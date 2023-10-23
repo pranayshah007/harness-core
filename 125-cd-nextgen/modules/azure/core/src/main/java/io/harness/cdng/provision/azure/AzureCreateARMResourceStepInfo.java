@@ -64,7 +64,7 @@ public class AzureCreateARMResourceStepInfo extends AzureCreateARMResourceStepBa
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    // Azure connector
+    // Azure ConnectorDisconnectHandler
     if (createStepConfiguration.getConnectorRef() != null) {
       connectorRefMap.put("configuration.spec.connectorRef",
           ParameterField.createValueField(createStepConfiguration.getConnectorRef().getValue()));

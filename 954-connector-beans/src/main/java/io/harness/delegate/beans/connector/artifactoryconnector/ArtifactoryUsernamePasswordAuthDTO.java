@@ -31,7 +31,7 @@ import lombok.Data;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "ArtifactoryUsernamePasswordAuth",
     description = "This entity contains the details of the Artifactory Username and Password")
-@RecasterAlias("io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO")
 public class ArtifactoryUsernamePasswordAuthDTO implements ArtifactoryAuthCredentialsDTO {
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;

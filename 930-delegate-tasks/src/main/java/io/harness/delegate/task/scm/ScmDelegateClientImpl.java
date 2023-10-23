@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DX)
 public class ScmDelegateClientImpl implements ScmDelegateClient {
   // Caller code eg:
-  //    processScmRequest( c->scmServiceClient.listFiles(connector,xyz,abc,SCMGrpc.newBlockingStub(c)));
+  //    processScmRequest( c->scmServiceClient.listFiles(ConnectorDisconnectHandler,xyz,abc,SCMGrpc.newBlockingStub(c)));
 
   @SneakyThrows
   @Override

@@ -16,6 +16,6 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface LightwingClient {
-  @POST("internal/connector/callback")
+  @POST("internal/ConnectorDisconnectHandler/callback")
   Call<ResponseDTO<ResponseBody>> scheduleAutoCUDDataCollectorJob(@Body RequestBody request);
 }

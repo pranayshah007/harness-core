@@ -91,13 +91,13 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
         return scmConnector;
       } else {
         throw new UnexpectedException(
-            String.format("The connector with the  id %s, accountId %s, orgId %s, projectId %s is not a scm connector",
+            String.format("The ConnectorDisconnectHandler with the  id %s, accountId %s, orgId %s, projectId %s is not a scm ConnectorDisconnectHandler",
                 gitSyncConfigDTO.getIdentifier(), accountId, gitSyncConfigDTO.getOrganizationIdentifier(),
                 gitSyncConfigDTO.getProjectIdentifier()));
       }
     } else {
       throw new UnexpectedException(String.format(
-          "No connector found with the id %s, accountId %s, orgId %s, projectId %s", gitSyncConfigDTO.getIdentifier(),
+          "No ConnectorDisconnectHandler found with the id %s, accountId %s, orgId %s, projectId %s", gitSyncConfigDTO.getIdentifier(),
           accountId, gitSyncConfigDTO.getOrganizationIdentifier(), gitSyncConfigDTO.getProjectIdentifier()));
     }
   }
@@ -112,7 +112,7 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
   public ScmConnector getDecryptedConnectorForNewGitX(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
-    // setting service principal for connector decryption in case of Git Connector
+    // setting service principal for ConnectorDisconnectHandler decryption in case of Git Connector
     GitSyncUtils.setGitSyncServicePrincipal();
     ScmConnector scmConnector =
         decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
@@ -134,7 +134,7 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
       return scmConnector;
     } else {
       throw new UnexpectedException(
-          String.format("The connector with the  id %s, accountId %s, orgId %s, projectId %s is not a scm connector",
+          String.format("The ConnectorDisconnectHandler with the  id %s, accountId %s, orgId %s, projectId %s is not a scm ConnectorDisconnectHandler",
               gitSyncConfigDTO.getIdentifier(), accountId, gitSyncConfigDTO.getOrganizationIdentifier(),
               gitSyncConfigDTO.getProjectIdentifier()));
     }
@@ -176,7 +176,7 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
       return scmConnector;
     } catch (Exception ex) {
       throw new UnexpectedException(
-          String.format("The connector with the  id %s, accountId %s, orgId %s, projectId %s is not a scm connector",
+          String.format("The ConnectorDisconnectHandler with the  id %s, accountId %s, orgId %s, projectId %s is not a scm ConnectorDisconnectHandler",
               connectorRef, accountIdentifier, orgIdentifier, projectIdentifier));
     }
   }
@@ -231,13 +231,13 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
         return (ScmConnector) connectorInfoDTO.getConnectorConfig();
       } else {
         throw new UnexpectedException(String.format(
-            "The connector with the  identifier [%s], accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s] is not an scm connector",
+            "The ConnectorDisconnectHandler with the  identifier [%s], accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s] is not an scm ConnectorDisconnectHandler",
             connectorInfoDTO.getIdentifier(), accountIdentifier, orgIdentifier, projectIdentifier));
       }
     }
     throw new ConnectorNotFoundException(
         String.format(
-            "No connector found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
+            "No ConnectorDisconnectHandler found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
             accountIdentifier, orgIdentifier, projectIdentifier, connectorRef),
         USER);
   }

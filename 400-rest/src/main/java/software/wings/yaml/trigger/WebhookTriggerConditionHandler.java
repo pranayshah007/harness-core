@@ -153,13 +153,13 @@ public class WebhookTriggerConditionHandler extends TriggerConditionYamlHandler<
       return null;
     }
     SettingAttribute gitSettingAttribute = settingsService.getSettingAttributeByName(accountId, gitConnectorName);
-    notNullCheck(String.format("Git connector %s does not exist.", gitConnectorName), gitSettingAttribute);
+    notNullCheck(String.format("Git ConnectorDisconnectHandler %s does not exist.", gitConnectorName), gitSettingAttribute);
     return gitSettingAttribute.getUuid();
   }
 
   private String getGitConnectorNameFromId(String gitConnectorId) {
     SettingAttribute gitSettingAttribute = settingsService.get(gitConnectorId);
-    notNullCheck(String.format("Git connector %s does not exist.", gitConnectorId), gitSettingAttribute);
+    notNullCheck(String.format("Git ConnectorDisconnectHandler %s does not exist.", gitConnectorId), gitSettingAttribute);
     return gitSettingAttribute.getName();
   }
 

@@ -897,7 +897,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
         createDownloadContext(ArtifactSourceType.NEXUS2_REGISTRY, artifactRequestDetails, connectorDTO);
     assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
         .isInstanceOf(HintException.class)
-        .hasMessageContaining("Configure nexus connector for nexus configuration");
+        .hasMessageContaining("Configure nexus ConnectorDisconnectHandler for nexus configuration");
   }
 
   private void testDownloadNexusRequestWrongArtifactDetails(ArtifactSourceType artifactSourceType) throws Exception {

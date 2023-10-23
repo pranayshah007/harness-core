@@ -51,7 +51,7 @@ public class NGConstants {
   public static final String ENTITY_REFERENCE_LOG_PREFIX = "ENTITY_REFERENCE :";
   public static final String HARNESS_BLUE = "#0063F7";
   public static final String STRING_CONNECTOR = ":";
-  public static final String CONNECTOR_STRING = "connector [%s] in account [%s], org [%s], project [%s]";
+  public static final String CONNECTOR_STRING = "ConnectorDisconnectHandler [%s] in account [%s], org [%s], project [%s]";
   public static final String SETTINGS_STRING = "settings [%s] in account [%s], org [%s], project [%s]";
   public static final String CONNECTOR_HEARTBEAT_LOG_PREFIX = "Connector Heartbeat :";
   public static final String CONNECTOR_TYPE_NAME = "connectorType";

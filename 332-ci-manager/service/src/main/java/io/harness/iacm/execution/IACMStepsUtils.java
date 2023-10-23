@@ -411,7 +411,7 @@ public class IACMStepsUtils {
       }
     }
 
-    // Check for secrets in the connector
+    // Check for secrets in the ConnectorDisconnectHandler
     Map<String, String> secretVarsFromConnector = iacmTerraformPluginInfo.getSecretVariablesFromConnector().getValue();
     if (secretVarsFromConnector != null) {
       for (Map.Entry<String, String> entry : secretVarsFromConnector.entrySet()) {

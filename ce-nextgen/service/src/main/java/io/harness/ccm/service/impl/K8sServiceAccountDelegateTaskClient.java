@@ -91,7 +91,7 @@ public class K8sServiceAccountDelegateTaskClient {
   private static void checkForErrorResponse(DelegateResponseData responseData) {
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
-      log.info("Error in {} task for connector : [{}] with failure types [{}]", TaskType.K8S_SERVICE_ACCOUNT_INFO,
+      log.info("Error in {} task for ConnectorDisconnectHandler : [{}] with failure types [{}]", TaskType.K8S_SERVICE_ACCOUNT_INFO,
           errorNotifyResponseData.getErrorMessage(), errorNotifyResponseData.getFailureTypes());
       throw new InvalidRequestException(errorNotifyResponseData.getErrorMessage());
     }

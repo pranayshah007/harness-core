@@ -67,7 +67,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
     SshWinRmAzureInfrastructure invalidInfra = SshWinRmAzureInfrastructure.builder()
                                                    .credentialsRef(ParameterField.ofNull())
                                                    .resourceGroup(ParameterField.ofNull())
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                   .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                    .subscriptionId(ParameterField.createValueField("sub-id"))
                                                    .build();
 
@@ -132,7 +132,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPdcInfrastructureEmptySshKeyRef() {
     PdcInfrastructure emptySshKeyRef =
-        PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+        PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref")).build();
 
     assertThatThrownBy(() -> validator.validate(emptySshKeyRef)).isInstanceOf(InvalidArgumentsException.class);
   }
@@ -314,7 +314,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
         InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
     ElastigroupInfrastructureBuilder builder = ElastigroupInfrastructure.builder();
     if (!emptyConnector) {
-      builder.connectorRef(ParameterField.createValueField("connector"));
+      builder.connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"));
     }
     if (!emptyConfiguration) {
       builder.configuration(
@@ -341,7 +341,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
   private AsgInfrastructure getAsgInfrastructure(boolean emptyConnector, boolean emptyRegion) {
     AsgInfrastructureBuilder builder = AsgInfrastructure.builder();
     if (!emptyConnector) {
-      builder.connectorRef(ParameterField.createValueField("connector"));
+      builder.connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"));
     }
     if (!emptyRegion) {
       builder.region(ParameterField.createValueField("region"));

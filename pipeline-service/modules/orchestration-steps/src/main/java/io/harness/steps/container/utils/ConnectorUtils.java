@@ -36,7 +36,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     try {
       connectorDetails = getConnectorDetails(ngAccess, containerExecutionConfig.getDefaultInternalImageConnector());
     } catch (ConnectorNotFoundException e) {
-      log.info("Default harness image connector does not exist: {}", e.getMessage());
+      log.info("Default harness image ConnectorDisconnectHandler does not exist: {}", e.getMessage());
       connectorDetails = null;
     }
     return connectorDetails;

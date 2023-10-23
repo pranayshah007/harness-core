@@ -36,7 +36,7 @@ public final class EventsFrameworkMetadataConstants {
 
   public static final String PROJECT_ENTITY = "project";
   public static final String ORGANIZATION_ENTITY = "organization";
-  public static final String CONNECTOR_ENTITY = "connector";
+  public static final String CONNECTOR_ENTITY = "ConnectorDisconnectHandler";
   public static final String SERVICEACCOUNT_ENTITY = "serviceaccount";
   public static final String TERRAFORM_CONFIG_ENTITY = "terraformconfig";
   public static final String TERRAGRUNT_CONFIG_ENTITY = "terragruntconfig";

@@ -55,7 +55,7 @@ pipeline:
                         store:
                           type: Git
                           spec:
-                            connectorRef: my-git-connector
+                            connectorRef: my-git-ConnectorDisconnectHandler
                             gitFetchType: Branch
                             branch: masterOverride2
                             paths:
@@ -137,7 +137,7 @@ pipeline:
                   store:
                     type: Git
                     spec:
-                      connectorRef: my-connector
+                      connectorRef: my-ConnectorDisconnectHandler
                       gitFetchType: Branch
                       branch: <+input>
                       paths:

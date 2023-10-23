@@ -261,7 +261,7 @@ public class GitConfigHelperService {
     notNullCheck("GitConfig provided cannot be null", gitConfig);
     if (GitConfig.UrlType.ACCOUNT == gitConfig.getUrlType()) {
       repoName = trimToEmpty(repoName);
-      notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+      notEmptyCheck("Repo name cannot be empty for Account level git ConnectorDisconnectHandler", repoName);
       String purgedRepoUrl = gitConfig.getRepoUrl().replaceAll("/*$", "");
       String purgedRepoName = repoName.replaceAll("^/*", "");
       return purgedRepoUrl + "/" + purgedRepoName;

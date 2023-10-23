@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.outcome.AzureAuthOutcomeDTO")
 public class AzureAuthOutcomeDTO {
   @NotNull AzureSecretType type;
   @JsonTypeInfo(

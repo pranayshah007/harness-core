@@ -38,7 +38,7 @@ import org.hibernate.validator.constraints.URL;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@RecasterAlias("io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.docker.outcome.DockerConnectorOutcomeDTO")
 public class DockerConnectorOutcomeDTO
     extends ConnectorConfigOutcomeDTO implements DelegateSelectable, ManagerExecutable {
   @URL @NotNull @NotBlank String dockerRegistryUrl;

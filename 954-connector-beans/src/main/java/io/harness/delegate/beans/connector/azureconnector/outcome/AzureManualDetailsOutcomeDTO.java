@@ -21,7 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @JsonTypeName(AzureConstants.MANUAL_CONFIG)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.outcome.AzureManualDetailsOutcomeDTO")
 public class AzureManualDetailsOutcomeDTO implements AzureCredentialSpecOutcomeDTO {
   @NotNull String applicationId;
 

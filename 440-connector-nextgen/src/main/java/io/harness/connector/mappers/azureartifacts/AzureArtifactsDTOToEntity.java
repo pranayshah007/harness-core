@@ -31,7 +31,7 @@ public class AzureArtifactsDTOToEntity
     }
 
     if (configDTO.getAuth() == null) {
-      throw new InvalidRequestException("No Authentication Details Found in the connector");
+      throw new InvalidRequestException("No Authentication Details Found in the ConnectorDisconnectHandler");
     }
 
     AzureArtifactsAuthentication azureArtifactsAuthentication =

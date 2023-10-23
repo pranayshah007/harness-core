@@ -51,7 +51,7 @@ public class HelmChartOverrideRepoStoreService implements NgManifestService {
         CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
     if (!migratedEntities.containsKey(connectorId)) {
       log.error(
-          String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+          String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
               applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
       return Collections.emptyList();
     }

@@ -545,7 +545,7 @@ public class ContainerStepInitHelper {
 
     if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
       throw new ContainerStepExecutionException(
-          String.format("connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
+          String.format("ConnectorDisconnectHandler ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
               runStepInfo.getIdentifier(), runStepInfo.getName()));
     }
     String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(runStepInfo.getIdentifier());

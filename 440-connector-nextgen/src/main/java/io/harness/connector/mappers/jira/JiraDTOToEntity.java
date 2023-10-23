@@ -30,7 +30,7 @@ import com.google.inject.Singleton;
 public class JiraDTOToEntity implements ConnectorDTOToEntityMapper<JiraConnectorDTO, JiraConnector> {
   @Override
   public JiraConnector toConnectorEntity(JiraConnectorDTO configDTO) {
-    // no change required after Jira connector migration
+    // no change required after Jira ConnectorDisconnectHandler migration
     JiraConnectorBuilder jiraConnectorBuilder =
         JiraConnector.builder()
             .jiraUrl(configDTO.getJiraUrl())

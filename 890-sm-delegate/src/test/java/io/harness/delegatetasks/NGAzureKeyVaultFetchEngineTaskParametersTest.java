@@ -69,7 +69,7 @@ public class NGAzureKeyVaultFetchEngineTaskParametersTest {
     assertThat(executionCapabilities.get(1))
         .isEqualTo(SelectorCapability.builder()
                        .selectors(Set.of("selector1", "selector2"))
-                       .selectorOrigin("connector")
+                       .selectorOrigin("ConnectorDisconnectHandler")
                        .build());
   }
 }

@@ -705,13 +705,13 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
       if (settingAttribute == null) {
         cvActivityLogService.getLoggerByStateExecutionId(context.getAccountId(), context.getStateExecutionInstanceId())
             .error(
-                "The evaluated connector name " + analysisServerConfigName + " did not resolve to a valid connector");
+                "The evaluated ConnectorDisconnectHandler name " + analysisServerConfigName + " did not resolve to a valid ConnectorDisconnectHandler");
         throw new DataCollectionException("Expression " + fieldValue + " resolved to " + analysisServerConfigName
-            + ". There was no connector found with this name.");
+            + ". There was no ConnectorDisconnectHandler found with this name.");
       }
       cvActivityLogService.getLoggerByStateExecutionId(context.getAccountId(), context.getStateExecutionInstanceId())
-          .info("The evaluated connector name " + analysisServerConfigName
-              + " successfully resolved to a valid connector");
+          .info("The evaluated ConnectorDisconnectHandler name " + analysisServerConfigName
+              + " successfully resolved to a valid ConnectorDisconnectHandler");
       return settingAttribute.getUuid();
     }
 
@@ -748,7 +748,7 @@ public abstract class AbstractAnalysisState extends State implements SweepingOut
 
   protected SettingAttribute getSettingAttribute(String configId) {
     SettingAttribute settingAttribute = settingsService.get(configId);
-    Preconditions.checkNotNull(settingAttribute, "No connector found with id " + configId);
+    Preconditions.checkNotNull(settingAttribute, "No ConnectorDisconnectHandler found with id " + configId);
     return settingAttribute;
   }
 

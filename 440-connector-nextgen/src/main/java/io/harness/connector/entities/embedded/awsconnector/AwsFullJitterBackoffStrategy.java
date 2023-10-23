@@ -20,7 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsFullJitterBackoffStrategyKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy")
 public class AwsFullJitterBackoffStrategy implements AwsSdkClientBackoffStrategy {
   long baseDelay;
   long maxBackoffTime;

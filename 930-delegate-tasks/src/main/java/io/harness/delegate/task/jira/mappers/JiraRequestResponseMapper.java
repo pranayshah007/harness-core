@@ -61,7 +61,7 @@ public class JiraRequestResponseMapper {
           .authToken(String.format("%s %s", BEARER, new String(jiraPATDTO.getPatRef().getDecryptedValue())))
           .build();
     } else {
-      throw new InvalidRequestException(String.format("Unsupported auth type in jira connector: %s", jiraAuthType));
+      throw new InvalidRequestException(String.format("Unsupported auth type in jira ConnectorDisconnectHandler: %s", jiraAuthType));
     }
   }
 

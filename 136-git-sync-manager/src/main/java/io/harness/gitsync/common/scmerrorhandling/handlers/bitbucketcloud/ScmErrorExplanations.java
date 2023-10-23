@@ -20,7 +20,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class ScmErrorExplanations {
   public static final String INVALID_CONNECTOR_CREDS =
-      "The credentials provided in the connector<CONNECTOR> are invalid or have expired.";
+      "The credentials provided in the ConnectorDisconnectHandler<CONNECTOR> are invalid or have expired.";
   public static final String REPO_NOT_FOUND = "Provided Bitbucket repository<REPO> does not exist or has been deleted.";
   public static final String FILE_NOT_FOUND =
       "The requested file path<FILEPATH> doesn't exist in git. Possible reasons can be:\n"

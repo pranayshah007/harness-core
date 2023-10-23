@@ -223,7 +223,7 @@ public class CIExecutionPlanTestHelper {
   private static final String VOLUME_NAME = "harness";
   private static final String WORK_DIR = "/harness";
 
-  public static final String GIT_CONNECTOR = "git-connector";
+  public static final String GIT_CONNECTOR = "git-ConnectorDisconnectHandler";
   private static final String CLONE_STEP_ID = "step-1";
   private static final String GIT_PLUGIN_DEPTH_ENV = "PLUGIN_DEPTH";
   private static final Integer GIT_STEP_LIMIT_MEM = 200;
@@ -374,12 +374,12 @@ public class CIExecutionPlanTestHelper {
     Map<EnvVariableEnum, String> envToSecretEntry = new HashMap<>();
     envToSecretEntry.put(EnvVariableEnum.GCP_KEY_AS_FILE, "PLUGIN_JSON_KEY");
     map.put("publish-1",
-        ConnectorConversionInfo.builder().connectorRef("gcr-connector").envToSecretsMap(envToSecretEntry).build());
+        ConnectorConversionInfo.builder().connectorRef("gcr-ConnectorDisconnectHandler").envToSecretsMap(envToSecretEntry).build());
     envToSecretEntry.clear();
     envToSecretEntry.put(EnvVariableEnum.AWS_ACCESS_KEY, "PLUGIN_ACCESS_KEY");
     envToSecretEntry.put(EnvVariableEnum.AWS_ACCESS_KEY, "PLUGIN_ACCESS_KEY");
     map.put("publish-2",
-        ConnectorConversionInfo.builder().connectorRef("ecr-connector").envToSecretsMap(envToSecretEntry).build());
+        ConnectorConversionInfo.builder().connectorRef("ecr-ConnectorDisconnectHandler").envToSecretsMap(envToSecretEntry).build());
     return map;
   }
 
@@ -886,7 +886,7 @@ public class CIExecutionPlanTestHelper {
     tags.add("v01");
 
     ObjectNode stepSpecType = mapper.createObjectNode();
-    stepSpecType.put("connectorRef", "ecr-connector");
+    stepSpecType.put("connectorRef", "ecr-ConnectorDisconnectHandler");
     stepSpecType.put("region", "987923132879");
     stepSpecType.put("account", "./test-script1.sh");
     stepSpecType.set("tags", tags);
@@ -908,7 +908,7 @@ public class CIExecutionPlanTestHelper {
     tags.add("v01");
 
     ObjectNode stepSpecType = mapper.createObjectNode();
-    stepSpecType.put("connectorRef", "gcr-connector");
+    stepSpecType.put("connectorRef", "gcr-ConnectorDisconnectHandler");
     stepSpecType.set("tags", tags);
     stepSpecType.put("imageName", "portal");
     stepSpecType.put("host", "us.gcr.io");

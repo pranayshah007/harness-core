@@ -335,16 +335,16 @@ public class ScmFacilitatorResource {
   }
 
   @GET
-  @Path("list-repos-by-connector")
+  @Path("list-repos-by-ConnectorDisconnectHandler")
   @ApiOperation(
-      value = "Lists Git Repos corresponding to given reference connector", nickname = "getListOfReposByRefConnector")
+      value = "Lists Git Repos corresponding to given reference ConnectorDisconnectHandler", nickname = "getListOfReposByRefConnector")
   @Hidden
   @Operation(operationId = "listReposByRefConnector",
-      summary = "Lists Git Repos corresponding to given reference connector",
+      summary = "Lists Git Repos corresponding to given reference ConnectorDisconnectHandler",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "This contains list of Git Repos specific to given reference connector.")
+        ApiResponse(description = "This contains list of Git Repos specific to given reference ConnectorDisconnectHandler.")
       },
       hidden = true)
   public ResponseDTO<List<GitRepositoryResponseDTO>>
@@ -379,15 +379,15 @@ public class ScmFacilitatorResource {
 
   @GET
   @Path("/v2/list-repos")
-  @ApiOperation(value = "Paginated List Git Repos corresponding to given reference connector",
+  @ApiOperation(value = "Paginated List Git Repos corresponding to given reference ConnectorDisconnectHandler",
       nickname = "getPaginatedListOfReposByRefConnector")
   @Hidden
   @Operation(operationId = "paginatedListReposByRefConnector",
-      summary = "Paginated lists Git Repos corresponding to given reference connector",
+      summary = "Paginated lists Git Repos corresponding to given reference ConnectorDisconnectHandler",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "This contains list of Git Repos specific to given reference connector.")
+        ApiResponse(description = "This contains list of Git Repos specific to given reference ConnectorDisconnectHandler.")
       },
       hidden = true)
   public ResponseDTO<GitListRepositoryResponse>
@@ -421,16 +421,16 @@ public class ScmFacilitatorResource {
   }
 
   @GET
-  @Path("list-all-repos-by-connector")
-  @ApiOperation(value = "Lists All Git Repos corresponding to given reference connector",
+  @Path("list-all-repos-by-ConnectorDisconnectHandler")
+  @ApiOperation(value = "Lists All Git Repos corresponding to given reference ConnectorDisconnectHandler",
       nickname = "getListOfAllReposByRefConnector")
   @Hidden
   @Operation(operationId = "listReposByRefConnector",
-      summary = "Lists All Git Repos corresponding to given reference connector",
+      summary = "Lists All Git Repos corresponding to given reference ConnectorDisconnectHandler",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "This contains list of All Git Repos specific to given reference connector.")
+        ApiResponse(description = "This contains list of All Git Repos specific to given reference ConnectorDisconnectHandler.")
       },
       hidden = true)
   public ResponseDTO<List<UserRepoResponse>>
@@ -659,12 +659,12 @@ public class ScmFacilitatorResource {
   @ApiOperation(value = "Validates repos on the basis of repoAllowList in default settings", nickname = "validateRepo")
   @Hidden
   @Operation(operationId = "validateRepoByRefConnector",
-      summary = "Validates repos on the basis repoAllowList in default settings using referenced connector.",
+      summary = "Validates repos on the basis repoAllowList in default settings using referenced ConnectorDisconnectHandler.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description =
-                "Validates if the repo is accessible or not on the basis of repoAllowList in default settings using referenced connector.")
+                "Validates if the repo is accessible or not on the basis of repoAllowList in default settings using referenced ConnectorDisconnectHandler.")
       },
       hidden = true)
   public ResponseDTO<RepoValidationResponse>

@@ -115,7 +115,7 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorMap = new HashMap<>();
     if (source != null && SbomSourceType.IMAGE.equals(source.getType())) {
-      connectorMap.put("source.spec.connector", ((ImageSbomSource) source.getSbomSourceSpec()).getConnector());
+      connectorMap.put("source.spec.ConnectorDisconnectHandler", ((ImageSbomSource) source.getSbomSourceSpec()).getConnector());
     }
     return connectorMap;
   }

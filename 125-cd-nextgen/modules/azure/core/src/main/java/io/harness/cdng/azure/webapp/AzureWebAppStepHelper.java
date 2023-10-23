@@ -320,7 +320,7 @@ public class AzureWebAppStepHelper {
     ConnectorInfoDTO connectorInfo = cdStepHelper.getConnector(infrastructure.getConnectorRef(), ambiance);
     if (!(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
-          format("Invalid infrastructure connector type: %s, expected: %s",
+          format("Invalid infrastructure ConnectorDisconnectHandler type: %s, expected: %s",
               connectorInfo.getConnectorType().getDisplayName(), ConnectorType.AZURE.getDisplayName())));
     }
 

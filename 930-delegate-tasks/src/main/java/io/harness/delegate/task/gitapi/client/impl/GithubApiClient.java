@@ -84,7 +84,7 @@ public class GithubApiClient implements GitApiClient {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Received blank pr details");
       }
     } catch (Exception e) {
-      log.error(new StringBuilder("failed while fetching PR Details using connector: ")
+      log.error(new StringBuilder("failed while fetching PR Details using ConnectorDisconnectHandler: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);
@@ -119,7 +119,7 @@ public class GithubApiClient implements GitApiClient {
                 prNumber, mergePRResponse.get("error"), mergePRResponse.get("code")));
       }
     } catch (Exception e) {
-      log.error(new StringBuilder("Failed while merging PR using connector: ")
+      log.error(new StringBuilder("Failed while merging PR using ConnectorDisconnectHandler: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);
@@ -147,7 +147,7 @@ public class GithubApiClient implements GitApiClient {
 
       boolean success = githubService.deleteRef(gitApiURL, token, gitApiTaskParams.getOwner(), repo, ref);
       if (!success) {
-        String err = format("Failed to delete reference %s for github connector %s", ref, gitConnector.getIdentifier());
+        String err = format("Failed to delete reference %s for github ConnectorDisconnectHandler %s", ref, gitConnector.getIdentifier());
         log.info(err);
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Failed to delete");
       } else {
@@ -155,7 +155,7 @@ public class GithubApiClient implements GitApiClient {
       }
     } catch (Exception e) {
       log.error(
-          new StringBuilder(format("Failed to delete reference %s for github connector ", gitApiTaskParams.getRef()))
+          new StringBuilder(format("Failed to delete reference %s for github ConnectorDisconnectHandler ", gitApiTaskParams.getRef()))
               .append(gitConnector.getIdentifier())
               .toString(),
           e);
@@ -213,7 +213,7 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null || gitConfigDTO.getApiAccess().getType() == null) {
       throw new InvalidRequestException(
-          format("Failed to retrieve token info for github connector: %s", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for github ConnectorDisconnectHandler: %s", gitConnector.getIdentifier()));
     }
 
     GithubApiAccessSpecDTO spec = gitConfigDTO.getApiAccess().getSpec();

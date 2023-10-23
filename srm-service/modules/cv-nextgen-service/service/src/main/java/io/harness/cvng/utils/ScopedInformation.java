@@ -100,7 +100,7 @@ public class ScopedInformation {
             accountId, orgIdentifier, projectIdentifier, scopeIdentifierPair.getRight());
       default:
         throw new IllegalArgumentException(String.format(
-            "Invalid Scope: %s for connector Identifier: %s", scopeIdentifierPair.getLeft(), identifierWithScope));
+            "Invalid Scope: %s for ConnectorDisconnectHandler Identifier: %s", scopeIdentifierPair.getLeft(), identifierWithScope));
     }
   }
 

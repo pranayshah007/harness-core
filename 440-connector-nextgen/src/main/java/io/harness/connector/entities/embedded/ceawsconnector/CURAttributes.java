@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "CURAttributesKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.ceawsconnector.CURAttributes")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.ceawsconnector.CURAttributes")
 public class CURAttributes {
   String reportName;
   S3BucketDetails s3BucketDetails;

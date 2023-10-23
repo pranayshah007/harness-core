@@ -152,7 +152,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
         return harnessImageConnectorRef.getValue();
       }
     }
-    log.info("Defaulting to default connector for step {}", stepIdentifier);
+    log.info("Defaulting to default ConnectorDisconnectHandler for step {}", stepIdentifier);
     return containerExecutionConfig.getDefaultInternalImageConnector();
   }
 

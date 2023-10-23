@@ -101,7 +101,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
   @InjectMocks private CloudformationCreateStackStep cloudformationCreateStackStep;
 
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
-  private static final String CONNECTOR_REF = "test-connector";
+  private static final String CONNECTOR_REF = "test-ConnectorDisconnectHandler";
   private Ambiance getAmbiance() {
     return Ambiance.newBuilder()
         .putSetupAbstractions("accountId", "test-account")

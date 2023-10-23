@@ -69,15 +69,15 @@ public class ConnectorEntityReferenceHelper {
   IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
 
   private final String TEMPLATE_REFERENCE_CREATE_FAIL_LOG_MSG =
-      "The entity reference was not created for the connector [{}], event ID [{}] with the exception[{}]";
+      "The entity reference was not created for the ConnectorDisconnectHandler [{}], event ID [{}] with the exception[{}]";
   private final String TEMPLATE_REFERENCE_UPDATE_FAIL_LOG_MSG =
-      "The entity reference was not updated for the connector [{}], event ID [{}] with the exception[{}] ";
+      "The entity reference was not updated for the ConnectorDisconnectHandler [{}], event ID [{}] with the exception[{}] ";
   private final String deleteLogMsg =
-      "The entity reference was not deleted when the connector [{}] was deleted that used secret [{}] with the exception[{}]";
+      "The entity reference was not deleted when the ConnectorDisconnectHandler [{}] was deleted that used secret [{}] with the exception[{}]";
   private final String createFailedLogMsg =
-      "The entity reference was not created for the connector [{}] using the secret [{}] with the exception[{}]";
+      "The entity reference was not created for the ConnectorDisconnectHandler [{}] using the secret [{}] with the exception[{}]";
   private final String updateFailedLogMsg =
-      "The entity reference was not updated for the connector [{}] using the secret [{}] with the exception[{}]";
+      "The entity reference was not updated for the ConnectorDisconnectHandler [{}] using the secret [{}] with the exception[{}]";
 
   @Inject
   public ConnectorEntityReferenceHelper(@Named(EventsFrameworkConstants.SETUP_USAGE) Producer eventProducer,
@@ -108,7 +108,7 @@ public class ConnectorEntityReferenceHelper {
         getAllReferredSecretDetails(secrets, baseNGAccess);
 
     log.info(ENTITY_REFERENCE_LOG_PREFIX
-            + "[{}] the entity reference when the connector [{}] was created using the secret [{}]",
+            + "[{}] the entity reference when the ConnectorDisconnectHandler [{}] was created using the secret [{}]",
         isUpdate ? "Updating" : "Creating", connectorFQN, secretFQNs);
 
     return produceEventForSetupUsage(
@@ -156,7 +156,7 @@ public class ConnectorEntityReferenceHelper {
       }
       return allTemplateDetails;
     } catch (Exception e) {
-      log.error("Could not add the reference in entity setup usage for acc :{}, project :{}, connector:{}: {}",
+      log.error("Could not add the reference in entity setup usage for acc :{}, project :{}, ConnectorDisconnectHandler:{}: {}",
           accountIdentifier, connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier(), e);
     }
     return null;
@@ -365,7 +365,7 @@ public class ConnectorEntityReferenceHelper {
               .setData(entityReferenceDTO.toByteString())
               .build());
     } catch (Exception ex) {
-      log.error("Error deleting the setup usages for the connector with the identifier {} in project {} in org {}",
+      log.error("Error deleting the setup usages for the ConnectorDisconnectHandler with the identifier {} in project {} in org {}",
           identifier, projectIdentifier, orgIdentifier, ex);
     }
   }

@@ -33,7 +33,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(using = RancherConnectorConfigAuthCredentialsDTOSerializer.class)
 @Schema(name = "RancherAuthentication", description = "This contains rancher authentication details")
-@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.rancher.RancherConnectorConfigAuthCredentialsDTO")
 public class RancherConnectorConfigAuthCredentialsDTO {
   @NotNull @JsonProperty("type") RancherAuthType authType;
 

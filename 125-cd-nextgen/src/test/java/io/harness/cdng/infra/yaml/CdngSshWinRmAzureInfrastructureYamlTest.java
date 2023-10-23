@@ -28,7 +28,7 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
   private SshWinRmAzureInfrastructure infrastructure =
       SshWinRmAzureInfrastructure.builder()
           .credentialsRef(ParameterField.createValueField("some-key-ref"))
-          .connectorRef(ParameterField.createValueField("some-connector-ref"))
+          .connectorRef(ParameterField.createValueField("some-ConnectorDisconnectHandler-ref"))
           .subscriptionId(ParameterField.createValueField("sub-id"))
           .resourceGroup(ParameterField.createValueField("res-group"))
           .tags(ParameterField.createValueField(Collections.singletonMap("key", "val")))
@@ -42,7 +42,7 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
     SshWinRmAzureInfrastructure infrastructureNew =
         SshWinRmAzureInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("another-key-ref"))
-            .connectorRef(ParameterField.createValueField("another-connector-ref"))
+            .connectorRef(ParameterField.createValueField("another-ConnectorDisconnectHandler-ref"))
             .subscriptionId(ParameterField.createValueField("sub-id"))
             .resourceGroup(ParameterField.createValueField("res-group"))
             .build();
@@ -61,6 +61,6 @@ public class CdngSshWinRmAzureInfrastructureYamlTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractAndGetConnectorRefs() {
     assertThat(infrastructure.extractConnectorRefs().get(YAMLFieldNameConstants.CONNECTOR_REF).getValue())
-        .isEqualTo("some-connector-ref");
+        .isEqualTo("some-ConnectorDisconnectHandler-ref");
   }
 }

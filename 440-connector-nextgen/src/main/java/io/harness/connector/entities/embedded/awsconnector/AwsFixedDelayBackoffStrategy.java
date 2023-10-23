@@ -20,7 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsFixedDelayBackoffStrategyKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy")
 public class AwsFixedDelayBackoffStrategy implements AwsSdkClientBackoffStrategy {
   long fixedBackoff;
   int retryCount;

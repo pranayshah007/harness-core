@@ -48,7 +48,7 @@ public class GithubUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo("The credentials provided in the Github connector " + connectorRef
+          .isEqualTo("The credentials provided in the Github ConnectorDisconnectHandler " + connectorRef
               + " are invalid or have expired. " + errorMessage);
     }
   }

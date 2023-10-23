@@ -180,7 +180,7 @@ public class APMVerificationConfig extends SettingValue implements EncryptableSe
           .encryptedDataDetails(encryptedDataDetails(secretManager, Arrays.asList(bodySecrets, urlSecrets)))
           .build();
     } catch (Exception ex) {
-      throw new VerificationOperationException(ErrorCode.APM_CONFIGURATION_ERROR, "Unable to validate connector ", ex);
+      throw new VerificationOperationException(ErrorCode.APM_CONFIGURATION_ERROR, "Unable to validate ConnectorDisconnectHandler ", ex);
     }
   }
 

@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
   , @JsonSubTypes.Type(value = AzureInheritFromDelegateDetailsDTO.class, name = AzureConstants.INHERIT_FROM_DELEGATE)
 })
 @ApiModel("AzureCredentialSpec")
-@Schema(name = "AzureCredentialSpec", description = "This contains Azure connector credentials spec")
+@Schema(name = "AzureCredentialSpec", description = "This contains Azure ConnectorDisconnectHandler credentials spec")
 public interface AzureCredentialSpecDTO {
   default AzureCredentialSpecOutcomeDTO toOutcome() {
     return null;

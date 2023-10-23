@@ -919,7 +919,7 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(HarnessTeam.DEL)
-@BreakDependencyOn("io.harness.delegate.beans.connector.ConnectorType")
+@BreakDependencyOn("io.harness.delegate.beans.ConnectorDisconnectHandler.ConnectorType")
 @BreakDependencyOn("io.harness.encryptors.clients.CustomSecretsManagerEncryptor")
 @BreakDependencyOn("io.harness.exception.DelegateServiceDriverExceptionHandler")
 @BreakDependencyOn("io.harness.impl.scm.ScmServiceClientImpl")

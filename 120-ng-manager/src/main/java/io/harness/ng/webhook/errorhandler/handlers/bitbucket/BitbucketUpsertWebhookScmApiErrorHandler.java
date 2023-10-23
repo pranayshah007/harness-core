@@ -27,12 +27,12 @@ public class BitbucketUpsertWebhookScmApiErrorHandler implements ScmApiErrorHand
     switch (statusCode) {
       case 401:
         throw new ScmUnauthorizedException(
-            String.format("Please check if credentials provided in Bitbucket connector %s are correct. ",
+            String.format("Please check if credentials provided in Bitbucket ConnectorDisconnectHandler %s are correct. ",
                 errorMetadata.getConnectorRef())
             + errorMessage);
       case 403:
         throw new ScmBadRequestException(
-            "Please check if webhook read write permissions are given to the token used in connector." + errorMessage);
+            "Please check if webhook read write permissions are given to the token used in ConnectorDisconnectHandler." + errorMessage);
       case 404:
         throw new ScmBadRequestException("Please check if repository provided is correct. " + errorMessage);
       default:

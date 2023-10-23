@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "SpotPermanentTokenCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.spotconnector.SpotPermanentTokenCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.spotconnector.SpotPermanentTokenCredential")
 public class SpotPermanentTokenCredential implements SpotCredential {
   String spotAccountId;
   String spotAccountIdRef;

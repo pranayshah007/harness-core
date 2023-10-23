@@ -44,7 +44,7 @@ public class EntityCrudStreamListenerTest extends CategoryTest {
   @Mock ConnectorMessageHandler connectorMessageHandler;
 
   public static final String TEST_ACCOUNT_ID = "test-account-id";
-  private static final String TEST_CONNECTOR_ID = "test-connector-id";
+  private static final String TEST_CONNECTOR_ID = "test-ConnectorDisconnectHandler-id";
 
   @Before
   public void setup() {

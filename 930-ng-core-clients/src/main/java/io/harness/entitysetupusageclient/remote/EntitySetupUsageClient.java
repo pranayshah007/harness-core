@@ -38,7 +38,7 @@ import retrofit2.http.Query;
 /**
  * All this apis are internal and won't be exposed to the customers. The APIs takes the FQN as input, FQN is fully
  * qualified Name of the entity. It is the unique key with which we can identify the resource.
- * for eg: For a project level connector it will be
+ * for eg: For a project level ConnectorDisconnectHandler it will be
  *      accountIdentifier/orgIdentifier/projectIdentifier/identifier
  *  For a input set it will be
  *    accountIdentifier/orgIdentifier/projectIdentifier/pipelineIdentifier/identifier

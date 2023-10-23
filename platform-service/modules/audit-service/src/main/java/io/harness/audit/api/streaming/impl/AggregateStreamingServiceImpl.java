@@ -127,9 +127,9 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
     try {
       connectorDTOOptional =
           NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountIdentifier, null, null),
-              "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
+              "Could not get ConnectorDisconnectHandler response for account: " + accountIdentifier + " after {} attempts.");
     } catch (Exception exception) {
-      log.warn(String.format("Exception while fetching connector [%s]", connectorId), exception);
+      log.warn(String.format("Exception while fetching ConnectorDisconnectHandler [%s]", connectorId), exception);
     }
     return connectorDTOOptional;
   }

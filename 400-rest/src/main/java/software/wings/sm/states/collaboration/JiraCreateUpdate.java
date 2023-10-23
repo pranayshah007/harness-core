@@ -851,7 +851,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
 
   private JiraConfig getJiraConfig(String jiraConnectorId, String accountId) {
     SettingAttribute jiraSettingAttribute = settingsService.getByAccountAndId(accountId, jiraConnectorId);
-    notNullCheck("Jira connector doesn't exist", jiraSettingAttribute);
+    notNullCheck("Jira ConnectorDisconnectHandler doesn't exist", jiraSettingAttribute);
 
     if (!(jiraSettingAttribute.getValue() instanceof JiraConfig)) {
       throw new InvalidRequestException("Type of Setting Attribute Value is not JiraConfig");

@@ -28,8 +28,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AwsCredential")
 @JsonDeserialize(using = AwsCredentialDTODeserializer.class)
-@Schema(name = "AwsCredential", description = "This contains details of the AWS connector credential")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO")
+@Schema(name = "AwsCredential", description = "This contains details of the AWS ConnectorDisconnectHandler credential")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.AwsCredentialDTO")
 public class AwsCredentialDTO {
   @Valid CrossAccountAccessDTO crossAccountAccess;
   @NotNull @JsonProperty("type") AwsCredentialType awsCredentialType;

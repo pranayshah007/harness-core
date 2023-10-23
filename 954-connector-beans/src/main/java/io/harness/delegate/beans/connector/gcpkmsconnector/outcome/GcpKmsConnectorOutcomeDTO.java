@@ -31,7 +31,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO")
 public class GcpKmsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @NotNull
   @NotBlank

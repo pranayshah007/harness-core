@@ -30,8 +30,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-@Api("/google-secret-manager-connector")
-@Path("/google-secret-manager-connector")
+@Api("/google-secret-manager-ConnectorDisconnectHandler")
+@Path("/google-secret-manager-ConnectorDisconnectHandler")
 @Produces({"application/json", "text/yaml", "text/html"})
 @Consumes({"application/json", "text/yaml", "text/html", "text/plain"})
 @Tag(name = "GoogleSecretManagerConnector",

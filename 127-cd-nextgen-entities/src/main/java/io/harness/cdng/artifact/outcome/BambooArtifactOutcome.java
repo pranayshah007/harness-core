@@ -38,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.BambooArtifactOutcome")
 public class BambooArtifactOutcome implements ArtifactOutcome {
   /**
-   * Bamboo connector.
+   * Bamboo ConnectorDisconnectHandler.
    */
   String connectorRef;
 

@@ -50,10 +50,10 @@ public class CCMConnectorValidationResource {
   @Timed
   @ExceptionMetered
   @LogAccountIdentifier
-  @ApiOperation(value = "Validate connector", nickname = "validate connector")
+  @ApiOperation(value = "Validate ConnectorDisconnectHandler", nickname = "validate ConnectorDisconnectHandler")
   public ResponseDTO<ConnectorValidationResult> testConnection(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, ConnectorResponseDTO connectorResponseDTO) {
-    // Implement validation methods for each connector type
+    // Implement validation methods for each ConnectorDisconnectHandler type
     log.info("Connector dto from ngmanager in request {}", connectorResponseDTO.toString());
     ConnectorType connectorType = connectorResponseDTO.getConnector().getConnectorType();
     AbstractCEConnectorValidator ceConnectorValidator = ceConnectorValidatorFactory.getValidator(connectorType);
@@ -69,7 +69,7 @@ public class CCMConnectorValidationResource {
   @Timed
   @ExceptionMetered
   @LogAccountIdentifier
-  @ApiOperation(value = "Get connector details", nickname = "get connector details")
+  @ApiOperation(value = "Get ConnectorDisconnectHandler details", nickname = "get ConnectorDisconnectHandler details")
   public ResponseDTO<CCMConnectorDetails> getConnectorDetails(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
     CCMConnectorDetails firstConnectorDetails = connectorDetailsService.getFirstConnectorDetails(accountId);

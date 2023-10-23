@@ -171,7 +171,7 @@ public class DockerRegistryUtils {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Failed to fetch tags for image. Check if the image details are correct",
-          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching tags for the image",
           new InvalidArtifactServerException(response.message(), USER));
     }
 
@@ -208,7 +208,7 @@ public class DockerRegistryUtils {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Failed to fetch tags for image. Check if the image details are correct",
-          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching tags for the image",
           new InvalidArtifactServerException(response.message(), USER));
     }
 
@@ -328,7 +328,7 @@ public class DockerRegistryUtils {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Failed to fetch tags for image. Check if the image details are correct",
-          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching tags for the image",
           new InvalidArtifactServerException(response.message(), USER));
     }
     checkValidImage(imageName, response);

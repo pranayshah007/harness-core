@@ -58,7 +58,7 @@ public class InfrastructureExpandedValue implements ExpandedValue {
       ObjectNode infraNode = (ObjectNode) parentNode.get(keys.infrastructureDefinition);
       ObjectNode spec = (ObjectNode) infraNode.get("spec");
       if (spec.get(YamlTypes.CONNECTOR_REF) != null) {
-        spec.set("connector", infrastructureConnectorNode);
+        spec.set("ConnectorDisconnectHandler", infrastructureConnectorNode);
         spec.remove(YamlTypes.CONNECTOR_REF);
       }
       return parentNode.toPrettyString();

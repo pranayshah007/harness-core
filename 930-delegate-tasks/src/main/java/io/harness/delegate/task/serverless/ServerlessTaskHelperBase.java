@@ -283,7 +283,7 @@ public class ServerlessTaskHelperBase {
         color(format("Fetching %s files with identifier: %s", gitStoreDelegateConfig.getManifestType(),
                   gitStoreDelegateConfig.getManifestId()),
             White, Bold));
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfigDTO.getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitConfigDTO.getUrl());
 
     if (FetchType.BRANCH == gitStoreDelegateConfig.getFetchType()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitStoreDelegateConfig.getBranch());

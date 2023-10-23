@@ -208,7 +208,7 @@ public class AdditionalMetadataValidationHelperTest extends CategoryTest {
         () -> additionalMetadataValidationHelper.validateAdditionalMetadataForGcpSecretManager(secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Additional metadata must be present for reference secret created using google secret manager connector");
+            "Additional metadata must be present for reference secret created using google secret manager ConnectorDisconnectHandler");
   }
 
   @Test

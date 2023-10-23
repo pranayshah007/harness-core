@@ -121,7 +121,7 @@ public class GitlabConnectorDTO
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
-            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in ConnectorDisconnectHandler.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
       return url;

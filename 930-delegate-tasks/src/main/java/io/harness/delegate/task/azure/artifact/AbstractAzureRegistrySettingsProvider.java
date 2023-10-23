@@ -65,14 +65,14 @@ public abstract class AbstractAzureRegistrySettingsProvider implements AzureRegi
     validateSettings(config, registryUrl);
     if (isBlank(username)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          format("Configure username for %s container registry connector", config.getRegistryType().getValue()),
+          format("Configure username for %s container registry ConnectorDisconnectHandler", config.getRegistryType().getValue()),
           format("Username is blank for '%s' container registry but is required", config.getRegistryType().getValue()),
           new InvalidArgumentsException(Pair.of("username", "Null or blank value")));
     }
 
     if (isBlank(password)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          format("Configure password for %s container registry connector", config.getRegistryType().getValue()),
+          format("Configure password for %s container registry ConnectorDisconnectHandler", config.getRegistryType().getValue()),
           format("Password is blank for '%s' container registry but is required", config.getRegistryType().getValue()),
           new InvalidArgumentsException(Pair.of("password", "Null or blank value")));
     }
@@ -81,7 +81,7 @@ public abstract class AbstractAzureRegistrySettingsProvider implements AzureRegi
   protected void validateSettings(AzureContainerArtifactConfig config, String registryUrl) {
     if (isBlank(registryUrl)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          format("Check if connector provided %s is properly configured", config.getRegistryType().getValue()),
+          format("Check if ConnectorDisconnectHandler provided %s is properly configured", config.getRegistryType().getValue()),
           format("Registry url is '%s' which is an invalid value for '%s' container registry", registryUrl,
               config.getRegistryType().getValue()),
           new InvalidArgumentsException(Pair.of("registry", "Null or blank value")));

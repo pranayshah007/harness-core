@@ -498,7 +498,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
       connectorService.delete(accountIdentifier, null, null, identifier, false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
-          .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
+          .isEqualTo("Could not delete the ConnectorDisconnectHandler identifier as it is referenced by other entities");
     }
     verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
@@ -719,15 +719,15 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     createConnector(identifier, name);
     assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, null, null, identifier))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level connector cannot be used at account level. Ref: [identifier]");
+        .hasMessage("The project level ConnectorDisconnectHandler cannot be used at account level. Ref: [identifier]");
 
     assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, orgIdentifier, null, identifier))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The project level connector cannot be used at org level. Ref: [identifier]");
+        .hasMessage("The project level ConnectorDisconnectHandler cannot be used at org level. Ref: [identifier]");
 
     assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, null, null, "org." + identifier))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("The org level connector cannot be used at account level. Ref: [org.identifier]");
+        .hasMessage("The org level ConnectorDisconnectHandler cannot be used at account level. Ref: [org.identifier]");
 
     Optional<ConnectorResponseDTO> connectorResponseDTOOptional =
         connectorService.getByRef(accountIdentifier, null, null, "account." + identifier);

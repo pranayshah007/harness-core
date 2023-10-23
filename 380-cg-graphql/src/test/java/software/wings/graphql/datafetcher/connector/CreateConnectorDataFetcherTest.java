@@ -245,7 +245,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
     MutationContext mutationContext = MutationContext.builder().accountId(ACCOUNT_ID).build();
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, mutationContext))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("No secretId provided with the request for connector");
+        .hasMessage("No secretId provided with the request for ConnectorDisconnectHandler");
   }
 
   @Test
@@ -395,7 +395,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, mutationContext))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   // CREATE NEXUS CONNECTOR TESTS
@@ -516,7 +516,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, mutationContext))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   // CREATE HELM CONNECTOR TESTS
@@ -586,7 +586,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, mutationContext))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Wrong hosting platform provided with the request for HTTP_HELM_REPO connector");
+        .hasMessage("Wrong hosting platform provided with the request for HTTP_HELM_REPO ConnectorDisconnectHandler");
   }
 
   @Test
@@ -714,7 +714,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, mutationContext))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test

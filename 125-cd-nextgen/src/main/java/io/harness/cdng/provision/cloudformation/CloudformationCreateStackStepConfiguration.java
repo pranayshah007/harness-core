@@ -59,7 +59,7 @@ public class CloudformationCreateStackStepConfiguration {
   List<NGVariable> parameterOverrides;
 
   void validateParams() {
-    Validator.notNullCheck("AWS connector is null", connectorRef);
+    Validator.notNullCheck("AWS ConnectorDisconnectHandler is null", connectorRef);
     Validator.notNullCheck("AWS region is null", region);
   }
 

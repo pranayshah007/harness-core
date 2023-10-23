@@ -65,7 +65,7 @@ public class OpaSecretServiceImpl implements OpaSecretService {
     try {
       connectorYaml = objectMapper.writeValueAsString(secretDTO);
     } catch (Exception ex) {
-      log.error("Failed while converting to connector yaml format", ex);
+      log.error("Failed while converting to ConnectorDisconnectHandler yaml format", ex);
     }
     return connectorYaml;
   }

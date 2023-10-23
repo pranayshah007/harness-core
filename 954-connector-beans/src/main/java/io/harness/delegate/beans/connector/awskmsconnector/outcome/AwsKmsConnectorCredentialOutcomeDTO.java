@@ -30,7 +30,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@RecasterAlias("io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorCredentialOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awskmsconnector.outcome.AwsKmsConnectorCredentialOutcomeDTO")
 public class AwsKmsConnectorCredentialOutcomeDTO {
   @Schema(description = SecretManagerDescriptionConstants.AWS_CREDENTIAL) @NotNull AwsKmsCredentialType type;
 

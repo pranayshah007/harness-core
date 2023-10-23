@@ -628,7 +628,7 @@ public class YamlResourceServiceImpl implements YamlResourceService {
       case GIT:
         return yamlHandlerFactory.getYamlHandler(YamlType.SOURCE_REPO_PROVIDER, settingVariableType.name());
 
-      // CD-7865 : Change as part of removing SLACK Collaboration provider connector
+      // CD-7865 : Change as part of removing SLACK Collaboration provider ConnectorDisconnectHandler
       case SLACK:
         break;
       // load balancers

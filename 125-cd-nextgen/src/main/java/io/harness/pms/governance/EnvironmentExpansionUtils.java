@@ -99,7 +99,7 @@ public class EnvironmentExpansionUtils {
     }
   }
 
-  // replace connectorRef by connector spec and also move out infrastructure type and spec to upper level to keep the
+  // replace connectorRef by ConnectorDisconnectHandler spec and also move out infrastructure type and spec to upper level to keep the
   // paths less verbose
   static JsonNode processInfrastructureNode(JsonNode node) {
     if (!node.isObject()) {
@@ -405,7 +405,7 @@ public class EnvironmentExpansionUtils {
               getConnectorDTO(identifierRef.getIdentifier(), accountId, orgId, projectId, gitSyncBranchContext);
           break;
         default:
-          throw new InvalidRequestException("No connector found with reference " + identifierRef);
+          throw new InvalidRequestException("No ConnectorDisconnectHandler found with reference " + identifierRef);
       }
       return optConnector;
     }

@@ -221,7 +221,7 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
       when(connectorService.get(GLOBAL_ACCOUNT_ID, null, null, connectorDTO.getConnectorInfo().getIdentifier()))
           .thenReturn(Optional.ofNullable(null));
       exceptionRule.expect(NotFoundException.class);
-      exceptionRule.expectMessage(String.format("Global connector of type %s not found", ConnectorType.GCP_KMS));
+      exceptionRule.expectMessage(String.format("Global ConnectorDisconnectHandler of type %s not found", ConnectorType.GCP_KMS));
       globalKmsService.updateGlobalKms(connectorDTO, secretDTOV2);
       verify(connectorService, times(1))
           .get(GLOBAL_ACCOUNT_ID, null, null, connectorDTO.getConnectorInfo().getIdentifier());
@@ -248,7 +248,7 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
                                       .connector(ConnectorInfoDTO.builder().connectorType(ConnectorType.LOCAL).build())
                                       .build()));
       exceptionRule.expect(NotFoundException.class);
-      exceptionRule.expectMessage(String.format("Global connector of type %s not found", ConnectorType.GCP_KMS));
+      exceptionRule.expectMessage(String.format("Global ConnectorDisconnectHandler of type %s not found", ConnectorType.GCP_KMS));
       globalKmsService.updateGlobalKms(connectorDTO, secretDTOV2);
       verify(connectorService, times(1))
           .get(GLOBAL_ACCOUNT_ID, null, null, connectorDTO.getConnectorInfo().getIdentifier());
@@ -404,7 +404,7 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
                secretDTOV2.getIdentifier()))
           .thenReturn(Optional.of(getSecretResponseWrapper()));
       exceptionRule.expect(InvalidRequestException.class);
-      exceptionRule.expectMessage("Global connector cannot have org/project identifier");
+      exceptionRule.expectMessage("Global ConnectorDisconnectHandler cannot have org/project identifier");
       globalKmsService.updateGlobalKms(connectorDTO, secretDTOV2);
     }
   }

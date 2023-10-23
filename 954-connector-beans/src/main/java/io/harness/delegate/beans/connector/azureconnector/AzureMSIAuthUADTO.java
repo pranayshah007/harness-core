@@ -30,7 +30,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureMSIAuth")
 @Schema(name = "AzureMSIAuth", description = "This contains azure MSI auth details")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureMSIAuthUADTO")
 public class AzureMSIAuthUADTO implements AzureMSIAuthDTO {
   @NotNull @JsonProperty("type") AzureManagedIdentityType azureManagedIdentityType;
 

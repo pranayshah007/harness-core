@@ -39,7 +39,7 @@ public class GithubApiFunctor implements ExpressionFunctor {
 
   public Object token() {
     if (isEmpty(githubApiFunctorConfig.getCodeBaseConnectorRef())) {
-      throw new FunctorException("Cannot evaluate expression with empty codebase connector : <+gitApp.token()>");
+      throw new FunctorException("Cannot evaluate expression with empty codebase ConnectorDisconnectHandler : <+gitApp.token()>");
     }
     return token(githubApiFunctorConfig.getCodeBaseConnectorRef());
   }
@@ -48,7 +48,7 @@ public class GithubApiFunctor implements ExpressionFunctor {
     try {
       if (isEmpty(connectorRef)) {
         throw new FunctorException(
-            "Cannot evaluate expression with empty connector: <+gitApp.token(\"" + connectorRef + "\")>");
+            "Cannot evaluate expression with empty ConnectorDisconnectHandler: <+gitApp.token(\"" + connectorRef + "\")>");
       }
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
           connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -57,7 +57,7 @@ public class GithubApiFunctor implements ExpressionFunctor {
 
       if (githubApiFunctorConfig.isFetchConnector()) {
         if (connectorUtils == null) {
-          throw new FunctorException("ConnectorUtils must be provided to functor when fetch connector is true");
+          throw new FunctorException("ConnectorUtils must be provided to functor when fetch ConnectorDisconnectHandler is true");
         }
         ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
         connectorDetailsMap.put(tokenVariable, connectorDetails);

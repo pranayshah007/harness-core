@@ -2596,7 +2596,7 @@ public class K8sTaskHelperBase {
           CommandExecutionStatus.FAILURE);
 
       throw new KubernetesTaskException(
-          format("Failed while trying to fetch files from git connector: '%s' in manifest with identifier: %s",
+          format("Failed while trying to fetch files from git ConnectorDisconnectHandler: '%s' in manifest with identifier: %s",
               gitStoreDelegateConfig.getConnectorId(), gitStoreDelegateConfig.getManifestId()),
           e.getCause());
     } catch (Exception e) {
@@ -2607,7 +2607,7 @@ public class K8sTaskHelperBase {
           CommandExecutionStatus.FAILURE);
 
       throw new KubernetesTaskException(
-          format("Failed while trying to fetch files from git connector: '%s' in manifest with identifier: %s",
+          format("Failed while trying to fetch files from git ConnectorDisconnectHandler: '%s' in manifest with identifier: %s",
               gitStoreDelegateConfig.getConnectorId(), gitStoreDelegateConfig.getManifestId()),
           e);
     }
@@ -2624,7 +2624,7 @@ public class K8sTaskHelperBase {
     } else {
       executionLogCallback.saveExecutionLog("\n" + color("Fetching manifest files", White, Bold));
     }
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfigDTO.getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitConfigDTO.getUrl());
 
     if (FetchType.BRANCH == gitStoreDelegateConfig.getFetchType()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitStoreDelegateConfig.getBranch());

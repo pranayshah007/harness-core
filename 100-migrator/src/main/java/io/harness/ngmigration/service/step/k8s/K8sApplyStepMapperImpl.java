@@ -113,7 +113,7 @@ public class K8sApplyStepMapperImpl extends StepMapper {
       NgEntityDetail connector = getGitConnector(migratedEntities, cgRemoteStepConfig);
       if (connector == null) {
         log.error(
-            String.format("We could not migrate the following workflow %s as we could not find the git connector %s",
+            String.format("We could not migrate the following workflow %s as we could not find the git ConnectorDisconnectHandler %s",
                 workflowId, cgRemoteStepConfig.getConnectorId()));
         return manifestConfigWrapperList;
       }

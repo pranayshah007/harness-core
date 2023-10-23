@@ -27,7 +27,7 @@ public class GithubUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler
     switch (statusCode) {
       case 401:
         throw new ScmUnauthorizedException(
-            String.format("The credentials provided in the Github connector %s are invalid or have expired. ",
+            String.format("The credentials provided in the Github ConnectorDisconnectHandler %s are invalid or have expired. ",
                 errorMetadata.getConnectorRef())
             + errorMessage);
       case 403:

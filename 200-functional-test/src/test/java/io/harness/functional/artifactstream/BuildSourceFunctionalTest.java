@@ -247,7 +247,7 @@ public class BuildSourceFunctionalTest extends AbstractFunctionalTest {
   @Test
   @Owner(developers = AADITI, intermittent = true)
   @Category(FunctionalTests.class)
-  @Ignore("TODO - Will be enabled when connector level apis are changed to account for nexus3 support")
+  @Ignore("TODO - Will be enabled when ConnectorDisconnectHandler level apis are changed to account for nexus3 support")
   public void getGroupIdsForNexus3() {
     GenericType<RestResponse<Set<String>>> artifactStreamType = new GenericType<RestResponse<Set<String>>>() {
 

@@ -61,7 +61,7 @@ public class ContainerSpecBuilderTestHelper {
   private static String value2 = "bar";
 
   private static String secretVar = "connector_username";
-  private static String secretName = "connector";
+  private static String secretName = "ConnectorDisconnectHandler";
   private static String secretKey = "username";
 
   private static String volume1 = "volume1";

@@ -166,13 +166,13 @@ public class TriggerHelperTest extends CategoryTest {
     metadata.put("url", "my_url");
 
     Map<String, String> source = new HashMap<>();
-    source.put("connectorRef", "connector");
+    source.put("connectorRef", "ConnectorDisconnectHandler");
     source.put("imagePath", "image");
 
     TriggerPayload artifactPayload =
         TriggerPayload.newBuilder()
             .setArtifactData(ArtifactData.newBuilder().setBuild("1.0").putAllMetadata(metadata).build())
-            .setConnectorRef("connector")
+            .setConnectorRef("ConnectorDisconnectHandler")
             .setImagePath("image")
             .build();
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(artifactPayload);

@@ -121,7 +121,7 @@ public class CIStepInfoUtils {
     if (finalConnector.isPresent()) {
       return finalConnector;
     }
-    // choose connector with same type as image
+    // choose ConnectorDisconnectHandler with same type as image
     finalConnector = findConnectorByType(registries, image);
     return finalConnector;
   }

@@ -29,7 +29,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName(GitConfigConstants.SSH)
 @Schema(name = "GitSSHAuthentication",
     description = "This contains details of the Generic Git authentication information used via SSH connections")
-@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.scm.genericgitconnector.GitSSHAuthenticationDTO")
 public class GitSSHAuthenticationDTO extends GitAuthenticationDTO {
   @JsonProperty("sshKeyRef")
   @ApiModelProperty(dataType = "string")

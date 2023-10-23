@@ -49,7 +49,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITLAB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
-          String.format("Connector with id - [%s] is not gitlab connector for accountId: [%s]", connectorIdentifier,
+          String.format("Connector with id - [%s] is not gitlab ConnectorDisconnectHandler for accountId: [%s]", connectorIdentifier,
               accountIdentifier));
     }
 
@@ -66,7 +66,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
     String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
     if (tokenSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(String.format(
-          "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+          "Secret identifier not found for ConnectorDisconnectHandler: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();

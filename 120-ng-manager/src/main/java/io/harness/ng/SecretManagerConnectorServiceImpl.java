@@ -158,7 +158,7 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
             connectorInfo.getIdentifier())
             .isPresent()) {
       throw new DuplicateFieldException(String.format(
-          "Try using different connector identifier, [%s] cannot be used", connectorInfo.getIdentifier()));
+          "Try using different ConnectorDisconnectHandler identifier, [%s] cannot be used", connectorInfo.getIdentifier()));
     }
 
     // validate the dto received
@@ -235,12 +235,12 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
     if (!EmptyPredicate.isEmpty(variablesArray)) {
       for (JsonNode node : variablesArray) {
         String key = node.get("name").asText();
-        // validate this key value is present in the incoming connector inputs
+        // validate this key value is present in the incoming ConnectorDisconnectHandler inputs
         if (!inputs.contains(key)) {
           log.error(
               "Run time inputs of templates should be passed in Custom SM {} in account {}. Runtime parameter {} is missing.",
               connectorIdentifier, accountIdentifier, key);
-          throw new InvalidRequestException("Run time inputs of templates should be passed in connector.");
+          throw new InvalidRequestException("Run time inputs of templates should be passed in ConnectorDisconnectHandler.");
         }
       }
     }

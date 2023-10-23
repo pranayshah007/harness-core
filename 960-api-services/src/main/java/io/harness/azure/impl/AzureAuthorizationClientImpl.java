@@ -116,15 +116,15 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
       });
     } catch (UncheckedTimeoutException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Timeout occurred. Failed to validate connection for Azure connector.",
-          "Please check your Azure connector configuration.",
+          "Timeout occurred. Failed to validate connection for Azure ConnectorDisconnectHandler.",
+          "Please check your Azure ConnectorDisconnectHandler configuration.",
           new AzureAuthenticationException(
-              "Failed to validate connection for Azure connector", WingsException.USER, e));
+              "Failed to validate connection for Azure ConnectorDisconnectHandler", WingsException.USER, e));
     } catch (WingsException we) {
       throw we;
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
-          "Please check your Azure connector configuration.",
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler.",
+          "Please check your Azure ConnectorDisconnectHandler configuration.",
           new AzureAuthenticationException(e.getMessage(), WingsException.USER, e));
     }
   }
@@ -173,7 +173,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
         String errorBody = response.errorBody().string();
         throw NestedExceptionUtils.hintWithExplanationException(
             format("Fetching user access token for %s has failed.", azureCredentialType.name()),
-            "Please check your connector configuration",
+            "Please check your ConnectorDisconnectHandler configuration",
             new AzureAuthenticationException("Response Code: " + response.code()
                 + ", Response Message: " + response.message() + ", Error Body: " + errorBody));
       }
@@ -182,7 +182,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
     }
 
     throw NestedExceptionUtils.hintWithExplanationException("Fetching access token for azure user has failed.",
-        "Please use a different type (non managed identity) of Azure connector for this action",
+        "Please use a different type (non managed identity) of Azure ConnectorDisconnectHandler for this action",
         new AzureAuthenticationException(
             "Retrieving ManagedIdentity access token is currently not supported via REST API"));
   }

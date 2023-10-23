@@ -22,7 +22,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldNameConstants(innerTypeName = "DockerArtifactSourceKeys")
 @EqualsAndHashCode(callSuper = true)
 public class DockerArtifactSource extends ArtifactSource {
-  /** Docker hub registry connector identifier. */
+  /** Docker hub registry ConnectorDisconnectHandler identifier. */
   @NotEmpty String connectorRef;
   /** Images in repos need to be referenced via a path */
   @NotEmpty String imagePath;

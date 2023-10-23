@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitconnector.GitSSHAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitconnector.GitSSHAuthentication")
 public class GitSSHAuthentication implements GitAuthentication {
   String sshKeyReference;
 }

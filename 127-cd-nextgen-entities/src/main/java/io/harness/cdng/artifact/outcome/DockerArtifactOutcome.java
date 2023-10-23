@@ -38,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.DockerArtifactOutcome")
 public class DockerArtifactOutcome implements ArtifactOutcome {
   /**
-   * Docker hub registry connector.
+   * Docker hub registry ConnectorDisconnectHandler.
    */
   String connectorRef;
   /**

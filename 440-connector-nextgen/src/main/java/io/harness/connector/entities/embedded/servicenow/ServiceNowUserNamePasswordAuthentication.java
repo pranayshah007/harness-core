@@ -22,7 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "ServiceNowAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication")
 public class ServiceNowUserNamePasswordAuthentication implements ServiceNowAuthentication {
   String username;
   String usernameRef;

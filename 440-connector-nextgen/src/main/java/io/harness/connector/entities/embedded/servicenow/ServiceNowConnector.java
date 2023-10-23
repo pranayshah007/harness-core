@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.servicenow.ServiceNowConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.servicenow.ServiceNowConnector")
 public class ServiceNowConnector extends Connector {
   String serviceNowUrl;
   /** @deprecated */

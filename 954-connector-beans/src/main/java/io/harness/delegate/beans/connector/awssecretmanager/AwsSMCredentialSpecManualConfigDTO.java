@@ -32,7 +32,7 @@ import lombok.Data;
 @ApiModel("AwsSMCredentialSpecManualConfig")
 @Schema(name = "AwsSMCredentialSpecManualConfig",
     description = "Returns secret reference access key and secret key of AWS Secret Manager.")
-@RecasterAlias("io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awssecretmanager.AwsSMCredentialSpecManualConfigDTO")
 public class AwsSMCredentialSpecManualConfigDTO implements AwsSecretManagerCredentialSpecDTO {
   @SecretReference
   @ApiModelProperty(dataType = "string")

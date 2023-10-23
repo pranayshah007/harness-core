@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class ContainerSpecUtilsTest extends CategoryTest {
-  public static final String CONNECTOR_ORIGIN = "connector";
+  public static final String CONNECTOR_ORIGIN = "ConnectorDisconnectHandler";
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)

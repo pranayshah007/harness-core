@@ -68,7 +68,7 @@ public class BambooConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTe
   }
 
   private SettingAttribute createBambooVerificationProvider(String bambooProviderName) {
-    // Generate Bamboo verification connector
+    // Generate Bamboo verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

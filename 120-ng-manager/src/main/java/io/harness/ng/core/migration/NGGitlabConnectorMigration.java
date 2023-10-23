@@ -45,14 +45,14 @@ public class NGGitlabConnectorMigration implements NGMigration {
       Update update = new Update();
       update.set(classField, GitlabTokenApiAccess.class.getCanonicalName());
       update.set(GitlabConnectorKeys.apiAccessType, GitlabApiAccessType.TOKEN);
-      log.info("[NGGitlabConnectorMigration] Query for updating Harness Gitlab connector Access: {}", query.toString());
+      log.info("[NGGitlabConnectorMigration] Query for updating Harness Gitlab ConnectorDisconnectHandler Access: {}", query.toString());
 
       UpdateResult result = connectorRepository.updateMultiple(query, update);
 
-      log.info("[NGGitlabConnectorMigration] Successfully updated {} Gitlab connector api access type",
+      log.info("[NGGitlabConnectorMigration] Successfully updated {} Gitlab ConnectorDisconnectHandler api access type",
           result.getModifiedCount());
     } catch (Exception e) {
-      log.error("[NGGitlabConnectorMigration] Failed to update Gitlab connector api access type. Error: {}", e);
+      log.error("[NGGitlabConnectorMigration] Failed to update Gitlab ConnectorDisconnectHandler api access type. Error: {}", e);
     }
   }
 }

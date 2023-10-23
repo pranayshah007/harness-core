@@ -53,7 +53,7 @@ public class ConnectorActivityServiceTest extends CategoryTest {
   @InjectMocks ConnectorActivityServiceImpl connectorActivityService;
   @Mock NGActivityService ngActivityService;
   @Mock Producer producer;
-  String connectorName = "connector";
+  String connectorName = "ConnectorDisconnectHandler";
   String accountIdentifier = "accountIdentifier";
   String orgIdentifier = "orgIdentifier";
   String projIdentifier = "projIdentifier";

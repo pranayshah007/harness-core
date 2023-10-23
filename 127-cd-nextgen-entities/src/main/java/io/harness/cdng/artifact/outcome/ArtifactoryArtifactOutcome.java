@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome")
 public class ArtifactoryArtifactOutcome implements ArtifactOutcome {
   /**
-   * Artifactory hub registry connector.
+   * Artifactory hub registry ConnectorDisconnectHandler.
    */
   String connectorRef;
   /**

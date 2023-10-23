@@ -42,7 +42,7 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
   public Response getConnectorInfo(String harnessAccount) {
     CatalogConnectorEntity catalogConnectorEntity = gitIntegrationService.findDefaultConnectorDetails(harnessAccount);
     if (catalogConnectorEntity == null) {
-      log.warn("Could not fetch connector details for accountId: {}", harnessAccount);
+      log.warn("Could not fetch ConnectorDisconnectHandler details for accountId: {}", harnessAccount);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     return Response.status(Response.Status.OK)
@@ -55,7 +55,7 @@ public class ConnectorInfoApiImpl implements ConnectorInfoApi {
     Optional<CatalogConnectorEntity> catalogConnector =
         gitIntegrationService.findByAccountIdAndProviderType(harnessAccount, providerType);
     if (catalogConnector.isEmpty()) {
-      log.warn("Could not fetch connector details for accountId: {}, providerType: {}", harnessAccount, providerType);
+      log.warn("Could not fetch ConnectorDisconnectHandler details for accountId: {}, providerType: {}", harnessAccount, providerType);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     return Response.status(Response.Status.OK)

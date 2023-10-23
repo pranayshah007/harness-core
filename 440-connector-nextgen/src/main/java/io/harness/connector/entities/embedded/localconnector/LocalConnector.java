@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.localconnector.LocalConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.localconnector.LocalConnector")
 public class LocalConnector extends Connector {
   boolean isDefault;
   @Builder.Default Boolean harnessManaged = Boolean.TRUE;

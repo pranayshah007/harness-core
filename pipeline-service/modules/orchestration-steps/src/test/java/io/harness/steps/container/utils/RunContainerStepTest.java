@@ -90,7 +90,7 @@ public class RunContainerStepTest extends CategoryTest {
         ContainerK8sInfra.builder()
             .spec(ContainerInfraYamlSpec.builder()
                       .os(ParameterField.<OSType>builder().value(OSType.Linux).build())
-                      .connectorRef(ParameterField.<String>builder().value("connector").build())
+                      .connectorRef(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
                       .build())
             .build());
 

@@ -69,7 +69,7 @@ public class DynaTraceConfigYamlHandlerTest extends SettingValueConfigYamlHandle
   }
 
   private SettingAttribute createDynaTraceProviderNameVerificationProvider(String dynaTraceProviderName) {
-    // Generate dynatrace verification connector
+    // Generate dynatrace verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

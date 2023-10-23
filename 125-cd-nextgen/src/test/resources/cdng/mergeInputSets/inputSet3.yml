@@ -48,7 +48,7 @@ inputSet:
                                   type: Git
                                   # Git|Local
                                   spec:
-                                    connectorRef: my-git-connector
+                                    connectorRef: my-git-ConnectorDisconnectHandler
                                     branch: masterOverride1
             infrastructure:
               infrastructureDefinition:

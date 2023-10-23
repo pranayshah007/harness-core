@@ -119,7 +119,7 @@ public class SumoLogicAnalysisStateTest extends APMStateVerificationTestBase {
     assertThatThrownBy(
         () -> sumoLogicAnalysisState.triggerAnalysisDataCollection(executionContext, executionData, hosts))
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("No connector found with id " + configId);
+        .hasMessage("No ConnectorDisconnectHandler found with id " + configId);
   }
 
   @Test

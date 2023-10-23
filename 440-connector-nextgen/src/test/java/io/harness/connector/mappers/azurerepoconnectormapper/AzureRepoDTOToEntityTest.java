@@ -223,7 +223,7 @@ public class AzureRepoDTOToEntityTest extends CategoryTest {
                                                        .build();
     assertThatThrownBy(() -> azureRepoDTOToEntity.toConnectorEntity(azureRepoConnectorDTO1))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("No Authentication Details Found in the connector");
+        .hasMessage("No Authentication Details Found in the ConnectorDisconnectHandler");
 
     // Git Auth Type is null
     final String sshKeyRef = "sshKeyRef";

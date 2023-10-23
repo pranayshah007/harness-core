@@ -99,7 +99,7 @@ public class NGHostResource {
 
   @POST
   @Path("filter")
-  @ApiOperation(value = "Get hosts filtered by connector", nickname = "filterHostsByConnector")
+  @ApiOperation(value = "Get hosts filtered by ConnectorDisconnectHandler", nickname = "filterHostsByConnector")
   @Operation(operationId = "filterHostsByConnector",
       summary = "Gets the list of hosts filtered by accountIdentifier and connectorIdentifier",
       responses =

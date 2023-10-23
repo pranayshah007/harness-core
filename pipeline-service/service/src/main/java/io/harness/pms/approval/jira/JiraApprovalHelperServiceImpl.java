@@ -280,7 +280,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
           format("Connector of other then Jira type was found : [%s] ", connectorIdentifierRef));
     } catch (Exception e) {
       throw new HarnessJiraException(
-          format("Error while getting connector information : [%s]", connectorIdentifierRef), e, null);
+          format("Error while getting ConnectorDisconnectHandler information : [%s]", connectorIdentifierRef), e, null);
     }
   }
 

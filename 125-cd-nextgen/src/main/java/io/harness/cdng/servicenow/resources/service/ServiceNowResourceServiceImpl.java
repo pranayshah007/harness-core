@@ -351,7 +351,7 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
             serviceNowConnectorRef.getProjectIdentifier(), serviceNowConnectorRef.getIdentifier());
     if (!connectorDTO.isPresent() || ConnectorType.SERVICENOW != connectorDTO.get().getConnector().getConnectorType()) {
       throw new InvalidRequestException(
-          String.format("ServiceNow connector not found for identifier : [%s] with scope: [%s]",
+          String.format("ServiceNow ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]",
               serviceNowConnectorRef.getIdentifier(), serviceNowConnectorRef.getScope()),
           WingsException.USER);
     }

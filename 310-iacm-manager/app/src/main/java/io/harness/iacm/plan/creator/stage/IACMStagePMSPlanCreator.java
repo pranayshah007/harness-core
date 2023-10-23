@@ -195,12 +195,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
     for (VariablesRepo variablesRepo : workspace.getTf_var_files()) {
-      // If the connector is the same as where the main repo is, then it means that we do not need to clone the repo
+      // If the ConnectorDisconnectHandler is the same as where the main repo is, then it means that we do not need to clone the repo
       // again
       if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())) {
         continue;
       }
-      // if the connector has been already processed, skip it
+      // if the ConnectorDisconnectHandler has been already processed, skip it
       if (processedRepos.contains(variablesRepo.getRepository_connector())) {
         continue;
       }
@@ -633,10 +633,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       // If the trigger type is WEBHOOK, we need to get the repository name from the webhook payload.
       // If the trigger is not a WEBHOOK, then we retrieve the repository from the Workspace
       if (ctx.getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
-        // It looks like the connector type in the workspace has to match with the connector type in the webhook,.
-        // I could not find a way to get the connector type from the webhook, so I will use the connector type from the
-        // workspace and assume that both are the same. This is required because if the connector is an account
-        // connector, the repository name can only contain the name and not the full url.
+        // It looks like the ConnectorDisconnectHandler type in the workspace has to match with the ConnectorDisconnectHandler type in the webhook,.
+        // I could not find a way to get the ConnectorDisconnectHandler type from the webhook, so I will use the ConnectorDisconnectHandler type from the
+        // workspace and assume that both are the same. This is required because if the ConnectorDisconnectHandler is an account
+        // ConnectorDisconnectHandler, the repository name can only contain the name and not the full url.
         if (!Objects.equals(workspace.getRepository_connector(), "") && workspace.getRepository_connector() != null) {
           iacmCodeBase.repoName(
               ParameterField.<String>builder()
@@ -672,7 +672,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         }
 
       } else {
-        // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
+        // If the repository name is empty, it means that the ConnectorDisconnectHandler is an account ConnectorDisconnectHandler and the repo needs to be
         // defined
         if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
           iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
@@ -691,7 +691,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                                .build());
         } else {
           throw new IACMStageExecutionException(
-              "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+              "Unexpected ConnectorDisconnectHandler information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
               + workspace);
         }
       }
@@ -710,7 +710,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
-      throw new IACMStageExecutionException("Unexpected error building the connector information from the workspace: "
+      throw new IACMStageExecutionException("Unexpected error building the ConnectorDisconnectHandler information from the workspace: "
           + workspaceId + " ." + ex.getMessage());
     }
   }

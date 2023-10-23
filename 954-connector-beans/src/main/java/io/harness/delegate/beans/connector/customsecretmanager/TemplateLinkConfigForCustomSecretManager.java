@@ -34,9 +34,9 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("delegate.beans.connector.customsecretmanager.TemplateLinkConfig")
+@TypeAlias("delegate.beans.ConnectorDisconnectHandler.customsecretmanager.TemplateLinkConfig")
 @OwnedBy(PL)
-@RecasterAlias("io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.customsecretmanager.TemplateLinkConfigForCustomSecretManager")
 public class TemplateLinkConfigForCustomSecretManager {
   @NotNull String templateRef;
   @NotNull @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;

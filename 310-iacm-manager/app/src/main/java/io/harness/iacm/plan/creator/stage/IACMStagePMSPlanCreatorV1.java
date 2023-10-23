@@ -133,7 +133,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
       Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
           ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
-      // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
+      // If the repository name is empty, it means that the ConnectorDisconnectHandler is an account ConnectorDisconnectHandler and the repo needs to be
       // defined
       if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
@@ -163,7 +163,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
                              .build());
       } else {
         throw new IACMStageExecutionException(
-            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+            "Unexpected ConnectorDisconnectHandler information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
             + workspaceId);
       }
 
@@ -172,7 +172,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
-      throw new IACMStageExecutionException("Unexpected error building the connector information from the workspace: "
+      throw new IACMStageExecutionException("Unexpected error building the ConnectorDisconnectHandler information from the workspace: "
           + workspaceId + " ." + ex.getMessage());
     }
   }

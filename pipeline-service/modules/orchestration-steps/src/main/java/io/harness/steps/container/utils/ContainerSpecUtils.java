@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class ContainerSpecUtils {
-  public static final String CONNECTOR_ORIGIN = "connector";
+  public static final String CONNECTOR_ORIGIN = "ConnectorDisconnectHandler";
 
   @NotNull
   public List<TaskSelector> getStepDelegateSelectors(ContainerStepSpec containerStepSpec) {

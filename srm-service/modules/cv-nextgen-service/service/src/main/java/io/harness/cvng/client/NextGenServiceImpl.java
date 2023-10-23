@@ -345,7 +345,7 @@ public class NextGenServiceImpl implements NextGenService {
       }
       if (!Collections.isEmpty(connectorIdSetWithScope)) {
         throw new InvalidArgumentsException(
-            String.format("Invalid connector refs: %s", String.join(", ", connectorIdSetWithScope)));
+            String.format("Invalid ConnectorDisconnectHandler refs: %s", String.join(", ", connectorIdSetWithScope)));
       }
     }
   }

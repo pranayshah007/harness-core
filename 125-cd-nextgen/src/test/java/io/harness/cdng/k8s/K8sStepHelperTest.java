@@ -739,7 +739,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("http-helm-connector")
+                                            .identifier("http-helm-ConnectorDisconnectHandler")
                                             .connectorType(HTTP_HELM_REPO)
                                             .connectorConfig(httpHelmConnectorConfig)
                                             .build())
@@ -895,7 +895,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("aws-helm-connector")
+                                            .identifier("aws-helm-ConnectorDisconnectHandler")
                                             .connectorType(AWS)
                                             .connectorConfig(awsConnectorConfig)
                                             .build())
@@ -949,7 +949,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("gcp-helm-connector")
+                                            .identifier("gcp-helm-ConnectorDisconnectHandler")
                                             .connectorType(GCP)
                                             .connectorConfig(gcpConnectorDTO)
                                             .build())
@@ -983,7 +983,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().identifier("k8s").store(gitStore).build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("k8s", k8sManifestOutcome);
@@ -1053,7 +1053,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().identifier("k8s").store(gitStore).build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("k8s", k8sManifestOutcome);
@@ -1131,12 +1131,12 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/k8s/manifest"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     GitStore gitStorePatches = GitStore.builder()
                                    .branch(ParameterField.createValueField("master"))
                                    .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/patch1.yaml")))
-                                   .connectorRef(ParameterField.createValueField("git-connector"))
+                                   .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                                    .build();
     InheritFromManifestStoreConfig inheritFromManifestStore =
         InheritFromManifestStoreConfig.builder()
@@ -1241,7 +1241,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         GitStore.builder()
             .branch(ParameterField.createValueField("master"))
             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/step-values.yaml")))
-            .connectorRef(ParameterField.createValueField("git-connector"))
+            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
             .build();
 
     InlineStoreConfig inlineStore =
@@ -1278,7 +1278,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
 
     K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().identifier("k8s").store(gitStore).build();
@@ -1340,7 +1340,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     K8sManifestOutcome k8sManifestOutcome =
         K8sManifestOutcome.builder()
@@ -1351,7 +1351,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/values3.yaml")))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     InheritFromManifestStoreConfig inheritFromManifestStore =
         InheritFromManifestStoreConfig.builder()
@@ -1462,7 +1462,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -1540,7 +1540,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -1552,7 +1552,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -1805,7 +1805,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     K8sManifestOutcome k8sManifestOutcome =
         K8sManifestOutcome.builder()
@@ -1887,7 +1887,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
                                 .bucketName(ParameterField.createValueField("bucket"))
                                 .region(ParameterField.createValueField("us-east-1"))
                                 .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                .connectorRef(ParameterField.createValueField("aws-connector"))
+                                .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                                 .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -1980,7 +1980,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
                                 .bucketName(ParameterField.createValueField("bucket"))
                                 .region(ParameterField.createValueField("us-east-1"))
                                 .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                .connectorRef(ParameterField.createValueField("aws-connector"))
+                                .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                                 .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -1994,7 +1994,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -2113,7 +2113,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GcsStoreConfig gcsStore = GcsStoreConfig.builder()
                                   .bucketName(ParameterField.createValueField("bucket"))
                                   .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                  .connectorRef(ParameterField.createValueField("gcs-connector"))
+                                  .connectorRef(ParameterField.createValueField("gcs-ConnectorDisconnectHandler"))
                                   .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -2204,7 +2204,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GcsStoreConfig gcsStore = GcsStoreConfig.builder()
                                   .bucketName(ParameterField.createValueField("bucket"))
                                   .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                  .connectorRef(ParameterField.createValueField("gcs-connector"))
+                                  .connectorRef(ParameterField.createValueField("gcs-ConnectorDisconnectHandler"))
                                   .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -2218,7 +2218,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -2338,7 +2338,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreGenericConfig.builder()
-                              .connectorRef(ParameterField.createValueField("oci-helm-connector"))
+                              .connectorRef(ParameterField.createValueField("oci-helm-ConnectorDisconnectHandler"))
                               .build())
                     .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
@@ -2480,7 +2480,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     StoreConfig store = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/manifest/templates")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("k8s").store(CustomRemoteStoreConfig.builder().build()).build();
@@ -2559,7 +2559,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("http-helm-connector")
+                                            .identifier("http-helm-ConnectorDisconnectHandler")
                                             .connectorType(HTTP_HELM_REPO)
                                             .connectorConfig(httpHelmConnectorConfig)
                                             .build())
@@ -2621,7 +2621,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).build();
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -2707,7 +2707,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).build();
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -2720,7 +2720,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -3018,7 +3018,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     localStoreFetchFilesResultMap.put("helmOverride3", localStoreFetchFilesResult);
 
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .identifier(manifestIdentifier)
@@ -3030,7 +3030,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride1").store(gitStore2).build();
@@ -3131,7 +3131,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         asList(CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build()));
 
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .identifier(manifestIdentifier)
@@ -3143,7 +3143,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -3226,7 +3226,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -3238,7 +3238,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -3916,7 +3916,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/template.yaml")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     InheritFromManifestStoreConfig inheritFromManifestStore =
         InheritFromManifestStoreConfig.builder()
@@ -4378,12 +4378,12 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/k8s/manifest"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     GitStore gitStorePatches = GitStore.builder()
                                    .branch(ParameterField.createValueField("master"))
                                    .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/patch1.yaml")))
-                                   .connectorRef(ParameterField.createValueField("git-connector"))
+                                   .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                                    .build();
     InheritFromManifestStoreConfig inheritFromManifestStore =
         InheritFromManifestStoreConfig.builder()
@@ -4670,7 +4670,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     String extractionScript = "git clone something.git";
     List<TaskSelectorYaml> delegateSelector = asList(new TaskSelectorYaml("sample-delegate"));
@@ -4902,7 +4902,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         GitStore.builder()
             .branch(ParameterField.createValueField("master"))
             .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/step-values.yaml")))
-            .connectorRef(ParameterField.createValueField("git-connector"))
+            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
             .build();
 
     K8sApplyStepParameters applyStepParams = new K8sApplyStepParameters();

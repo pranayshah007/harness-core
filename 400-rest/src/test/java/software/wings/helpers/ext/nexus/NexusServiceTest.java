@@ -784,12 +784,12 @@ public class NexusServiceTest extends WingsBaseTest {
             "Check if the Nexus URL & Nexus version are correct. Nexus URLs are different for different Nexus versions")
         .getCause()
         .isInstanceOf(ExplanationException.class)
-        .hasMessage("The Nexus URL or the version for the connector is incorrect")
+        .hasMessage("The Nexus URL or the version for the ConnectorDisconnectHandler is incorrect")
         .getCause()
         .isInstanceOf(InvalidArtifactServerException.class)
         .hasMessage("INVALID_ARTIFACT_SERVER")
         .extracting("params")
-        .hasFieldOrPropertyWithValue("message", "Invalid Nexus connector details");
+        .hasFieldOrPropertyWithValue("message", "Invalid Nexus ConnectorDisconnectHandler details");
   }
 
   @Test
@@ -808,12 +808,12 @@ public class NexusServiceTest extends WingsBaseTest {
             "Check if the Nexus URL & Nexus version are correct. Nexus URLs are different for different Nexus versions")
         .getCause()
         .isInstanceOf(ExplanationException.class)
-        .hasMessage("The Nexus URL or the version for the connector is incorrect")
+        .hasMessage("The Nexus URL or the version for the ConnectorDisconnectHandler is incorrect")
         .getCause()
         .isInstanceOf(InvalidArtifactServerException.class)
         .hasMessage("INVALID_ARTIFACT_SERVER")
         .extracting("params")
-        .hasFieldOrPropertyWithValue("message", "Invalid Nexus connector details");
+        .hasFieldOrPropertyWithValue("message", "Invalid Nexus ConnectorDisconnectHandler details");
   }
 
   @Test

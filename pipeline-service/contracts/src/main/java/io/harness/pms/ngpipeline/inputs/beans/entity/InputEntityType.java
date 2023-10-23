@@ -18,5 +18,5 @@ public enum InputEntityType {
   @JsonProperty("string") STRING,
   @JsonProperty("number") NUMBER,
   @JsonProperty("secret") SECRET,
-  @JsonProperty("connector") CONNECTOR,
+  @JsonProperty("ConnectorDisconnectHandler") CONNECTOR,
 }

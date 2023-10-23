@@ -156,7 +156,7 @@ public class GitSyncErrorMapperTest extends GitSyncTestBase {
                                         .accountIdentifier(accountIdentifier)
                                         .repoUrl("https://github.com/harness/harness-core")
                                         .branchName("master")
-                                        .completeFilePath(".harness/test/connector.yaml")
+                                        .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                         .errorType(GitSyncErrorType.FULL_SYNC)
                                         .repoProvider(GITHUB)
                                         .build();
@@ -168,7 +168,7 @@ public class GitSyncErrorMapperTest extends GitSyncTestBase {
                                          .accountIdentifier(accountIdentifier)
                                          .repoUrl("https://bitbucket.org/harness/harness-core")
                                          .branchName("master")
-                                         .completeFilePath(".harness/test/connector.yaml")
+                                         .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                          .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                          .repoProvider(BITBUCKET)
                                          .build();

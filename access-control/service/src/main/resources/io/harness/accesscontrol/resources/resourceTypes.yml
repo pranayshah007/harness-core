@@ -9,7 +9,7 @@ resourceTypes:
   - identifier: PROJECT
     permissionKey: project
   - identifier: CONNECTOR
-    permissionKey: connector
+    permissionKey: ConnectorDisconnectHandler
   - identifier: DELEGATE
     permissionKey: delegate
   - identifier: DELEGATECONFIGURATION

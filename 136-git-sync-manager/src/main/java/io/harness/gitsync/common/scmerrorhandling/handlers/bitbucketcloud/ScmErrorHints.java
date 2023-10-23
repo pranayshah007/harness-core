@@ -20,7 +20,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class ScmErrorHints {
   public static final String INVALID_CREDENTIALS =
-      "Please check if your Bitbucket credentials in connector<CONNECTOR> are valid.";
+      "Please check if your Bitbucket credentials in ConnectorDisconnectHandler<CONNECTOR> are valid.";
   public static final String REPO_NOT_FOUND = "Please check if the requested Bitbucket repository<REPO> exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / repo name<REPO> if they exist or not.";

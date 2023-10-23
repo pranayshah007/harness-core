@@ -360,7 +360,7 @@ public class GitSyncServiceImpl implements GitSyncService {
   }
 
   /**
-   * @param gitConnectorIds List of git connector ids
+   * @param gitConnectorIds List of git ConnectorDisconnectHandler ids
    * @param accountId AccountId
    * @return Returns Map of uuid, SettingAttributes of GitConnector containing uuid, name and value keys.
    */

@@ -205,13 +205,13 @@ public class CloudFormationInfrastructureProvisionerYamlHandlerTest extends Yaml
     Service service = Service.builder().name("ServiceName").uuid(SERVICE_ID).build();
     doReturn(service).when(mockServiceResourceService).get(anyString(), anyString());
     doReturn(service).when(mockServiceResourceService).getServiceByName(anyString(), anyString());
-    doThrow(new InvalidRequestException("Not found connector with connectorId"))
+    doThrow(new InvalidRequestException("Not found ConnectorDisconnectHandler with connectorId"))
         .when(mockInfrastructureProvisionerService)
         .save(any());
 
     assertThatThrownBy(() -> handler.upsertFromYaml(changeContext, asList(changeContext)))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Not found connector with connectorId");
+        .hasMessage("Not found ConnectorDisconnectHandler with connectorId");
   }
 
   @Test
@@ -303,12 +303,12 @@ public class CloudFormationInfrastructureProvisionerYamlHandlerTest extends Yaml
     doReturn(service).when(mockServiceResourceService).getServiceByName(anyString(), anyString());
     // GitFileConfig with connectName only from UI
     GitFileConfig yamlGitFileConfigWithConnectorName = yaml.getGitFileConfig();
-    doThrow(new InvalidRequestException("Not found connector with connectorName"))
+    doThrow(new InvalidRequestException("Not found ConnectorDisconnectHandler with connectorName"))
         .when(mockGitFileConfigHelperService)
         .getGitFileConfigFromYaml(ACCOUNT_ID, APP_ID, yamlGitFileConfigWithConnectorName);
 
     assertThatThrownBy(() -> handler.upsertFromYaml(changeContext, asList(changeContext)))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Not found connector with connectorName");
+        .hasMessage("Not found ConnectorDisconnectHandler with connectorName");
   }
 }

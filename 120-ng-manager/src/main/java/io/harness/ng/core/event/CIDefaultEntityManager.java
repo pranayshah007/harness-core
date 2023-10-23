@@ -40,7 +40,7 @@ public class CIDefaultEntityManager {
         connectorService.get(accountId, org, project, NGCommonEntityConstants.HARNESS_IMAGE);
     if (harnessImage.isPresent()) {
       log.info(String.format(
-          "skipping creating docker connector as its already present in account id: %s, org: %s, project: %s",
+          "skipping creating docker ConnectorDisconnectHandler as its already present in account id: %s, org: %s, project: %s",
           accountId, org, project));
       return;
     }
@@ -59,14 +59,14 @@ public class CIDefaultEntityManager {
                                               .identifier(NGCommonEntityConstants.HARNESS_IMAGE)
                                               .connectorType(ConnectorType.DOCKER)
                                               .name("Harness Docker Connector")
-                                              .description("Harness internal connector")
+                                              .description("Harness internal ConnectorDisconnectHandler")
                                               .orgIdentifier(org)
                                               .projectIdentifier(project)
                                               .build();
       ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
       connectorService.create(connectorDTO, accountId);
     } catch (Exception ex) {
-      log.error(String.format("Failed to create docker connector in account: %s for org: %s for project: %s", accountId,
+      log.error(String.format("Failed to create docker ConnectorDisconnectHandler in account: %s for org: %s for project: %s", accountId,
                     org, project),
           ex);
     }

@@ -162,7 +162,7 @@ public class WebhookTriggerProcessor {
   private TriggerDeploymentNeededRequest createTriggerDeploymentNeededRequest(
       @NotEmpty String accountId, @NotEmpty String appId, WebhookEventDetails webhookEventDetails) {
     GitConfig gitConfig = settingsService.fetchGitConfigFromConnectorId(webhookEventDetails.getGitConnectorId());
-    notNullCheck("Git connector was deleted", gitConfig);
+    notNullCheck("Git ConnectorDisconnectHandler was deleted", gitConfig);
     setGitConfigRepoNameAndUrl(gitConfig, webhookEventDetails);
 
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(gitConfig, null, null);

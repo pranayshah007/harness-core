@@ -432,7 +432,7 @@ public class K8InitializeStepUtils {
 
     if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
       throw new CIStageExecutionException(String.format(
-          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "ConnectorDisconnectHandler ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     Integer port = portFinder.getNextPort();
@@ -571,7 +571,7 @@ public class K8InitializeStepUtils {
 
     if (ParameterField.isNull(runTestsStepInfo.getConnectorRef())) {
       throw new CIStageExecutionException(String.format(
-          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "ConnectorDisconnectHandler ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
@@ -1175,7 +1175,7 @@ public class K8InitializeStepUtils {
           baseConnectorRefs.stream()
               .map(baseConnectorRef -> {
                 CIStepInfoType stepInfoType;
-                // get connector details
+                // get ConnectorDisconnectHandler details
                 ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, baseConnectorRef);
                 switch (connectorDetails.getConnectorType()) {
                   case DOCKER:
@@ -1183,7 +1183,7 @@ public class K8InitializeStepUtils {
                     break;
                   default:
                     throw new IllegalStateException(
-                        "Unexpected base connector: " + connectorDetails.getConnectorType());
+                        "Unexpected base ConnectorDisconnectHandler: " + connectorDetails.getConnectorType());
                 }
                 Map<EnvVariableEnum, String> envToSecretMap = PluginSettingUtils.getConnectorSecretEnvMap(stepInfoType);
                 return ConnectorConversionInfo.builder()

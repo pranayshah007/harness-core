@@ -75,7 +75,7 @@ public class HelmChartVersionResourceTest extends CategoryTest {
         + " store:\n"
         + "   type: Git\n"
         + "   spec:\n"
-        + "     connectorRef: connector\n"
+        + "     connectorRef: ConnectorDisconnectHandler\n"
         + "     gitFetchType: Branch\n"
         + "     folderPath: folderPath\n"
         + "     branch: main\n"

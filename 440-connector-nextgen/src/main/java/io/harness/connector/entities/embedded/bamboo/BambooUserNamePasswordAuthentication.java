@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "BambooAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.bamboo.BambooUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.bamboo.BambooUserNamePasswordAuthentication")
 public class BambooUserNamePasswordAuthentication implements BambooAuthentication {
   String username;
   String usernameRef;

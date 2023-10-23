@@ -81,7 +81,7 @@ public class NGVaultUnsetRenewalHandler implements Handler<VaultConnector> {
 
   @Override
   public void handle(VaultConnector vaultConnector) {
-    log.info("Running token lookup handler for vault connector: {}", vaultConnector.getIdentifier());
+    log.info("Running token lookup handler for vault ConnectorDisconnectHandler: {}", vaultConnector.getIdentifier());
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
 

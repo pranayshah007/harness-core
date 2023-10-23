@@ -87,18 +87,18 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
               jiraConnectorRef.getOrgIdentifier(), jiraConnectorRef.getProjectIdentifier()));
       if (!connector.isPresent() || !isJiraConnector(connector.get().getConnectorInfo())) {
         throw new InvalidRequestException(
-            String.format("Jira connector not found for identifier : [%s] with scope: [%s]",
+            String.format("Jira ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]",
                 jiraConnectorRef.getIdentifier(), jiraConnectorRef.getScope()),
             WingsException.USER);
       }
       connectorConfigDTO = connector.get().getConnectorInfo().getConnectorConfig();
     } catch (Exception e) {
       throw new NotFoundException(
-          format("Error while getting connector information : [%s]", jiraConnectorRef.getIdentifier()), e);
+          format("Error while getting ConnectorDisconnectHandler information : [%s]", jiraConnectorRef.getIdentifier()), e);
     }
     // Get Encryption Details
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(jiraConnectorRef, connectorConfigDTO);
-    // Decrypt connector using Encryption Details
+    // Decrypt ConnectorDisconnectHandler using Encryption Details
     connectorConfigDTO = decryptJiraConnectorDTO(
         (JiraConnectorDTO) connectorConfigDTO, encryptionDetails, jiraConnectorRef.getAccountIdentifier());
     return (JiraConnectorDTO) connectorConfigDTO;

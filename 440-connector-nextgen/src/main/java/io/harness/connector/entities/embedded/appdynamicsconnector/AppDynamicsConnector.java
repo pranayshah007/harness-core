@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.appdynamicsconnector.AppDynamicsConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.appdynamicsconnector.AppDynamicsConnector")
 @OwnedBy(HarnessTeam.CV)
 public class AppDynamicsConnector extends Connector {
   private String username;

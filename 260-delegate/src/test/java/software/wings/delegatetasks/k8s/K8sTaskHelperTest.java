@@ -251,7 +251,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                 .encryptedDataDetails(
                     Collections.singletonList(EncryptedDataDetail.builder().fieldName("serviceToken").build()))
                 .gitFileConfig(
-                    GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-connector").build())
+                    GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-ConnectorDisconnectHandler").build())
                 .build(),
             "./dir", logCallback, LONG_TIMEOUT_INTERVAL))
         .isTrue();
@@ -271,7 +271,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                 .manifestStoreTypes(storeType)
                 .gitConfig(GitConfig.builder().repoUrl(REPO_URL).build())
                 .gitFileConfig(
-                    GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-connector").build())
+                    GitFileConfig.builder().filePath("dir/file").branch("master").connectorId("git-ConnectorDisconnectHandler").build())
                 .build(),
             "./dir", logCallback, LONG_TIMEOUT_INTERVAL))
         .isFalse();
@@ -294,7 +294,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                           .useBranch(true)
                                           .filePath("dir/file")
                                           .branch("master")
-                                          .connectorId("git-connector")
+                                          .connectorId("git-ConnectorDisconnectHandler")
                                           .build())
                        .build(),
                    "./dir", logCallback, LONG_TIMEOUT_INTERVAL))
@@ -318,7 +318,7 @@ public class K8sTaskHelperTest extends CategoryTest {
                                           .useBranch(true)
                                           .filePath("dir/file")
                                           .branch("master")
-                                          .connectorId("git-connector")
+                                          .connectorId("git-ConnectorDisconnectHandler")
                                           .build())
                        .build(),
                    "./dir", logCallback, LONG_TIMEOUT_INTERVAL))

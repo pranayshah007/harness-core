@@ -43,7 +43,7 @@ public class DeleteInstanceOfDeletedConnectors implements NGMigration {
         for (InfrastructureMapping infraMapping : infraMappings) {
           Optional<Connector> connectorOpt = getConnector(infraMapping);
           if (!connectorOpt.isPresent()) {
-            log.info("Deleting orphan entities for account {} belonging to deleted connector {} and "
+            log.info("Deleting orphan entities for account {} belonging to deleted ConnectorDisconnectHandler {} and "
                     + "infrastructure mapping {}",
                 infraMapping.getAccountIdentifier(), infraMapping.getConnectorRef(), infraMapping.getId());
             cdMigrationUtils.deleteOrphanInstance(infraMapping);

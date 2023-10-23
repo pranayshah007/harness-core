@@ -121,7 +121,7 @@ spec:
                 name: {{.Values.name}}
                 port:
                   number: 12003
-          - path: /(v1/connector-info.*)
+          - path: /(v1/ConnectorDisconnectHandler-info.*)
             pathType: Prefix
             backend:
               service:

@@ -31,7 +31,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO")
 public class CustomSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
   @Builder.Default Boolean onDelegate = Boolean.FALSE;

@@ -242,7 +242,7 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
 
   private ServiceNowConfig getSnowConfig(String snowConnectorId, String accountId) {
     SettingAttribute snowSettingAttribute = settingsService.getByAccountAndId(accountId, snowConnectorId);
-    notNullCheck("Service Now connector may be deleted.", snowSettingAttribute);
+    notNullCheck("Service Now ConnectorDisconnectHandler may be deleted.", snowSettingAttribute);
 
     if (!(snowSettingAttribute.getValue() instanceof ServiceNowConfig)) {
       throw new InvalidRequestException("Type of Setting Attribute Value is not SnowConfig");

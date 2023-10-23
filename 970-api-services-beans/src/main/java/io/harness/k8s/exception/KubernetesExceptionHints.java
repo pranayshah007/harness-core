@@ -26,7 +26,7 @@ public class KubernetesExceptionHints {
       "Please connect remotely to Harness delegate and verify if Harness delegate is whitelisted to access Kubernetes API.";
   public final String K8S_API_FORBIDDEN_EXCEPTION =
       "Check configured Kubernetes user permissions and authorization policies. \nTo know more about Roles, ClusterRoles and ClusterRoleBindings, refer: https://kubernetes.io/docs/reference/access-authn-authz/rbac/";
-  public final String K8S_API_UNAUTHORIZED_EXCEPTION = "Check Kubernetes connector credentials.";
+  public final String K8S_API_UNAUTHORIZED_EXCEPTION = "Check Kubernetes ConnectorDisconnectHandler credentials.";
   public final String K8S_API_VALIDATION_ERROR = "Validate Kubernetes infrastructure configuration";
   public final String K8S_API_SSL_VALIDATOR = "Check if provided CA certificate is valid for this kubernetes cluster";
 
@@ -94,7 +94,7 @@ public class KubernetesExceptionHints {
   public final String UNRESOLVED_MANIFEST_FIELD =
       "Please check values.yaml file(s) for any missing/null fields inside manifests or any unresolved expressions referencing harness variables.";
 
-  public final String API_CLIENT_CREATE_FAILED = "Check kubernetes connector for invalid values";
+  public final String API_CLIENT_CREATE_FAILED = "Check kubernetes ConnectorDisconnectHandler for invalid values";
   public final String API_CLIENT_CA_CERT_INVALID =
       "Check if given %s field is a valid X.509 certificate and is from a trusted or verified source.";
   public final String API_CLIENT_CA_CERT_INCOMPLETE =

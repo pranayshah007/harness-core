@@ -580,7 +580,7 @@ public class HelmTaskHelper {
   }
 
   /*
-  This method is called in case the helm has empty repository connector and the chartName has <REPO_NAME/CHART_NAME>
+  This method is called in case the helm has empty repository ConnectorDisconnectHandler and the chartName has <REPO_NAME/CHART_NAME>
   value. In that case, we want to use the default "$HELM_HOME" path. That is why :-
   1.) We are not adding repo if the URL is empty
   2.) Passing null directoryPath in the helmFetchCommand so that it picks up default helm

@@ -4,7 +4,7 @@ pipeline:
   properties:
     ci:
       codebase:
-        connectorRef: account.connector
+        connectorRef: account.ConnectorDisconnectHandler
         repoName: <+input>
         build: <+input>
   stages:

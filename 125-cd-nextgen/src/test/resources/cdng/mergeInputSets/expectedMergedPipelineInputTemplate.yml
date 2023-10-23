@@ -44,7 +44,7 @@ pipeline:
                         store:
                           type: Git
                           spec:
-                            connectorRef: my-git-connector
+                            connectorRef: my-git-ConnectorDisconnectHandler
                             branch: masterOverride2
         infrastructure:
           infrastructureDefinition:
@@ -83,5 +83,5 @@ pipeline:
                   store:
                     type: Git
                     spec:
-                      connectorRef: my-connector
+                      connectorRef: my-ConnectorDisconnectHandler
                       branch: <+input>

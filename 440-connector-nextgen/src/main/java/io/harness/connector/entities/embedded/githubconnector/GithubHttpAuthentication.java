@@ -15,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.githubconnector.GithubHttpAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubHttpAuthentication")
 public class GithubHttpAuthentication implements GithubAuthentication {
   GithubHttpAuthenticationType type;
   GithubHttpAuth auth;

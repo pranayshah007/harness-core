@@ -196,7 +196,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
     doNothing().when(logCallback).saveExecutionLog(any());
     doNothing().when(gitOpsTaskHelper).setGitConfigCred(gitFetchFilesConfig, logCallback);
     TaskParameters params = NGGitOpsTaskParams.builder()
-                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("ConnectorDisconnectHandler").build())
                                 .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
                                 .gitFetchFilesConfig(gitFetchFilesConfig)
                                 .isRevertPR(true)
@@ -222,7 +222,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
         .revertCommitAndPush(any(GitConfigDTO.class), any(), anyString(), any(), anyBoolean());
     TaskParameters params =
         NGGitOpsTaskParams.builder()
-            .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+            .connectorInfoDTO(ConnectorInfoDTO.builder().name("ConnectorDisconnectHandler").build())
             .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
             .gitFetchFilesConfig(
                 GitFetchFilesConfig.builder()
@@ -244,7 +244,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
         .createNewBranch(any(), anyString(), anyString());
     doReturn(CreatePRResponse.newBuilder().build()).when(scmFetchFilesHelper).createPR(any(), any());
     TaskParameters params = NGGitOpsTaskParams.builder()
-                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("connector").build())
+                                .connectorInfoDTO(ConnectorInfoDTO.builder().name("ConnectorDisconnectHandler").build())
                                 .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
                                 .build();
 

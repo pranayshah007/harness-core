@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.JenkinsArtifactOutcome")
 public class JenkinsArtifactOutcome implements ArtifactOutcome {
-  /** Jenkins connector. */
+  /** Jenkins ConnectorDisconnectHandler. */
   String connectorRef;
 
   /** jobName */

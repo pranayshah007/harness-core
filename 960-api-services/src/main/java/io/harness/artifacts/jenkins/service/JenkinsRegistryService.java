@@ -80,7 +80,7 @@ public class JenkinsRegistryService {
       throw e;
     } catch (IOException ex) {
       throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch build details jenkins server ",
-          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Jobs.",
           new InvalidRequestException(
               "Failed to fetch build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
     }
@@ -93,7 +93,7 @@ public class JenkinsRegistryService {
       throw e;
     } catch (IOException ex) {
       throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch build details",
-          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Jobs.",
           new InvalidRequestException(
               "Failed to fetch build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
     }
@@ -105,7 +105,7 @@ public class JenkinsRegistryService {
       return jenkinsRegistryUtils.getLastSuccessfulBuildForJob(jenkinsInternalConfig, jobName, artifactPaths);
     } catch (IOException ex) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Jobs.",
           "Failed to fetch last successful build details jenkins server ",
           new InvalidRequestException(
               "Failed to fetch last successful build details jenkins server " + ExceptionUtils.getMessage(ex), USER));

@@ -188,7 +188,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
   private GitFetchFilesResult fetchFilesFromRepo(String identifier, GitFileConfig gitFileConfig, GitConfig gitConfig,
       List<EncryptedDataDetail> encryptedDataDetails, ExecutionLogCallback executionLogCallback,
       boolean optimizedFilesFetch, boolean closeLogStream) {
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfig.getRepoUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitConfig.getRepoUrl());
     if (gitFileConfig.isUseBranch()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitFileConfig.getBranch());
     } else {

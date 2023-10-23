@@ -155,7 +155,7 @@ public class NGSecretManagerMigration {
       migrateFromCGToNG(nonHMConnector.getAccountIdentifier(), connectorFromDB, false);
     } catch (Exception e) {
       log.error(
-          "[NGSecretManagerMigration] Moving to next connector. Could not migrate: " + connectorFromDB.getIdentifier(),
+          "[NGSecretManagerMigration] Moving to next ConnectorDisconnectHandler. Could not migrate: " + connectorFromDB.getIdentifier(),
           e);
     }
   }
@@ -194,9 +194,9 @@ public class NGSecretManagerMigration {
       try {
         connectorService.update(fromCGToNG, accountIdentifier, ChangeType.NONE);
       } catch (NotFoundException exception) {
-        log.error("[NGSecretManagerMigration] NotFoundException in updating connector", exception);
+        log.error("[NGSecretManagerMigration] NotFoundException in updating ConnectorDisconnectHandler", exception);
       } catch (InvalidRequestException exception) {
-        log.error("[NGSecretManagerMigration] InvalidRequestException in updating connector", exception);
+        log.error("[NGSecretManagerMigration] InvalidRequestException in updating ConnectorDisconnectHandler", exception);
       } catch (Exception e) {
         log.error("[NGSecretManagerMigration] Unexpected exception occured during updation of HarnessManaged SM", e);
       }
@@ -331,7 +331,7 @@ public class NGSecretManagerMigration {
         log.info("[NGSecretManagerMigration] Successfully updated from CG: "
             + connectorDTO.getConnectorInfo().getIdentifier());
       } catch (Exception e) {
-        log.error("[NGSecretManagerMigration] Moving to next connector. Could not migrate: "
+        log.error("[NGSecretManagerMigration] Moving to next ConnectorDisconnectHandler. Could not migrate: "
                 + connectorInfoDTO.getIdentifier(),
             e);
       }

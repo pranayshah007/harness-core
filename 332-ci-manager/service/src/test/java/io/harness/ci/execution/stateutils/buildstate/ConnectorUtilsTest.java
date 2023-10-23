@@ -306,7 +306,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     ResponseDTO<Optional<ConnectorDTO>> emptyResponseDTO = ResponseDTO.newResponse(Optional.empty());
     when(getConnectorResourceCall.execute())
         .thenReturn(Response.success(emptyResponseDTO))
-        .thenThrow(new IOException("Error getting connector"));
+        .thenThrow(new IOException("Error getting ConnectorDisconnectHandler"));
 
     when(connectorResourceClient.get(eq(connectorId01), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID)))
         .thenReturn(getConnectorResourceCall);

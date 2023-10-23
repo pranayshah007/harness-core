@@ -82,7 +82,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
             connectorValidationParams.getConnectorType().getDisplayName());
       }
       if (connectorValidationHandler == null || connectorValidationHandler instanceof NoOpConnectorValidationHandler) {
-        log.info("The connector validation handler is not registered for the connector.");
+        log.info("The ConnectorDisconnectHandler validation handler is not registered for the ConnectorDisconnectHandler.");
         return getPerpetualTaskResponse(null);
       }
       try {
@@ -116,7 +116,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
           createHeartbeatResponse(accountId, orgIdentifier, projectIdentifier, connectorIdentifier,
               connectorValidationParams, connectorValidationResult)));
     } catch (Exception ex) {
-      log.error("{} Failed to publish connector heartbeat result for task [{}] for the connector:[{}]", taskId.getId(),
+      log.error("{} Failed to publish ConnectorDisconnectHandler heartbeat result for task [{}] for the ConnectorDisconnectHandler:[{}]", taskId.getId(),
           CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorMessage, ex);
     }
     log.info("Completed validation task for {}", connectorMessage);
@@ -139,7 +139,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
   private PerpetualTaskResponse getPerpetualTaskResponse(ConnectorValidationResult connectorValidationResult) {
     String message = "success";
     if (connectorValidationResult == null) {
-      message = "Got Null connector validation result";
+      message = "Got Null ConnectorDisconnectHandler validation result";
     } else if (connectorValidationResult.getStatus() != ConnectivityStatus.SUCCESS) {
       message = connectorValidationResult.getErrorSummary();
     }

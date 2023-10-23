@@ -66,7 +66,7 @@ public class AwsSamInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBas
                                                             .orgIdentifier(ORG_IDENTIFIER)
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .infrastructureKind("KUBERNETES_DIRECT")
-                                                            .connectorRef("connector")
+                                                            .connectorRef("ConnectorDisconnectHandler")
                                                             .envIdentifier("env")
                                                             .serviceIdentifier("service")
                                                             .infrastructureKey("key")

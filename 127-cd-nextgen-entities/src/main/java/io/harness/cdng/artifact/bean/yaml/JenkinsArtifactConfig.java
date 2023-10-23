@@ -51,7 +51,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig")
 public class JenkinsArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Jenkins connector.
+   * Jenkins ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 

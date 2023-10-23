@@ -86,7 +86,7 @@ public class PipelineTemplateCrudHelperTest extends TemplateServiceTestBase {
         TemplateReferenceTestHelper.connectorEntityDetailProto_StepTemplate.getIdentifierRef()
             .toBuilder()
             .clearMetadata()
-            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.connector")
+            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.ConnectorDisconnectHandler")
             .build();
     assertThat(referredEntitiesWithModifiedFQNs.get(0).getIdentifierRef()).isNotNull().isEqualTo(expectedIdentifierRef);
   }
@@ -131,7 +131,7 @@ public class PipelineTemplateCrudHelperTest extends TemplateServiceTestBase {
         TemplateReferenceTestHelper.connectorEntityDetailProto_StepTemplate.getIdentifierRef()
             .toBuilder()
             .clearMetadata()
-            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.execution.steps.jira.spec.connector")
+            .putMetadata(PreFlightCheckMetadata.FQN, "templateInputs.spec.execution.steps.jira.spec.ConnectorDisconnectHandler")
             .build();
     assertThat(referredEntitiesWithModifiedFQNs.get(0).getIdentifierRef()).isNotNull().isEqualTo(expectedIdentifierRef);
   }

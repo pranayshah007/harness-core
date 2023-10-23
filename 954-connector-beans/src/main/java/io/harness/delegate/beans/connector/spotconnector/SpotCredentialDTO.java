@@ -30,8 +30,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("SpotCredential")
 @JsonDeserialize(using = SpotCredentialDTODeserializer.class)
-@Schema(name = "SpotCredential", description = "This contains details of the Spot connector credential")
-@RecasterAlias("io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO")
+@Schema(name = "SpotCredential", description = "This contains details of the Spot ConnectorDisconnectHandler credential")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.spotconnector.SpotCredentialDTO")
 public class SpotCredentialDTO {
   @NotNull @RecasterFieldName(name = "type") @JsonProperty("type") SpotCredentialType spotCredentialType;
   @RecasterFieldName(name = "spec")

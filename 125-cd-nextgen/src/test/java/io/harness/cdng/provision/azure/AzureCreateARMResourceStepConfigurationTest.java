@@ -48,7 +48,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
@@ -72,7 +72,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
 
@@ -98,7 +98,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
 
@@ -124,7 +124,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
 
@@ -150,7 +150,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
 
@@ -171,7 +171,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
@@ -190,7 +190,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration::validateParams);
@@ -203,7 +203,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile2)
             .template(templateFile2)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration2::validateParams);
@@ -221,7 +221,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
@@ -240,7 +240,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertThatThrownBy(azureCreateARMResourceStepConfiguration::validateParams)
@@ -259,7 +259,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration::validateParams);
@@ -277,7 +277,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration::validateParams);
@@ -295,7 +295,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(parameterFile)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration::validateParams);
@@ -311,7 +311,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
         AzureCreateARMResourceStepConfiguration.builder()
             .parameters(null)
             .template(templateFile)
-            .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+            .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
             .scope(createScope())
             .build();
     assertDoesNotThrow(azureCreateARMResourceStepConfiguration::validateParams);
@@ -331,7 +331,7 @@ public class AzureCreateARMResourceStepConfigurationTest extends CategoryTest {
     } else {
       GithubStoreBuilder builder = GithubStore.builder();
       builder.paths(ParameterField.createValueField(createNumberOfFiles(numberOfFiles)))
-          .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+          .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
           .build();
       storeConfigWrapper = StoreConfigWrapper.builder().spec(builder.build()).build();
     }

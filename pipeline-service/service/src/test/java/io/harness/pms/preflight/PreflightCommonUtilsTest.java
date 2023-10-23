@@ -70,7 +70,7 @@ public class PreflightCommonUtilsTest extends CategoryTest {
     assertEquals(1, preFlightEntityErrorInfo.causes.size());
     assertEquals("Connector not found or does not exist", preFlightEntityErrorInfo.causes.get(0).cause);
     assertEquals(1, preFlightEntityErrorInfo.resolution.size());
-    assertEquals("Create this connector", preFlightEntityErrorInfo.resolution.get(0).resolution);
+    assertEquals("Create this ConnectorDisconnectHandler", preFlightEntityErrorInfo.resolution.get(0).resolution);
   }
 
   @Test
@@ -80,9 +80,9 @@ public class PreflightCommonUtilsTest extends CategoryTest {
     PreFlightEntityErrorInfo preFlightEntityErrorInfo = PreflightCommonUtils.getInvalidConnectorInfo();
     assertEquals("Connector not valid", preFlightEntityErrorInfo.summary);
     assertEquals(1, preFlightEntityErrorInfo.causes.size());
-    assertEquals("The connector YAML provided on git is invalid", preFlightEntityErrorInfo.causes.get(0).cause);
+    assertEquals("The ConnectorDisconnectHandler YAML provided on git is invalid", preFlightEntityErrorInfo.causes.get(0).cause);
     assertEquals(1, preFlightEntityErrorInfo.resolution.size());
-    assertEquals("Fix the connector yaml", preFlightEntityErrorInfo.resolution.get(0).resolution);
+    assertEquals("Fix the ConnectorDisconnectHandler yaml", preFlightEntityErrorInfo.resolution.get(0).resolution);
   }
 
   @Test

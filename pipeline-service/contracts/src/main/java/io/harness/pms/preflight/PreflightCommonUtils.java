@@ -31,7 +31,7 @@ public class PreflightCommonUtils {
         .causes(
             Collections.singletonList(PreFlightCause.builder().cause("Connector not found or does not exist").build()))
         .resolution(
-            Collections.singletonList(PreFlightResolution.builder().resolution("Create this connector").build()))
+            Collections.singletonList(PreFlightResolution.builder().resolution("Create this ConnectorDisconnectHandler").build()))
         .build();
   }
 
@@ -39,9 +39,9 @@ public class PreflightCommonUtils {
     return PreFlightEntityErrorInfo.builder()
         .summary("Connector not valid")
         .causes(Collections.singletonList(
-            PreFlightCause.builder().cause("The connector YAML provided on git is invalid").build()))
+            PreFlightCause.builder().cause("The ConnectorDisconnectHandler YAML provided on git is invalid").build()))
         .resolution(
-            Collections.singletonList(PreFlightResolution.builder().resolution("Fix the connector yaml").build()))
+            Collections.singletonList(PreFlightResolution.builder().resolution("Fix the ConnectorDisconnectHandler yaml").build()))
         .build();
   }
 

@@ -35,7 +35,7 @@ import org.hibernate.validator.constraints.URL;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("TerraformCloudConnector")
-@Schema(name = "TerraformCloudConnector", description = "This contains details of the Terraform Cloud connector")
+@Schema(name = "TerraformCloudConnector", description = "This contains details of the Terraform Cloud ConnectorDisconnectHandler")
 public class TerraformCloudConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @URL String terraformCloudUrl;
   @NotNull @Valid TerraformCloudCredentialDTO credential;

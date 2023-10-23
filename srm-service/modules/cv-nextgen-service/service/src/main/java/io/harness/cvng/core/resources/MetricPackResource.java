@@ -43,7 +43,7 @@ public class MetricPackResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get all metric packs for a connector type", nickname = "getMetricPacks")
+  @ApiOperation(value = "get all metric packs for a ConnectorDisconnectHandler type", nickname = "getMetricPacks")
   public RestResponse<List<MetricPackDTO>> getMetricPacks(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("dataSourceType") @NotNull DataSourceType dataSourceType) {
     return new RestResponse<>(metricPackService.getMetricPacks(dataSourceType, projectParams.getAccountIdentifier(),
@@ -53,7 +53,7 @@ public class MetricPackResource {
   @POST
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "saves a metric pack for a connector type", nickname = "saveMetricPacks")
+  @ApiOperation(value = "saves a metric pack for a ConnectorDisconnectHandler type", nickname = "saveMetricPacks")
   public RestResponse<Boolean> saveMetricPacks(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("dataSourceType") @NotNull DataSourceType dataSourceType,
       @NotNull @Valid @Body List<MetricPack> metricPacks) {

@@ -423,7 +423,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("http-helm-connector")
+                                            .identifier("http-helm-ConnectorDisconnectHandler")
                                             .connectorType(HTTP_HELM_REPO)
                                             .connectorConfig(httpHelmConnectorConfig)
                                             .build())
@@ -474,7 +474,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("aws-helm-connector")
+                                            .identifier("aws-helm-ConnectorDisconnectHandler")
                                             .connectorType(AWS)
                                             .connectorConfig(awsConnectorConfig)
                                             .build())
@@ -527,7 +527,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("gcp-helm-connector")
+                                            .identifier("gcp-helm-ConnectorDisconnectHandler")
                                             .connectorType(GCP)
                                             .connectorConfig(gcpConnectorDTO)
                                             .build())
@@ -559,7 +559,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -637,7 +637,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -649,7 +649,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     List<String> files = asList("org:/folderPath/values5.yaml");
     HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
@@ -758,7 +758,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                 .bucketName(ParameterField.createValueField("bucket"))
                                 .region(ParameterField.createValueField("us-east-1"))
                                 .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                .connectorRef(ParameterField.createValueField("aws-connector"))
+                                .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                                 .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -847,7 +847,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                 .bucketName(ParameterField.createValueField("bucket"))
                                 .region(ParameterField.createValueField("us-east-1"))
                                 .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                .connectorRef(ParameterField.createValueField("aws-connector"))
+                                .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                                 .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -861,7 +861,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -975,7 +975,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GcsStoreConfig gcsStore = GcsStoreConfig.builder()
                                   .bucketName(ParameterField.createValueField("bucket"))
                                   .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                  .connectorRef(ParameterField.createValueField("gcs-connector"))
+                                  .connectorRef(ParameterField.createValueField("gcs-ConnectorDisconnectHandler"))
                                   .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -1063,7 +1063,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GcsStoreConfig gcsStore = GcsStoreConfig.builder()
                                   .bucketName(ParameterField.createValueField("bucket"))
                                   .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                                  .connectorRef(ParameterField.createValueField("gcs-connector"))
+                                  .connectorRef(ParameterField.createValueField("gcs-ConnectorDisconnectHandler"))
                                   .build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -1077,7 +1077,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -1334,7 +1334,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -1413,7 +1413,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder().namespace("default").infrastructureKey(INFRA_KEY).build();
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -1499,7 +1499,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreGenericConfig.builder()
-                              .connectorRef(ParameterField.createValueField("oci-helm-connector"))
+                              .connectorRef(ParameterField.createValueField("oci-helm-ConnectorDisconnectHandler"))
                               .build())
                     .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
@@ -1589,7 +1589,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreEcrConfig.builder()
-                              .connectorRef(ParameterField.createValueField("oci-helm-connector"))
+                              .connectorRef(ParameterField.createValueField("oci-helm-ConnectorDisconnectHandler"))
                               .region(ParameterField.createValueField("region"))
                               .build())
                     .type(OciHelmChartStoreConfigType.ECR)
@@ -1676,7 +1676,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder().namespace("default").infrastructureKey(INFRA_KEY).build();
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
 
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -1689,7 +1689,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -1858,7 +1858,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     StoreConfig store = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .paths(ParameterField.createValueField(asList("path/to/manifest/templates")))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("k8s").store(CustomRemoteStoreConfig.builder().build()).build();
@@ -1938,7 +1938,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .connector(ConnectorInfoDTO.builder()
-                                            .identifier("http-helm-connector")
+                                            .identifier("http-helm-ConnectorDisconnectHandler")
                                             .connectorType(HTTP_HELM_REPO)
                                             .connectorConfig(httpHelmConnectorConfig)
                                             .build())
@@ -2187,7 +2187,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     localStoreFetchFilesResultMap.put("helmOverride3", localStoreFetchFilesResult);
 
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .identifier(manifestIdentifier)
@@ -2199,7 +2199,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -2302,7 +2302,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         asList(CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build()));
 
     HttpStoreConfig httpStore =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-connector")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("http-ConnectorDisconnectHandler")).build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
             .identifier(manifestIdentifier)
@@ -2314,7 +2314,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -2401,7 +2401,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore = GitStore.builder()
                             .branch(ParameterField.createValueField("master"))
                             .folderPath(ParameterField.createValueField("path/to/helm/chart"))
-                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                             .build();
     HelmChartManifestOutcome helmChartManifestOutcome =
         HelmChartManifestOutcome.builder()
@@ -2413,7 +2413,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     ValuesManifestOutcome valuesManifestOutcome1 =
         ValuesManifestOutcome.builder().identifier("helmOverride").store(gitStore2).build();
@@ -2802,7 +2802,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     GitStore gitStore2 = GitStore.builder()
                              .branch(ParameterField.createValueField("master"))
                              .paths(ParameterField.createValueField(overridePaths))
-                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .connectorRef(ParameterField.createValueField("git-ConnectorDisconnectHandler"))
                              .build();
     String extractionScript = "git clone something.git";
     List<TaskSelectorYaml> delegateSelector = asList(new TaskSelectorYaml("sample-delegate"));

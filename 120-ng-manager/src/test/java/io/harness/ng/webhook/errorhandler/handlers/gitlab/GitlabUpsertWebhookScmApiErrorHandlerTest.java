@@ -48,7 +48,7 @@ public class GitlabUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo("The credentials provided in the Gitlab connector " + connectorRef
+          .isEqualTo("The credentials provided in the Gitlab ConnectorDisconnectHandler " + connectorRef
               + " are invalid or have expired. " + errorMessage);
     }
   }
@@ -64,7 +64,7 @@ public class GitlabUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo("Please check if webhook read write permission is given to token used in connector " + connectorRef
+          .isEqualTo("Please check if webhook read write permission is given to token used in ConnectorDisconnectHandler " + connectorRef
               + ". " + errorMessage);
     }
   }

@@ -38,7 +38,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector customSecretManagerConnector = CustomSecretManagerConnector.builder().build();
     // Get all the fields in it
     Field[] fields = CustomSecretManagerConnector.class.getDeclaredFields();
@@ -48,7 +48,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
       if (!defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
+        // Get its value in the ConnectorDisconnectHandler entity
         Object value = field.get(customSecretManagerConnector);
         // asset that the fields are null.
         assertThat(value).isNull();
@@ -60,7 +60,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector customSecretManagerConnector = CustomSecretManagerConnector.builder().build();
     // Get all the fields in it
     Field[] fields = CustomSecretManagerConnector.class.getDeclaredFields();
@@ -70,7 +70,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
+        // Get its value in the ConnectorDisconnectHandler entity
         Object value = field.get(customSecretManagerConnector);
         // asset that the fields are not null.
         assertThat(value).isNotNull();
@@ -82,7 +82,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector customSecretManagerConnector = CustomSecretManagerConnector.builder().build();
     // Get all the fields in it
     Field[] fields = CustomSecretManagerConnector.class.getDeclaredFields();
@@ -92,7 +92,7 @@ public class CustomSecretManagerConnectorTest extends CategoryTest {
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector entity
+        // Get its value in the ConnectorDisconnectHandler entity
         Object value = field.get(customSecretManagerConnector);
         // asset that default value is same as that defined in map created at test setup.
         assertThat(value).isEqualTo(defaultFieldNamesToValue.get(field.getName()));

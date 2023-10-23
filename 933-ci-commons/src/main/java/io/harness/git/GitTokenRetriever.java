@@ -73,7 +73,7 @@ public class GitTokenRetriever {
   private String retrieveGithubAuthToken(ConnectorDetails gitConnector) {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null || gitConfigDTO.getApiAccess().getType() == null) {
-      throw new InvalidRequestException(format("Failed to retrieve token info for github connector: %s", gitConfigDTO));
+      throw new InvalidRequestException(format("Failed to retrieve token info for github ConnectorDisconnectHandler: %s", gitConfigDTO));
     }
 
     GithubApiAccessType apiAccessType = gitConfigDTO.getApiAccess().getType();
@@ -110,7 +110,7 @@ public class GitTokenRetriever {
     GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null) {
       throw new CIStageExecutionException(
-          format("Failed to retrieve token info for gitlab connector: %s", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for gitlab ConnectorDisconnectHandler: %s", gitConnector.getIdentifier()));
     }
     if (gitConfigDTO.getApiAccess().getType() == GitlabApiAccessType.TOKEN) {
       GitlabApiAccessSpecDTO gitlabApiAccessSpecDTO = gitConfigDTO.getApiAccess().getSpec();
@@ -141,7 +141,7 @@ public class GitTokenRetriever {
     BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
     if (bitbucketConnectorDTO.getApiAccess() == null) {
       throw new CIStageExecutionException(
-          format("Failed to retrieve token info for Bitbucket connector: %s", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for Bitbucket ConnectorDisconnectHandler: %s", gitConnector.getIdentifier()));
     }
     if (bitbucketConnectorDTO.getApiAccess().getType() == BitbucketApiAccessType.USERNAME_AND_TOKEN) {
       BitbucketUsernameTokenApiAccessDTO bitbucketTokenSpecDTO =
@@ -159,7 +159,7 @@ public class GitTokenRetriever {
     AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
     if (azureRepoConnectorDTO.getApiAccess() == null) {
       throw new CIStageExecutionException(
-          format("Failed to retrieve token info for Azure repo connector: %s", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for Azure repo ConnectorDisconnectHandler: %s", gitConnector.getIdentifier()));
     }
     if (azureRepoConnectorDTO.getApiAccess().getType() == AzureRepoApiAccessType.TOKEN) {
       AzureRepoTokenSpecDTO azureRepoTokenSpecDTO =

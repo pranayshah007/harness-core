@@ -39,7 +39,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(name = "OciHelmConnector", description = "This contains Oci helm connector details")
+@Schema(name = "OciHelmConnector", description = "This contains Oci helm ConnectorDisconnectHandler details")
 public class OciHelmConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationDTO auth;

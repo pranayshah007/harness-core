@@ -580,7 +580,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
         Response.error(429, ResponseBody.create(MediaType.parse("text/plain"), "MSG"));
     assertThatThrownBy(() -> DockerRegistryServiceImpl.isSuccessfulPublicRegistry(response))
         .isInstanceOf(HintException.class)
-        .hasMessage("Image pull rate limit reached. Please authenticate Docker connector using Username and Password");
+        .hasMessage("Image pull rate limit reached. Please authenticate Docker ConnectorDisconnectHandler using Username and Password");
   }
 
   @Test

@@ -458,7 +458,7 @@ public class CDStepHelperTest extends CategoryTest {
     } catch (Exception thrown) {
       assertThat(thrown).isNotNull();
       assertThat(thrown).isInstanceOf(InvalidRequestException.class);
-      assertThat(thrown.getMessage()).isEqualTo("Repo name cannot be empty for Account level git connector");
+      assertThat(thrown.getMessage()).isEqualTo("Repo name cannot be empty for Account level git ConnectorDisconnectHandler");
     }
   }
 

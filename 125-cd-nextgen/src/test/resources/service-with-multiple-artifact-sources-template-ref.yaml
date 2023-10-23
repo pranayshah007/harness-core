@@ -39,7 +39,7 @@ service:
               identifier: sidecar1
               type: DockerRegistry
               spec:
-                connectorRef: connector
+                connectorRef: ConnectorDisconnectHandler
                 imagePath: nginx
                 tag: "latest"
     type: Kubernetes

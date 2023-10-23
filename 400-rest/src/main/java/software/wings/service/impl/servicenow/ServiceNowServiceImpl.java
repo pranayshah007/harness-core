@@ -197,12 +197,12 @@ public class ServiceNowServiceImpl implements ServiceNowService {
   private ServiceNowConfig getServiceNowConfig(String accountId, String connectorId) {
     try {
       SettingAttribute settingAttribute = settingService.getByAccountAndId(accountId, connectorId);
-      notNullCheck("Service Now connector may be deleted.", settingAttribute, USER);
+      notNullCheck("Service Now ConnectorDisconnectHandler may be deleted.", settingAttribute, USER);
       return (ServiceNowConfig) settingAttribute.getValue();
     } catch (Exception e) {
-      log.error("Error getting ServiceNow connector for ID: {}", connectorId);
+      log.error("Error getting ServiceNow ConnectorDisconnectHandler for ID: {}", connectorId);
       throw new ServiceNowException(
-          "Error getting ServiceNow connector " + ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+          "Error getting ServiceNow ConnectorDisconnectHandler " + ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
     }
   }
 

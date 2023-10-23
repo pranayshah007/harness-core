@@ -392,7 +392,7 @@ public class SettingResource {
    *
    * @param appId                 Harness App ID
    * @param accountId             Harness Account ID
-   * @param gitConnectorsToRetain Body should be a list of git connector IDs
+   * @param gitConnectorsToRetain Body should be a list of git ConnectorDisconnectHandler IDs
    * @return Rest response
    */
   @DELETE
@@ -416,7 +416,7 @@ public class SettingResource {
     if (yamlGitConfigsDeleted) {
       log.info("Deleted Yaml Git Configs of accountId {} of remaining git connectors", accountId);
     }
-    log.info("Completed processing git connector and yaml git config deletions for accountId {}", accountId);
+    log.info("Completed processing git ConnectorDisconnectHandler and yaml git config deletions for accountId {}", accountId);
     return new RestResponse();
   }
 

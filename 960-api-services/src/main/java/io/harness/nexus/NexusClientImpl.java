@@ -62,7 +62,7 @@ public class NexusClientImpl {
         if (isNexusTwo) {
           if (RepositoryFormat.docker.name().equals(repositoryFormat)) {
             throw NestedExceptionUtils.hintWithExplanationException("Nexus 2.x does not support Docker artifacts",
-                "The version for the connector is probably 3.x and not 2.x",
+                "The version for the ConnectorDisconnectHandler is probably 3.x and not 2.x",
                 new InvalidArtifactServerException("Nexus 2.x does not support Docker artifact type", USER));
           }
           return nexusTwoService.getRepositories(nexusConfig, repositoryFormat);
@@ -98,7 +98,7 @@ public class NexusClientImpl {
         return nexusThreeService.isServerValid(nexusConfig);
       } catch (UnknownHostException e) {
         throw NestedExceptionUtils.hintWithExplanationException("Check if the Nexus URL & version are correct",
-            "The Nexus URL for the connector is incorrect or not reachable",
+            "The Nexus URL for the ConnectorDisconnectHandler is incorrect or not reachable",
             new InvalidArtifactServerException("Unknown Nexus Host"));
       } catch (InvalidArtifactServerException e) {
         throw e;
@@ -122,10 +122,10 @@ public class NexusClientImpl {
       NexusRequest nexusConfig, String repositoryName, String port, String artifactName, String repoFormat) {
     if (isNexusVersion2(nexusConfig)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
-          "Nexus 2.x connector does not support docker artifact type.",
+          "Please check your Nexus ConnectorDisconnectHandler and/or artifact configuration. Please use the 3.x ConnectorDisconnectHandler version.",
+          "Nexus 2.x ConnectorDisconnectHandler does not support docker artifact type.",
           new NexusRegistryException(
-              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+              String.format("Currently Nexus ConnectorDisconnectHandler version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       return nexusThreeService.getArtifactsVersions(nexusConfig, repositoryName, port, artifactName, repoFormat);
     }
@@ -161,10 +161,10 @@ public class NexusClientImpl {
       String artifactName, String repositoryFormat, String tag) {
     if (isNexusVersion2(nexusConfig)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
-          "Nexus 2.x connector does not support docker artifact type.",
+          "Please check your Nexus ConnectorDisconnectHandler and/or artifact configuration. Please use the 3.x ConnectorDisconnectHandler version.",
+          "Nexus 2.x ConnectorDisconnectHandler does not support docker artifact type.",
           new NexusRegistryException(
-              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+              String.format("Currently Nexus ConnectorDisconnectHandler version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       return nexusThreeService.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     }
@@ -174,10 +174,10 @@ public class NexusClientImpl {
       NexusRequest nexusConfig, String repository, String artifactName, String tag, boolean isV1) throws IOException {
     if (isNexusVersion2(nexusConfig)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
-          "Nexus 2.x connector does not support docker artifact type.",
+          "Please check your Nexus ConnectorDisconnectHandler and/or artifact configuration. Please use the 3.x ConnectorDisconnectHandler version.",
+          "Nexus 2.x ConnectorDisconnectHandler does not support docker artifact type.",
           new NexusRegistryException(
-              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+              String.format("Currently Nexus ConnectorDisconnectHandler version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       Response<DockerImageManifestResponse> response =
           nexusThreeService.fetchImageManifest(nexusConfig, repository, artifactName, isV1, tag);
@@ -188,10 +188,10 @@ public class NexusClientImpl {
   public List<BuildDetailsInternal> getPackageNames(NexusRequest nexusConfig, String repository, String groupName) {
     if (isNexusVersion2(nexusConfig)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
-          "Nexus 2.x connector does not support raw artifact type.",
+          "Please check your Nexus ConnectorDisconnectHandler and/or artifact configuration. Please use the 3.x ConnectorDisconnectHandler version.",
+          "Nexus 2.x ConnectorDisconnectHandler does not support raw artifact type.",
           new NexusRegistryException(
-              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
+              String.format("Currently Nexus ConnectorDisconnectHandler version [%s] is not allowed.", nexusConfig.getVersion())));
     } else {
       try {
         return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repository, groupName);

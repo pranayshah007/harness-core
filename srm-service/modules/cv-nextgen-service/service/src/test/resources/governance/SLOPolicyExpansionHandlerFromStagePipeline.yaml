@@ -23,7 +23,7 @@ pipeline:
             infrastructureDefinition:
               type: KubernetesDirect
               spec:
-                connectorRef: connector
+                connectorRef: ConnectorDisconnectHandler
                 namespace: abc
                 releaseName: release-<+INFRA_KEY>
             allowSimultaneousDeployments: false
@@ -64,7 +64,7 @@ pipeline:
             infrastructureDefinition:
               type: KubernetesDirect
               spec:
-                connectorRef: connector
+                connectorRef: ConnectorDisconnectHandler
                 namespace: zbc
                 releaseName: release-<+INFRA_KEY>
             allowSimultaneousDeployments: false

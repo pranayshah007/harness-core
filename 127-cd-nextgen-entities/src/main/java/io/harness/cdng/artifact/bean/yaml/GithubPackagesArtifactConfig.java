@@ -57,7 +57,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig")
 public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Git connector.
+   * Git ConnectorDisconnectHandler.
    */
   @NotNull
   @NotEmpty

@@ -27,7 +27,7 @@ import lombok.Data;
 @ApiModel("AwsFixedDelayBackoffStrategy")
 @Schema(name = "AwsFixedDelayBackoffStrategy",
     description = "Simple backoff strategy that always uses a fixed delay for the delay before the next retry attempt.")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.AwsFixedDelayBackoffStrategySpecDTO")
 public class AwsFixedDelayBackoffStrategySpecDTO implements AwsSdkClientBackoffStrategySpecDTO {
   long fixedBackoff;
   int retryCount;

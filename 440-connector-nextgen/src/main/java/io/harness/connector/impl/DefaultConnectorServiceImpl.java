@@ -181,7 +181,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
   EntitySetupUsageService entitySetupUsageService;
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
 
   @Override
   public Optional<ConnectorResponseDTO> get(
@@ -492,14 +492,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     String projectIdentifier = connectorDTO.getConnectorInfo().getProjectIdentifier();
 
     if (isNotEmpty(projectIdentifier)) {
-      // its a project level connector
+      // its a project level ConnectorDisconnectHandler
       if (isEmpty(orgIdentifier)) {
         throw new InvalidRequestException(
             String.format("Project %s specified without the org Identifier", projectIdentifier));
       }
       checkThatTheProjectExists(orgIdentifier, projectIdentifier, accountIdentifier);
     } else if (isNotEmpty(orgIdentifier)) {
-      // its a org level connector
+      // its a org level ConnectorDisconnectHandler
       checkThatTheOrganizationExists(orgIdentifier, accountIdentifier);
     }
   }
@@ -523,7 +523,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   /***
-   * Saves a connector
+   * Saves a ConnectorDisconnectHandler
    *
    * Note: Don't add any logic in create function, all logic should go inside createInternal method
    *
@@ -633,7 +633,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
     if (!existingConnectorOptional.isPresent()) {
       throw new InvalidRequestException(
-          format("No connector exists with the  Identifier %s", connector.getIdentifier()));
+          format("No ConnectorDisconnectHandler exists with the  Identifier %s", connector.getIdentifier()));
     }
     Connector existingConnector = existingConnectorOptional.get();
     final ConnectorResponseDTO oldConnectorDTO = connectorMapper.writeDTO(existingConnector);
@@ -659,7 +659,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             existingConnector.getIdentifier());
         newConnector.setHeartbeatPerpetualTaskId(
             connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
-        log.info("Started Heartbeat Perpetual task for connector {} with taskID {}",
+        log.info("Started Heartbeat Perpetual task for ConnectorDisconnectHandler {} with taskID {}",
             newConnector.getAccountIdentifier(),
             connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
       } else if (existingConnector.getHeartbeatPerpetualTaskId() != null) {
@@ -668,7 +668,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               accountIdentifier, existingConnector.getHeartbeatPerpetualTaskId());
           newConnector.setHeartbeatPerpetualTaskId(existingConnector.getHeartbeatPerpetualTaskId());
         } else {
-          log.info("Deleting Heartbeat Perpetual task for connector {} with taskID {}",
+          log.info("Deleting Heartbeat Perpetual task for ConnectorDisconnectHandler {} with taskID {}",
               existingConnector.getAccountIdentifier(), existingConnector.getHeartbeatPerpetualTaskId());
           connectorHeartbeatService.deletePerpetualTask(
               accountIdentifier, existingConnector.getHeartbeatPerpetualTaskId(), fullyQualifiedIdentifier);
@@ -705,12 +705,12 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Preconditions.checkNotNull(accountIdentifier, "The account identifier input cannot be null for the full sync");
     Preconditions.checkNotNull(orgIdentifier, "The org identifier input cannot be null for the full sync");
     Preconditions.checkNotNull(projectIdentifier, "The project identifier input cannot be null for the full sync");
-    Preconditions.checkNotNull(identifier, "The connector identifier input cannot be null for the full sync");
+    Preconditions.checkNotNull(identifier, "The ConnectorDisconnectHandler identifier input cannot be null for the full sync");
 
     Optional<Connector> existingConnectorOptional =
         getUnSyncedConnector(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (!existingConnectorOptional.isPresent()) {
-      throw new InvalidRequestException(format("No connector exists with the  Identifier %s", identifier));
+      throw new InvalidRequestException(format("No ConnectorDisconnectHandler exists with the  Identifier %s", identifier));
     }
     Connector connector = existingConnectorOptional.get();
     connector.setHeartbeatPerpetualTaskId(null);
@@ -851,7 +851,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     } catch (Exception e) {
       if (forceDelete) {
         log.warn(
-            "Exception occured while deleting references of connector {} with accountId {}, orgId {}, projectId {} - {} ",
+            "Exception occured while deleting references of ConnectorDisconnectHandler {} with accountId {}, orgId {}, projectId {} - {} ",
             connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier, e);
       } else {
         throw e;
@@ -899,11 +899,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     } catch (Exception ex) {
       log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
           connector.getIdentifier(), ex);
-      throw new UnexpectedException("Error while deleting the connector");
+      throw new UnexpectedException("Error while deleting the ConnectorDisconnectHandler");
     }
     if (isEntityReferenced) {
       throw new ReferencedEntityException(String.format(
-          "Could not delete the connector %s as it is referenced by other entities", connector.getIdentifier()));
+          "Could not delete the ConnectorDisconnectHandler %s as it is referenced by other entities", connector.getIdentifier()));
     }
   }
 
@@ -936,10 +936,10 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       return ConnectorValidationResult.builder()
           .status(FAILURE)
           .testedAt(System.currentTimeMillis())
-          .errorSummary("Invalid connector yaml")
+          .errorSummary("Invalid ConnectorDisconnectHandler yaml")
           .errors(Collections.singletonList(ErrorDetail.builder()
-                                                .message("Invalid connector yaml")
-                                                .reason("Invalid connector yaml")
+                                                .message("Invalid ConnectorDisconnectHandler yaml")
+                                                .reason("Invalid ConnectorDisconnectHandler yaml")
                                                 .code(400)
                                                 .build()))
           .build();
@@ -950,7 +950,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   /**
-   * This function tests connection for git connector with repo url from parameter.
+   * This function tests connection for git ConnectorDisconnectHandler with repo url from parameter.
    */
 
   public ConnectorValidationResult testGitRepoConnection(String accountIdentifier, String orgIdentifier,
@@ -960,8 +960,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     ConnectorValidationResult validationResult;
 
     if (connector.getCategories() != null & !connector.getCategories().contains(ConnectorCategory.CODE_REPO)) {
-      log.info("Test Connection failed for connector with identifier[{}] in account[{}] with error [{}]",
-          connector.getIdentifier(), accountIdentifier, "Non git connector is provided for repo verification");
+      log.info("Test Connection failed for ConnectorDisconnectHandler with identifier[{}] in account[{}] with error [{}]",
+          connector.getIdentifier(), accountIdentifier, "Non git ConnectorDisconnectHandler is provided for repo verification");
       validationResult = ConnectorValidationResult.builder().status(FAILURE).build();
       return validationResult;
     }
@@ -1002,11 +1002,11 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       validationResult = validateSafely(
           connectorResponseDTO, connectorInfo, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } catch (Exception ex) {
-      // generate secret usage for connector test
+      // generate secret usage for ConnectorDisconnectHandler test
       connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(accountIdentifier, connectorInfo, FAILURE);
       throw ex;
     }
-    // generate secret usage for connector test
+    // generate secret usage for ConnectorDisconnectHandler test
     connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(
         accountIdentifier, connectorInfo, validationResult.getStatus());
     return validationResult;
@@ -1046,7 +1046,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
 
     } catch (ConnectorValidationException | DelegateServiceDriverException ex) {
-      log.error("Test Connection failed for connector with identifier[{}] in account[{}]",
+      log.error("Test Connection failed for ConnectorDisconnectHandler with identifier[{}] in account[{}]",
           connectorInfo.getIdentifier(), accountIdentifier, ex);
       ConnectorValidationResultBuilder validationFailureBuilder = ConnectorValidationResult.builder();
       validationFailureBuilder.status(FAILURE).testedAt(System.currentTimeMillis());
@@ -1168,7 +1168,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             ()
                 -> new ConnectorNotFoundException(
                     format(
-                        "No connector found with identifier [%s] with accountidentifier [%s], orgIdentifier [%s] and projectIdentifier [%s]",
+                        "No ConnectorDisconnectHandler found with identifier [%s] with accountidentifier [%s], orgIdentifier [%s] and projectIdentifier [%s]",
                         identifier, accountIdentifier, orgIdentifier, projectIdentifier),
                     USER));
   }
@@ -1240,7 +1240,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
           })
           .orElseThrow(()
                            -> new ConnectorNotFoundException(
-                               String.format("No connector found with identifier %s", connectorIdentifier), USER));
+                               String.format("No ConnectorDisconnectHandler found with identifier %s", connectorIdentifier), USER));
     }
   }
 
@@ -1265,7 +1265,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     existingConnector.setObjectIdOfYaml(EntityObjectIdUtils.getObjectIdOfYaml(invalidYaml));
     connectorRepository.save(existingConnector, ChangeType.NONE);
     if (existingConnector.getHeartbeatPerpetualTaskId() != null) {
-      log.info("Reset invalid connector heartbeat");
+      log.info("Reset invalid ConnectorDisconnectHandler heartbeat");
       connectorHeartbeatService.resetPerpetualTask(accountIdentifier, existingConnector.getHeartbeatPerpetualTaskId());
     }
     return true;

@@ -16,7 +16,7 @@ import lombok.ToString;
 import lombok.Value;
 
 /*
- * Contains the jiraUrl and authToken (generated from the credentials provided in connector DTO)
+ * Contains the jiraUrl and authToken (generated from the credentials provided in ConnectorDisconnectHandler DTO)
  *
  * */
 @OwnedBy(CDC)

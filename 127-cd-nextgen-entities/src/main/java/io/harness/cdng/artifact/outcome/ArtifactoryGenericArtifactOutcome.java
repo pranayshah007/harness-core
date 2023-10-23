@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 // @TargetModule(878-pms-coupling)
 @RecasterAlias("io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome")
 public class ArtifactoryGenericArtifactOutcome implements ArtifactOutcome {
-  /** Artifactory hub registry connector. */
+  /** Artifactory hub registry ConnectorDisconnectHandler. */
   String connectorRef;
   /** Artifactory registry repository name. */
   String repositoryName;

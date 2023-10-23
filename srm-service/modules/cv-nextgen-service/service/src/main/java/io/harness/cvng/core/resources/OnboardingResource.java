@@ -49,8 +49,8 @@ public class OnboardingResource {
   @GET
   @Timed
   @ExceptionMetered
-  @Path("/connector")
-  @ApiOperation(value = "connector api response", nickname = "validateConnector")
+  @Path("/ConnectorDisconnectHandler")
+  @ApiOperation(value = "ConnectorDisconnectHandler api response", nickname = "validateConnector")
   public RestResponse<Void> validateConnector(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("tracingId") @NotNull String tracingId,

@@ -52,7 +52,7 @@ public class ConnectorEntityActivityEventHandler {
     String connectorIdentifier = entityRef.getIdentifier();
     String connectorMessage = String.format(
         CONNECTOR_STRING, connectorIdentifier, ngActivityDTO.getAccountIdentifier(), orgIdentifier, projectIdentifier);
-    log.info("Updating the connector activity result for the connector {}", connectorMessage);
+    log.info("Updating the ConnectorDisconnectHandler activity result for the ConnectorDisconnectHandler {}", connectorMessage);
     Long activityTime = null;
     ConnectorValidationResult connectorValidationResult = null;
     try (AutoLogContext ignore1 =
@@ -82,7 +82,7 @@ public class ConnectorEntityActivityEventHandler {
       }
       connectorService.updateActivityDetailsInTheConnector(accountIdentifier, orgIdentifier, projectIdentifier,
           connectorIdentifier, connectorValidationResult, activityTime);
-      log.info("Completed Updating the connector heartbeat result for the connector {}", connectorMessage);
+      log.info("Completed Updating the ConnectorDisconnectHandler heartbeat result for the ConnectorDisconnectHandler {}", connectorMessage);
     }
   }
 
@@ -99,7 +99,7 @@ public class ConnectorEntityActivityEventHandler {
   private void processUpdateEvent(IdentifierRef entityRef) {
     if (entityRef.getMetadata() != null
         && ConnectorType.getArtifactConnectorTypes().contains(entityRef.getMetadata().get(CONNECTOR_TYPE_NAME))) {
-      log.info("Resetting polling documents perpetual tasks for account {} , connector {}",
+      log.info("Resetting polling documents perpetual tasks for account {} , ConnectorDisconnectHandler {}",
           entityRef.getAccountIdentifier(), entityRef.getIdentifier());
       pollingService.resetPerpetualTasksForConnector(entityRef.getAccountIdentifier(), entityRef.getIdentifier());
     }

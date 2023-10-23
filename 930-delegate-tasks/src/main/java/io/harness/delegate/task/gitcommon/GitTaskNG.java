@@ -153,7 +153,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
                   gitRequestFileConfig.getIdentifier()),
             White, Bold));
     GitStoreDelegateConfig gitStoreDelegateConfig = gitRequestFileConfig.getGitStoreDelegateConfig();
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo;
     GitConfigDTO gitConfigDTO = null;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {

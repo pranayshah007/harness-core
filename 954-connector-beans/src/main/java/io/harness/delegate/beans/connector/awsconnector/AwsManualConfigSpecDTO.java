@@ -26,8 +26,8 @@ import lombok.Value;
 @JsonTypeName(AwsConstants.MANUAL_CONFIG)
 @ApiModel("AwsManualConfigSpec")
 @OneOfField(fields = {"accessKey", "accessKeyRef"})
-@Schema(name = "AwsManualConfigSpec", description = "This contains AWS manual credentials connector spec")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO")
+@Schema(name = "AwsManualConfigSpec", description = "This contains AWS manual credentials ConnectorDisconnectHandler spec")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.AwsManualConfigSpecDTO")
 public class AwsManualConfigSpecDTO implements AwsCredentialSpecDTO, DecryptableEntity {
   String accessKey;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData accessKeyRef;

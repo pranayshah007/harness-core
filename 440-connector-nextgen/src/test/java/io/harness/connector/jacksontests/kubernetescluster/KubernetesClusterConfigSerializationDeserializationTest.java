@@ -105,7 +105,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing k8s connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing k8s ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult =
         readFileAsString("440-connector-nextgen/src/test/resources/kubernetescluster/k8sConnector.json");
@@ -116,7 +116,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two k8s json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two k8s json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -130,7 +130,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing k8s connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing k8s ConnectorDisconnectHandler " + ex.getMessage());
     }
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTOForK8sConnector();
     ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorRequestDTO).build();
@@ -146,7 +146,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
     try {
       connectorString = objectMapper.writeValueAsString(kubernetesClusterConfig);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing k8s connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing k8s ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult =
         readFileAsString("440-connector-nextgen/src/test/resources/kubernetescluster/k8sClusterConfig.json");
@@ -157,7 +157,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two k8s json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two k8s json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -171,7 +171,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
     try {
       inputConnector = objectMapper.readValue(connectorInput, KubernetesClusterConfigDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing k8s connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing k8s ConnectorDisconnectHandler " + ex.getMessage());
     }
     assertThat(inputConnector).isEqualTo(createKubernetesConnectorRequestDTO());
   }

@@ -118,7 +118,7 @@ public class JenkinsRegistryUtils {
   public static final String ERROR_HINT = "Check if the Server is reachable from delegate";
   public static final String ERROR_MESSAGE_ARTIFACT_PATH = "Error in artifact paths from jenkins server";
   public static final String ERROR_HINT_ARTIFACT_PATH =
-      "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds";
+      "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Builds";
 
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
@@ -324,7 +324,7 @@ public class JenkinsRegistryUtils {
       });
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching job with details",
-          "Check if the Job exist, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          "Check if the Job exist, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Job details",
           new InvalidArtifactServerException("Failure in fetching job with details:", USER));
     }
   }
@@ -361,7 +361,7 @@ public class JenkinsRegistryUtils {
       });
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching build details",
-          "Check if the build exist, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          "Check if the build exist, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Job details",
           new InvalidArtifactServerException("Failure in fetching job with details:", USER));
     }
   }
@@ -481,7 +481,7 @@ public class JenkinsRegistryUtils {
       throw e;
     } catch (Exception ex) {
       throw NestedExceptionUtils.hintWithExplanationException("Error in fetching builds from jenkins server",
-          "Check if the Builds exist, permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          "Check if the Builds exist, permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Builds",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(ex), USER));
     }
   }
@@ -538,7 +538,7 @@ public class JenkinsRegistryUtils {
       });
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching job",
-          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Builds",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
   }
@@ -689,7 +689,7 @@ public class JenkinsRegistryUtils {
       throw e;
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException("Failed to trigger job %s with url: " + job.getUrl(),
-          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Builds",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
   }
@@ -728,7 +728,7 @@ public class JenkinsRegistryUtils {
               throw NestedExceptionUtils.hintWithExplanationException(
                   String.format("Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(),
                       e.getMessage()),
-                  "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+                  "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Job details",
                   new UnauthorizedException("Error retrieving job details at url", USER));
             }
           }
@@ -892,7 +892,7 @@ public class JenkinsRegistryUtils {
    * Creates build with new url and number
    *
    * @param build    existing build with Jenkins master URL
-   * @param buildUrl build url with Jenkins connector URL
+   * @param buildUrl build url with Jenkins ConnectorDisconnectHandler URL
    * @return new build.
    */
   private Build createBuild(Build build, String buildUrl, CustomJenkinsHttpClient jenkinsHttpClient) {

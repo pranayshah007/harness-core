@@ -166,7 +166,7 @@ public class HealthStatusServiceImpl implements HealthStatusService {
         cloudProvider.getAccountId(), billingPipelineRecordSettingId);
 
     if (billingDataPipelineRecord == null) {
-      // Case just after creating the connector.
+      // Case just after creating the ConnectorDisconnectHandler.
       return serialiseHealthStatusToPOJO(
           true, Collections.singletonList(SETTING_ATTRIBUTE_CREATED.getMessage()), lastS3SyncTimestamp);
     }

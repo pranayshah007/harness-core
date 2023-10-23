@@ -21,17 +21,17 @@ import lombok.Value;
 //@Builder -- do not add this
 public class ConnectorRegistrar {
   /**
-   * Category of the connector.
+   * Category of the ConnectorDisconnectHandler.
    */
   ConnectorCategory connectorCategory;
   /**
-   * The connector validator which will be executed during connector creation to check if connector is able to connect
+   * The ConnectorDisconnectHandler validator which will be executed during ConnectorDisconnectHandler creation to check if ConnectorDisconnectHandler is able to connect
    * or not.
    */
   Class<? extends ConnectionValidator> connectorValidator;
   /**
-   * The connector Validation Params provider helps in perpetual task based validation of connectors every 10 minutes on
-   * delegate agent to see if connector is able to connect.
+   * The ConnectorDisconnectHandler Validation Params provider helps in perpetual task based validation of connectors every 10 minutes on
+   * delegate agent to see if ConnectorDisconnectHandler is able to connect.
    * {@link ConnectorValidationHandler} needs to be implemented to execute heartbeat on delegate.
    */
   Class<? extends ConnectorValidationParamsProvider> connectorValidationParams;
@@ -44,7 +44,7 @@ public class ConnectorRegistrar {
    */
   Class<? extends ConnectorEntityToDTOMapper<?, ?>> connectorEntityToDTOMapper;
   /**
-   * The connector validation handler which will be executed during validation of connector to see if connector is able
+   * The ConnectorDisconnectHandler validation handler which will be executed during validation of ConnectorDisconnectHandler to see if ConnectorDisconnectHandler is able
    * to connect or not.
    */
   Class<? extends ConnectorValidationHandler> connectorValidationHandler;

@@ -381,7 +381,7 @@ public class ConnectorApiUtils {
     Connector connector = request.getConnector();
     ConnectorInfoDTO connectorInfo = toConnectorInfoDTO(connector);
     ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
-    // add javax validation here on connector dto
+    // add javax validation here on ConnectorDisconnectHandler dto
     Set<ConstraintViolation<ConnectorDTO>> violations = validator.validate(connectorDTO);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);

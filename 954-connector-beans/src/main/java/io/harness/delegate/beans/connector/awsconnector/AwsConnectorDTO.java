@@ -43,8 +43,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AwsConnector")
-@Schema(name = "AwsConnector", description = "This contains details of the AWS connector")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO")
+@Schema(name = "AwsConnector", description = "This contains details of the AWS ConnectorDisconnectHandler")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.AwsConnectorDTO")
 public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull AwsCredentialDTO credential;
   @Valid AwsSdkClientBackoffStrategyDTO awsSdkClientBackOffStrategyOverride;

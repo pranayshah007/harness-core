@@ -84,11 +84,11 @@ public class NexusHelper {
           return false;
         case 401:
           throw NestedExceptionUtils.hintWithExplanationException(
-              "Update the connector credentials with correct values", "The connector credentials are incorrect",
+              "Update the ConnectorDisconnectHandler credentials with correct values", "The ConnectorDisconnectHandler credentials are incorrect",
               new InvalidArtifactServerException("Invalid Nexus credentials", USER));
         case 405:
           throw NestedExceptionUtils.hintWithExplanationException(
-              "Ensure that the connector URL is correct & the provided credentials have all the required permissions",
+              "Ensure that the ConnectorDisconnectHandler URL is correct & the provided credentials have all the required permissions",
               "Failed to perform action",
               new InvalidArtifactServerException("Method not allowed " + response.message(), USER));
         default:
@@ -116,11 +116,11 @@ public class NexusHelper {
           return false;
         case 401:
           throw NestedExceptionUtils.hintWithExplanationException(
-              "Update the connector credentials with correct values", "The connector credentials are incorrect",
+              "Update the ConnectorDisconnectHandler credentials with correct values", "The ConnectorDisconnectHandler credentials are incorrect",
               new NexusRegistryException("Invalid Nexus credentials", USER));
         case 405:
           throw NestedExceptionUtils.hintWithExplanationException(
-              "Ensure that the connector URL is correct & the provided credentials have all the required permissions",
+              "Ensure that the ConnectorDisconnectHandler URL is correct & the provided credentials have all the required permissions",
               "Failed to perform action",
               new NexusRegistryException("Method not allowed: " + response.message(), USER));
         default:

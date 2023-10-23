@@ -106,7 +106,7 @@ public class GithubConnectorProcessorTest {
   private static final String APPLICATION_ID = "test-applicationId";
   private static final String EMAIL = "test-email@gmail.com";
   private static final String URL = "https://test-url";
-  private static final String CONNECTOR_NAME = "test-connector-name";
+  private static final String CONNECTOR_NAME = "test-ConnectorDisconnectHandler-name";
   private static final String DECRYPTED_SECRET_VALUE = "test-decrypted-value";
   private static final String TOKEN_SECRET_IDENTIFIER = "test-secret-identifier";
   private static final String GITHUB_APP_APPLICATION_ID = "test-github-app-id";

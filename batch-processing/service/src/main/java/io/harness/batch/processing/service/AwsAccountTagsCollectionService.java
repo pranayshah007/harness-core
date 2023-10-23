@@ -88,7 +88,7 @@ public class AwsAccountTagsCollectionService {
   }
 
   public void processAndInsertTags(CEAwsConnectorDTO ceAwsConnectorDTO, String accountId) {
-    String tableName = createBQTable(accountId); // This can be moved to connector creation part
+    String tableName = createBQTable(accountId); // This can be moved to ConnectorDisconnectHandler creation part
     log.info("awsAccountId: {}, roleArn: {}, externalId: {}", ceAwsConnectorDTO.getAwsAccountId(),
         ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
         ceAwsConnectorDTO.getCrossAccountAccess().getExternalId());

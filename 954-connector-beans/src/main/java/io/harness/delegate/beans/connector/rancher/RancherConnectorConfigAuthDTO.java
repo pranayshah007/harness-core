@@ -31,8 +31,8 @@ import org.hibernate.validator.constraints.URL;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(name = "RancherConnectorConfigAuth", description = "This contains rancher connector authentication details")
-@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO")
+@Schema(name = "RancherConnectorConfigAuth", description = "This contains rancher ConnectorDisconnectHandler authentication details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.rancher.RancherConnectorConfigAuthDTO")
 public class RancherConnectorConfigAuthDTO {
   @URL @NotNull @NotBlank String rancherUrl;
   @NotNull @JsonProperty("auth") @Valid RancherConnectorConfigAuthCredentialsDTO credentials;

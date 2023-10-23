@@ -22,7 +22,7 @@ import lombok.Data;
 public class DebeziumConfig {
   @JsonProperty("isEnabled") boolean isEnabled;
   /**
-   * Unique name for the connector. Attempting to register again with the same name will fail.
+   * Unique name for the ConnectorDisconnectHandler. Attempting to register again with the same name will fail.
    * (This property is required by all Kafka Connect connectors.)
    */
   @JsonProperty("name") String connectorName;
@@ -35,8 +35,8 @@ public class DebeziumConfig {
    */
   @JsonProperty("offset.storage.topic") private String offsetStorageTopic;
   /**
-   * A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector
-   * monitors. Each server should be monitored by at most one Debezium connector, since this server name prefixes
+   * A unique name that identifies the ConnectorDisconnectHandler and/or MongoDB replica set or sharded cluster that this ConnectorDisconnectHandler
+   * monitors. Each server should be monitored by at most one Debezium ConnectorDisconnectHandler, since this server name prefixes
    * all persisted Kafka topics emanating from the MongoDB replica set or cluster. Only alphanumeric characters
    * and underscores should be used.
    */
@@ -52,7 +52,7 @@ public class DebeziumConfig {
   /**
    * An optional comma-separated list of regular expressions that match fully-qualified namespaces for MongoDB
    * collections to be monitored; any collection not included in collection.include.list is excluded from monitoring.
-   * Each identifier is of the form databaseName.collectionName. By default the connector will monitor all collections
+   * Each identifier is of the form databaseName.collectionName. By default the ConnectorDisconnectHandler will monitor all collections
    * except those in the local and admin databases. Must not be used with collection.exclude.list.
    */
   @JsonProperty("collection.include.list") private String collectionIncludeList;
@@ -61,7 +61,7 @@ public class DebeziumConfig {
    */
   @JsonProperty("redisStreamSize") private int redisStreamSize;
   /**
-   * Specifies the criteria for running a snapshot upon startup of the connector. The value can be one of these: ("all"
+   * Specifies the criteria for running a snapshot upon startup of the ConnectorDisconnectHandler. The value can be one of these: ("all"
    * - both snapshot and streaming, "initial" - only snapshot, "never" - only streaming)
    */
   @JsonProperty("snapshot.mode") private String snapshotMode;
@@ -69,13 +69,13 @@ public class DebeziumConfig {
    * Positive integer value that specifies the maximum number of records that the blocking queue can hold. When Debezium
    * reads events streamed from the database, it places the events in the blocking queue before it writes them to Kafka.
    * The blocking queue can provide backpressure for reading change events from the database in cases where the
-   * connector ingests messages faster than it can write them to Kafka, or when Kafka becomes unavailable. Events that
-   * are held in the queue are disregarded when the connector periodically records offsets.
+   * ConnectorDisconnectHandler ingests messages faster than it can write them to Kafka, or when Kafka becomes unavailable. Events that
+   * are held in the queue are disregarded when the ConnectorDisconnectHandler periodically records offsets.
    */
   @JsonProperty("max.queue.size") private String maxQueueSize;
   /**
    * Positive integer value that specifies the maximum size of each batch of events that should be processed during
-   * each iteration of this connector.
+   * each iteration of this ConnectorDisconnectHandler.
    */
   @JsonProperty("max.batch.size") private String maxBatchSize;
   /**
@@ -86,14 +86,14 @@ public class DebeziumConfig {
    */
   @JsonProperty("max.queue.size.in.bytes") private long maxQueueSizeInBytes;
   /**
-   * Positive integer value that specifies the number of milliseconds the connector should wait during each iteration
+   * Positive integer value that specifies the number of milliseconds the ConnectorDisconnectHandler should wait during each iteration
    * for new change events to appear.
    */
   @JsonProperty("poll.interval.ms") private String pollIntervalMs;
   /**
    * Controls how frequently heartbeat messages are sent. This property contains an interval in milliseconds that
-   * defines how frequently the connector sends messages into a heartbeat topic. This can be used to monitor whether the
-   * connector is still receiving change events from the database.
+   * defines how frequently the ConnectorDisconnectHandler sends messages into a heartbeat topic. This can be used to monitor whether the
+   * ConnectorDisconnectHandler is still receiving change events from the database.
    */
   @JsonProperty("heartbeat.interval.ms") private String heartbeatIntervalMs;
   /**

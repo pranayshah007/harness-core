@@ -173,7 +173,7 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
       if (!checkFieldTemplatized(AppDynamicsStateKeys.applicationId, getTemplateExpressions())
           && !isExpression(AppDynamicsStateKeys.applicationId, applicationId, getTemplateExpressions())) {
         results.put("Invalid templatization for application",
-            "If connector is templatized then application should be either templatized or should be an expression");
+            "If ConnectorDisconnectHandler is templatized then application should be either templatized or should be an expression");
       }
     }
 

@@ -39,7 +39,7 @@ public class GitlabToGitMapper {
       if (gitlabHttpCredentialsDTO.getType() == GitlabHttpAuthenticationType.KERBEROS) {
         // todo(Deepak): please add when we add kerboros support in generic git.
         throw new InvalidRequestException(
-            "Git connector doesn't have configuration for " + gitlabHttpCredentialsDTO.getType());
+            "Git ConnectorDisconnectHandler doesn't have configuration for " + gitlabHttpCredentialsDTO.getType());
       }
       String username;
       SecretRefData usernameRef, passwordRef;

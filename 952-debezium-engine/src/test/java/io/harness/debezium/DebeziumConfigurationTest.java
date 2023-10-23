@@ -47,7 +47,7 @@ public class DebeziumConfigurationTest extends CategoryTest {
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_FLUSH_INTERVAL_MS, "5000");
     expectedProps.setProperty(DebeziumConfiguration.HEARTBEAT_INTERVAL_MS, debeziumConfig.getHeartbeatIntervalMs());
 
-    /* begin connector properties */
+    /* begin ConnectorDisconnectHandler properties */
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_CLASS, DebeziumConfiguration.MONGO_DB_CONNECTOR);
     expectedProps.setProperty(DebeziumConfiguration.MONGODB_NAME, debeziumConfig.getMongodbName());
     Optional.ofNullable(debeziumConfig.getFieldExcludeList())

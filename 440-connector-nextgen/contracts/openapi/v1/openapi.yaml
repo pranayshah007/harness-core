@@ -22,11 +22,11 @@ paths:
   /v1/connectors:
     post:
       summary: Create a Connector
-      operationId: create-account-scoped-connector
+      operationId: create-account-scoped-ConnectorDisconnectHandler
       responses:
         '201':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Creates a new connector
+      description: Creates a new ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -62,8 +62,8 @@ paths:
       x-internal: true
   '/v1/connectors/{connector}':
     get:
-      summary: Retrieve a connector
-      operationId: get-account-scoped-connector
+      summary: Retrieve a ConnectorDisconnectHandler
+      operationId: get-account-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -76,8 +76,8 @@ paths:
       security:
         - x-api-key: []
     put:
-      summary: Update a connector
-      operationId: update-account-scoped-connector
+      summary: Update a ConnectorDisconnectHandler
+      operationId: update-account-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -93,17 +93,17 @@ paths:
     parameters:
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
     delete:
-      summary: Delete a connector
-      operationId: delete-account-scoped-connector
+      summary: Delete a ConnectorDisconnectHandler
+      operationId: delete-account-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           description: OK
-      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
+      description: 'Deletes the information of the ConnectorDisconnectHandler with the matching ConnectorDisconnectHandler identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Account Connector
       parameters:
@@ -112,8 +112,8 @@ paths:
         - x-api-key: []
   '/v1/connectors/{connector}/test-connection':
     get:
-      summary: Test a connector
-      operationId: test-account-scoped-connector
+      summary: Test a ConnectorDisconnectHandler
+      operationId: test-account-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
@@ -128,18 +128,18 @@ paths:
     parameters:
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
   '/v1/orgs/{org}/connectors':
     post:
       summary: Create a Connector
-      operationId: create-org-scoped-connector
+      operationId: create-org-scoped-ConnectorDisconnectHandler
       responses:
         '201':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Creates a new connector
+      description: Creates a new ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -177,8 +177,8 @@ paths:
       x-internal: true
   '/v1/orgs/{org}/connectors/{connector}':
     get:
-      summary: Retrieve a connector
-      operationId: get-org-scoped-connector
+      summary: Retrieve a ConnectorDisconnectHandler
+      operationId: get-org-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -191,8 +191,8 @@ paths:
       security:
         - x-api-key: []
     put:
-      summary: Update a connector
-      operationId: update-org-scoped-connector
+      summary: Update a ConnectorDisconnectHandler
+      operationId: update-org-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -206,12 +206,12 @@ paths:
       security:
         - x-api-key: []
     delete:
-      summary: Delete a connector
-      operationId: delete-org-scoped-connector
+      summary: Delete a ConnectorDisconnectHandler
+      operationId: delete-org-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           description: OK
-      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
+      description: 'Deletes the information of the ConnectorDisconnectHandler with the matching ConnectorDisconnectHandler identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Org Connector
       parameters:
@@ -222,14 +222,14 @@ paths:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
   '/v1/orgs/{org}/connectors/{connector}/test-connection':
     get:
-      summary: Test a connector
-      operationId: test-org-scoped-connector
+      summary: Test a ConnectorDisconnectHandler
+      operationId: test-org-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
@@ -245,18 +245,18 @@ paths:
       - $ref: '#/components/parameters/OrgPathParam'
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
   '/v1/orgs/{org}/projects/{project}/connectors':
     post:
       summary: Create a Connector
-      operationId: create-project-scoped-connector
+      operationId: create-project-scoped-ConnectorDisconnectHandler
       responses:
         '201':
           $ref: '#/components/responses/ConnectorResponse'
-      description: Creates a new connector
+      description: Creates a new ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -295,8 +295,8 @@ paths:
       x-internal: true
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}':
     get:
-      summary: Retrieve a connector
-      operationId: get-project-scoped-connector
+      summary: Retrieve a ConnectorDisconnectHandler
+      operationId: get-project-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -309,8 +309,8 @@ paths:
       security:
         - x-api-key: []
     put:
-      summary: Update a connector
-      operationId: update-project-scoped-connector
+      summary: Update a ConnectorDisconnectHandler
+      operationId: update-project-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
@@ -324,12 +324,12 @@ paths:
       security:
         - x-api-key: []
     delete:
-      summary: Delete a connector
-      operationId: delete-project-scoped-connector
+      summary: Delete a ConnectorDisconnectHandler
+      operationId: delete-project-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           description: OK
-      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
+      description: 'Deletes the information of the ConnectorDisconnectHandler with the matching ConnectorDisconnectHandler identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Project Connector
       parameters:
@@ -341,14 +341,14 @@ paths:
       - $ref: '#/components/parameters/ProjectPathParam'
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}/test-connection':
     get:
-      summary: Test a connector
-      operationId: test-project-scoped-connector
+      summary: Test a ConnectorDisconnectHandler
+      operationId: test-project-scoped-ConnectorDisconnectHandler
       responses:
         '200':
           $ref: '#/components/responses/ConnectorTestConnectionResponse'
@@ -365,7 +365,7 @@ paths:
       - $ref: '#/components/parameters/ProjectPathParam'
       - schema:
           type: string
-        name: connector
+        name: ConnectorDisconnectHandler
         in: path
         required: true
         description: Connector identifier
@@ -451,11 +451,11 @@ components:
         created:
           type: integer
           format: int64
-          description: Creation timestamp for the connector
+          description: Creation timestamp for the ConnectorDisconnectHandler
         updated:
           type: integer
           format: int64
-          description: Updated timestamp for the connector
+          description: Updated timestamp for the ConnectorDisconnectHandler
         status:
           $ref: '#/components/schemas/ConnectorConnectivityDetail'
         harness_managed:
@@ -470,7 +470,7 @@ components:
         connector:
           $ref: '#/components/schemas/Connector'
       required:
-        - connector
+        - ConnectorDisconnectHandler
     Connector:
       type: object
       properties:
@@ -489,11 +489,11 @@ components:
           description: Connector description
         org:
           type: string
-          description: Organization identifier for connector
+          description: Organization identifier for ConnectorDisconnectHandler
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         project:
           type: string
-          description: Project identifier for connector
+          description: Project identifier for ConnectorDisconnectHandler
           pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
         tags:
           type: object
@@ -509,7 +509,7 @@ components:
     ConnectorSpec:
       title: ConnectorSpec
       type: object
-      description: Details of the connector defined in Harness
+      description: Details of the ConnectorDisconnectHandler defined in Harness
       required:
         - type
       discriminator:
@@ -543,11 +543,11 @@ components:
             - AzureClientCertificate
             - AzureInheritFromDelegateUserAssignedManagedIdentity
             - AzureInheritFromDelegateSystemAssignedManagedIdentity
-          description: This specifies the type of connector
+          description: This specifies the type of ConnectorDisconnectHandler
     GitHttpConnectorSpec:
       title: GitHttp
       x-discriminator-value: GitHttp
-      description: This contains details of the Generic Git http connector
+      description: This contains details of the Generic Git http ConnectorDisconnectHandler
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -556,7 +556,7 @@ components:
               type: string
               enum:
                 - GitHttp
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: Git repo url
@@ -595,7 +595,7 @@ components:
     GitHttpEncryptedConnectorSpec:
       title: GitHttpEncrypted
       x-discriminator-value: GitHttpEncrypted
-      description: This contains details of the Generic Git http connector
+      description: This contains details of the Generic Git http ConnectorDisconnectHandler
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -604,7 +604,7 @@ components:
               type: string
               enum:
                 - GitHttpEncrypted
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: Git repo url
@@ -643,7 +643,7 @@ components:
     GitSshConnectorSpec:
       title: GitSsh
       x-discriminator-value: GitSsh
-      description: This contains details of the Generic Git ssh connector
+      description: This contains details of the Generic Git ssh ConnectorDisconnectHandler
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -652,7 +652,7 @@ components:
               type: string
               enum:
                 - GitSsh
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: Git repo url
@@ -687,7 +687,7 @@ components:
     AppdynamicsConnectorSpec:
       title: Appdynamics
       x-discriminator-value: Appdynamics
-      description: This contains details of the appdynamics connector
+      description: This contains details of the appdynamics ConnectorDisconnectHandler
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -696,7 +696,7 @@ components:
               type: string
               enum:
                 - Appdynamics
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             delegate_selectors:
               type: array
               items:
@@ -721,7 +721,7 @@ components:
     AppdynamicsClientIdConnectorSpec:
       title: AppdynamicsClientId
       x-discriminator-value: AppdynamicsClientId
-      description: This contains details of the appdynamics connector with client secrets
+      description: This contains details of the appdynamics ConnectorDisconnectHandler with client secrets
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -754,7 +754,7 @@ components:
     ArtifactoryAnonymousConnectorSpec:
       title: ArtifactoryAnonymous
       x-discriminator-value: ArtifactoryAnonymous
-      description: This contains details of the artifactory connector with anonymous user
+      description: This contains details of the artifactory ConnectorDisconnectHandler with anonymous user
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -763,7 +763,7 @@ components:
               type: string
               enum:
                 - ArtifactoryAnonymous
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: artifactory repo url
@@ -781,7 +781,7 @@ components:
     ArtifactoryConnectorSpec:
       title: Artifactory
       x-discriminator-value: Artifactory
-      description: This contains details of the artifactory connector with username/password
+      description: This contains details of the artifactory ConnectorDisconnectHandler with username/password
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -790,7 +790,7 @@ components:
               type: string
               enum:
                 - Artifactory
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: artifactory repo url
@@ -816,7 +816,7 @@ components:
     ArtifactoryEncryptedConnectorSpec:
       title: ArtifactoryEncrypted
       x-discriminator-value: ArtifactoryEncrypted
-      description: This contains details of the artifactory connector with encrypted username/password
+      description: This contains details of the artifactory ConnectorDisconnectHandler with encrypted username/password
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -825,7 +825,7 @@ components:
               type: string
               enum:
                 - ArtifactoryEncrypted
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: artifactory repo url
@@ -851,7 +851,7 @@ components:
     AwsCodeCommitConnectorSpec:
       title: AwsCodeCommit
       x-discriminator-value: AwsCodeCommit
-      description: This contains details of the AWS code commit connector
+      description: This contains details of the AWS code commit ConnectorDisconnectHandler
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -860,7 +860,7 @@ components:
               type: string
               enum:
                 - AwsCodeCommit
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             url:
               type: string
               description: AWS codecommit repository url
@@ -892,7 +892,7 @@ components:
     AwsAccessKeyConnectorSpec:
       title: AwsAccessKey
       x-discriminator-value: AwsAccessKey
-      description: This contains details of the AWS connector and needs AWS access and secret keys for an AWS IAM user.
+      description: This contains details of the AWS ConnectorDisconnectHandler and needs AWS access and secret keys for an AWS IAM user.
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -901,7 +901,7 @@ components:
               type: string
               enum:
                 - AwsAccessKey
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             access_key:
               type: string
               description: AWS access key
@@ -933,7 +933,7 @@ components:
     AwsEncryptedAccessKeyConnectorSpec:
       title: AwsEncryptedAccessKey
       x-discriminator-value: AwsEncryptedAccessKey
-      description: This contains details of the AWS connector and needs AWS encrypted access and secret keys for an AWS IAM user.
+      description: This contains details of the AWS ConnectorDisconnectHandler and needs AWS encrypted access and secret keys for an AWS IAM user.
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -942,7 +942,7 @@ components:
               type: string
               enum:
                 - AwsEncryptedAccessKey
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             access_key_ref:
               type: string
               description: Reference to encrypted Harness secret for AWS access key
@@ -974,7 +974,7 @@ components:
     AwsIAMRoleConnectorSpec:
       title: AwsIAMRole
       x-discriminator-value: AwsIAMRole
-      description: This contains details of the AWS connector. This assume IAM role on Delegate and uses the IAM role of a Harness Delegate running in your AWS account.
+      description: This contains details of the AWS ConnectorDisconnectHandler. This assume IAM role on Delegate and uses the IAM role of a Harness Delegate running in your AWS account.
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -983,7 +983,7 @@ components:
               type: string
               enum:
                 - AwsIAMRole
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             cross_account_role_arn:
               type: string
               description: 'If you want to use one AWS account for the connection, but you want to deploy or build in a different AWS account. In this scenario, the AWS account used for AWS access in Credentials will assume the IAM role you specify in Cross-account role ARN setting. This option uses the AWS Security Token Service (STS) feature.'
@@ -1007,7 +1007,7 @@ components:
     AwsIRSAConnectorSpec:
       title: AwsIRSA
       x-discriminator-value: AwsIRSA
-      description: This contains details of the AWS connector. This uses IRSA and forces the Harness kubernetes delegate in AWS EKS to use a specific IAM role.
+      description: This contains details of the AWS ConnectorDisconnectHandler. This uses IRSA and forces the Harness kubernetes delegate in AWS EKS to use a specific IAM role.
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1016,7 +1016,7 @@ components:
               type: string
               enum:
                 - AwsIRSA
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             cross_account_role_arn:
               type: string
               description: 'If you want to use one AWS account for the connection, but you want to deploy or build in a different AWS account. In this scenario, the AWS account used for AWS access in Credentials will assume the IAM role you specify in Cross-account role ARN setting. This option uses the AWS Security Token Service (STS) feature.'
@@ -1049,7 +1049,7 @@ components:
               type: string
               enum:
                 - AwsKmsAccessKey
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             kms_arn:
               type: string
               description: Amazon Resource Name (ARN)
@@ -1079,7 +1079,7 @@ components:
     AwsKmsAssumeIAMConnectorSpec:
       title: AwsKmsAssumeIAM
       x-discriminator-value: AwsKmsAssumeIAM
-      description: 'This contains details of the AWS connector and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
+      description: 'This contains details of the AWS ConnectorDisconnectHandler and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1088,7 +1088,7 @@ components:
               type: string
               enum:
                 - AwsKmsAssumeIAM
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             kms_arn:
               type: string
               description: Amazon Resource Name (ARN)
@@ -1112,7 +1112,7 @@ components:
     AwsKmsAssumeSTSConnectorSpec:
       title: AwsKmsAssumeSTS
       x-discriminator-value: AwsKmsAssumeSTS
-      description: 'This contains details of the AWS connector and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
+      description: 'This contains details of the AWS ConnectorDisconnectHandler and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1121,7 +1121,7 @@ components:
               type: string
               enum:
                 - AwsKmsAssumeSTS
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             kms_arn:
               type: string
               description: Amazon Resource Name (ARN)
@@ -1163,7 +1163,7 @@ components:
               type: string
               enum:
                 - AwsSecretManagerAccessKey
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             region:
               type: string
               description: AWS Region for kms
@@ -1192,7 +1192,7 @@ components:
     AwsSecretManagerAssumeIAMConnectorSpec:
       title: AwsSecretManagerAssumeIAM
       x-discriminator-value: AwsSecretManagerAssumeIAM
-      description: 'This contains details of the AWS connector and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
+      description: 'This contains details of the AWS ConnectorDisconnectHandler and Harness will authenticate using the IAM role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1201,7 +1201,7 @@ components:
               type: string
               enum:
                 - AwsSecretManagerAssumeIAM
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             region:
               type: string
               description: AWS Region for kms
@@ -1223,7 +1223,7 @@ components:
     AwsSecretManagerAssumeSTSConnectorSpec:
       title: AwsSecretManagerAssumeSTS
       x-discriminator-value: AwsSecretManagerAssumeSTS
-      description: 'This contains details of the AWS connector and Harness will authenticate using the STS role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
+      description: 'This contains details of the AWS ConnectorDisconnectHandler and Harness will authenticate using the STS role assigned to the AWS host running the Delegate, you select using a Delegate Selector.'
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1232,7 +1232,7 @@ components:
               type: string
               enum:
                 - AwsSecretManagerAssumeSTS
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             region:
               type: string
               description: AWS Region for kms
@@ -1264,7 +1264,7 @@ components:
     AzureClientSecretKeyConnectorSpec:
       title: AzureClientSecretKey
       x-discriminator-value: AzureClientSecretKey
-      description: This contains details of the Azure connector and uses Azure client secret key details
+      description: This contains details of the Azure ConnectorDisconnectHandler and uses Azure client secret key details
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1273,7 +1273,7 @@ components:
               type: string
               enum:
                 - AzureClientSecretKey
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             delegate_selectors:
               type: array
               items:
@@ -1309,7 +1309,7 @@ components:
     AzureClientCertificateConnectorSpec:
       title: AzureClientCertificate
       x-discriminator-value: AzureClientCertificate
-      description: This contains details of the Azure connector and uses Azure client certificate details
+      description: This contains details of the Azure ConnectorDisconnectHandler and uses Azure client certificate details
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1318,7 +1318,7 @@ components:
               type: string
               enum:
                 - AzureClientCertificate
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             delegate_selectors:
               type: array
               items:
@@ -1354,7 +1354,7 @@ components:
     AzureInheritFromDelegateUserAssignedManagedIdentityConnectorSpec:
       title: AzureInheritFromDelegateUserAssignedManagedIdentity
       x-discriminator-value: AzureInheritFromDelegateUserAssignedManagedIdentity
-      description: This contains details of the Azure connector and for azure UserAssigned MSI auth details
+      description: This contains details of the Azure ConnectorDisconnectHandler and for azure UserAssigned MSI auth details
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1363,7 +1363,7 @@ components:
               type: string
               enum:
                 - AzureInheritFromDelegateUserAssignedManagedIdentity
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             delegate_selectors:
               type: array
               items:
@@ -1391,7 +1391,7 @@ components:
     AzureInheritFromDelegateSystemAssignedManagedIdentityConnectorSpec:
       title: AzureInheritFromDelegateSystemAssignedManagedIdentity
       x-discriminator-value: AzureInheritFromDelegateSystemAssignedManagedIdentity
-      description: This contains details of the Azure connector for contains azure MSI auth details
+      description: This contains details of the Azure ConnectorDisconnectHandler for contains azure MSI auth details
       allOf:
         - $ref: '#/components/schemas/ConnectorSpec'
         - type: object
@@ -1400,7 +1400,7 @@ components:
               type: string
               enum:
                 - AzureInheritFromDelegateSystemAssignedManagedIdentity
-              description: This specifies the type of connector
+              description: This specifies the type of ConnectorDisconnectHandler
             delegate_selectors:
               type: array
               items:

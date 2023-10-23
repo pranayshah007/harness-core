@@ -53,7 +53,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.BambooArtifactConfig")
 public class BambooArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Jenkins connector.
+   * Jenkins ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 

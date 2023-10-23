@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.spotconnector.SpotConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.spotconnector.SpotConfig")
 public class SpotConfig extends Connector {
   SpotCredentialType credentialType;
   SpotCredential credential;

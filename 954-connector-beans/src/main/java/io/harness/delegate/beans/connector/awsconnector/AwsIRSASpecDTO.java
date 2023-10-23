@@ -24,5 +24,5 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(AwsConstants.IRSA)
 @ApiModel("AwsIRSA")
-@Schema(name = "AwsIRSASpec", description = "This contains AWS IRSA connector spec")
+@Schema(name = "AwsIRSASpec", description = "This contains AWS IRSA ConnectorDisconnectHandler spec")
 public class AwsIRSASpecDTO implements AwsCredentialSpecDTO {}

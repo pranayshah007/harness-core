@@ -227,7 +227,7 @@ public class PreflightServiceImplTest extends CategoryTest {
             .errorInfo(PreFlightEntityErrorInfo.builder()
                            .causes(Collections.singletonList(PreFlightCause.builder().cause(exceptionMessage).build()))
                            .summary(String.format(
-                               "Exception encountered while checking connector responses. %s", exceptionMessage))
+                               "Exception encountered while checking ConnectorDisconnectHandler responses. %s", exceptionMessage))
                            .build())
             .build());
     when(connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(

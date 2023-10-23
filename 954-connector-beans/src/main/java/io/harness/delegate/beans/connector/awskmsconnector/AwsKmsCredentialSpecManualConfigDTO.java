@@ -32,7 +32,7 @@ import lombok.Data;
 @ApiModel("AwsKmsCredentialSpecManualConfig")
 @Schema(name = "AwsKmsCredentialSpecManualConfig",
     description = "This contains the AWS KMS Secret Manager's secret reference access key and secret key.")
-@RecasterAlias("io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialSpecManualConfigDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awskmsconnector.AwsKmsCredentialSpecManualConfigDTO")
 public class AwsKmsCredentialSpecManualConfigDTO implements AwsKmsCredentialSpecDTO {
   @SecretReference
   @ApiModelProperty(dataType = "string")

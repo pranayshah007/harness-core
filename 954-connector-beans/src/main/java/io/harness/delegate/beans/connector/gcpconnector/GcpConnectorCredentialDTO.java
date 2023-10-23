@@ -28,8 +28,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GcpConnectorCredential")
 @JsonDeserialize(using = GcpCredentialDTODeserializer.class)
-@Schema(name = "GcpConnectorCredential", description = "This contains GCP connector credentials")
-@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO")
+@Schema(name = "GcpConnectorCredential", description = "This contains GCP ConnectorDisconnectHandler credentials")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpconnector.GcpConnectorCredentialDTO")
 public class GcpConnectorCredentialDTO {
   @NotNull @JsonProperty("type") GcpCredentialType gcpCredentialType;
   @JsonProperty("spec")

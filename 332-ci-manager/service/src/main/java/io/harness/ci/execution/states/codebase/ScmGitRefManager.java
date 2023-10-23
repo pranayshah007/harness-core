@@ -98,8 +98,8 @@ public class ScmGitRefManager {
 
   public String getDefaultBranch(ScmConnector scmConnector, String connectorIdentifier) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
-        format("[Retrying failed call to get default branch for connector: [%s], attempt: {}", connectorIdentifier),
-        format("Failed call to get default branch for connector: [%s] after retrying {} times", connectorIdentifier));
+        format("[Retrying failed call to get default branch for ConnectorDisconnectHandler: [%s], attempt: {}", connectorIdentifier),
+        format("Failed call to get default branch for ConnectorDisconnectHandler: [%s] after retrying {} times", connectorIdentifier));
     PageRequestDTO pageRequestDTO = PageRequestDTO.builder().build();
     final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         Failsafe.with(retryPolicy)

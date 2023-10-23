@@ -32,7 +32,7 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
   private PdcInfrastructure infrastructure =
       PdcInfrastructure.builder()
           .credentialsRef(ParameterField.createValueField("some-key-ref"))
-          .connectorRef(ParameterField.createValueField("some-connector-ref"))
+          .connectorRef(ParameterField.createValueField("some-ConnectorDisconnectHandler-ref"))
           .hostFilter(HostFilter.builder()
                           .type(HostFilterType.HOST_NAMES)
                           .spec(HostNamesFilter.builder()
@@ -50,7 +50,7 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
     PdcInfrastructure infrastructureNew =
         PdcInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("another-key-ref"))
-            .connectorRef(ParameterField.createValueField("another-connector-ref"))
+            .connectorRef(ParameterField.createValueField("another-ConnectorDisconnectHandler-ref"))
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
                             .spec(HostNamesFilter.builder()
@@ -71,6 +71,6 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractAndGetConnectorRefs() {
     assertThat(infrastructure.extractConnectorRefs().get(YAMLFieldNameConstants.CONNECTOR_REF).getValue())
-        .isEqualTo("some-connector-ref");
+        .isEqualTo("some-ConnectorDisconnectHandler-ref");
   }
 }

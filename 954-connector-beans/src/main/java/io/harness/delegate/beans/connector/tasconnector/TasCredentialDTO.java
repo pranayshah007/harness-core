@@ -30,7 +30,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("TasCredential")
 @JsonDeserialize(using = TasCredentialDTODeserializer.class)
-@Schema(name = "TasCredential", description = "This contains Tas connector credentials")
+@Schema(name = "TasCredential", description = "This contains Tas ConnectorDisconnectHandler credentials")
 public class TasCredentialDTO {
   @NotNull @JsonProperty("type") TasCredentialType type;
   @JsonProperty("spec")

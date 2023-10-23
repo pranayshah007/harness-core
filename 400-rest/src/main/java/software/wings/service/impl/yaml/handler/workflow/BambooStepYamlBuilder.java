@@ -36,7 +36,7 @@ public class BambooStepYamlBuilder extends StepYamlBuilder {
     if (BAMBOO_CONFIG_ID.equals(name)) {
       String bambooConfigId = (String) objectValue;
       SettingAttribute bambooConfig = settingsService.get(bambooConfigId);
-      notNullCheck("Bamboo connector does not exist.", bambooConfig);
+      notNullCheck("Bamboo ConnectorDisconnectHandler does not exist.", bambooConfig);
       outputProperties.put(BAMBOO_CONFIG_NAME, bambooConfig.getName());
       return;
     }
@@ -49,7 +49,7 @@ public class BambooStepYamlBuilder extends StepYamlBuilder {
     if (BAMBOO_CONFIG_NAME.equals(name)) {
       String bambooConfigName = (String) objectValue;
       SettingAttribute bambooConfig = settingsService.getSettingAttributeByName(accountId, bambooConfigName);
-      notNullCheck(String.format("Bamboo connector %s does not exist.", bambooConfigName), bambooConfig);
+      notNullCheck(String.format("Bamboo ConnectorDisconnectHandler %s does not exist.", bambooConfigName), bambooConfig);
       outputProperties.put(BAMBOO_CONFIG_ID, bambooConfig.getUuid());
       return;
     }

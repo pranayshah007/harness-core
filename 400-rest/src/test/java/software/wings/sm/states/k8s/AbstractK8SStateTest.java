@@ -571,7 +571,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   private ApplicationManifest buildKustomizeAppManifest() {
     GitFileConfig gitFileConfig = GitFileConfig.builder()
                                       .filePath("${filePath}")
-                                      .connectorId("connector-id")
+                                      .connectorId("ConnectorDisconnectHandler-id")
                                       .useBranch(true)
                                       .branch("${branch}")
                                       .build();
@@ -1646,7 +1646,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     K8sApplyState k8sApplyState = mock(K8sApplyState.class);
     GitFileConfig remoteOverride = GitFileConfig.builder()
                                        .branch("master")
-                                       .connectorId("git-connector")
+                                       .connectorId("git-ConnectorDisconnectHandler")
                                        .filePathList(Arrays.asList("folder/v1.yaml", "folder/v2.yaml"))
                                        .build();
     k8sApplyState.setRemoteStepOverride(remoteOverride);

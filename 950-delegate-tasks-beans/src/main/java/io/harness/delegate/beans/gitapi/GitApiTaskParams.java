@@ -35,11 +35,11 @@ public class GitApiTaskParams implements TaskParameters, ExecutionCapabilityDema
   String repo;
   String owner;
   String slug;
-  String key; // TODO it will come via github app connector with encrypted details
-  String installId; // TODO it will come via github app connector with encrypted details
-  String appId; //  TODO it will come via github app connector
-  // private String token; //  TODO it will come via bitbucket/gitlab  connector details
-  String userName; //  TODO it will come via bitbucket/gitlab connector details
+  String key; // TODO it will come via github app ConnectorDisconnectHandler with encrypted details
+  String installId; // TODO it will come via github app ConnectorDisconnectHandler with encrypted details
+  String appId; //  TODO it will come via github app ConnectorDisconnectHandler
+  // private String token; //  TODO it will come via bitbucket/gitlab  ConnectorDisconnectHandler details
+  String userName; //  TODO it will come via bitbucket/gitlab ConnectorDisconnectHandler details
   ConnectorDetails connectorDetails; // Use connectorDetails to retrieve all information
   GitRepoType gitRepoType;
   @NotEmpty GitApiRequestType requestType;

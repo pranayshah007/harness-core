@@ -3042,7 +3042,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     validateUpdate(webhookTrigger);
 
     webHookTriggerCondition.setBranchName("master");
-    webHookTriggerCondition.setGitConnectorId("Git-connector");
+    webHookTriggerCondition.setGitConnectorId("Git-ConnectorDisconnectHandler");
     validateUpdate(webhookTrigger);
 
     webHookTriggerCondition.setGitConnectorId(UUID);

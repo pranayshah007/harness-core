@@ -250,10 +250,10 @@ public class YamlGitServiceImpl implements YamlGitService {
     notNullCheck("Git config does not exist", gitConfig);
 
     if (UrlType.ACCOUNT == gitConfig.getUrlType() && isBlank(ygs.getRepositoryName())) {
-      throw new GeneralException("Account level git connector must have repository name set");
+      throw new GeneralException("Account level git ConnectorDisconnectHandler must have repository name set");
     }
     if (UrlType.ACCOUNT != gitConfig.getUrlType() && isNotBlank(ygs.getRepositoryName())) {
-      throw new GeneralException("Repository level git connector must not have repository name set");
+      throw new GeneralException("Repository level git ConnectorDisconnectHandler must not have repository name set");
     }
 
     if (UrlType.ACCOUNT != gitConfig.getUrlType() && null != ygs.getRepositoryName()) {
@@ -275,7 +275,7 @@ public class YamlGitServiceImpl implements YamlGitService {
     if (EmptyPredicate.isNotEmpty(ygs.getGitConnectorId())) {
       SettingAttribute settingAttributeForGitConnector = settingsService.get(ygs.getGitConnectorId());
       if (settingAttributeForGitConnector == null) {
-        log.info(GIT_YAML_LOG_PREFIX + "Setting attribute deleted with connector Id [{}]", ygs.getGitConnectorId());
+        log.info(GIT_YAML_LOG_PREFIX + "Setting attribute deleted with ConnectorDisconnectHandler Id [{}]", ygs.getGitConnectorId());
         return null;
       }
       gitConfig = (GitConfig) settingAttributeForGitConnector.getValue();
@@ -795,8 +795,8 @@ public class YamlGitServiceImpl implements YamlGitService {
               .asList();
 
       if (isEmpty(settingAttributes)) {
-        log.info(GIT_YAML_LOG_PREFIX + "Git connector not found for account");
-        throw new InvalidRequestException("Git connector not found with webhook token " + webhookToken, USER);
+        log.info(GIT_YAML_LOG_PREFIX + "Git ConnectorDisconnectHandler not found for account");
+        throw new InvalidRequestException("Git ConnectorDisconnectHandler not found with webhook token " + webhookToken, USER);
       }
 
       String gitConnectorId = null;
@@ -812,7 +812,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       }
 
       if (isEmpty(gitConnectorId) || gitConfig == null) {
-        throw new InvalidRequestException("Git connector not found with webhook token " + webhookToken, USER);
+        throw new InvalidRequestException("Git ConnectorDisconnectHandler not found with webhook token " + webhookToken, USER);
       }
 
       boolean gitPingEvent = webhookEventUtils.isGitPingEvent(headers);
@@ -929,7 +929,7 @@ public class YamlGitServiceImpl implements YamlGitService {
         && UrlType.ACCOUNT == ((GitConfig) settingAttribute.getValue()).getUrlType()) {
       if (isEmpty(repositoryName)) {
         throw new IllegalArgumentException(
-            "Missing repository name when using account level git connector in webhook request attributes");
+            "Missing repository name when using account level git ConnectorDisconnectHandler in webhook request attributes");
       }
 
       return list.stream()

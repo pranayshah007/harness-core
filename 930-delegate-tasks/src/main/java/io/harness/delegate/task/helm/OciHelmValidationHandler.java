@@ -59,7 +59,7 @@ public class OciHelmValidationHandler implements ConnectorValidationHandler {
     String ociUrl = ociHelmConnectorDTO.getHelmRepoUrl();
     ConnectorValidationResultBuilder validationResultBuilder = ConnectorValidationResult.builder();
     try {
-      log.info("Running OciHelmValidationHandler for account {} connector {}", accountIdentifier,
+      log.info("Running OciHelmValidationHandler for account {} ConnectorDisconnectHandler {}", accountIdentifier,
           connectorValidationParams.getConnectorName());
 
       decryptEncryptedDetails(helmValidationParams);

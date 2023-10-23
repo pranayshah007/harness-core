@@ -53,7 +53,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig")
 public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * GoogleArtifactRegistry connector to connect to Google Artifact Registry.
+   * GoogleArtifactRegistry ConnectorDisconnectHandler to connect to Google Artifact Registry.
    */
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;

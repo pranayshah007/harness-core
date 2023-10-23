@@ -29,7 +29,7 @@ import io.harness.exception.InvalidRequestException;
 public class ServiceNowDTOtoEntity implements ConnectorDTOToEntityMapper<ServiceNowConnectorDTO, ServiceNowConnector> {
   @Override
   public ServiceNowConnector toConnectorEntity(ServiceNowConnectorDTO configDTO) {
-    // no change required after ServiceNow connector migration
+    // no change required after ServiceNow ConnectorDisconnectHandler migration
     ServiceNowConnectorBuilder serviceNowConnectorBuilder =
         ServiceNowConnector.builder()
             .serviceNowUrl(configDTO.getServiceNowUrl())

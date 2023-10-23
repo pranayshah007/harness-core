@@ -99,7 +99,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof BambooConnectorDTO)) {
       throw new InvalidRequestException(
-          String.format("Connector [%s] is not a bamboo connector", connectorRef), WingsException.USER);
+          String.format("Connector [%s] is not a bamboo ConnectorDisconnectHandler", connectorRef), WingsException.USER);
     }
 
     BambooConnectorDTO connectorDTO = (BambooConnectorDTO) configDTO;

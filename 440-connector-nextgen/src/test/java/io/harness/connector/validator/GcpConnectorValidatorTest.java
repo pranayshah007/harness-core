@@ -243,7 +243,7 @@ public class GcpConnectorValidatorTest extends CategoryTest {
     on(gcpValidationParamsProvider).set("encryptionHelper", encryptionHelper);
     ConnectorValidationResult connectorValidationResult =
         gcpValidationTaskHandler.validate(gcpValidationParamsProvider.getConnectorValidationParams(connectorInfoDTO,
-                                              "connector", "accountIdentifier", "projectIdentifier", "orgIdentifier"),
+                                              "ConnectorDisconnectHandler", "accountIdentifier", "projectIdentifier", "orgIdentifier"),
             "accountIdentifier");
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }

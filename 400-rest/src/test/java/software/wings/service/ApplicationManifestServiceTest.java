@@ -1220,7 +1220,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
             .name(APP_MANIFEST_NAME)
             .serviceId(SERVICE_ID)
             .storeType(StoreType.HelmChartRepo)
-            .helmChartConfig(HelmChartConfig.builder().connectorId("connector").chartName("name").build())
+            .helmChartConfig(HelmChartConfig.builder().connectorId("ConnectorDisconnectHandler").chartName("name").build())
             .kind(K8S_MANIFEST)
             .build();
 

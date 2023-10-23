@@ -141,7 +141,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
     assertThat(entityDetails.size()).isEqualTo(2);
     assertThat(entityDetails.get(1).getEntityRef().getIdentifier()).isEqualTo("azure");
     assertThat(entityDetails.get(1).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
-    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo("template-connector-ref");
+    assertThat(entityDetails.get(0).getEntityRef().getIdentifier()).isEqualTo("template-ConnectorDisconnectHandler-ref");
     assertThat(entityDetails.get(0).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
   }
 
@@ -341,7 +341,7 @@ public class AzureCreateBPStepTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     templateFileBuilder.setStore(templateStore);

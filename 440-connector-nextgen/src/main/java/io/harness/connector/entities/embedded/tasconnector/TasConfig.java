@@ -29,7 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.tasconnector.TasConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.tasconnector.TasConfig")
 public class TasConfig extends Connector {
   TasCredentialType credentialType;
   TasCredential credential;

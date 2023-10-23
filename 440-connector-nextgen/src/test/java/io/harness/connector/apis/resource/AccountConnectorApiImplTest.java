@@ -185,7 +185,7 @@ public class AccountConnectorApiImplTest extends CategoryTest {
                                  -> accountConnectorApi.createAccountScopedConnector(connectorRequest, account),
             InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage("harnessSecretManager cannot be used as connector identifier");
+    assertThat(thrown).hasMessage("harnessSecretManager cannot be used as ConnectorDisconnectHandler identifier");
   }
 
   @Test(expected = NotFoundException.class)
@@ -241,7 +241,7 @@ public class AccountConnectorApiImplTest extends CategoryTest {
     Throwable thrown = catchThrowableOfType(
         () -> accountConnectorApi.testAccountScopedConnector(identifier, account), ConnectorNotFoundException.class);
 
-    assertThat(thrown).hasMessage(String.format("No connector found with identifier %s", identifier));
+    assertThat(thrown).hasMessage(String.format("No ConnectorDisconnectHandler found with identifier %s", identifier));
   }
 
   @Test

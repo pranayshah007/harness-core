@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "OciHelmAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.helm.OciHelmUsernamePasswordAuthentication")
 public class OciHelmUsernamePasswordAuthentication implements OciHelmAuthentication {
   String username;
   String usernameRef;

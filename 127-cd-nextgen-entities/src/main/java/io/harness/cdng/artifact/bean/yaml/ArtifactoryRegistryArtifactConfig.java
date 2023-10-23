@@ -61,7 +61,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig")
 public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Artifactory registry connector.
+   * Artifactory registry ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

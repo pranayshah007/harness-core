@@ -11,7 +11,7 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 
 /**
- * Validation handler is called by heartbeat during perpetual task on validate to check if connector is working fine.
+ * Validation handler is called by heartbeat during perpetual task on validate to check if ConnectorDisconnectHandler is working fine.
  */
 
 public interface ConnectorValidationHandler {

@@ -462,7 +462,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
   public void testDoCollaborationProviders() {
     SettingAttribute jiraConnector = aSettingAttribute()
                                          .withAccountId(ACCOUNT_ID)
-                                         .withName("jira-connector")
+                                         .withName("jira-ConnectorDisconnectHandler")
                                          .withCategory(CONNECTOR)
                                          .withValue(JiraConfig.builder()
                                                         .baseUrl("https://test"
@@ -473,7 +473,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
                                          .build();
     SettingAttribute snowConnector = aSettingAttribute()
                                          .withAccountId(ACCOUNT_ID)
-                                         .withName("snow-connector")
+                                         .withName("snow-ConnectorDisconnectHandler")
                                          .withCategory(CONNECTOR)
                                          .withValue(ServiceNowConfig.builder()
                                                         .baseUrl("http://test.com")
@@ -500,7 +500,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
   public void testDoSourceRepoProviders() {
     SettingAttribute gitConnector = aSettingAttribute()
                                         .withAccountId(ACCOUNT_ID)
-                                        .withName("git-connector")
+                                        .withName("git-ConnectorDisconnectHandler")
                                         .withCategory(CONNECTOR)
                                         .withValue(GitConfig.builder()
                                                        .repoUrl("https://test"

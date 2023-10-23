@@ -86,7 +86,7 @@ public class CloudformationCreateStackStep
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-    // Template file connector
+    // Template file ConnectorDisconnectHandler
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepParameters.getSpec();
     CloudformationTemplateFileSpec cloudformationTemplateFileSpec =
@@ -116,7 +116,7 @@ public class CloudformationCreateStackStep
           });
     }
 
-    // AWS connector
+    // AWS ConnectorDisconnectHandler
     String connectorRef =
         getParameterFieldValue(cloudformationCreateStackStepParameters.getConfiguration().getConnectorRef());
     IdentifierRef identifierRef =

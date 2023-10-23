@@ -64,9 +64,9 @@ public class ServerlessExceptionConstants {
       + " logs for more details.";
 
   public final String SERVERLESS_GIT_FILES_DOWNLOAD_EXPLANATION = "Failed while trying to download files from manifest "
-      + "store connector: %s with identifier: %s";
+      + "store ConnectorDisconnectHandler: %s with identifier: %s";
 
-  public final String SERVERLESS_GIT_FILES_DOWNLOAD_HINT = "Please check manifest store connector with identifier: %s";
+  public final String SERVERLESS_GIT_FILES_DOWNLOAD_HINT = "Please check manifest store ConnectorDisconnectHandler with identifier: %s";
 
   public final String SERVERLESS_GIT_FILES_DOWNLOAD_FAILED = "Failed while trying to fetch files from manifest store ";
 

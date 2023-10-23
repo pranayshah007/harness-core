@@ -159,7 +159,7 @@ public class PreflightServiceImpl implements PreflightService {
       connectorCheckResponses = connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
           accountId, orgId, projectId, fqnToObjectMapMergedYaml, connectorUsages);
     } catch (Exception exception) {
-      log.error("Exception encountered while checking connector responses for preflightEntityId {}. {}",
+      log.error("Exception encountered while checking ConnectorDisconnectHandler responses for preflightEntityId {}. {}",
           preflightEntityId, exception.getMessage());
       connectorCheckResponses = Collections.singletonList(
           ConnectorCheckResponse.builder()
@@ -168,7 +168,7 @@ public class PreflightServiceImpl implements PreflightService {
                   PreFlightEntityErrorInfo.builder()
                       .causes(Collections.singletonList(PreFlightCause.builder().cause(exception.getMessage()).build()))
                       .summary(String.format(
-                          "Exception encountered while checking connector responses. %s", exception.getMessage()))
+                          "Exception encountered while checking ConnectorDisconnectHandler responses. %s", exception.getMessage()))
                       .build())
               .build());
     }

@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePassword")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketUsernamePassword")
 public class BitbucketUsernamePassword implements BitbucketHttpAuth {
   String username;
   String usernameRef;

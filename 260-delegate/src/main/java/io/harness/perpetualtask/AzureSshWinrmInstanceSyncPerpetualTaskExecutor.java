@@ -77,7 +77,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements Perpetual
       return executeTask(taskId, taskParams);
     } catch (IOException ioe) {
       throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
-          "Please check you Azure connector configuration or delegate filesystem permissions.",
+          "Please check you Azure ConnectorDisconnectHandler configuration or delegate filesystem permissions.",
           new AzureAuthenticationException(ioe.getMessage()));
     }
   }

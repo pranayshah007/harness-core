@@ -68,9 +68,9 @@ public class TerraformCloudValidationHandler implements ConnectorValidationHandl
   }
 
   private void handleFailedValidation(String message) {
-    throw new HintException("Check if your connector credentials are correct",
+    throw new HintException("Check if your ConnectorDisconnectHandler credentials are correct",
         NestedExceptionUtils.hintWithExplanationException("Check api token has permissions to get organizations",
-            "Failed to get organizations, Please check you Terraform cloud connector configuration.",
+            "Failed to get organizations, Please check you Terraform cloud ConnectorDisconnectHandler configuration.",
             new InvalidRequestException(message)));
   }
 }

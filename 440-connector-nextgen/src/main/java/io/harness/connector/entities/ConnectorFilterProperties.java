@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("io.harness.connector.entities.ConnectorFilterProperties")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.ConnectorFilterProperties")
 public class ConnectorFilterProperties extends FilterProperties {
   List<String> connectorNames;
   List<String> connectorIdentifiers;

@@ -66,13 +66,13 @@ public class UpdateConnectorDataFetcher
     }
 
     if (input.getConnectorType() == null) {
-      throw new InvalidRequestException("Invalid connector type provided");
+      throw new InvalidRequestException("Invalid ConnectorDisconnectHandler type provided");
     }
 
     SettingAttribute settingAttribute = settingsService.getByAccount(accountId, connectorId);
     if (settingAttribute == null || settingAttribute.getValue() == null
         || (CONNECTOR != settingAttribute.getCategory() && HELM_REPO != settingAttribute.getCategory())) {
-      throw new InvalidRequestException(String.format("No connector exists with the connectorId %s", connectorId));
+      throw new InvalidRequestException(String.format("No ConnectorDisconnectHandler exists with the connectorId %s", connectorId));
     }
 
     checkIfConnectorTypeMatchesTheInputType(settingAttribute.getValue().getType(), input.getConnectorType());
@@ -103,7 +103,7 @@ public class UpdateConnectorDataFetcher
   private void checkIfConnectorTypeMatchesTheInputType(String settingVariableType, QLConnectorType connectorType) {
     if (!settingVariableType.equals(connectorType.toString())) {
       throw new InvalidRequestException(
-          String.format("The existing connector is of type %s and the update operation inputs a connector of type %s",
+          String.format("The existing ConnectorDisconnectHandler is of type %s and the update operation inputs a ConnectorDisconnectHandler of type %s",
               settingVariableType, connectorType));
     }
   }

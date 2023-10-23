@@ -27,7 +27,7 @@ public class CEConnectorValidatorFactory {
       case GCP_CLOUD_COST:
         return injector.getInstance(CEGcpConnectorValidator.class);
       default:
-        log.error("Unknown connector type: {}", connectorType);
+        log.error("Unknown ConnectorDisconnectHandler type: {}", connectorType);
     }
     return null;
   }

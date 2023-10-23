@@ -383,9 +383,9 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doThrow(
         NestedExceptionUtils.hintWithExplanationException(
-            "Check if the URL is correct. Consider appending `/artifactory` to the connector endpoint if you have not already. Check artifact configuration (repository and artifact path field values).",
+            "Check if the URL is correct. Consider appending `/artifactory` to the ConnectorDisconnectHandler endpoint if you have not already. Check artifact configuration (repository and artifact path field values).",
 
-            "Artifactory connector URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate",
+            "Artifactory ConnectorDisconnectHandler URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate",
 
             new ArtifactoryServerException(
                 "Artifactory Server responded with Not Found.", ErrorCode.INVALID_ARTIFACT_SERVER, USER)))

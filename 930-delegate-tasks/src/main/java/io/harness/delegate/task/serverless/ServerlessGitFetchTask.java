@@ -133,7 +133,7 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
   private FetchFilesResult fetchManifestFile(ServerlessGitFetchFileConfig serverlessGitFetchFileConfig,
       LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
     GitStoreDelegateConfig gitStoreDelegateConfig = serverlessGitFetchFileConfig.getGitStoreDelegateConfig();
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo;
     GitConfigDTO gitConfigDTO = null;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {

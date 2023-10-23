@@ -21,7 +21,7 @@ import io.harness.encryption.SecretRefHelper;
 public class ServiceNowEntityToDTO implements ConnectorEntityToDTOMapper<ServiceNowConnectorDTO, ServiceNowConnector> {
   @Override
   public ServiceNowConnectorDTO createConnectorDTO(ServiceNowConnector connector) {
-    // no change required after ServiceNow connector migration
+    // no change required after ServiceNow ConnectorDisconnectHandler migration
     ServiceNowConnectorDTOBuilder serviceNowConnectorDTOBuilder =
         ServiceNowConnectorDTO.builder()
             .serviceNowUrl(connector.getServiceNowUrl())

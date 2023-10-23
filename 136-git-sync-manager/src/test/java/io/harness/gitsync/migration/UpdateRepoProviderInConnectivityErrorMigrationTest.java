@@ -39,14 +39,14 @@ public class UpdateRepoProviderInConnectivityErrorMigrationTest extends GitSyncT
                                       .accountIdentifier("accountIdentifier")
                                       .repoUrl("https://bitbucket.org/harness/harness-core")
                                       .branchName("master")
-                                      .completeFilePath(".harness/test/connector.yaml")
+                                      .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                       .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                       .build();
     GitSyncError githubError = GitSyncError.builder()
                                    .accountIdentifier("accountIdentifier")
                                    .repoUrl("https://github.com/harness/harness-core")
                                    .branchName("master")
-                                   .completeFilePath(".harness/test/connector.yaml")
+                                   .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                    .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                    .build();
     GitSyncError githubSaaSConnectivityError = GitSyncError.builder()

@@ -70,7 +70,7 @@ public class SplunkConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTe
   }
 
   private SettingAttribute createSplunkVerificationProvider(String splunkProviderName) {
-    // Generate Splunk verification connector
+    // Generate Splunk verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

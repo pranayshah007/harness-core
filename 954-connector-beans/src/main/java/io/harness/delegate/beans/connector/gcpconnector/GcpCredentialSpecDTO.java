@@ -15,5 +15,5 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonSubTypes({ @JsonSubTypes.Type(value = GcpManualDetailsDTO.class, name = GcpConstants.MANUAL_CONFIG) })
 @ApiModel("GcpCredentialSpec")
-@Schema(name = "GcpCredentialSpec", description = "This contains GCP connector credentials spec")
+@Schema(name = "GcpCredentialSpec", description = "This contains GCP ConnectorDisconnectHandler credentials spec")
 public interface GcpCredentialSpecDTO extends DecryptableEntity {}

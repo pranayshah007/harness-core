@@ -1,7 +1,7 @@
 connector:
-  # Name of the connector Required
-  name: "My git connector"
-  # Non-changeable identifier of the connector, can not contain spaces or special chars. REQUIRED
+  # Name of the ConnectorDisconnectHandler Required
+  name: "My git ConnectorDisconnectHandler"
+  # Non-changeable identifier of the ConnectorDisconnectHandler, can not contain spaces or special chars. REQUIRED
   identifier: "my_git_connector"
   # Org ID
   orgIdentifier: "Devops"

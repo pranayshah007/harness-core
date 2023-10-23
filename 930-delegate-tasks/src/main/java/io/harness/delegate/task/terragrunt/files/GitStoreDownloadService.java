@@ -164,7 +164,7 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
   private SshSessionConfig getSshSessionConfig(GitStoreDelegateConfig gitStoreDelegateConfig) {
     if (gitStoreDelegateConfig.getSshKeySpecDTO() == null) {
       throw new InvalidRequestException(
-          format("SSHKeySpecDTO is null for connector %s", gitStoreDelegateConfig.getConnectorName()));
+          format("SSHKeySpecDTO is null for ConnectorDisconnectHandler %s", gitStoreDelegateConfig.getConnectorName()));
     }
     return sshSessionConfigMapper.getSSHSessionConfig(
         gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

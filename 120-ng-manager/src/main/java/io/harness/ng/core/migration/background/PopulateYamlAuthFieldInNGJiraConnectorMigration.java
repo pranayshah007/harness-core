@@ -49,7 +49,7 @@ public class PopulateYamlAuthFieldInNGJiraConnectorMigration implements NGMigrat
   @Override
   public void migrate() {
     try {
-      log.info(DEBUG_LOG + "Starting migration to JiraAuthenticationDTO in Jira connector");
+      log.info(DEBUG_LOG + "Starting migration to JiraAuthenticationDTO in Jira ConnectorDisconnectHandler");
       List<JiraConnector> jiraConnectors = new ArrayList<>();
       try {
         Criteria jiraConnectorCriteria = Criteria.where(JiraConnector.ConnectorKeys.type).is(ConnectorType.JIRA);
@@ -67,7 +67,7 @@ public class PopulateYamlAuthFieldInNGJiraConnectorMigration implements NGMigrat
       for (JiraConnector jiraConnector : jiraConnectors) {
         if (!isNull(jiraConnector.getJiraAuthentication()) || !isNull(jiraConnector.getAuthType())) {
           log.info(String.format(
-              "%s Skipping since jira connector with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
+              "%s Skipping since jira ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
               DEBUG_LOG, jiraConnector.getIdentifier(), jiraConnector.getAccountIdentifier(),
               jiraConnector.getOrgIdentifier(), jiraConnector.getProjectIdentifier(),
               jiraConnector.getJiraAuthentication(), jiraConnector.getAuthType()));
@@ -80,9 +80,9 @@ public class PopulateYamlAuthFieldInNGJiraConnectorMigration implements NGMigrat
         }
         findAndModifyJiraConnector(jiraConnector, jiraAuthentication);
       }
-      log.info(DEBUG_LOG + "Migration of adding auth type and jira authentication to jira connector completed");
+      log.info(DEBUG_LOG + "Migration of adding auth type and jira authentication to jira ConnectorDisconnectHandler completed");
     } catch (Exception e) {
-      log.error(DEBUG_LOG + "Migration of adding auth type and jira authentication to jira connector failed", e);
+      log.error(DEBUG_LOG + "Migration of adding auth type and jira authentication to jira ConnectorDisconnectHandler failed", e);
     }
   }
 
@@ -99,7 +99,7 @@ public class PopulateYamlAuthFieldInNGJiraConnectorMigration implements NGMigrat
     } catch (Exception exception) {
       log.error(
           String.format(
-              "%s Failed trying to add jiraAuthentication for jira connector with identifier %s in account %s, org %s, project %s",
+              "%s Failed trying to add jiraAuthentication for jira ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s",
               DEBUG_LOG, jiraConnector.getIdentifier(), jiraConnector.getAccountIdentifier(),
               jiraConnector.getOrgIdentifier(), jiraConnector.getProjectIdentifier()),
           exception);
@@ -129,7 +129,7 @@ public class PopulateYamlAuthFieldInNGJiraConnectorMigration implements NGMigrat
     } catch (Exception exception) {
       log.error(
           String.format(
-              "%s Failed trying to save modified jira connector with identifier %s in account %s, org %s, project %s",
+              "%s Failed trying to save modified jira ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s",
               DEBUG_LOG, jiraConnector.getIdentifier(), jiraConnector.getAccountIdentifier(),
               jiraConnector.getOrgIdentifier(), jiraConnector.getProjectIdentifier()),
           exception);

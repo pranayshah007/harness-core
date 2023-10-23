@@ -19,7 +19,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "BillingExportDetailsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.ceazure.BillingExportDetails")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.ceazure.BillingExportDetails")
 public class BillingExportDetails {
   @NotNull String storageAccountName;
   @NotNull String containerName;

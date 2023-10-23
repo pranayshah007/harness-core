@@ -31,7 +31,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class SpotValidationHandler implements ConnectorValidationHandler {

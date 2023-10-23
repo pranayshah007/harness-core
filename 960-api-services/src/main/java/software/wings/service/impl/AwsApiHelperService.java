@@ -593,7 +593,7 @@ public class AwsApiHelperService {
     AwsSdkClientBackoffStrategyOverride awsSdkClientBackoffStrategyOverride =
         awsConfig.getAwsSdkClientBackoffStrategyOverride();
     if (awsSdkClientBackoffStrategyOverride != null) {
-      // use backoff strategy provided by aws connector
+      // use backoff strategy provided by aws ConnectorDisconnectHandler
       return getRetryPolicy(awsSdkClientBackoffStrategyOverride);
     }
 
@@ -775,11 +775,11 @@ public class AwsApiHelperService {
             new ArtifactServerException(errormessage, WingsException.USER));
       case 429:
         throw new InvalidRequestException(
-            "The connector provided had Rate limit exceeded while fetching repositories, Please check rate limit on connector's request",
+            "The ConnectorDisconnectHandler provided had Rate limit exceeded while fetching repositories, Please check rate limit on ConnectorDisconnectHandler's request",
             new InvalidArtifactServerException(errormessage, USER));
       case 403:
         throw new InvalidRequestException(
-            "connector provided does not have permissions granted to use Amazon ECR, Please verify that the user has been granted permissions to access that repository",
+            "ConnectorDisconnectHandler provided does not have permissions granted to use Amazon ECR, Please verify that the user has been granted permissions to access that repository",
             new InvalidArtifactServerException(errormessage, USER));
       default:
         throw new InvalidRequestException(

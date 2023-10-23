@@ -152,7 +152,7 @@ public class SCMDataObtainerTest extends CategoryTest {
                     .accountId("account")
                     .metadata(NGTriggerMetadata.builder()
                                   .webhook(WebhookMetadata.builder()
-                                               .git(GitMetadata.builder().connectorIdentifier("connector").build())
+                                               .git(GitMetadata.builder().connectorIdentifier("ConnectorDisconnectHandler").build())
                                                .build())
                                   .build())
                     .build())

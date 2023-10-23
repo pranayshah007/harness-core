@@ -69,7 +69,7 @@ public class PluginUtils {
       case CD_SSCA_ENFORCEMENT:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       default:
-        throw new ContainerStepExecutionException("Unhandled connector secret for step type: " + containerStepType);
+        throw new ContainerStepExecutionException("Unhandled ConnectorDisconnectHandler secret for step type: " + containerStepType);
     }
   }
 }

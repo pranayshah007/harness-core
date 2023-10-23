@@ -35,7 +35,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
-@RecasterAlias("io.harness.connector.ConnectorInfoOutcomeDTO")
+@RecasterAlias("io.harness.ConnectorDisconnectHandler.ConnectorInfoOutcomeDTO")
 public class ConnectorInfoOutcomeDTO {
   @NotNull @NotBlank @NGEntityName String name;
   @NotNull @NotBlank @EntityIdentifier String identifier;

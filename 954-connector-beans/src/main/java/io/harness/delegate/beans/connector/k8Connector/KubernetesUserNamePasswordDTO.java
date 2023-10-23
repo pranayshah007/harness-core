@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName(KubernetesConfigConstants.USERNAME_PASSWORD)
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "KubernetesUserNamePassword", description = "This contains kubernetes username password details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesUserNamePasswordDTO")
 public class KubernetesUserNamePasswordDTO extends KubernetesAuthCredentialDTO {
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;

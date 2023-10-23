@@ -332,7 +332,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
                 .match(match)
                 .build();
           } catch (Exception e) {
-            log.warn(String.format("Exception occurred while fetching connector details: %s", e.getMessage()));
+            log.warn(String.format("Exception occurred while fetching ConnectorDisconnectHandler details: %s", e.getMessage()));
           }
           return null;
         }));
@@ -341,7 +341,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
       List<CIRegistry> registries = completableFutures.allOf().get(10, TimeUnit.SECONDS);
       return registries.stream().filter(Objects::nonNull).collect(Collectors.toList());
     } catch (Exception ex) {
-      throw new UnexpectedException("Error fetching connector details response from service", ex);
+      throw new UnexpectedException("Error fetching ConnectorDisconnectHandler details response from service", ex);
     }
   }
 

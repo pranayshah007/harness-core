@@ -63,7 +63,7 @@ public class AzureCreateBPStepInfo
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    // Azure connector
+    // Azure ConnectorDisconnectHandler
     if (createStepBPConfiguration.getConnectorRef() != null) {
       connectorRefMap.put("configuration.spec.connectorRef", createStepBPConfiguration.getConnectorRef());
     }

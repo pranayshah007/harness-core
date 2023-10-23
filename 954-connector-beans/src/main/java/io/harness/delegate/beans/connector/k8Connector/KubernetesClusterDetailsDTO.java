@@ -24,7 +24,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonTypeName(KubernetesConfigConstants.MANUAL_CREDENTIALS)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterDetails", description = "This contains kubernetes cluster details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesClusterDetailsDTO")
 public class KubernetesClusterDetailsDTO implements KubernetesCredentialSpecDTO {
   @NotBlank @NotNull String masterUrl;
   @JsonProperty("auth") @NotNull @Valid KubernetesAuthDTO auth;

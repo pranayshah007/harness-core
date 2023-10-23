@@ -187,7 +187,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
 
       String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
       if (tokenRefIdentifier == null) {
-        throw new InvalidRequestException("Failed to get token identifier from connector");
+        throw new InvalidRequestException("Failed to get token identifier from ConnectorDisconnectHandler");
       }
       String constraintUnitIdentifier =
           CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;

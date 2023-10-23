@@ -342,7 +342,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
             .build();
 
     doReturn(ConnectorInfoDTO.builder()
-                 .identifier("http-helm-connector")
+                 .identifier("http-helm-ConnectorDisconnectHandler")
                  .connectorType(HTTP_HELM_REPO)
                  .connectorConfig(httpHelmConnectorConfig)
                  .build())
@@ -390,7 +390,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
             .build();
 
     doReturn(ConnectorInfoDTO.builder()
-                 .identifier("oci-helm-connector")
+                 .identifier("oci-helm-ConnectorDisconnectHandler")
                  .connectorType(OCI_HELM_REPO)
                  .connectorConfig(ociHelmConnectorDTO)
                  .build())
@@ -440,7 +440,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
             .build();
 
     doReturn(ConnectorInfoDTO.builder()
-                 .identifier("oci-helm-connector")
+                 .identifier("oci-helm-ConnectorDisconnectHandler")
                  .connectorType(OCI_HELM_REPO)
                  .connectorConfig(awsConnectorConfig)
                  .build())
@@ -544,7 +544,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
             .build();
 
     doReturn(ConnectorInfoDTO.builder()
-                 .identifier("aws-helm-connector")
+                 .identifier("aws-helm-ConnectorDisconnectHandler")
                  .connectorType(AWS)
                  .connectorConfig(awsConnectorConfig)
                  .build())
@@ -597,7 +597,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
             .build();
 
     doReturn(ConnectorInfoDTO.builder()
-                 .identifier("gcp-helm-connector")
+                 .identifier("gcp-helm-ConnectorDisconnectHandler")
                  .connectorType(GCP)
                  .connectorConfig(gcpConnectorDTO)
                  .build())

@@ -40,7 +40,7 @@ import org.hibernate.validator.constraints.URL;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(name = "HttpHelmConnector", description = "This contains http helm connector details")
+@Schema(name = "HttpHelmConnector", description = "This contains http helm ConnectorDisconnectHandler details")
 public class HttpHelmConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @URL @NotNull @NotBlank String helmRepoUrl;
   @Valid HttpHelmAuthenticationDTO auth;

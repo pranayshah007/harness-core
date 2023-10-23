@@ -574,7 +574,7 @@ paths:
       summary: Get Connector Info
       tags:
         - ConnectorInfo
-      operationId: get-connector-info
+      operationId: get-ConnectorDisconnectHandler-info
       responses:
         '200':
           $ref: '#/components/responses/ConnectorInfoResponse'
@@ -588,11 +588,11 @@ paths:
       summary: Create or Update Connector Info
       tags:
         - ConnectorInfo
-      operationId: save-connector-info
+      operationId: save-ConnectorDisconnectHandler-info
       responses:
         '201':
           $ref: '#/components/responses/ConnectorInfoResponse'
-      description: Create or update connector info
+      description: Create or update ConnectorDisconnectHandler info
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -608,8 +608,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ConnectorInfoResponse'
-      operationId: get-connector-info-by-providerType
-      description: Get connector info by connector provider type
+      operationId: get-ConnectorDisconnectHandler-info-by-providerType
+      description: Get ConnectorDisconnectHandler info by ConnectorDisconnectHandler provider type
       security:
         - x-api-key: []
       parameters:
@@ -1477,7 +1477,7 @@ components:
       x-stoplight:
         id: wpk4fmntpbtlj
       type: object
-      description: Details of IDP catalog connector
+      description: Details of IDP catalog ConnectorDisconnectHandler
       properties:
         connector:
           $ref: '#/components/schemas/ConnectorDetails'
@@ -1490,7 +1490,7 @@ components:
         path:
           type: string
       required:
-        - connector
+        - ConnectorDisconnectHandler
         - repo
         - branch
         - path

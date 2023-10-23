@@ -78,7 +78,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
                                           .entity(artifactStream)
                                           .build();
     Set<CgEntityId> children = Collections.emptySet();
-    // There is no connector for CUSTOM ARTIFACT SOURCE
+    // There is no ConnectorDisconnectHandler for CUSTOM ARTIFACT SOURCE
     if (!ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
       children = Collections.singleton(
           CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(artifactStream.getSettingId()).build());

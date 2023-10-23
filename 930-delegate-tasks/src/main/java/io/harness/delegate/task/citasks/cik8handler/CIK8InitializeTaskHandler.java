@@ -458,7 +458,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       }
 
       if (isNotEmpty(connectorDetailsMap)) {
-        log.info("Creating connector env variables for container {} present on pod: {}", containerParams.getName(),
+        log.info("Creating ConnectorDisconnectHandler env variables for container {} present on pod: {}", containerParams.getName(),
             podParams.getName());
         switch (containerParams.getContainerType()) {
           case LITE_ENGINE:

@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.AMIArtifactOutcome")
 public class AMIArtifactOutcome implements ArtifactOutcome {
   /**
-   * Azure Artifacts connector.
+   * Azure Artifacts ConnectorDisconnectHandler.
    */
   String connectorRef;
 

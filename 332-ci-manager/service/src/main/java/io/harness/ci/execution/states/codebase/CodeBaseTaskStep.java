@@ -216,7 +216,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       } else {
         if (isNotEmpty(manualExecutionSource.getPrNumber())) {
           throw new CIStageExecutionException(
-              "PR build type is not supported when api access is disabled in git connector or clone codebase is false");
+              "PR build type is not supported when api access is disabled in git ConnectorDisconnectHandler or clone codebase is false");
         }
         String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
         codebaseSweepingOutput = buildManualCodebaseSweepingOutput(manualExecutionSource, repoUrl);

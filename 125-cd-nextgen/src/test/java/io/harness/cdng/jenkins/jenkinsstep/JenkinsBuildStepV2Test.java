@@ -39,7 +39,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JenkinsBuildStepV2Test extends CategoryTest {
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final String JOB_NAME = "jobName";
   private static final Ambiance AMBIANCE = Ambiance.newBuilder().build();
 

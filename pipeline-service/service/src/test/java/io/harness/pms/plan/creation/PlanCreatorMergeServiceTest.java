@@ -186,7 +186,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     Options options = (Options) kryoSerializer.asObject(bytes);
     assertThat(options).isNotNull();
     assertThat(options.getRepository()).isNotNull();
-    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("connector");
+    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("ConnectorDisconnectHandler");
     assertThat(options.getRepository().getName().fetchFinalValue()).isEqualTo("harness-core");
 
     assertThat(options.getRegistry()).isNotNull();
@@ -236,7 +236,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     Options options = (Options) kryoSerializer.asObject(bytes);
     assertThat(options).isNotNull();
     assertThat(options.getRepository()).isNotNull();
-    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("connector");
+    assertThat(options.getRepository().getConnector().fetchFinalValue()).isEqualTo("ConnectorDisconnectHandler");
     assertThat(options.getRepository().getName().fetchFinalValue()).isEqualTo("harness-core");
     assertThat(options.getClone()).isNotNull();
     assertThat(options.getClone().getRef().fetchFinalValue()).isNotNull();

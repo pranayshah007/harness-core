@@ -16,5 +16,5 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonSubTypes(
     { @JsonSubTypes.Type(value = SpotPermanentTokenConfigSpecDTO.class, name = SpotConstants.PERMANENT_TOKEN_CONFIG) })
 @ApiModel("SpotCredentialSpec")
-@Schema(name = "SpotCredentialSpec", description = "This contains Spot connector credential spec")
+@Schema(name = "SpotCredentialSpec", description = "This contains Spot ConnectorDisconnectHandler credential spec")
 public interface SpotCredentialSpecDTO extends DecryptableEntity {}

@@ -158,7 +158,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
       String accountId, boolean closeLogStream) throws IOException {
     String identifier = gitFetchFilesConfig.getIdentifier();
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH
         ? "Branch: " + gitStoreDelegateConfig.getBranch()
         : "CommitId: " + gitStoreDelegateConfig.getCommitId();

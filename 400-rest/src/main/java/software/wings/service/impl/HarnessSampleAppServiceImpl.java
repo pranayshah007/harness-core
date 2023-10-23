@@ -195,7 +195,7 @@ public class HarnessSampleAppServiceImpl implements HarnessSampleAppService {
       health = Health.BAD;
     }
 
-    // Verify Docker connector
+    // Verify Docker ConnectorDisconnectHandler
     SettingAttribute existingDockerConnector = settingsService.fetchSettingAttributeByName(
         accountId, HARNESS_DOCKER_HUB_CONNECTOR, SettingVariableTypes.DOCKER);
     if (existingDockerConnector != null) {

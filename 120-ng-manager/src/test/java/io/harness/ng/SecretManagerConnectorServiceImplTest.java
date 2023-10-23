@@ -308,7 +308,7 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
       ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT_IDENTIFIER);
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidRequestException.class);
-      assertThat(ex.getMessage()).isEqualTo("Run time inputs of templates should be passed in connector.");
+      assertThat(ex.getMessage()).isEqualTo("Run time inputs of templates should be passed in ConnectorDisconnectHandler.");
     }
   }
 

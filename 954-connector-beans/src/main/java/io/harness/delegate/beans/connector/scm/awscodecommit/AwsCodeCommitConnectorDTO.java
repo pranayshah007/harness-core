@@ -41,7 +41,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AwsCodeCommitConnectorDTO")
-@Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit connector")
+@Schema(name = "AwsCodeCommitConnector", description = "This contains details of the AWS Code Commit ConnectorDisconnectHandler")
 public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull @JsonProperty("type") AwsCodeCommitUrlType urlType;
   @NotNull @NotBlank String url;

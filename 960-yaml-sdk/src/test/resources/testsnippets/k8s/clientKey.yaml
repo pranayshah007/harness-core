@@ -1,8 +1,8 @@
 connector:
   # Connector typ to access kubernetes cluster
-  # Name of the connector Required
+  # Name of the ConnectorDisconnectHandler Required
   name: "My k8s Cluster"
-  # Non-changeable identifier of the connector, can not contain spaces or special chars. REQUIRED
+  # Non-changeable identifier of the ConnectorDisconnectHandler, can not contain spaces or special chars. REQUIRED
   identifier: "my_k8s_cluster"
   type: K8sCluster
   spec:

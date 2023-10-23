@@ -32,7 +32,7 @@ public class GitUtilsManager {
   @Inject private SettingsService settingsService;
   public GitConfig getGitConfig(String sourceRepoSettingId) {
     SettingAttribute gitSettingAttribute = settingsService.get(sourceRepoSettingId);
-    notNullCheck("Git connector not found", gitSettingAttribute);
+    notNullCheck("Git ConnectorDisconnectHandler not found", gitSettingAttribute);
     if (!(gitSettingAttribute.getValue() instanceof GitConfig)) {
       throw new InvalidRequestException("Invalid Git Repo");
     }
@@ -47,7 +47,7 @@ public class GitUtilsManager {
   public static String fetchCompleteGitRepoUrl(GitConfig gitConfig, String repoName) {
     if (GitConfig.UrlType.ACCOUNT == gitConfig.getUrlType()) {
       if (StringUtils.isEmpty(repoName)) {
-        throw new InvalidRequestException("Repo name cannot be null for Account level git connector");
+        throw new InvalidRequestException("Repo name cannot be null for Account level git ConnectorDisconnectHandler");
       }
       String purgedRepoUrl = gitConfig.getRepoUrl().replaceAll("/*$", "");
       String purgedRepoName = repoName.replaceAll("^/*", "");

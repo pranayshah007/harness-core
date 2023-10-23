@@ -44,7 +44,7 @@ import org.hibernate.validator.constraints.URL;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureArtifactsConnector")
 @OwnedBy(HarnessTeam.CDC)
-@Schema(name = "AzureArtifactsConnector", description = "This contains details of AzureArtifacts connector")
+@Schema(name = "AzureArtifactsConnector", description = "This contains details of AzureArtifacts ConnectorDisconnectHandler")
 public class AzureArtifactsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   /**
    * Azure Artifacts Url
@@ -56,7 +56,7 @@ public class AzureArtifactsConnectorDTO extends ConnectorConfigDTO implements De
    */
   @Valid
   @NotNull
-  @Schema(description = "Details for authentication mechanism for AzureArtifacts connector")
+  @Schema(description = "Details for authentication mechanism for AzureArtifacts ConnectorDisconnectHandler")
   AzureArtifactsAuthenticationDTO auth;
 
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;

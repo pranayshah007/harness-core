@@ -460,12 +460,12 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testGetScmBatchGetFileTaskParams() {
     GitFileRequestV2 gitFileRequest1 = GitFileRequestV2.builder()
-                                           .connectorRef("connector-1")
+                                           .connectorRef("ConnectorDisconnectHandler-1")
                                            .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
     GitFileRequestV2 gitFileRequest2 = GitFileRequestV2.builder()
-                                           .connectorRef("connector-2")
+                                           .connectorRef("ConnectorDisconnectHandler-2")
                                            .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
@@ -483,7 +483,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
 
     GitFileRequestV2 gitFileRequest3 = GitFileRequestV2.builder()
-                                           .connectorRef("connector-2")
+                                           .connectorRef("ConnectorDisconnectHandler-2")
                                            .scope(getScope(accountIdentifier, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();
@@ -492,7 +492,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(responseParams.getGetFileTaskParamsPerConnectorList().size()).isEqualTo(2);
 
     GitFileRequestV2 gitFileRequest4 = GitFileRequestV2.builder()
-                                           .connectorRef("connector-2")
+                                           .connectorRef("ConnectorDisconnectHandler-2")
                                            .scope(getScope(null, orgIdentifier, projectIdentifier))
                                            .scmConnector(githubConnector)
                                            .build();

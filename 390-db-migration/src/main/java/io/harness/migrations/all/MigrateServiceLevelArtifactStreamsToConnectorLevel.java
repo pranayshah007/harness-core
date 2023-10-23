@@ -60,7 +60,7 @@ public class MigrateServiceLevelArtifactStreamsToConnectorLevel implements Migra
 
   @Override
   public void migrate() {
-    log.info("Migration Started - move service level artifact streams to connector level");
+    log.info("Migration Started - move service level artifact streams to ConnectorDisconnectHandler level");
     Account account = wingsPersistence.get(Account.class, ACCOUNT_ID);
     if (account == null) {
       log.info("Specified account not found. Not migrating artifact streams from services to connectors.");
@@ -68,7 +68,7 @@ public class MigrateServiceLevelArtifactStreamsToConnectorLevel implements Migra
     }
 
     migrateAccount(account.getUuid());
-    log.info("Migration Completed - move service level artifact streams to connector level");
+    log.info("Migration Completed - move service level artifact streams to ConnectorDisconnectHandler level");
   }
 
   private void migrateAccount(String accountId) {
@@ -206,7 +206,7 @@ public class MigrateServiceLevelArtifactStreamsToConnectorLevel implements Migra
                     .append(ArtifactStreamKeys.serviceId, savedSettingAttribute.getUuid())));
         updated++;
 
-        // Update all artifacts belonging to this artifact stream - set settingId to the new connector created above
+        // Update all artifacts belonging to this artifact stream - set settingId to the new ConnectorDisconnectHandler created above
         int updatedArtifacts = 0;
         boolean foundArtifacts = false;
         final DBCollection artifactCollection = wingsPersistence.getCollection(DEFAULT_STORE, "artifacts");

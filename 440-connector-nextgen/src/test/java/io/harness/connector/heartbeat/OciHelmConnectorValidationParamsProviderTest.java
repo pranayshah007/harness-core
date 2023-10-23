@@ -70,11 +70,11 @@ public class OciHelmConnectorValidationParamsProviderTest extends CategoryTest {
         .getEncryptionDetail(eq(credentials), eq("acc"), eq("org"), eq("prj"));
 
     ConnectorValidationParams validationParams =
-        provider.getConnectorValidationParams(connectorInfoDTO, "test-connector", "acc", "org", "prj");
+        provider.getConnectorValidationParams(connectorInfoDTO, "test-ConnectorDisconnectHandler", "acc", "org", "prj");
     assertThat(validationParams).isInstanceOf(OciHelmValidationParams.class);
     OciHelmValidationParams ociHelmValidationParams = (OciHelmValidationParams) validationParams;
     assertThat(ociHelmValidationParams.getOciHelmConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(ociHelmValidationParams.getConnectorName()).isEqualTo("test-connector");
+    assertThat(ociHelmValidationParams.getConnectorName()).isEqualTo("test-ConnectorDisconnectHandler");
     assertThat(ociHelmValidationParams.getConnectorType()).isEqualTo(ConnectorType.OCI_HELM_REPO);
     assertThat(ociHelmValidationParams.getEncryptionDataDetails()).isNotEmpty();
     assertThat(ociHelmValidationParams.getEncryptionDataDetails().get(0)).isEqualTo(encryptedDataDetail);
@@ -95,11 +95,11 @@ public class OciHelmConnectorValidationParamsProviderTest extends CategoryTest {
         .getEncryptionDetail(eq(null), eq("acc"), eq("org"), eq("prj"));
 
     ConnectorValidationParams validationParams =
-        provider.getConnectorValidationParams(connectorInfoDTO, "test-connector", "acc", "org", "prj");
+        provider.getConnectorValidationParams(connectorInfoDTO, "test-ConnectorDisconnectHandler", "acc", "org", "prj");
     assertThat(validationParams).isInstanceOf(OciHelmValidationParams.class);
     OciHelmValidationParams ociHelmValidationParams = (OciHelmValidationParams) validationParams;
     assertThat(ociHelmValidationParams.getOciHelmConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(ociHelmValidationParams.getConnectorName()).isEqualTo("test-connector");
+    assertThat(ociHelmValidationParams.getConnectorName()).isEqualTo("test-ConnectorDisconnectHandler");
     assertThat(ociHelmValidationParams.getConnectorType()).isEqualTo(ConnectorType.OCI_HELM_REPO);
     assertThat(ociHelmValidationParams.getEncryptionDataDetails()).isEmpty();
   }

@@ -24,7 +24,7 @@ public interface NGHostService {
    * @param accountIdentifier the account identifier
    * @param orgIdentifier the organization identifier
    * @param projectIdentifier the project identifier
-   * @param scopedConnectorIdentifier scoped connector identifier
+   * @param scopedConnectorIdentifier scoped ConnectorDisconnectHandler identifier
    * @param filter host names or host attributes filter
    * @param pageRequest page
    * @return list of hosts

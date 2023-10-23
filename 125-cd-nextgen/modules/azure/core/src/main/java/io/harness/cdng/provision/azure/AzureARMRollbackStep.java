@@ -108,7 +108,7 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(azureARMConfig.getConnectorRef(), ambiance);
     if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format(
-          "Invalid connector selected in Azure step. The connector type is %s. Please select a valid Azure connector",
+          "Invalid ConnectorDisconnectHandler selected in Azure step. The ConnectorDisconnectHandler type is %s. Please select a valid Azure ConnectorDisconnectHandler",
           connectorDTO.getConnectorType()));
     }
 

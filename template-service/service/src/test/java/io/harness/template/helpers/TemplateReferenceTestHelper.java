@@ -41,10 +41,10 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
 
   public static final String INVALID_IDENTIFIER_REF_YAML = "template:\n"
       + "  spec:\n"
-      + "    connector: abc";
+      + "    ConnectorDisconnectHandler: abc";
 
   public static final String DUMMY_INVALID_IDENTIFIER_REF_YAML = "Dummy:\n"
-      + "  connector: \"abc\"\n";
+      + "  ConnectorDisconnectHandler: \"abc\"\n";
 
   public static final String INVALID_YAML = "template:\n"
       + "  spec: {}";
@@ -52,10 +52,10 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
   public static final String DUMMY_INVALID_YAML = "Dummy: {}\n";
 
   public static final Map<String, String> metadata_StepTemplate =
-      new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, "spec.connector"));
+      new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, "spec.ConnectorDisconnectHandler"));
 
   public static final Map<String, String> metadata_StageTemplate = new HashMap<>(
-      Collections.singletonMap(PreFlightCheckMetadata.FQN, "stage.spec.execution.steps.jira.spec.connector"));
+      Collections.singletonMap(PreFlightCheckMetadata.FQN, "stage.spec.execution.steps.jira.spec.ConnectorDisconnectHandler"));
 
   public static final EntitySetupUsageDTO entitySetupUsage = EntitySetupUsageDTO.builder().build();
 

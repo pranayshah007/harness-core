@@ -30,13 +30,13 @@ public interface ScmConnector {
 
   /**
    * This method is used to fetch final git connection url to the repo
-   * If it is a REPO level connector, it should return its url directly
-   * If it is an ACCOUNT level connector, it should construct corresponding connection url for input repo
+   * If it is a REPO level ConnectorDisconnectHandler, it should return its url directly
+   * If it is an ACCOUNT level ConnectorDisconnectHandler, it should construct corresponding connection url for input repo
    */
   String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO);
   /**
    * This method is used to set gitConnection Url to the repo provided, instead of setting url, set gitConnectionUrl
-   * In case of ACCOUNT type connector, a connection url to Repo is required for further usecase
+   * In case of ACCOUNT type ConnectorDisconnectHandler, a connection url to Repo is required for further usecase
    */
   @JsonIgnore void setGitConnectionUrl(String url);
   // It will return already set gitConnection Url

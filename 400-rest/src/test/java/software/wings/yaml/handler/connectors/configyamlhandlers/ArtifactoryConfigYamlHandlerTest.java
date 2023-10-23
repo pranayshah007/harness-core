@@ -71,7 +71,7 @@ public class ArtifactoryConfigYamlHandlerTest extends SettingValueConfigYamlHand
   }
 
   private SettingAttribute createArtifactoryVerificationProvider(String ArtifactoryProviderName) {
-    // Generate Artifactory verification connector
+    // Generate Artifactory verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

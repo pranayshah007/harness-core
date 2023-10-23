@@ -52,7 +52,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig")
 public class GoogleCloudStorageArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * GCP connector to connect to Google Container Registry.
+   * GCP ConnectorDisconnectHandler to connect to Google Container Registry.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

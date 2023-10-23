@@ -61,7 +61,7 @@ public class CloudformationCreateStackStepInfo
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    // Extract connector refs from the step configuration
+    // Extract ConnectorDisconnectHandler refs from the step configuration
     if (cloudformationStepConfiguration.getConnectorRef() != null) {
       connectorRefMap.put("configuration.connectorRef", cloudformationStepConfiguration.getConnectorRef());
     }

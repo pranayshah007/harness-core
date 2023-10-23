@@ -30,8 +30,8 @@ public class AggregatorMetricsServiceImpl implements AggregatorMetricsService {
     this.aggregatorMongodbName = aggregatorConfiguration.getDebeziumConfig().getMongodbName();
   }
 
-  private static final String STREAMING_METRICS = "debezium.mongodb:type=connector-metrics,context=streaming,server=%s";
-  private static final String SNAPSHOT_METRICS = "debezium.mongodb:type=connector-metrics,context=snapshot,server=%s";
+  private static final String STREAMING_METRICS = "debezium.mongodb:type=ConnectorDisconnectHandler-metrics,context=streaming,server=%s";
+  private static final String SNAPSHOT_METRICS = "debezium.mongodb:type=ConnectorDisconnectHandler-metrics,context=snapshot,server=%s";
   private static final String NUMBER_OF_DISCONNECTS = "NumberOfDisconnects";
   private static final String NUMBER_OF_PRIMARY_ELECTIONS = "NumberOfPrimaryElections";
   private static final String MILLISECONDS_BEHIND_SOURCE = "MilliSecondsBehindSource";

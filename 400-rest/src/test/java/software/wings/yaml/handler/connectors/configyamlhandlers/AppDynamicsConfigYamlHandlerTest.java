@@ -68,7 +68,7 @@ public class AppDynamicsConfigYamlHandlerTest extends SettingValueConfigYamlHand
   }
 
   private SettingAttribute createAppdynamicsVerificationProvider(String appdProviderName) {
-    // Generate appdynamics verification connector
+    // Generate appdynamics verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

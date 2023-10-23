@@ -114,7 +114,7 @@ public class K8sDeploymentTests extends AbstractFunctionalTest {
 
     InfrastructureDefinitions infraDefinitionType = null;
 
-    // create jenkins artifact stream at connector level
+    // create jenkins artifact stream at ConnectorDisconnectHandler level
     ArtifactStream artifactStream = artifactStreamManager.ensurePredefined(
         seed, owners, ArtifactStreamManager.ArtifactStreams.HARNESS_SAMPLE_DOCKER_AT_CONNECTOR, true);
     assertThat(artifactStream).isNotNull();

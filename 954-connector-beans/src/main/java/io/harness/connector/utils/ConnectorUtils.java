@@ -24,7 +24,7 @@ public class ConnectorUtils {
   public void checkForConnectorValidityOrThrow(ConnectorResponseDTO connector) {
     if (!connector.getEntityValidityDetails().isValid()) {
       throw new InvalidRequestException(
-          format("Connector for identifier [%s] is invalid. Please fix the connector YAML.",
+          format("Connector for identifier [%s] is invalid. Please fix the ConnectorDisconnectHandler YAML.",
               connector.getConnector().getIdentifier()),
           WingsException.USER);
     }

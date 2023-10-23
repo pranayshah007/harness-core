@@ -122,7 +122,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-    // Template file connector
+    // Template file ConnectorDisconnectHandler
     AzureCreateBPStepParameters azureCreateBPStepParameters = (AzureCreateBPStepParameters) stepParameters.getSpec();
     AzureTemplateFile azureCreateTemplateFile = azureCreateBPStepParameters.getConfiguration().getTemplateFile();
 
@@ -134,7 +134,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
       EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
       entityDetailList.add(entityDetail);
     }
-    // Azure connector
+    // Azure ConnectorDisconnectHandler
     String connectorRef = azureCreateBPStepParameters.getConfiguration().getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -198,7 +198,7 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
     ConnectorInfoDTO connectorDTO =
         cdStepHelper.getConnector(azureCreateBPStepConfigurationParameters.getConnectorRef().getValue(), ambiance);
     if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException("Invalid connector selected in Azure step. Select Azure connector");
+      throw new InvalidRequestException("Invalid ConnectorDisconnectHandler selected in Azure step. Select Azure ConnectorDisconnectHandler");
     }
     if (ManifestStoreType.isInGitSubset(
             azureCreateBPStepConfigurationParameters.getTemplateFile().getStore().getSpec().getKind())) {

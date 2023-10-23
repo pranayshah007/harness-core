@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "S3BucketDetailsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.ceawsconnector.S3BucketDetails")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.ceawsconnector.S3BucketDetails")
 public class S3BucketDetails {
   String s3BucketName;
   String s3Prefix;

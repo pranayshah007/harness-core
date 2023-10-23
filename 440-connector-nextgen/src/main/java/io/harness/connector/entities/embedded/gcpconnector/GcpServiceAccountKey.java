@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gcpconnector.GcpServiceAccountKey")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpconnector.GcpServiceAccountKey")
 public class GcpServiceAccountKey implements GcpCredential {
   String secretKeyRef;
 }

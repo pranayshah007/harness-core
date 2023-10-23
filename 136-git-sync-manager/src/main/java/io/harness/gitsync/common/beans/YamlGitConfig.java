@@ -68,9 +68,9 @@ public class YamlGitConfig implements PersistentEntity, UuidAware, CreatedAtAwar
   @NotEmpty String gitConnectorRef;
 
   /*
-   * The git connector which we are using to do full sync can be one of the default connector
+   * The git ConnectorDisconnectHandler which we are using to do full sync can be one of the default ConnectorDisconnectHandler
    * or it might belong to a repo and branch.
-   * We are storing the repo and branch of the connector, so that when we need to do get connector,
+   * We are storing the repo and branch of the ConnectorDisconnectHandler, so that when we need to do get ConnectorDisconnectHandler,
    * we can use this repo and branch.
    *
    * For more detail refer:

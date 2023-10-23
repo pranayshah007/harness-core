@@ -206,7 +206,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
       return connectorDTO.get().getConnectorInfo();
     } catch (Exception e) {
       throw new InvalidRequestException(
-          format("Error while getting connector information : [%s]", connectorIdentifierRef));
+          format("Error while getting ConnectorDisconnectHandler information : [%s]", connectorIdentifierRef));
     }
   }
 

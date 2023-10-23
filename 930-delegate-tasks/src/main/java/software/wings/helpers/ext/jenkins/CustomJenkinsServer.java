@@ -78,7 +78,7 @@ public class CustomJenkinsServer extends JenkinsServer {
   }
 
   /**
-   * Creates new job with Jenkins connector URL
+   * Creates new job with Jenkins ConnectorDisconnectHandler URL
    *
    * @param jobWithExtendedDetails the job with extended details
    * @param folder                 the folder or {@code null}

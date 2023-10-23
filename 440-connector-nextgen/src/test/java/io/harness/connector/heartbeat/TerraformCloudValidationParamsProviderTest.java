@@ -71,7 +71,7 @@ public class TerraformCloudValidationParamsProviderTest extends CategoryTest {
     assertThat(executionCapabilityList)
         .contains(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(URL, null));
     assertThat(executionCapabilityList)
-        .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("connector").build());
+        .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("ConnectorDisconnectHandler").build());
   }
 
   private ConnectorInfoDTO getConnectorInfoDTO() {

@@ -30,7 +30,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("TerraformCloudCredential")
-@Schema(name = "TerraformCloudCredential", description = "This contains Terraform Cloud connector credentials")
+@Schema(name = "TerraformCloudCredential", description = "This contains Terraform Cloud ConnectorDisconnectHandler credentials")
 public class TerraformCloudCredentialDTO {
   @NotNull @JsonProperty("type") TerraformCloudCredentialType type;
   @JsonProperty("spec")

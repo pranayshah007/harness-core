@@ -127,7 +127,7 @@ public class AzureCommonHelperTest extends CategoryTest {
             .url("url")
             .build();
     GithubStore store = GithubStore.builder()
-                            .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                            .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                             .folderPath(ParameterField.createValueField("folderPath"))
                             .build();
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
@@ -172,7 +172,7 @@ public class AzureCommonHelperTest extends CategoryTest {
             .url("url")
             .build();
     GithubStore store = GithubStore.builder()
-                            .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                            .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                             .folderPath(ParameterField.createValueField("folderPath"))
                             .build();
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
@@ -203,7 +203,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
     StoreConfigWrapper store = StoreConfigWrapper.builder()
                                    .spec(GithubStore.builder()
-                                             .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                                             .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                                              .folderPath(ParameterField.createValueField("folderPath"))
                                              .build())
                                    .build();
@@ -268,7 +268,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     AzureTemplateFile templateFile = new AzureTemplateFile();
     StoreConfigWrapper store = StoreConfigWrapper.builder()
                                    .spec(GithubStore.builder()
-                                             .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                                             .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                                              .folderPath(ParameterField.createValueField("folderPath"))
                                              .build())
                                    .build();
@@ -334,7 +334,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     AzureCreateARMResourceParameterFile parameterFile = new AzureCreateARMResourceParameterFile();
     StoreConfigWrapper store = StoreConfigWrapper.builder()
                                    .spec(GithubStore.builder()
-                                             .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                                             .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                                              .folderPath(ParameterField.createValueField("folderPath"))
                                              .build())
                                    .build();
@@ -354,7 +354,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     StoreConfigWrapper store =
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .paths(ParameterField.<List<String>>builder().value(Arrays.asList("thisIsAPath")).build())
                       .build())
             .build();
@@ -415,7 +415,7 @@ public class AzureCommonHelperTest extends CategoryTest {
                     .build())
             .build();
     GithubStore store = GithubStore.builder()
-                            .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                            .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                             .folderPath(ParameterField.createValueField("folderPath"))
                             .build();
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()

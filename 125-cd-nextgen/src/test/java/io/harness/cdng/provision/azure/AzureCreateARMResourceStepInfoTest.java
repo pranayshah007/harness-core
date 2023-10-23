@@ -42,7 +42,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -53,7 +53,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -103,7 +103,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -114,7 +114,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -144,7 +144,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("parameters-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -174,7 +174,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -196,7 +196,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -227,7 +227,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -258,7 +258,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -289,7 +289,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -318,7 +318,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -350,7 +350,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -379,7 +379,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -410,7 +410,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>(Collections.singletonList("foobar"))))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
     AzureCreateARMResourceParameterFile parametersFileBuilder = new AzureCreateARMResourceParameterFile();
@@ -438,11 +438,11 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
     StoreConfigWrapper fileStoreConfigWrapper =
         StoreConfigWrapper.builder()
             .spec(
-                GithubStore.builder().connectorRef(ParameterField.createValueField("parameters-connector-ref")).build())
+                GithubStore.builder().connectorRef(ParameterField.createValueField("parameters-ConnectorDisconnectHandler-ref")).build())
             .build();
     StoreConfigWrapper configStoreConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("template-connector-ref")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref")).build())
             .build();
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFile.setStore(configStoreConfigWrapper);
@@ -455,9 +455,9 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
     assertThat(parameterFieldMap.size()).isEqualTo(3);
     assertThat(parameterFieldMap.get("configuration.spec.connectorRef").getValue()).isEqualTo("azConnectorRef");
     assertThat(parameterFieldMap.get("configuration.spec.templateFile.store.spec.connectorRef").getValue())
-        .isEqualTo("template-connector-ref");
+        .isEqualTo("template-ConnectorDisconnectHandler-ref");
     assertThat(parameterFieldMap.get("configuration.spec.parameters.store.spec.connectorRef").getValue())
-        .isEqualTo("parameters-connector-ref");
+        .isEqualTo("parameters-ConnectorDisconnectHandler-ref");
   }
 
   @Test
@@ -468,7 +468,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
     AzureTemplateFile templateFile = new AzureTemplateFile();
     StoreConfigWrapper configStoreConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("template-connector-ref")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref")).build())
             .build();
     templateFile.setStore(configStoreConfigWrapper);
     azureCreateStepInfo.setCreateStepBPConfiguration(
@@ -480,7 +480,7 @@ public class AzureCreateARMResourceStepInfoTest extends CategoryTest {
     assertThat(parameterFieldMap.size()).isEqualTo(2);
     assertThat(parameterFieldMap.get("configuration.spec.connectorRef").getValue()).isEqualTo("azConnectorRef");
     assertThat(parameterFieldMap.get("configuration.spec.templateFile.store.spec.connectorRef").getValue())
-        .isEqualTo("template-connector-ref");
+        .isEqualTo("template-ConnectorDisconnectHandler-ref");
   }
 
   @Test

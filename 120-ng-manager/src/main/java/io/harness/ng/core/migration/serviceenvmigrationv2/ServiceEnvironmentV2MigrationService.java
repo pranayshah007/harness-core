@@ -708,14 +708,14 @@ public class ServiceEnvironmentV2MigrationService {
                                 .getValue();
       infraIdentifier = infraIdentifier.replace("<+infra.connectorRef>", connectorRef);
 
-      if (infraIdentifier.contains("<+infra.connector.name>")) {
+      if (infraIdentifier.contains("<+infra.ConnectorDisconnectHandler.name>")) {
         IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
             connectorRef, accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier());
         Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
 
         infraIdentifier =
-            infraIdentifier.replace("<+infra.connector.name>", connectorDTO.get().getConnector().getName());
+            infraIdentifier.replace("<+infra.ConnectorDisconnectHandler.name>", connectorDTO.get().getConnector().getName());
       }
       infraIdentifier = replaceK8sInfraExpressions(
           infraIdentifier, deploymentStageConfig.getInfrastructure().getInfrastructureDefinition().getSpec());

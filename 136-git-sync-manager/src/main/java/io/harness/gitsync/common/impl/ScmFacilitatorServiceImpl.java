@@ -282,7 +282,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).build());
     }
 
-    // For hosted flow where we are creating a default docker connector
+    // For hosted flow where we are creating a default docker ConnectorDisconnectHandler
     testConnectionAsync(accountIdentifier, null, null, NGCommonEntityConstants.HARNESS_IMAGE);
 
     return convertToUserRepo(response.getReposList());

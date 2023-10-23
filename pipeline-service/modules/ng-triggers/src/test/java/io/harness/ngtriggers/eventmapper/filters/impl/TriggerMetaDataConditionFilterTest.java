@@ -90,7 +90,7 @@ public class TriggerMetaDataConditionFilterTest extends CategoryTest {
                         .spec(ArtifactTriggerConfig.builder()
                                   .type(ArtifactType.DOCKER_REGISTRY)
                                   .spec(DockerRegistrySpec.builder()
-                                            .connectorRef("connector")
+                                            .connectorRef("ConnectorDisconnectHandler")
                                             .metaDataConditions(triggerMetaDataConditions)
                                             .build())
                                   .build())

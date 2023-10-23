@@ -20,7 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.terraformcloudconncetor.TerraformCloudTokenCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.terraformcloudconncetor.TerraformCloudTokenCredential")
 public class TerraformCloudTokenCredential implements TerraformCloudCredential {
   String tokenRef;
 }

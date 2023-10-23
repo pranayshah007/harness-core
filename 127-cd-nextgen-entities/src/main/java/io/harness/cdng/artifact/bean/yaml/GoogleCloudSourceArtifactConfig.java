@@ -52,7 +52,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig")
 public class GoogleCloudSourceArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * GCP connector to connect to Google Cloud Source.
+   * GCP ConnectorDisconnectHandler to connect to Google Cloud Source.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

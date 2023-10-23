@@ -60,7 +60,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing docker connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing docker ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult =
         readFileAsString("440-connector-nextgen/src/test/resources/docker/dockerConnectorWithUserNamePass.json");
@@ -71,7 +71,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two docker json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two docker json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -86,7 +86,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing docker connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing docker ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult =
         readFileAsString("440-connector-nextgen/src/test/resources/docker/dockerConnectorWithAnonymous.json");
@@ -97,7 +97,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two docker json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two docker json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -111,7 +111,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing k8s connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing k8s ConnectorDisconnectHandler " + ex.getMessage());
     }
     DockerConnectorDTO dockerConnectorDTO = createDockerConfigWithUserNameAndPass();
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO(dockerConnectorDTO, DOCKER);
@@ -129,7 +129,7 @@ public class DockerConnectorSerializationDeserializationTest extends CategoryTes
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing docker connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing docker ConnectorDisconnectHandler " + ex.getMessage());
     }
     DockerConnectorDTO dockerConnectorDTO = createDockerConfigWithAnonymousCreds();
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO(dockerConnectorDTO, DOCKER);

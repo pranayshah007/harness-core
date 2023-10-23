@@ -28,7 +28,7 @@ import lombok.Value;
 @JsonTypeName(TerraformCloudConstants.API_TOKEN)
 @ApiModel("TerraformCloudTokenCredentials")
 @Schema(name = "TerraformCloudTokenCredentials",
-    description = "This contains Terraform Cloud API TOKEN credentials connector details")
+    description = "This contains Terraform Cloud API TOKEN credentials ConnectorDisconnectHandler details")
 public class TerraformCloudTokenCredentialsDTO implements TerraformCloudCredentialSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @JsonProperty("apiToken") @SecretReference SecretRefData apiToken;
 

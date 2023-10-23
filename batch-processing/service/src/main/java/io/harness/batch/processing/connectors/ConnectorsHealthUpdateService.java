@@ -64,7 +64,7 @@ public class ConnectorsHealthUpdateService {
   }
 
   public void processConnector(ConnectorResponseDTO connector, String accountId) {
-    log.info("connector.getConnector().getIdentifier(): {}, accountId: {}", connector.getConnector().getIdentifier(),
+    log.info("ConnectorDisconnectHandler.getConnector().getIdentifier(): {}, accountId: {}", connector.getConnector().getIdentifier(),
         accountId);
     ConnectorValidationResult connectorValidationResult =
         NGRestUtils.getResponse(connectorResourceClient.testConnectionInternal(

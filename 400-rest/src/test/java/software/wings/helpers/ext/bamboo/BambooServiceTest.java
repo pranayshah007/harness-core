@@ -371,7 +371,7 @@ public class BambooServiceTest extends WingsBaseTest {
                            -> ((BambooServiceImpl) bambooService)
                                   .getBasicAuthCredentials(bambooConfigPasswordEncrypted, Collections.emptyList()))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Failed to decrypt password for Bamboo connector");
+        .hasMessage("Failed to decrypt password for Bamboo ConnectorDisconnectHandler");
   }
 
   @Test(expected = ArtifactServerException.class)

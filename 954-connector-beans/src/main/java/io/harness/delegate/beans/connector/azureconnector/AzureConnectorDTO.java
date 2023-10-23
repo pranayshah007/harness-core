@@ -40,8 +40,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AzureConnector")
-@Schema(name = "AzureConnector", description = "This contains details of the Azure connector")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO")
+@Schema(name = "AzureConnector", description = "This contains details of the Azure ConnectorDisconnectHandler")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureConnectorDTO")
 public class AzureConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid AzureCredentialDTO credential;
   Set<String> delegateSelectors;

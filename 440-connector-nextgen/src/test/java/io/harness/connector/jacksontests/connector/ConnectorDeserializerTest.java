@@ -54,7 +54,7 @@ public class ConnectorDeserializerTest extends CategoryTest {
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing docker connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing docker ConnectorDisconnectHandler " + ex.getMessage());
     }
     DockerConnectorDTO dockerConnectorDTO = createDockerConfigWithAnonymousCreds();
     Map<String, String> tags = new HashMap<>();

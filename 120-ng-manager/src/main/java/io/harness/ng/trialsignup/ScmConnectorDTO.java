@@ -21,5 +21,5 @@ import lombok.Data;
 @Schema(name = "ScmConnector", description = "Connector and secret details")
 public class ScmConnectorDTO implements YamlDTO {
   @JsonProperty("secret") SecretDTOV2 secret;
-  @JsonProperty("connector") ConnectorInfoDTO connectorInfo;
+  @JsonProperty("ConnectorDisconnectHandler") ConnectorInfoDTO connectorInfo;
 }

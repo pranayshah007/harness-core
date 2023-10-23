@@ -63,7 +63,7 @@ public class GitSyncServiceImplTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void test_shouldLogActivityForGitOperation() {
     final String commitId = "commitId";
-    final String filePath = "rootpath/connector/file1.yaml";
+    final String filePath = "rootpath/ConnectorDisconnectHandler/file1.yaml";
     final String commitMessage = "commitMessage";
     Iterable<GitFileActivity> gitFileActivities =
         gitSyncService.logActivityForGitOperation(Collections.singletonList(GitFileChange.builder()

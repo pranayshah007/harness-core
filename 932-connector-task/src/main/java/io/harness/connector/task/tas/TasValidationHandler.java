@@ -86,8 +86,8 @@ public class TasValidationHandler implements ConnectorValidationHandler {
           .build();
     } catch (Exception e) {
       String errorMessage = "Testing connection to Tas has Failed: ";
-      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Tas connector",
-          "Please check you Tas connector configuration.",
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Tas ConnectorDisconnectHandler",
+          "Please check you Tas ConnectorDisconnectHandler configuration.",
           new ConnectorValidationException(errorMessage + ExceptionSanitizer.sanitizeTheMessage(e.getMessage())));
     }
   }

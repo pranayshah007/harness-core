@@ -329,7 +329,7 @@ public class JenkinsRegistryServiceTest extends CategoryTest {
     } catch (Exception ex) {
       assertThat(ex.getMessage())
           .isEqualTo(
-              "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.");
+              "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Jobs.");
     }
   }
 
@@ -409,7 +409,7 @@ public class JenkinsRegistryServiceTest extends CategoryTest {
     } catch (Exception ex) {
       assertThat(ex.getMessage())
           .isEqualTo(
-              "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.");
+              "Check if the permissions are scoped for the authenticated user & check if the right ConnectorDisconnectHandler chosen for fetching the Jobs.");
     }
   }
 

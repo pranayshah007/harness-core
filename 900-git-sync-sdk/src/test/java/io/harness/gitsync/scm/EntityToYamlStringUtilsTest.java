@@ -73,7 +73,7 @@ public class EntityToYamlStringUtilsTest extends CategoryTest {
   public void testGetYamlStringNew_1() throws IOException {
     ConnectorInfoDTO connectorInfo =
         ConnectorInfoDTO.builder()
-            .name("connector")
+            .name("ConnectorDisconnectHandler")
             .identifier("identifier")
             .connectorType(KUBERNETES_CLUSTER)
             .connectorConfig(KubernetesClusterConfigDTO.builder()

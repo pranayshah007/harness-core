@@ -125,7 +125,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToDockerArtifactOutcome() {
     ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                         .imagePath(ParameterField.createValueField("IMAGE"))
                                         .build();
     ArtifactDelegateResponse artifactDelegateResponse = DockerArtifactDelegateResponse.builder().build();
@@ -142,7 +142,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToDockerArtifactOutcomeWithMatchingV1Digest() {
     ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                         .imagePath(ParameterField.createValueField("IMAGE"))
                                         .digest(ParameterField.createValueField("V1_DIGEST"))
                                         .build();
@@ -167,7 +167,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToDockerArtifactOutcomeWithMatchingV2Digest() {
     ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                         .imagePath(ParameterField.createValueField("IMAGE"))
                                         .digest(ParameterField.createValueField("V2_DIGEST"))
                                         .build();
@@ -191,7 +191,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToDockerArtifactOutcomeWithUnmatchedDigest() {
     ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                         .imagePath(ParameterField.createValueField("IMAGE"))
                                         .digest(ParameterField.createValueField("WRONG_DIGEST"))
                                         .build();
@@ -239,7 +239,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .build();
     ArtifactConfig artifactConfig =
         NexusRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
             .repository(ParameterField.createValueField("REPO_NAME"))
             .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.maven.name()))
@@ -266,7 +266,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .build();
     ArtifactConfig artifactConfig =
         Nexus2RegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
             .repository(ParameterField.createValueField("REPO_NAME"))
             .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.maven.name()))
@@ -296,7 +296,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .repositoryPort(ParameterField.createValueField("TEST_REPO"))
             .build();
     ArtifactConfig artifactConfig = NexusRegistryArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                         .repository(ParameterField.createValueField("REPO_NAME"))
                                         .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
                                         .repositoryFormat(ParameterField.createValueField(RepositoryFormat.npm.name()))
@@ -341,7 +341,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   public void testToArtifactoryGenericArtifactPathOutcome() {
     ArtifactoryRegistryArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
             .repository(ParameterField.createValueField("REPO_NAME"))
             .artifactPath(ParameterField.createValueField("path"))
             .artifactDirectory(ParameterField.createValueField("dir"))
@@ -386,7 +386,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   public void testToArtifactoryGenericArtifactOutcome() {
     ArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
             .repository(ParameterField.createValueField("REPO_NAME"))
             .artifactPath(ParameterField.createValueField("IMAGE"))
             .artifactDirectory(ParameterField.createValueField("IMAGE1"))
@@ -433,7 +433,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   public void testToValidateArtifactoryArtifactPath() {
     ArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
             .repository(ParameterField.createValueField("REPO_NAME"))
             .artifactPath(ParameterField.createValueField("IMAGE"))
             .artifactDirectory(ParameterField.createValueField("serverless"))
@@ -1027,7 +1027,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
             .repositoryPort(ParameterField.createValueField("TEST_REPO"))
             .build();
     return NexusRegistryArtifactConfig.builder()
-        .connectorRef(ParameterField.createValueField("connector"))
+        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
         .repository(ParameterField.createValueField("REPO_NAME"))
         .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
         .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
@@ -1037,7 +1037,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
   private ArtifactoryRegistryArtifactConfig getSampleArtifactoryRegistryArtifactConfig(ParameterField<String> digest) {
     return ArtifactoryRegistryArtifactConfig.builder()
-        .connectorRef(ParameterField.createValueField("connector"))
+        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
         .repository(ParameterField.createValueField("REPO_NAME"))
         .artifactPath(ParameterField.createValueField("IMAGE"))
         .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
@@ -1047,7 +1047,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
   private AcrArtifactConfig getSampleAcrArtifactConfig(ParameterField<String> digest) {
     return AcrArtifactConfig.builder()
-        .connectorRef(ParameterField.createValueField("connector"))
+        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
         .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
         .registry(ParameterField.createValueField("AZURE_REGISTRY"))
         .repository(ParameterField.createValueField("REPO_NAME"))

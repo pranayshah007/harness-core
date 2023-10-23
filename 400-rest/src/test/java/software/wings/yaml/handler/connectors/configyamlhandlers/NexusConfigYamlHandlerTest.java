@@ -73,7 +73,7 @@ public class NexusConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTes
   }
 
   private SettingAttribute createNexusVerificationProvider(String nexusProviderName) {
-    // Generate Nexus verification connector
+    // Generate Nexus verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

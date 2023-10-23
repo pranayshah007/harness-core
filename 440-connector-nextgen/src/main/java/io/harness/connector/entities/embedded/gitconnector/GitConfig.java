@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "GitConfigKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.gitconnector.GitConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitconnector.GitConfig")
 @Persistent
 public class GitConfig extends Connector {
   GitConnectionType connectionType;

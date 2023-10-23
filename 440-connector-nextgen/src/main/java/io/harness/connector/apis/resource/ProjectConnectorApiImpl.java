@@ -163,7 +163,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
                 connectorResponseDTO.getConnector(), account))
         .orElseThrow(()
                          -> new ConnectorNotFoundException(
-                             String.format("No connector found with identifier %s", connector), USER));
+                             String.format("No ConnectorDisconnectHandler found with identifier %s", connector), USER));
 
     ConnectorValidationResult connectorValidationResult =
         connectorService.testConnection(account, org, project, connector);
@@ -206,7 +206,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     }
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(request.getConnector().getIdentifier())) {
       throw new InvalidRequestException(
-          String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
+          String.format("%s cannot be used as ConnectorDisconnectHandler identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }
     if (request.getConnector().getSpec().getType().value() == ConnectorType.LOCAL.getDisplayName()) {
       throw new InvalidRequestException("Local Secret Manager creation not supported", USER);

@@ -70,11 +70,11 @@ public class HttpHelmConnectorValidationParamsProviderTest extends CategoryTest 
         .getEncryptionDetail(eq(credentials), eq("acc"), eq("org"), eq("prj"));
 
     ConnectorValidationParams validationParams =
-        provider.getConnectorValidationParams(connectorInfoDTO, "test-connector", "acc", "org", "prj");
+        provider.getConnectorValidationParams(connectorInfoDTO, "test-ConnectorDisconnectHandler", "acc", "org", "prj");
     assertThat(validationParams).isInstanceOf(HttpHelmValidationParams.class);
     HttpHelmValidationParams httpHelmValidationParams = (HttpHelmValidationParams) validationParams;
     assertThat(httpHelmValidationParams.getHttpHelmConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(httpHelmValidationParams.getConnectorName()).isEqualTo("test-connector");
+    assertThat(httpHelmValidationParams.getConnectorName()).isEqualTo("test-ConnectorDisconnectHandler");
     assertThat(httpHelmValidationParams.getConnectorType()).isEqualTo(ConnectorType.HTTP_HELM_REPO);
     assertThat(httpHelmValidationParams.getEncryptionDataDetails()).isNotEmpty();
     assertThat(httpHelmValidationParams.getEncryptionDataDetails().get(0)).isEqualTo(encryptedDataDetail);
@@ -95,11 +95,11 @@ public class HttpHelmConnectorValidationParamsProviderTest extends CategoryTest 
         .getEncryptionDetail(eq(null), eq("acc"), eq("org"), eq("prj"));
 
     ConnectorValidationParams validationParams =
-        provider.getConnectorValidationParams(connectorInfoDTO, "test-connector", "acc", "org", "prj");
+        provider.getConnectorValidationParams(connectorInfoDTO, "test-ConnectorDisconnectHandler", "acc", "org", "prj");
     assertThat(validationParams).isInstanceOf(HttpHelmValidationParams.class);
     HttpHelmValidationParams httpHelmValidationParams = (HttpHelmValidationParams) validationParams;
     assertThat(httpHelmValidationParams.getHttpHelmConnectorDTO()).isEqualTo(connectorDTO);
-    assertThat(httpHelmValidationParams.getConnectorName()).isEqualTo("test-connector");
+    assertThat(httpHelmValidationParams.getConnectorName()).isEqualTo("test-ConnectorDisconnectHandler");
     assertThat(httpHelmValidationParams.getConnectorType()).isEqualTo(ConnectorType.HTTP_HELM_REPO);
     assertThat(httpHelmValidationParams.getEncryptionDataDetails()).isEmpty();
   }

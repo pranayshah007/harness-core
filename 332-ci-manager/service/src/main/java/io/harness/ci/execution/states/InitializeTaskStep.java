@@ -227,7 +227,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       throw new CIStageExecutionException(format(
           "While using hosted infrastructure, all connectors should be configured to go via the Harness platform instead of via the delegate. "
               + "Please update the connectors: %s to connect via the Harness platform instead. This can be done by "
-              + "editing the connector and updating the connectivity to go via the Harness platform.",
+              + "editing the ConnectorDisconnectHandler and updating the connectivity to go via the Harness platform.",
           invalidIdentifiers));
     }
   }
@@ -539,13 +539,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
     List<EntityDetail> entityDetails = new ArrayList<>();
-    // Add git clone connector
+    // Add git clone ConnectorDisconnectHandler
     if (!initializeStepInfo.isSkipGitClone()) {
       if (initializeStepInfo.getCiCodebase() == null) {
         throw new CIStageExecutionException("Codebase is mandatory with enabled cloneCodebase flag");
       }
       if (isEmpty(initializeStepInfo.getCiCodebase().getConnectorRef().getValue())) {
-        throw new CIStageExecutionException("Git connector is mandatory with enabled cloneCodebase flag");
+        throw new CIStageExecutionException("Git ConnectorDisconnectHandler is mandatory with enabled cloneCodebase flag");
       }
 
       entityDetails.add(createEntityDetails(initializeStepInfo.getCiCodebase().getConnectorRef().getValue(),

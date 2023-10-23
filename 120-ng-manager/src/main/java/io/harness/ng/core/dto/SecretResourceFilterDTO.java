@@ -28,7 +28,7 @@ public class SecretResourceFilterDTO {
   @Schema(description = NGResourceFilterConstants.IDENTIFIER_LIST) List<String> identifiers;
   @Schema(description = NGResourceFilterConstants.SEARCH_TERM) String searchTerm;
   @Schema(description = NGResourceFilterConstants.TYPE_LIST) List<SecretType> secretTypes;
-  @Schema(description = "Specifies the connector category.") ConnectorCategory sourceCategory;
+  @Schema(description = "Specifies the ConnectorDisconnectHandler category.") ConnectorCategory sourceCategory;
   @Schema(description = "This is true if secrets are filtered at each subsequent scope.")
   @DefaultValue("false")
   boolean includeSecretsFromEverySubScope;

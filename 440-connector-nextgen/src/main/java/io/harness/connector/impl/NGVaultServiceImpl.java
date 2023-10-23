@@ -998,7 +998,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
         vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
 
-    log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+    log.info("Renewal interval set to 0 for the Vault ConnectorDisconnectHandler: {}", vaultConnector.getUuid());
   }
 
   private void pauseRenewalIfStale(VaultConnector vaultConnector) {

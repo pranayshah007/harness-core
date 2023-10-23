@@ -116,7 +116,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof JenkinsConnectorDTO)) {
       throw new InvalidRequestException(
-          String.format("Connector [%s] is not a jenkins connector", connectorRef), WingsException.USER);
+          String.format("Connector [%s] is not a jenkins ConnectorDisconnectHandler", connectorRef), WingsException.USER);
     }
 
     JenkinsConnectorDTO connectorDTO = (JenkinsConnectorDTO) configDTO;
@@ -258,7 +258,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof JenkinsConnectorDTO)) {
       throw new InvalidRequestException(
-          String.format("Connector [%s] is not a jenkins connector", connectorRef), WingsException.USER);
+          String.format("Connector [%s] is not a jenkins ConnectorDisconnectHandler", connectorRef), WingsException.USER);
     }
     return (JenkinsConnectorDTO) configDTO;
   }

@@ -71,7 +71,7 @@ public interface EcrClassicService {
   /**
    * Get the ECR repository info for the given name
    *
-   * @param ecrConfig         ecr artifact server / connector config
+   * @param ecrConfig         ecr artifact server / ConnectorDisconnectHandler config
    * @param imageName
    * @return ecr image url
    */

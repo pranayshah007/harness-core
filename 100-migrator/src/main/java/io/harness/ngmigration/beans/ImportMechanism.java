@@ -19,6 +19,6 @@ public enum ImportMechanism {
   ALL,
   // Import specific connectors by ID
   SPECIFIC,
-  // Import connectors by type. For example: Import only Docker connector
+  // Import connectors by type. For example: Import only Docker ConnectorDisconnectHandler
   TYPE
 }

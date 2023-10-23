@@ -24,6 +24,7 @@ import io.harness.data.validator.NGEntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
+import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -71,7 +72,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
         ConnectorKeys.identifier, ConnectorKeys.name, ConnectorKeys.scope, ConnectorKeys.createdAt,
         ConnectorKeys.createdBy, ConnectorKeys.lastUpdatedBy, ConnectorKeys.type, ConnectorKeys.categories},
     handler = "Connectors")
-public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
+public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity, PersistentIterable {
   @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
@@ -105,6 +106,9 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Boolean isEntityInvalid;
   String invalidYamlString; // TODO: remove this field after RenameInvalidYamlStringToYamlMigration runs
   String yaml;
+  Long connectorDisconnectIteration;
+  Long lastAlertSent;
+
 
   public void setEntityInvalid(boolean isEntityInvalid) {
     this.isEntityInvalid = isEntityInvalid;
@@ -137,10 +141,20 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
   public static final class ConnectorKeys {
     public static final String connectionStatus =
         ConnectorKeys.connectivityDetails + "." + ConnectorConnectivityDetailsKeys.status;
+    public static final String connectionLastConnectedAt =
+            ConnectorKeys.connectivityDetails + "." + ConnectorConnectivityDetailsKeys.lastConnectedAt;
     public static final String tagKey = ConnectorKeys.tags + "." + NGTagKeys.key;
     public static final String tagValue = ConnectorKeys.tags + "." + NGTagKeys.value;
     public static final String renewalPaused = "renewalPaused";
     public static final String featuresEnabled = "featuresEnabled";
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (ConnectorKeys.connectorDisconnectIteration.equals(fieldName)) {
+      return this.connectorDisconnectIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   public static List<MongoIndex> mongoIndexes() {

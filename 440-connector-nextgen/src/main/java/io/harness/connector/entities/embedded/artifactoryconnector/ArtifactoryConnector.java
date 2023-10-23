@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.artifactoryconnector.ArtifactoryConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.artifactoryconnector.ArtifactoryConnector")
 public class ArtifactoryConnector extends Connector {
   String url;
   ArtifactoryAuthType authType;

@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePassword")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabUsernamePassword")
 public class GitlabUsernamePassword implements GitlabHttpAuth {
   String username;
   String usernameRef;

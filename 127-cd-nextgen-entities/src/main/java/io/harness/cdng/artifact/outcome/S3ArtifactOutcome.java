@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.S3ArtifactOutcome")
 public class S3ArtifactOutcome implements ArtifactOutcome {
-  /** AWS connector. */
+  /** AWS ConnectorDisconnectHandler. */
   String connectorRef;
 
   /** region */

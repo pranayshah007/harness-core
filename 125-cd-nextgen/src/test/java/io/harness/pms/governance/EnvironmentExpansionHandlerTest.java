@@ -98,7 +98,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
                                             .build())
                              .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), eq("aws-connector"));
+        .get(anyString(), anyString(), anyString(), eq("aws-ConnectorDisconnectHandler"));
 
     doReturn(Optional.of(Environment.builder().id("my_environment").name("dev_environment").build()))
         .when(environmentService)
@@ -111,7 +111,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
                                                .type(InfrastructureType.ECS)
                                                .spec(EcsInfrastructure.builder()
                                                          .cluster(ParameterField.createValueField("us-east-1-cluster"))
-                                                         .connectorRef(ParameterField.createValueField("aws-connector"))
+                                                         .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                                                          .region(ParameterField.createValueField("us-east-1"))
                                                          .build())
                                                .build())

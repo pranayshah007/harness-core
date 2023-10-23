@@ -58,7 +58,7 @@ public class OciHelmConnectorSerializationDeserializationTest extends CategoryTe
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serialize oci helm connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serialize oci helm ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult = readFileAsString(BASE_PATH + "ociHelmConnectorWithUsernamePasswordAuth.json");
     try {
@@ -68,7 +68,7 @@ public class OciHelmConnectorSerializationDeserializationTest extends CategoryTe
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two oci helm json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two oci helm json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -81,7 +81,7 @@ public class OciHelmConnectorSerializationDeserializationTest extends CategoryTe
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserialize oci helm connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserialize oci helm ConnectorDisconnectHandler " + ex.getMessage());
     }
     OciHelmConnectorDTO ociHelmConnectorDTO = buildConnector(OciHelmAuthType.USER_PASSWORD);
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO(ociHelmConnectorDTO, OCI_HELM_REPO);

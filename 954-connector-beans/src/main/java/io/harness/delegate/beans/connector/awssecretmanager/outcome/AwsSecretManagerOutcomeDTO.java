@@ -30,7 +30,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO")
 public class AwsSecretManagerOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Schema(description = SecretManagerDescriptionConstants.AWS_AUTH_CRED_SM)
   @Valid

@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsAccessKeyCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awsconnector.AwsAccessKeyCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsAccessKeyCredential")
 public class AwsAccessKeyCredential implements AwsCredential {
   String secretKeyRef;
   String accessKey;

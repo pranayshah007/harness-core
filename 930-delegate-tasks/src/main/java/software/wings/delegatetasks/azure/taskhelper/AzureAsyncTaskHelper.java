@@ -155,8 +155,8 @@ public class AzureAsyncTaskHelper {
           azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
           azureConfigContext.getCertificateWorkingDirectory());
     } catch (IOException ioe) {
-      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector",
-          "Please check you Azure connector configuration or delegate filesystem permissions.",
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler",
+          "Please check you Azure ConnectorDisconnectHandler configuration or delegate filesystem permissions.",
           new AzureAuthenticationException(ioe.getMessage()));
     }
 
@@ -169,8 +169,8 @@ public class AzureAsyncTaskHelper {
 
     errorMessage = "Testing connection to Azure has timed out.";
 
-    throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector",
-        "Please check you Azure connector configuration.", new AzureAuthenticationException(errorMessage));
+    throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler",
+        "Please check you Azure ConnectorDisconnectHandler configuration.", new AzureAuthenticationException(errorMessage));
   }
 
   public AzureSubscriptionsResponse listSubscriptions(AzureConfigContext azureConfigContext) throws IOException {

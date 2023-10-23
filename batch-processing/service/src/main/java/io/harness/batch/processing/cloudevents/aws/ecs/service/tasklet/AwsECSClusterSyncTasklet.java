@@ -83,7 +83,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
     List<ConnectorResponseDTO> nextGenConnectors =
         ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
             Arrays.asList(CEFeatures.VISIBILITY), Arrays.asList(ConnectivityStatus.SUCCESS));
-    log.info("Next gen connector list size {}", nextGenConnectors.size());
+    log.info("Next gen ConnectorDisconnectHandler list size {}", nextGenConnectors.size());
     for (ConnectorResponseDTO connector : nextGenConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
@@ -109,7 +109,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
     List<ConnectorResponseDTO> nextGenBillingConnectors =
         ngConnectorHelper.getNextGenConnectors(accountId, Arrays.asList(ConnectorType.CE_AWS),
             Arrays.asList(CEFeatures.BILLING), Arrays.asList(ConnectivityStatus.SUCCESS));
-    log.info("Next gen billing connector list size {}", nextGenBillingConnectors.size());
+    log.info("Next gen billing ConnectorDisconnectHandler list size {}", nextGenBillingConnectors.size());
     for (ConnectorResponseDTO connector : nextGenBillingConnectors) {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();

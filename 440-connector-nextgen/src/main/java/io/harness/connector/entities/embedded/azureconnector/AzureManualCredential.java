@@ -21,7 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.azureconnector.AzureManualCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azureconnector.AzureManualCredential")
 public class AzureManualCredential implements AzureCredential {
   String clientId;
   String tenantId;

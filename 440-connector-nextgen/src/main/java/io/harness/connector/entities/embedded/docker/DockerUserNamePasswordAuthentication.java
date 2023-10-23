@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "DockerAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.docker.DockerUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.docker.DockerUserNamePasswordAuthentication")
 public class DockerUserNamePasswordAuthentication implements DockerAuthentication {
   String username;
   String usernameRef;

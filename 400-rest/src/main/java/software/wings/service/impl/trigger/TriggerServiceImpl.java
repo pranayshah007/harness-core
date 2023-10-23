@@ -1709,7 +1709,7 @@ public class TriggerServiceImpl implements TriggerService {
             throw new InvalidRequestException("At least one file path is required to check content changed");
           }
           if (isEmpty(webHookTriggerCondition.getGitConnectorId())) {
-            throw new InvalidRequestException("Git connector is required to check content changed");
+            throw new InvalidRequestException("Git ConnectorDisconnectHandler is required to check content changed");
           }
           String branchName = StringUtils.trim(webHookTriggerCondition.getBranchName());
           if (isEmpty(branchName)) {

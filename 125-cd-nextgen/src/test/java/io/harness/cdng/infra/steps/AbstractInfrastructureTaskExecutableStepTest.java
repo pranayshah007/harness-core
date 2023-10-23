@@ -49,7 +49,7 @@ public class AbstractInfrastructureTaskExecutableStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateSshWinRmAzureInfrastructure() {
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .credentialsRef(ParameterField.createValueField("credentials-ref"))
@@ -71,7 +71,7 @@ public class AbstractInfrastructureTaskExecutableStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateGoogleFunctionInfrastructure() {
     GoogleFunctionsInfrastructure infrastructure = GoogleFunctionsInfrastructure.builder()
-                                                       .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                        .region(ParameterField.createValueField("region"))
                                                        .project(ParameterField.createValueField("project"))
                                                        .build();
@@ -91,7 +91,7 @@ public class AbstractInfrastructureTaskExecutableStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateECSInfrastructure() {
     EcsInfrastructure infrastructure = EcsInfrastructure.builder()
-                                           .connectorRef(ParameterField.createValueField("connector-ref"))
+                                           .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                            .region(ParameterField.createValueField("region"))
                                            .cluster(ParameterField.createValueField("cluster"))
                                            .build();
@@ -112,7 +112,7 @@ public class AbstractInfrastructureTaskExecutableStepTest extends CategoryTest {
   public void testValidateAzureWebAppInfrastructure() {
     // Create a mock AzureWebAppInfrastructure
     AzureWebAppInfrastructure infrastructure = AzureWebAppInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                   .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                    .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
                                                    .build();
@@ -131,7 +131,7 @@ public class AbstractInfrastructureTaskExecutableStepTest extends CategoryTest {
   public void testValidateAWS_SAMInfrastructure() {
     // Create a mock AzureWebAppInfrastructure
     AwsSamInfrastructure infrastructure = AwsSamInfrastructure.builder()
-                                              .connectorRef(ParameterField.createValueField("connector-ref"))
+                                              .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                               .region(ParameterField.createValueField("region"))
                                               .build();
     abstractInfrastructureTaskExecutableStep.validateInfrastructure(infrastructure, null, null);

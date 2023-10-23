@@ -63,9 +63,9 @@ public class YamlSnippetProviderTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testGetYamlSnippetMetaData() {
-    YamlSnippetsDTO yamlSnippetMetaData = yamlSnippetProvider.getYamlSnippetMetaData(Arrays.asList("connector", "k8s"));
+    YamlSnippetsDTO yamlSnippetMetaData = yamlSnippetProvider.getYamlSnippetMetaData(Arrays.asList("ConnectorDisconnectHandler", "k8s"));
     assertThat(yamlSnippetMetaData.getYamlSnippets().size()).isEqualTo(1);
-    yamlSnippetMetaData = yamlSnippetProvider.getYamlSnippetMetaData(Arrays.asList("connector"));
+    yamlSnippetMetaData = yamlSnippetProvider.getYamlSnippetMetaData(Arrays.asList("ConnectorDisconnectHandler"));
     assertThat(yamlSnippetMetaData.getYamlSnippets().size()).isEqualTo(3);
   }
 
@@ -84,16 +84,16 @@ public class YamlSnippetProviderTest extends CategoryTest {
     assertThat(objectMapper.readTree(IOUtils.resourceToString(
                    "testsnippets/randomSnippet.yaml", StandardCharsets.UTF_8, getClass().getClassLoader())))
         .isEqualTo(yamlSnippet);
-    assertThat(yamlSnippet_1.get("connector").get(ORG_KEY).textValue()).isEqualTo("abc");
-    assertThat(yamlSnippet_1.get("connector").get(PROJECT_KEY).textValue()).isEqualTo("xyz");
-    assertThat(yamlSnippet_2.get("connector").get(ORG_KEY).textValue()).isEqualTo("abc");
-    assertThat(yamlSnippet_2.get("connector").get(PROJECT_KEY)).isNull();
+    assertThat(yamlSnippet_1.get("ConnectorDisconnectHandler").get(ORG_KEY).textValue()).isEqualTo("abc");
+    assertThat(yamlSnippet_1.get("ConnectorDisconnectHandler").get(PROJECT_KEY).textValue()).isEqualTo("xyz");
+    assertThat(yamlSnippet_2.get("ConnectorDisconnectHandler").get(ORG_KEY).textValue()).isEqualTo("abc");
+    assertThat(yamlSnippet_2.get("ConnectorDisconnectHandler").get(PROJECT_KEY)).isNull();
     assertThat(objectMapper.readTree(IOUtils.resourceToString(
                    "testsnippets/git/test.yaml", StandardCharsets.UTF_8, getClass().getClassLoader())))
         .isEqualTo(yamlSnippet_3);
-    assertThat(yamlSnippet_4.get("connector").get(PROJECT_KEY)).isNull();
-    assertThat(yamlSnippet_4.get("connector").get(ORG_KEY)).isNotNull();
-    assertThat(yamlSnippet_5.get("connector").get(PROJECT_KEY)).isNull();
-    assertThat(yamlSnippet_5.get("connector").get(ORG_KEY)).isNull();
+    assertThat(yamlSnippet_4.get("ConnectorDisconnectHandler").get(PROJECT_KEY)).isNull();
+    assertThat(yamlSnippet_4.get("ConnectorDisconnectHandler").get(ORG_KEY)).isNotNull();
+    assertThat(yamlSnippet_5.get("ConnectorDisconnectHandler").get(PROJECT_KEY)).isNull();
+    assertThat(yamlSnippet_5.get("ConnectorDisconnectHandler").get(ORG_KEY)).isNull();
   }
 }

@@ -58,7 +58,7 @@ public class BambooBuildStepHelperServiceImplTest extends CDNGTestBase {
   private static final String ACCOUNT = "account";
   private static final String ORG = "org";
   private static final String PROJECT = "project";
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final String URL = "url";
   private static final String TIME_OUT = "10m";
 

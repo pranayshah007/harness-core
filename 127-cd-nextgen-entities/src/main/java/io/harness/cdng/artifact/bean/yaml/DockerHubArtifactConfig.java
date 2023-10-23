@@ -57,7 +57,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig")
 public class DockerHubArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Docker hub registry connector.
+   * Docker hub registry ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

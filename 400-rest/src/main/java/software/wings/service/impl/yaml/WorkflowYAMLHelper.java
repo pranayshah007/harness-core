@@ -259,7 +259,7 @@ public class WorkflowYAMLHelper {
         break;
       case GIT_CONFIG:
         uuidAccess = settingsService.fetchSettingAttributeByName(accountId, variableValue, SettingVariableTypes.GIT);
-        notNullCheck("Git connector [" + variableValue + ASSOCIATED_TO_GOOGLE_CLOUD_BUILD_STATE_DOES_NOT_EXIST,
+        notNullCheck("Git ConnectorDisconnectHandler [" + variableValue + ASSOCIATED_TO_GOOGLE_CLOUD_BUILD_STATE_DOES_NOT_EXIST,
             uuidAccess, USER);
         break;
       case JENKINS_SERVER:

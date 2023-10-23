@@ -42,7 +42,7 @@ public class AzureCreateBPStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>()))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -83,7 +83,7 @@ public class AzureCreateBPStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>()))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -118,7 +118,7 @@ public class AzureCreateBPStepInfoTest extends CategoryTest {
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder()
                       .paths(ParameterField.createValueField(new ArrayList<>()))
-                      .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                      .connectorRef(ParameterField.createValueField("template-ConnectorDisconnectHandler-ref"))
                       .build())
             .build();
 
@@ -133,7 +133,7 @@ public class AzureCreateBPStepInfoTest extends CategoryTest {
     assertThat(parameterFieldMap.size()).isEqualTo(2);
     assertThat(parameterFieldMap.get("configuration.spec.connectorRef").getValue()).isEqualTo("azConnectorRef");
     assertThat(parameterFieldMap.get("configuration.spec.templateFile.store.spec.connectorRef").getValue())
-        .isEqualTo("template-connector-ref");
+        .isEqualTo("template-ConnectorDisconnectHandler-ref");
   }
 
   @Test

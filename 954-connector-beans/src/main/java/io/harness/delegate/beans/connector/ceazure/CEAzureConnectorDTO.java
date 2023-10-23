@@ -30,7 +30,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("CEAzureConnector")
-@Schema(name = "CEAzureConnector", description = "This contains the cost explorer of Azure connector")
+@Schema(name = "CEAzureConnector", description = "This contains the cost explorer of Azure ConnectorDisconnectHandler")
 public class CEAzureConnectorDTO extends ConnectorConfigDTO {
   @NotEmpty(message = "FeaturesEnabled can't be empty") List<CEFeatures> featuresEnabled;
 

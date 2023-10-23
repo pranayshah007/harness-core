@@ -373,7 +373,7 @@ public class TerraformStepDataGenerator {
                              .build())
             .build();
 
-    // Create DTO connector
+    // Create DTO ConnectorDisconnectHandler
     ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder()
                                                           .artifactoryServerUrl("http://artifactory.com")
                                                           .auth(artifactoryAuthenticationDTO)
@@ -390,7 +390,7 @@ public class TerraformStepDataGenerator {
 
   public static ConnectorInfoDTO getAWSConnectorInfoDTO() {
     char[] password = {'r', 's', 't', 'u', 'v'};
-    // Create DTO connector
+    // Create DTO ConnectorDisconnectHandler
     AwsConnectorDTO awsConnectorDTO =
         AwsConnectorDTO.builder()
             .credential(AwsCredentialDTO.builder()

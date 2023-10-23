@@ -121,7 +121,7 @@ public class JenkinsConfigVerificationYamlHandlerTest extends SettingValueConfig
   }
 
   private SettingAttribute createJenkinsVerificationProvider(String jenkinsProviderName) {
-    // Generate Jenkins verification connector
+    // Generate Jenkins verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

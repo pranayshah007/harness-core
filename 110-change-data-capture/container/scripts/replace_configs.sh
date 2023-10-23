@@ -21,7 +21,7 @@ else
   yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
 fi
 
-# Remove the TLS connector (as ingress terminates TLS)
+# Remove the TLS ConnectorDisconnectHandler (as ingress terminates TLS)
 yq -i 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then

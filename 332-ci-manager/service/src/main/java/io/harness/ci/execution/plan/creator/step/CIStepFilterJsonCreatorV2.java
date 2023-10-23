@@ -66,7 +66,7 @@ public class CIStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2
       String imageExpression = runStep.getImage().getExpressionValue();
 
       if (Strings.isBlank(connectorRef) && Strings.isBlank(connectorExpression)) {
-        throw new InvalidYamlException("Run step with Kubernetes infra can't have empty connector field");
+        throw new InvalidYamlException("Run step with Kubernetes infra can't have empty ConnectorDisconnectHandler field");
       }
       if (Strings.isBlank(image) && Strings.isBlank(imageExpression)) {
         throw new InvalidYamlException("Run step with Kubernetes infra can't have empty image field");
@@ -84,7 +84,7 @@ public class CIStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2
       String imageExpression = runTestsStep.getImage().getExpressionValue();
 
       if (Strings.isBlank(connectorRef) && Strings.isBlank(connectorExpression)) {
-        throw new InvalidYamlException("RunTests step with Kubernetes infra can't have empty connector field");
+        throw new InvalidYamlException("RunTests step with Kubernetes infra can't have empty ConnectorDisconnectHandler field");
       }
       if (Strings.isBlank(image) && Strings.isBlank(imageExpression)) {
         throw new InvalidYamlException("RunTests step with Kubernetes infra can't have empty image field");

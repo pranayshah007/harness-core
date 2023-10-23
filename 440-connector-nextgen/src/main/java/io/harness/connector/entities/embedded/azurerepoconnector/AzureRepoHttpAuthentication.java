@@ -16,7 +16,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication")
 public class AzureRepoHttpAuthentication implements AzureRepoAuthentication {
   @NotEmpty AzureRepoHttpAuthenticationType type;
   @NotEmpty AzureRepoHttpAuth auth;

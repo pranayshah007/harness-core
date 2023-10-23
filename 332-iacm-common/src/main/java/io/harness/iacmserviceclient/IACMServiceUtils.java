@@ -121,7 +121,7 @@ public class IACMServiceUtils {
     }
     if (workspace.getProvider_connector() == null) {
       throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The WorkspaceID: "
-          + workspace.getIdentifier() + " doesn't have a connector reference");
+          + workspace.getIdentifier() + " doesn't have a ConnectorDisconnectHandler reference");
     }
     return workspace;
   }

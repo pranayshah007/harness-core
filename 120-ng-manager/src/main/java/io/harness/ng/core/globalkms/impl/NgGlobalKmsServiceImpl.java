@@ -133,7 +133,7 @@ public class NgGlobalKmsServiceImpl implements NgGlobalKmsService {
   private void checkConnectorHasOnlyAccountScopeInfo(ConnectorDTO connectorDTO) {
     if (null != connectorDTO.getConnectorInfo().getOrgIdentifier()
         || null != connectorDTO.getConnectorInfo().getProjectIdentifier()) {
-      throw new InvalidRequestException("Global connector cannot have org/project identifier");
+      throw new InvalidRequestException("Global ConnectorDisconnectHandler cannot have org/project identifier");
     }
   }
 
@@ -142,7 +142,7 @@ public class NgGlobalKmsServiceImpl implements NgGlobalKmsService {
         connectorService.get(GLOBAL_ACCOUNT_ID, null, null, connector.getConnectorInfo().getIdentifier());
     if (!existingConnector.isPresent()
         || !existingConnector.get().getConnector().getConnectorType().equals(ConnectorType.GCP_KMS)) {
-      throw new NotFoundException(String.format("Global connector of type %s not found", ConnectorType.GCP_KMS));
+      throw new NotFoundException(String.format("Global ConnectorDisconnectHandler of type %s not found", ConnectorType.GCP_KMS));
     }
     return existingConnector.get();
   }

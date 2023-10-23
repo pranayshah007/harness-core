@@ -161,7 +161,7 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     return connectorDTO.orElseThrow(
         ()
             -> new UnexpectedException(
-                String.format("No connector found with the id %s, accountId %s, orgId %s, projectId %s",
+                String.format("No ConnectorDisconnectHandler found with the id %s, accountId %s, orgId %s, projectId %s",
                     gitSyncConfigDTO.getIdentifier(), accountId, gitSyncConfigDTO.getOrganizationIdentifier(),
                     gitSyncConfigDTO.getProjectIdentifier())));
   }
@@ -281,11 +281,11 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
             }
             break;
           default:
-            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
+            log.info("OAUTH not supported for ConnectorDisconnectHandler type: {}", connectorDTO.getConnectorType());
         }
       }
     } catch (Exception ex) {
-      log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
+      log.error("Invalid type of ConnectorDisconnectHandler: {}", connectorDTO.getConnectorType(), ex);
     }
   }
 }

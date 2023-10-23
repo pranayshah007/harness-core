@@ -44,31 +44,31 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
                            -> ScmApiErrorHandlingHelper.processAndThrowError(
                                ScmApis.UPSERT_WEBHOOK, ConnectorType.GITHUB, "https://github.com", 401, "errorMessage"))
         .isInstanceOf(ScmUnauthorizedException.class)
-        .hasMessage("The credentials provided in the Github connector null are invalid or have expired. errorMessage");
+        .hasMessage("The credentials provided in the Github ConnectorDisconnectHandler null are invalid or have expired. errorMessage");
 
     assertThatThrownBy(()
                            -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.UPSERT_WEBHOOK,
                                ConnectorType.GITHUB, "https://github.com", 401, "errorMessage", null))
         .isInstanceOf(ScmUnauthorizedException.class)
-        .hasMessage("The credentials provided in the Github connector null are invalid or have expired. errorMessage");
+        .hasMessage("The credentials provided in the Github ConnectorDisconnectHandler null are invalid or have expired. errorMessage");
 
     assertThatThrownBy(()
                            -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.UPSERT_WEBHOOK,
                                ConnectorType.BITBUCKET, "https://bitbucket.org", 401, "errorMessage"))
         .isInstanceOf(ScmUnauthorizedException.class)
-        .hasMessage("Please check if credentials provided in Bitbucket connector null are correct. errorMessage");
+        .hasMessage("Please check if credentials provided in Bitbucket ConnectorDisconnectHandler null are correct. errorMessage");
 
     assertThatThrownBy(()
                            -> ScmApiErrorHandlingHelper.processAndThrowError(
                                ScmApis.UPSERT_WEBHOOK, ConnectorType.GITLAB, "https://gitlab.com", 401, "errorMessage"))
         .isInstanceOf(ScmUnauthorizedException.class)
-        .hasMessage("The credentials provided in the Gitlab connector null are invalid or have expired. errorMessage");
+        .hasMessage("The credentials provided in the Gitlab ConnectorDisconnectHandler null are invalid or have expired. errorMessage");
 
     assertThatThrownBy(()
                            -> ScmApiErrorHandlingHelper.processAndThrowError(
                                ScmApis.UPSERT_WEBHOOK, ConnectorType.AZURE, "https://azure.com", 401, "errorMessage"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unknown connector type Azure");
+        .hasMessage("Unknown ConnectorDisconnectHandler type Azure");
 
     assertThatThrownBy(()
                            -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.UPSERT_WEBHOOK,

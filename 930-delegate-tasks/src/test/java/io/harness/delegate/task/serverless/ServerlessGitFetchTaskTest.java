@@ -157,7 +157,7 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
                                                         .branch(branch)
                                                         .commitId("commitId")
-                                                        .connectorName("connector")
+                                                        .connectorName("ConnectorDisconnectHandler")
                                                         .manifestId("manifest")
                                                         .path(path)
                                                         .gitConfigDTO(gitConfigDTO)

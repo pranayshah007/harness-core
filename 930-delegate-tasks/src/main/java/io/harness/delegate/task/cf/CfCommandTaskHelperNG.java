@@ -160,14 +160,14 @@ public class CfCommandTaskHelperNG {
   public static final String APPLICATION = "APPLICATION: ";
   private static final String NEXUS_FAILED_DOWNLOAD_EXPLANATION = "Unable to download nexus artifact due to: ";
   private static final String NEXUS_FAILED_DOWNLOAD_HINT =
-      "Review artifact configuration and nexus connector details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
+      "Review artifact configuration and nexus ConnectorDisconnectHandler details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
   private static final String BAMBOO_FAILED_DOWNLOAD_EXPLANATION = "Unable to download bamboo artifact. ";
   private static final String BAMBOO_FAILED_DOWNLOAD_HINT =
-      "Review artifact configuration and bamboo connector details. For any intermittent network I/O issues please check delegate connectivity with Bamboo server";
+      "Review artifact configuration and bamboo ConnectorDisconnectHandler details. For any intermittent network I/O issues please check delegate connectivity with Bamboo server";
   private static final String GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_EXPLANATION =
       "Unable to download Google Cloud Storage artifact due to: ";
   private static final String GOOGLE_CLOUD_STORAGE_FAILED_DOWNLOAD_HINT =
-      "Review artifact configuration and google cloud storage connector details. For any intermittent network I/O issues please check delegate connectivity with Google Cloud Storage server";
+      "Review artifact configuration and google cloud storage ConnectorDisconnectHandler details. For any intermittent network I/O issues please check delegate connectivity with Google Cloud Storage server";
 
   public static final String ARTIFACT_NAME_PREFIX = "artifact-";
   private static final String APPLICATION_NAME = "APPLICATION-NAME:";
@@ -689,11 +689,11 @@ public class CfCommandTaskHelperNG {
       TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof ArtifactoryConnectorDTO)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Configure artifactory connector for artifactory configuration",
-          format("Unexpected connector type '%s' for artifactory configuration",
+          "Configure artifactory ConnectorDisconnectHandler for artifactory configuration",
+          format("Unexpected ConnectorDisconnectHandler type '%s' for artifactory configuration",
               artifactConfig.getConnectorConfig().getClass().getSimpleName()),
           new InvalidArgumentsException(Pair.of("connectorConfig",
-              format("Invalid connector type '%s', expected '%s'",
+              format("Invalid ConnectorDisconnectHandler type '%s', expected '%s'",
                   artifactConfig.getConnectorConfig().getClass().getSimpleName(),
                   ArtifactoryConnectorDTO.class.getSimpleName()))));
     }
@@ -729,11 +729,11 @@ public class CfCommandTaskHelperNG {
   private InputStream downloadFromNexus(TasPackageArtifactConfig artifactConfig,
       TasArtifactDownloadResponseBuilder artifactResponseBuilder, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof NexusConnectorDTO)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Configure nexus connector for nexus configuration",
-          format("Unexpected connector type '%s' for nexus configuration",
+      throw NestedExceptionUtils.hintWithExplanationException("Configure nexus ConnectorDisconnectHandler for nexus configuration",
+          format("Unexpected ConnectorDisconnectHandler type '%s' for nexus configuration",
               artifactConfig.getConnectorConfig().getClass().getSimpleName()),
           new InvalidArgumentsException(Pair.of("connectorConfig",
-              format("Invalid connector type '%s', expected '%s'",
+              format("Invalid ConnectorDisconnectHandler type '%s', expected '%s'",
                   artifactConfig.getConnectorConfig().getClass().getSimpleName(),
                   NexusConnectorDTO.class.getSimpleName()))));
     }

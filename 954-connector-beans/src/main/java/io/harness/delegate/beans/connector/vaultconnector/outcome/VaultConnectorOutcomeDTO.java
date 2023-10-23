@@ -42,7 +42,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.vaultconnector.outcome.VaultConnectorOutcomeDTO")
 public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @SecretReference @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN) private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;

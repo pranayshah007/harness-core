@@ -152,11 +152,11 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     String httpUrl = repository.getHttpURL().toLowerCase();
     httpUrl = GitClientHelper.convertToHttps(httpUrl);
     urls.add(httpUrl);
-    // Add url without .git, to handle case, where user entered url without .git on connector
+    // Add url without .git, to handle case, where user entered url without .git on ConnectorDisconnectHandler
     if (httpUrl.endsWith(DOT_GIT)) {
       urls.add(httpUrl.substring(0, httpUrl.length() - 4));
     }
-    // Add url without .git, to handle case, where user entered url without .git on connector
+    // Add url without .git, to handle case, where user entered url without .git on ConnectorDisconnectHandler
     String sshUrl = repository.getSshURL().toLowerCase();
     if (sshUrl.endsWith(DOT_GIT)) {
       urls.add(sshUrl.substring(0, sshUrl.length() - 4));
@@ -283,7 +283,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     2. https://github.com/<something>
     3. git@github.com:<something>.git
     4. git@github.com:<something>
-  And we allow connector url as http://<something>, http://www.<something>, https://www.<something>
+  And we allow ConnectorDisconnectHandler url as http://<something>, http://www.<something>, https://www.<something>
   This method will do the required fix
    */
   @VisibleForTesting

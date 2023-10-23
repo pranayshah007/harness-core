@@ -430,10 +430,10 @@ public class GitFullSyncProcessorServiceImpl implements GitFullSyncProcessorServ
   }
 
   private void keepTheFullSyncConnectorAtTheLast(List<GitFullSyncEntityInfo> filesForThisMicroservice) {
-    // When we are doing the full sync of the entities, we do a get call of the full sync config connector.
-    // If the git connector itself is full synced before any entity then we won't be able to find this
-    // git connector in other repo and branch. Hence we are first syncing all other files and at last we are
-    // syncing this git connector.
+    // When we are doing the full sync of the entities, we do a get call of the full sync config ConnectorDisconnectHandler.
+    // If the git ConnectorDisconnectHandler itself is full synced before any entity then we won't be able to find this
+    // git ConnectorDisconnectHandler in other repo and branch. Hence we are first syncing all other files and at last we are
+    // syncing this git ConnectorDisconnectHandler.
     if (isEmpty(filesForThisMicroservice)) {
       return;
     }

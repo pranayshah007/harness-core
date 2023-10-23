@@ -198,8 +198,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   public void testValidationFailedWithSecretKey() {
     AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
     AzureConfig azureConfig = getAzureConfigSecret();
-    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
-                "Please check your Azure connector configuration.",
+    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler.",
+                "Please check your Azure ConnectorDisconnectHandler configuration.",
                 new AzureAuthenticationException("Invalid Azure credentials.")))
         .when(azureAuthorizationClient)
         .validateAzureConnection(azureConfig);
@@ -708,8 +708,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
   private void testValidateSuccessConnectionWithManagedIdentityFailure(AzureConfig azureConfig, String clientId) {
     AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(clientId);
-    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
-                "Please check your Azure connector configuration.",
+    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler.",
+                "Please check your Azure ConnectorDisconnectHandler configuration.",
                 new AzureAuthenticationException("Failed to connect to Azure cluster.")))
         .when(azureAuthorizationClient)
         .validateAzureConnection(azureConfig);

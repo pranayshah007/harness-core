@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ConnectorCapabilityBaseHelper {
-  private static final String origin = "connector";
+  private static final String origin = "ConnectorDisconnectHandler";
   public static void populateDelegateSelectorCapability(
       List<ExecutionCapability> capabilityList, Set<String> delegateSelectors) {
     if (isNotEmpty(delegateSelectors)) {

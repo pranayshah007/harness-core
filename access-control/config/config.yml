@@ -203,7 +203,7 @@ aggregatorModuleConfig:
     mongodb.user: ${MONGODB_USER:-""}
     mongodb.password: ${MONGODB_PASSWORD:-""}
     mongodb.ssl.enabled: ${MONGODB_SSL_ENABLED:-false}
-    connector.class: ${CONNECTOR_CLASS:-io.debezium.connector.mongodb.MongoDbConnector}
+    connector.class: ${CONNECTOR_CLASS:-io.debezium.ConnectorDisconnectHandler.mongodb.MongoDbConnector}
     database.include.list: ${DATABASE_INCLUDE_LIST:-accesscontrol}
     collection.include.list: ${COLLECTION_INCLUDE_LIST:-accesscontrol.roles,accesscontrol.roleassignments,accesscontrol.resourcegroups,accesscontrol.usergroups}
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}

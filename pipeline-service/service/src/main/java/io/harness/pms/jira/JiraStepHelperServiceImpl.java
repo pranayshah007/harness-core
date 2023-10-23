@@ -83,7 +83,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
     if (NULL_VALUE.equals(identifierRef.getIdentifier())) {
       throw new InvalidRequestException(
           String.format(
-              "Error retrieving connector information : [%s]. Please check if the connector in the step is valid",
+              "Error retrieving ConnectorDisconnectHandler information : [%s]. Please check if the ConnectorDisconnectHandler in the step is valid",
               connectorRef),
           WingsException.USER);
     }
@@ -98,7 +98,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof JiraConnectorDTO)) {
       throw new InvalidRequestException(
-          String.format("Connector [%s] is not a jira connector", connectorRef), WingsException.USER);
+          String.format("Connector [%s] is not a jira ConnectorDisconnectHandler", connectorRef), WingsException.USER);
     }
 
     JiraConnectorDTO connectorDTO = (JiraConnectorDTO) configDTO;

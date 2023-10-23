@@ -267,7 +267,7 @@ public class ProvisionService {
 
       ConnectorResponseDTO connectorResponse = connectorService.create(connectorDTO, accountId);
     } catch (Exception e) {
-      log.error("Error adding hosted k8s connector", e);
+      log.error("Error adding hosted k8s ConnectorDisconnectHandler", e);
       return FALSE;
     }
 
@@ -402,7 +402,7 @@ public class ProvisionService {
   }
 
   // project / org and account information will always come from UI.
-  // based on the connectorIdentifier, decide the type of connector.
+  // based on the connectorIdentifier, decide the type of ConnectorDisconnectHandler.
   // for account type connectors expecting repo to come like : harness-core or harness/harness-core
   // for repo type connectors expecting repo to be empty.
   public String generateYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
@@ -416,7 +416,7 @@ public class ProvisionService {
     Optional<ConnectorResponseDTO> connectorResponseDTO =
         connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     if (!connectorResponseDTO.isPresent()) {
-      throw new InvalidRequestException(String.format("connector %s doesn't exists", connectorIdentifier));
+      throw new InvalidRequestException(String.format("ConnectorDisconnectHandler %s doesn't exists", connectorIdentifier));
     }
     AutogenInputBuilder builder;
     ConnectorInfoDTO connectorConfig = connectorResponseDTO.get().getConnector();

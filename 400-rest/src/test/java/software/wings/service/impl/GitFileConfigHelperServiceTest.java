@@ -174,7 +174,7 @@ public class GitFileConfigHelperServiceTest extends WingsBaseTest {
     gitConfig.setUrlType(GitConfig.UrlType.ACCOUNT);
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> configHelperService.validate(gitFileConfig))
-        .withMessageContaining("Repository name not provided for Account level git connector.");
+        .withMessageContaining("Repository name not provided for Account level git ConnectorDisconnectHandler.");
 
     gitFileConfig.setRepoName("repo1");
     configHelperService.validate(gitFileConfig);

@@ -272,9 +272,9 @@ public class HelmDeployStateTest extends CategoryTest {
   public static final String GIT_NOT_YML_FILE_PATH = "templates/values";
   public static final String FILE_PATH_VALIDATION_MSG_KEY = "File path";
   public static final String FILE_PATH_DIRECTORY_VALIDATION_MSG_VALUE =
-      "File path cannot be directory if git connector is selected";
+      "File path cannot be directory if git ConnectorDisconnectHandler is selected";
   public static final String FILE_PATH_NOT_YAML_FILE_VALIDATION_MSG_VALUE =
-      "File path has to be YAML file if git connector is selected";
+      "File path has to be YAML file if git ConnectorDisconnectHandler is selected";
   private static final String COMMAND_FLAGS = "--tls";
   private static final String PHASE_NAME = "phaseName";
   private static final HelmCommandFlagConfig HELM_COMMAND_FLAG =
@@ -754,7 +754,7 @@ public class HelmDeployStateTest extends CategoryTest {
     Map<String, String> invalidFields = helmDeployState.validateFields();
 
     assertThat(invalidFields).containsKey(FILE_PATH_VALIDATION_MSG_KEY);
-    assertThat(invalidFields).containsValue("File path must not be blank if git connector is selected");
+    assertThat(invalidFields).containsValue("File path must not be blank if git ConnectorDisconnectHandler is selected");
   }
 
   @Test
@@ -766,7 +766,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     Map<String, String> invalidFields = helmDeployState.validateFields();
     assertThat(invalidFields).containsKey("Branch or commit id");
-    assertThat(invalidFields).containsValue("Branch or commit id must not be blank if git connector is selected");
+    assertThat(invalidFields).containsValue("Branch or commit id must not be blank if git ConnectorDisconnectHandler is selected");
   }
 
   @Test
@@ -1606,7 +1606,7 @@ public class HelmDeployStateTest extends CategoryTest {
     // Invalid connectorId
     attribute.setValue(mock(SettingValue.class)); // Check is !(settingValue instanceof GitConfig)
     assertThatThrownBy(() -> helmDeployState.executeHelmTask(context, ACTIVITY_ID, emptyMap(), emptyMap()))
-        .hasMessageContaining("Git connector not found");
+        .hasMessageContaining("Git ConnectorDisconnectHandler not found");
 
     // Valid connectorId
     attribute.setValue(GitConfig.builder().build());

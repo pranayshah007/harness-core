@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.bamboo.BambooConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.bamboo.BambooConnector")
 public class BambooConnector extends Connector {
   String url;
   @NotEmpty BambooAuthType authType;

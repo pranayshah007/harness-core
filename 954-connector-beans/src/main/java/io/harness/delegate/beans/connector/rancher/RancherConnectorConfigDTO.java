@@ -27,8 +27,8 @@ import lombok.Data;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(name = "RancherConnectorConfig", description = "This contains rancher connector config details")
-@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO")
+@Schema(name = "RancherConnectorConfig", description = "This contains rancher ConnectorDisconnectHandler config details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.rancher.RancherConnectorConfigDTO")
 public class RancherConnectorConfigDTO {
   @NotNull @JsonProperty("type") RancherConfigType configType;
 

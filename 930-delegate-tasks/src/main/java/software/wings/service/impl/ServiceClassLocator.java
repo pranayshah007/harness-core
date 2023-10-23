@@ -48,7 +48,7 @@ import org.reflections.Reflections;
 /**
  * Service class locator for all the artifact streams.
  * We currently use guice based lookup but we have an issue with the current design.
- * Each config (compute provider / connector) can only be associated to one Service.
+ * Each config (compute provider / ConnectorDisconnectHandler) can only be associated to one Service.
  * In our case, both ECR and S3 services use AwsConfig.
  * @author rktummala on 08/17/17
  */

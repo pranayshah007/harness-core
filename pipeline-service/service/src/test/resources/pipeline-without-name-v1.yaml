@@ -17,7 +17,7 @@ inputs:
     enums: [secret1, secret2]
     required: true
 repository:
-  connector: connector
+  connector: ConnectorDisconnectHandler
   name: harness-core
 stages:
   - name: output variable

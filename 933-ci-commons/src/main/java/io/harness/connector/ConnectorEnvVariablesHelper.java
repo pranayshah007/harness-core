@@ -86,7 +86,7 @@ public class ConnectorEnvVariablesHelper {
       if (usernamePasswordAuthDTO == null || usernamePasswordAuthDTO.getPasswordRef() == null
           || usernamePasswordAuthDTO.getPasswordRef().getDecryptedValue() == null) {
         throw new InvalidArgumentsException(
-            format("Artifactory connector password secret does not exist for connector with identifier %s",
+            format("Artifactory ConnectorDisconnectHandler password secret does not exist for ConnectorDisconnectHandler with identifier %s",
                 connectorDetails.getIdentifier()),
             WingsException.USER);
       }
@@ -116,7 +116,7 @@ public class ConnectorEnvVariablesHelper {
       if (credentialConfig == null || credentialConfig.getSecretKeyRef() == null
           || credentialConfig.getSecretKeyRef().getDecryptedValue() == null) {
         throw new InvalidArgumentsException(
-            format("GCP connector GCP_KEY secret does not exist for connector with identifier  %s",
+            format("GCP ConnectorDisconnectHandler GCP_KEY secret does not exist for ConnectorDisconnectHandler with identifier  %s",
                 connectorDetails.getIdentifier()),
             WingsException.USER);
       }
@@ -154,14 +154,14 @@ public class ConnectorEnvVariablesHelper {
       if (manualConfig == null || manualConfig.getSecretKeyRef() == null
           || manualConfig.getSecretKeyRef().getDecryptedValue() == null) {
         throw new InvalidArgumentsException(
-            format("AWS connector secret key does not exist for connector with identifier  %s",
+            format("AWS ConnectorDisconnectHandler secret key does not exist for ConnectorDisconnectHandler with identifier  %s",
                 connectorDetails.getIdentifier()),
             WingsException.USER);
       }
 
       if (manualConfig == null || (manualConfig.getAccessKey() == null && manualConfig.getAccessKeyRef() == null)) {
         throw new InvalidArgumentsException(
-            format("AWS connector access key does not exist for connector with identifier %s",
+            format("AWS ConnectorDisconnectHandler access key does not exist for ConnectorDisconnectHandler with identifier %s",
                 connectorDetails.getIdentifier()),
             WingsException.USER);
       }
@@ -261,7 +261,7 @@ public class ConnectorEnvVariablesHelper {
       if (dockerUserNamePasswordDTO == null || dockerUserNamePasswordDTO.getPasswordRef() == null
           || dockerUserNamePasswordDTO.getPasswordRef().getDecryptedValue() == null) {
         throw new InvalidArgumentsException(
-            format("Docker connector password secret does not exist for connector with identifier %s",
+            format("Docker ConnectorDisconnectHandler password secret does not exist for ConnectorDisconnectHandler with identifier %s",
                 connectorDetails.getIdentifier()),
             WingsException.USER);
       }

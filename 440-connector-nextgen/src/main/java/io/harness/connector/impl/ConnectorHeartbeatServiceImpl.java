@@ -84,7 +84,7 @@ public class ConnectorHeartbeatServiceImpl implements ConnectorHeartbeatService 
       return delegateServiceGrpcClient.createPerpetualTask(accountId, "CONNECTOR_TEST_CONNECTION",
           perpetualTaskSchedule, taskContext, false, "Connector Test Connection Task");
     } catch (Exception ex) {
-      log.info("{} Error Creating Perpetual task for the connector {} in account {}, org {} with taskId {}",
+      log.info("{} Error Creating Perpetual task for the ConnectorDisconnectHandler {} in account {}, org {} with taskId {}",
           CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorIdentifier, connectorOrgIdentifier, connectorProjectIdentifier, ex);
       return null;
     }
@@ -114,7 +114,7 @@ public class ConnectorHeartbeatServiceImpl implements ConnectorHeartbeatService 
           PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
       return true;
     } catch (Exception ex) {
-      log.error("{} Exception while deleting the heartbeat task for the connector {}", CONNECTOR_HEARTBEAT_LOG_PREFIX,
+      log.error("{} Exception while deleting the heartbeat task for the ConnectorDisconnectHandler {}", CONNECTOR_HEARTBEAT_LOG_PREFIX,
           connectorFQN);
       return false;
     }
@@ -149,7 +149,7 @@ public class ConnectorHeartbeatServiceImpl implements ConnectorHeartbeatService 
           PerpetualTaskId.newBuilder().setId(perpetualTaskId).build(),
           PerpetualTaskExecutionBundle.getDefaultInstance());
     } catch (StatusRuntimeException ex) {
-      log.error("Unable to reset perpetual task {} while updating connector with exception - {}", perpetualTaskId, ex);
+      log.error("Unable to reset perpetual task {} while updating ConnectorDisconnectHandler with exception - {}", perpetualTaskId, ex);
     }
   }
 }

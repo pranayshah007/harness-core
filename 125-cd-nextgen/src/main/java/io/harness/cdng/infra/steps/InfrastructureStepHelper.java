@@ -91,7 +91,7 @@ public class InfrastructureStepHelper {
 
   public ConnectorInfoDTO validateAndGetConnector(
       ParameterField<String> connectorRef, Ambiance ambiance, NGLogCallback logCallback) {
-    saveExecutionLogSafely(logCallback, "Fetching and validating connector...");
+    saveExecutionLogSafely(logCallback, "Fetching and validating ConnectorDisconnectHandler...");
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {

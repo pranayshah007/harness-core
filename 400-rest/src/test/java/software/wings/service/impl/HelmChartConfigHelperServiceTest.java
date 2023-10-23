@@ -79,7 +79,7 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
         .thenReturn(HelmVersion.V3);
 
     helmConnector = new SettingAttribute();
-    helmConnector.setName("helm-connector");
+    helmConnector.setName("helm-ConnectorDisconnectHandler");
     helmConnector.setUuid("abc");
     helmConnector.setValue(HttpHelmRepoConfig.builder().build());
 
@@ -227,7 +227,7 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
             .build();
 
     SettingAttribute settingAttribute = new SettingAttribute();
-    settingAttribute.setName("s3-helm-connector");
+    settingAttribute.setName("s3-helm-ConnectorDisconnectHandler");
     settingAttribute.setUuid("abc");
     settingAttribute.setValue(AmazonS3HelmRepoConfig.builder().connectorId("cloudProviderId").build());
 
@@ -241,7 +241,7 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
       fail("Should not reach here.");
     } catch (GeneralException ex) {
       assertThat(ex.getMessage())
-          .isEqualTo("Cloud provider deleted for helm repository connector [s3-helm-connector] selected in service");
+          .isEqualTo("Cloud provider deleted for helm repository ConnectorDisconnectHandler [s3-helm-ConnectorDisconnectHandler] selected in service");
     }
   }
 

@@ -324,7 +324,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
     assertThatThrownBy(() -> azureHelperService.getConnector(identifierRef))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
-            "Connector with identifier [identifier] with scope: [PROJECT] is not an Azure connector. Please check you configuration.");
+            "Connector with identifier [identifier] with scope: [PROJECT] is not an Azure ConnectorDisconnectHandler. Please check you configuration.");
   }
 
   @Test

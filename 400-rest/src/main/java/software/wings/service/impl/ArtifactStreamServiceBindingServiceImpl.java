@@ -500,7 +500,7 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
     return workflowService.listWorkflows(artifactStreamId, artifactStream.getAccountId());
   }
 
-  // TODO: ASR: make sure throwException is false after refactor to connector level artifact
+  // TODO: ASR: make sure throwException is false after refactor to ConnectorDisconnectHandler level artifact
 
   @Override
   public Service getService(String appId, String artifactStreamId, boolean throwException) {

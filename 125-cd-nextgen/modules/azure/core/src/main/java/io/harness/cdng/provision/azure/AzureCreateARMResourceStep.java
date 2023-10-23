@@ -130,7 +130,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     if (isEmpty(getParameterFieldValue(azureCreateARMResourceStepParameters.getProvisionerIdentifier()))) {
       throw new InvalidRequestException("Provisioner Identifier can't be null or empty");
     }
-    // Template file connector
+    // Template file ConnectorDisconnectHandler
     AzureCreateARMResourceStepConfigurationParameters spec =
         azureCreateARMResourceStepParameters.getConfigurationParameters();
 
@@ -166,7 +166,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
       entityDetailList.add(entityDetail);
     }
 
-    // Azure connector
+    // Azure ConnectorDisconnectHandler
     String connectorRef = spec.getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -184,7 +184,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     ConnectorInfoDTO connectorDTO =
         cdStepHelper.getConnector(stepConfigurationParameters.getConnectorRef().getValue(), ambiance);
     if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException("Invalid connector selected in Azure step. Select Azure connector");
+      throw new InvalidRequestException("Invalid ConnectorDisconnectHandler selected in Azure step. Select Azure ConnectorDisconnectHandler");
     }
 
     AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDTO.getConnectorConfig();

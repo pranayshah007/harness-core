@@ -47,7 +47,7 @@ public class AzureRepoDTOToEntity implements ConnectorDTOToEntityMapper<AzureRep
       throw new InvalidRequestException("AzureRepo Config DTO is not found");
     }
     if (configDTO.getAuthentication() == null) {
-      throw new InvalidRequestException("No Authentication Details Found in the connector");
+      throw new InvalidRequestException("No Authentication Details Found in the ConnectorDisconnectHandler");
     }
     GitAuthType gitAuthType = getAuthType(configDTO.getAuthentication());
     AzureRepoAuthentication azureRepoAuthentication =

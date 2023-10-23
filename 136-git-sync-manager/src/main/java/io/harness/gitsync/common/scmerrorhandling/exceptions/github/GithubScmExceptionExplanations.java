@@ -17,9 +17,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class GithubScmExceptionExplanations {
   public static final String LIST_REPO_WITH_INVALID_CRED =
-      "Couldn't list repositories. Credentials provided in connector are invalid or have expired.";
+      "Couldn't list repositories. Credentials provided in ConnectorDisconnectHandler are invalid or have expired.";
   public static final String LIST_BRANCH_WITH_INVALID_CRED =
-      "Couldn't list branches. Credentials provided in connector are invalid or have expired.";
+      "Couldn't list branches. Credentials provided in ConnectorDisconnectHandler are invalid or have expired.";
   public static final String LIST_BRANCH_WHEN_REPO_NOT_EXIST =
       "Couldn't list branches. Provided repo does not exist or has been deleted.";
 }

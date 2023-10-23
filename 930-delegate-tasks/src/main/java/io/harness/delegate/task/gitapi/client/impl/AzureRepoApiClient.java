@@ -104,7 +104,7 @@ public class AzureRepoApiClient implements GitApiClient {
       }
     } catch (Exception e) {
       log.error(
-          new StringBuilder("Failed while merging PR using connector: ").append(gitApiTaskParams.getRepo()).toString(),
+          new StringBuilder("Failed while merging PR using ConnectorDisconnectHandler: ").append(gitApiTaskParams.getRepo()).toString(),
           e);
       responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
     }
@@ -160,7 +160,7 @@ public class AzureRepoApiClient implements GitApiClient {
     AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
     if (azureRepoConnectorDTO.getApiAccess() == null) {
       throw new InvalidRequestException(
-          format("Failed to retrieve token info for Azure repo connector: %s", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for Azure repo ConnectorDisconnectHandler: %s", gitConnector.getIdentifier()));
     }
     if (azureRepoConnectorDTO.getApiAccess().getType() == AzureRepoApiAccessType.TOKEN) {
       AzureRepoTokenSpecDTO azureRepoTokenSpecDTO =

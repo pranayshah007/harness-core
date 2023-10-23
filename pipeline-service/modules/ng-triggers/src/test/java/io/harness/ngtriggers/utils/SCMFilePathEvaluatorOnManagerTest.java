@@ -78,7 +78,7 @@ public class SCMFilePathEvaluatorOnManagerTest extends CategoryTest {
                                                    .latestCommit("latestCommit")
                                                    .previousCommit("previousCommit")
                                                    .build();
-    String connectorIdentifier = "connector";
+    String connectorIdentifier = "ConnectorDisconnectHandler";
     when(scmServiceClient.compareCommits(any(), any(), any(), any()))
         .thenReturn(
             CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("file1.txt").build()).build());
@@ -98,7 +98,7 @@ public class SCMFilePathEvaluatorOnManagerTest extends CategoryTest {
                                                    .latestCommit("latestCommit")
                                                    .previousCommit("previousCommit")
                                                    .build();
-    String connectorIdentifier = "connector";
+    String connectorIdentifier = "ConnectorDisconnectHandler";
     when(scmServiceClient.compareCommits(any(), any(), any(), any()))
         .thenReturn(
             CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("file1.txt").build()).build());
@@ -155,7 +155,7 @@ public class SCMFilePathEvaluatorOnManagerTest extends CategoryTest {
     when(secretDecryptor.decrypt(any(), any())).thenReturn(githubTokenSpec);
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
-            .identifier("connector")
+            .identifier("ConnectorDisconnectHandler")
             .connectorType(ConnectorType.GITHUB)
             .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
             .executeOnDelegate(true)
@@ -200,7 +200,7 @@ public class SCMFilePathEvaluatorOnManagerTest extends CategoryTest {
     when(secretDecryptor.decrypt(any(), any())).thenReturn(azureRepoTokenSpecDTO);
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
-            .identifier("connector")
+            .identifier("ConnectorDisconnectHandler")
             .connectorType(ConnectorType.AZURE_REPO)
             .connectorConfig(
                 AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.REPO).url("url").build())

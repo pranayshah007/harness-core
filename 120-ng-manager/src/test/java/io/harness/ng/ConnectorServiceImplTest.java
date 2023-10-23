@@ -151,7 +151,7 @@ public class ConnectorServiceImplTest extends CategoryTest {
       fail("Should fail with InvalidRequestException as no other secret manager is present in the account");
     } catch (InvalidRequestException ex) {
       assertEquals(ex.getMessage(),
-          String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
+          String.format("Cannot delete the ConnectorDisconnectHandler: %s as no other secret manager is present in the account.",
               connectorIdentifier));
     }
   }

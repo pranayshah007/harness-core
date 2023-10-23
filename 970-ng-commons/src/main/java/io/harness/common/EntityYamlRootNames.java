@@ -18,10 +18,10 @@ import lombok.experimental.UtilityClass;
 
 /**
  * Name of the top element in yaml. For example:
- * <p>connector:
+ * <p>ConnectorDisconnectHandler:
  * name: testname projectIdentifier: projectId
  * </p>
- * In this the top element is <b>connector</b>
+ * In this the top element is <b>ConnectorDisconnectHandler</b>
  */
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -40,7 +40,7 @@ public class EntityYamlRootNames {
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
   public static final String PIPELINE_STEP = "pipelineStep";
-  public static final String CONNECTOR = "connector";
+  public static final String CONNECTOR = "ConnectorDisconnectHandler";
   public static final String SECRET = "secret";
   public static final String FILE = "file";
   public static final String SERVICE = "service";

@@ -93,7 +93,7 @@ public class CustomSecretManagerHelper {
 
   public Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
       CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO) {
-    // Get connector DTO
+    // Get ConnectorDisconnectHandler DTO
     ConnectorDTO connectorDTO = ngConnectorSecretManagerService.getConnectorDTO(
         customNGSecretManagerConfigDTO.getAccountIdentifier(), customNGSecretManagerConfigDTO.getOrgIdentifier(),
         customNGSecretManagerConfigDTO.getProjectIdentifier(), customNGSecretManagerConfigDTO.getIdentifier());
@@ -101,7 +101,7 @@ public class CustomSecretManagerHelper {
     inputValueKeys.add(ENVIRONMENT_VARIABLES);
     inputValueKeys.add(INPUT_VARIABLES);
     removeDefaultFromConfigDTO(customNGSecretManagerConfigDTO, inputValueKeys);
-    // Set the template input in connector dto from the inputs received from secret.
+    // Set the template input in ConnectorDisconnectHandler dto from the inputs received from secret.
     ((CustomSecretManagerConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig())
         .getTemplate()
         .setTemplateInputs(customNGSecretManagerConfigDTO.getTemplate().getTemplateInputs());

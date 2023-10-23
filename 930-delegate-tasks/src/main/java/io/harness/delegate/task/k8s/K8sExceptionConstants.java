@@ -19,7 +19,7 @@ public final class K8sExceptionConstants {
       "Please provide the correct master URL of the kubernetes cluster. It can be obtained using \"kubectl cluster-info\" cli command";
   public static final String INCORRECT_MASTER_URL_EXPLANATION = "Master URL provided is not reachable";
   public static final String KUBERNETES_CLUSTER_CONNECTION_VALIDATION_FAILED =
-      "Failed to validate kubernetes cluster connector connection";
+      "Failed to validate kubernetes cluster ConnectorDisconnectHandler connection";
 
   private K8sExceptionConstants() {
     throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

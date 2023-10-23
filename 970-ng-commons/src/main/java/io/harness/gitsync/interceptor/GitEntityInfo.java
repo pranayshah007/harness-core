@@ -49,7 +49,7 @@ public class GitEntityInfo {
   @Setter String repoName;
   @Wither @Setter String lastCommitId;
   @Setter String parentEntityRepoUrl;
-  @Setter String parentEntityConnectorRef; // connector ref of entity under whose context actions are occurring
+  @Setter String parentEntityConnectorRef; // ConnectorDisconnectHandler ref of entity under whose context actions are occurring
   @Setter String parentEntityRepoName; // repo name of entity under whose context actions are occurring
   @Setter String parentEntityAccountIdentifier;
   @Setter String parentEntityOrgIdentifier;

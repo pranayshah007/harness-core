@@ -299,7 +299,7 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
                       .connectedCloudProvider(
                           CloudProvider.builder()
                               .spec(AwsCloudProviderBasicConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("aws-connector-ref"))
+                                        .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler-ref"))
                                         .region(ParameterField.createValueField("us-east-1"))
                                         .build())
                               .build())

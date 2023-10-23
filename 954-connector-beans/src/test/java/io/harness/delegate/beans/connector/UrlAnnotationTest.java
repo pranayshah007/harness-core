@@ -52,7 +52,7 @@ import org.reflections.scanners.TypeAnnotationsScanner;
 
 @OwnedBy(PL)
 public class UrlAnnotationTest {
-  public static final String PACKAGE_NAME = "io.harness.delegate.beans.connector";
+  public static final String PACKAGE_NAME = "io.harness.delegate.beans.ConnectorDisconnectHandler";
   public static final String URL_FAILURE_MSG = "must be a valid URL";
 
   public static final List<String> validURLs = new LinkedList<>(Arrays.asList("http://localhost", "https://localhost",
@@ -242,7 +242,7 @@ public class UrlAnnotationTest {
     // Get build method from builder object
     Method build = builderObj.getClass().getMethod("build");
     build.setAccessible(true);
-    // Create connector config dto object
+    // Create ConnectorDisconnectHandler config dto object
     ConnectorConfigDTO connectorConfigDTO = (ConnectorConfigDTO) build.invoke(builderObj);
     field.setAccessible(true);
     // Check for valid URL
@@ -275,7 +275,7 @@ public class UrlAnnotationTest {
 
     // This will store pair of class and url annotated field as a list.
     List<Pair<Class<? extends ConnectorConfigDTO>, Field>> classUrlFieldPairList = new LinkedList<>();
-    // Gets subclasses of connector config dto and pair it with url annotated field in them to fill the above list
+    // Gets subclasses of ConnectorDisconnectHandler config dto and pair it with url annotated field in them to fill the above list
     reflections.getSubTypesOf(ConnectorConfigDTO.class)
         .forEach(aClass
             -> Arrays.stream(aClass.getDeclaredFields())

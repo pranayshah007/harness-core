@@ -24,7 +24,7 @@ import com.google.inject.Singleton;
 public class JiraEntityToDTO implements ConnectorEntityToDTOMapper<JiraConnectorDTO, JiraConnector> {
   @Override
   public JiraConnectorDTO createConnectorDTO(JiraConnector jiraConnector) {
-    // no change required after Jira connector migration
+    // no change required after Jira ConnectorDisconnectHandler migration
     JiraConnectorDTOBuilder jiraConnectorDTOBuilder =
         JiraConnectorDTO.builder()
             .jiraUrl(jiraConnector.getJiraUrl())

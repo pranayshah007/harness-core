@@ -22,7 +22,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(AwsConstants.INHERIT_FROM_DELEGATE)
 @ApiModel("AwsInheritFromDelegateSpec")
-@Schema(name = "AwsInheritFromDelegateSpec", description = "This contains AWS inherit from delegate connector details")
+@Schema(name = "AwsInheritFromDelegateSpec", description = "This contains AWS inherit from delegate ConnectorDisconnectHandler details")
 public class AwsInheritFromDelegateSpecDTO implements AwsCredentialSpecDTO {
   @NotNull @Size(min = 1) Set<String> delegateSelectors;
 }

@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsSecretManagerManualCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerManualCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awssecretmanager.AwsSecretManagerManualCredential")
 public class AwsSecretManagerManualCredential implements AwsSecretManagerCredentialSpec {
   String accessKey;
   String secretKey;

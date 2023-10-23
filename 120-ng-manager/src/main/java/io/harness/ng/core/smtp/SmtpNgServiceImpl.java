@@ -53,7 +53,7 @@ public class SmtpNgServiceImpl implements SmtpNgService {
         getResponse(ngSMTPSettingsHttpClient.validateSmtpSettings(name, accountId, GLOBAL_APP_ID, GLOBAL_ENV_ID));
     ValidationResultDTO resultDTO = ValidationResultDTO.builder().valid(response).build();
     if (!response) {
-      resultDTO.setErrorMessage("There already exists a connector with this name. Please try a different one.");
+      resultDTO.setErrorMessage("There already exists a ConnectorDisconnectHandler with this name. Please try a different one.");
     }
     return resultDTO;
   }

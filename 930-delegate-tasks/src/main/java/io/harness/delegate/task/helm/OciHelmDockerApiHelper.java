@@ -67,7 +67,7 @@ public class OciHelmDockerApiHelper {
       ociHelmDockerApiRestClient = ociHelmApiHelperUtils.getRestClient(repoUrl);
     } catch (URISyntaxException e) {
       throw new OciHelmDockerApiException(
-          format("URL provided in OCI Helm connector is invalid. %s", e.getMessage()), e);
+          format("URL provided in OCI Helm ConnectorDisconnectHandler is invalid. %s", e.getMessage()), e);
     }
     if (ociHelmConnector.getAuth().getAuthType().getDisplayName().equalsIgnoreCase(
             OciHelmAuthType.USER_PASSWORD.getDisplayName())) {

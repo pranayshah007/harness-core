@@ -190,7 +190,7 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
 
   private AwsConfig composeAwsConfig(AwsS3ArtifactDelegateConfig s3ArtifactDelegateConfig) {
     if (s3ArtifactDelegateConfig == null || s3ArtifactDelegateConfig.getAwsConnector() == null) {
-      throw new InvalidRequestException("AWS S3 artifact Delegate config and AWS S3 connector need to be defined.");
+      throw new InvalidRequestException("AWS S3 artifact Delegate config and AWS S3 ConnectorDisconnectHandler need to be defined.");
     }
     final AwsConfigBuilder configBuilder = AwsConfig.builder().accountId(s3ArtifactDelegateConfig.getAccountId());
     AwsCredentialDTO awsCredentialDTO = s3ArtifactDelegateConfig.getAwsConnector().getCredential();

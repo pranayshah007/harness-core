@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabKerberos")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabKerberos")
 public class GitlabKerberos implements GitlabHttpAuth {
   String kerberosKeyRef;
 }

@@ -241,7 +241,7 @@ public class AwsCodeCommitDataObtainerTest extends CategoryTest {
         .thenReturn(BinaryResponseData.builder().build());
     when(kryoSerializer.asInflatedObject(any())).thenReturn(awsCodeCommitApiTaskResponse);
     AwsCodeCommitApiTaskResponse response = awsCodeCommitDataObtainer.buildAndExecuteAwsCodeCommitDelegateTask(
-        webhookPayloadData, triggerDetailsList.get(0), "connector");
+        webhookPayloadData, triggerDetailsList.get(0), "ConnectorDisconnectHandler");
     assertThat(
         ((AwsCodeCommitDataObtainmentTaskResult) response.getAwsCodecommitApiResult()).getCommitDetailsList().size())
         .isEqualTo(1);

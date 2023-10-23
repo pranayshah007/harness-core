@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeCommitConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awscodecommitconnector.AwsCodeCommitConfig")
 public class AwsCodeCommitConfig extends Connector {
   AwsCodeCommitUrlType urlType;
   String url;

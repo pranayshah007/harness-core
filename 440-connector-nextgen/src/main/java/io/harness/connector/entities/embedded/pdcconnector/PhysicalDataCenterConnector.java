@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.pdcconnector.PhysicalDataCenterConnector")
 public class PhysicalDataCenterConnector extends Connector {
   List<Host> hosts;
   String sshKeyRef;

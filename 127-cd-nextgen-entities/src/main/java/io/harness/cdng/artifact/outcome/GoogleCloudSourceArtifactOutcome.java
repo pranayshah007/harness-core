@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome")
 public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
-  /** Google Cloud Storage connector. */
+  /** Google Cloud Storage ConnectorDisconnectHandler. */
   String connectorRef;
 
   /** project */

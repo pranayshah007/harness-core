@@ -223,7 +223,7 @@ public class JiraResourceServiceImpl implements JiraResourceService {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(jiraConnectorRef.getAccountIdentifier(),
         jiraConnectorRef.getOrgIdentifier(), jiraConnectorRef.getProjectIdentifier(), jiraConnectorRef.getIdentifier());
     if (!connectorDTO.isPresent() || !isJiraConnector(connectorDTO.get())) {
-      throw new InvalidRequestException(String.format("Jira connector not found for identifier : [%s] with scope: [%s]",
+      throw new InvalidRequestException(String.format("Jira ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]",
                                             jiraConnectorRef.getIdentifier(), jiraConnectorRef.getScope()),
           WingsException.USER);
     }

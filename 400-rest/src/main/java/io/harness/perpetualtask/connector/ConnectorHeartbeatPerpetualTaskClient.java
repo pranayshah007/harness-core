@@ -131,7 +131,7 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
             connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
     if (connectorValidationParameterResponse == null) {
       log.info(
-          "{} The connector doesn't exists with the following ids accountId: {}, orgId: {}, projectId:{}, identifier:{}",
+          "{} The ConnectorDisconnectHandler doesn't exists with the following ids accountId: {}, orgId: {}, projectId:{}, identifier:{}",
           CONNECTOR_HEARTBEAT_LOG_PREFIX, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
       throw new UnexpectedException(String.format("The " + CONNECTOR_STRING + " doesn't exists.", connectorIdentifier,
           accountIdentifier, orgIdentifier, projectIdentifier));

@@ -251,7 +251,7 @@ public class SecretMigrationService extends NgMigrationService {
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response == null ? null : CustomSecretRequestWrapper.builder().secret(response.getSecret()).build();
     } catch (Exception ex) {
-      log.warn("Error when getting connector - ", ex);
+      log.warn("Error when getting ConnectorDisconnectHandler - ", ex);
       return null;
     }
   }

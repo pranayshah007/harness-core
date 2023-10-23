@@ -362,7 +362,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     try {
       saveAndMergeAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO, integrationConfigs, connectorType);
     } catch (Exception e) {
-      log.error("Error in saving and merging app config for git integration in account - {} for connector type - {} ",
+      log.error("Error in saving and merging app config for git integration in account - {} for ConnectorDisconnectHandler type - {} ",
           accountIdentifier, connectorInfoDTO.getConnectorType().toString(), e);
     }
   }
@@ -387,7 +387,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
     saveUpdateAndMergeConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
 
-    log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
+    log.info("Merging for git integration completed for ConnectorDisconnectHandler - {}", connectorTypeAsString);
   }
 
   private List<AppConfigEntity> getAllEnabledPlugins(String accountIdentifier) {

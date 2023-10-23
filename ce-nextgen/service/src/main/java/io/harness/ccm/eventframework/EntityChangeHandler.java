@@ -167,9 +167,9 @@ public class EntityChangeHandler {
 
     if (visibilityFeatureEnabled) {
       if (clusterRecord == null) {
-        /* If Visibility was enabled as a part of connector Update (Cluster record didn't exist previously)
+        /* If Visibility was enabled as a part of ConnectorDisconnectHandler Update (Cluster record didn't exist previously)
         - Then we create Cluster Record and Assign a Perpetual Task */
-        log.info("Handle CE K8s Connector[Visibility was enabled as a part of connector Update]");
+        log.info("Handle CE K8s Connector[Visibility was enabled as a part of ConnectorDisconnectHandler Update]");
         String k8sBaseConnectorRef = ceKubernetesClusterConfigDTO.getConnectorRef();
         onboardNewCEK8sConnector(getClusterRecord(
             accountIdentifier, ceK8sConnectorIdentifier, ceK8sConnectorInfoDTO.getName(), k8sBaseConnectorRef));
@@ -264,7 +264,7 @@ public class EntityChangeHandler {
       connectorInfoDTO = connectorDTO.get().getConnectorInfo();
     } catch (Exception e) {
       throw new NotFoundException(
-          format("Error while getting connector information : [%s]", connectorIdentifierRef), e);
+          format("Error while getting ConnectorDisconnectHandler information : [%s]", connectorIdentifierRef), e);
     }
     return connectorInfoDTO;
   }

@@ -474,7 +474,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
                             .envName("env1")
                             .envType(EnvironmentType.Production)
                             .instanceKey("key")
-                            .connectorRef("connector")
+                            .connectorRef("ConnectorDisconnectHandler")
                             .id("id")
                             .createdAt(5L)
                             .deletedAt(10)

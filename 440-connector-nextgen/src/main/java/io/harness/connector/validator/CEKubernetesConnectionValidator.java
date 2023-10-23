@@ -39,7 +39,7 @@ public class CEKubernetesConnectionValidator extends AbstractKubernetesConnector
   @Inject @Named("defaultConnectorService") ConnectorService connectorService;
 
   public static final String CONNECTOR_REF_NOT_EXIST =
-      "There does not exist a K8sCluster Cloud Provider connector with connectorRef='%s' ";
+      "There does not exist a K8sCluster Cloud Provider ConnectorDisconnectHandler with connectorRef='%s' ";
 
   @Override
   public String getTaskType() {

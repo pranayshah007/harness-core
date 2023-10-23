@@ -450,7 +450,7 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetGitDetailsUpdate() {
     templateServiceHelper.getGitDetailsUpdate(
-        UpdateGitDetailsParams.builder().repoName("repo").connectorRef("connector").filePath("filepath").build());
+        UpdateGitDetailsParams.builder().repoName("repo").connectorRef("ConnectorDisconnectHandler").filePath("filepath").build());
   }
 
   @Test

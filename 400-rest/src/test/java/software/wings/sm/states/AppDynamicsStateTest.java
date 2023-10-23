@@ -509,7 +509,7 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     assertThat(validationResult.size()).isEqualTo(1);
     assertThat(validationResult.get("Invalid templatization for application"))
         .isEqualTo(
-            "If connector is templatized then application should be either templatized or should be an expression");
+            "If ConnectorDisconnectHandler is templatized then application should be either templatized or should be an expression");
   }
 
   @Test
@@ -937,14 +937,14 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
   public void testGetResolvedConnectorId_whenExpressionInvalidValue() {
-    appDynamicsState.setAnalysisServerConfigId("${connector.name}");
+    appDynamicsState.setAnalysisServerConfigId("${ConnectorDisconnectHandler.name}");
     assertThatThrownBy(
         ()
             -> appDynamicsState.getResolvedConnectorId(executionContext, AppDynamicsStateKeys.analysisServerConfigId,
                 appDynamicsState.getAnalysisServerConfigId()))
         .isInstanceOf(DataCollectionException.class)
         .hasMessage("Expression " + appDynamicsState.getAnalysisServerConfigId() + " resolved to "
-            + appDynamicsState.getAnalysisServerConfigId() + ". There was no connector found with this name.");
+            + appDynamicsState.getAnalysisServerConfigId() + ". There was no ConnectorDisconnectHandler found with this name.");
   }
 
   @Test
@@ -963,8 +963,8 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
                                             .withValue(appDynamicsConfig)
                                             .build();
     wingsPersistence.save(settingAttribute);
-    appDynamicsState.setAnalysisServerConfigId("${connector.name}");
-    when(executionContext.renderExpression("${connector.name}")).thenReturn(settingAttribute.getName());
+    appDynamicsState.setAnalysisServerConfigId("${ConnectorDisconnectHandler.name}");
+    when(executionContext.renderExpression("${ConnectorDisconnectHandler.name}")).thenReturn(settingAttribute.getName());
     when(executionContext.getAccountId()).thenReturn(accountId);
     final String resolvedConnectorId = appDynamicsState.getResolvedConnectorId(
         executionContext, AppDynamicsStateKeys.analysisServerConfigId, appDynamicsState.getAnalysisServerConfigId());

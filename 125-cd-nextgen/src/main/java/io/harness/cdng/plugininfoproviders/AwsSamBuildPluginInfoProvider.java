@@ -167,7 +167,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         }
       } else {
         String errorMessage =
-            String.format("Only Docker Registry type connector is supported in SAM Build Docker Registry");
+            String.format("Only Docker Registry type ConnectorDisconnectHandler is supported in SAM Build Docker Registry");
         throw new InvalidRequestException(errorMessage);
       }
 

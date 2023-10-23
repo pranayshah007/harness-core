@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = ArtifactoryAuthDTODeserializer.class)
 @Schema(
     name = "ArtifactoryAuthentication", description = "This entity contains the details for Artifactory Authentication")
-@RecasterAlias("io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.artifactoryconnector.ArtifactoryAuthenticationDTO")
 public class ArtifactoryAuthenticationDTO {
   @NotNull @JsonProperty("type") ArtifactoryAuthType authType;
 

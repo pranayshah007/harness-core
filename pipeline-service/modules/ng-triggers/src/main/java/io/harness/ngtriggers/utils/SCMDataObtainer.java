@@ -129,20 +129,20 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
       gitUrl = url;
     } else if (connectionType == GitConnectionType.PROJECT) {
       if (isEmpty(repoName)) {
-        throw new IllegalArgumentException("Repo name is not set in trigger git connector spec");
+        throw new IllegalArgumentException("Repo name is not set in trigger git ConnectorDisconnectHandler spec");
       }
       if (url.contains(AZURE_REPO_BASE_URL)) {
         gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
       }
     } else if (connectionType == GitConnectionType.ACCOUNT) {
       if (isEmpty(repoName)) {
-        throw new IllegalArgumentException("Repo name is not set in trigger git connector spec");
+        throw new IllegalArgumentException("Repo name is not set in trigger git ConnectorDisconnectHandler spec");
       }
       gitUrl = StringUtils.join(
           StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(repoName, PATH_SEPARATOR));
     } else {
       throw new InvalidArgumentsException(
-          format("Invalid connection type for git connector: %s", connectionType.toString()), WingsException.USER);
+          format("Invalid connection type for git ConnectorDisconnectHandler: %s", connectionType.toString()), WingsException.USER);
     }
 
     return gitUrl;

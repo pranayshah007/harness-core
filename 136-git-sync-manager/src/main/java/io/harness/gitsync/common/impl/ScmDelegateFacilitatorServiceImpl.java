@@ -1008,7 +1008,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final DecryptableEntity apiAccessDecryptableEntity =
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmConnector);
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
-    // setting service principal for connector encryption in case of Git Connector
+    // setting service principal for ConnectorDisconnectHandler encryption in case of Git Connector
     GitSyncUtils.setGitSyncServicePrincipal();
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManagerClientService.getEncryptionDetails(baseNGAccess, apiAccessDecryptableEntity);
@@ -1132,7 +1132,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     return delegateResponseData;
   }
 
-  // Group files per connector to optimize on payload and pass it as task params to delegate task
+  // Group files per ConnectorDisconnectHandler to optimize on payload and pass it as task params to delegate task
   @VisibleForTesting
   ScmBatchGetFileTaskParams getScmBatchGetFileTaskParams(GitFileBatchRequest gitFileBatchRequest) {
     Map<ConnectorDetails, Pair<ScmConnector, List<EncryptedDataDetail>>> connectorDetailsToEncryptedDataDetailsMapping =

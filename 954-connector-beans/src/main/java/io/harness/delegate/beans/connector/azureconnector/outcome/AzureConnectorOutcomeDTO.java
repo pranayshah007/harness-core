@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.outcome.AzureConnectorOutcomeDTO")
 public class AzureConnectorOutcomeDTO
     extends ConnectorConfigOutcomeDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid AzureCredentialOutcomeDTO credential;

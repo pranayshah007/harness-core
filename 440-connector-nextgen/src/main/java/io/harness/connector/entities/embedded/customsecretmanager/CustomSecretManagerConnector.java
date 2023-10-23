@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomSecretManagerConnector extends Connector {
   @Builder.Default private Boolean isDefault = false;

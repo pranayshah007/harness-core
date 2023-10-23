@@ -15,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabHttpAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabHttpAuthentication")
 public class GitlabHttpAuthentication implements GitlabAuthentication {
   GitlabHttpAuthenticationType type;
   GitlabHttpAuth auth;

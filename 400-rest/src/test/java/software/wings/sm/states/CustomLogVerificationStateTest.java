@@ -318,6 +318,6 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     when(settingsService.get(configId)).thenReturn(null);
     assertThatThrownBy(() -> customLogVerificationState.triggerAnalysisDataCollection(context, executionData, hosts))
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("No connector found with id " + configId);
+        .hasMessage("No ConnectorDisconnectHandler found with id " + configId);
   }
 }

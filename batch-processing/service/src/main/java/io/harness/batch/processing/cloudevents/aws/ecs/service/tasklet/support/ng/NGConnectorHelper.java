@@ -58,7 +58,7 @@ public class NGConnectorHelper {
         }
         page++;
       } while (response != null && isNotEmpty(response.getContent()));
-      log.info("Processing batch size of {} in NG connector (From NG)", nextGenConnectorResponses.size());
+      log.info("Processing batch size of {} in NG ConnectorDisconnectHandler (From NG)", nextGenConnectorResponses.size());
     } catch (Exception ex) {
       log.error("Exception while getting NG connectors", ex);
     }

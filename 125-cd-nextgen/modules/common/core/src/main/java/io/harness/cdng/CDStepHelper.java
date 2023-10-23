@@ -417,7 +417,7 @@ public class CDStepHelper {
   @NotNull
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
-    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git ConnectorDisconnectHandler", repoName);
     String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
     String purgedRepoName = repoName.replaceAll("^/*", "");
     return purgedRepoUrl + "/" + purgedRepoName;
@@ -426,7 +426,7 @@ public class CDStepHelper {
   @NotNull
   public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
-    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git ConnectorDisconnectHandler", repoName);
     String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
     String purgedRepoName = repoName.replaceAll("^/*", "");
     return purgedRepoUrl + GIT + purgedRepoName;
@@ -801,56 +801,56 @@ public class CDStepHelper {
     switch (manifestStoreType) {
       case ManifestStoreType.GIT:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof GitConfigDTO)) {
-          throw new InvalidRequestException(format("Invalid connector selected in %s. Select Git connector", message));
+          throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler selected in %s. Select Git ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.GITHUB:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Github connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Github ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.GITLAB:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof GitlabConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select GitLab connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select GitLab ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.BITBUCKET:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof BitbucketConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Bitbucket connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Bitbucket ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.AZURE_REPO:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof AzureRepoConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Azure_Repo connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Azure_Repo ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.HTTP:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof HttpHelmConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Http Helm connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Http Helm ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Amazon Web Services connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Amazon Web Services ConnectorDisconnectHandler", message));
         }
         break;
       case ManifestStoreType.ARTIFACTORY:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof ArtifactoryConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Artifactory connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Artifactory ConnectorDisconnectHandler", message));
         }
         break;
 
       case ManifestStoreType.GCS:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Google cloud connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Google cloud ConnectorDisconnectHandler", message));
         }
         break;
 
@@ -867,13 +867,13 @@ public class CDStepHelper {
       case GENERIC:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Oci Helm ConnectorDisconnectHandler", message));
         }
         break;
       case ECR:
         if (!(connectorInfoDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
           throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Amazon Web Services connector", message));
+              format("Invalid ConnectorDisconnectHandler selected in %s. Select Amazon Web Services ConnectorDisconnectHandler", message));
         }
         break;
       default:

@@ -47,7 +47,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.AZURE_REPO_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
-          String.format("Connector with id - [%s] is not AzureRepo connector for accountId: [%s]", connectorIdentifier,
+          String.format("Connector with id - [%s] is not AzureRepo ConnectorDisconnectHandler for accountId: [%s]", connectorIdentifier,
               accountIdentifier));
     }
 
@@ -64,7 +64,7 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
     String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
     if (tokenSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(String.format(
-          "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+          "Secret identifier not found for ConnectorDisconnectHandler: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();

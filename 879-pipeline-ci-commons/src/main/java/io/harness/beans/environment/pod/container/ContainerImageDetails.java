@@ -15,7 +15,7 @@ import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
 /**
- * Stores connector identifier to fetch latest image from connector and populate imageDetails.
+ * Stores ConnectorDisconnectHandler identifier to fetch latest image from ConnectorDisconnectHandler and populate imageDetails.
  */
 
 @Data

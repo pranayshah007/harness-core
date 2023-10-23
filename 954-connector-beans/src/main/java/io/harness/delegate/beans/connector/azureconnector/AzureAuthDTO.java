@@ -27,7 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "AzureAuth", description = "This contains azure auth details")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureAuthDTO")
 public class AzureAuthDTO {
   @NotNull @JsonProperty("type") AzureSecretType azureSecretType;
 

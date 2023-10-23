@@ -101,7 +101,7 @@ public class MergeHelperTest extends CategoryTest {
     String filename = "opa-pipeline.yaml";
     String pipeline = readFile(filename);
 
-    String fqn1 = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector";
+    String fqn1 = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler";
     String exp1 = "{\n"
         + "  \"name\": \"jira basic\",\n"
         + "  \"identifier\": \"jira_basic\",\n"
@@ -139,7 +139,7 @@ public class MergeHelperTest extends CategoryTest {
     assertThat(expandedPipeline).isEqualTo(expandedPipelineExpected);
     YamlField yamlField = YamlUtils.readTree(expandedPipeline);
     YamlNode firstExp =
-        yamlField.getNode().gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector");
+        yamlField.getNode().gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler");
     YamlNode secondExp = yamlField.getNode().gotoPath("pipeline/stages/[1]/stage/spec/infrastructure/environment");
     assertThat(firstExp).isNotNull();
     assertThat(secondExp).isNotNull();
@@ -158,7 +158,7 @@ public class MergeHelperTest extends CategoryTest {
     String filename = "opa-pipeline.yaml";
     String pipeline = readFile(filename);
 
-    String fqn1 = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector";
+    String fqn1 = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler";
     String exp1 = readFile("emojiExp1.txt");
 
     String fqn2 = "pipeline/stages/[1]/stage/spec/infrastructure/environment";
@@ -173,7 +173,7 @@ public class MergeHelperTest extends CategoryTest {
     assertThat(expandedPipeline).isEqualTo(expandedPipelineExpected);
     YamlField yamlField = YamlUtils.readTree(expandedPipeline);
     YamlNode firstExp =
-        yamlField.getNode().gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector");
+        yamlField.getNode().gotoPath("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler");
     YamlNode secondExp = yamlField.getNode().gotoPath("pipeline/stages/[1]/stage/spec/infrastructure/environment");
     assertThat(firstExp).isNotNull();
     assertThat(secondExp).isNotNull();

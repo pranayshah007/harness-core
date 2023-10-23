@@ -185,7 +185,7 @@ public class VmPluginStepSerializer {
           connectorRef = envVars.get("PLUGIN_CONNECTOR_REF");
           envVars.remove("PLUGIN_CONNECTOR_REF");
         } else {
-          throw new IACMStageExecutionException("The connector ref is missing. Check the workspace");
+          throw new IACMStageExecutionException("The ConnectorDisconnectHandler ref is missing. Check the workspace");
         }
         if (envVars.containsKey("PLUGIN_PROVISIONER")) {
           provider = envVars.get("PLUGIN_PROVISIONER");
@@ -217,7 +217,7 @@ public class VmPluginStepSerializer {
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 
     // if the plugin type is git clone use default harnessImage Connector
-    // else if the connector is given in plugin, use that.
+    // else if the ConnectorDisconnectHandler is given in plugin, use that.
     if (isGitCloneStep(identifier, pluginStepInfo)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails harnessInternalImageConnector =

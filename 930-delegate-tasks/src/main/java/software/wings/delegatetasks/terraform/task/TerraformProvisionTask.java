@@ -1161,7 +1161,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   }
 
   /*
-Copies Files from the directory common to the git connector to a directory specific to the app
+Copies Files from the directory common to the git ConnectorDisconnectHandler to a directory specific to the app
 and provisioner
  */
   private void copyFilesToWorkingDirectory(String sourceDir, String destinationDir) throws IOException {

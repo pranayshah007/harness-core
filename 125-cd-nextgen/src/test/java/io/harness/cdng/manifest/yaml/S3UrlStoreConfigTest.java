@@ -31,19 +31,19 @@ public class S3UrlStoreConfigTest extends CategoryTest {
         ParameterField.createValueField(Collections.singletonList("url-override"));
 
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .urls(urls)
                                   .region(ParameterField.createValueField("region"))
                                   .build();
 
     S3UrlStoreConfig override = S3UrlStoreConfig.builder()
-                                    .connectorRef(ParameterField.createValueField("connector-ref-override"))
+                                    .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref-override"))
                                     .urls(urlsOverride)
                                     .region(ParameterField.createValueField("region-override"))
                                     .build();
 
     S3UrlStoreConfig result = (S3UrlStoreConfig) origin.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref-override");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref-override");
     assertThat(result.getUrls().getValue().get(0)).isEqualTo("url-override");
     assertThat(result.getRegion().getValue()).isEqualTo("region-override");
   }
@@ -54,7 +54,7 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   public void testApplyOverridesEmpty() {
     ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .urls(urls)
                                   .region(ParameterField.createValueField("region"))
                                   .build();
@@ -63,7 +63,7 @@ public class S3UrlStoreConfigTest extends CategoryTest {
 
     S3UrlStoreConfig result = (S3UrlStoreConfig) origin.applyOverrides(override);
 
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(result.getUrls().getValue().get(0)).isEqualTo("url1");
     assertThat(result.getRegion().getValue()).isEqualTo("region");
   }
@@ -74,14 +74,14 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   public void testCloneInternal() {
     ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .urls(urls)
                                   .region(ParameterField.createValueField("region"))
                                   .build();
 
     S3UrlStoreConfig originClone = (S3UrlStoreConfig) origin.cloneInternal();
 
-    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(originClone.getUrls().getValue().get(0)).isEqualTo("url1");
     assertThat(originClone.getRegion().getValue()).isEqualTo("region");
   }
@@ -92,11 +92,11 @@ public class S3UrlStoreConfigTest extends CategoryTest {
   public void testExtractConnectorRefs() {
     ParameterField<List<String>> urls = ParameterField.createValueField(Collections.singletonList("url1"));
     S3UrlStoreConfig origin = S3UrlStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .urls(urls)
                                   .region(ParameterField.createValueField("region"))
                                   .build();
 
-    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("connector-ref");
+    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 }

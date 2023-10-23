@@ -16,7 +16,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.azureartifacts.AzureArtifactsHttpAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azureartifacts.AzureArtifactsHttpAuthentication")
 public class AzureArtifactsAuthentication {
   /**
    * Authentication Type - Personal Access Token

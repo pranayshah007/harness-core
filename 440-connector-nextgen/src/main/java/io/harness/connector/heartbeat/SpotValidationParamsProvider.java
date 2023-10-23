@@ -23,7 +23,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class SpotValidationParamsProvider implements ConnectorValidationParamsProvider {

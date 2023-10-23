@@ -99,7 +99,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
     if (stepParametersSpec.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
             TerraformStepConfigurationType.INLINE.getDisplayName())) {
-      // Config Files connector
+      // Config Files ConnectorDisconnectHandler
       String connectorRef = stepParametersSpec.getConfiguration()
                                 .getSpec()
                                 .configFiles.store.getSpec()

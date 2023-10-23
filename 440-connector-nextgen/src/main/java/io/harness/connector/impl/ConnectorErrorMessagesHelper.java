@@ -16,7 +16,7 @@ public class ConnectorErrorMessagesHelper {
   public String createConnectorNotFoundMessage(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     StringBuilder stringBuilder = new StringBuilder(256);
-    stringBuilder.append("No connector exists with the identifier ")
+    stringBuilder.append("No ConnectorDisconnectHandler exists with the identifier ")
         .append(connectorIdentifier)
         .append(" in account ")
         .append(accountIdentifier);

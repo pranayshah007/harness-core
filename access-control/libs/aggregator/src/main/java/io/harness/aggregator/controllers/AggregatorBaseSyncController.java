@@ -71,7 +71,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private final AtomicLong hostSelectorIndex;
 
   protected static final String ACCESS_CONTROL_AGGREGATOR_LOCK = "ACCESS_CONTROL_AGGREGATOR_LOCK";
-  private static final String MONGO_DB_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
+  private static final String MONGO_DB_CONNECTOR = "io.debezium.ConnectorDisconnectHandler.mongodb.MongoDbConnector";
   private static final String CONNECTOR_NAME = "name";
   private static final String OFFSET_STORAGE = "offset.storage";
   private static final String OFFSET_STORAGE_FILE_FILENAME = "offset.storage.file.filename";
@@ -82,7 +82,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private static final String CONNECT_BACKOFF_INITIAL_DELAY_MS = "connect.backoff.initial.delay.ms";
   private static final String CONNECT_BACKOFF_MAX_DELAY_MS = "connect.backoff.max.delay.ms";
   private static final String CONNECT_MAX_ATTEMPTS = "connect.max.attempts";
-  private static final String CONNECTOR_CLASS = "connector.class";
+  private static final String CONNECTOR_CLASS = "ConnectorDisconnectHandler.class";
   private static final String MONGODB_HOSTS = "mongodb.hosts";
   private static final String MONGODB_HOSTS_DELIMITER = ",";
   private static final String MONGODB_NAME = "mongodb.name";
@@ -97,7 +97,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private static final String TRANSFORMS_UNWRAP_ADD_HEADERS = "transforms.unwrap.add.headers";
   private static final String SNAPSHOT_FETCH_SIZE = "snapshot.fetch.size";
   private static final String DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE =
-      "io.debezium.connector.mongodb.transforms.ExtractNewDocumentState";
+      "io.debezium.ConnectorDisconnectHandler.mongodb.transforms.ExtractNewDocumentState";
   private static final String ROLE_ASSIGNMENTS = "roleassignments";
   private static final String ROLES = "roles";
   private static final String RESOURCE_GROUPS = "resourcegroups";
@@ -154,7 +154,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
     props.setProperty(OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
 
-    /* begin connector properties */
+    /* begin ConnectorDisconnectHandler properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);
     String[] mongoDbHosts = debeziumConfig.getMongodbHosts().split(MONGODB_HOSTS_DELIMITER);
     int hostSelector = (int) (hostSelectorIndex.incrementAndGet() % mongoDbHosts.length);

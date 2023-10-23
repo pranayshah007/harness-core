@@ -68,7 +68,7 @@ public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
   }
 
   private void createGcpKmsCopiesInAllScopes(ConnectorDTO globalConnectorDTO) {
-    // if there are no LOCAL connector except one then migration is not needed.
+    // if there are no LOCAL ConnectorDisconnectHandler except one then migration is not needed.
     Query query = new Query(Criteria.where(ConnectorKeys.identifier)
                                 .is(HARNESS_SECRET_MANAGER_IDENTIFIER)
                                 .and(ConnectorKeys.type)

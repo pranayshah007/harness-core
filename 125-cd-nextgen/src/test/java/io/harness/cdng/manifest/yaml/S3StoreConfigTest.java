@@ -26,21 +26,21 @@ public class S3StoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverrides() {
     S3StoreConfig origin = S3StoreConfig.builder()
-                               .connectorRef(ParameterField.createValueField("connector-ref"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                .bucketName(ParameterField.createValueField("bucket-name"))
                                .region(ParameterField.createValueField("region"))
                                .folderPath(ParameterField.createValueField("folder-path"))
                                .build();
 
     S3StoreConfig override = S3StoreConfig.builder()
-                                 .connectorRef(ParameterField.createValueField("connector-ref-override"))
+                                 .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref-override"))
                                  .bucketName(ParameterField.createValueField("bucket-name-override"))
                                  .region(ParameterField.createValueField("region-override"))
                                  .folderPath(ParameterField.createValueField("folder-path-override"))
                                  .build();
 
     S3StoreConfig result = (S3StoreConfig) origin.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref-override");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref-override");
     assertThat(result.getBucketName().getValue()).isEqualTo("bucket-name-override");
     assertThat(result.getRegion().getValue()).isEqualTo("region-override");
     assertThat(result.getFolderPath().getValue()).isEqualTo("folder-path-override");
@@ -51,7 +51,7 @@ public class S3StoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverridesEmpty() {
     S3StoreConfig origin = S3StoreConfig.builder()
-                               .connectorRef(ParameterField.createValueField("connector-ref"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                .bucketName(ParameterField.createValueField("bucket-name"))
                                .region(ParameterField.createValueField("region"))
                                .folderPath(ParameterField.createValueField("folder-path"))
@@ -61,7 +61,7 @@ public class S3StoreConfigTest extends CategoryTest {
 
     S3StoreConfig result = (S3StoreConfig) origin.applyOverrides(override);
 
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(result.getBucketName().getValue()).isEqualTo("bucket-name");
     assertThat(result.getRegion().getValue()).isEqualTo("region");
     assertThat(result.getFolderPath().getValue()).isEqualTo("folder-path");
@@ -72,7 +72,7 @@ public class S3StoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCloneInternal() {
     S3StoreConfig origin = S3StoreConfig.builder()
-                               .connectorRef(ParameterField.createValueField("connector-ref"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                .bucketName(ParameterField.createValueField("bucket-name"))
                                .region(ParameterField.createValueField("region"))
                                .folderPath(ParameterField.createValueField("folder-path"))
@@ -80,7 +80,7 @@ public class S3StoreConfigTest extends CategoryTest {
 
     S3StoreConfig originClone = (S3StoreConfig) origin.cloneInternal();
 
-    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(originClone.getBucketName().getValue()).isEqualTo("bucket-name");
     assertThat(originClone.getRegion().getValue()).isEqualTo("region");
     assertThat(originClone.getFolderPath().getValue()).isEqualTo("folder-path");
@@ -91,12 +91,12 @@ public class S3StoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractConnectorRefs() {
     S3StoreConfig origin = S3StoreConfig.builder()
-                               .connectorRef(ParameterField.createValueField("connector-ref"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                .bucketName(ParameterField.createValueField("bucket-name"))
                                .region(ParameterField.createValueField("region"))
                                .folderPath(ParameterField.createValueField("folder-path"))
                                .build();
 
-    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("connector-ref");
+    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 }

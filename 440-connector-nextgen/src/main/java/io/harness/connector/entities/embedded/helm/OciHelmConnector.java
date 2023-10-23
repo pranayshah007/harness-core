@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.helm.OciHelmConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.helm.OciHelmConnector")
 public class OciHelmConnector extends Connector {
   String url;
   @NotEmpty OciHelmAuthType authType;

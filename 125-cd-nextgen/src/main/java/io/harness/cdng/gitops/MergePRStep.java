@@ -192,7 +192,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
 
     String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
     if (tokenRefIdentifier == null) {
-      throw new InvalidRequestException("Failed to get token identifier from connector");
+      throw new InvalidRequestException("Failed to get token identifier from ConnectorDisconnectHandler");
     }
     String constraintUnitIdentifier =
         GITOPS_MERGE_PR.getName() + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;

@@ -68,11 +68,11 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
       connectorDetails = connectorUtils.getConnectorDetails(
           ngAccess, ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
     } catch (Exception ex) {
-      log.error("Failed to register webhook, could not fetch connector details", ex);
+      log.error("Failed to register webhook, could not fetch ConnectorDisconnectHandler details", ex);
       WebhookRegistrationStatusDataBuilder metadataBuilder = WebhookRegistrationStatusData.builder();
       metadataBuilder.webhookAutoRegistrationStatus(
           WebhookAutoRegistrationStatus.builder()
-              .detailedMessage("Failed to fetch connector details: " + ExceptionUtils.getMessage(ex))
+              .detailedMessage("Failed to fetch ConnectorDisconnectHandler details: " + ExceptionUtils.getMessage(ex))
               .registrationResult(WebhookRegistrationStatus.ERROR)
               .build());
       return metadataBuilder.build();
@@ -85,7 +85,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
       if (isNotEmpty(repoName)) {
         url = format("%s/%s", stripEnd(url, "/"), stripStart(repoName, "/"));
       } else {
-        log.warn("Repo name is empty for account level connector");
+        log.warn("Repo name is empty for account level ConnectorDisconnectHandler");
       }
     } else if (connectorUtils.getConnectionType(connectorDetails).equals(GitConnectionType.PROJECT)) {
       if (isNotEmpty(repoName)) {
@@ -93,7 +93,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
           url = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
         }
       } else {
-        log.warn("Repo name is empty for project level connector");
+        log.warn("Repo name is empty for project level ConnectorDisconnectHandler");
       }
     }
 

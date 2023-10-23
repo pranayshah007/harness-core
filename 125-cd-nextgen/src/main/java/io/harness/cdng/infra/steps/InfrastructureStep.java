@@ -355,7 +355,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         infrastructure.getConnectorReferences(), ambiance, logCallback);
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
@@ -363,7 +363,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.SERVERLESS_AWS_LAMBDA.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -371,28 +371,28 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -400,7 +400,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
@@ -408,7 +408,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.SPOT.name()));
       }
@@ -416,7 +416,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.TAS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof TasConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.TAS.name()));
       }
@@ -424,7 +424,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.ASG.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -432,7 +432,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -440,7 +440,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -448,7 +448,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.KUBERNETES_AWS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }

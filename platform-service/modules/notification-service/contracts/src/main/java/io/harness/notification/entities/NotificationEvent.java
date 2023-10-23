@@ -24,7 +24,7 @@ public enum NotificationEvent {
   DELEGATE_EXPIRED(NotificationEntity.DELEGATE, NotificationModule.PLATFORM, "DelegateExpired"),
   DELEGATE_ABOUT_TO_EXPIRE(NotificationEntity.DELEGATE, NotificationModule.PLATFORM, "DelegateAboutToExpire"),
 
-  // connector events
+  // ConnectorDisconnectHandler events
   CONNECTOR_DOWN(NotificationEntity.CONNECTOR, NotificationModule.PLATFORM, "ConnectorDown");
 
   private final NotificationEntity notificationEntity;

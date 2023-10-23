@@ -56,7 +56,7 @@ public class TasInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   private static final String PROJECT_IDENTIFIER = "project";
   private static final String ACCOUNT_IDENTIFIER = "account";
   private static final String ORG_IDENTIFIER = "org";
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final String APPLICATION_NAME = "application";
   private static final String APPLICATION_ID = "app_Id";
   private static final String SPACE = "space";

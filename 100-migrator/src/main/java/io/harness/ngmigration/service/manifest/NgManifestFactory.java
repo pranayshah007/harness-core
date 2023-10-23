@@ -153,7 +153,7 @@ public class NgManifestFactory {
         CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build();
     if (!migratedEntities.containsKey(connectorId)) {
       log.error(
-          String.format("We could not migrate the following manifest %s as we could not find the git connector %s",
+          String.format("We could not migrate the following manifest %s as we could not find the git ConnectorDisconnectHandler %s",
               applicationManifest.getUuid(), gitFileConfig.getConnectorId()));
       return null;
     }

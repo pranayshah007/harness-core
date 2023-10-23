@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.githubconnector.GithubTokenApiAccess")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubTokenApiAccess")
 public class GithubTokenApiAccess implements GithubApiAccess {
   String tokenRef;
 }

@@ -1296,14 +1296,14 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ConnectorPathParam'
     get:
-      summary: List rancher clusters using account level connector
+      summary: List rancher clusters using account level ConnectorDisconnectHandler
       tags:
         - Account Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
-      operationId: list-account-scoped-rancher-clusters-using-connector
-      description: List rancher clusters using the given account level rancher connector
+      operationId: list-account-scoped-rancher-clusters-using-ConnectorDisconnectHandler
+      description: List rancher clusters using the given account level rancher ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -1317,13 +1317,13 @@ paths:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ConnectorPathParam'
     get:
-      summary: List rancher clusters using org level connector
+      summary: List rancher clusters using org level ConnectorDisconnectHandler
       tags:
         - Org Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
-      operationId: list-org-scoped-rancher-clusters-using-connector
+      operationId: list-org-scoped-rancher-clusters-using-ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -1332,20 +1332,20 @@ paths:
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: []
-      description: List rancher clusters using the given org level rancher connector
+      description: List rancher clusters using the given org level rancher ConnectorDisconnectHandler
   '/v1/orgs/{org}/projects/{project}/rancher/connectors/{connector}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
       - $ref: '#/components/parameters/ConnectorPathParam'
     get:
-      summary: List rancher clusters using project level connector
+      summary: List rancher clusters using project level ConnectorDisconnectHandler
       tags:
         - Project Rancher Infrastructure
       responses:
         '200':
           $ref: '#/components/responses/RancherListClustersResponse'
-      operationId: list-project-scoped-rancher-clusters-using-connector
+      operationId: list-project-scoped-rancher-clusters-using-ConnectorDisconnectHandler
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Page'
@@ -1354,7 +1354,7 @@ paths:
         - $ref: '#/components/parameters/Order'
       security:
         - x-api-key: []
-      description: List rancher clusters using the given project level rancher connector
+      description: List rancher clusters using the given project level rancher ConnectorDisconnectHandler
   '/v1/rancher/environments/{environment}/infrastructure-definitions/{infrastructure-definition}/clusters':
     parameters:
       - $ref: '#/components/parameters/EnvironmentPathParam'
@@ -4395,12 +4395,12 @@ components:
           - AIDA
       description: Type of Agreements.
     ConnectorPathParam:
-      name: connector
+      name: ConnectorDisconnectHandler
       in: path
       required: true
       schema:
         type: string
-      description: Identifier field of the scoped connector entity to be used for this operation.
+      description: Identifier field of the scoped ConnectorDisconnectHandler entity to be used for this operation.
     EnvironmentPathParam:
       name: environment
       in: path

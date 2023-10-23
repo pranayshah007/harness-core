@@ -117,7 +117,7 @@ public class AzureResourceTest extends CategoryTest {
                            -> azureResource.getAzureSubscriptions(
                                null, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, INFRA_DEFINITION_ID))
         .isInstanceOf(InvalidIdentifierRefException.class)
-        .hasMessage("Unable to resolve empty connector identifier reference");
+        .hasMessage("Unable to resolve empty ConnectorDisconnectHandler identifier reference");
   }
 
   @Test

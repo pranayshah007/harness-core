@@ -34,8 +34,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("SpotConnector")
-@Schema(name = "SpotConnector", description = "This contains details of the Spot connector")
-@RecasterAlias("io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO")
+@Schema(name = "SpotConnector", description = "This contains details of the Spot ConnectorDisconnectHandler")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.spotconnector.SpotConnectorDTO")
 public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull SpotCredentialDTO credential;
   Set<String> delegateSelectors;

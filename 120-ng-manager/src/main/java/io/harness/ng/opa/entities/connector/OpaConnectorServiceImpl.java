@@ -65,7 +65,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
     try {
       connectorYaml = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      log.error("Failed while converting to connector yaml format", ex);
+      log.error("Failed while converting to ConnectorDisconnectHandler yaml format", ex);
     }
     return connectorYaml;
   }

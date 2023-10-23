@@ -72,7 +72,7 @@ public class SpotValidationParamsProviderTest extends CategoryTest {
         .contains(
             HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(spotInstHealthUrl, null));
     assertThat(executionCapabilityList)
-        .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("connector").build());
+        .contains(SelectorCapability.builder().selectors(DELEGATE_SELECTORS).selectorOrigin("ConnectorDisconnectHandler").build());
   }
 
   private ConnectorInfoDTO getConnectorInfoDTO() {

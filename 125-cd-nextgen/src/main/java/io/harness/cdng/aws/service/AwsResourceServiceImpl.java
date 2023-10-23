@@ -164,7 +164,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
       }
     } else if (AwsCFTemplatesType.GIT.getValue().equalsIgnoreCase(type)) {
       if (isEmpty(connectorDTO) || (isEmpty(branch) && isEmpty(commitId))) {
-        throw new InvalidRequestException("Missing connector ID or branch and commid ID");
+        throw new InvalidRequestException("Missing ConnectorDisconnectHandler ID or branch and commid ID");
       }
       FetchType fetchType = isBranch ? FetchType.BRANCH : FetchType.COMMIT;
 

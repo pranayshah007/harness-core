@@ -49,7 +49,7 @@ public interface AwsResourceService {
   /**
    * Get all the rolesARNs associated with the given computeProviderId and deployment type
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier the org identifier
    * @param projectIdentifier the project identifier
    * @param region AWS region
@@ -69,9 +69,9 @@ public interface AwsResourceService {
    * @param repoName the name of the repo
    * @param filePath The file path for the template
    * @param commitId The commit id for GIT
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param data the template data if inline is selected
-   * @param connectorDTO the IdentifierRef of the git connector
+   * @param connectorDTO the IdentifierRef of the git ConnectorDisconnectHandler
    * @param accountIdentifier is the account id
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
@@ -86,7 +86,7 @@ public interface AwsResourceService {
    * Get list of AWS instance hosts based on search criteria.
    * Use either autoScalingGroupName or (vpcIds, tags) criteria.
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param winRm true for winRm credentials, default false
    * @param region AWS region
    * @param vpcIds list of AWS vpc-ids
@@ -100,7 +100,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS VPC ids
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -111,7 +111,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS tags
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -123,7 +123,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS instance Load balancers
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -135,7 +135,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS autoscaling groups
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -147,7 +147,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS clusters
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -159,7 +159,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS elastic load balancers
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -171,7 +171,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS elastic load balancer listeners arn
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -183,7 +183,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS elastic load balancer listener rules
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @param region AWS region
@@ -195,7 +195,7 @@ public interface AwsResourceService {
   /**
    * Get list of AWS elastic kubernetes service clusters
    *
-   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param awsConnectorRef the IdentifierRef of the aws ConnectorDisconnectHandler
    * @param orgIdentifier is the org id
    * @param projectIdentifier is the project id
    * @return list of AWS elastic kubernetes service clusters

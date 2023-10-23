@@ -108,7 +108,7 @@ public class ConnectorResourceTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     connectorInfo = ConnectorInfoDTO.builder()
-                        .name("connector")
+                        .name("ConnectorDisconnectHandler")
                         .identifier("identifier")
                         .connectorType(KUBERNETES_CLUSTER)
                         .connectorConfig(KubernetesClusterConfigDTO.builder()

@@ -67,7 +67,7 @@ public class LogzConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTest
   }
 
   private SettingAttribute createLogzVerificationProvider(String logzProviderName) {
-    // Generate Logz verification connector
+    // Generate Logz verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     LogzConfig logzConfig = new LogzConfig();

@@ -28,9 +28,9 @@ import lombok.Value;
 @JsonTypeName(AzureConstants.INHERIT_FROM_DELEGATE)
 @ApiModel("AzureInheritFromDelegateDetails")
 @Schema(name = "AzureInheritFromDelegateDetails",
-    description = "This contains Azure inherit from delegate credentials connector details")
+    description = "This contains Azure inherit from delegate credentials ConnectorDisconnectHandler details")
 @JsonDeserialize(using = AzureInheritFromDelegateDetailsDTODeserializer.class)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureInheritFromDelegateDetailsDTO")
 public class AzureInheritFromDelegateDetailsDTO implements AzureCredentialSpecDTO {
   @NotNull @JsonProperty("auth") @Schema(description = "The auth azure details ") AzureMSIAuthDTO authDTO;
 

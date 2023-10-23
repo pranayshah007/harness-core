@@ -33,7 +33,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO")
 public class AzureKeyVaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Schema(description = "Application ID of the Azure App.") private String clientId;
   @SecretReference

@@ -528,7 +528,7 @@ public class AwsHelperServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> service.listRepositories(awsConfig, null, request, region))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "The connector provided had Rate limit exceeded while fetching repositories, Please check rate limit on connector's request");
+            "The ConnectorDisconnectHandler provided had Rate limit exceeded while fetching repositories, Please check rate limit on ConnectorDisconnectHandler's request");
   }
   @Test
   @Owner(developers = vivekveman)
@@ -553,7 +553,7 @@ public class AwsHelperServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> service.listRepositories(awsConfig, null, request, region))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "connector provided does not have permissions granted to use Amazon ECR, Please verify that the user has been granted permissions to access that repository");
+            "ConnectorDisconnectHandler provided does not have permissions granted to use Amazon ECR, Please verify that the user has been granted permissions to access that repository");
   }
 
   @Test

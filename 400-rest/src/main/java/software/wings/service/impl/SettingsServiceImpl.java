@@ -990,9 +990,9 @@ public class SettingsServiceImpl implements SettingsService {
       }
 
       if (settingAttribute.getValue() instanceof CEAwsConfig) {
-        // Throw Exception if AWS connector Exists already
+        // Throw Exception if AWS ConnectorDisconnectHandler Exists already
         if (isAwsConnectorPresent && isSave) {
-          log.info("Did not save Setting Attribute of type {} for account ID {} because AWS connector exists already",
+          log.info("Did not save Setting Attribute of type {} for account ID {} because AWS ConnectorDisconnectHandler exists already",
               settingAttribute.getValue().getType(), settingAttribute.getAccountId());
           throw new InvalidRequestException("Cannot enable Cloud Cost Management for more than 1 AWS cloud account");
         }
@@ -1017,9 +1017,9 @@ public class SettingsServiceImpl implements SettingsService {
       }
 
       if (settingAttribute.getValue() instanceof CEGcpConfig) {
-        // Throw Exception if GCP connector Exists already
+        // Throw Exception if GCP ConnectorDisconnectHandler Exists already
         if (isGCPConnectorPresent && isSave) {
-          log.info("Did not save Setting Attribute of type {} for account ID {} because GCP connector exists already",
+          log.info("Did not save Setting Attribute of type {} for account ID {} because GCP ConnectorDisconnectHandler exists already",
               settingAttribute.getValue().getType(), settingAttribute.getAccountId());
           throw new InvalidRequestException("Cannot enable Cloud Cost Management for more than 1 GCP cloud account");
         }
@@ -1027,9 +1027,9 @@ public class SettingsServiceImpl implements SettingsService {
 
       // Azure
       if (settingAttribute.getValue() instanceof CEAzureConfig) {
-        // Throw Exception if Azure connector Exists already
+        // Throw Exception if Azure ConnectorDisconnectHandler Exists already
         if (isAzureConnectorPresent && isSave) {
-          log.info("Did not save Setting Attribute of type {} for account ID {} because Azure connector exists already",
+          log.info("Did not save Setting Attribute of type {} for account ID {} because Azure ConnectorDisconnectHandler exists already",
               settingAttribute.getValue().getType(), settingAttribute.getAccountId());
           throw new InvalidRequestException("Cannot enable Cloud Cost Management for more than 1 Azure cloud account");
         }
@@ -1905,7 +1905,7 @@ public class SettingsServiceImpl implements SettingsService {
     SettingAttribute gitSettingAttribute = get(gitConnectorId);
 
     if (gitSettingAttribute == null || !(gitSettingAttribute.getValue() instanceof GitConfig)) {
-      throw new InvalidRequestException("Git connector not found", USER);
+      throw new InvalidRequestException("Git ConnectorDisconnectHandler not found", USER);
     }
 
     GitConfig gitConfig = (GitConfig) gitSettingAttribute.getValue();

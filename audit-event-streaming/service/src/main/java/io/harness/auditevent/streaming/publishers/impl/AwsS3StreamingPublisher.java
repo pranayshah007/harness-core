@@ -96,7 +96,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         NGRestUtils.getResponse(connectorResourceClient.get(identifier, accountIdentifier, null, null));
     if (connectorDTO.isEmpty() || !isAAwsConnector(connectorDTO.get())) {
       throw new InvalidRequestException(
-          String.format("AWS connector not found for identifier : [%s] with scope: [%s]", identifier, Scope.ACCOUNT),
+          String.format("AWS ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]", identifier, Scope.ACCOUNT),
           WingsException.USER);
     }
     ConnectorInfoDTO connectors = connectorDTO.get().getConnectorInfo();
@@ -159,7 +159,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
     if (!connector.getExecuteOnDelegate()) {
       throw new InvalidRequestException(String.format(
-          "Ensure that the connectivity mode for the connector [%s] should be: Connect through harness delegate.",
+          "Ensure that the connectivity mode for the ConnectorDisconnectHandler [%s] should be: Connect through harness delegate.",
           streamingDestination.getConnectorRef()));
     }
 

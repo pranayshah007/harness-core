@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabConnector")
 public class GitlabConnector extends Connector implements PersistentRegularIterable {
   GitConnectionType connectionType;
   String url;

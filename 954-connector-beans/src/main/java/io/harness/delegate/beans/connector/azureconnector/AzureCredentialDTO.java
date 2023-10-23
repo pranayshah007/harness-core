@@ -33,8 +33,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureCredential")
 @JsonDeserialize(using = AzureCredentialDTODeserializer.class)
-@Schema(name = "AzureCredential", description = "This contains Azure connector credentials")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO")
+@Schema(name = "AzureCredential", description = "This contains Azure ConnectorDisconnectHandler credentials")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureCredentialDTO")
 public class AzureCredentialDTO {
   @NotNull @JsonProperty("type") AzureCredentialType azureCredentialType;
   @JsonProperty("spec")

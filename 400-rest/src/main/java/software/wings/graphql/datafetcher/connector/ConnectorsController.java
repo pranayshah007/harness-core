@@ -198,7 +198,7 @@ public class ConnectorsController {
   public void checkInputExists(QLConnectorType type, Object input) {
     if (input == null) {
       throw new InvalidRequestException(
-          String.format("No input provided with the request for %s connector", type.getStringValue()));
+          String.format("No input provided with the request for %s ConnectorDisconnectHandler", type.getStringValue()));
     }
   }
 }

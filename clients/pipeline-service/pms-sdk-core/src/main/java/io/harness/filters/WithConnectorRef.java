@@ -17,7 +17,7 @@ import java.util.Map;
 public interface WithConnectorRef {
   /**
    *
-   * @return a map of relative fqn from step to the connector ref parameter field value
+   * @return a map of relative fqn from step to the ConnectorDisconnectHandler ref parameter field value
    */
   Map<String, ParameterField<String>> extractConnectorRefs();
 }

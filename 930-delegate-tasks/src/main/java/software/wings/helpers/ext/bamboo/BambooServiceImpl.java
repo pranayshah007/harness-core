@@ -199,7 +199,7 @@ public class BambooServiceImpl implements BambooService {
   String getBasicAuthCredentials(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(bambooConfig, encryptionDetails, false);
     if (isEmpty(bambooConfig.getPassword())) {
-      throw new InvalidRequestException("Failed to decrypt password for Bamboo connector");
+      throw new InvalidRequestException("Failed to decrypt password for Bamboo ConnectorDisconnectHandler");
     }
     return Credentials.basic(bambooConfig.getUsername(), new String(bambooConfig.getPassword()));
   }

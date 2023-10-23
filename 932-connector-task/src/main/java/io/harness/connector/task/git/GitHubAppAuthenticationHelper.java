@@ -37,7 +37,7 @@ public class GitHubAppAuthenticationHelper {
   public SecretRefData getGithubAppSecretFromConnector(
       GithubConnectorDTO githubConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
     if (githubConnectorDTO == null) {
-      throw new InvalidRequestException("Github connector can not be null for fetching token for github app");
+      throw new InvalidRequestException("Github ConnectorDisconnectHandler can not be null for fetching token for github app");
     }
     GithubHttpCredentialsDTO githubHttpCredentialsDTO =
         gitDecryptionHelper.decryptGitHubAppAuthenticationConfig(githubConnectorDTO, encryptedDataDetails);

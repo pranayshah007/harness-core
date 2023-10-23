@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@RecasterAlias("io.harness.delegate.beans.connector.docker.outcome.DockerAuthenticationOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.docker.outcome.DockerAuthenticationOutcomeDTO")
 public class DockerAuthenticationOutcomeDTO {
   @NotNull DockerAuthType type;
 

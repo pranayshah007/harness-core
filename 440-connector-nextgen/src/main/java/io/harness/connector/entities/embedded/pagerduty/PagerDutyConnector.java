@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.pagerduty.PagerDutyConnector")
 @OwnedBy(HarnessTeam.CV)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PagerDutyConnector extends Connector {

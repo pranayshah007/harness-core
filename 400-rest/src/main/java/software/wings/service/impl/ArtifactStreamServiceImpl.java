@@ -612,7 +612,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
   }
 
   private void setServiceId(ArtifactStream artifactStream) {
-    // set serviceId equal to settingId for connector level artifact streams
+    // set serviceId equal to settingId for ConnectorDisconnectHandler level artifact streams
     String appId = artifactStream.fetchAppId();
     if (appId == null || appId.equals(GLOBAL_APP_ID)) {
       artifactStream.setServiceId(artifactStream.getSettingId());
@@ -684,7 +684,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
                                                     .build();
       PageResponse<ArtifactStream> response = wingsPersistence.query(ArtifactStream.class, pageRequest);
 
-      // For the connector level also, check if the name exists
+      // For the ConnectorDisconnectHandler level also, check if the name exists
       // TODO: ASR: uncomment when index added on setting_id + name
       //      pageRequest = aPageRequest()
       //                        .addFilter("settingId", EQ, artifactStream.getSettingId())
@@ -1258,7 +1258,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     }
 
     if (!GLOBAL_APP_ID.equals(artifactStream.fetchAppId())) {
-      // delete method used only for artifact streams defined at connector level
+      // delete method used only for artifact streams defined at ConnectorDisconnectHandler level
       throw new NotFoundException("Artifact stream with id " + artifactStreamId + " not found");
     }
 

@@ -217,7 +217,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     catalogConnectorInfo.getConnector().setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(catalogConnectorInfo.getConnector().getIdentifier()));
 
-    log.info("IDP onboarding import - connector processor initialized for type = {}",
+    log.info("IDP onboarding import - ConnectorDisconnectHandler processor initialized for type = {}",
         catalogConnectorInfo.getConnector().getType());
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
@@ -343,7 +343,7 @@ public class OnboardingServiceImpl implements OnboardingService {
       cleanUpDirectories(orgYamlPath, serviceYamlPath, serviceYamlPath);
 
       log.info("Finished async operation of yaml generation, pushing to source, registering in backstage, "
-          + "creating connector secret in K8S for all entities");
+          + "creating ConnectorDisconnectHandler secret in K8S for all entities");
     } catch (Exception ex) {
       log.error(
           "Error in asyncCatalogImport for entityChangeDTO = {} with error = {}", entityChangeDTO, ex.getMessage(), ex);
@@ -469,7 +469,7 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
         ConnectorType.fromString(catalogConnectorInfo.getConnector().getType().toString()));
-    log.info("IDP onboarding import - connector processor initialized for type = {}",
+    log.info("IDP onboarding import - ConnectorDisconnectHandler processor initialized for type = {}",
         catalogConnectorInfo.getConnector().getType());
 
     ConnectorInfoDTO connectorInfoDTO =
@@ -507,7 +507,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
 
     log.info("Finished operation of yaml generation, pushing to source, registering in backstage, "
-        + "creating connector secret in K8S for all entities, saving connector & status info");
+        + "creating ConnectorDisconnectHandler secret in K8S for all entities, saving ConnectorDisconnectHandler & status info");
 
     log.info("Cleaning up directories created during IDP onboarding");
     cleanUpDirectories(sampleYamlPath);
@@ -804,8 +804,8 @@ public class OnboardingServiceImpl implements OnboardingService {
       gitIntegrationService.createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO,
           CatalogInfraConnectorType.valueOf(catalogInfraConnectorType), host, delegateSelectors);
     } catch (Exception e) {
-      log.error("Error in creating catalog connector in backstage. Error = {}", e.getMessage(), e);
-      throw new InvalidRequestException("Unable to create catalog connector in backstage - " + e.getMessage());
+      log.error("Error in creating catalog ConnectorDisconnectHandler in backstage. Error = {}", e.getMessage(), e);
+      throw new InvalidRequestException("Unable to create catalog ConnectorDisconnectHandler in backstage - " + e.getMessage());
     }
   }
 

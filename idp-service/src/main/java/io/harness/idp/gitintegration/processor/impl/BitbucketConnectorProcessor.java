@@ -54,7 +54,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
-          String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
+          String.format("Connector with id - [%s] is not bitbucket ConnectorDisconnectHandler for accountId: [%s]", connectorIdentifier,
               accountIdentifier));
     }
 
@@ -74,7 +74,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     String pwdSecretIdentifier = spec.getPasswordRef().getIdentifier();
     if (pwdSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(String.format(
-          "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+          "Secret identifier not found for ConnectorDisconnectHandler: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
     if (spec.getUsernameRef() == null) {

@@ -90,7 +90,7 @@ public class K8sEntityHelper {
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String CLASS_CAST_EXCEPTION_ERROR =
-      "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
+      "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure ConnectorDisconnectHandler of type: [%s] to resolve the issue";
   public static final String K8S_INFRA_NAMESPACE_REGEX_PATTERN = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$";
   public List<EncryptedDataDetail> getEncryptionDataDetails(
       @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
@@ -137,7 +137,7 @@ public class K8sEntityHelper {
       case GIT:
       default:
         throw new UnsupportedOperationException(
-            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
+            format("Unsupported ConnectorDisconnectHandler type : [%s]", connectorDTO.getConnectorType()));
     }
   }
 

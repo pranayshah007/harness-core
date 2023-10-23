@@ -20,4 +20,4 @@ inputSet:
                         store:
                           type: Git
                           spec:
-                            connectorRef: my-connector
+                            connectorRef: my-ConnectorDisconnectHandler

@@ -17,5 +17,5 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @OwnedBy(HarnessTeam.CDP)
 @JsonSubTypes({ @JsonSubTypes.Type(value = TasManualDetailsDTO.class, name = TasConstants.MANUAL_CONFIG) })
 @ApiModel("TasCredentialSpec")
-@Schema(name = "TasCredentialSpec", description = "This contains Tas connector credentials spec")
+@Schema(name = "TasCredentialSpec", description = "This contains Tas ConnectorDisconnectHandler credentials spec")
 public interface TasCredentialSpecDTO extends DecryptableEntity {}

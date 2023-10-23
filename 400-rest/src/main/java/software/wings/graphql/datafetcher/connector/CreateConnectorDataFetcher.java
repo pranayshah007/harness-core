@@ -57,7 +57,7 @@ public class CreateConnectorDataFetcher extends BaseMutatorDataFetcher<QLConnect
         QLCreateConnectorPayload.builder().clientMutationId(input.getClientMutationId());
 
     if (input.getConnectorType() == null) {
-      throw new InvalidRequestException("Invalid connector type provided");
+      throw new InvalidRequestException("Invalid ConnectorDisconnectHandler type provided");
     }
 
     Connector connector = ConnectorFactory.getConnector(input.getConnectorType(), connectorsController, secretManager,

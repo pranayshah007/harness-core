@@ -66,7 +66,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
-          String.format("Connector with id - [%s] is not github connector ", connectorIdentifier));
+          String.format("Connector with id - [%s] is not github ConnectorDisconnectHandler ", connectorIdentifier));
     }
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -74,7 +74,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     String authType = String.valueOf(config.getAuthentication().getAuthType());
     if (authType.equals("Ssh")) {
       throw new InvalidRequestException(
-          String.format("Connector type Ssh not allowed for Github connector with Id - : [%s] ", connectorIdentifier));
+          String.format("Connector type Ssh not allowed for Github ConnectorDisconnectHandler with Id - : [%s] ", connectorIdentifier));
     }
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
@@ -119,7 +119,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     if (tokenSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(
-          String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
+          String.format("Secret identifier not found for ConnectorDisconnectHandler: [%s] ", connectorIdentifier));
     }
 
     secrets.put(Constants.GITHUB_TOKEN,
@@ -138,7 +138,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
     }
 
-    // config for github connector git integration
+    // config for github ConnectorDisconnectHandler git integration
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL,
         getGithubApiBaseUrlFromHost(GitIntegrationUtils.getHostForConnector(connectorInfoDTO)));

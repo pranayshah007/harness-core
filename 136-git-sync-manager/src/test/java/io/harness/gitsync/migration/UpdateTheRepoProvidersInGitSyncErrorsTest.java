@@ -39,21 +39,21 @@ public class UpdateTheRepoProvidersInGitSyncErrorsTest extends GitSyncTestBase {
                                       .accountIdentifier("accountIdentifier")
                                       .repoUrl("https://bitbucket.org/harness/harness-core")
                                       .branchName("master")
-                                      .completeFilePath(".harness/test/connector.yaml")
+                                      .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                       .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                       .build();
     GitSyncError githubError = GitSyncError.builder()
                                    .accountIdentifier("accountIdentifier")
                                    .repoUrl("https://github.com/harness/harness-core")
                                    .branchName("master")
-                                   .completeFilePath(".harness/test/connector.yaml")
+                                   .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                    .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                    .build();
     GitSyncError githubError2 = GitSyncError.builder()
                                     .accountIdentifier("accountIdentifier")
                                     .repoUrl("https://22.45.108.67:80/harness/harness-core")
                                     .branchName("master")
-                                    .completeFilePath(".harness/test/connector.yaml")
+                                    .completeFilePath(".harness/test/ConnectorDisconnectHandler.yaml")
                                     .errorType(GitSyncErrorType.GIT_TO_HARNESS)
                                     .build();
     mongoTemplate.save(bitbucketError);

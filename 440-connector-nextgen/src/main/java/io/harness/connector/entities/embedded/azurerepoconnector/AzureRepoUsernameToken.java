@@ -14,7 +14,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoUsernameToken")
 public class AzureRepoUsernameToken implements AzureRepoHttpAuth {
   String username;
   String usernameRef;

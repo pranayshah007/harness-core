@@ -48,7 +48,7 @@ public class BitbucketUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo("Please check if credentials provided in Bitbucket connector " + connectorRef + " are correct. "
+          .isEqualTo("Please check if credentials provided in Bitbucket ConnectorDisconnectHandler " + connectorRef + " are correct. "
               + errorMessage);
     }
   }
@@ -64,7 +64,7 @@ public class BitbucketUpsertWebhookScmApiErrorHandlerTest extends CategoryTest {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage())
-          .isEqualTo("Please check if webhook read write permissions are given to the token used in connector."
+          .isEqualTo("Please check if webhook read write permissions are given to the token used in ConnectorDisconnectHandler."
               + errorMessage);
     }
   }

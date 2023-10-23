@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "GcpCloudCostConfigKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.gcpccm.GcpCloudCostConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpccm.GcpCloudCostConfig")
 @OwnedBy(CE)
 public class GcpCloudCostConfig extends Connector {
   @NotEmpty List<CEFeatures> featuresEnabled;

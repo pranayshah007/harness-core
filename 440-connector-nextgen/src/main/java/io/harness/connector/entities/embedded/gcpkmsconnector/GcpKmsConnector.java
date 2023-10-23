@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpkmsconnector.GcpKmsConnector")
 public class GcpKmsConnector extends Connector {
   String projectId;
   String region;

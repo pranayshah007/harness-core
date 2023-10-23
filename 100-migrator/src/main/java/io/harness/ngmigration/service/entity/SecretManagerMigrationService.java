@@ -186,7 +186,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
         secretFactory.getConfigDTO(secretManagerConfig, inputDTO, migratedEntities);
     NGYamlFile ngYamlFile =
         NGYamlFile.builder()
-            .filename("connector/" + name + ".yaml")
+            .filename("ConnectorDisconnectHandler/" + name + ".yaml")
             .yaml(ConnectorDTO.builder()
                       .connectorInfo(ConnectorInfoDTO.builder()
                                          .name(name)
@@ -250,7 +250,7 @@ public class SecretManagerMigrationService extends NgMigrationService {
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response.orElse(null);
     } catch (Exception ex) {
-      log.warn("Error when getting connector - ", ex);
+      log.warn("Error when getting ConnectorDisconnectHandler - ", ex);
       return null;
     }
   }

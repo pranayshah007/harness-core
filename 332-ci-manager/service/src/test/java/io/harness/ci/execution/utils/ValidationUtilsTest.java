@@ -173,7 +173,7 @@ public class ValidationUtilsTest extends CIExecutionTestBase {
     stepElementConfig.put("name", "ArtifactoryUpload");
 
     ObjectNode stepSpecType = mapper.createObjectNode();
-    stepSpecType.put("connectorRef", "connector");
+    stepSpecType.put("connectorRef", "ConnectorDisconnectHandler");
     stepSpecType.put("target", "target");
     stepSpecType.put("sourcePath", "sourcePath");
     stepElementConfig.set("spec", stepSpecType);

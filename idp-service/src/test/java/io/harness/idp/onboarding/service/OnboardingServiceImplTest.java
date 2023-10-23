@@ -109,7 +109,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String GENERATE_YAML_DEF_WITH_ENTITIES =
       "kind: Component\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  title: serviceName\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n    harness.io/services: |\n      serviceId: https://localhost:8181/ng/account/123/cd/orgs/orgId/projects/projectId/services/serviceId\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\n";
   private static final String URL = "https://www.github.com";
-  private static final String CONNECTOR_NAME = "test-connector-name";
+  private static final String CONNECTOR_NAME = "test-ConnectorDisconnectHandler-name";
   private static final String DELEGATE_SELECTOR1 = "ds1";
   private static final String DELEGATE_SELECTOR2 = "ds2";
   static final String TEST_ENTITY_NAME = "entityName";

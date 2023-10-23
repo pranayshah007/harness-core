@@ -384,7 +384,7 @@ public class CIPlanCreatorUtils {
       return Optional.of(defaultBranch);
     } catch (Exception ex) {
       throw new InvalidRequestException(
-          String.format("Cannot find default branch for connector: %s", connectorIdentifier));
+          String.format("Cannot find default branch for ConnectorDisconnectHandler: %s", connectorIdentifier));
     }
   }
 

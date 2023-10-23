@@ -339,7 +339,7 @@ public class ApplicationManifestUtils {
     ApplicationManifest applicationManifestAtK8sLocation = manifestsMap.get(k8sValuesLocation);
     if (applicationManifestAtK8sLocation != null) {
       throwExceptionIfStoreTypesDontMatch(applicationManifestAtK8sLocation, manifestAtService);
-      // only override helm connector
+      // only override helm ConnectorDisconnectHandler
       manifestAtService.getHelmChartConfig().setConnectorId(
           applicationManifestAtK8sLocation.getHelmChartConfig().getConnectorId());
     }

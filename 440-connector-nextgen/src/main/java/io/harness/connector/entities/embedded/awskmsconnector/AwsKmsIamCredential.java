@@ -24,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsKmsIamCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awskmsconnector.AwsKmsIamCredential")
 public class AwsKmsIamCredential implements AwsKmsCredentialSpec {
   Set<String> delegateSelectors;
 }

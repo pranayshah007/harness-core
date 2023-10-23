@@ -15,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication")
 public class BitbucketHttpAuthentication implements BitbucketAuthentication {
   BitbucketHttpAuthenticationType type;
   BitbucketHttpAuth auth;

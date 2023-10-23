@@ -130,7 +130,7 @@ public class AzureHelperService {
     if (!isAzureConnector(connectorDTO.get())) {
       throw new InvalidRequestException(
           String.format(
-              "Connector with identifier [%s] with scope: [%s] is not an Azure connector. Please check you configuration.",
+              "Connector with identifier [%s] with scope: [%s] is not an Azure ConnectorDisconnectHandler. Please check you configuration.",
               azureConnectorRef.getIdentifier(), azureConnectorRef.getScope()),
           WingsException.USER);
     }

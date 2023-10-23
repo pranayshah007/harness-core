@@ -37,7 +37,7 @@ public class ConnectorTest extends GraphQLTest {
 
   private static String connectorQueryPattern = $.GQL(/*
 {
-  connector(connectorId: "%s") {
+  ConnectorDisconnectHandler(connectorId: "%s") {
     id
     name
     createdAt

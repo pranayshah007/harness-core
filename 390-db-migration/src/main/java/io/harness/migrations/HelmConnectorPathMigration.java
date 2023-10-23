@@ -116,7 +116,7 @@ public class HelmConnectorPathMigration implements Migration {
         }
 
         if (!settingAttributeIdObjectMap.containsKey(connectorId)) {
-          // Helm HTTP connector or somehow connector got deleted
+          // Helm HTTP ConnectorDisconnectHandler or somehow ConnectorDisconnectHandler got deleted
           return;
         } else {
           SettingAttribute settingAttribute = settingAttributeIdObjectMap.get(connectorId);

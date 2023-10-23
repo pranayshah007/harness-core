@@ -36,7 +36,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
    Other use cases might need new yaml string creation as well but the above acts as a simple example for most cases.
    */
   private String yamlBeforeScript = "---\n"
-      + "connector:\n"
+      + "ConnectorDisconnectHandler:\n"
       + "  type: SecretManager\n"
       + "  name: Script\n"
       + "  identifier: CustomSecretManagerIdentifier\n"
@@ -49,7 +49,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
       + "        type: Inline\n"
       + "    environmentVariables:\n"
       + "    - name: e1\n"
-      + "      value: <+connector.spec.environmentVariables.e2>\n"
+      + "      value: <+ConnectorDisconnectHandler.spec.environmentVariables.e2>\n"
       + "      type: String\n"
       + "      __uuid: 4G7y3pKAQzW-neREpx2mmQ1\n"
       + "    - name: e2\n"

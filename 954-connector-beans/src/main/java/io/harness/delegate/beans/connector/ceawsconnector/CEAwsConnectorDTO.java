@@ -28,7 +28,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("CEAwsConnector")
-@Schema(name = "CEAwsConnector", description = "This contains the cost explorer of AWS connector")
+@Schema(name = "CEAwsConnector", description = "This contains the cost explorer of AWS ConnectorDisconnectHandler")
 public class CEAwsConnectorDTO extends ConnectorConfigDTO {
   @NotNull @Valid CrossAccountAccessDTO crossAccountAccess;
   @Valid AwsCurAttributesDTO curAttributes;

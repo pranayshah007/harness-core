@@ -149,7 +149,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
               .setData(entityReferenceDTO.toByteString())
               .build());
     } catch (Exception ex) {
-      log.error("Error deleting the setup usages for the connector with the identifier {} in project {} in org {}",
+      log.error("Error deleting the setup usages for the ConnectorDisconnectHandler with the identifier {} in project {} in org {}",
           identifier, projectIdentifier, orgIdentifier);
     }
   }
@@ -217,7 +217,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
                   .setData(entityReferenceDTO.toByteString())
                   .build());
         } catch (Exception ex) {
-          log.error("Error deleting the setup usages for the connector with the identifier {} in project {} in org {}",
+          log.error("Error deleting the setup usages for the ConnectorDisconnectHandler with the identifier {} in project {} in org {}",
               pipelineEntity.getIdentifier(), pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier());
         }
       }

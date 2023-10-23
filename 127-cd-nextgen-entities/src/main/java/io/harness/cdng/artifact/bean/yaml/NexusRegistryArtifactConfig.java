@@ -64,7 +64,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig")
 public class NexusRegistryArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Nexus registry connector.
+   * Nexus registry ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

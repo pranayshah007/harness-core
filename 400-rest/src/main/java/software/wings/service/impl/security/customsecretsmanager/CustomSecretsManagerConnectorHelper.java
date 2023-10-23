@@ -77,7 +77,7 @@ class CustomSecretsManagerConnectorHelper {
         .filter(secretVariable -> secretVariable.getName().equals(CustomSecretsManagerConfigKeys.connectorId))
         .findFirst()
         .<InvalidArgumentsException>orElseThrow(() -> {
-          String errorMessage = "There is no connector supplied as a variable although the connector was templatized";
+          String errorMessage = "There is no ConnectorDisconnectHandler supplied as a variable although the ConnectorDisconnectHandler was templatized";
           throw new InvalidArgumentsException(errorMessage, USER);
         })
         .getValue();

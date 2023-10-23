@@ -71,7 +71,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
         CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
     if (!entities.containsKey(connectorId)) {
       log.error(
-          String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+          String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
               applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
       return Collections.emptyList();
     }
@@ -103,7 +103,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
           CgEntityId.builder().id(settingAttribute.getUuid()).type(NGMigrationEntityType.CONNECTOR).build());
       if (connectorYamlFile == null) {
         log.error(
-            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+            String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
                 applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
         return Collections.emptyList();
       }
@@ -131,7 +131,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
           CgEntityId.builder().id(settingAttribute.getUuid()).type(NGMigrationEntityType.CONNECTOR).build());
       if (connectorYamlFile == null) {
         log.error(
-            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+            String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
                 applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
         return Collections.emptyList();
       }
@@ -152,7 +152,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
           CgEntityId.builder().id(repoConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
       if (connectorYamlFile == null) {
         log.error(
-            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+            String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
                 applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
         return Collections.emptyList();
       }
@@ -177,7 +177,7 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
           CgEntityId.builder().id(repoConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build());
       if (connectorYamlFile == null) {
         log.error(
-            String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+            String.format("We could not migrate the following manifest %s as we could not find the helm ConnectorDisconnectHandler %s",
                 applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
         return Collections.emptyList();
       }

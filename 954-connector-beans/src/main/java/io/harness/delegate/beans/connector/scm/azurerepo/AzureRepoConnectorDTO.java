@@ -55,19 +55,19 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureRepoConnector")
 @OwnedBy(HarnessTeam.PL)
-@Schema(name = "AzureRepoConfig", description = "This contains details of AzureRepo connector")
+@Schema(name = "AzureRepoConfig", description = "This contains details of AzureRepo ConnectorDisconnectHandler")
 public class AzureRepoConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
   @JsonProperty("type")
-  @Schema(description = "Project | Repository connector type")
+  @Schema(description = "Project | Repository ConnectorDisconnectHandler type")
   AzureRepoConnectionTypeDTO connectionType;
   @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
-  @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type connector")
+  @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type ConnectorDisconnectHandler")
   String validationRepo;
   @Valid
   @NotNull
-  @Schema(description = "Details for authentication mechanism for Azure Repo connector")
+  @Schema(description = "Details for authentication mechanism for Azure Repo ConnectorDisconnectHandler")
   AzureRepoAuthenticationDTO authentication;
   @Valid
   @Schema(description = "API access details, to be used in Harness Triggers and Git Experience")
@@ -131,7 +131,7 @@ public class AzureRepoConnectorDTO
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
-            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in ConnectorDisconnectHandler.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
       return url;

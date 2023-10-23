@@ -26,19 +26,19 @@ public class GcsStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverrides() {
     GcsStoreConfig original = GcsStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .bucketName(ParameterField.createValueField("bucket-name"))
                                   .folderPath(ParameterField.createValueField("folder-path"))
                                   .build();
 
     GcsStoreConfig override = GcsStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref-override"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref-override"))
                                   .bucketName(ParameterField.createValueField("bucket-name-override"))
                                   .folderPath(ParameterField.createValueField("folder-path-override"))
                                   .build();
 
     GcsStoreConfig result = (GcsStoreConfig) original.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref-override");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref-override");
     assertThat(result.getBucketName().getValue()).isEqualTo("bucket-name-override");
     assertThat(result.getFolderPath().getValue()).isEqualTo("folder-path-override");
   }
@@ -48,7 +48,7 @@ public class GcsStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverridesEmpty() {
     GcsStoreConfig original = GcsStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector-ref"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                   .bucketName(ParameterField.createValueField("bucket-name"))
                                   .folderPath(ParameterField.createValueField("folder-path"))
                                   .build();
@@ -56,7 +56,7 @@ public class GcsStoreConfigTest extends CategoryTest {
     GcsStoreConfig override = GcsStoreConfig.builder().build();
 
     GcsStoreConfig result = (GcsStoreConfig) original.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(result.getBucketName().getValue()).isEqualTo("bucket-name");
     assertThat(result.getFolderPath().getValue()).isEqualTo("folder-path");
   }
@@ -66,14 +66,14 @@ public class GcsStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCloneInternal() {
     GcsStoreConfig origin = GcsStoreConfig.builder()
-                                .connectorRef(ParameterField.createValueField("connector-ref"))
+                                .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                 .bucketName(ParameterField.createValueField("bucket-name"))
                                 .folderPath(ParameterField.createValueField("folder-path"))
                                 .build();
 
     GcsStoreConfig originClone = (GcsStoreConfig) origin.cloneInternal();
 
-    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
     assertThat(originClone.getBucketName().getValue()).isEqualTo("bucket-name");
     assertThat(originClone.getFolderPath().getValue()).isEqualTo("folder-path");
   }
@@ -83,11 +83,11 @@ public class GcsStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractConnectorRefs() {
     GcsStoreConfig origin = GcsStoreConfig.builder()
-                                .connectorRef(ParameterField.createValueField("connector-ref"))
+                                .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                 .bucketName(ParameterField.createValueField("bucket-name"))
                                 .folderPath(ParameterField.createValueField("folder-path"))
                                 .build();
 
-    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("connector-ref");
+    assertThat(origin.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 }

@@ -162,7 +162,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
                   .reason("Either the " + crossAccountAccessDTO.getCrossAccountRoleArn()
                       + " doesn't exist or Harness isn't a trusted entity on it or wrong externalId.")
                   .message(
-                      "Verify if the roleArn and externalId are entered correctly for this connector. For more information, refer to the documentation.")
+                      "Verify if the roleArn and externalId are entered correctly for this ConnectorDisconnectHandler. For more information, refer to the documentation.")
                   .build()))
           .errorSummary(ex.getErrorMessage())
           .testedAt(Instant.now().toEpochMilli())
@@ -188,7 +188,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (AWSCostAndUsageReportException ex) {
-      // CCM-12474: Handling error and declaring connector success temporarily, AWS CUR API 404
+      // CCM-12474: Handling error and declaring ConnectorDisconnectHandler success temporarily, AWS CUR API 404
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
     } catch (Exception ex) {
       // These are unknown errors, they should be identified over time and parsed correctly
@@ -201,7 +201,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .build();
     }
 
-    // Check for data at destination only when 24 hrs have elapsed since connector last modified at
+    // Check for data at destination only when 24 hrs have elapsed since ConnectorDisconnectHandler last modified at
     long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
     if (featuresEnabled.contains(CEFeatures.BILLING) && connectorResponseDTO.getCreatedAt() < now) {
       if (!ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier, ConnectorType.CE_AWS,
@@ -220,7 +220,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
             .build();
       }
     }
-    log.info("Validation successful for connector {}", connectorIdentifier);
+    log.info("Validation successful for ConnectorDisconnectHandler {}", connectorIdentifier);
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)
         .testedAt(Instant.now().toEpochMilli())
@@ -413,19 +413,19 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         String reason = String.format("No CUR file is found in last 24 hrs at %s/%s. ", s3BucketName, s3PathPrefix);
         errorList.add(
             ErrorDetail.builder()
-                .message("Please verify your billing export config in your AWS account and in CCM connector. \n"
+                .message("Please verify your billing export config in your AWS account and in CCM ConnectorDisconnectHandler. \n"
                     + "For more information, refer to the documentation.\n")
                 .reason(reason)
                 .build());
       }
     } catch (InvalidRequestException ex) {
       String reason = String.format(
-          "Either bucket '%s' doesn't exist or there is a mismatch between bucketName entered in connector and the name present in the role policy.",
+          "Either bucket '%s' doesn't exist or there is a mismatch between bucketName entered in ConnectorDisconnectHandler and the name present in the role policy.",
           s3BucketName);
       errorList.add(
           ErrorDetail.builder()
               .message(
-                  "Verify if the bucket exists and name matches in connector and in role policy. For more information, refer to the documentation.\n")
+                  "Verify if the bucket exists and name matches in ConnectorDisconnectHandler and in role policy. For more information, refer to the documentation.\n")
               .reason(reason)
               .build());
     }

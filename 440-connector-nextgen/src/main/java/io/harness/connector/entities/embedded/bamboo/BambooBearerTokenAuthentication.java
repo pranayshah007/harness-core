@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "BambooAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.bamboo.BambooBearerTokenAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.bamboo.BambooBearerTokenAuthentication")
 public class BambooBearerTokenAuthentication implements BambooAuthentication {
   String tokenRef;
 }

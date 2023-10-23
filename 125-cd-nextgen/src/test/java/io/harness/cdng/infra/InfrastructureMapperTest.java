@@ -267,7 +267,7 @@ public class InfrastructureMapperTest extends CategoryTest {
     PdcInfrastructure infrastructure =
         PdcInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-            .connectorRef(ParameterField.createValueField("connector-ref"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
             .hostFilter(HostFilter.builder()
                             .type(HostFilterType.HOST_NAMES)
                             .spec(HostNamesFilter.builder()
@@ -282,7 +282,7 @@ public class InfrastructureMapperTest extends CategoryTest {
     PdcInfrastructureOutcome outcome =
         PdcInfrastructureOutcome.builder()
             .credentialsRef("ssh-key-ref")
-            .connectorRef("connector-ref")
+            .connectorRef("ConnectorDisconnectHandler-ref")
             .hostFilter(HostFilterDTO.builder()
                             .type(HostFilterType.HOST_NAMES)
                             .spec(HostNamesFilterDTO.builder()
@@ -328,7 +328,7 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     SshWinRmAzureInfrastructure infrastructure =
         SshWinRmAzureInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField("connector-ref"))
+            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
             .credentialsRef(ParameterField.createValueField("credentials-ref"))
             .resourceGroup(ParameterField.createValueField("res-group"))
             .subscriptionId(ParameterField.createValueField("sub-id"))
@@ -340,7 +340,7 @@ public class InfrastructureMapperTest extends CategoryTest {
         serviceOutcome, "accountId", "projId", "orgId", Map.of("entityKey", "entityValue"));
 
     SshWinRmAzureInfrastructureOutcome outcome = SshWinRmAzureInfrastructureOutcome.builder()
-                                                     .connectorRef("connector-ref")
+                                                     .connectorRef("ConnectorDisconnectHandler-ref")
                                                      .credentialsRef("credentials-ref")
                                                      .resourceGroup("res-group")
                                                      .subscriptionId("sub-id")

@@ -156,7 +156,7 @@ public class AwsLambdaTaskHelper {
       AwsLambdaArtifactType.NEXUS_PACKAGE, AwsLambdaArtifactType.JENKINS, AwsLambdaArtifactType.ARTIFACTORY);
   private final String NEXUS_FAILED_DOWNLOAD_EXPLANATION = "Unable to download nexus artifact due to: ";
   private final String NEXUS_FAILED_DOWNLOAD_HINT =
-      "Review artifact configuration and nexus connector details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
+      "Review artifact configuration and nexus ConnectorDisconnectHandler details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
 
   private YamlUtils yamlUtils = new YamlUtils();
 
@@ -474,11 +474,11 @@ public class AwsLambdaTaskHelper {
 
   private InputStream downloadFromNexus(AwsLambdaNexusArtifactConfig artifactConfig, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof NexusConnectorDTO)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Configure nexus connector for nexus configuration",
-          format("Unexpected connector type '%s' for nexus configuration",
+      throw NestedExceptionUtils.hintWithExplanationException("Configure nexus ConnectorDisconnectHandler for nexus configuration",
+          format("Unexpected ConnectorDisconnectHandler type '%s' for nexus configuration",
               artifactConfig.getConnectorConfig().getClass().getSimpleName()),
           new InvalidArgumentsException(Pair.of("connectorConfig",
-              format("Invalid connector type '%s', expected '%s'",
+              format("Invalid ConnectorDisconnectHandler type '%s', expected '%s'",
                   artifactConfig.getConnectorConfig().getClass().getSimpleName(),
                   NexusConnectorDTO.class.getSimpleName()))));
     }
@@ -555,11 +555,11 @@ public class AwsLambdaTaskHelper {
       AwsLambdaArtifactoryArtifactConfig artifactConfig, LogCallback logCallback) {
     if (!(artifactConfig.getConnectorConfig() instanceof ArtifactoryConnectorDTO)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Configure artifactory connector for artifactory configuration",
-          format("Unexpected connector type '%s' for artifactory configuration",
+          "Configure artifactory ConnectorDisconnectHandler for artifactory configuration",
+          format("Unexpected ConnectorDisconnectHandler type '%s' for artifactory configuration",
               artifactConfig.getConnectorConfig().getClass().getSimpleName()),
           new InvalidArgumentsException(Pair.of("connectorConfig",
-              format("Invalid connector type '%s', expected '%s'",
+              format("Invalid ConnectorDisconnectHandler type '%s', expected '%s'",
                   artifactConfig.getConnectorConfig().getClass().getSimpleName(),
                   ArtifactoryConnectorDTO.class.getSimpleName()))));
     }

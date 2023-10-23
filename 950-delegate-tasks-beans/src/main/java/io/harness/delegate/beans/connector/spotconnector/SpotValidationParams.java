@@ -21,7 +21,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @Data
 @SuperBuilder
 @OwnedBy(HarnessTeam.CDP)

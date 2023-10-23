@@ -25,7 +25,7 @@ public class GitUtils {
   @Inject private SettingsService settingsService;
   public GitConfig getGitConfig(String sourceRepoSettingId) {
     SettingAttribute gitSettingAttribute = settingsService.get(sourceRepoSettingId);
-    notNullCheck("Git connector not found", gitSettingAttribute);
+    notNullCheck("Git ConnectorDisconnectHandler not found", gitSettingAttribute);
     if (!(gitSettingAttribute.getValue() instanceof GitConfig)) {
       throw new InvalidRequestException("Invalid Git Repo");
     }

@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome")
 public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
   /**
-   * Github connector.
+   * Github ConnectorDisconnectHandler.
    */
   String connectorRef;
 

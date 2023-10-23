@@ -95,7 +95,7 @@ public class TerraformCloudConfigSerializationDeserializationTest extends Catego
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing terraformCloud connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing terraformCloud ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult =
         readFileAsString("440-connector-nextgen/src/test/resources/terraformcloud/terraformCloudConnector.json");
@@ -107,7 +107,7 @@ public class TerraformCloudConfigSerializationDeserializationTest extends Catego
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
       Assert.fail(
-          "Encountered exception while checking the two terraform cloud json value connector" + ex.getMessage());
+          "Encountered exception while checking the two terraform cloud json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -121,7 +121,7 @@ public class TerraformCloudConfigSerializationDeserializationTest extends Catego
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing terraform cloud connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing terraform cloud ConnectorDisconnectHandler " + ex.getMessage());
     }
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO();
     ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorRequestDTO).build();

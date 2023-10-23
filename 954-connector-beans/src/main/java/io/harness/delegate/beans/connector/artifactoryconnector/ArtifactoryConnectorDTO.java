@@ -44,7 +44,7 @@ import org.hibernate.validator.constraints.URL;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ArtifactoryConnector")
 @Schema(name = "ArtifactoryConnector", description = "This entity contains the details of the Artifactory Connectors")
-@RecasterAlias("io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.artifactoryconnector.ArtifactoryConnectorDTO")
 public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @URL @NotNull @NotBlank String artifactoryServerUrl;
   @Valid ArtifactoryAuthenticationDTO auth;

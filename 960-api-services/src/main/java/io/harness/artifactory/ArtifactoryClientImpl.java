@@ -219,8 +219,8 @@ public class ArtifactoryClientImpl {
       }
       if (artifactoryResponse.getStatusLine().getStatusCode() == 404) {
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the URL is correct. Consider appending `/artifactory` to the connector endpoint if you have not already. Check artifact configuration (repository and artifact path field values).",
-            "Artifactory connector URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate",
+            "Check if the URL is correct. Consider appending `/artifactory` to the ConnectorDisconnectHandler endpoint if you have not already. Check artifact configuration (repository and artifact path field values).",
+            "Artifactory ConnectorDisconnectHandler URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate",
             new ArtifactoryServerException(
                 "Artifactory Server responded with Not Found.", ErrorCode.INVALID_ARTIFACT_SERVER, USER));
       }
@@ -250,7 +250,7 @@ public class ArtifactoryClientImpl {
           + "SocketTimeout: Artifactory server may not be running";
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the URL is correct. Consider appending `/artifactory` to the endpoint if you have not already.",
-          "Artifactory connector URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
+          "Artifactory ConnectorDisconnectHandler URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
           new ArtifactoryServerException(
               serverMayNotBeRunningMessaage, ErrorCode.INVALID_ARTIFACT_SERVER, reportTargets));
     }
@@ -259,7 +259,7 @@ public class ArtifactoryClientImpl {
     }
     throw NestedExceptionUtils.hintWithExplanationException(
         "Check if the URL is correct. Consider appending `/artifactory` to the endpoint if you have not already.",
-        "Artifactory connector URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
+        "Artifactory ConnectorDisconnectHandler URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
         new ArtifactoryServerException(ExceptionUtils.getMessage(e), ARTIFACT_SERVER_ERROR, reportTargets, e));
   }
 
@@ -719,7 +719,7 @@ public class ArtifactoryClientImpl {
       artifactoryUrl = ArtifactUtilities.getBaseUrl(artifactoryClient.getUri());
     } catch (MalformedURLException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check Artifactory connector configuration and verify that URL is valid.",
+          "Please check Artifactory ConnectorDisconnectHandler configuration and verify that URL is valid.",
           String.format("URL [%s] is malformed.", artifactoryConfig.getArtifactoryUrl()),
           new ArtifactoryRegistryException(e.getMessage()));
     }
@@ -736,7 +736,7 @@ public class ArtifactoryClientImpl {
       artifactoryResponse = artifactoryClient.restCall(artifactoryRequest);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check Artifactory connector configuration and verify that URL is valid.",
+          "Please check Artifactory ConnectorDisconnectHandler configuration and verify that URL is valid.",
           String.format("Failed to execute API call '%s %s'", artifactoryRequest.getMethod(),
               artifactoryUrl + artifactoryRequest.getApiUrl()),
           new ArtifactoryRegistryException(e.getMessage()));
@@ -749,7 +749,7 @@ public class ArtifactoryClientImpl {
         throw NestedExceptionUtils.hintWithExplanationException(
             "Check if the URL is correct. Check artifact configuration (repository and artifact path field values).",
             String.format(
-                "Artifactory connector URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate. Executed API call '%s %s' and got response code '%s'",
+                "Artifactory ConnectorDisconnectHandler URL or artifact configuration may be incorrect or the server is down or the server is not reachable from the delegate. Executed API call '%s %s' and got response code '%s'",
                 artifactoryRequest.getMethod(), artifactoryUrl + artifactoryRequest.getApiUrl(),
                 artifactoryResponse.getStatusLine().getStatusCode()),
             new ArtifactoryRegistryException("Artifactory Server responded with 'Not Found'.", USER));
@@ -758,7 +758,7 @@ public class ArtifactoryClientImpl {
       response = artifactoryResponse.parseBody(Map.class);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check Artifactory connector configuration and verify that URL is valid.",
+          "Please check Artifactory ConnectorDisconnectHandler configuration and verify that URL is valid.",
           String.format("Failed to parse response for API call '%s %s' and got response code %s",
               artifactoryRequest.getMethod(), artifactoryUrl + artifactoryRequest.getApiUrl(),
               artifactoryResponse.getStatusLine().getStatusCode()),
@@ -839,7 +839,7 @@ public class ArtifactoryClientImpl {
       throw NestedExceptionUtils.hintWithExplanationException(
           "SocketTimeout: Artifactory server may not be running. Check if the URL is correct. Consider appending `/artifactory` to the endpoint if you have not already."
               + e.getMessage(),
-          "Artifactory connector URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
+          "Artifactory ConnectorDisconnectHandler URL may be incorrect or the server may be down or the server may not be reachable from the delegate",
           new ArtifactoryServerException(
               format(errorOnListingDockerimages, artifactory, repoKey), ErrorCode.INVALID_ARTIFACT_SERVER, USER));
     } catch (Exception e) {

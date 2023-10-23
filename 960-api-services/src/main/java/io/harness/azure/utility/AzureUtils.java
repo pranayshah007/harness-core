@@ -142,8 +142,8 @@ public class AzureUtils {
       log.error(errMsg);
     }
     throw NestedExceptionUtils.hintWithExplanationException(
-        "Fail to retrieve certificate from Azure connector PEM file.",
-        "Please check if the PEM file configured with Azure connector is proper.",
+        "Fail to retrieve certificate from Azure ConnectorDisconnectHandler PEM file.",
+        "Please check if the PEM file configured with Azure ConnectorDisconnectHandler is proper.",
         new AzureAuthenticationException(errMsg));
   }
 
@@ -164,8 +164,8 @@ public class AzureUtils {
     }
 
     throw NestedExceptionUtils.hintWithExplanationException(
-        "Failed to retrieve private key from Azure connector PEM file.",
-        "Please check if the PEM file configured with Azure connector is proper.",
+        "Failed to retrieve private key from Azure ConnectorDisconnectHandler PEM file.",
+        "Please check if the PEM file configured with Azure ConnectorDisconnectHandler is proper.",
         new AzureAuthenticationException(errMsg));
   }
 
@@ -177,9 +177,9 @@ public class AzureUtils {
     }
 
     throw NestedExceptionUtils.hintWithExplanationException(
-        "Failed to retrieve certificate part from Azure connector PEM file.",
-        "Please check if the PEM file configured with Azure connector is proper.",
-        new AzureAuthenticationException("PEM file provided for Azure connector is not valid!"));
+        "Failed to retrieve certificate part from Azure ConnectorDisconnectHandler PEM file.",
+        "Please check if the PEM file configured with Azure ConnectorDisconnectHandler is proper.",
+        new AzureAuthenticationException("PEM file provided for Azure ConnectorDisconnectHandler is not valid!"));
   }
 
   public String getPrivateKey(byte[] pem, boolean withWrapperText) {
@@ -190,9 +190,9 @@ public class AzureUtils {
     }
 
     throw NestedExceptionUtils.hintWithExplanationException(
-        "Failed to retrieve private key from Azure connector PEM file.",
-        "Please check if the PEM file configured with Azure connector is proper.",
-        new AzureAuthenticationException("PEM file provided for Azure connector is not valid!"));
+        "Failed to retrieve private key from Azure ConnectorDisconnectHandler PEM file.",
+        "Please check if the PEM file configured with Azure ConnectorDisconnectHandler is proper.",
+        new AzureAuthenticationException("PEM file provided for Azure ConnectorDisconnectHandler is not valid!"));
   }
 
   protected String extract(byte[] data, boolean withWrapperText, String startPoint, String endPoint) throws Exception {

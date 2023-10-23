@@ -143,35 +143,35 @@ public class VmInitializeUtils {
 
   private void validateRunTestsStepConnector(RunTestsStepInfo stepInfo) {
     if (stepInfo.getImage() != null && stepInfo.getConnectorRef() == null) {
-      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+      throw new CIStageExecutionException("ConnectorDisconnectHandler ref can't be empty if image is provided");
     }
     if (stepInfo.getImage() == null && stepInfo.getConnectorRef() != null) {
-      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+      throw new CIStageExecutionException("image can't be empty if ConnectorDisconnectHandler ref is provided");
     }
   }
 
   private void validateRunStepConnector(RunStepInfo runStepInfo) {
     if (runStepInfo.getImage() != null && runStepInfo.getConnectorRef() == null) {
-      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+      throw new CIStageExecutionException("ConnectorDisconnectHandler ref can't be empty if image is provided");
     }
     if (runStepInfo.getImage() == null && runStepInfo.getConnectorRef() != null) {
-      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+      throw new CIStageExecutionException("image can't be empty if ConnectorDisconnectHandler ref is provided");
     }
   }
 
   private void validateBackgroundStepConnector(BackgroundStepInfo backgroundStepInfo) {
     if (backgroundStepInfo.getImage() != null && backgroundStepInfo.getConnectorRef() == null) {
-      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+      throw new CIStageExecutionException("ConnectorDisconnectHandler ref can't be empty if image is provided");
     }
     if (backgroundStepInfo.getImage() == null && backgroundStepInfo.getConnectorRef() != null) {
-      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+      throw new CIStageExecutionException("image can't be empty if ConnectorDisconnectHandler ref is provided");
     }
   }
 
   private void validatePluginStepConnector(PluginCompatibleStep pluginStepInfo) {
     List<String> baseImageConnectorRefs = PluginSettingUtils.getBaseImageConnectorRefs(pluginStepInfo);
     if (baseImageConnectorRefs != null) {
-      throw new CIStageExecutionException("Base image connector is not allowed for VM Infrastructure.");
+      throw new CIStageExecutionException("Base image ConnectorDisconnectHandler is not allowed for VM Infrastructure.");
     }
   }
 

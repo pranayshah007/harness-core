@@ -50,7 +50,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
-    // TODO: get store from migrated connector entity
+    // TODO: get store from migrated ConnectorDisconnectHandler entity
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
     if (connector == null) {

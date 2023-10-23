@@ -969,7 +969,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     return GitStore.builder()
         .branch(ParameterField.createValueField("branch"))
         .gitFetchType(FetchType.BRANCH)
-        .connectorRef(ParameterField.createValueField("connector"))
+        .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
         .paths(ParameterField.createValueField(singletonList("test")))
         .build();
   }

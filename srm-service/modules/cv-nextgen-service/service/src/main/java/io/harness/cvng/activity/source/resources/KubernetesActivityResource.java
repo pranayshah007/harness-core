@@ -79,7 +79,7 @@ public class KubernetesActivityResource {
   @ExceptionMetered
   @NextGenManagerAuth
   @Path("/validate")
-  @ApiOperation(value = "validate permissions of a k8s connector for events", nickname = "validateK8sConnectivity")
+  @ApiOperation(value = "validate permissions of a k8s ConnectorDisconnectHandler for events", nickname = "validateK8sConnectivity")
   public ResponseDTO<Boolean> validateConnectivity(@QueryParam("accountId") @NotNull String accountId,
       @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
       @QueryParam("projectIdentifier") @NotNull String projectIdentifier,

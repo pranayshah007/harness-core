@@ -26,7 +26,7 @@ import lombok.Data;
 @JsonTypeName(GcpConstants.MANUAL_CONFIG)
 @ApiModel("GcpManualDetails")
 @Schema(name = "GcpManualDetails", description = "This contains GCP manual credentials details")
-@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpconnector.GcpManualDetailsDTO")
 public class GcpManualDetailsDTO implements GcpCredentialSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData secretKeyRef;
 }

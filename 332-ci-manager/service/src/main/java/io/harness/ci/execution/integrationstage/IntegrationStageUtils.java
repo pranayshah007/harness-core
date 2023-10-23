@@ -474,7 +474,7 @@ public class IntegrationStageUtils {
       url = CodebaseUtils.getCompleteHarnessUrl(gitConfigDTO.getUrl(), gitConnector.getOrgIdentifier(),
           gitConnector.getProjectIdentifier(), ciCodebase.getRepoName().getValue());
     } else {
-      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
+      throw new CIStageExecutionException("Unsupported git ConnectorDisconnectHandler type" + gitConnector.getConnectorType());
     }
 
     url = GitClientHelper.convertToHttps(url);

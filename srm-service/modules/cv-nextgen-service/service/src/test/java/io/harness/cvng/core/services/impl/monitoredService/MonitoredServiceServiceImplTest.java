@@ -914,7 +914,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                   .build();
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
-        .hasMessage("Invalid connector refs: connectorRef2");
+        .hasMessage("Invalid ConnectorDisconnectHandler refs: connectorRef2");
   }
 
   @Test

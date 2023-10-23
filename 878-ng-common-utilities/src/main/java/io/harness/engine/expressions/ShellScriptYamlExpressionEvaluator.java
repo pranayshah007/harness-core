@@ -42,8 +42,8 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   private InputSetValidatorFactory inputSetValidatorFactory;
   private static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
   private static final String SECRETS_PREFIX = "secrets";
-  private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
-  private static final String CONNECTOR_ROOT_FIELD = "connector";
+  private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.ConnectorDisconnectHandler";
+  private static final String CONNECTOR_ROOT_FIELD = "ConnectorDisconnectHandler";
   private static final String SPEC_FIELD = "spec";
 
   public ShellScriptYamlExpressionEvaluator(

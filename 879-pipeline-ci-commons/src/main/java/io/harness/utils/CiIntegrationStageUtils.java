@@ -61,7 +61,7 @@ public class CiIntegrationStageUtils {
       }
     } else {
       throw new InvalidArgumentsException(
-          format("Invalid connection type for git connector: %s", connectionType.toString()), WingsException.USER);
+          format("Invalid connection type for git ConnectorDisconnectHandler: %s", connectionType.toString()), WingsException.USER);
     }
 
     return gitUrl;
@@ -88,7 +88,7 @@ public class CiIntegrationStageUtils {
       url = new URL(registryUrl);
     } catch (MalformedURLException e) {
       throw new InvalidArgumentsException(
-          format("Malformed registryUrl %s in docker connector id: %s", registryUrl, connectorId));
+          format("Malformed registryUrl %s in docker ConnectorDisconnectHandler id: %s", registryUrl, connectorId));
     }
 
     String registryHostName = url.getHost();

@@ -39,7 +39,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesClusterConfig", description = "This contains kubernetes cluster config details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesClusterConfigDTO")
 public class KubernetesClusterConfigDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @Valid @NotNull KubernetesCredentialDTO credential;
   Set<String> delegateSelectors;

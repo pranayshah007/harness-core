@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.nexusconnector.NexusConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.nexusconnector.NexusConnector")
 public class NexusConnector extends Connector {
   String url;
   NexusAuthType authType;

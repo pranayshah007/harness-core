@@ -102,7 +102,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     TerraformPlanStepParameters stepParametersSpec = (TerraformPlanStepParameters) stepParameters.getSpec();
 
-    // Config Files connector
+    // Config Files ConnectorDisconnectHandler
     String connectorRef =
         stepParametersSpec.configuration.configFiles.store.getSpec().getConnectorReference().getValue();
     IdentifierRef identifierRef =
@@ -116,7 +116,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         TerraformStepHelper.prepareEntityDetailsForVarFiles(accountId, orgIdentifier, projectIdentifier, varFiles);
     entityDetailList.addAll(varFilesEntityDetails);
 
-    // Backend Config connector
+    // Backend Config ConnectorDisconnectHandler
     TerraformBackendConfig backendConfig = stepParametersSpec.getConfiguration().getBackendConfig();
     Optional<EntityDetail> bcFileEntityDetails = TerraformStepHelper.prepareEntityDetailForBackendConfigFiles(
         accountId, orgIdentifier, projectIdentifier, backendConfig);

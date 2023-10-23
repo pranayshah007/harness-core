@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.awssecretmanager.AwsSecretManagerConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awssecretmanager.AwsSecretManagerConnector")
 public class AwsSecretManagerConnector extends Connector {
   String region;
   boolean isDefault;

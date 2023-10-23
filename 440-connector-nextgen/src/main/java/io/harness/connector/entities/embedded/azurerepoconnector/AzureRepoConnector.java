@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoConnector")
 @Persistent
 public class AzureRepoConnector extends Connector {
   @NotEmpty AzureRepoConnectionType connectionType;

@@ -99,17 +99,17 @@ public class ConnectorPreflightHandler {
         // will come here if the Connector is for a Pipeline which is Inline or has New-Git-Flow enabled
         if (responseDTO.getConnector() != null && !EmptyPredicate.isEmpty(responseDTO.getConnector().getIdentifier())) {
           log.info(
-              "Preflight will be run on connector with identifier: {}, this connector is either Inline Pipeline or New-Git-Experience IsEnabled.",
+              "Preflight will be run on ConnectorDisconnectHandler with identifier: {}, this ConnectorDisconnectHandler is either Inline Pipeline or New-Git-Experience IsEnabled.",
               responseDTO.getConnector().getIdentifier());
         } else {
           log.info("Connector is either null or empty. Hence rejected for Preflight checks");
         }
         filteredConnectorResponse.add(responseDTO);
       } else {
-        // will come here if Old-Git-flow is enabled and our connector is made for a remote Pipeline
+        // will come here if Old-Git-flow is enabled and our ConnectorDisconnectHandler is made for a remote Pipeline
         for (EntityDetail connectorUse : connectorUsages) {
           if (ifResponseHasAConnectorUsage(responseDTO, connectorUse)) {
-            log.info("Preflight will be run on connector with identifier: {}, repoIdentifier: {} and branch: {}.",
+            log.info("Preflight will be run on ConnectorDisconnectHandler with identifier: {}, repoIdentifier: {} and branch: {}.",
                 responseDTO.getConnector().getIdentifier(), responseDTO.getGitDetails().getRepoIdentifier(),
                 responseDTO.getGitDetails().getBranch());
             filteredConnectorResponse.add(responseDTO);
@@ -133,7 +133,7 @@ public class ConnectorPreflightHandler {
   }
 
   /**
-   * Checks whether the connectorResponse is for a connector which is for an inline pipeline OR for a pipeline that has
+   * Checks whether the connectorResponse is for a ConnectorDisconnectHandler which is for an inline pipeline OR for a pipeline that has
    * New-Git_experience enabled.
    */
   private boolean isInlineConnectorOrNewGitFlowIsEnabled(ConnectorResponseDTO responseDTO) {
@@ -190,12 +190,12 @@ public class ConnectorPreflightHandler {
   @VisibleForTesting
   String getErrorMessage(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (orgIdentifier == null) {
-      return "Could not get connector response for account: " + accountIdentifier + " after {} attempts.";
+      return "Could not get ConnectorDisconnectHandler response for account: " + accountIdentifier + " after {} attempts.";
     } else if (projectIdentifier == null) {
-      return "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
+      return "Could not get ConnectorDisconnectHandler response for account: " + accountIdentifier + ", org: " + orgIdentifier
           + " after {} attempts.";
     } else {
-      return "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
+      return "Could not get ConnectorDisconnectHandler response for account: " + accountIdentifier + ", org: " + orgIdentifier
           + ", project: " + projectIdentifier + " after {} attempts.";
     }
   }

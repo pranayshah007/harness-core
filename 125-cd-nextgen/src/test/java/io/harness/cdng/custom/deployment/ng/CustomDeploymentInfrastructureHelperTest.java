@@ -143,7 +143,7 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     CustomDeploymentConnectorNGVariable connector1 =
         CustomDeploymentConnectorNGVariable.builder()
             .name("connector1")
-            .value(ParameterField.<String>builder().value("connector").build())
+            .value(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
             .connector(ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build())
             .build();
     CustomDeploymentConnectorNGVariable connector2 =
@@ -155,13 +155,13 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     CustomDeploymentConnectorNGVariable connector3 =
         CustomDeploymentConnectorNGVariable.builder()
             .name("connector3")
-            .value(ParameterField.<String>builder().value("account.connector").build())
+            .value(ParameterField.<String>builder().value("account.ConnectorDisconnectHandler").build())
             .connector(ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build())
             .build();
     CustomDeploymentConnectorNGVariable connector4 =
         CustomDeploymentConnectorNGVariable.builder()
             .name("connector4")
-            .value(ParameterField.<String>builder().value("org.connector").build())
+            .value(ParameterField.<String>builder().value("org.ConnectorDisconnectHandler").build())
             .connector(ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build())
             .build();
 
@@ -270,7 +270,7 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
     CustomDeploymentConnectorNGVariable connector1 =
         CustomDeploymentConnectorNGVariable.builder()
             .name("connector1")
-            .value(ParameterField.<String>builder().value("connector").build())
+            .value(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
             .connector(ParameterField.<ConnectorInfoDTO>builder().value(connectorInfoDTO).build())
             .build();
 
@@ -278,7 +278,7 @@ public class CustomDeploymentInfrastructureHelperTest extends CategoryTest {
 
     doReturn(Optional.empty()).when(connectorService).get(any(), any(), any(), any());
 
-    String errorMessage = "Connector not found for given connector ref :[connector]";
+    String errorMessage = "Connector not found for given ConnectorDisconnectHandler ref :[ConnectorDisconnectHandler]";
 
     assertThatThrownBy(
         () -> customDeploymentInfrastructureHelper.convertListVariablesToMap(variableList, ACCOUNT, ORG, PROJECT))

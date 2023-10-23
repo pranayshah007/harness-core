@@ -106,7 +106,7 @@ public abstract class CVConfigurationYamlHandler<Y extends CVConfigurationYaml, 
     }
     SettingAttribute connector = getConnector(yaml, accountId);
     if (connector == null) {
-      throw new WingsException("Invalid connector name specified in yaml: " + yaml.getConnectorName());
+      throw new WingsException("Invalid ConnectorDisconnectHandler name specified in yaml: " + yaml.getConnectorName());
     }
     bean.setConnectorId(connector.getUuid());
   }

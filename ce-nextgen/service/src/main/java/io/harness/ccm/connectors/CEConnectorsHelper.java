@@ -70,7 +70,7 @@ public class CEConnectorsHelper {
         cloudProvider = "GCP";
         break;
       default:
-        log.error("Unknown connector type: {}", connectorType);
+        log.error("Unknown ConnectorDisconnectHandler type: {}", connectorType);
         return false;
     }
     if (configuration.isClickHouseEnabled()) {

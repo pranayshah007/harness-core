@@ -251,7 +251,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
 
     throw NestedExceptionUtils.hintWithExplanationException(
         format("Retrieving ACR refresh token for %s has failed", registryUrl),
-        "Please recheck your azure connector config", we);
+        "Please recheck your azure ConnectorDisconnectHandler config", we);
   }
 
   @Override
@@ -278,6 +278,6 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
     }
     throw NestedExceptionUtils.hintWithExplanationException(
         format("Retrieving ACR access token for %s has failed", registryUrl),
-        "Please recheck your azure connector config", new AzureAuthenticationException(errMsg));
+        "Please recheck your azure ConnectorDisconnectHandler config", new AzureAuthenticationException(errMsg));
   }
 }

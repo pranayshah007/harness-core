@@ -158,8 +158,8 @@ public class SettingsUtils {
 
   /*
     Use this to check how many total number of cloudprovider/connectors are present. Use this in case of,
-    1. Should be handy in verifying the new connector created by count
-    2. Should be handy in verifying the existing connector is deleted
+    1. Should be handy in verifying the new ConnectorDisconnectHandler created by count
+    2. Should be handy in verifying the existing ConnectorDisconnectHandler is deleted
    */
   public static int getCloudproviderConnectorCount(String bearerToken, String accountId, String category) {
     // Get all the cloudprovider/connectors
@@ -177,11 +177,11 @@ public class SettingsUtils {
   }
 
   /*
-    Use this function when you want to check if the cloudprovider/connector with specific name exist.
+    Use this function when you want to check if the cloudprovider/ConnectorDisconnectHandler with specific name exist.
     Use this in case of,
-    1. to check and create new connector (create only when it's not found)
-    2. to verify new connector created
-    3. to delete a connector and check if its deleted
+    1. to check and create new ConnectorDisconnectHandler (create only when it's not found)
+    2. to verify new ConnectorDisconnectHandler created
+    3. to delete a ConnectorDisconnectHandler and check if its deleted
    */
   public static boolean checkCloudproviderConnectorExist(
       String bearerToken, String accountId, String category, String name) {

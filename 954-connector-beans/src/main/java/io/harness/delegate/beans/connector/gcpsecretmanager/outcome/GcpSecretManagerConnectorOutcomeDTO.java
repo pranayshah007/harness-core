@@ -30,7 +30,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO")
 public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 

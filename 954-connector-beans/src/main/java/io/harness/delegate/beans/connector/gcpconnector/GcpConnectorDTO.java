@@ -44,8 +44,8 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GcpConnector")
-@Schema(name = "GcpConnector", description = "This contains GCP connector details")
-@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO")
+@Schema(name = "GcpConnector", description = "This contains GCP ConnectorDisconnectHandler details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpconnector.GcpConnectorDTO")
 public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;

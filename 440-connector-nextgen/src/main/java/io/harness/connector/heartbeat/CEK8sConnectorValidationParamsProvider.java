@@ -38,7 +38,7 @@ public class CEK8sConnectorValidationParamsProvider extends K8sConnectorValidati
         getReferencedConnectorConfig(scopedConnectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     if (!k8sConnectorInfoDTO.isPresent()) {
       throw new InvalidRequestException(
-          String.format("There does not exist a K8sCluster Cloud Provider connector with kubernetesConnectorRef=[%s]",
+          String.format("There does not exist a K8sCluster Cloud Provider ConnectorDisconnectHandler with kubernetesConnectorRef=[%s]",
               scopedConnectorIdentifier));
     }
     ConnectorValidationParams refConnectorValidationParams = super.getConnectorValidationParams(

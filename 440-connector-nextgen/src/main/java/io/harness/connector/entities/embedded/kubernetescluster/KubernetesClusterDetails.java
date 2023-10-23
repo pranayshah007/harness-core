@@ -15,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.kubernetescluster.KubernetesClusterDetails")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.kubernetescluster.KubernetesClusterDetails")
 public class KubernetesClusterDetails implements KubernetesCredential {
   String masterUrl;
   KubernetesAuthType authType;

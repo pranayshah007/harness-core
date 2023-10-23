@@ -66,7 +66,7 @@ public class GitSyncTriggerServiceImpl implements GitSyncTriggerService {
 
   @VisibleForTesting
   List<ConnectorInfoDTO> getGitConnectors(String accountId) {
-    // TODO(abhinav): Refactor after connector impl
+    // TODO(abhinav): Refactor after ConnectorDisconnectHandler impl
     return null;
   }
 
@@ -97,14 +97,14 @@ public class GitSyncTriggerServiceImpl implements GitSyncTriggerService {
       List<ConnectorInfoDTO> connectors = getGitConnectors(accountId);
 
       if (isEmpty(connectors)) {
-        log.info(GIT_YAML_LOG_PREFIX + "Git connector not found for account");
-        throw new InvalidRequestException("Git connector not found with webhook token " + webhookToken, USER);
+        log.info(GIT_YAML_LOG_PREFIX + "Git ConnectorDisconnectHandler not found for account");
+        throw new InvalidRequestException("Git ConnectorDisconnectHandler not found with webhook token " + webhookToken, USER);
       }
 
       String gitConnectorId = getGitConnectorIdByWebhookToken(connectors, webhookToken);
 
       if (isEmpty(gitConnectorId)) {
-        throw new InvalidRequestException("Git connector not found with webhook token " + webhookToken, USER);
+        throw new InvalidRequestException("Git ConnectorDisconnectHandler not found with webhook token " + webhookToken, USER);
       }
 
       boolean gitPingEvent = webhookEventUtils.isGitPingEvent(headers);

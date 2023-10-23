@@ -838,7 +838,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
                       .paths(ParameterField.createValueField(Collections.singletonList("path1")))
                       .branch(ParameterField.createValueField("branch1"))
                       .gitFetchType(FetchType.BRANCH)
-                      .connectorRef(ParameterField.createValueField("test-connector"))
+                      .connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler"))
                       .build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
@@ -846,7 +846,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     templateFileSpec.setStore(storeConfigWrapper);
     CloudformationCreateStackStepConfigurationParameters config =
         CloudformationCreateStackStepConfigurationParameters.builder()
-            .connectorRef(ParameterField.createValueField("aws-connector"))
+            .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
             .region(ParameterField.createValueField("region"))
             .stackName(ParameterField.createValueField("stack-name"))
             .parameters(parametersFileSpecs)
@@ -862,7 +862,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     assertThat(dataCaptor.getValue()).isNotNull();
     assertThat(dataCaptor.getValue().getStackName()).isEqualTo("stack-name");
     assertThat(dataCaptor.getValue().getRegion()).isEqualTo("region");
-    assertThat(dataCaptor.getValue().getConnectorRef()).isEqualTo("aws-connector");
+    assertThat(dataCaptor.getValue().getConnectorRef()).isEqualTo("aws-ConnectorDisconnectHandler");
   }
 
   @Test()
@@ -871,7 +871,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
   public void getSavedCloudformationInheritInputTest() {
     CloudFormationInheritOutput cloudFormationInheritOutput = CloudFormationInheritOutput.builder()
                                                                   .stackName("stack-name")
-                                                                  .connectorRef("aws-connector")
+                                                                  .connectorRef("aws-ConnectorDisconnectHandler")
                                                                   .region("region")
                                                                   .roleArn("role-arn")
                                                                   .build();
@@ -883,7 +883,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
         cloudformationStepHelper.getSavedCloudFormationInheritOutput("id", getAmbiance());
     assertThat(output).isNotNull();
     assertThat(output.getStackName()).isEqualTo("stack-name");
-    assertThat(output.getConnectorRef()).isEqualTo("aws-connector");
+    assertThat(output.getConnectorRef()).isEqualTo("aws-ConnectorDisconnectHandler");
     assertThat(output.getRegion()).isEqualTo("region");
     assertThat(output.getRoleArn()).isEqualTo("role-arn");
   }
@@ -992,7 +992,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
             .spec(S3UrlStoreConfig.builder()
                       .urls(ParameterField.createValueField(Collections.singletonList("url1")))
                       .region(ParameterField.createValueField("region"))
-                      .connectorRef(ParameterField.createValueField("test-connector"))
+                      .connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler"))
                       .build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
@@ -1073,7 +1073,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
                       .paths(ParameterField.createValueField(Collections.singletonList("path1")))
                       .branch(ParameterField.createValueField("branch1"))
                       .gitFetchType(FetchType.BRANCH)
-                      .connectorRef(ParameterField.createValueField("test-connector"))
+                      .connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler"))
                       .build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);

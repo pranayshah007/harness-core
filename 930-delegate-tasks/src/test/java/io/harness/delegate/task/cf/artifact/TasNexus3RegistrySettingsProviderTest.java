@@ -93,7 +93,7 @@ public class TasNexus3RegistrySettingsProviderTest extends CategoryTest {
             -> tasNexus3RegistrySettingsProvider.getContainerSettings(
                 TasTestUtils.createTestContainerArtifactConfig(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
                 decryptionHelper))
-        .hasMessage("Configure username for Nexus Private Registry  container registry connector");
+        .hasMessage("Configure username for Nexus Private Registry  container registry ConnectorDisconnectHandler");
   }
 
   @Test
@@ -117,13 +117,13 @@ public class TasNexus3RegistrySettingsProviderTest extends CategoryTest {
             -> tasNexus3RegistrySettingsProvider.getContainerSettings(
                 TasTestUtils.createTestContainerArtifactConfig(nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
                 decryptionHelper))
-        .hasMessage("Configure password for Nexus Private Registry  container registry connector");
+        .hasMessage("Configure password for Nexus Private Registry  container registry ConnectorDisconnectHandler");
     assertThatThrownBy(()
                            -> tasNexus3RegistrySettingsProvider.getContainerSettings(
                                TasTestUtils.createTestContainerArtifactConfigWithoutHostname(
                                    nexusConnectorDTO, NEXUS_PRIVATE_REGISTRY),
                                decryptionHelper))
-        .hasMessage("Check if connector provided Nexus Private Registry  is properly configured");
+        .hasMessage("Check if ConnectorDisconnectHandler provided Nexus Private Registry  is properly configured");
   }
   @Test
   @Owner(developers = RISHABH)

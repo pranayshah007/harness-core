@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @ApiModel("HostDTO")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "HostDTO", description = "This entity contains the Host details")
-@RecasterAlias("io.harness.delegate.beans.connector.pdcconnector.HostDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.pdcconnector.HostDTO")
 public class HostDTO {
   @JsonProperty("hostname") @NotNull String hostName;
   @JsonProperty("hostAttributes") Map<String, String> hostAttributes = new HashMap<>();

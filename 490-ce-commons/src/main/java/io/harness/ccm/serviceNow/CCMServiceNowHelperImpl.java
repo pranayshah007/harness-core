@@ -82,18 +82,18 @@ public class CCMServiceNowHelperImpl implements CCMServiceNowHelper {
           serviceNowConnectorRef.getOrgIdentifier(), serviceNowConnectorRef.getProjectIdentifier()));
       if (connector.isEmpty() || !isServiceNowConnector(connector.get().getConnectorInfo())) {
         throw new InvalidRequestException(
-            String.format("Servicenow connector not found for identifier : [%s] with scope: [%s]",
+            String.format("Servicenow ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]",
                 serviceNowConnectorRef.getIdentifier(), serviceNowConnectorRef.getScope()),
             WingsException.USER);
       }
       connectorConfigDTO = connector.get().getConnectorInfo().getConnectorConfig();
     } catch (Exception e) {
       throw new NotFoundException(
-          format("Error while getting connector information : [%s]", serviceNowConnectorRef.getIdentifier()), e);
+          format("Error while getting ConnectorDisconnectHandler information : [%s]", serviceNowConnectorRef.getIdentifier()), e);
     }
     // Get Encryption Details
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(serviceNowConnectorRef, connectorConfigDTO);
-    // Decrypt connector using Encryption Details
+    // Decrypt ConnectorDisconnectHandler using Encryption Details
     connectorConfigDTO = decryptServiceNowConnectorDTO(
         (ServiceNowConnectorDTO) connectorConfigDTO, encryptionDetails, serviceNowConnectorRef.getAccountIdentifier());
     return (ServiceNowConnectorDTO) connectorConfigDTO;

@@ -67,7 +67,7 @@ public class NewRelicConfigYamlHandlerTest extends SettingValueConfigYamlHandler
   }
 
   private SettingAttribute createNewRelicProviderNameVerificationProvider(String newRelicProviderName) {
-    // Generate newRelic verification connector
+    // Generate newRelic verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

@@ -71,7 +71,7 @@ public class SmtpConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTest
   }
 
   private SettingAttribute createSMTPVerificationProvider(String name) {
-    // Generate SMTP connector
+    // Generate SMTP ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

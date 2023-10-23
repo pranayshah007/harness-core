@@ -35,7 +35,7 @@ public abstract class AbstractArtifactConnectorValidator extends AbstractConnect
       if (connectorConfigDTO instanceof ArtifactoryConnectorDTO || connectorConfigDTO instanceof DockerConnectorDTO) {
         return responseData.getConnectorValidationResult();
       } else {
-        throw new InvalidRequestException("Invalid connector type found during connection test");
+        throw new InvalidRequestException("Invalid ConnectorDisconnectHandler type found during connection test");
       }
     }
   }

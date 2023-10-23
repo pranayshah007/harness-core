@@ -429,7 +429,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       }
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Unable to fetch Harbor projects to validate the connector", "Check if the provided credentials are correct",
+          "Unable to fetch Harbor projects to validate the ConnectorDisconnectHandler", "Check if the provided credentials are correct",
           new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
     return true;
@@ -567,7 +567,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       case 429:
         if (isPublic) {
           throw NestedExceptionUtils.hintWithExplanationException(
-              "Image pull rate limit reached. Please authenticate Docker connector using Username and Password",
+              "Image pull rate limit reached. Please authenticate Docker ConnectorDisconnectHandler using Username and Password",
               "Docker has rate limit on image requests for anonymous usage. Please refer: https://www.docker.com/increase-rate-limits");
         } else {
           throw NestedExceptionUtils.hintWithExplanationException("Image pull rate limit reached",

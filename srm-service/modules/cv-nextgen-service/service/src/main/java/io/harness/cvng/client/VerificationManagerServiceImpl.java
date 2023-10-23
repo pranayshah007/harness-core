@@ -38,7 +38,7 @@ public class VerificationManagerServiceImpl implements VerificationManagerServic
         nextGenService.get(accountId, bundle.getConnectorIdentifier(), orgIdentifier, projectIdentifier);
     if (!connectorDTO.isPresent()) {
       throw new InternalServerErrorException(
-          "Failed to retrieve connector with id: " + bundle.getConnectorIdentifier());
+          "Failed to retrieve ConnectorDisconnectHandler with id: " + bundle.getConnectorIdentifier());
     }
 
     bundle.setConnectorDTO(connectorDTO.get());
@@ -59,7 +59,7 @@ public class VerificationManagerServiceImpl implements VerificationManagerServic
         nextGenService.get(accountId, bundle.getConnectorIdentifier(), orgIdentifier, projectIdentifier);
     if (!connectorDTO.isPresent()) {
       throw new InternalServerErrorException(
-          "Failed to retrieve connector with id: " + bundle.getConnectorIdentifier());
+          "Failed to retrieve ConnectorDisconnectHandler with id: " + bundle.getConnectorIdentifier());
     }
 
     bundle.setConnectorDTO(connectorDTO.get());
@@ -90,7 +90,7 @@ public class VerificationManagerServiceImpl implements VerificationManagerServic
     Optional<ConnectorInfoDTO> connectorDTO =
         nextGenService.get(accountId, connectorIdentifier, orgIdentifier, projectIdentifier);
     if (!connectorDTO.isPresent()) {
-      throw new InternalServerErrorException("Failed to retrieve connector with id: " + connectorIdentifier);
+      throw new InternalServerErrorException("Failed to retrieve ConnectorDisconnectHandler with id: " + connectorIdentifier);
     }
 
     DataCollectionConnectorBundle bundle =
@@ -108,7 +108,7 @@ public class VerificationManagerServiceImpl implements VerificationManagerServic
     Optional<ConnectorInfoDTO> connectorDTO =
         nextGenService.get(accountId, connectorIdentifier, orgIdentifier, projectIdentifier);
     if (!connectorDTO.isPresent()) {
-      throw new InternalServerErrorException("Failed to retrieve connector with id: " + connectorIdentifier);
+      throw new InternalServerErrorException("Failed to retrieve ConnectorDisconnectHandler with id: " + connectorIdentifier);
     }
 
     DataCollectionConnectorBundle bundle =
@@ -126,7 +126,7 @@ public class VerificationManagerServiceImpl implements VerificationManagerServic
     Optional<ConnectorInfoDTO> connectorDTO =
         nextGenService.get(accountId, connectorIdentifier, orgIdentifier, projectIdentifier);
     if (!connectorDTO.isPresent()) {
-      throw new InternalServerErrorException("Failed to retrieve connector with id: " + connectorIdentifier);
+      throw new InternalServerErrorException("Failed to retrieve ConnectorDisconnectHandler with id: " + connectorIdentifier);
     }
 
     DataCollectionConnectorBundle bundle =

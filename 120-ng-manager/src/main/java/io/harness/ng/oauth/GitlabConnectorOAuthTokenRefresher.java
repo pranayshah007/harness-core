@@ -123,7 +123,7 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
       SecretDTOV2 refreshTokenDTO = getSecretSecretValue(entity, gitlabOauthDTO.getRefreshTokenRef());
 
       if (tokenDTO == null || refreshTokenDTO == null) {
-        log.error("[OAuth refresh] Error getting refresh/access token for connector: ", entity.getName());
+        log.error("[OAuth refresh] Error getting refresh/access token for ConnectorDisconnectHandler: ", entity.getName());
         return;
       }
 
@@ -139,7 +139,7 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
         log.error(
-            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID short:{}, client Secret short:{}, Account:{}, Error:{}",
+            "[OAuth refresh] Error from SCM for refreshing token for ConnectorDisconnectHandler:{}, clientID short:{}, client Secret short:{}, Account:{}, Error:{}",
             entity.getIdentifier(), clientIdShort, clientSecretShort, entity.getAccountIdentifier(), e.getMessage());
         return;
       }
@@ -150,7 +150,7 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
       updateSecretSecretValue(entity, refreshTokenDTO, refreshTokenResponse.getRefreshToken());
 
     } catch (Exception e) {
-      log.error("[OAuth refresh] Error in refreshing token for connector:" + entity.getIdentifier(), e);
+      log.error("[OAuth refresh] Error in refreshing token for ConnectorDisconnectHandler:" + entity.getIdentifier(), e);
     }
   }
 

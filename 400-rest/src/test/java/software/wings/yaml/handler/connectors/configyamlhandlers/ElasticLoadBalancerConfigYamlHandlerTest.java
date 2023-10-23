@@ -88,7 +88,7 @@ public class ElasticLoadBalancerConfigYamlHandlerTest extends SettingValueConfig
   }
 
   private SettingAttribute createELBVerificationProvider(String name) {
-    // Generate appdynamics verification connector
+    // Generate appdynamics verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(aSettingAttribute()

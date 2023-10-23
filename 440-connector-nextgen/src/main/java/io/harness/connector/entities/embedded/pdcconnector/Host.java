@@ -22,7 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.pdcconnector.Host")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.pdcconnector.Host")
 public class Host {
   String hostName;
   Map<String, String> hostAttributes;

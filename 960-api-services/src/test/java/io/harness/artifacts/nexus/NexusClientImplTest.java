@@ -127,7 +127,7 @@ public class NexusClientImplTest extends CategoryTest {
     mockResponse.put("repo2", "repo2");
     mockResponse.put("repo3", "repo3");
 
-    /** nexus 2.x connector with unknown repo format */
+    /** nexus 2.x ConnectorDisconnectHandler with unknown repo format */
     NexusRequest nexusConfig1 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -147,7 +147,7 @@ public class NexusClientImplTest extends CategoryTest {
       assertThat(ex.getMessage()).isEqualTo("Nexus 3.x requires that a repository format is correct");
     }
 
-    /** nexus 2.x connector with docker repo format */
+    /** nexus 2.x ConnectorDisconnectHandler with docker repo format */
     NexusRequest nexusConfig2 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -160,7 +160,7 @@ public class NexusClientImplTest extends CategoryTest {
     try (MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class)) {
       hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible21(any(), any(), any()))
           .thenThrow(NestedExceptionUtils.hintWithExplanationException("Nexus 2.x does not support docker artifacts",
-              "The version for the connector should probably be 3.x and not 2.x",
+              "The version for the ConnectorDisconnectHandler should probably be 3.x and not 2.x",
               new InvalidArtifactServerException("Nexus 2.x does not support docker artifact type", USER)));
       nexusClient.getRepositories(nexusConfig2, RepositoryFormat.docker.name());
     } catch (Exception e) {
@@ -172,7 +172,7 @@ public class NexusClientImplTest extends CategoryTest {
           .isInstanceOf(InvalidArtifactServerException.class);
     }
 
-    /** nexus 3.x connector with unknown repo format */
+    /** nexus 3.x ConnectorDisconnectHandler with unknown repo format */
     NexusRequest nexusConfig3 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -198,7 +198,7 @@ public class NexusClientImplTest extends CategoryTest {
           .isInstanceOf(InvalidRequestException.class);
     }
 
-    /** nexus 3.x connector with docker repo format */
+    /** nexus 3.x ConnectorDisconnectHandler with docker repo format */
     NexusRequest nexusConfig4 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -228,7 +228,7 @@ public class NexusClientImplTest extends CategoryTest {
     mockResponse.put("repo2", "repo2");
     mockResponse.put("repo3", "repo3");
 
-    /** nexus 2.x connector with unknown repo format */
+    /** nexus 2.x ConnectorDisconnectHandler with unknown repo format */
     NexusRequest nexusConfig1 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -261,7 +261,7 @@ public class NexusClientImplTest extends CategoryTest {
     mockResponse.put("repo2", "repo2");
     mockResponse.put("repo3", "repo3");
 
-    /** nexus 2.x connector with unknown repo format */
+    /** nexus 2.x ConnectorDisconnectHandler with unknown repo format */
     NexusRequest nexusConfig1 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -306,7 +306,7 @@ public class NexusClientImplTest extends CategoryTest {
     mockResponse.put("repo2", "repo2");
     mockResponse.put("repo3", "repo3");
 
-    /** nexus 3.x connector with unknown repo format */
+    /** nexus 3.x ConnectorDisconnectHandler with unknown repo format */
     NexusRequest nexusConfig1 = NexusRequest.builder()
                                     .nexusUrl(url)
                                     .username("username")
@@ -710,7 +710,7 @@ public class NexusClientImplTest extends CategoryTest {
     } catch (HintException exception) {
       assertThat(exception.getMessage())
           .isEqualTo(
-              "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.");
+              "Please check your Nexus ConnectorDisconnectHandler and/or artifact configuration. Please use the 3.x ConnectorDisconnectHandler version.");
     }
   }
 

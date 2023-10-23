@@ -53,7 +53,7 @@ public class HttpHelmValidationHandler implements ConnectorValidationHandler {
     final HttpHelmValidationParams helmValidationParams = (HttpHelmValidationParams) connectorValidationParams;
     ConnectorValidationResultBuilder validationResultBuilder = ConnectorValidationResult.builder();
     try {
-      log.info("Running HttpHelmValidationHandler for account {} connector {}", accountIdentifier,
+      log.info("Running HttpHelmValidationHandler for account {} ConnectorDisconnectHandler {}", accountIdentifier,
           connectorValidationParams.getConnectorName());
 
       decryptEncryptedDetails(helmValidationParams);

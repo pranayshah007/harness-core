@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "KubernetesAuth", description = "This contains kubernetes auth details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesAuthDTO")
 public class KubernetesAuthDTO {
   @NotNull @JsonProperty("type") KubernetesAuthType authType;
 

@@ -14,7 +14,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess")
 public class AzureRepoTokenApiAccess implements AzureRepoApiAccess {
   @NotEmpty String tokenRef;
 }

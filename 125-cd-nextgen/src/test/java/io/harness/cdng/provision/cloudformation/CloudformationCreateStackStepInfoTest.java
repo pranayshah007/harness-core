@@ -75,7 +75,7 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
     cloudformationCreateStackStepInfo.setCloudformationStepConfiguration(
         CloudformationCreateStackStepConfiguration.builder().region(ParameterField.createValueField("test")).build());
     Assertions.assertThatThrownBy(cloudformationCreateStackStepInfo::validateSpecParameters)
-        .hasMessageContaining("AWS connector is null");
+        .hasMessageContaining("AWS ConnectorDisconnectHandler is null");
   }
 
   @Test
@@ -89,7 +89,7 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-connector")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler")).build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec.setIdentifier("test-identifier");
@@ -110,10 +110,10 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
     assertThat(response.size()).isEqualTo(4);
     assertThat(response.get("configuration.connectorRef").getValue()).isEqualTo("connectorRef");
     assertThat(response.get("configuration.spec.templateFile.store.spec.connectorRef").getValue())
-        .isEqualTo("test-connector");
+        .isEqualTo("test-ConnectorDisconnectHandler");
     assertThat(response.get("configuration.spec.parameters.test-identifier.store.spec.connectorRef").getValue())
-        .isEqualTo("test-connector");
-    assertThat(response.get("configuration.spec.tags.store.spec.connectorRef").getValue()).isEqualTo("test-connector");
+        .isEqualTo("test-ConnectorDisconnectHandler");
+    assertThat(response.get("configuration.spec.tags.store.spec.connectorRef").getValue()).isEqualTo("test-ConnectorDisconnectHandler");
   }
 
   @Test
@@ -126,7 +126,7 @@ public class CloudformationCreateStackStepInfoTest extends CategoryTest {
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
-            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-connector")).build())
+            .spec(GithubStore.builder().connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler")).build())
             .build();
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec.setIdentifier("test-identifier");

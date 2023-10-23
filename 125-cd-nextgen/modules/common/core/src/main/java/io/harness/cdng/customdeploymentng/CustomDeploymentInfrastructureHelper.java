@@ -88,10 +88,10 @@ public class CustomDeploymentInfrastructureHelper {
             Optional<ConnectorResponseDTO> response =
                 getConnectorRefByScope(accRef, orgRef, projectRef, connectorNGVariable.getValue().getValue());
             if (!response.isPresent()) {
-              log.error("connector not found for connector ref :{}, for acc ref :{}",
+              log.error("ConnectorDisconnectHandler not found for ConnectorDisconnectHandler ref :{}, for acc ref :{}",
                   connectorNGVariable.getValue().getValue(), accRef);
               throw new InvalidRequestException(format(
-                  "Connector not found for given connector ref :[%s]", connectorNGVariable.getValue().getValue()));
+                  "Connector not found for given ConnectorDisconnectHandler ref :[%s]", connectorNGVariable.getValue().getValue()));
             }
             ConnectorResponseDTO connectorResponseDTO = response.get();
             ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();

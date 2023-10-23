@@ -178,7 +178,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
           }
         }
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.",
             "Version not found ", new InvalidRequestException("Version not found"));
       } else if (isNotEmpty(attributesRequest.getBuildNumber())) {
         BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
@@ -191,7 +191,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
               Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
         }
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.",
             "Version not found ", new InvalidRequestException("Version not found"));
       }
       return getLastSuccessfulBuildForJob(attributesRequest, jobName);

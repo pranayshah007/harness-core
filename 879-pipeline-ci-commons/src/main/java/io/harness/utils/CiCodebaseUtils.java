@@ -131,7 +131,7 @@ public class CiCodebaseUtils {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       envVars = retrieveGitEnvVar(gitConfigDTO, repoName);
     } else {
-      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
+      throw new CIStageExecutionException("Unsupported git ConnectorDisconnectHandler type" + gitConnector.getConnectorType());
     }
 
     return envVars;
@@ -139,13 +139,13 @@ public class CiCodebaseUtils {
 
   private void validateGitConnector(ConnectorDetails gitConnector) {
     if (gitConnector == null) {
-      log.error("Git connector is not valid {}", gitConnector);
-      throw new InvalidArgumentsException("Git connector is not valid", WingsException.USER);
+      log.error("Git ConnectorDisconnectHandler is not valid {}", gitConnector);
+      throw new InvalidArgumentsException("Git ConnectorDisconnectHandler is not valid", WingsException.USER);
     }
     if (gitConnector.getConnectorType() != GIT && gitConnector.getConnectorType() != ConnectorType.GITHUB
         && gitConnector.getConnectorType() != ConnectorType.GITLAB && gitConnector.getConnectorType() != BITBUCKET
         && gitConnector.getConnectorType() != CODECOMMIT && gitConnector.getConnectorType() != AZURE_REPO) {
-      log.error("Git connector ref is not of type git {}", gitConnector.getConnectorType());
+      log.error("Git ConnectorDisconnectHandler ref is not of type git {}", gitConnector.getConnectorType());
       throw new InvalidArgumentsException(
           "Connector type is not from supported connectors list GITHUB, GITLAB, BITBUCKET, CODECOMMIT ",
           WingsException.USER);
@@ -160,14 +160,14 @@ public class CiCodebaseUtils {
             && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN
             && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH
             && gitAuth.getType() != GithubHttpAuthenticationType.GITHUB_APP) {
-          throw new CIStageExecutionException("Unsupported github connector auth type" + gitAuth.getType());
+          throw new CIStageExecutionException("Unsupported github ConnectorDisconnectHandler auth type" + gitAuth.getType());
         }
         break;
       case SSH:
         break;
       default:
         throw new CIStageExecutionException(
-            "Unsupported github connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+            "Unsupported github ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -177,14 +177,14 @@ public class CiCodebaseUtils {
         BitbucketHttpCredentialsDTO gitAuth =
             (BitbucketHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD) {
-          throw new CIStageExecutionException("Unsupported bitbucket connector auth type" + gitAuth.getType());
+          throw new CIStageExecutionException("Unsupported bitbucket ConnectorDisconnectHandler auth type" + gitAuth.getType());
         }
         break;
       case SSH:
         break;
       default:
         throw new CIStageExecutionException(
-            "Unsupported bitbucket connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+            "Unsupported bitbucket ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -194,14 +194,14 @@ public class CiCodebaseUtils {
         AzureRepoHttpCredentialsDTO gitAuth =
             (AzureRepoHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN) {
-          throw new CIStageExecutionException("Unsupported azure repo connector auth type" + gitAuth.getType());
+          throw new CIStageExecutionException("Unsupported azure repo ConnectorDisconnectHandler auth type" + gitAuth.getType());
         }
         break;
       case SSH:
         break;
       default:
         throw new CIStageExecutionException(
-            "Unsupported azure repo connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+            "Unsupported azure repo ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -212,14 +212,14 @@ public class CiCodebaseUtils {
         if (gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD
             && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN
             && gitAuth.getType() != GitlabHttpAuthenticationType.OAUTH) {
-          throw new CIStageExecutionException("Unsupported gitlab connector auth type" + gitAuth.getType());
+          throw new CIStageExecutionException("Unsupported gitlab ConnectorDisconnectHandler auth type" + gitAuth.getType());
         }
         break;
       case SSH:
         break;
       default:
         throw new CIStageExecutionException(
-            "Unsupported gitlab connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+            "Unsupported gitlab ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -239,7 +239,7 @@ public class CiCodebaseUtils {
       case SSH:
         break;
       default:
-        throw new CIStageExecutionException("Unsupported bitbucket connector auth" + gitConfigDTO.getGitAuthType());
+        throw new CIStageExecutionException("Unsupported bitbucket ConnectorDisconnectHandler auth" + gitConfigDTO.getGitAuthType());
     }
     return envVars;
   }
@@ -270,11 +270,11 @@ public class CiCodebaseUtils {
       AwsCodeCommitHttpsCredentialsDTO credentials =
           (AwsCodeCommitHttpsCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
       if (credentials.getType() != AwsCodeCommitHttpsAuthType.ACCESS_KEY_AND_SECRET_KEY) {
-        throw new CIStageExecutionException("Unsupported aws code commit connector auth type" + credentials.getType());
+        throw new CIStageExecutionException("Unsupported aws code commit ConnectorDisconnectHandler auth type" + credentials.getType());
       }
     } else {
       throw new CIStageExecutionException(
-          "Unsupported aws code commit connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+          "Unsupported aws code commit ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
     return envVars;
   }
@@ -426,7 +426,7 @@ public class CiCodebaseUtils {
 
   public ConnectorDetails getGitConnector(NGAccess ngAccess, String gitConnectorRefValue) {
     if (gitConnectorRefValue == null) {
-      throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+      throw new CIStageExecutionException("Git ConnectorDisconnectHandler is mandatory in case git clone is enabled");
     }
     return connectorUtils.getConnectorDetails(ngAccess, gitConnectorRefValue);
   }

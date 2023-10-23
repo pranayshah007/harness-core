@@ -27,7 +27,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.outcome.AzureCredentialOutcomeDTO")
 public class AzureCredentialOutcomeDTO {
   @NotNull AzureCredentialType type;
   @JsonTypeInfo(

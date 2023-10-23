@@ -82,7 +82,7 @@ public class InfrastructureStepHelperTest extends CategoryTest {
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                              .connector(ConnectorInfoDTO.builder()
-                                            .name("GCP connector")
+                                            .name("GCP ConnectorDisconnectHandler")
                                             .connectorType(ConnectorType.GCP)
                                             .connectorConfig(gcpConnectorServiceAccount)
                                             .build())

@@ -1015,7 +1015,7 @@ public class ApplicationManifestServiceImpl implements ApplicationManifestServic
     }
 
     /*
-    For Helm Chart override in environment for all services, only the helm connector should be present
+    For Helm Chart override in environment for all services, only the helm ConnectorDisconnectHandler should be present
      */
     if (isNotBlank(helmChartConfig.getChartName())) {
       throw new InvalidRequestException("Helm chart name cannot be given for all services helm chart override", USER);

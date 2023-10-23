@@ -52,7 +52,7 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
 
   private static final String PLAN_KEY = "plan";
   private static final String VERSION_NOT_FOUND =
-      "Check if the version exist & check if the right connector chosen for fetching the build.";
+      "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.";
   private static final String INVALID_REGEX = "Check if the regex is correct";
   private static final List<String> ARTIFACT_PATH_LIST = Collections.singletonList("artifactPath");
 

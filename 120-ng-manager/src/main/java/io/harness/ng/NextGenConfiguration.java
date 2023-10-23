@@ -102,7 +102,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String SERVICE_ID = "ng-manager";
   public static final String CORE_PACKAGE = "io.harness.ng.core.remote";
   public static final String INVITE_PACKAGE = "io.harness.ng.core.invites.remote";
-  public static final String CONNECTOR_PACKAGE = "io.harness.connector.apis.resource";
+  public static final String CONNECTOR_PACKAGE = "io.harness.ConnectorDisconnectHandler.apis.resource";
   public static final String GITOPS_PROVIDER_RESOURCE_PACKAGE = "io.harness.gitopsprovider.resource";
   public static final String GIT_SYNC_PACKAGE = "io.harness.gitsync";
   public static final String CDNG_RESOURCES_PACKAGE = "io.harness.cdng";

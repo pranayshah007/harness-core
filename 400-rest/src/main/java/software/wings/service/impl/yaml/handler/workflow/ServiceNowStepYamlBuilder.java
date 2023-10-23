@@ -63,7 +63,7 @@ public class ServiceNowStepYamlBuilder extends StepYamlBuilder {
       Map<String, Object> snowParams = (Map<String, Object>) objectValue;
       String snowConnectorId = (String) snowParams.get(SNOW_CONNECTOR_ID);
       SettingAttribute snowSettingAttribute = settingsService.get(snowConnectorId);
-      notNullCheck("ServiceNow connector does not exist.", snowSettingAttribute);
+      notNullCheck("ServiceNow ConnectorDisconnectHandler does not exist.", snowSettingAttribute);
       snowParams.remove(SNOW_CONNECTOR_ID);
       snowParams.put(SNOW_CONNECTOR_NAME, snowSettingAttribute.getName());
       outputProperties.put(SERVICE_NOW_CREATE_UPDATE_PARAMS, snowParams);
@@ -83,7 +83,7 @@ public class ServiceNowStepYamlBuilder extends StepYamlBuilder {
       if (snowParams.containsKey(SNOW_CONNECTOR_NAME)) {
         String snowConnectorName = (String) snowParams.get(SNOW_CONNECTOR_NAME);
         SettingAttribute snowSettingAttribute = settingsService.getSettingAttributeByName(accountId, snowConnectorName);
-        notNullCheck(String.format("ServiceNow connector %s does not exist.", snowConnectorName), snowSettingAttribute);
+        notNullCheck(String.format("ServiceNow ConnectorDisconnectHandler %s does not exist.", snowConnectorName), snowSettingAttribute);
         snowParams.remove(SNOW_CONNECTOR_NAME);
         snowParams.put(SNOW_CONNECTOR_ID, snowSettingAttribute.getUuid());
       }

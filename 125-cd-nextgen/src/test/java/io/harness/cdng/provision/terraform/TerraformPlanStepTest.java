@@ -394,7 +394,7 @@ public class TerraformPlanStepTest extends CategoryTest {
                              .build())
             .build();
 
-    // Create DTO connector
+    // Create DTO ConnectorDisconnectHandler
     ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder()
                                                           .artifactoryServerUrl("http://artifactory.com")
                                                           .auth(artifactoryAuthenticationDTO)

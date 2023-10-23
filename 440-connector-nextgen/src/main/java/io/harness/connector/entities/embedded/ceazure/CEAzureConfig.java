@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "CEAzureConfigKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.ceazure.CEAzureConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.ceazure.CEAzureConfig")
 public class CEAzureConfig extends Connector {
   @NotEmpty List<CEFeatures> featuresEnabled;
   @NotNull String subscriptionId;

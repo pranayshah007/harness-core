@@ -30,7 +30,7 @@ import lombok.EqualsAndHashCode;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "GitAuthentication",
     description = "This contains details of the Generic Git authentication information used via HTTP connections")
-@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.scm.genericgitconnector.GitHTTPAuthenticationDTO")
 public class GitHTTPAuthenticationDTO extends GitAuthenticationDTO {
   String username;
   @SecretReference @ApiModelProperty(dataType = "string") SecretRefData usernameRef;

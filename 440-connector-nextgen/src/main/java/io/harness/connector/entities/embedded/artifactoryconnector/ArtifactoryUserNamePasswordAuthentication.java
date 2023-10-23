@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "ArtifactoryAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.artifactoryconnector.ArtifactoryUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.artifactoryconnector.ArtifactoryUserNamePasswordAuthentication")
 public class ArtifactoryUserNamePasswordAuthentication implements ArtifactoryAuthentication {
   String username;
   String usernameRef;

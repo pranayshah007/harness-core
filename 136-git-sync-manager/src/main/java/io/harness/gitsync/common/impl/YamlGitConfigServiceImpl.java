@@ -419,11 +419,11 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
         validateTheAPIAccessPresence((ScmConnector) connectorConfig);
       } else {
         throw new InvalidRequestException(
-            String.format("The connector reference %s is not a git connector", ygs.getGitConnectorRef()));
+            String.format("The ConnectorDisconnectHandler reference %s is not a git ConnectorDisconnectHandler", ygs.getGitConnectorRef()));
       }
     } else {
       throw new InvalidRequestException(
-          String.format("No connector found for the connector reference %s", ygs.getGitConnectorRef()));
+          String.format("No ConnectorDisconnectHandler found for the ConnectorDisconnectHandler reference %s", ygs.getGitConnectorRef()));
     }
   }
 
@@ -621,7 +621,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
               .build());
     } catch (Exception e) {
       log.info(ENTITY_REFERENCE_LOG_PREFIX
-              + "The entity reference was not created when the connector [{}] was set up from yamlGitConfig [{}]",
+              + "The entity reference was not created when the ConnectorDisconnectHandler [{}] was set up from yamlGitConfig [{}]",
           gitSyncConfigDTO.getGitConnectorRef(), gitSyncConfigDTO.getIdentifier());
     }
   }
@@ -714,7 +714,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     GithubApiAccessDTO apiAccess = githubConnectorDTO.getApiAccess();
     if (apiAccess == null) {
       throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
+          "The ConnectorDisconnectHandler doesn't contain api access field which is required for the git sync ");
     }
   }
 
@@ -722,7 +722,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     GitlabApiAccessDTO apiAccess = gitlabConnectorDTO.getApiAccess();
     if (apiAccess == null) {
       throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
+          "The ConnectorDisconnectHandler doesn't contain api access field which is required for the git sync ");
     }
   }
 
@@ -730,7 +730,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     BitbucketApiAccessDTO apiAccess = bitbucketConnectorDTO.getApiAccess();
     if (apiAccess == null) {
       throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
+          "The ConnectorDisconnectHandler doesn't contain api access field which is required for the git sync ");
     }
   }
 
@@ -738,7 +738,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     AzureRepoApiAccessDTO apiAccess = azureRepoConnectorDTO.getApiAccess();
     if (apiAccess == null) {
       throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
+          "The ConnectorDisconnectHandler doesn't contain api access field which is required for the git sync ");
     }
   }
 }

@@ -237,6 +237,6 @@ public class TerraformCloudConnectorValidatorTest extends CategoryTest {
     assertThatThrownBy(()
                            -> terraformCloudConnectorValidator.validate(terraformCloudConnectorDTO, "accountIdentifier",
                                "orgIdentifier", "projectIdentifier", "identifier"))
-        .hasMessage("Check if your connector credentials are correct");
+        .hasMessage("Check if your ConnectorDisconnectHandler credentials are correct");
   }
 }

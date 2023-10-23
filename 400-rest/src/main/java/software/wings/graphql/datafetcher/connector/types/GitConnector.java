@@ -160,7 +160,7 @@ public class GitConnector extends Connector {
       sshSettingIdIsPresent = sshSecretId.getValue().isPresent();
     }
     if (!passwordSecretIsPresent && !sshSettingIdIsPresent) {
-      throw new InvalidRequestException("No secretId provided with the request for connector");
+      throw new InvalidRequestException("No secretId provided with the request for ConnectorDisconnectHandler");
     }
     if (passwordSecretIsPresent && sshSettingIdIsPresent) {
       throw new InvalidRequestException("Just one secretId should be specified");

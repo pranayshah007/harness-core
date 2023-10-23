@@ -383,6 +383,6 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
                            -> spyState.triggerAnalysisDataCollection(
                                executionContext, AnalysisContext.builder().build(), executionData, hosts))
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("No connector found with id " + configId);
+        .hasMessage("No ConnectorDisconnectHandler found with id " + configId);
   }
 }

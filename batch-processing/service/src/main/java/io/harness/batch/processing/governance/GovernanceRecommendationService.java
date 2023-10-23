@@ -98,7 +98,7 @@ public class GovernanceRecommendationService {
   }
 
   public void generateRecommendationForAccount(String accountId, List<ConnectorType> ceEnabledConnectorType) {
-    // fetch connector information for all the account with governance enabled
+    // fetch ConnectorDisconnectHandler information for all the account with governance enabled
     List<ConnectorResponseDTO> nextGenConnectorResponses = ngConnectorHelper.getNextGenConnectors(
         accountId, ceEnabledConnectorType, Arrays.asList(CEFeatures.GOVERNANCE), null);
     if (!nextGenConnectorResponses.isEmpty()) {
@@ -117,7 +117,7 @@ public class GovernanceRecommendationService {
         log.error("error which generating recommendation for {}", accountId);
       }
     } else {
-      log.info("No connector found for {}", accountId);
+      log.info("No ConnectorDisconnectHandler found for {}", accountId);
     }
   }
 

@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.prometheusConnector.PrometheusConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.prometheusConnector.PrometheusConnector")
 @OwnedBy(HarnessTeam.CV)
 public class PrometheusConnector extends Connector {
   private String url;

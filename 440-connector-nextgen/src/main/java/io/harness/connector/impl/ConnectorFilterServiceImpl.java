@@ -169,7 +169,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     FilterDTO connectorFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, CONNECTOR);
     if (connectorFilterDTO == null) {
-      throw new InvalidRequestException(String.format("Could not find a connector filter with the identifier %s",
+      throw new InvalidRequestException(String.format("Could not find a ConnectorDisconnectHandler filter with the identifier %s",
           ScopeHelper.getScopeMessageForLogs(accountIdentifier, orgIdentifier, projectIdentifier)));
     }
     populateConnectorFiltersInTheCriteria(criteria,

@@ -25,7 +25,7 @@ public interface NGConnectorSecretManagerService {
 
   default ConnectorDTO getConnectorDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    throw new RuntimeException("Can not find the connector dto. ");
+    throw new RuntimeException("Can not find the ConnectorDisconnectHandler dto. ");
   }
 
   void resolveSecretManagerScriptSecrets(String accountIdentifier, String path,

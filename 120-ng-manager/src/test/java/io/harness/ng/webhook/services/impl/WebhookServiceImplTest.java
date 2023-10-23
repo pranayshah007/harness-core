@@ -166,7 +166,7 @@ public class WebhookServiceImplTest extends CategoryTest {
         .when(scmOrchestratorService)
         .processScmRequestUsingConnectorSettings(any(), any(), any(), any(), any(), any(), any());
     assertThatThrownBy(() -> webhookService.upsertWebhook(upsertWebhookRequestDTO))
-        .hasMessage("The credentials provided in the Github connector identifier are invalid or have expired. message")
+        .hasMessage("The credentials provided in the Github ConnectorDisconnectHandler identifier are invalid or have expired. message")
         .isInstanceOf(ScmUnauthorizedException.class);
 
     doThrow(new ExplanationException("message", new InvalidRequestException("message")))
@@ -180,7 +180,7 @@ public class WebhookServiceImplTest extends CategoryTest {
         .when(scmOrchestratorService)
         .processScmRequestUsingConnectorSettings(any(), any(), any(), any(), any(), any(), any());
     assertThatThrownBy(() -> webhookService.upsertWebhook(upsertWebhookRequestDTO))
-        .hasMessage("The credentials provided in the Github connector identifier are invalid or have expired. message")
+        .hasMessage("The credentials provided in the Github ConnectorDisconnectHandler identifier are invalid or have expired. message")
         .isInstanceOf(ScmUnauthorizedException.class);
 
     doThrow(new HintException("message", new InvalidRequestException("message")))
@@ -194,7 +194,7 @@ public class WebhookServiceImplTest extends CategoryTest {
         .when(scmOrchestratorService)
         .processScmRequestUsingConnectorSettings(any(), any(), any(), any(), any(), any(), any());
     assertThatThrownBy(() -> webhookService.upsertWebhook(upsertWebhookRequestDTO))
-        .hasMessage("The credentials provided in the Github connector identifier are invalid or have expired. ")
+        .hasMessage("The credentials provided in the Github ConnectorDisconnectHandler identifier are invalid or have expired. ")
         .isInstanceOf(ScmUnauthorizedException.class);
 
     doThrow(new SCMRuntimeException("message"))
@@ -220,7 +220,7 @@ public class WebhookServiceImplTest extends CategoryTest {
     when(connectorService.getByRef(accountId, orgId, projectId, "identifier")).thenReturn(Optional.empty());
     assertThatThrownBy(() -> webhookService.getScmConnector(accountId, orgId, projectId, "identifier"))
         .isInstanceOf(ConnectorNotFoundException.class)
-        .hasMessage("No connector found for accountIdentifier: [" + accountId + "], orgIdentifier : [" + orgId
+        .hasMessage("No ConnectorDisconnectHandler found for accountIdentifier: [" + accountId + "], orgIdentifier : [" + orgId
             + "], projectIdentifier : [" + projectId + "], connectorRef : [identifier]");
 
     ConnectorResponseDTO connectorResponseDTO =
@@ -232,7 +232,7 @@ public class WebhookServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> webhookService.getScmConnector(accountId, orgId, projectId, "identifier"))
         .isInstanceOf(UnexpectedException.class)
         .hasMessage(
-            "The connector with the  identifier [null], accountIdentifier [accountId], orgIdentifier [orgId], projectIdentifier [projectId] is not an scm connector");
+            "The ConnectorDisconnectHandler with the  identifier [null], accountIdentifier [accountId], orgIdentifier [orgId], projectIdentifier [projectId] is not an scm ConnectorDisconnectHandler");
   }
 
   @Test

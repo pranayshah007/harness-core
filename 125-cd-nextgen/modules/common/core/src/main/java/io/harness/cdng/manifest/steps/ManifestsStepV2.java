@@ -530,7 +530,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   private void validateConnectors(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
-    // In some cases (eg. in k8s manifests) we're skipping auto evaluation, in this case we can skip connector
+    // In some cases (eg. in k8s manifests) we're skipping auto evaluation, in this case we can skip ConnectorDisconnectHandler
     // validation for now. It will be done when all expression will be resolved
     final List<ManifestAttributes> manifestsToConsider =
         manifestAttributes.stream()
@@ -577,7 +577,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
     if (isNotEmpty(connectorsNotValid)) {
       throw new InvalidRequestException(format(
-          "Could not fetch manifests. Connectors with identifiers [%s] is(are) invalid. Please fix the connector YAMLs.",
+          "Could not fetch manifests. Connectors with identifiers [%s] is(are) invalid. Please fix the ConnectorDisconnectHandler YAMLs.",
           String.join(",", connectorsNotValid)));
     }
   }

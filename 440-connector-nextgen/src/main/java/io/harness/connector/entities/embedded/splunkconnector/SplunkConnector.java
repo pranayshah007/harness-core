@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.splunkconnector.SplunkConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.splunkconnector.SplunkConnector")
 public class SplunkConnector extends Connector {
   String username;
   String passwordRef;

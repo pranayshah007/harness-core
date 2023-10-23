@@ -1089,7 +1089,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     } else {
       executionLogCallback.saveExecutionLog("\n" + color("Fetching manifest files", White, Bold));
     }
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfigDTO.getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitConfigDTO.getUrl());
 
     if (FetchType.BRANCH == gitStoreDelegateConfig.getFetchType()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitStoreDelegateConfig.getBranch());

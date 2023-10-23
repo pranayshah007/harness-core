@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.CDP)
 public class CdngInfraYamlTest extends CategoryTest {
   private K8sGcpInfrastructure k8sGcpInfrastructure = K8sGcpInfrastructure.builder()
-                                                          .connectorRef(ParameterField.createValueField("connector"))
+                                                          .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                           .namespace(ParameterField.createValueField("default"))
                                                           .cluster(ParameterField.createValueField("my-cluster"))
                                                           .releaseName(ParameterField.createValueField("rel-123"))
@@ -62,7 +62,7 @@ public class CdngInfraYamlTest extends CategoryTest {
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
   public void testExtractAndGetConnectorRefs() {
-    assertThat(k8sGcpInfrastructure.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("connector");
+    assertThat(k8sGcpInfrastructure.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("ConnectorDisconnectHandler");
 
     assertThat(k8SDirectInfrastructure.getConnectorRef().getValue()).isEqualTo("connectorDirect");
   }

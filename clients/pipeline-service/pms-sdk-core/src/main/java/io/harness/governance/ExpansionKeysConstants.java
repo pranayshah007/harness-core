@@ -16,7 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ExpansionKeysConstants {
-  public final String CONNECTOR_EXPANSION_KEY = "connector";
+  public final String CONNECTOR_EXPANSION_KEY = "ConnectorDisconnectHandler";
   public final String SERVICE_EXPANSION_KEY = "service";
   public final String ENV_EXPANSION_KEY = "environment";
   public final String MULTI_ENV_EXPANSION_KEY = "environments";

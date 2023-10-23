@@ -196,7 +196,7 @@ public class ValidationUtils {
 
       if (ParameterField.isNotNull(connector) || ParameterField.isNotNull(image)) {
         throw new CIStageExecutionException(format(
-            "MacOS Cloud infra doesn't support container based steps. Please remove connector and image field from step %s",
+            "MacOS Cloud infra doesn't support container based steps. Please remove ConnectorDisconnectHandler and image field from step %s",
             stepElement.getIdentifier()));
       }
     }

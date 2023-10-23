@@ -425,7 +425,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
 
   private ApplicationManifest buildKustomizeAppManifest() {
     GitFileConfig gitFileConfig =
-        GitFileConfig.builder().connectorId("connector-id").useBranch(true).branch("master").build();
+        GitFileConfig.builder().connectorId("ConnectorDisconnectHandler-id").useBranch(true).branch("master").build();
     return ApplicationManifest.builder()
         .kind(K8S_MANIFEST)
         .gitFileConfig(gitFileConfig)
@@ -524,7 +524,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     gitConfig.setUrlType(GitConfig.UrlType.ACCOUNT);
     assertThatThrownBy(() -> applicationManifestServiceImpl.validateOpenShiftSourceRepoAppManifest(applicationManifest))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Repository name not provided for Account level git connector.");
+        .hasMessageContaining("Repository name not provided for Account level git ConnectorDisconnectHandler.");
 
     gitConfig.setUrlType(GitConfig.UrlType.REPO);
     applicationManifestServiceImpl.validateOpenShiftSourceRepoAppManifest(applicationManifest);
@@ -535,7 +535,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testValidateApplicationManifestGitAccount() {
     GitFileConfig gitFileConfig =
-        GitFileConfig.builder().connectorId("connector-id").useBranch(true).branch("master").build();
+        GitFileConfig.builder().connectorId("ConnectorDisconnectHandler-id").useBranch(true).branch("master").build();
     ApplicationManifest applicationManifest = ApplicationManifest.builder()
                                                   .serviceId("s1")
                                                   .kind(AppManifestKind.HELM_CHART_OVERRIDE)
@@ -547,7 +547,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = new SettingAttribute();
     attribute.setValue(GitConfig.builder().urlType(GitConfig.UrlType.ACCOUNT).build());
 
-    doReturn(attribute).when(settingsService).get("connector-id");
+    doReturn(attribute).when(settingsService).get("ConnectorDisconnectHandler-id");
 
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> applicationManifestServiceImpl.validateApplicationManifest(applicationManifest));
@@ -704,7 +704,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     applicationManifest.setPollForChanges(true);
     applicationManifest.setHelmChartConfig(HelmChartConfig.builder().connectorId("c1").build());
 
-    // savedAppManifest -> True, applicationManifest -> True with different connector id
+    // savedAppManifest -> True, applicationManifest -> True with different ConnectorDisconnectHandler id
     when(applicationManifestServiceImpl.getById(any(), any())).thenReturn(savedAppManifest);
 
     applicationManifestServiceImpl.checkForUpdates(savedAppManifest, applicationManifest);
@@ -722,7 +722,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     savedAppManifest.setPollForChanges(true);
     applicationManifest.setPollForChanges(true);
 
-    // savedAppManifest -> True, applicationManifest -> True with same connector id and chart name
+    // savedAppManifest -> True, applicationManifest -> True with same ConnectorDisconnectHandler id and chart name
     when(applicationManifestServiceImpl.getById(anyString(), anyString())).thenReturn(savedAppManifest);
     applicationManifestServiceImpl.checkForUpdates(savedAppManifest, applicationManifest);
     verify(helmChartService, never()).deleteByAppManifest(anyString(), anyString());

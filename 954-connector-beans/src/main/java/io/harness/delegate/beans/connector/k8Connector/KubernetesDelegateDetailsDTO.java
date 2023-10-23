@@ -17,7 +17,7 @@ import lombok.Data;
 @Builder
 @JsonTypeName(KubernetesConfigConstants.INHERIT_FROM_DELEGATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "KubernetesDelegateDetails", description = "This contains kubernetes connector delegate details")
+@Schema(name = "KubernetesDelegateDetails", description = "This contains kubernetes ConnectorDisconnectHandler delegate details")
 public class KubernetesDelegateDetailsDTO implements KubernetesCredentialSpecDTO {
   //  @NotNull @Size(min = 1) Set<String> delegateSelectors;
   // delete this

@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "JenkinsAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.docker.JenkinsUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.docker.JenkinsUserNamePasswordAuthentication")
 public class JenkinsUserNamePasswordAuthentication implements JenkinsAuthentication {
   String username;
   String usernameRef;

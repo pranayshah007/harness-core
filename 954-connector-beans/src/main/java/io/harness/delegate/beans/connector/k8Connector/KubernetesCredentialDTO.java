@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(using = KubernetesCredentialDTODeserializer.class)
 @Schema(name = "KubernetesCredential", description = "This contains kubernetes credentials details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesCredentialDTO")
 public class KubernetesCredentialDTO {
   @NotNull @JsonProperty("type") KubernetesCredentialType kubernetesCredentialType;
   @JsonProperty("spec")

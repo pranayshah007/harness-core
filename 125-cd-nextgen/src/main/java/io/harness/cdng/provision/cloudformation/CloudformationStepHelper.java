@@ -153,7 +153,7 @@ public class CloudformationStepHelper {
         cdStepHelper.getConnector(getParameterFieldValue(stepConfiguration.getConnectorRef()), ambiance);
 
     if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
-      throw new InvalidRequestException("Invalid connector selected in CloudFormation step. Select AWS connector");
+      throw new InvalidRequestException("Invalid ConnectorDisconnectHandler selected in CloudFormation step. Select AWS ConnectorDisconnectHandler");
     }
 
     List<GitFetchFilesConfig> gitFetchFilesConfigs = getParametersGitFetchFileConfigs(ambiance, stepConfiguration);
@@ -810,8 +810,8 @@ public class CloudformationStepHelper {
       ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
       return connectorDTO.get().getConnector();
     } catch (Exception e) {
-      log.error(format("Unable to get connector information : [%s] ", connectorIdentifierRef), e);
-      throw new InvalidRequestException(format("Unable to get connector information : [%s] ", connectorIdentifierRef));
+      log.error(format("Unable to get ConnectorDisconnectHandler information : [%s] ", connectorIdentifierRef), e);
+      throw new InvalidRequestException(format("Unable to get ConnectorDisconnectHandler information : [%s] ", connectorIdentifierRef));
     }
   }
 

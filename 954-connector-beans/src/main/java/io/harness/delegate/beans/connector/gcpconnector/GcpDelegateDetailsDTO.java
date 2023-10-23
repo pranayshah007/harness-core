@@ -22,7 +22,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(GcpConstants.INHERIT_FROM_DELEGATE)
 @ApiModel("GcpDelegateDetails")
-@Schema(name = "GcpDelegateDetails", description = "This contains GCP connector delegate details")
+@Schema(name = "GcpDelegateDetails", description = "This contains GCP ConnectorDisconnectHandler delegate details")
 public class GcpDelegateDetailsDTO implements GcpCredentialSpecDTO {
   @NotNull @Size(min = 1) Set<String> delegateSelectors;
 }

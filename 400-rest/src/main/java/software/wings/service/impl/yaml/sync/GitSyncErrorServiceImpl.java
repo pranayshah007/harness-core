@@ -899,7 +899,7 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
     if (isEmpty(gitProcessingErrors)) {
       return;
     }
-    // We need to filter because maybe someone deleted the connector and
+    // We need to filter because maybe someone deleted the ConnectorDisconnectHandler and
     // alert still uses that gitConnectorId
     gitProcessingErrors.forEach(e -> populateGitProcessingErrorWithConnectorName(e, connectorMap));
   }

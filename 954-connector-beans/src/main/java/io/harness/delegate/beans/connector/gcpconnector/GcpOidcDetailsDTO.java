@@ -24,7 +24,7 @@ import lombok.Data;
 @JsonTypeName(GcpConstants.OIDC_AUTHENTICATION)
 @ApiModel("GcpOidcDetails")
 @Schema(name = "GcpOidcDetails", description = "This contains GCP OIDC details")
-@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.gcpconnector.GcpOidcDetailsDTO")
 public class GcpOidcDetailsDTO implements GcpCredentialSpecDTO {
   @ApiModelProperty(dataType = "string") @NotEmpty String workloadPoolId;
   @ApiModelProperty(dataType = "string") @NotEmpty String providerId;

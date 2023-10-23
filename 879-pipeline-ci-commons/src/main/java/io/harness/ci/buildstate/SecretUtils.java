@@ -261,8 +261,8 @@ public class SecretUtils {
   public DecryptableEntity decryptViaManager(DecryptableEntity decryptableEntity,
       List<EncryptedDataDetail> encryptionDetails, String accountId, String connectorId) {
     RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to decrypt connector credentials: [%s], attempt: {}", connectorId),
-            format("Failed to decrypt connector credentials: [%s] after retrying {} times", connectorId));
+        getRetryPolicy(format("[Retrying failed call to decrypt ConnectorDisconnectHandler credentials: [%s], attempt: {}", connectorId),
+            format("Failed to decrypt ConnectorDisconnectHandler credentials: [%s] after retrying {} times", connectorId));
 
     DecryptableEntityWithEncryptionConsumers entity = DecryptableEntityWithEncryptionConsumers.builder()
                                                           .decryptableEntity(decryptableEntity)

@@ -36,9 +36,9 @@ public class ExplanationException extends WingsException {
   public static String IMAGE_TAG_METADATA_NOT_FOUND =
       "Tag not found: Unable to fetch artifact metadata for {%s:%s} using Connector %s and the credentials provided";
   public static String IMAGE_METADATA_NOT_FOUND =
-      "Image Not Found: Unable to fetch artifact metadata for {%s} using connector %s with the given credentials.";
+      "Image Not Found: Unable to fetch artifact metadata for {%s} using ConnectorDisconnectHandler %s with the given credentials.";
   public static String REGISTRY_ACCESS_DENIED =
-      "Failed to fetch artifact metadata using connector %s with given credentials.";
+      "Failed to fetch artifact metadata using ConnectorDisconnectHandler %s with given credentials.";
   public static String COMMAND_TRIED_FOR_ARTIFACT = "Commands tried %s but no metadata was returned";
   public static String ILLEGAL_IMAGE_FORMAT = "Provided image path [%s] does not satisfy ECR image path format";
   public static String AWS_SM_DECRYPTION_FAILURE =

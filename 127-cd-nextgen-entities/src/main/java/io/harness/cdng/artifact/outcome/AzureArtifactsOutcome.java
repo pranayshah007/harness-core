@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.AzureArtifactsOutcome")
 public class AzureArtifactsOutcome implements ArtifactOutcome {
   /**
-   * Azure Artifacts connector.
+   * Azure Artifacts ConnectorDisconnectHandler.
    */
   String connectorRef;
 

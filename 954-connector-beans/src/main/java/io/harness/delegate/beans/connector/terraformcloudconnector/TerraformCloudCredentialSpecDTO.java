@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonSubTypes(
     { @JsonSubTypes.Type(value = TerraformCloudTokenCredentialsDTO.class, name = TerraformCloudConstants.API_TOKEN) })
 @ApiModel("TerraformCloudCredentialSpec")
-@Schema(name = "TerraformCloudCredentialSpec", description = "This contains Terraform Cloud connector credentials spec")
+@Schema(name = "TerraformCloudCredentialSpec", description = "This contains Terraform Cloud ConnectorDisconnectHandler credentials spec")
 public interface TerraformCloudCredentialSpecDTO extends DecryptableEntity {
   default TerraformCloudCredentialSpecOutcomeDTO toOutcome() {
     return null;

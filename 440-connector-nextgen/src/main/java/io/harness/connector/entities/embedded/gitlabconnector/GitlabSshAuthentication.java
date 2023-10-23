@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabSshAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabSshAuthentication")
 public class GitlabSshAuthentication implements GitlabAuthentication {
   String sshKeyRef;
 }

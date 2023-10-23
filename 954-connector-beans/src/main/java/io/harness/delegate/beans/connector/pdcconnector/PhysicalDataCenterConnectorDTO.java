@@ -36,8 +36,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
-@Schema(name = "PhysicalDataCenterConnectorDTO", description = "This contains Physical Data Center connector details")
-@RecasterAlias("io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO")
+@Schema(name = "PhysicalDataCenterConnectorDTO", description = "This contains Physical Data Center ConnectorDisconnectHandler details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.pdcconnector.PhysicalDataCenterConnectorDTO")
 public class PhysicalDataCenterConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @JsonDeserialize(using = HostDTOsDeserializer.class) @JsonProperty("hosts") @Valid List<HostDTO> hosts;
   Set<String> delegateSelectors;

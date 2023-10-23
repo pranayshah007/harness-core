@@ -278,7 +278,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
                                          .branch(ParameterField.createValueField("test-branch"))
                                          .gitFetchType(FetchType.BRANCH)
                                          .folderPath(ParameterField.createValueField("test-folder-path"))
-                                         .connectorRef(ParameterField.createValueField("test-connector"))
+                                         .connectorRef(ParameterField.createValueField("test-ConnectorDisconnectHandler"))
                                          .build())
                         .varFileConfigs(new ArrayList<>() {
                           { add(TerragruntInlineVarFileConfig.builder().varFileContent("test-var1-content").build()); }

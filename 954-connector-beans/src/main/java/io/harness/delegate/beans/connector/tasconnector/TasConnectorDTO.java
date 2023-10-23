@@ -37,7 +37,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("TasConnector")
-@Schema(name = "TasConnector", description = "This contains details of the Tas connector")
+@Schema(name = "TasConnector", description = "This contains details of the Tas ConnectorDisconnectHandler")
 public class TasConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid TasCredentialDTO credential;
   Set<String> delegateSelectors;

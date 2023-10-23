@@ -29,7 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.ceawsconnector.CEAwsConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.ceawsconnector.CEAwsConfig")
 public class CEAwsConfig extends Connector {
   List<CEFeatures> featuresEnabled;
   String awsAccountId;

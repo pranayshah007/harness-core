@@ -32,11 +32,11 @@ public class HintException extends WingsException {
   public static final String HINT_AWS_IAM_ROLE_CHECK =
       "Check if the IAM role on ec2 delegate has the permissions to describe regions.";
   public static final String HINT_CI_LITE_ENGINE_CONNECTIVITY =
-      "Check if the delegate is installed in the same cluster where build is running, Try by adding delegate selector in infrastructure connector.";
+      "Check if the delegate is installed in the same cluster where build is running, Try by adding delegate selector in infrastructure ConnectorDisconnectHandler.";
 
   public static final String HINT_NO_DELEGATES = "There are no eligible delegates present";
   public static final String HINT_AWS_CONNECTOR_NG_DOCUMENTATION =
-      "\nRefer Harness NG documentation for configuring AWS connector settings: https://ngdocs.harness.io/article/m5vkql35ca-aws-connector-settings-reference";
+      "\nRefer Harness NG documentation for configuring AWS ConnectorDisconnectHandler settings: https://ngdocs.harness.io/article/m5vkql35ca-aws-connector-settings-reference";
   public static final String IAM_DETAILS_COMMAND =
       "\nRun this command to check the details about the IAM user/role: `aws sts get-caller-identity`\n";
   public static final String HINT_AWS_CLIENT_UNKNOWN_ISSUE = "Check AWS client on delegate";
@@ -93,7 +93,7 @@ public class HintException extends WingsException {
   public static final String HINT_INVALID_IMAGE_REFER_LINK_ARTIFACTORY_REGISTRY =
       "Please check if image is available. Refer https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-ListDockerTags for more information";
   public static final String HINT_INVALID_CONNECTOR =
-      "Please ensure that connector %s is valid and using the correct Credentials.";
+      "Please ensure that ConnectorDisconnectHandler %s is valid and using the correct Credentials.";
   public static final String DELEGATE_NOT_AVAILABLE =
       "Please make sure that your delegates are connected. Refer %s for more information on delegate Installation";
   public static final String HINT_ILLEGAL_IMAGE_PATH = "Please provide valid image path";

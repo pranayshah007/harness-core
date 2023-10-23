@@ -50,15 +50,15 @@ public class ConnectorsSourceRepoTest extends AbstractFunctionalTest {
 
     log.info("WebHook Token: " + webHookToken);
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();

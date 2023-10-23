@@ -40,7 +40,7 @@ public class ConnectorFactory {
       case HTTP_HELM_REPO:
         return new HelmConnector(featureFlagService, secretManager, connectorsController, settingsService);
       default:
-        throw new InvalidRequestException("Invalid connector Type");
+        throw new InvalidRequestException("Invalid ConnectorDisconnectHandler Type");
     }
   }
 }

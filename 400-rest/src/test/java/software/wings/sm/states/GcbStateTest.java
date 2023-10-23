@@ -538,7 +538,7 @@ public class GcbStateTest extends CategoryTest {
 
     assertThat(state.executeInternal(context, ACTIVITY_ID).getExecutionStatus()).isEqualTo(FAILED);
     assertThat(state.executeInternal(context, ACTIVITY_ID).getErrorMessage())
-        .isEqualTo("Git connector does not exist. Please update with an appropriate git connector.");
+        .isEqualTo("Git ConnectorDisconnectHandler does not exist. Please update with an appropriate git ConnectorDisconnectHandler.");
   }
 
   @Test

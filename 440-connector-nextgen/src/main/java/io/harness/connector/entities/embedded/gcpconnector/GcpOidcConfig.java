@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gcpconnector.GcpOidcConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpconnector.GcpOidcConfig")
 public class GcpOidcConfig implements GcpCredential {
   String workloadPoolId;
   String providerId;

@@ -103,7 +103,7 @@ public class ElkDelegateServiceImpl implements ElkDelegateService {
     apiCallLog.setTitle("Fetching logs from " + elkConfig.getElkUrl());
     apiCallLog.setRequestTimeStamp(OffsetDateTime.now().toInstant().toEpochMilli());
     apiCallLog.addFieldToRequest(ThirdPartyApiCallField.builder()
-                                     .name("connector")
+                                     .name("ConnectorDisconnectHandler")
                                      .value(elkConfig.getElkConnector().getName())
                                      .type(FieldType.TEXT)
                                      .build());
@@ -206,7 +206,7 @@ public class ElkDelegateServiceImpl implements ElkDelegateService {
         throw new WingsException("Unable to get version. Check url : " + ExceptionUtils.getMessage(ex), ex);
       }
     } else {
-      throw new WingsException("Get version is supported only for the Kibana connector");
+      throw new WingsException("Get version is supported only for the Kibana ConnectorDisconnectHandler");
     }
   }
 

@@ -55,7 +55,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifest =
         HelmChartManifestOutcome.builder()
             .store(GcsStoreConfig.builder()
-                       .connectorRef(ParameterField.createValueField("connector"))
+                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                        .bucketName(ParameterField.createValueField("bucket"))
                        .build())
             .chartName(ParameterField.createValueField("chart"))
@@ -71,7 +71,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifest =
         HelmChartManifestOutcome.builder()
             .store(GitStore.builder()
-                       .connectorRef(ParameterField.createValueField("connector"))
+                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                        .repoName(ParameterField.createValueField("repo"))
                        .gitFetchType(FetchType.BRANCH)
                        .branch(ParameterField.createValueField("master"))
@@ -89,7 +89,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifest =
         HelmChartManifestOutcome.builder()
             .store(GcsStoreConfig.builder()
-                       .connectorRef(ParameterField.createValueField("connector"))
+                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                        .bucketName(ParameterField.createValueField("bucket"))
                        .build())
             .chartName(ParameterField.createExpressionField(true, "<+expression>", null, true))
@@ -105,7 +105,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
     HelmChartManifestOutcome helmChartManifest =
         HelmChartManifestOutcome.builder()
             .store(GcsStoreConfig.builder()
-                       .connectorRef(ParameterField.createValueField("connector"))
+                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                        .bucketName(ParameterField.createValueField("bucket"))
                        .build())
             .chartName(ParameterField.createExpressionField(true, "<+expression>", null, true))
@@ -120,7 +120,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInvalidHelmChartManifestGitStore() {
     GitStore store = GitStore.builder()
-                         .connectorRef(ParameterField.createValueField("connector"))
+                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                          .repoName(ParameterField.createValueField("repo"))
                          .gitFetchType(FetchType.BRANCH)
                          .branch(ParameterField.createValueField("master"))
@@ -148,7 +148,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGitStoreBranch() {
     GitStore gitStore = GitStore.builder()
-                            .connectorRef(ParameterField.createValueField("connector"))
+                            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                             .repoName(ParameterField.createValueField("repo"))
                             .gitFetchType(FetchType.BRANCH)
                             .branch(ParameterField.createValueField("master"))
@@ -195,7 +195,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInvalidGitStoreBranchCommitId() {
     GithubStore gitStore = GithubStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.BRANCH)
                                .commitId(ParameterField.createValueField("commitId"))
@@ -214,7 +214,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGitStoreCommitId() {
     GitStore gitStore = GitStore.builder()
-                            .connectorRef(ParameterField.createValueField("connector"))
+                            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                             .repoName(ParameterField.createValueField("repo"))
                             .gitFetchType(FetchType.COMMIT)
                             .commitId(ParameterField.createValueField("commitId"))
@@ -230,7 +230,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGitStoreCommitIdAllowExpression() {
     BitbucketStore gitStore = BitbucketStore.builder()
-                                  .connectorRef(ParameterField.createValueField("connector"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                   .repoName(ParameterField.createValueField("repo"))
                                   .gitFetchType(FetchType.COMMIT)
                                   .commitId(ParameterField.createExpressionField(true, "<+expression>", null, true))
@@ -246,7 +246,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInvalidGitStoreCommitIdDisallowExpression() {
     GitLabStore gitStore = GitLabStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.COMMIT)
                                .commitId(ParameterField.createExpressionField(true, "<+expression>", null, true))
@@ -264,7 +264,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGitStoreFolderPath() {
     GithubStore gitStore = GithubStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.COMMIT)
                                .commitId(ParameterField.createValueField("commitId"))
@@ -280,7 +280,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGitStoreFolderPathAllowExpression() {
     GithubStore gitStore = GithubStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.COMMIT)
                                .commitId(ParameterField.createValueField("commitId"))
@@ -296,7 +296,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInvalidGitStoreFolderPathMissing() {
     GithubStore gitStore = GithubStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.COMMIT)
                                .commitId(ParameterField.createValueField("commitId"))
@@ -313,7 +313,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInvalidGitStoreFolderPathDisallowExpression() {
     GithubStore gitStore = GithubStore.builder()
-                               .connectorRef(ParameterField.createValueField("connector"))
+                               .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                .repoName(ParameterField.createValueField("repo"))
                                .gitFetchType(FetchType.COMMIT)
                                .commitId(ParameterField.createValueField("commitId"))
@@ -331,7 +331,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidS3Store() {
     S3StoreConfig s3Store = S3StoreConfig.builder()
-                                .connectorRef(ParameterField.createValueField("connector"))
+                                .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                 .bucketName(ParameterField.createValueField("bucket"))
                                 .region(ParameterField.createValueField("region"))
                                 .build();
@@ -387,7 +387,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidGcsStore() {
     GcsStoreConfig gcsStore = GcsStoreConfig.builder()
-                                  .connectorRef(ParameterField.createValueField("connector"))
+                                  .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                   .bucketName(ParameterField.createValueField("bucket"))
                                   .build();
 
@@ -438,7 +438,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
             .identifier("Test")
             .chartName(ParameterField.createValueField("TodoList"))
             .store(GcsStoreConfig.builder()
-                       .connectorRef(ParameterField.createValueField("connector"))
+                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                        .bucketName(ParameterField.createValueField("bucket"))
                        .build())
             .valuesPaths(ParameterField.createValueField(asList(" ", " ")))
@@ -487,7 +487,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreGenericConfig.builder()
-                              .connectorRef(ParameterField.createValueField("connector"))
+                              .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                               .build())
                     .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
@@ -507,7 +507,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreEcrConfig.builder()
-                              .connectorRef(ParameterField.createValueField("connector"))
+                              .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                               .region(ParameterField.createValueField("region"))
                               .build())
                     .type(OciHelmChartStoreConfigType.ECR)
@@ -608,7 +608,7 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
             .config(ParameterField.createValueField(
                 OciHelmChartStoreConfigWrapper.builder()
                     .spec(OciHelmChartStoreEcrConfig.builder()
-                              .connectorRef(ParameterField.createValueField("connector"))
+                              .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                               .region(ParameterField.createExpressionField(true, "<+expression>", null, true))
                               .build())
                     .type(OciHelmChartStoreConfigType.ECR)

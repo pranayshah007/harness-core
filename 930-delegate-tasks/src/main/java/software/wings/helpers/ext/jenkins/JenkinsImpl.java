@@ -793,7 +793,7 @@ public class JenkinsImpl implements Jenkins {
    * Creates build with new url and number
    *
    * @param build          existing build with Jenkins master URL
-   * @param buildUrl       build url with Jenkins connector URL
+   * @param buildUrl       build url with Jenkins ConnectorDisconnectHandler URL
    * @return new build.
    */
   private Build createBuild(Build build, String buildUrl) {

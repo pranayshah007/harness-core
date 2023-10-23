@@ -194,7 +194,7 @@ public class HelmConnector extends Connector {
         || (type == QLConnectorType.HTTP_HELM_REPO && httpServerPlatformInput == null)
         || (type == QLConnectorType.OCI_HELM_REPO && ociPlatformInput == null)) {
       throw new InvalidRequestException(
-          String.format("Wrong hosting platform provided with the request for %s connector", type.getStringValue()));
+          String.format("Wrong hosting platform provided with the request for %s ConnectorDisconnectHandler", type.getStringValue()));
     }
   }
 

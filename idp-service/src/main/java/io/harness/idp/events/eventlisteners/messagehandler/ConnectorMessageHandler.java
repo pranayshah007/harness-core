@@ -35,7 +35,7 @@ public class ConnectorMessageHandler implements EventMessageHandler {
         gitIntegrationService.processConnectorUpdate(message, entityChangeDTO);
         break;
       default:
-        log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
+        log.warn("ACTION - {} is not to be handled by IDP ConnectorDisconnectHandler event handler", action);
     }
   }
 }

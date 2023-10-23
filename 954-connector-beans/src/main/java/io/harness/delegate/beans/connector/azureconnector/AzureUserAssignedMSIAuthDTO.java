@@ -25,7 +25,7 @@ import lombok.Value;
 @JsonTypeName(AzureConstants.USER_ASSIGNED_MANAGED_IDENTITY)
 @ApiModel("AzureUserAssignedMSIAuth")
 @Schema(name = "AzureUserAssignedMSIAuth", description = "This contains azure UserAssigned MSI auth details")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureUserAssignedMSIAuthDTO")
 public class AzureUserAssignedMSIAuthDTO extends AzureAuthCredentialDTO {
   @Schema(description = "Client Id of the ManagedIdentity resource") @NotNull String clientId;
   @Override

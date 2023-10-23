@@ -262,8 +262,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   private void runTestConnectionAsync(ConnectorDTO connectorRequestDTO, String accountIdentifier) {
-    // User can create a connector without test connection, in this flow we won't have
-    // a status for the connector, to solve this issue we will do one test connection
+    // User can create a ConnectorDisconnectHandler without test connection, in this flow we won't have
+    // a status for the ConnectorDisconnectHandler, to solve this issue we will do one test connection
     // asynchronously
     executorService.submit(() -> validate(connectorRequestDTO, accountIdentifier));
   }
@@ -274,15 +274,15 @@ public class ConnectorServiceImpl implements ConnectorService {
          AutoLogContext ignore2 = new ConnectorLogContext(connector.getIdentifier(), OVERRIDE_ERROR);) {
       connectorActivityService.create(accountIdentifier, connector, NGActivityType.ENTITY_CREATION);
     } catch (Exception ex) {
-      log.info("Error while creating connector creation activity", ex);
+      log.info("Error while creating ConnectorDisconnectHandler creation activity", ex);
     }
   }
 
   /***
    * The usual update logic involves getting the entity, updating it and saving it
-   * In the case when user selected commit to a new branch while updating a connector
+   * In the case when user selected commit to a new branch while updating a ConnectorDisconnectHandler
    * We need to
-   *   1. Update the connector in git
+   *   1. Update the ConnectorDisconnectHandler in git
    *   2. Create a new record for this branch in our mongo
    * We are handling this case using the below if statement
    ***/
@@ -416,7 +416,7 @@ public class ConnectorServiceImpl implements ConnectorService {
               .setData(connectorUpdateDTOBuilder.build().toByteString())
               .build());
     } catch (Exception ex) {
-      log.info("Exception while publishing the event of connector update for {}",
+      log.info("Exception while publishing the event of ConnectorDisconnectHandler update for {}",
           String.format(CONNECTOR_STRING, identifier, accountIdentifier, orgIdentifier, projectIdentifier));
     }
   }
@@ -425,7 +425,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     try {
       connectorActivityService.create(accountIdentifier, connector, NGActivityType.ENTITY_UPDATE);
     } catch (Exception ex) {
-      log.info("Error while creating connector update activity", ex);
+      log.info("Error while creating ConnectorDisconnectHandler update activity", ex);
     }
   }
 
@@ -475,9 +475,9 @@ public class ConnectorServiceImpl implements ConnectorService {
             return false;
           }
         }
-        throw new InvalidRequestException("Could not delete connector because heartbeat could not be deleted", USER);
+        throw new InvalidRequestException("Could not delete ConnectorDisconnectHandler because heartbeat could not be deleted", USER);
       }
-      throw new InvalidRequestException("No such connector found", USER);
+      throw new InvalidRequestException("No such ConnectorDisconnectHandler found", USER);
     }
   }
 
@@ -488,7 +488,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null, emptyList());
     if (connectorResponseDTOList.getContent().size() == 1) {
       throw new InvalidRequestException(
-          String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
+          String.format("Cannot delete the ConnectorDisconnectHandler: %s as no other secret manager is present in the account.",
               connectorIdentifier));
     }
   }
@@ -503,7 +503,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     try {
       connectorActivityService.deleteAllActivities(accountIdentifier, connectorFQN);
     } catch (Exception ex) {
-      log.info("Error while deleting connector activity", ex);
+      log.info("Error while deleting ConnectorDisconnectHandler activity", ex);
     }
   }
 
@@ -516,11 +516,11 @@ public class ConnectorServiceImpl implements ConnectorService {
         return false;
       }
     } else {
-      log.info("{} The perpetual task id is empty for the connector {}", CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorFQN);
+      log.info("{} The perpetual task id is empty for the ConnectorDisconnectHandler {}", CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorFQN);
       return false;
     }
     log.info(
-        "{} Deleted the heartbeat perpetual task for the connector {}", CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorFQN);
+        "{} Deleted the heartbeat perpetual task for the ConnectorDisconnectHandler {}", CONNECTOR_HEARTBEAT_LOG_PREFIX, connectorFQN);
     return true;
   }
 
@@ -637,7 +637,7 @@ public class ConnectorServiceImpl implements ConnectorService {
               connector.getConnectivityDetails().getTestedAt());
 
     } catch (Exception ex) {
-      log.error("Error saving the connector status for the connector {}",
+      log.error("Error saving the ConnectorDisconnectHandler status for the ConnectorDisconnectHandler {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),
           ex);
     }
@@ -659,7 +659,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         && connector.getHeartbeatPerpetualTaskId() == null && connector.getExecuteOnDelegate()) {
       PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
-      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getIdentifier(),
+      log.info("Started Heartbeat Perpetual task for ConnectorDisconnectHandler {} with taskID {}", connector.getIdentifier(),
           connectorHeartbeatTaskId.getId());
 
       connector.setHeartbeatPerpetualTaskId(connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
@@ -711,7 +711,7 @@ public class ConnectorServiceImpl implements ConnectorService {
       boolean isConnectorHeartbeatDeleted = deleteConnectorHeartbeatTask(
           accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
       if (isConnectorHeartbeatDeleted) {
-        log.info("Deleted Heartbeat Perpetual task for connector {} with taskID {} due to invalid Auth",
+        log.info("Deleted Heartbeat Perpetual task for ConnectorDisconnectHandler {} with taskID {} due to invalid Auth",
             connector.getIdentifier(), connector.getHeartbeatPerpetualTaskId());
         connector.setHeartbeatPerpetualTaskId(null);
       }

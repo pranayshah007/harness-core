@@ -379,7 +379,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateInfraMappingObject() {
     String namespace = "namespace";
-    String connector = "connector";
+    String connector = "ConnectorDisconnectHandler";
 
     Infrastructure infrastructureSpec = K8SDirectInfrastructure.builder()
                                             .connectorRef(ParameterField.createValueField(connector))
@@ -398,7 +398,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateK8sGcpInfraMapping() {
     String namespace = "namespace";
-    String connector = "connector";
+    String connector = "ConnectorDisconnectHandler";
     String cluster = "cluster";
 
     Infrastructure infrastructureSpec = K8sGcpInfrastructure.builder()
@@ -437,7 +437,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePdcInfraMappingWithConnectorAndHostFilters() {
     String sshKeyRef = "some-key-ref";
-    String connectorRef = "some-connector-ref";
+    String connectorRef = "some-ConnectorDisconnectHandler-ref";
     List<String> hostFilters = Arrays.asList("filter-host1", "filter-host2");
 
     Infrastructure infrastructureSpec =
@@ -469,7 +469,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePdcInfraMappingWithConnectorAndAttributeFilters() {
     String sshKeyRef = "some-key-ref";
-    String connectorRef = "some-connector-ref";
+    String connectorRef = "some-ConnectorDisconnectHandler-ref";
     Map<String, String> attributeFilters = new HashMap<>();
     attributeFilters.put("some-attribute", "some-value");
     attributeFilters.put("another-attribute", "another-value");
@@ -506,7 +506,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testCreateSshWinRmAzureInfraMapping() {
-    String connectorRef = "some-connector-ref";
+    String connectorRef = "some-ConnectorDisconnectHandler-ref";
     String credentialsRef = "some-credentials-ref";
     String subscriptionId = "some-sub-id";
     String resourceGroup = "some-resource-group";
@@ -578,7 +578,7 @@ public class InfrastructureStepTest extends CategoryTest {
     K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder = K8SDirectInfrastructure.builder();
     infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
 
-    k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("connector"));
+    k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"));
     infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
 
     ParameterField param = new ParameterField<>(null, null, true, "expression1", null, true);
@@ -649,7 +649,7 @@ public class InfrastructureStepTest extends CategoryTest {
   public void testValidateSshWinRmAzureInfrastructure() {
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
                                                      .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .build();
@@ -664,7 +664,7 @@ public class InfrastructureStepTest extends CategoryTest {
     ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
                                                      .credentialsRef(credentialsRef)
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .build();
@@ -704,7 +704,7 @@ public class InfrastructureStepTest extends CategoryTest {
     ParameterField subscriptionId = new ParameterField<>(null, null, true, "expression2", null, true);
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
                                                      .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(subscriptionId)
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .build();
@@ -724,7 +724,7 @@ public class InfrastructureStepTest extends CategoryTest {
     ParameterField resourceGroup = new ParameterField<>(null, null, true, "expression2", null, true);
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
                                                      .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                      .resourceGroup(resourceGroup)
                                                      .build();
@@ -794,7 +794,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateK8sAzureInfraMapping() {
     String namespace = "namespace";
-    String connector = "connector";
+    String connector = "ConnectorDisconnectHandler";
     String subscriptionId = "subscriptionId";
     String resourceGroup = "resourceGroup";
     String cluster = "cluster";
@@ -1001,7 +1001,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateAzureWebAppInfrastructure() {
     AzureWebAppInfrastructure infrastructure = AzureWebAppInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                   .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                    .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
                                                    .build();
@@ -1014,7 +1014,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateK8sAwsInfraMapping() {
     String namespace = "namespace";
-    String connector = "connector";
+    String connector = "ConnectorDisconnectHandler";
     String cluster = "cluster";
     String region = "region";
 
@@ -1072,7 +1072,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateGoogleFunctionsInfraMapping() {
     String region = "region";
-    String connector = "connector";
+    String connector = "ConnectorDisconnectHandler";
     String project = "project";
 
     Infrastructure infrastructureSpec = GoogleFunctionsInfrastructure.builder()

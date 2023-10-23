@@ -127,7 +127,7 @@ public class AnomalyDetectionBigQueryServiceImpl {
         return true;
       }
     } catch (BigQueryException | SQLException e) {
-      log.info("Skipping account {} since gcp/aws connector doesn't exist: {}", accountId, e);
+      log.info("Skipping account {} since gcp/aws ConnectorDisconnectHandler doesn't exist: {}", accountId, e);
     }
     return false;
   }

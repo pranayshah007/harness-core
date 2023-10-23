@@ -22,7 +22,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfi
 import io.harness.delegate.beans.connector.spotconnector.SpotTaskParams;
 import io.harness.delegate.task.TaskParameters;
 
-// Specific to Delegate side connector validation
+// Specific to Delegate side ConnectorDisconnectHandler validation
 @OwnedBy(HarnessTeam.CDP)
 public class SpotConnectorValidator extends AbstractCloudProviderConnectorValidator {
   @Override

@@ -316,7 +316,7 @@ public class FilepathTriggerFilter implements TriggerFilter {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getGitConnectionType();
     } else {
-      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
+      throw new CIStageExecutionException("Unsupported git ConnectorDisconnectHandler type" + gitConnector.getConnectorType());
     }
   }
 

@@ -97,8 +97,8 @@ public class NexusThreeClientImpl {
         return repositories;
       } else {
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the connector details - URL & credentials are correct",
-            "No repositories were found for the connector",
+            "Check if the ConnectorDisconnectHandler details - URL & credentials are correct",
+            "No repositories were found for the ConnectorDisconnectHandler",
             new InvalidArtifactServerException("Failed to fetch the repositories", WingsException.USER));
       }
     }
@@ -128,7 +128,7 @@ public class NexusThreeClientImpl {
             nexusConfig.getNexusUrl(), images);
       } else {
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the connector details - URL & credentials are correct", "No images were found for the connector",
+            "Check if the ConnectorDisconnectHandler details - URL & credentials are correct", "No images were found for the ConnectorDisconnectHandler",
             new InvalidArtifactServerException("Failed to fetch the images", WingsException.USER));
       }
     } else {
@@ -162,8 +162,8 @@ public class NexusThreeClientImpl {
     if (response.code() == 404) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Nexus URL & Nexus version are correct. Nexus URLs are different for different Nexus versions",
-          "The Nexus URL or the version for the connector is incorrect",
-          new InvalidArtifactServerException("Invalid Nexus connector details"));
+          "The Nexus URL or the version for the ConnectorDisconnectHandler is incorrect",
+          new InvalidArtifactServerException("Invalid Nexus ConnectorDisconnectHandler details"));
     }
     return NexusHelper.isSuccessful(response);
   }
@@ -611,7 +611,7 @@ public class NexusThreeClientImpl {
       return request.execute();
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Nexus registry might not be online. Please check Nexus connector configuration and verify that URL is valid.",
+          "Nexus registry might not be online. Please check Nexus ConnectorDisconnectHandler configuration and verify that URL is valid.",
           String.format("Failed to execute API call '%s %s'", request.request().method(), request.request().url()),
           new NexusRegistryException(e.getMessage()));
     }

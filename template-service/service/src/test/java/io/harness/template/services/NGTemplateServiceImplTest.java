@@ -1742,7 +1742,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
             .repoName("repo")
             .branch("branch")
             .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
-            .connectorRef("connector")
+            .connectorRef("ConnectorDisconnectHandler")
             .baseBranch("baseBranch")
             .commitMessage("Commit message")
             .isNewBranch(false)
@@ -1752,7 +1752,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, moveConfigOperationDTO, templateEntity);
     assertThat(updatedTemplateEntity.getStoreType()).isEqualTo(StoreType.REMOTE);
     assertThat(updatedTemplateEntity.getRepo()).isEqualTo("repo");
-    assertThat(updatedTemplateEntity.getConnectorRef()).isEqualTo("connector");
+    assertThat(updatedTemplateEntity.getConnectorRef()).isEqualTo("ConnectorDisconnectHandler");
     assertThat(updatedTemplateEntity.getFilePath()).isEqualTo("filepath");
     assertThat(updatedTemplateEntity.getFallBackBranch()).isEqualTo("branch");
     assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);

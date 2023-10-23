@@ -123,15 +123,15 @@ public class ExpansionsMergerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetNewFQN() {
     String fqn = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connectorRef";
-    String key = "connector";
+    String key = "ConnectorDisconnectHandler";
     String newFQN1 = ExpansionsMerger.getNewFQN(fqn, key, REPLACE);
-    assertThat(newFQN1).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector");
+    assertThat(newFQN1).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler");
     String newFQN2 = ExpansionsMerger.getNewFQN(fqn, key, PARALLEL);
-    assertThat(newFQN2).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector");
+    assertThat(newFQN2).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/ConnectorDisconnectHandler");
     String newFQN3 = ExpansionsMerger.getNewFQN(fqn, key, MOVE_UP);
-    assertThat(newFQN3).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/connector");
+    assertThat(newFQN3).isEqualTo("pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/ConnectorDisconnectHandler");
     String newFQN4 = ExpansionsMerger.getNewFQN(fqn, key, APPEND);
     assertThat(newFQN4).isEqualTo(
-        "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connectorRef/connector");
+        "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connectorRef/ConnectorDisconnectHandler");
   }
 }

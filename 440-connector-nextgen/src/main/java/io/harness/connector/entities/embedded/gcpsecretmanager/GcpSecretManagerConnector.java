@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpsecretmanager.GcpSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GcpSecretManagerConnector extends Connector {
   @Builder.Default private Boolean isDefault = false;

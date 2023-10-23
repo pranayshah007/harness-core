@@ -32,7 +32,7 @@ public class RepoProviderHelper {
       case AZURE_REPO:
         return RepoProviders.AZURE;
       default:
-        throw new InvalidRequestException("Unknown connector type " + connectorType);
+        throw new InvalidRequestException("Unknown ConnectorDisconnectHandler type " + connectorType);
     }
   }
 }

@@ -104,7 +104,7 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
             (Map<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.jiraApprovalParams);
         String jiraConnectorId = (String) jiraApprovalParams.get(JIRA_CONNECTOR_ID);
         SettingAttribute jiraConnectionAttribute = settingsService.get(jiraConnectorId);
-        notNullCheck("Jira connector does not exist.", jiraConnectionAttribute);
+        notNullCheck("Jira ConnectorDisconnectHandler does not exist.", jiraConnectionAttribute);
         jiraApprovalParams.remove(JIRA_CONNECTOR_ID);
         jiraApprovalParams.put(JIRA_CONNECTOR_NAME, jiraConnectionAttribute.getName());
       }
@@ -113,7 +113,7 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
             (Map<String, Object>) approvalStateParams.get(ApprovalStateParamsKeys.serviceNowApprovalParams);
         String snowConnectorId = (String) snowApprovalParams.get(SNOW_CONNECTOR_ID);
         SettingAttribute snowConnectionAttribute = settingsService.get(snowConnectorId);
-        notNullCheck("ServiceNow connector does not exist.", snowConnectionAttribute);
+        notNullCheck("ServiceNow ConnectorDisconnectHandler does not exist.", snowConnectionAttribute);
         snowApprovalParams.remove(SNOW_CONNECTOR_ID);
         snowApprovalParams.put(SNOW_CONNECTOR_NAME, snowConnectionAttribute.getName());
       }
@@ -157,7 +157,7 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
           String jiraConnectorName = (String) jiraApprovalParams.get(JIRA_CONNECTOR_NAME);
           SettingAttribute jiraSettingAttribute =
               settingsService.getSettingAttributeByName(accountId, jiraConnectorName);
-          notNullCheck(String.format("Jira connector %s does not exist.", jiraConnectorName), jiraSettingAttribute);
+          notNullCheck(String.format("Jira ConnectorDisconnectHandler %s does not exist.", jiraConnectorName), jiraSettingAttribute);
           jiraApprovalParams.remove(JIRA_CONNECTOR_NAME);
           jiraApprovalParams.put(JIRA_CONNECTOR_ID, jiraSettingAttribute.getUuid());
         }
@@ -173,7 +173,7 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
           SettingAttribute snowSettingAttribute =
               settingsService.getSettingAttributeByName(accountId, snowConnectorName);
           notNullCheck(
-              String.format("ServiceNow connector %s does not exist.", snowConnectorName), snowSettingAttribute);
+              String.format("ServiceNow ConnectorDisconnectHandler %s does not exist.", snowConnectorName), snowSettingAttribute);
           snowApprovalParams.remove(SNOW_CONNECTOR_NAME);
           snowApprovalParams.put(SNOW_CONNECTOR_ID, snowSettingAttribute.getUuid());
         }

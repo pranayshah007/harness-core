@@ -69,7 +69,7 @@ public class AzureValidationHandler implements ConnectorValidationHandler {
     }
 
     String errorMessage = "Testing connection to Azure has timed out.";
-    throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector",
-        "Please check you Azure connector configuration.", new AzureAuthenticationException(errorMessage));
+    throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure ConnectorDisconnectHandler",
+        "Please check you Azure ConnectorDisconnectHandler configuration.", new AzureAuthenticationException(errorMessage));
   }
 }

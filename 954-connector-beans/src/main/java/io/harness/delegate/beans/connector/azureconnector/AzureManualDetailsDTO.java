@@ -26,8 +26,8 @@ import lombok.Value;
 @Builder
 @JsonTypeName(AzureConstants.MANUAL_CONFIG)
 @ApiModel("AzureManualDetails")
-@Schema(name = "AzureManualDetails", description = "This contains Azure manual credentials connector details")
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO")
+@Schema(name = "AzureManualDetails", description = "This contains Azure manual credentials ConnectorDisconnectHandler details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.AzureManualDetailsDTO")
 public class AzureManualDetailsDTO implements AzureCredentialSpecDTO {
   @Schema(description = "Application ID of the Azure App.") @JsonProperty("applicationId") @NotNull String clientId;
 

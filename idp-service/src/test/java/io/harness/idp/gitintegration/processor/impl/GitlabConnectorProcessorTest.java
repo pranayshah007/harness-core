@@ -66,7 +66,7 @@ public class GitlabConnectorProcessorTest {
   private static final String USER_NAME = "test-username";
   private static final String EMAIL = "test-email@gmail.com";
   private static final String URL = "https://test-url";
-  private static final String CONNECTOR_NAME = "test-connector-name";
+  private static final String CONNECTOR_NAME = "test-ConnectorDisconnectHandler-name";
   private static final String DECRYPTED_SECRET_VALUE = "test-decrypted-value";
   private static final String TOKEN_SECRET_IDENTIFIER = "test-secret-identifier";
 

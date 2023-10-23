@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "HttpHelmAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication")
 public class HttpHelmUsernamePasswordAuthentication implements HttpHelmAuthentication {
   String username;
   String usernameRef;

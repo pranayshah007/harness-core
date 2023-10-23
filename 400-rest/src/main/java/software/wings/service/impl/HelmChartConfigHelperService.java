@@ -203,7 +203,7 @@ public class HelmChartConfigHelperService {
 
     if (isNotBlank(helmRepoConfig.getConnectorId())) {
       SettingAttribute connectorSettingAttribute = settingsService.get(helmRepoConfig.getConnectorId());
-      notNullCheck(format("Cloud provider deleted for helm repository connector [%s] selected in service",
+      notNullCheck(format("Cloud provider deleted for helm repository ConnectorDisconnectHandler [%s] selected in service",
                        settingAttribute.getName()),
           connectorSettingAttribute);
 

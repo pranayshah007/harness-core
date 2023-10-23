@@ -39,7 +39,7 @@ public class PcfStepFunctor extends StepExpressionFunctor {
 
     if (getCgExpression().contains("infra.pcf")) {
       if ("cloudProvider".equals(key)) {
-        newKey = "connector.name";
+        newKey = "ConnectorDisconnectHandler.name";
       }
       return "<+infra." + newKey + ">";
     }

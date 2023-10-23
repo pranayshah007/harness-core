@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitconnector.GitUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gitconnector.GitUserNamePasswordAuthentication")
 public class GitUserNamePasswordAuthentication implements GitAuthentication {
   String userName;
   String userNameRef;

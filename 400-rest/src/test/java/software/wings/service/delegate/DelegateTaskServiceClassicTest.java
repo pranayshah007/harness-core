@@ -1026,12 +1026,12 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     SelectorCapability selectorCapability1 =
         SelectorCapability.builder().selectors(selectors1).selectorOrigin("step").build();
     SelectorCapability selectorCapability2 =
-        SelectorCapability.builder().selectors(selectors2).selectorOrigin("connector").build();
+        SelectorCapability.builder().selectors(selectors2).selectorOrigin("ConnectorDisconnectHandler").build();
 
     List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1, selectorCapability2);
     List<SelectorCapability> selectorCapabilityList =
         delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
-    // ignore connector ones
+    // ignore ConnectorDisconnectHandler ones
     assertThat(selectorCapabilityList).hasSize(1);
     assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
     assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");
@@ -1049,7 +1049,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1);
     List<SelectorCapability> selectorCapabilityList =
         delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
-    // ignore connector ones
+    // ignore ConnectorDisconnectHandler ones
     assertThat(selectorCapabilityList).hasSize(1);
     assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
     assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");

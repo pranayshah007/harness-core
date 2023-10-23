@@ -150,9 +150,9 @@ deploymentClusterName: ""
 
 gcpConfig:
   gcpProjectId: ccm-play
-  gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
-  gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
-  gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"
+  gcpAwsConnectorCrudPubSubTopic: "ce-aws-ConnectorDisconnectHandler-crud"
+  gcpGcpConnectorCrudPubSubTopic: "ce-gcp-ConnectorDisconnectHandler-crud"
+  gcpAzureConnectorCrudPubSubTopic: "ce-azure-ConnectorDisconnectHandler-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder

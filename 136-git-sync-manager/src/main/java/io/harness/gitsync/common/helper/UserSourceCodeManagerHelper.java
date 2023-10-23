@@ -33,7 +33,7 @@ public class UserSourceCodeManagerHelper {
       return userIdentifier.map(s -> userSourceCodeManagerService.getByType(accountIdentifier, s, scmType))
           .or(() -> userSourceCodeManagerDTOOptional);
     } catch (Exception ex) {
-      log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
+      log.error("Invalid type of ConnectorDisconnectHandler: {}", connectorDTO.getConnectorType(), ex);
       return userSourceCodeManagerDTOOptional;
     }
   }

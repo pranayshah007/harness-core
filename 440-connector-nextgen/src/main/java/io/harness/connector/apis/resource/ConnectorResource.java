@@ -167,7 +167,7 @@ public class ConnectorResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
-            description = "Returns the connector with the requested accountIdentifier and connectorIdentifier")
+            description = "Returns the ConnectorDisconnectHandler with the requested accountIdentifier and connectorIdentifier")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.CONNECTOR, permission = VIEW_CONNECTOR_PERMISSION)
   public ResponseDTO<ConnectorResponseDTO>
@@ -303,8 +303,8 @@ public class ConnectorResource {
       @Body ConnectorFilterPropertiesDTO connectorListFilter, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(
           description =
-              "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
-              + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
+              "This when set to true along with GitSync enabled for the Connector, you can get one ConnectorDisconnectHandler entity from each identifier. "
+              + "The ConnectorDisconnectHandler entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
       @QueryParam("version") String version, @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites,
       @BeanParam PageRequest pageRequest) {
@@ -361,8 +361,8 @@ public class ConnectorResource {
       @Body ConnectorFilterPropertiesDTO connectorListFilter, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(
           description =
-              "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
-              + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
+              "This when set to true along with GitSync enabled for the Connector, you can get one ConnectorDisconnectHandler entity from each identifier. "
+              + "The ConnectorDisconnectHandler entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
       @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
@@ -423,7 +423,7 @@ public class ConnectorResource {
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(
-          String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
+          String.format("%s cannot be used as ConnectorDisconnectHandler identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }
     if (connector.getConnectorInfo().getConnectorType() == null) {
       throw new InvalidRequestException("Connector type cannot be null");
@@ -471,7 +471,7 @@ public class ConnectorResource {
 
   @DELETE
   @Path("{identifier}")
-  @ApiOperation(value = "Delete a connector by identifier", nickname = "deleteConnector")
+  @ApiOperation(value = "Delete a ConnectorDisconnectHandler by identifier", nickname = "deleteConnector")
   @Operation(operationId = "deleteConnector", summary = "Delete a Connector",
       description = "Deletes a Connector for the given ID.",
       responses =
@@ -525,7 +525,7 @@ public class ConnectorResource {
                 connector.getConnector(), accountIdentifier))
         .orElseThrow(()
                          -> new ConnectorNotFoundException(
-                             String.format("No connector found with identifier %s", connectorIdentifier), USER));
+                             String.format("No ConnectorDisconnectHandler found with identifier %s", connectorIdentifier), USER));
 
     return ResponseDTO.newResponse(
         connectorService.testConnection(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
@@ -537,11 +537,11 @@ public class ConnectorResource {
   @Path("testConnectionInternal/{identifier}")
   @ApiOperation(value = "Test the connection internal api", nickname = "getTestConnectionResultInternal")
   @Operation(operationId = "getTestConnectionResultInternal",
-      summary = "Tests the connection of the connector by Identifier",
+      summary = "Tests the connection of the ConnectorDisconnectHandler by Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the connector validation result")
+        ApiResponse(responseCode = "default", description = "Returns the ConnectorDisconnectHandler validation result")
       })
   public ResponseDTO<ConnectorValidationResult>
   testConnectionInternal(@NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -554,7 +554,7 @@ public class ConnectorResource {
                 connector.getConnector(), accountIdentifier))
         .orElseThrow(()
                          -> new ConnectorNotFoundException(
-                             String.format("No connector found with identifier %s", connectorIdentifier), USER));
+                             String.format("No ConnectorDisconnectHandler found with identifier %s", connectorIdentifier), USER));
 
     return ResponseDTO.newResponse(
         connectorService.testConnection(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
@@ -606,7 +606,7 @@ public class ConnectorResource {
   @Path("/stats")
   @ApiOperation(value = "Get Connectors statistics", nickname = "getConnectorStatistics")
   @Operation(operationId = "getConnectorStatistics",
-      summary = "Gets the connector's statistics by Account Identifier, Project Identifier and Organization Identifier",
+      summary = "Gets the ConnectorDisconnectHandler's statistics by Account Identifier, Project Identifier and Organization Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -655,7 +655,7 @@ public class ConnectorResource {
   @GET
   @Hidden
   @Path("{identifier}/validation-params")
-  @ApiOperation(hidden = true, value = "Gets connector validation params")
+  @ApiOperation(hidden = true, value = "Gets ConnectorDisconnectHandler validation params")
   @InternalApi
   @Produces("application/x-kryo")
   public ResponseDTO<ConnectorValidationParameterResponse> getConnectorValidationParams(
@@ -675,7 +675,7 @@ public class ConnectorResource {
   @POST
   @Path("/getceawstemplateurl")
   @ApiOperation(value = "Get CCM Aws Connector Template URL Environment Wise", nickname = "getCEAwsTemplate")
-  @Operation(deprecated = true, operationId = "getCEAwsTemplate", summary = "Get the Template URL of connector",
+  @Operation(deprecated = true, operationId = "getCEAwsTemplate", summary = "Get the Template URL of ConnectorDisconnectHandler",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -699,12 +699,12 @@ public class ConnectorResource {
   @Operation(operationId = "getAllAllowedFieldValues",
       summary = "List all the configured field values for the given Connector type.",
       description =
-          "Returns all the configured field values for the given Connector type, which can be used during connector creation.",
+          "Returns all the configured field values for the given Connector type, which can be used during ConnectorDisconnectHandler creation.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description =
-                "Returns all the configured field values for the given Connector type, which can be used during connector creation.")
+                "Returns all the configured field values for the given Connector type, which can be used during ConnectorDisconnectHandler creation.")
       })
   public ResponseDTO<FieldValues>
   getAllAllowedFieldValues(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
@@ -725,7 +725,7 @@ public class ConnectorResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("connectorIdentifiers") List<String> connectorIdentifiers) {
     if (connectorIdentifiers.size() > MAX_LIMIT) {
-      throw new InvalidRequestException("The number of connector identifiers should be less than or equal to 1000.");
+      throw new InvalidRequestException("The number of ConnectorDisconnectHandler identifiers should be less than or equal to 1000.");
     }
     return ResponseDTO.newResponse(
         connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));

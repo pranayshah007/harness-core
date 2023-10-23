@@ -85,7 +85,7 @@ public class ConnectorUtils {
   }
 
   public ConnectorDetails getConnectorDetails(NGAccess ngAccess, String connectorIdentifier) {
-    log.info("Getting connector details for connector ref [{}]", connectorIdentifier);
+    log.info("Getting ConnectorDisconnectHandler details for ConnectorDisconnectHandler ref [{}]", connectorIdentifier);
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifier,
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
@@ -100,7 +100,7 @@ public class ConnectorUtils {
             .orgIdentifier(connectorDTO.getConnectorInfo().getOrgIdentifier())
             .projectIdentifier(connectorDTO.getConnectorInfo().getProjectIdentifier());
 
-    log.info("Fetching encryption details for connector details for connector id:[{}] type:[{}]", connectorIdentifier,
+    log.info("Fetching encryption details for ConnectorDisconnectHandler details for ConnectorDisconnectHandler id:[{}] type:[{}]", connectorIdentifier,
         connectorType);
     ConnectorDetails connectorDetails;
 
@@ -129,10 +129,10 @@ public class ConnectorUtils {
         connectorDetails = getArtifactoryConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       default:
-        throw new InvalidArgumentsException(format("Unexpected connector type:[%s]", connectorType));
+        throw new InvalidArgumentsException(format("Unexpected ConnectorDisconnectHandler type:[%s]", connectorType));
     }
     log.info(
-        "Successfully fetched encryption details for  connector id:[{}] type:[{}]", connectorIdentifier, connectorType);
+        "Successfully fetched encryption details for  ConnectorDisconnectHandler id:[{}] type:[{}]", connectorIdentifier, connectorType);
     return connectorDetails;
   }
 
@@ -148,7 +148,7 @@ public class ConnectorUtils {
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, auth);
       return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
     }
-    throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on ConnectorDisconnectHandler:[%s]",
         artifactoryConnectorDTO.getAuth().getAuthType(), artifactoryConnectorDTO));
   }
 
@@ -166,7 +166,7 @@ public class ConnectorUtils {
     } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.IRSA) {
       return connectorDetailsBuilder.build();
     }
-    throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
   }
 
@@ -183,7 +183,7 @@ public class ConnectorUtils {
         || credential.getGcpCredentialType() == GcpCredentialType.OIDC_AUTHENTICATION) {
       return connectorDetailsBuilder.build();
     }
-    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         gcpConnectorDTO.getCredential().getGcpCredentialType(), gcpConnectorDTO));
   }
 
@@ -246,7 +246,7 @@ public class ConnectorUtils {
     } else if (config.getKubernetesCredentialType() == KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
       return connectorDetailsBuilder.build();
     }
-    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         kubernetesClusterConfigDTO.getCredential().getKubernetesCredentialType(), kubernetesClusterConfigDTO));
   }
 
@@ -254,7 +254,7 @@ public class ConnectorUtils {
     Optional<ConnectorDTO> connectorDTO;
 
     try {
-      log.info("Fetching connector details for connector id:[{}] acc:[{}] project:[{}] org:[{}]",
+      log.info("Fetching ConnectorDisconnectHandler details for ConnectorDisconnectHandler id:[{}] acc:[{}] project:[{}] org:[{}]",
           connectorRef.getIdentifier(), connectorRef.getAccountIdentifier(), connectorRef.getProjectIdentifier(),
           connectorRef.getOrgIdentifier());
 
@@ -265,9 +265,9 @@ public class ConnectorUtils {
               .getData();
 
     } catch (Exception e) {
-      log.error(format("Unable to get connector information : [%s] with scope: [%s]", connectorRef.getIdentifier(),
+      log.error(format("Unable to get ConnectorDisconnectHandler information : [%s] with scope: [%s]", connectorRef.getIdentifier(),
           connectorRef.getScope()));
-      throw new CIStageExecutionException(format("Unable to get connector information : [%s] with scope: [%s]",
+      throw new CIStageExecutionException(format("Unable to get ConnectorDisconnectHandler information : [%s] with scope: [%s]",
                                               connectorRef.getIdentifier(), connectorRef.getScope()),
           e);
     }

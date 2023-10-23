@@ -102,7 +102,7 @@ public class ServiceNowAuthNgHelper {
       return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, false);
     } else {
       throw new InvalidRequestException(
-          String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
+          String.format("Unsupported auth type in servicenow ConnectorDisconnectHandler: %s", serviceNowAuthType));
     }
   }
 
@@ -134,7 +134,7 @@ public class ServiceNowAuthNgHelper {
       return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, fetchFromCache);
     } else {
       throw new InvalidRequestException(
-          String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
+          String.format("Unsupported auth type in servicenow ConnectorDisconnectHandler: %s", serviceNowAuthType));
     }
   }
 

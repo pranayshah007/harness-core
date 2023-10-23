@@ -48,9 +48,9 @@ public class GitSyncFilePathUtilsTest extends CategoryTest {
     assertThat(completeFilePath).isEqualTo("/testHarness/.harness/testConnector.yaml");
 
     folderPath = "testHarness/tests/.harness";
-    filePath = "tests/test-connector.yaml";
+    filePath = "tests/test-ConnectorDisconnectHandler.yaml";
     completeFilePath = GitSyncFilePathUtils.createFilePath(folderPath, filePath);
-    assertThat(completeFilePath).isEqualTo("/testHarness/tests/.harness/tests/test-connector.yaml");
+    assertThat(completeFilePath).isEqualTo("/testHarness/tests/.harness/tests/test-ConnectorDisconnectHandler.yaml");
   }
 
   @Test

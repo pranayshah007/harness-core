@@ -249,7 +249,7 @@ public class ConnectorMigrationService extends NgMigrationService {
       if (connectorType == null) {
         return YamlGenerationDetails.builder()
             .skipDetails(Collections.singletonList(NGSkipDetail.builder()
-                                                       .reason("Unsupported/Unrecognized connector in NG")
+                                                       .reason("Unsupported/Unrecognized ConnectorDisconnectHandler in NG")
                                                        .cgBasicInfo(settingAttribute.getCgBasicInfo())
                                                        .type(entityId.getType())
                                                        .build()))
@@ -257,7 +257,7 @@ public class ConnectorMigrationService extends NgMigrationService {
       }
       yamlFile = NGYamlFile.builder()
                      .type(CONNECTOR)
-                     .filename("connector/" + settingAttribute.getName() + ".yaml")
+                     .filename("ConnectorDisconnectHandler/" + settingAttribute.getName() + ".yaml")
                      .yaml(ConnectorDTO.builder()
                                .connectorInfo(ConnectorInfoDTO.builder()
                                                   .name(name)
@@ -292,7 +292,7 @@ public class ConnectorMigrationService extends NgMigrationService {
               ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
       return response.orElse(null);
     } catch (Exception ex) {
-      log.warn("Error when getting connector - ", ex);
+      log.warn("Error when getting ConnectorDisconnectHandler - ", ex);
       return null;
     }
   }

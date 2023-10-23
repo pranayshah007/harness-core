@@ -183,7 +183,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     NexusConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_NEXUS);
     return connectorFound;
@@ -213,7 +213,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), NexusConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_NEXUS);
     assertThat(connectorFound).isTrue();
@@ -222,7 +222,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   public void TC3_deleteNexusConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), NexusConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_NEXUS);
     assertThat(connectorFound).isFalse();
@@ -252,7 +252,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     JenkinsConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_JENKINS);
     return connectorFound;
@@ -282,7 +282,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), JenkinsConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_JENKINS);
     assertThat(connectorFound).isTrue();
@@ -291,7 +291,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   public void TC6_deleteJenkinsConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), JenkinsConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_JENKINS);
     assertThat(connectorFound).isFalse();
@@ -319,7 +319,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     DockerConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_DOCKER);
     return connectorFound;
@@ -348,7 +348,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), DockerConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_DOCKER);
     assertThat(connectorFound).isTrue();
@@ -357,7 +357,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   public void TC9_deleteDockerConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), DockerConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_DOCKER);
     assertThat(connectorFound).isFalse();
@@ -384,7 +384,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     BambooConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_BAMBOO);
     return connectorFound;
@@ -413,7 +413,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), BambooConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_BAMBOO);
     assertThat(connectorFound).isTrue();
@@ -422,7 +422,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   public void TC12_deleteBambooConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), BambooConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_BAMBOO);
     assertThat(connectorFound).isFalse();
@@ -449,7 +449,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     ArtifactoryConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_ARTIFACTORY);
     return connectorFound;
@@ -478,7 +478,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), ArtifactoryConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_ARTIFACTORY);
     assertThat(connectorFound).isTrue();
@@ -487,7 +487,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   public void TC15_deleteArtifactoryConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), ArtifactoryConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, CONNECTOR_NAME_ARTIFACTORY);
     assertThat(connectorFound).isFalse();
@@ -511,7 +511,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     AzureArtifactsConnectorId = setAttrResponse.getString("resource.uuid").trim();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), AZURE_ARTIFACTS_CATEGORY, CONNECTOR_NAME_AZURE_ARTIFACTS);
     return connectorFound;
@@ -536,7 +536,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
         SettingsUtils.updateConnector(bearerToken, getAccount().getUuid(), AzureArtifactsConnectorId, settingAttribute);
     assertThat(setAttrResponse).isNotNull();
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), AZURE_ARTIFACTS_CATEGORY, CONNECTOR_NAME_AZURE_ARTIFACTS);
     assertThat(connectorFound).isTrue();
@@ -545,7 +545,7 @@ public class ConnectorsArtifactoryTests extends AbstractFunctionalTest {
   private void TC18_deleteAzureArtifactsConnector() {
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), AzureArtifactsConnectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), AZURE_ARTIFACTS_CATEGORY, CONNECTOR_NAME_AZURE_ARTIFACTS);
     assertThat(connectorFound).isFalse();

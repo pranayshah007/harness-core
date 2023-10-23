@@ -90,14 +90,14 @@ public class CCMK8sMetaResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns list of connector identifiers with their health metadata",
+        ApiResponse(description = "Returns list of ConnectorDisconnectHandler identifiers with their health metadata",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<CcmK8sMetaInfoResponseDTO>
   ccmK8sMeta(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
-          description = "Request body containing Cost Access K8s connector identifiers") CcmK8sMetaDTO ccmK8sMetaDTO) {
+          description = "Request body containing Cost Access K8s ConnectorDisconnectHandler identifiers") CcmK8sMetaDTO ccmK8sMetaDTO) {
     log.info("In request {}", ccmK8sMetaDTO.toString());
     Map<String, Long> clusterLastReceivedTime;
     Map<String, ClusterRecord> clusterIdCcmConnRefMap = new HashMap<>();

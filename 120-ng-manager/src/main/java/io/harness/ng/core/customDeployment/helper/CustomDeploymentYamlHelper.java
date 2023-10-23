@@ -422,7 +422,7 @@ public class CustomDeploymentYamlHelper {
 
   private static EntityDetailProtoDTO getConnectorReferredEntity(
       String accountId, String orgId, String projectId, YamlNode arrayElement, Stack<String> path) {
-    if (arrayElement.getField(YAMLFieldNameConstants.TYPE).getNode().asText().equalsIgnoreCase("connector")) {
+    if (arrayElement.getField(YAMLFieldNameConstants.TYPE).getNode().asText().equalsIgnoreCase("ConnectorDisconnectHandler")) {
       String connectorRef = arrayElement.getField(YAMLFieldNameConstants.VALUE).getNode().asText();
       if (connectorRef.equals(INPUT_STRING)) {
         return null;

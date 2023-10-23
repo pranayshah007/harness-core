@@ -596,8 +596,8 @@ public class ImagePullSecretUtils {
       }
       return connectorDTO.get().getConnector();
     } catch (Exception e) {
-      log.error(format("Unable to get connector information : [%s] ", connectorIdentifierRef), e);
-      throw new InvalidRequestException(format("Unable to get connector information : [%s] ", connectorIdentifierRef));
+      log.error(format("Unable to get ConnectorDisconnectHandler information : [%s] ", connectorIdentifierRef), e);
+      throw new InvalidRequestException(format("Unable to get ConnectorDisconnectHandler information : [%s] ", connectorIdentifierRef));
     }
   }
 

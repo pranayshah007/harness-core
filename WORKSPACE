@@ -4955,7 +4955,7 @@ plain_artifacts = [
     "io.confluent:kafka-schema-serializer:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
     "io.debezium:debezium-api:1.9.7.Final",
-    "io.debezium:debezium-connector-mongodb:1.9.7.Final",
+    "io.debezium:debezium-ConnectorDisconnectHandler-mongodb:1.9.7.Final",
     "io.debezium:debezium-core:1.9.7.Final",
     "io.dropwizard-bundles:dropwizard-configurable-assets-bundle:1.3.5",
     "io.dropwizard.metrics:metrics-annotation:4.1.19",
@@ -5689,7 +5689,7 @@ maven_install(
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
         "io.debezium:debezium-api:2.3.1.Final",
-        "io.debezium:debezium-connector-mongodb:2.3.1.Final",
+        "io.debezium:debezium-ConnectorDisconnectHandler-mongodb:2.3.1.Final",
         "io.debezium:debezium-core:2.3.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",

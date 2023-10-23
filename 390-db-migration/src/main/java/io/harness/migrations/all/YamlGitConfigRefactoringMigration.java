@@ -116,7 +116,7 @@ public class YamlGitConfigRefactoringMigration implements Migration {
                               .keyAuth(yamlGitConfig.isKeyAuth())
                               .branch(yamlGitConfig.getBranchName().trim())
                               .webhookToken(yamlGitConfig.getWebhookToken())
-                              .description("Default Yaml git connector for account")
+                              .description("Default Yaml git ConnectorDisconnectHandler for account")
                               .build();
 
     if (encryptedData != null) {

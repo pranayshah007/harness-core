@@ -136,7 +136,7 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
             accountId, orgIdentifier, projectIdentifier, connectorIdentifier, Scope.PROJECT);
     assertThat(monitoringSourcePerpetualTasks).hasSize(2);
 
-    // Delete HealthSource and create new one and make sure it is created with new connector id
+    // Delete HealthSource and create new one and make sure it is created with new ConnectorDisconnectHandler id
     healthSourceService.delete(
         accountId, orgIdentifier, projectIdentifier, nameSpaceIdentifier, Arrays.asList(healthSource.getIdentifier()));
     connectorIdentifier = "connector2";

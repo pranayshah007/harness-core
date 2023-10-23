@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DebeziumConfiguration {
-  public static final String MONGO_DB_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
+  public static final String MONGO_DB_CONNECTOR = "io.debezium.ConnectorDisconnectHandler.mongodb.MongoDbConnector";
   public static final String CONNECTOR_NAME = "name";
   public static final String OFFSET_STORAGE = "offset.storage";
   public static final String OFFSET_STORAGE_KEY = "offset.storage.topic";
@@ -28,7 +28,7 @@ public class DebeziumConfiguration {
   public static final String KEY_CONVERTER_SCHEMAS_ENABLE = "key.converter.schemas.enable";
   public static final String VALUE_CONVERTER_SCHEMAS_ENABLE = "value.converter.schemas.enable";
   public static final String OFFSET_FLUSH_INTERVAL_MS = "offset.flush.interval.ms";
-  public static final String CONNECTOR_CLASS = "connector.class";
+  public static final String CONNECTOR_CLASS = "ConnectorDisconnectHandler.class";
   public static final String MONGODB_NAME = "mongodb.name";
   public static final String MONGODB_SSL_ENABLED = "mongodb.ssl.enabled";
   public static final String DATABASE_INCLUDE_LIST = "database.include.list";
@@ -38,7 +38,7 @@ public class DebeziumConfiguration {
   public static final String TRANSFORMS_UNWRAP_DROP_TOMBSTONES = "transforms.unwrap.drop.tombstones";
   public static final String TRANSFORMS_UNWRAP_ADD_HEADERS = "transforms.unwrap.add.headers";
   public static final String DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE =
-      "io.debezium.connector.mongodb.transforms.ExtractNewDocumentState";
+      "io.debezium.ConnectorDisconnectHandler.mongodb.transforms.ExtractNewDocumentState";
   public static final String CONNECT_BACKOFF_INITIAL_DELAY_MS = "connect.backoff.initial.delay.ms";
   public static final String CONNECT_BACKOFF_MAX_DELAY_MS = "connect.backoff.max.delay.ms";
   public static final String CONNECT_MAX_ATTEMPTS = "connect.max.attempts";
@@ -86,7 +86,7 @@ public class DebeziumConfiguration {
     // useful for us to recover from state when oplog is rotated
     props.setProperty("errors.max.retries", "-2");
 
-    /* begin connector properties */
+    /* begin ConnectorDisconnectHandler properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);
     props.setProperty(MONGODB_NAME, debeziumConfig.getMongodbName());
     props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());

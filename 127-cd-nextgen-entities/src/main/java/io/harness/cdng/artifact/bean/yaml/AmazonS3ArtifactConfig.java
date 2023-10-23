@@ -54,7 +54,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig")
 public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Amazon S3 connector.
+   * Amazon S3 ConnectorDisconnectHandler.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
 

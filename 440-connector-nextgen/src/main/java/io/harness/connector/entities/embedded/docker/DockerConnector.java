@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.docker.DockerConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.docker.DockerConnector")
 public class DockerConnector extends Connector {
   String url;
   @NotEmpty DockerAuthType authType;

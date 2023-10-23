@@ -47,8 +47,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.DX)
-@Schema(name = "GitConfig", description = "This contains details of the Generic Git connector")
-@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO")
+@Schema(name = "GitConfig", description = "This contains details of the Generic Git ConnectorDisconnectHandler")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.scm.genericgitconnector.GitConfigDTO")
 public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") private GitAuthType gitAuthType;
   @NotNull @JsonProperty("connectionType") private GitConnectionType gitConnectionType;

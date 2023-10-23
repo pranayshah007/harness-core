@@ -43,7 +43,7 @@ public class CIStepFilterJsonCreatorV2Test {
     RunStepNode runStepNode =
         RunStepNode.builder()
             .runStepInfo(RunStepInfo.builder()
-                             .connectorRef(ParameterField.<String>builder().value("connector").build())
+                             .connectorRef(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
                              .image(ParameterField.<String>builder().value("image").build())
                              .build())
             .build();
@@ -53,7 +53,7 @@ public class CIStepFilterJsonCreatorV2Test {
     RunStepNode runStepNode1 =
         RunStepNode.builder()
             .runStepInfo(RunStepInfo.builder()
-                             .connectorRef(ParameterField.<String>builder().value("connector").build())
+                             .connectorRef(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
                              .image(ParameterField.<String>builder().expressionValue("<+matrix.image>").build())
                              .build())
             .build();
@@ -71,7 +71,7 @@ public class CIStepFilterJsonCreatorV2Test {
     RunStepNode runStepNode =
         RunStepNode.builder()
             .runStepInfo(RunStepInfo.builder()
-                             .connectorRef(ParameterField.<String>builder().value("connector").build())
+                             .connectorRef(ParameterField.<String>builder().value("ConnectorDisconnectHandler").build())
                              .image(ParameterField.<String>builder().build())
                              .build())
             .build();

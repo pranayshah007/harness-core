@@ -450,7 +450,7 @@ public class TerragruntStepHelper {
 
   private String getGitRepoUrl(GitConfigDTO gitConfigDTO, String repoName) {
     repoName = trimToEmpty(repoName);
-    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git ConnectorDisconnectHandler", repoName);
     String purgedRepoUrl = gitConfigDTO.getUrl().replaceAll("/*$", "");
     String purgedRepoName = repoName.replaceAll("^/*", "");
     return purgedRepoUrl + "/" + purgedRepoName;

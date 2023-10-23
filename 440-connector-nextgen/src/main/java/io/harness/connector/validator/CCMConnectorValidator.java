@@ -49,7 +49,7 @@ public class CCMConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorResponseDTO connectorResponseDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    log.info("Calling ce-nextgen for connector {}", connectorResponseDTO);
+    log.info("Calling ce-nextgen for ConnectorDisconnectHandler {}", connectorResponseDTO);
     try {
       ConnectorValidationResult response = RestCallToCENGClientUtils.execute(
           ceNextGenResourceClient.testConnection(accountIdentifier, connectorResponseDTO));

@@ -82,7 +82,7 @@ public class WorkflowServiceTemplateHelper {
   private static final String USER_GROUP_DESC = "Variable for User Group entity";
   private static final String WINRM_CONNECTION_ATTRIBUTE_DESC = "Variable for WINRM Connection Attribute entity";
   private static final String GCP_CONFIG_VAR_DESC = "Variable for Google Cloud Platform configuration entity";
-  private static final String GIT_CONFIG_VAR_DESC = "Variable for Git connector configuration entity";
+  private static final String GIT_CONFIG_VAR_DESC = "Variable for Git ConnectorDisconnectHandler configuration entity";
   private static final String JENKINS_SERVER_VAR_DESC = "Variable for Jenkins server configuration entity";
   private static final String TIMEOUT_PROPERTY_KEY = "timeoutMillis";
   private static final String ARTIFACT_SOURCE_VAR_DESC = "Variable for Artifact source configuration entity";

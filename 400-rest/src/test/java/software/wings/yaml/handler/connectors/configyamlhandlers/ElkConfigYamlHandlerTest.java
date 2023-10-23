@@ -90,7 +90,7 @@ public class ElkConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTestB
   }
 
   private SettingAttribute createElkVerificationProvider(String elkProviderName) {
-    // Generate Elk verification connector
+    // Generate Elk verification ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     ElkConfig elkConfig = new ElkConfig();

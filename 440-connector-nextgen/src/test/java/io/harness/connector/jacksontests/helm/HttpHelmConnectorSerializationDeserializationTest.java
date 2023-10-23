@@ -58,7 +58,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing http helm repo connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing http helm repo ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult = readFileAsString(BASE_PATH + "httpHelmConnectorWithAnonymousAuth.json");
     try {
@@ -68,7 +68,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two http helm json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two http helm json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -81,7 +81,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserialize http helm connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserialize http helm ConnectorDisconnectHandler " + ex.getMessage());
     }
     HttpHelmConnectorDTO httpHelmConnectorDTO = buildConnector(HttpHelmAuthType.ANONYMOUS);
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO(httpHelmConnectorDTO, HTTP_HELM_REPO);
@@ -100,7 +100,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serialize http helm connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serialize http helm ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult = readFileAsString(BASE_PATH + "httpHelmConnectorWithUsernamePasswordAuth.json");
     try {
@@ -110,7 +110,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two http helm json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two http helm json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -123,7 +123,7 @@ public class HttpHelmConnectorSerializationDeserializationTest extends CategoryT
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserialize http helm connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserialize http helm ConnectorDisconnectHandler " + ex.getMessage());
     }
     HttpHelmConnectorDTO httpHelmConnectorDTO = buildConnector(HttpHelmAuthType.USER_PASSWORD);
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTO(httpHelmConnectorDTO, HTTP_HELM_REPO);

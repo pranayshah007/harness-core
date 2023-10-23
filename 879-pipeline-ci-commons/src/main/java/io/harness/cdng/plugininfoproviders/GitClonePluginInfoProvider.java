@@ -111,7 +111,7 @@ public class GitClonePluginInfoProvider implements PluginInfoProvider {
           ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginCompatibleStep.getStepType().toString(),
               pluginCompatibleStep.getIdentifier(), pluginCompatibleStep.getConnectorRef(), false);
       if (isNotEmpty(stepConnectorRef)) {
-        // todo: if we need to support more steps we need to add connector env conversion map too.
+        // todo: if we need to support more steps we need to add ConnectorDisconnectHandler env conversion map too.
         pluginDetailsBuilder.addConnectorsForStep(
             ConnectorDetails.newBuilder().setConnectorRef(stepConnectorRef).build());
       }

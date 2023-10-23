@@ -895,24 +895,24 @@ public class HelmDeployState extends State {
 
     if (gitFileConfig != null && isNotBlank(gitFileConfig.getConnectorId())) {
       if (isBlank(gitFileConfig.getBranch()) && isBlank(gitFileConfig.getCommitId())) {
-        invalidFields.put("Branch or commit id", "Branch or commit id must not be blank if git connector is selected");
+        invalidFields.put("Branch or commit id", "Branch or commit id must not be blank if git ConnectorDisconnectHandler is selected");
       }
 
       String filePath = gitFileConfig.getFilePath();
       boolean isFilePathValid = true;
       if (isBlank(filePath)) {
-        invalidFields.put("File path", "File path must not be blank if git connector is selected");
+        invalidFields.put("File path", "File path must not be blank if git ConnectorDisconnectHandler is selected");
         isFilePathValid = false;
       }
 
       if (isFilePathValid && isBlank(FilenameUtils.getName(filePath))) {
-        invalidFields.put("File path", "File path cannot be directory if git connector is selected");
+        invalidFields.put("File path", "File path cannot be directory if git ConnectorDisconnectHandler is selected");
         isFilePathValid = false;
       }
 
       String fileExtension = FilenameUtils.getExtension(filePath).trim();
       if (isFilePathValid && (isBlank(fileExtension) || !fileExtension.matches(VALID_YAML_FILE_EXTENSIONS_REGEX))) {
-        invalidFields.put("File path", "File path has to be YAML file if git connector is selected");
+        invalidFields.put("File path", "File path has to be YAML file if git ConnectorDisconnectHandler is selected");
       }
     }
 
@@ -1153,7 +1153,7 @@ public class HelmDeployState extends State {
             context, configIdExpression, SettingVariableTypes.GIT);
         SettingValue settingValue = settingAttribute.getValue();
         if (!(settingValue instanceof GitConfig)) {
-          throw new InvalidRequestException("Git connector not found", USER);
+          throw new InvalidRequestException("Git ConnectorDisconnectHandler not found", USER);
         }
         gitConfig = (GitConfig) settingValue;
         gitConfigHelperService.setSshKeySettingAttributeIfNeeded(gitConfig);

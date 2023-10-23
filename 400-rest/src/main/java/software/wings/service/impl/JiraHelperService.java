@@ -195,7 +195,7 @@ public class JiraHelperService {
   void checkApprovalAsync(ApprovalPollingJobEntity entity) {
     SettingAttribute settingAttribute =
         settingService.getByAccountAndId(entity.getAccountId(), entity.getConnectorId());
-    notNullCheck("Jira connector may be deleted.", settingAttribute, USER);
+    notNullCheck("Jira ConnectorDisconnectHandler may be deleted.", settingAttribute, USER);
     JiraConfig jiraConfig = (JiraConfig) settingAttribute.getValue();
 
     JiraTaskParameters jiraTaskParameters =
@@ -301,7 +301,7 @@ public class JiraHelperService {
   private JiraExecutionData runTask(
       String accountId, String appId, String connectorId, JiraTaskParameters jiraTaskParameters, long timeoutMillis) {
     SettingAttribute settingAttribute = settingService.getByAccountAndId(accountId, connectorId);
-    notNullCheck("Jira connector may be deleted.", settingAttribute, USER);
+    notNullCheck("Jira ConnectorDisconnectHandler may be deleted.", settingAttribute, USER);
     JiraConfig jiraConfig = (JiraConfig) settingAttribute.getValue();
     jiraTaskParameters.setJiraConfig(jiraConfig);
     jiraTaskParameters.setEncryptionDetails(

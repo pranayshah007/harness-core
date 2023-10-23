@@ -96,7 +96,7 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep, WithConne
     Map<String, ParameterField<String>> connectorMap = new HashMap<>();
     if (source != null) {
       if (source.getType() == SlsaVerificationSourceType.DOCKER) {
-        connectorMap.put("source.spec.connector", ((SlsaDockerSourceSpec) source.getSpec()).getConnector());
+        connectorMap.put("source.spec.ConnectorDisconnectHandler", ((SlsaDockerSourceSpec) source.getSpec()).getConnector());
       }
     }
     return connectorMap;

@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.githubconnector.GithubConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubConnector")
 @Persistent
 public class GithubConnector extends Connector {
   GitConnectionType connectionType;

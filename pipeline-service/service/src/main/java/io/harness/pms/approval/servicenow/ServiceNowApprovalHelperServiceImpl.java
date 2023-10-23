@@ -140,7 +140,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
           ErrorCode.SERVICENOW_ERROR, WingsException.USER);
     } catch (Exception e) {
       throw new ServiceNowException(
-          format("Error retrieving connector information : [%s]. Please check if the connector in the step is valid ",
+          format("Error retrieving ConnectorDisconnectHandler information : [%s]. Please check if the ConnectorDisconnectHandler in the step is valid ",
               connectorIdentifierRef),
           ErrorCode.SERVICENOW_ERROR, WingsException.USER, e);
     }

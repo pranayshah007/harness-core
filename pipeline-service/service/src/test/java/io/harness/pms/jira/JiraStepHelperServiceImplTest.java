@@ -87,7 +87,7 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
   private static final String ACCOUNT = "account";
   private static final String ORG = "org";
   private static final String PROJECT = "project";
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final TaskSelectorYaml TASK_SELECTOR_YAML = getTaskSelectorYaml();
   private static final ParameterField TASK_SELECTOR_YAML_PARAMETER =
       ParameterField.createValueField(List.of(TASK_SELECTOR_YAML));

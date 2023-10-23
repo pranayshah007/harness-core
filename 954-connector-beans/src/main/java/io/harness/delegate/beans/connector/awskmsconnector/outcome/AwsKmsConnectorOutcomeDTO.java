@@ -31,7 +31,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@RecasterAlias("io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awskmsconnector.outcome.AwsKmsConnectorOutcomeDTO")
 public class AwsKmsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @NotNull
   @Valid

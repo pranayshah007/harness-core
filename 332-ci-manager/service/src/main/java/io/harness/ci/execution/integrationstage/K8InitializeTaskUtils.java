@@ -562,7 +562,7 @@ public class K8InitializeTaskUtils {
     final String stageID = k8PodDetails.getStageID();
     final String executionID = ambiance.getPlanExecutionId();
 
-    // Add git connector environment variables
+    // Add git ConnectorDisconnectHandler environment variables
     envVars.putAll(gitEnvVars);
 
     // Add runtime git vars, i.e. manual pull request execution data.

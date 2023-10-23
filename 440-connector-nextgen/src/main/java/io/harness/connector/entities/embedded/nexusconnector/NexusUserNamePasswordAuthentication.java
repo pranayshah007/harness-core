@@ -18,7 +18,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "NexusUserNamePasswordAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication")
 public class NexusUserNamePasswordAuthentication implements NexusAuthentication {
   String username;
   String usernameRef;

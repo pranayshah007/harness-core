@@ -60,7 +60,7 @@ public class OciHelmApiHelperUtils {
 
     if (isEmpty(uriObject.getHost())) {
       if (isEmpty(path)) {
-        throw new OciHelmDockerApiException("Hostname provided in URL field of OCI Helm connector is invalid");
+        throw new OciHelmDockerApiException("Hostname provided in URL field of OCI Helm ConnectorDisconnectHandler is invalid");
       }
       if (!path.equals("/") && path.contains("/")) {
         path = path.substring(0, path.indexOf('/'));

@@ -78,7 +78,7 @@ public class ELKSourceSpecTransformerTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testTransformToHealthSourceConfigPreconditionForConnectorRef() {
     List<ELKCVConfig> cvConfigs = createCVConfigs();
-    cvConfigs.get(0).setConnectorIdentifier("different-connector-ref");
+    cvConfigs.get(0).setConnectorIdentifier("different-ConnectorDisconnectHandler-ref");
     assertThatThrownBy(() -> classUnderTest.transform(cvConfigs))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("ConnectorRef should be same for List of all configs.");

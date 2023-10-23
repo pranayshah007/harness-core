@@ -58,7 +58,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig")
 public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * AWS connector.
+   * AWS ConnectorDisconnectHandler.
    */
   @NotNull
   @NotEmpty

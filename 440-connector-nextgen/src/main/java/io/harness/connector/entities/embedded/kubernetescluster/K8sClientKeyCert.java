@@ -13,7 +13,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.kubernetescluster.K8sClientKeyCert")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.kubernetescluster.K8sClientKeyCert")
 public class K8sClientKeyCert implements KubernetesAuth {
   String caCertRef;
   String clientCertRef;

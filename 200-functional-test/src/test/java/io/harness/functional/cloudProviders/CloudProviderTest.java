@@ -185,7 +185,7 @@ public class CloudProviderTest extends AbstractFunctionalTest {
     assertThat(setAttrResponse).isNotNull();
     //    System.out.println(setAttrResponse.prettyPrint());
     GCPCloudProviderId = setAttrResponse.getString("resource.uuid").trim();
-    log.info("GCP connector created with {}", GCPCloudProviderId);
+    log.info("GCP ConnectorDisconnectHandler created with {}", GCPCloudProviderId);
     // Verify cloudprovider is created i.e cloudprovider with specific name exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(
         bearerToken, getAccount().getUuid(), CATEGORY, GCP_CONNECTOR_NAME);
@@ -289,7 +289,7 @@ public class CloudProviderTest extends AbstractFunctionalTest {
 
   private boolean updateGCPCloudProvider() {
     String GCP_CONNECTOR_NAME = String.format(CONNECTOR_NAME, GCP_NAMESPACE) + MODIFIED_SUFFIX;
-    log.info("GCP connector has id {}", GCPCloudProviderId);
+    log.info("GCP ConnectorDisconnectHandler has id {}", GCPCloudProviderId);
     JsonPath setAttrResponse =
         SettingsUtils.updateGCP(bearerToken, getAccount().getUuid(), GCP_CONNECTOR_NAME, GCPCloudProviderId);
     assertThat(setAttrResponse).isNotNull();
@@ -315,7 +315,7 @@ public class CloudProviderTest extends AbstractFunctionalTest {
 
   private boolean deleteGCPCloudProvider() {
     String GCP_CONNECTOR_NAME = String.format(CONNECTOR_NAME, GCP_NAMESPACE) + MODIFIED_SUFFIX;
-    log.info("GCP connector has id {}", GCPCloudProviderId);
+    log.info("GCP ConnectorDisconnectHandler has id {}", GCPCloudProviderId);
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), GCPCloudProviderId);
     // Verify cloudprovider is deleted i.e cloudprovider with specific name doesn't exist
     boolean connectorFound = SettingsUtils.checkCloudproviderConnectorExist(

@@ -235,8 +235,8 @@ public class GARApiServiceImpl implements GarApiService {
         return false;
       case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
-            "The connector provided does not have sufficient privileges to access Google artifact registry",
-            "Please check connector's permission and credentials",
+            "The ConnectorDisconnectHandler provided does not have sufficient privileges to access Google artifact registry",
+            "Please check ConnectorDisconnectHandler's permission and credentials",
             new InvalidArtifactServerException(errormessage, USER));
       case 403:
         throw new HintException("Connector provided does not have access to project. Please check the project field.");

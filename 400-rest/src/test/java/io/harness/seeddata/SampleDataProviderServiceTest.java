@@ -73,7 +73,7 @@ public class SampleDataProviderServiceTest extends WingsBaseTest {
     assertThat(settingsService.getSettingAttributeByName(
                    account.getUuid(), SampleDataProviderConstants.K8S_CLOUD_PROVIDER_NAME))
         .isNotNull();
-    // Verify the connector created
+    // Verify the ConnectorDisconnectHandler created
     assertThat(settingsService.getSettingAttributeByName(
                    account.getUuid(), SampleDataProviderConstants.HARNESS_DOCKER_HUB_CONNECTOR))
         .isNotNull();

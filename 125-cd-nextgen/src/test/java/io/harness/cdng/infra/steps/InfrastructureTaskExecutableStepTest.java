@@ -703,7 +703,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   public void testValidateSshWinRmAzureInfrastructure() {
     SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
                                                      .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
+                                                     .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref"))
                                                      .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                      .resourceGroup(ParameterField.createValueField("resource-group"))
                                                      .build();

@@ -40,7 +40,7 @@ public class PipelineGitXHelper {
       if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
         gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
       }
-      // setting connector and repo name. This is required to pass to child pipeline from parent pipeline
+      // setting ConnectorDisconnectHandler and repo name. This is required to pass to child pipeline from parent pipeline
       if (!GitAwareContextHelper.isNullOrDefault(connectorRef)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorRef);
       }

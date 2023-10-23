@@ -29,7 +29,7 @@ public class YamlUtils {
     } else if (baseImageConnectorRefs != null && baseImageConnectorRefs.getValue() != null) {
       List<String> baseImageConnectorRefsValues = baseImageConnectorRefs.getValue();
       if (baseImageConnectorRefsValues.size() > 1) {
-        throw new InvalidArgumentsException("Only a single base image connector is allowed.");
+        throw new InvalidArgumentsException("Only a single base image ConnectorDisconnectHandler is allowed.");
       }
       String baseImageConnectorRef = baseImageConnectorRefsValues.get(0);
       baseConnectorRefMap.put(YAMLFieldNameConstants.BASE_IMAGE_CONNECTOR_REFS,

@@ -64,7 +64,7 @@ public class TasEntityHelperTest extends CategoryTest {
   private static final String PROJECT_IDENTIFIER = "project";
   private static final String ACCOUNT_IDENTIFIER = "account";
   private static final String ORG_IDENTIFIER = "org";
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   @Mock private ConnectorService connectorService;
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -148,7 +148,7 @@ public class TasEntityHelperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetails = List.of(EncryptedDataDetail.builder().build());
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
     assertThatCode(() -> tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))
-        .hasMessageContaining("Unsupported connector type");
+        .hasMessageContaining("Unsupported ConnectorDisconnectHandler type");
   }
 
   @Test
@@ -172,7 +172,7 @@ public class TasEntityHelperTest extends CategoryTest {
                             .build();
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
         TanzuApplicationServiceInfrastructureOutcome.builder()
-            .connectorRef("connector")
+            .connectorRef("ConnectorDisconnectHandler")
             .space("space")
             .organization("org")
             .build();
@@ -205,7 +205,7 @@ public class TasEntityHelperTest extends CategoryTest {
                             .projectIdentifier(PROJECT_IDENTIFIER)
                             .build();
     K8sDirectInfrastructureOutcome infrastructureOutcome =
-        K8sDirectInfrastructureOutcome.builder().connectorRef("connector").build();
+        K8sDirectInfrastructureOutcome.builder().connectorRef("ConnectorDisconnectHandler").build();
     assertThatThrownBy(() -> tasEntityHelper.getTasInfraConfig(infrastructureOutcome, ngAccess))
         .hasMessageContaining("Unsupported Infrastructure type:");
   }

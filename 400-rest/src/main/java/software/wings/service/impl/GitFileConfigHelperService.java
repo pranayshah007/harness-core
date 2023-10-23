@@ -49,7 +49,7 @@ public class GitFileConfigHelperService {
         settingsService.getConnectorByName(accountId, appId, newGitFileConfig.getConnectorName());
     if (settingAttribute == null) {
       throw new WingsException(ErrorCode.INVALID_ARGUMENT)
-          .addParam("args", "No git connector exists with name " + newGitFileConfig.getConnectorName());
+          .addParam("args", "No git ConnectorDisconnectHandler exists with name " + newGitFileConfig.getConnectorName());
     }
 
     newGitFileConfig.setConnectorId(settingAttribute.getUuid());
@@ -68,7 +68,7 @@ public class GitFileConfigHelperService {
     SettingAttribute settingAttribute = settingsService.get(newGitFileConfig.getConnectorId());
     if (settingAttribute == null) {
       throw new WingsException(ErrorCode.INVALID_ARGUMENT)
-          .addParam("args", "No git connector exists with id " + newGitFileConfig.getConnectorId());
+          .addParam("args", "No git ConnectorDisconnectHandler exists with id " + newGitFileConfig.getConnectorId());
     }
 
     newGitFileConfig.setConnectorId(null);
@@ -148,19 +148,19 @@ public class GitFileConfigHelperService {
 
     SettingAttribute settingAttribute = settingsService.get(gitFileConfig.getConnectorId());
     if (null == settingAttribute) {
-      throw new InvalidRequestException("Invalid git connector provided.", USER);
+      throw new InvalidRequestException("Invalid git ConnectorDisconnectHandler provided.", USER);
     }
 
     if (!(settingAttribute.getValue() instanceof GitConfig)) {
       throw new InvalidRequestException(
-          String.format("Invalid git connector provided [connectorId=%s, name=%s, type=%s]",
+          String.format("Invalid git ConnectorDisconnectHandler provided [connectorId=%s, name=%s, type=%s]",
               gitFileConfig.getConnectorId(), settingAttribute.getName(), settingAttribute.getValue().getType()),
           USER);
     }
 
     GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
     if (GitConfig.UrlType.ACCOUNT == gitConfig.getUrlType() && isBlank(gitFileConfig.getRepoName())) {
-      throw new InvalidRequestException("Repository name not provided for Account level git connector.", USER);
+      throw new InvalidRequestException("Repository name not provided for Account level git ConnectorDisconnectHandler.", USER);
     }
   }
 

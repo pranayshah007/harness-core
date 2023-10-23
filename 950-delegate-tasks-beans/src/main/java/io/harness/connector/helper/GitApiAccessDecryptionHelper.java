@@ -81,35 +81,35 @@ public class GitApiAccessDecryptionHelper {
 
   public DecryptableEntity getAPIAccessDecryptableEntity(GithubConnectorDTO githubConnectorDTO) {
     if (githubConnectorDTO == null || githubConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     return githubConnectorDTO.getApiAccess().getSpec();
   }
 
   public DecryptableEntity getAPIAccessDecryptableEntity(HarnessConnectorDTO harnessConnectorDTO) {
     if (harnessConnectorDTO == null || harnessConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     return harnessConnectorDTO.getApiAccess().getSpec();
   }
 
   public DecryptableEntity getAPIAccessDecryptableEntity(BitbucketConnectorDTO bitbucketConnectorDTO) {
     if (bitbucketConnectorDTO == null || bitbucketConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     return bitbucketConnectorDTO.getApiAccess().getSpec();
   }
 
   public DecryptableEntity getAPIAccessDecryptableEntity(GitlabConnectorDTO gitlabConnectorDTO) {
     if (gitlabConnectorDTO == null || gitlabConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     return gitlabConnectorDTO.getApiAccess().getSpec();
   }
 
   public DecryptableEntity getAPIAccessDecryptableEntity(AzureRepoConnectorDTO azureRepoConnectorDTO) {
     if (azureRepoConnectorDTO == null || azureRepoConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     return azureRepoConnectorDTO.getApiAccess().getSpec();
   }
@@ -129,7 +129,7 @@ public class GitApiAccessDecryptionHelper {
   public void setAPIAccessDecryptableEntity(
       GithubConnectorDTO githubConnectorDTO, DecryptableEntity decryptableEntity) {
     if (githubConnectorDTO == null || githubConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     githubConnectorDTO.getApiAccess().setSpec((GithubApiAccessSpecDTO) decryptableEntity);
   }
@@ -137,7 +137,7 @@ public class GitApiAccessDecryptionHelper {
   public void setAPIAccessDecryptableEntity(
       BitbucketConnectorDTO bitbucketConnectorDTO, DecryptableEntity decryptableEntity) {
     if (bitbucketConnectorDTO == null || bitbucketConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     bitbucketConnectorDTO.getApiAccess().setSpec((BitbucketApiAccessSpecDTO) decryptableEntity);
   }
@@ -145,7 +145,7 @@ public class GitApiAccessDecryptionHelper {
   public void setAPIAccessDecryptableEntity(
       GitlabConnectorDTO gitlabConnectorDTO, DecryptableEntity decryptableEntity) {
     if (gitlabConnectorDTO == null || gitlabConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     gitlabConnectorDTO.getApiAccess().setSpec((GitlabApiAccessSpecDTO) decryptableEntity);
   }
@@ -153,7 +153,7 @@ public class GitApiAccessDecryptionHelper {
   public void setAPIAccessDecryptableEntity(
       AzureRepoConnectorDTO azureRepoConnectorDTO, DecryptableEntity decryptableEntity) {
     if (azureRepoConnectorDTO == null || azureRepoConnectorDTO.getApiAccess() == null) {
-      throw new InvalidRequestException("The given connector doesn't have api access field set");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler doesn't have api access field set");
     }
     azureRepoConnectorDTO.getApiAccess().setSpec((AzureRepoApiAccessSpecDTO) decryptableEntity);
   }

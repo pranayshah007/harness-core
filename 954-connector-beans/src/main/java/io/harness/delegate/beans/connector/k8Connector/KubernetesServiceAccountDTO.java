@@ -24,7 +24,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(KubernetesConfigConstants.SERVICE_ACCOUNT)
 @Schema(name = "KubernetesServiceAccount", description = "This contains kubernetes service account details")
-@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.k8Connector.KubernetesServiceAccountDTO")
 public class KubernetesServiceAccountDTO extends KubernetesAuthCredentialDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData serviceAccountTokenRef;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData caCertRef;

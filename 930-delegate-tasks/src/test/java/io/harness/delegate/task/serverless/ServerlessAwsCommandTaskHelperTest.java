@@ -102,7 +102,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   private GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
                                                               .branch("branch")
                                                               .commitId("commitId")
-                                                              .connectorName("connector")
+                                                              .connectorName("ConnectorDisconnectHandler")
                                                               .manifestId("manifest")
                                                               .build();
   private ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =

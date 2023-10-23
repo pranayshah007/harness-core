@@ -162,7 +162,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     if (isEmpty(yamlGitConfigs)) {
       throw NoResultFoundException.newBuilder()
           .message(format(
-              "unable to find yamlGitConfig for git to harness changeset for account =[%s], git connector id =[%s], branch=[%s]. Git Sync might not have been configured",
+              "unable to find yamlGitConfig for git to harness changeset for account =[%s], git ConnectorDisconnectHandler id =[%s], branch=[%s]. Git Sync might not have been configured",
               yamlChangeSet.getAccountId(), yamlChangeSet.getGitWebhookRequestAttributes().getGitConnectorId(),
               yamlChangeSet.getGitWebhookRequestAttributes().getBranchName()))
           .build();

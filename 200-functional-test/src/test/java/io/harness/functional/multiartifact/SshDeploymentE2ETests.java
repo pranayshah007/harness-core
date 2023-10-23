@@ -89,7 +89,7 @@ public class SshDeploymentE2ETests extends AbstractFunctionalTest {
   @Category(FunctionalTests.class)
   @Ignore("Enable once feature flag is enabled")
   public void runBasicWorkflowWithServiceCommandLinkedToWorkflow() {
-    // create jenkins artifact stream at connector level
+    // create jenkins artifact stream at ConnectorDisconnectHandler level
     ArtifactStream artifactStream = artifactStreamManager.ensurePredefined(
         seed, owners, ArtifactStreamManager.ArtifactStreams.HARNESS_SAMPLE_ECHO_WAR_AT_CONNECTOR, true);
     assertThat(artifactStream).isNotNull();

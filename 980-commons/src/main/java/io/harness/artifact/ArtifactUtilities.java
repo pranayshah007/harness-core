@@ -142,7 +142,7 @@ public class ArtifactUtilities {
     }
 
     throw NestedExceptionUtils.hintWithExplanationException(
-        "Please check connector configuration or artifact source configuration",
+        "Please check ConnectorDisconnectHandler configuration or artifact source configuration",
         "Registry URL must of valid URL format",
         new ArtifactServerException(String.format("Registry URL is not valid [%s]", registryUrl)));
   }

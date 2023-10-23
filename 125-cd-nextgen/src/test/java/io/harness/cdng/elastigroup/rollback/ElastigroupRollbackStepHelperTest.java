@@ -89,7 +89,7 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
     InfrastructureOutcome infrastructureOutcome =
-        ElastigroupInfrastructureOutcome.builder().connectorRef("some-connector").build();
+        ElastigroupInfrastructureOutcome.builder().connectorRef("some-ConnectorDisconnectHandler").build();
     doReturn(infrastructureOutcome).when(elastigroupRollbackStepHelper).getInfrastructureOutcome(any());
     doReturn(ConnectorInfoDTO.builder().build()).when(elastigroupRollbackStepHelper).getConnector(anyString(), any());
 
@@ -105,7 +105,7 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
         ElastigroupSetupDataOutcome.builder()
             .awsRegion(awsRegion)
-            .awsConnectorRef("connector")
+            .awsConnectorRef("ConnectorDisconnectHandler")
             .oldElastigroupOriginalConfig(ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().build()).build())
             .newElastigroupOriginalConfig(ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().build()).build())
             .build();

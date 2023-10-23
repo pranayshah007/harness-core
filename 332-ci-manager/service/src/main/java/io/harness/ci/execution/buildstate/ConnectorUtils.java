@@ -149,7 +149,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
       try {
         connectorDetails = getConnectorDetails(ngAccess, cIExecutionServiceConfig.getDefaultInternalImageConnector());
       } catch (ConnectorNotFoundException e) {
-        log.info("Default harness image connector does not exist: {}", e.getMessage());
+        log.info("Default harness image ConnectorDisconnectHandler does not exist: {}", e.getMessage());
         connectorDetails = null;
       }
     }
@@ -159,7 +159,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
   public ConnectorDetails getConnectorDetails(NGAccess ngAccess, String connectorIdentifier, boolean isGitConnector) {
     if (isGitConnector && isEmpty(connectorIdentifier)
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
-      log.info("fetching harness scm connector");
+      log.info("fetching harness scm ConnectorDisconnectHandler");
       String gitBaseUrl = harnessCodeGitBaseUrl;
       String authToken = "";
       // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas and
@@ -169,7 +169,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     }
 
     if (isEmpty(connectorIdentifier)) {
-      throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+      throw new CIStageExecutionException("Git ConnectorDisconnectHandler is mandatory in case git clone is enabled");
     }
 
     return super.getConnectorDetails(ngAccess, connectorIdentifier);
@@ -179,7 +179,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
       NGAccess ngAccess, String connectorIdentifier, boolean isGitConnector, Ambiance ambiance, String repoName) {
     if (isEmpty(connectorIdentifier)) {
       if (isGitConnector && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
-        log.info("fetching harness scm connector");
+        log.info("fetching harness scm ConnectorDisconnectHandler");
         String baseUrl = harnessCodeGitBaseUrl;
         String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
         // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas
@@ -187,7 +187,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
         return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken,
             cIExecutionServiceConfig.getGitnessConfig().getHttpClientConfig().getBaseUrl());
       } else {
-        throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+        throw new CIStageExecutionException("Git ConnectorDisconnectHandler is mandatory in case git clone is enabled");
       }
     }
 

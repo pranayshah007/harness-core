@@ -194,7 +194,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
       "value for version and versionRegex is empty or not provided";
   private static final String NULL_FILEPATH_FILEPATH_REGEX_MESSAGE =
       "value for filePath and filePathRegex is empty or not provided";
-  private static final ParameterField<String> CONNECTOR = ParameterField.createValueField("connector");
+  private static final ParameterField<String> CONNECTOR = ParameterField.createValueField("ConnectorDisconnectHandler");
   private static final ParameterField<String> TAG_NULL = ParameterField.createValueField(null);
   private static final ParameterField<String> TAG_EMPTY = ParameterField.createValueField("");
   private static final ParameterField<String> TAG_INPUT = ParameterField.createValueField("<+input>");
@@ -211,7 +211,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     Reflect.on(step).set("artifactStepHelper", stepHelper);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
 
-    // setup mock for connector
+    // setup mock for ConnectorDisconnectHandler
     doReturn(Optional.of(
                  ConnectorResponseDTO.builder()
                      .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
@@ -228,7 +228,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                              .build())
                      .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), eq("connector"));
+        .get(anyString(), anyString(), anyString(), eq("ConnectorDisconnectHandler"));
 
     // mock serviceStepsHelper
     doReturn(mockNgLogCallback)
@@ -457,7 +457,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                 .primary(PrimaryArtifact.builder()
                                              .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                              .spec(DockerHubArtifactConfig.builder()
-                                                       .connectorRef(ParameterField.createValueField("connector"))
+                                                       .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                        .tag(ParameterField.createValueField("latest"))
                                                        .imagePath(ParameterField.createValueField("nginx"))
                                                        .build())
@@ -563,7 +563,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                  .identifier("source1-id")
                                  .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                  .spec(DockerHubArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                            .tag(ParameterField.createValueField("latest"))
                                            .imagePath(ParameterField.createValueField("nginx"))
                                            .build())
@@ -572,7 +572,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                  .identifier("source2-id")
                                  .sourceType(ArtifactSourceType.GCR)
                                  .spec(GcrArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                            .tag(ParameterField.createValueField("latest-1"))
                                            .imagePath(ParameterField.createValueField("nginx"))
                                            .build())
@@ -590,7 +590,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s1")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -601,7 +601,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s2")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-3"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -641,7 +641,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                  .identifier("source1-id")
                                  .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                  .spec(DockerHubArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                            .tag(ParameterField.createValueField("latest"))
                                            .imagePath(ParameterField.createValueField("nginx"))
                                            .build())
@@ -651,7 +651,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                  .identifier("source2-id")
                                  .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                  .spec(DockerHubArtifactConfig.builder()
-                                           .connectorRef(ParameterField.createValueField("connector"))
+                                           .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                            .tag(ParameterField.createValueField("latest"))
                                            .imagePath(ParameterField.createValueField("nginx"))
                                            .build())
@@ -686,7 +686,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                   .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                   .spec(DockerHubArtifactConfig.builder()
                                             .tag(ParameterField.createValueField("latest"))
-                                            .connectorRef(ParameterField.createValueField("connector"))
+                                            .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                             .imagePath(ParameterField.createValueField("nginx"))
                                             .build())
                                   .build())
@@ -695,7 +695,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s1")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-1"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -706,7 +706,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s2")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -768,7 +768,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s1")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-1"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -779,7 +779,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                                .identifier("s2")
                                                .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
                                                .spec(DockerHubArtifactConfig.builder()
-                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler"))
                                                          .tag(ParameterField.createValueField("latest-2"))
                                                          .imagePath(ParameterField.createValueField("nginx"))
                                                          .build())
@@ -1155,7 +1155,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                 .attributes(
                     DockerArtifactDelegateRequest.builder()
                         .imagePath("nginx")
-                        .connectorRef("connector")
+                        .connectorRef("ConnectorDisconnectHandler")
                         .tag(tag)
                         .encryptedDataDetails(List.of())
                         .sourceType(ArtifactSourceType.DOCKER_REGISTRY)

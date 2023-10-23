@@ -42,7 +42,7 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
   @Override
   public void migrate() {
     try {
-      log.info(DEBUG_LOG + "Starting migration to ServiceNowAuthenticationDTO in ServiceNow connector");
+      log.info(DEBUG_LOG + "Starting migration to ServiceNowAuthenticationDTO in ServiceNow ConnectorDisconnectHandler");
       List<ServiceNowConnector> serviceNowConnectors = new ArrayList<>();
       try {
         Criteria serviceNowConnectorCriteria =
@@ -62,7 +62,7 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
       for (ServiceNowConnector serviceNowConnector : serviceNowConnectors) {
         if (!isNull(serviceNowConnector.getServiceNowAuthentication()) || !isNull(serviceNowConnector.getAuthType())) {
           log.info(String.format(
-              "%s Skipping since serviceNow connector with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
+              "%s Skipping since serviceNow ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
               DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
               serviceNowConnector.getOrgIdentifier(), serviceNowConnector.getProjectIdentifier(),
               serviceNowConnector.getServiceNowAuthentication(), serviceNowConnector.getAuthType()));
@@ -77,10 +77,10 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
         findAndModifyServiceNowConnector(serviceNowConnector, serviceNowAuthentication);
       }
       log.info(
-          DEBUG_LOG + "Migration of adding auth type and serviceNow authentication to serviceNow connector completed");
+          DEBUG_LOG + "Migration of adding auth type and serviceNow authentication to serviceNow ConnectorDisconnectHandler completed");
     } catch (Exception e) {
       log.error(
-          DEBUG_LOG + "Migration of adding auth type and serviceNow authentication to serviceNow connector failed", e);
+          DEBUG_LOG + "Migration of adding auth type and serviceNow authentication to serviceNow ConnectorDisconnectHandler failed", e);
     }
   }
 
@@ -97,7 +97,7 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
     } catch (Exception exception) {
       log.error(
           String.format(
-              "%s Failed trying to add serviceNowAuthentication for serviceNow connector with identifier %s in account %s, org %s, project %s",
+              "%s Failed trying to add serviceNowAuthentication for serviceNow ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s",
               DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
               serviceNowConnector.getOrgIdentifier(), serviceNowConnector.getProjectIdentifier()),
           exception);
@@ -128,7 +128,7 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
     } catch (Exception exception) {
       log.error(
           String.format(
-              "%s Failed trying to save modified serviceNow connector with identifier %s in account %s, org %s, project %s",
+              "%s Failed trying to save modified serviceNow ConnectorDisconnectHandler with identifier %s in account %s, org %s, project %s",
               DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
               serviceNowConnector.getOrgIdentifier(), serviceNowConnector.getProjectIdentifier()),
           exception);

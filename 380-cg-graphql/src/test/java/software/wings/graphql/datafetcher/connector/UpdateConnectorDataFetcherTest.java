@@ -386,7 +386,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("No connector exists with the connectorId ".concat(CONNECTOR_ID));
+        .hasMessage("No ConnectorDisconnectHandler exists with the connectorId ".concat(CONNECTOR_ID));
   }
 
   @Test
@@ -410,7 +410,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "The existing connector is of type GIT and the update operation inputs a connector of type ARTIFACTORY");
+            "The existing ConnectorDisconnectHandler is of type GIT and the update operation inputs a ConnectorDisconnectHandler of type ARTIFACTORY");
   }
 
   // UPDATE DOCKER CONNECTOR TESTS
@@ -517,7 +517,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test
@@ -636,7 +636,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test
@@ -755,7 +755,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test
@@ -895,7 +895,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test
@@ -1030,7 +1030,7 @@ public class UpdateConnectorDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> dataFetcher.mutateAndFetch(input, context))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Invalid connector type provided");
+        .hasMessage("Invalid ConnectorDisconnectHandler type provided");
   }
 
   @Test

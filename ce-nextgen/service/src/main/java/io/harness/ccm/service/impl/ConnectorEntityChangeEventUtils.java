@@ -21,7 +21,7 @@ import okhttp3.RequestBody;
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class ConnectorEntityChangeEventUtils {
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final String ACCOUNT_IDENTIFIER = "account_identifier";
   private static final String EVENT_TYPE = "event_type";
 
@@ -34,7 +34,7 @@ public class ConnectorEntityChangeEventUtils {
     }
 
     if (connectorDto == null) {
-      log.info("The connector dto object sent is null");
+      log.info("The ConnectorDisconnectHandler dto object sent is null");
       return;
     }
 

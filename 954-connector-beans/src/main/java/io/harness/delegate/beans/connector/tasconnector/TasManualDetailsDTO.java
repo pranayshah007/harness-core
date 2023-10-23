@@ -25,7 +25,7 @@ import lombok.Value;
 @Builder
 @JsonTypeName(TasConstants.MANUAL_CONFIG)
 @ApiModel("TasManualDetails")
-@Schema(name = "TasManualDetails", description = "This contains Tas manual credentials connector details")
+@Schema(name = "TasManualDetails", description = "This contains Tas manual credentials ConnectorDisconnectHandler details")
 public class TasManualDetailsDTO implements TasCredentialSpecDTO {
   String username;
   @Schema(description = "Endpoint URL of the TAS Cluster.") @JsonProperty("endpointUrl") @NotNull String endpointUrl;

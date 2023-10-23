@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.jira.JiraConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.jira.JiraConnector")
 public class JiraConnector extends Connector {
   String jiraUrl;
   /** @deprecated */

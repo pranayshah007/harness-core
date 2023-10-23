@@ -106,7 +106,7 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
   @Category(UnitTests.class)
   public void testTransformToHealthSourceConfig_preconditionForConnectorRef() {
     List<AppDynamicsCVConfig> cvConfigs = createCVConfigs();
-    cvConfigs.get(0).setConnectorIdentifier("different-connector-ref");
+    cvConfigs.get(0).setConnectorIdentifier("different-ConnectorDisconnectHandler-ref");
     assertThatThrownBy(() -> appDynamicsHealthSourceSpecTransformer.transform(cvConfigs))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("ConnectorRef should be same for List of all configs.");

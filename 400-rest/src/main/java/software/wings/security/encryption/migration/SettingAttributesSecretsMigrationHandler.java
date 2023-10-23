@@ -219,7 +219,7 @@ public class SettingAttributesSecretsMigrationHandler
   }
 
   private boolean migrateApmConnector(SettingAttribute settingAttribute) {
-    log.info("migrating apm connector {}", settingAttribute.getUuid());
+    log.info("migrating apm ConnectorDisconnectHandler {}", settingAttribute.getUuid());
     APMVerificationConfig apmVerificationConfig = (APMVerificationConfig) settingAttribute.getValue();
     final AtomicBoolean isMigrated = new AtomicBoolean(true);
     if (apmVerificationConfig.getHeadersList() != null) {

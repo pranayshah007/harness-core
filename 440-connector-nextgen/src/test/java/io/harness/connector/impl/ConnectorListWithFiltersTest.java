@@ -244,9 +244,9 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testListWithNamesFilter() {
-    createConnectorsWithNames(Arrays.asList("docker", "docker connector", "qa connector", "a docker connector"));
+    createConnectorsWithNames(Arrays.asList("docker", "docker ConnectorDisconnectHandler", "qa ConnectorDisconnectHandler", "a docker ConnectorDisconnectHandler"));
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
-        ConnectorFilterPropertiesDTO.builder().connectorNames(Arrays.asList("docker", "docker connector")).build();
+        ConnectorFilterPropertiesDTO.builder().connectorNames(Arrays.asList("docker", "docker ConnectorDisconnectHandler")).build();
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
         orgIdentifier, projectIdentifier, "", "", false, false, pageable);
     assertThat(connectorDTOS).isNotNull();
@@ -254,7 +254,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     List<String> connectorNames = connectorDTOS.stream()
                                       .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getName())
                                       .collect(Collectors.toList());
-    assertThat(connectorNames.containsAll(Arrays.asList("docker", "docker connector", "a docker connector"))).isTrue();
+    assertThat(connectorNames.containsAll(Arrays.asList("docker", "docker ConnectorDisconnectHandler", "a docker ConnectorDisconnectHandler"))).isTrue();
   }
 
   private void createConnectorsWithNames(List<String> namesList) {
@@ -271,10 +271,10 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testListWithIdentifierFilter() {
-    createConnectorsWithIdentifiers(Arrays.asList("dockerId", "identifier", "qa connector", "dockerId1"));
+    createConnectorsWithIdentifiers(Arrays.asList("dockerId", "identifier", "qa ConnectorDisconnectHandler", "dockerId1"));
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder()
-            .connectorIdentifiers(Arrays.asList("identifier", "qa connector"))
+            .connectorIdentifiers(Arrays.asList("identifier", "qa ConnectorDisconnectHandler"))
             .build();
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
         orgIdentifier, projectIdentifier, "", "", false, false, pageable);
@@ -283,7 +283,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     List<String> identifiersName = connectorDTOS.stream()
                                        .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getIdentifier())
                                        .collect(Collectors.toList());
-    assertThat(identifiersName.containsAll(Arrays.asList("identifier", "qa connector"))).isTrue();
+    assertThat(identifiersName.containsAll(Arrays.asList("identifier", "qa ConnectorDisconnectHandler"))).isTrue();
   }
 
   private void createConnectorsWithIdentifiers(List<String> identifiers) {
@@ -300,7 +300,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testListWithDescriptionFilter() {
     createConnectorsWithDescriptions(
-        Arrays.asList("docker connector", "docker", "qa connector", "qa", "harness test", "description"));
+        Arrays.asList("docker ConnectorDisconnectHandler", "docker", "qa ConnectorDisconnectHandler", "qa", "harness test", "description"));
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder().description("docker").build();
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
@@ -310,7 +310,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     List<String> descriptions = connectorDTOS.stream()
                                     .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getDescription())
                                     .collect(Collectors.toList());
-    assertThat(descriptions.containsAll(Arrays.asList("docker connector", "docker"))).isTrue();
+    assertThat(descriptions.containsAll(Arrays.asList("docker ConnectorDisconnectHandler", "docker"))).isTrue();
   }
 
   private void createConnectorsWithDescriptions(List<String> descriptions) {
@@ -327,10 +327,10 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testListWithSearchTerm() {
-    createConnectorsWithNames(Arrays.asList("docker connector", "docker dev", "qa connector test", "qb"));
+    createConnectorsWithNames(Arrays.asList("docker ConnectorDisconnectHandler", "docker dev", "qa ConnectorDisconnectHandler test", "qb"));
     createConnectorsWithIdentifiers(Arrays.asList("docker", "identifier", "dockerId"));
     createConnectorsWithDescriptions(
-        Arrays.asList("docker connector description", "docker", "qa connector test", "harness test", "description"));
+        Arrays.asList("docker ConnectorDisconnectHandler description", "docker", "qa ConnectorDisconnectHandler test", "harness test", "description"));
     Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(
         accountIdentifier, null, orgIdentifier, projectIdentifier, "", "docker", false, false, pageable);
     assertThat(connectorDTOS).isNotNull();
@@ -341,7 +341,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testListWithTypes() {
-    createConnectorsWithNames(Arrays.asList("docker connector test", "docker dev connector"));
+    createConnectorsWithNames(Arrays.asList("docker ConnectorDisconnectHandler test", "docker dev ConnectorDisconnectHandler"));
     createK8sConnector();
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder().types(Arrays.asList(KUBERNETES_CLUSTER, DOCKER)).build();
@@ -394,7 +394,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.RICHA)
   @Category(UnitTests.class)
   public void testListWithTypesAndVersionNexus2x3x() {
-    createConnectorsWithNames(Arrays.asList("docker connector test", "docker dev connector"));
+    createConnectorsWithNames(Arrays.asList("docker ConnectorDisconnectHandler test", "docker dev ConnectorDisconnectHandler"));
     createNexusConnector("2.x", "identifier2");
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder().types(Arrays.asList(NEXUS, DOCKER)).build();
@@ -413,7 +413,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.RICHA)
   @Category(UnitTests.class)
   public void testListWithTypesAndVersionWithNexus1x2xFilter2x() {
-    createConnectorsWithNames(Arrays.asList("docker connector test", "docker dev connector"));
+    createConnectorsWithNames(Arrays.asList("docker ConnectorDisconnectHandler test", "docker dev ConnectorDisconnectHandler"));
     createK8sConnector();
     createNexusConnector("1.x", "identifier2");
     createNexusConnector("2.x", "identifier3");
@@ -528,7 +528,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testListWithCategories() {
-    createConnectorsWithNames(Arrays.asList("docker connector", "docker dev"));
+    createConnectorsWithNames(Arrays.asList("docker ConnectorDisconnectHandler", "docker dev"));
     createK8sConnector();
     ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
         ConnectorFilterPropertiesDTO.builder().categories(Arrays.asList(ARTIFACTORY, CLOUD_PROVIDER)).build();

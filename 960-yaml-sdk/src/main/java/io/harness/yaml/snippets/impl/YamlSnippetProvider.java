@@ -156,7 +156,7 @@ public class YamlSnippetProvider {
   }
 
   ObjectNode getObjectNodeRemovingWrapper(JsonNode genericSnippetNode) throws YamlSnippetException {
-    // Assumption is top level will have just one node. (like connector:, pipeline: etc)
+    // Assumption is top level will have just one node. (like ConnectorDisconnectHandler:, pipeline: etc)
     // In case we have some other kind of node at root or first level it should be handled here and we can avoid
     // throwing exception.
     if (!genericSnippetNode.isObject()) {

@@ -97,7 +97,7 @@ public class TasResource {
         ApiResponse(responseCode = "default", description = "Return the Tas organizations")
       })
   public ResponseDTO<List<String>>
-  getTasOrganizations(@Parameter(description = "Identifier for tas connector") @QueryParam(
+  getTasOrganizations(@Parameter(description = "Identifier for tas ConnectorDisconnectHandler") @QueryParam(
                           "connectorRef") String tasConnectorIdentifier,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -126,7 +126,7 @@ public class TasResource {
         ApiResponse(responseCode = "default", description = "Return the Tas spaces")
       })
   public ResponseDTO<List<String>>
-  getTasSpaces(@Parameter(description = "Identifier for tas connector") @NotNull @QueryParam(
+  getTasSpaces(@Parameter(description = "Identifier for tas ConnectorDisconnectHandler") @NotNull @QueryParam(
                    "connectorRef") String tasConnectorIdentifier,
       @Parameter(description = "organization for tas") @NotNull @QueryParam("organization") String organization,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,

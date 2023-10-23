@@ -1544,7 +1544,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
       install(new ConnectorResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
           configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId(), ClientMode.PRIVILEGED));
     } catch (Exception ex) {
-      log.info("Could not create the connector resource client module", ex);
+      log.info("Could not create the ConnectorDisconnectHandler resource client module", ex);
     }
 
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),

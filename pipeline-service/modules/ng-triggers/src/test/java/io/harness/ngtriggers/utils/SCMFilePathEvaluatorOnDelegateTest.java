@@ -102,7 +102,7 @@ public class SCMFilePathEvaluatorOnDelegateTest extends CategoryTest {
                                           .build();
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
-            .identifier("connector")
+            .identifier("ConnectorDisconnectHandler")
             .connectorType(ConnectorType.GITHUB)
             .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
             .executeOnDelegate(true)
@@ -149,7 +149,7 @@ public class SCMFilePathEvaluatorOnDelegateTest extends CategoryTest {
                                           .build();
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
-            .identifier("connector")
+            .identifier("ConnectorDisconnectHandler")
             .connectorType(ConnectorType.GITHUB)
             .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
             .executeOnDelegate(true)
@@ -195,7 +195,7 @@ public class SCMFilePathEvaluatorOnDelegateTest extends CategoryTest {
                                           .build();
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
-            .identifier("connector")
+            .identifier("ConnectorDisconnectHandler")
             .connectorType(ConnectorType.GITHUB)
             .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
             .executeOnDelegate(true)

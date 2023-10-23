@@ -27,7 +27,7 @@ public class HealthSourceParamValuesRequest {
   public void validate() {
     if (QueryParamsDTO.QueryParamKeys.index.equals(paramName)) {
       if (StringUtils.isEmpty(connectorIdentifier)) {
-        throw new BadRequestException("The connector Identifier cannot be null");
+        throw new BadRequestException("The ConnectorDisconnectHandler Identifier cannot be null");
       }
     }
   }

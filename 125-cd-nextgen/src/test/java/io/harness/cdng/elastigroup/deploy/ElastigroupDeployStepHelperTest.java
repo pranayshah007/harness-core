@@ -141,7 +141,7 @@ public class ElastigroupDeployStepHelperTest extends CategoryTest {
     when(outcomeService.resolveOptional(any(), any()))
         .thenReturn(OptionalOutcome.builder()
                         .found(true)
-                        .outcome(ElastigroupInfrastructureOutcome.builder().connectorRef("connector").build())
+                        .outcome(ElastigroupInfrastructureOutcome.builder().connectorRef("ConnectorDisconnectHandler").build())
                         .build());
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
@@ -206,7 +206,7 @@ public class ElastigroupDeployStepHelperTest extends CategoryTest {
     when(outcomeService.resolveOptional(any(), any()))
         .thenReturn(OptionalOutcome.builder()
                         .found(true)
-                        .outcome(ElastigroupInfrastructureOutcome.builder().connectorRef("connector").build())
+                        .outcome(ElastigroupInfrastructureOutcome.builder().connectorRef("ConnectorDisconnectHandler").build())
                         .build());
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))

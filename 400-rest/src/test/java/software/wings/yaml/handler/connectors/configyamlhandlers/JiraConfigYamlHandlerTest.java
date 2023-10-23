@@ -55,7 +55,7 @@ public class JiraConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTest
   }
 
   private SettingAttribute createJIRAVerificationProvider(String name) {
-    // Generate JIRA connector
+    // Generate JIRA ConnectorDisconnectHandler
     when(settingValidationService.validate(any(SettingAttribute.class))).thenReturn(true);
 
     return settingsService.save(

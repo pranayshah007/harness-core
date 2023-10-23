@@ -346,7 +346,7 @@ public class ConfigFilesStepV2Test extends CategoryTest {
       step.executeAsyncAfterRbac(buildAmbiance(), new EmptyStepParameters(), null);
     } catch (InvalidRequestException ex) {
       assertThat(ex.getMessage()).contains("Connector not found");
-      assertThat(ex.getMessage()).contains("my-connector");
+      assertThat(ex.getMessage()).contains("my-ConnectorDisconnectHandler");
       return;
     }
 
@@ -361,7 +361,7 @@ public class ConfigFilesStepV2Test extends CategoryTest {
         ConfigFileOutcome.builder()
             .identifier("id")
             .store(GitStore.builder()
-                       .connectorRef(ParameterField.createValueField("my-connector"))
+                       .connectorRef(ParameterField.createValueField("my-ConnectorDisconnectHandler"))
                        .paths(ParameterField.<List<String>>builder().value(Arrays.asList("/config/file")).build())
                        .build())
             .build();
@@ -401,7 +401,7 @@ public class ConfigFilesStepV2Test extends CategoryTest {
                                   .store(ParameterField.createValueField(
                                       StoreConfigWrapper.builder()
                                           .spec(GitStore.builder()
-                                                    .connectorRef(ParameterField.createValueField("my-connector"))
+                                                    .connectorRef(ParameterField.createValueField("my-ConnectorDisconnectHandler"))
                                                     .paths(ParameterField.<List<String>>builder()
                                                                .value(Arrays.asList("/config/file"))
                                                                .build())

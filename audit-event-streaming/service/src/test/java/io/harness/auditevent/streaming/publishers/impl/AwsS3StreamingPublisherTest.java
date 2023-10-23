@@ -100,7 +100,7 @@ public class AwsS3StreamingPublisherTest extends CategoryTest {
     assertThatThrownBy(
         () -> awsS3StreamingPublisher.getAwsConnector(ACCOUNT_IDENTIFIER, SCOPED_CONNECTOR_IDENTIFIER_REF))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(String.format("AWS connector not found for identifier : [%s] with scope: [%s]",
+        .hasMessage(String.format("AWS ConnectorDisconnectHandler not found for identifier : [%s] with scope: [%s]",
             SCOPED_CONNECTOR_IDENTIFIER_REF.split("\\.")[1], Scope.ACCOUNT));
   }
 
@@ -142,7 +142,7 @@ public class AwsS3StreamingPublisherTest extends CategoryTest {
     verify(delegateGrpcClientWrapper, times(0)).executeSyncTaskV2(any());
     assertThat(response).isEqualToComparingFieldByField(getPublishResponse(PublishResponseStatus.FAILED,
         String.format(
-            "Ensure that the connectivity mode for the connector [%s] should be: Connect through harness delegate.",
+            "Ensure that the connectivity mode for the ConnectorDisconnectHandler [%s] should be: Connect through harness delegate.",
             SCOPED_CONNECTOR_IDENTIFIER_REF)));
   }
 

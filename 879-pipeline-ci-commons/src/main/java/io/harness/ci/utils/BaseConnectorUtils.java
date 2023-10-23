@@ -208,9 +208,9 @@ public class BaseConnectorUtils {
   public ConnectorDetails getConnectorDetailsInternalWithRetries(NGAccess ngAccess, IdentifierRef connectorRef) {
     Instant startTime = Instant.now();
     RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to fetch connector: [%s], scope: [%s], attempt: {}",
+        getRetryPolicy(format("[Retrying failed call to fetch ConnectorDisconnectHandler: [%s], scope: [%s], attempt: {}",
                            connectorRef.getIdentifier(), connectorRef.getScope()),
-            format("Failed to fetch connector: [%s] scope: [%s] after retrying {} times", connectorRef.getIdentifier(),
+            format("Failed to fetch ConnectorDisconnectHandler: [%s] scope: [%s] after retrying {} times", connectorRef.getIdentifier(),
                 connectorRef.getScope()));
 
     ConnectorDetails connectorDetails =
@@ -219,7 +219,7 @@ public class BaseConnectorUtils {
     long elapsedTimeInSecs = Duration.between(startTime, Instant.now()).toMillis() / 1000;
 
     log.info(
-        "Fetched connector details for connector ref successfully {} with scope {} in {} seconds accountId {}, projectId {}",
+        "Fetched ConnectorDisconnectHandler details for ConnectorDisconnectHandler ref successfully {} with scope {} in {} seconds accountId {}, projectId {}",
         connectorRef.getIdentifier(), connectorRef.getScope(), elapsedTimeInSecs, ngAccess.getAccountIdentifier(),
         ngAccess.getProjectIdentifier());
 
@@ -238,7 +238,7 @@ public class BaseConnectorUtils {
 
   private ConnectorDetails getConnectorDetailsInternal(NGAccess ngAccess, IdentifierRef connectorRef)
       throws IOException {
-    log.info("Getting connector details for connector ref with scope: [{}] and identifier: [{}]",
+    log.info("Getting ConnectorDisconnectHandler details for ConnectorDisconnectHandler ref with scope: [{}] and identifier: [{}]",
         connectorRef.getScope(), connectorRef.getIdentifier());
 
     ConnectorDTO connectorDTO = getConnector(connectorRef);
@@ -252,7 +252,7 @@ public class BaseConnectorUtils {
             .orgIdentifier(connectorDTO.getConnectorInfo().getOrgIdentifier())
             .projectIdentifier(connectorDTO.getConnectorInfo().getProjectIdentifier());
 
-    log.info("Fetching encryption details for connector details for connector id:[{}] type:[{}] scope: [{}]",
+    log.info("Fetching encryption details for ConnectorDisconnectHandler details for ConnectorDisconnectHandler id:[{}] type:[{}] scope: [{}]",
         connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     ConnectorDetails connectorDetails;
 
@@ -284,9 +284,9 @@ public class BaseConnectorUtils {
         connectorDetails = getArtifactoryConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       default:
-        throw new InvalidArgumentsException(format("Unexpected connector type:[%s]", connectorType));
+        throw new InvalidArgumentsException(format("Unexpected ConnectorDisconnectHandler type:[%s]", connectorType));
     }
-    log.info("Successfully fetched encryption details for  connector id:[{}] type:[{}] scope:[{}]",
+    log.info("Successfully fetched encryption details for  ConnectorDisconnectHandler id:[{}] type:[{}] scope:[{}]",
         connectorRef.getIdentifier(), connectorType, connectorRef.getScope());
     return connectorDetails;
   }
@@ -308,7 +308,7 @@ public class BaseConnectorUtils {
       HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
       return fetchUserNameFromHarnessConnector(gitConfigDTO);
     } else {
-      throw new CIStageExecutionException("Unsupported git connector " + gitConnector.getConnectorType());
+      throw new CIStageExecutionException("Unsupported git ConnectorDisconnectHandler " + gitConnector.getConnectorType());
     }
   }
 
@@ -423,7 +423,7 @@ public class BaseConnectorUtils {
           .encryptedDataDetails(encryptedDataDetails)
           .build();
     }
-    throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported artifactory auth type:[%s] on ConnectorDisconnectHandler:[%s]",
         artifactoryConnectorDTO.getAuth().getAuthType(), artifactoryConnectorDTO));
   }
 
@@ -443,7 +443,7 @@ public class BaseConnectorUtils {
     } else if (awsCredentialDTO.getAwsCredentialType() == AwsCredentialType.IRSA) {
       return connectorDetailsBuilder.executeOnDelegate(awsConnectorDTO.getExecuteOnDelegate()).build();
     }
-    throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
   }
 
@@ -478,7 +478,7 @@ public class BaseConnectorUtils {
     } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
       return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate()).build();
     }
-    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         gcpConnectorDTO.getCredential().getGcpCredentialType(), gcpConnectorDTO));
   }
 
@@ -498,7 +498,7 @@ public class BaseConnectorUtils {
       return buildGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else {
       throw new CIStageExecutionException(
-          "Unsupported git connector " + connectorDTO.getConnectorInfo().getConnectorType());
+          "Unsupported git ConnectorDisconnectHandler " + connectorDTO.getConnectorInfo().getConnectorType());
     }
   }
 
@@ -523,7 +523,7 @@ public class BaseConnectorUtils {
           (AzureRepoSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
       SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, azureRepoSshCredentialsDTO.getSshKeyRef());
       if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
-        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git connector: "
+        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git ConnectorDisconnectHandler: "
             + gitConfigDTO.getAuthentication().getAuthType());
       }
       connectorDetailsBuilder.sshKeyDetails(sshKey);
@@ -535,7 +535,7 @@ public class BaseConnectorUtils {
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
-          "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+          "Unsupported git ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -560,7 +560,7 @@ public class BaseConnectorUtils {
           (GitlabSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
       SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, gitlabSshCredentialsDTO.getSshKeyRef());
       if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
-        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git connector: "
+        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git ConnectorDisconnectHandler: "
             + gitConfigDTO.getAuthentication().getAuthType());
       }
       connectorDetailsBuilder.sshKeyDetails(sshKey);
@@ -572,7 +572,7 @@ public class BaseConnectorUtils {
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
-          "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+          "Unsupported git ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -598,7 +598,7 @@ public class BaseConnectorUtils {
           (GithubSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
       SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, githubSshCredentialsDTO.getSshKeyRef());
       if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
-        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git connector: "
+        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git ConnectorDisconnectHandler: "
             + gitConfigDTO.getAuthentication().getAuthType());
       }
       connectorDetailsBuilder.sshKeyDetails(sshKey);
@@ -610,7 +610,7 @@ public class BaseConnectorUtils {
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
-          "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+          "Unsupported git ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -636,7 +636,7 @@ public class BaseConnectorUtils {
       SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, bitbucketSshCredentialsDTO.getSshKeyRef());
       connectorDetailsBuilder.sshKeyDetails(sshKey);
       if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
-        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git connector: "
+        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git ConnectorDisconnectHandler: "
             + gitConfigDTO.getAuthentication().getAuthType());
       }
       if (gitConfigDTO.getApiAccess() != null && gitConfigDTO.getApiAccess().getSpec() != null) {
@@ -647,7 +647,7 @@ public class BaseConnectorUtils {
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
-          "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+          "Unsupported git ConnectorDisconnectHandler auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -678,11 +678,11 @@ public class BaseConnectorUtils {
       connectorDetailsBuilder.sshKeyDetails(sshKey);
       if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
         throw new CIStageExecutionException(
-            "Unsupported ssh key format, passphrase is unsupported in git connector: " + gitConfigDTO.getGitAuthType());
+            "Unsupported ssh key format, passphrase is unsupported in git ConnectorDisconnectHandler: " + gitConfigDTO.getGitAuthType());
       }
       return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
-      throw new CIStageExecutionException("Unsupported git connector auth" + gitConfigDTO.getGitAuthType());
+      throw new CIStageExecutionException("Unsupported git ConnectorDisconnectHandler auth" + gitConfigDTO.getGitAuthType());
     }
   }
 
@@ -701,7 +701,7 @@ public class BaseConnectorUtils {
       return connectorDetailsBuilder.executeOnDelegate(dockerConnectorDTO.getExecuteOnDelegate()).build();
     } else {
       throw new InvalidArgumentsException(
-          format("Unsupported docker credential type:[%s] on connector:[%s]", dockerAuthType, dockerConnectorDTO));
+          format("Unsupported docker credential type:[%s] on ConnectorDisconnectHandler:[%s]", dockerAuthType, dockerConnectorDTO));
     }
   }
 
@@ -719,12 +719,12 @@ public class BaseConnectorUtils {
     } else if (config.getKubernetesCredentialType() == KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
       return connectorDetailsBuilder.build();
     }
-    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
+    throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on ConnectorDisconnectHandler:[%s]",
         kubernetesClusterConfigDTO.getCredential().getKubernetesCredentialType(), kubernetesClusterConfigDTO));
   }
 
   private ConnectorDTO getConnector(IdentifierRef connectorRef) throws IOException {
-    log.info("Fetching connector details for connector id:[{}] acc:[{}] project:[{}] org:[{}]",
+    log.info("Fetching ConnectorDisconnectHandler details for ConnectorDisconnectHandler id:[{}] acc:[{}] project:[{}] org:[{}]",
         connectorRef.getIdentifier(), connectorRef.getAccountIdentifier(), connectorRef.getProjectIdentifier(),
         connectorRef.getOrgIdentifier());
 
@@ -748,7 +748,7 @@ public class BaseConnectorUtils {
             USER);
       } else {
         throw new CIStageExecutionException(
-            format("Failed to find connector for identifier: [%s] with scope: [%s] with error: %s",
+            format("Failed to find ConnectorDisconnectHandler for identifier: [%s] with scope: [%s] with error: %s",
                 connectorRef.getIdentifier(), connectorRef.getScope(), errorCode));
       }
     }

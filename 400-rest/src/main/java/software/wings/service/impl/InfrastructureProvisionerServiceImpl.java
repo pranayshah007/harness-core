@@ -1059,7 +1059,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
     }
     GitConfig gitConfig = gitUtilsManager.getGitConfig(sourceRepoSettingId);
     if (gitConfig.getUrlType() == GitConfig.UrlType.ACCOUNT && isEmpty(repoName)) {
-      throw new InvalidRequestException("Repo name cannot be empty for account level git connector");
+      throw new InvalidRequestException("Repo name cannot be empty for account level git ConnectorDisconnectHandler");
     }
   }
 

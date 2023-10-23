@@ -931,7 +931,7 @@ public class GitClientImpl implements GitClient {
     }
 
     if (GitConfig.UrlType.ACCOUNT == gitConfig.getUrlType() && isBlank(gitConfig.getRepoName())) {
-      throw new InvalidRequestException("Repository name not provided for Account level git connector.", USER);
+      throw new InvalidRequestException("Repository name not provided for Account level git ConnectorDisconnectHandler.", USER);
     }
   }
 

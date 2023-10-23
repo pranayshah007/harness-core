@@ -211,10 +211,10 @@ public abstract class AbstractConfigFileStep {
           String errorMessage;
           if (EmptyPredicate.isEmpty(fileLocation)) {
             errorMessage = format(
-                "Config file connector ref cannot be null or empty, ConfigFile identifier: [%s]", configFileIdentifier);
+                "Config file ConnectorDisconnectHandler ref cannot be null or empty, ConfigFile identifier: [%s]", configFileIdentifier);
           } else {
             errorMessage = format(
-                "Config file connector ref cannot be null or empty, ConfigFile identifier: [%s], ConfigFile Location: [%s]",
+                "Config file ConnectorDisconnectHandler ref cannot be null or empty, ConfigFile identifier: [%s], ConfigFile Location: [%s]",
                 configFileIdentifier, fileLocation);
           }
           return new InvalidRequestException(errorMessage);

@@ -1076,7 +1076,7 @@ public class WingsApplication extends Application<MainConfiguration> {
       clientRegistry.registerClient(PerpetualTaskType.CONNECTOR_TEST_CONNECTION,
           injector.getInstance(ConnectorHeartbeatPerpetualTaskClient.class));
     } catch (Exception ex) {
-      log.info("Could not create the connector task client", ex);
+      log.info("Could not create the ConnectorDisconnectHandler task client", ex);
     }
     clientRegistry.registerClient(PerpetualTaskType.AZURE_WEB_APP_INSTANCE_SYNC,
         injector.getInstance(AzureWebAppInstanceSyncPerpetualTaskClient.class));

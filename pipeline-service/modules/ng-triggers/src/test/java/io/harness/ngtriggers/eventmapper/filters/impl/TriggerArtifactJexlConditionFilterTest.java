@@ -77,7 +77,7 @@ public class TriggerArtifactJexlConditionFilterTest extends CategoryTest {
                                                         .spec(ArtifactTriggerConfig.builder()
                                                                   .type(ArtifactType.DOCKER_REGISTRY)
                                                                   .spec(DockerRegistrySpec.builder()
-                                                                            .connectorRef("connector")
+                                                                            .connectorRef("ConnectorDisconnectHandler")
                                                                             .jexlCondition(jexlCondition)
                                                                             .build())
                                                                   .build())

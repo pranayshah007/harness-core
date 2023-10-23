@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @OwnedBy(CDP)
 @Data
 @Builder

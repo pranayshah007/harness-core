@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 // @TargetModule(878-pms-coupling)
 @RecasterAlias("io.harness.cdng.artifact.outcome.NexusArtifactOutcome")
 public class NexusArtifactOutcome implements ArtifactOutcome {
-  /** Nexus hub registry connector. */
+  /** Nexus hub registry ConnectorDisconnectHandler. */
   String connectorRef;
   /** Nexus registry repository name. */
   String repositoryName;

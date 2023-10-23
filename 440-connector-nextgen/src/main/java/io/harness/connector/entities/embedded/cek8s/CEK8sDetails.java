@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "CEK8sDetailsKeys")
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
-@TypeAlias("io.harness.connector.entities.embedded.cek8s.CEK8sDetails")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.cek8s.CEK8sDetails")
 public class CEK8sDetails extends Connector {
   @NotNull String connectorRef;
   @NotEmpty List<CEFeatures> featuresEnabled;

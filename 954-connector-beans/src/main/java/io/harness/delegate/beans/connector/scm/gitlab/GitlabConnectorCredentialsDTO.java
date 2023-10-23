@@ -21,5 +21,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GitlabConnectorCredentials")
 @Schema(name = "GithubConnectorCredentials",
-    description = "This is a interface for details of the Github connector credentials")
+    description = "This is a interface for details of the Github ConnectorDisconnectHandler credentials")
 public class GitlabConnectorCredentialsDTO {}

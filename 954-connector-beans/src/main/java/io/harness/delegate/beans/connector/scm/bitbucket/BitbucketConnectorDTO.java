@@ -126,7 +126,7 @@ public class BitbucketConnectorDTO
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
-            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in ConnectorDisconnectHandler.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
       return url;
@@ -226,7 +226,7 @@ public class BitbucketConnectorDTO
   }
 
   /*
-    Since bitbucket connector can take two usernames (in authentication and apiAccess) there is a limitation
+    Since bitbucket ConnectorDisconnectHandler can take two usernames (in authentication and apiAccess) there is a limitation
     right now that both have to be of same type, either as secret or plain text.
    */
   private void validateUsername() {

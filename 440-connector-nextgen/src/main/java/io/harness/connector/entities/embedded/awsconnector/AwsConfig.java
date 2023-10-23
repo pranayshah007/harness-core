@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.awsconnector.AwsConfig")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsConfig")
 public class AwsConfig extends Connector {
   AwsCredentialType credentialType;
   CrossAccountAccessDTO crossAccountAccess;

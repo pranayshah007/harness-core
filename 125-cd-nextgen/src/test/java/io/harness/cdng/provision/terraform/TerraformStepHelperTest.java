@@ -633,14 +633,14 @@ public class TerraformStepHelperTest extends CategoryTest {
             .spec(TerraformStepDataGenerator.generateRemoteVarFileSpec(
                 StoreConfigType.ARTIFACTORY, artifactoryStoreVarFilesB))
             .build());
-    // Add another var file with a different connector. This one is a github connector
+    // Add another var file with a different ConnectorDisconnectHandler. This one is a github ConnectorDisconnectHandler
     varFilesMap.put("var-file-4",
         TerraformVarFile.builder()
             .identifier("var-file-4")
             .type("Remote")
             .spec(TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.GITHUB, gitStoreVarFiles))
             .build());
-    // Create base auth for the artifactory connector
+    // Create base auth for the artifactory ConnectorDisconnectHandler
     char[] password = {'r', 's', 't', 'u', 'v'};
     ArtifactoryAuthenticationDTO artifactoryAuthenticationDTO =
         ArtifactoryAuthenticationDTO.builder()
@@ -3338,7 +3338,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         TerraformProviderCredential.builder()
             .type(TerraformProviderType.AWS)
             .spec(AWSIAMRoleCredentialSpec.builder()
-                      .connectorRef(ParameterField.createValueField("aws-connector"))
+                      .connectorRef(ParameterField.createValueField("aws-ConnectorDisconnectHandler"))
                       .region(ParameterField.createValueField("us-east-1"))
                       .roleArn(ParameterField.createValueField("dummy-role-arn"))
                       .build())

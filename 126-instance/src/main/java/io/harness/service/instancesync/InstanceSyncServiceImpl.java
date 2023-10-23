@@ -110,7 +110,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private AccountClient accountClient;
   private KryoSerializer kryoSerializer;
   private static final int NEW_DEPLOYMENT_EVENT_RETRY = 3;
-  private static final String CONNECTOR = "connector";
+  private static final String CONNECTOR = "ConnectorDisconnectHandler";
   private static final int PAGE_SIZE = 100;
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
 
@@ -311,7 +311,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         return instanceSyncPerpetualTaskInfoDTO;
       }
     } else {
-      // if connector is not found we have to delete all PTs V2 related to that connector Id
+      // if ConnectorDisconnectHandler is not found we have to delete all PTs V2 related to that ConnectorDisconnectHandler Id
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           infrastructureMappingDTO.getConnectorRef(), infrastructureMappingDTO.getAccountIdentifier(),
           deploymentSummaryDTO.getOrgIdentifier(), deploymentSummaryDTO.getProjectIdentifier(), CONNECTOR);
@@ -326,7 +326,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
 
     throw new InvalidRequestException(
-        String.format("No connector found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef()), USER);
+        String.format("No ConnectorDisconnectHandler found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef()), USER);
   }
 
   @Override

@@ -36,7 +36,7 @@ public class JiraStepYamlBuilder extends StepYamlBuilder {
     if (JIRA_CONNECTOR_ID.equals(name)) {
       String jiraConnectorId = (String) objectValue;
       SettingAttribute jiraConnectionAttribute = settingsService.get(jiraConnectorId);
-      notNullCheck("Jira connector does not exist.", jiraConnectionAttribute);
+      notNullCheck("Jira ConnectorDisconnectHandler does not exist.", jiraConnectionAttribute);
       outputProperties.put(JIRA_CONNECTOR_NAME, jiraConnectionAttribute.getName());
       return;
     }
@@ -50,7 +50,7 @@ public class JiraStepYamlBuilder extends StepYamlBuilder {
       String jiraConnectorName = (String) objectValue;
       SettingAttribute jiraConnectionAttribute =
           settingsService.getSettingAttributeByName(accountId, jiraConnectorName);
-      notNullCheck(String.format("Jira connector %s does not exist.", jiraConnectorName), jiraConnectionAttribute);
+      notNullCheck(String.format("Jira ConnectorDisconnectHandler %s does not exist.", jiraConnectorName), jiraConnectionAttribute);
       outputProperties.put(JIRA_CONNECTOR_ID, jiraConnectionAttribute.getUuid());
       return;
     }

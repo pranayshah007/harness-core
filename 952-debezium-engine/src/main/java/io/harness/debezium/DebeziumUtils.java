@@ -26,7 +26,7 @@ public class DebeziumUtils {
     return new DebeziumEngine.ConnectorCallback() {
       @Override
       public void connectorStopped() {
-        log.info("Debezium connector stopped for collection {}", collection);
+        log.info("Debezium ConnectorDisconnectHandler stopped for collection {}", collection);
       }
       @Override
       public void taskStopped() {

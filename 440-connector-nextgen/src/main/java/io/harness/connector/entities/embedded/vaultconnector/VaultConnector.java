@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.vaultconnector.VaultConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.vaultconnector.VaultConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VaultConnector extends Connector implements PersistentRegularIterable {
   String authTokenRef;

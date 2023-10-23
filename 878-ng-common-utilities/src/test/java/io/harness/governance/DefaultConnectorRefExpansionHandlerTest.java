@@ -63,7 +63,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     String acc = "acc";
     String org = "org";
     String proj = "proj";
-    String connProj = "basic-connector";
+    String connProj = "basic-ConnectorDisconnectHandler";
     ConnectorDTO connectorDTOProj =
         ConnectorDTO.builder().connectorInfo(ConnectorInfoDTO.builder().identifier(connProj).build()).build();
     JsonNode jsonNodeProj = new TextNode(connProj);
@@ -72,12 +72,12 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     Call<ResponseDTO<Optional<ConnectorDTO>>> requestToClient = mock(Call.class);
     doReturn(requestToClient).when(connectorResourceClient).get(connProj, acc, org, proj);
     when(NGRestUtils.getResponse(
-             requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
+             requestToClient, "Could not get ConnectorDisconnectHandler response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOProj));
     ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject, null);
     assertThat(expansionResponseProj.isSuccess()).isTrue();
-    assertThat(expansionResponseProj.getKey()).isEqualTo("connector");
-    assertThat(expansionResponseProj.getValue().toJson()).isEqualTo("{\"identifier\":\"basic-connector\"}");
+    assertThat(expansionResponseProj.getKey()).isEqualTo("ConnectorDisconnectHandler");
+    assertThat(expansionResponseProj.getValue().toJson()).isEqualTo("{\"identifier\":\"basic-ConnectorDisconnectHandler\"}");
     assertThat(expansionResponseProj.getPlacement()).isEqualTo(ExpansionPlacementStrategy.REPLACE);
 
     String connOrg = "org.conn";
@@ -88,11 +88,11 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
         ExpansionRequestMetadata.newBuilder().setAccountId(acc).setOrgId(org).build();
     doReturn(requestToClient).when(connectorResourceClient).get("conn", acc, org, null);
     when(NGRestUtils.getResponse(
-             requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
+             requestToClient, "Could not get ConnectorDisconnectHandler response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOOrg));
     ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg, null);
     assertThat(expansionResponseOrg.isSuccess()).isTrue();
-    assertThat(expansionResponseOrg.getKey()).isEqualTo("connector");
+    assertThat(expansionResponseOrg.getKey()).isEqualTo("ConnectorDisconnectHandler");
     assertThat(expansionResponseOrg.getValue().toJson()).isEqualTo("{\"identifier\":\"conn\"}");
     assertThat(expansionResponseOrg.getPlacement()).isEqualTo(ExpansionPlacementStrategy.REPLACE);
   }

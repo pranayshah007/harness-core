@@ -23,7 +23,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class RancherNgConfigMapper {
@@ -49,7 +49,7 @@ public class RancherNgConfigMapper {
           .build();
     }
 
-    throw new IllegalArgumentException("Unsupported rancher connector type provided: " + rancherConfigType);
+    throw new IllegalArgumentException("Unsupported rancher ConnectorDisconnectHandler type provided: " + rancherConfigType);
   }
 
   private RancherConnectorBearerTokenAuthenticationDTO validateAndDecryptCredentials(

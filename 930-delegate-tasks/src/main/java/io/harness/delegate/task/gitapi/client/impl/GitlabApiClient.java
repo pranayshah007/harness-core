@@ -84,7 +84,7 @@ public class GitlabApiClient implements GitApiClient {
       JSONObject mergePRResponse = gitlabService.mergePR(gitApiURL, slug, token, prNumber, deleteSourceBranch);
       prepareResponseBuilder(responseBuilder, prNumber, mergePRResponse);
     } catch (Exception e) {
-      log.error(new StringBuilder("failed while merging PR using connector: ")
+      log.error(new StringBuilder("failed while merging PR using ConnectorDisconnectHandler: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);
@@ -163,7 +163,7 @@ public class GitlabApiClient implements GitApiClient {
     GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null || gitConfigDTO.getApiAccess().getType() == null) {
       throw new InvalidRequestException(
-          format("Failed to retrieve token info for gitlab connector: ", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for gitlab ConnectorDisconnectHandler: ", gitConnector.getIdentifier()));
     }
     GitlabApiAccessSpecDTO spec = gitConfigDTO.getApiAccess().getSpec();
     GitlabApiAccessType apiAccessType = gitConfigDTO.getApiAccess().getType();

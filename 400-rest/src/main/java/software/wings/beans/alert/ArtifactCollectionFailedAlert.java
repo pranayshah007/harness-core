@@ -39,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 @Builder
 @TargetModule(HarnessModule._955_ALERT_BEANS)
 public class ArtifactCollectionFailedAlert implements AlertData {
-  // TODO: ASR: refactor this class for connector level artifact streams
+  // TODO: ASR: refactor this class for ConnectorDisconnectHandler level artifact streams
   @Inject @Transient @SchemaIgnore private transient AppService appService;
   @Inject @Transient @SchemaIgnore private transient ArtifactStreamService artifactStreamService;
   @Inject @Transient @SchemaIgnore private transient ServiceResourceService serviceResourceService;

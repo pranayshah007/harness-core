@@ -107,7 +107,7 @@ public class AzureConfigSerializationDeserializationTest extends CategoryTest {
     try {
       connectorString = objectMapper.writeValueAsString(connectorDTO);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while serializing azure connector " + ex.getMessage());
+      Assert.fail("Encountered exception while serializing azure ConnectorDisconnectHandler " + ex.getMessage());
     }
     String expectedResult = readFileAsString("440-connector-nextgen/src/test/resources/azure/azureConnector.json");
     try {
@@ -117,7 +117,7 @@ public class AzureConfigSerializationDeserializationTest extends CategoryTest {
       log.info("Actual Connector String: {}", tree2.toString());
       assertThat(tree1.equals(tree2)).isTrue();
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while checking the two azure json value connector" + ex.getMessage());
+      Assert.fail("Encountered exception while checking the two azure json value ConnectorDisconnectHandler" + ex.getMessage());
     }
   }
 
@@ -130,7 +130,7 @@ public class AzureConfigSerializationDeserializationTest extends CategoryTest {
     try {
       inputConnector = objectMapper.readValue(connectorInput, ConnectorDTO.class);
     } catch (Exception ex) {
-      Assert.fail("Encountered exception while deserializing azure connector " + ex.getMessage());
+      Assert.fail("Encountered exception while deserializing azure ConnectorDisconnectHandler " + ex.getMessage());
     }
     ConnectorInfoDTO connectorRequestDTO = createConnectorRequestDTOForAzure();
     ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorRequestDTO).build();

@@ -65,7 +65,7 @@ public class SecretConnectorRefExtractorHelper extends ConnectorRefExtractorHelp
               getStringFromStringValue(connectorIdentifierRef.getIdentifier()));
 
       if (connector.isEmpty()) {
-        log.warn("Unable to retrieve connector for identifier: [accountId: {}, orgId: {}, projectId: {}, ref: {}]",
+        log.warn("Unable to retrieve ConnectorDisconnectHandler for identifier: [accountId: {}, orgId: {}, projectId: {}, ref: {}]",
             connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
         continue;

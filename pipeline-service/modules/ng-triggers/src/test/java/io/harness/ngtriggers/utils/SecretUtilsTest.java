@@ -53,7 +53,7 @@ public class SecretUtilsTest extends CategoryTest {
         GithubTokenSpecDTO.builder().tokenRef(SecretRefData.builder().identifier("token").build()).build();
     when(secretNGManagerClient.decryptEncryptedDetails(any(), any())).thenReturn(request);
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(githubTokenSpec)));
-    secretUtils.decrypt(githubTokenSpec, Collections.emptyList(), "account", "connector");
+    secretUtils.decrypt(githubTokenSpec, Collections.emptyList(), "account", "ConnectorDisconnectHandler");
     verify(secretNGManagerClient, times(1)).decryptEncryptedDetails(any(), eq("account"));
   }
 }

@@ -108,7 +108,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof ServiceNowConnectorDTO)) {
       throw new InvalidRequestException(
-          String.format("Connector [%s] is not a ServiceNow connector", connectorRef), WingsException.USER);
+          String.format("Connector [%s] is not a ServiceNow ConnectorDisconnectHandler", connectorRef), WingsException.USER);
     }
 
     ServiceNowConnectorDTO connectorDTO = (ServiceNowConnectorDTO) configDTO;

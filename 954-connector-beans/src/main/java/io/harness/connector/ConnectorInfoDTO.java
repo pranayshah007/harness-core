@@ -40,7 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
 @Schema(name = "ConnectorInfo", description = "This has the Connector details defined in Harness")
-@RecasterAlias("io.harness.connector.ConnectorInfoDTO")
+@RecasterAlias("io.harness.ConnectorDisconnectHandler.ConnectorInfoDTO")
 public class ConnectorInfoDTO {
   @NotNull @NotBlank @NGEntityName @Schema(description = ConnectorConstants.CONNECTOR_NAME) String name;
   @NotNull

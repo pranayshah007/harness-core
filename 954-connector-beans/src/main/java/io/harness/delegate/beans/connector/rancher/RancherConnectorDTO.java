@@ -37,8 +37,8 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(name = "RancherConnector", description = "This contains Rancher connector details")
-@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorDTO")
+@Schema(name = "RancherConnector", description = "This contains Rancher ConnectorDisconnectHandler details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.rancher.RancherConnectorDTO")
 public class RancherConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
 

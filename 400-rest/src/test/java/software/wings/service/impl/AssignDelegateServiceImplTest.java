@@ -2059,7 +2059,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     Set<String> selectors1 = Stream.of("sel1").collect(Collectors.toSet());
 
     SelectorCapability selectorCapability1 =
-        SelectorCapability.builder().selectors(selectors1).selectorOrigin("connector").build();
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("ConnectorDisconnectHandler").build();
     List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1);
 
     when(delegateService.retrieveDelegateSelectors(delegate, true)).thenReturn(Sets.newHashSet(delegate.getTags()));
@@ -2092,7 +2092,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     SelectorCapability selectorCapability_pipeline =
         SelectorCapability.builder().selectors(selectors_pipeline).selectorOrigin("pipeline").build();
     SelectorCapability selectorCapability_connector =
-        SelectorCapability.builder().selectors(selectors_connector).selectorOrigin("connector").build();
+        SelectorCapability.builder().selectors(selectors_connector).selectorOrigin("ConnectorDisconnectHandler").build();
     List<ExecutionCapability> executionCapabilityList = asList(selectorCapability_step, selectorCapability_step_group,
         selectorCapability_stage, selectorCapability_pipeline, selectorCapability_connector);
 

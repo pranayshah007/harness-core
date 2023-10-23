@@ -83,13 +83,13 @@ public class DefaultConnectorRefExpansionHandler implements JsonExpansionHandler
 
   Optional<ConnectorDTO> getConnectorDTO(String connectorId, String accountId, String orgId, String projectId) {
     return NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountId, orgId, projectId),
-        "Could not get connector response for account: " + accountId + " after {} attempts.");
+        "Could not get ConnectorDisconnectHandler response for account: " + accountId + " after {} attempts.");
   }
 
   ExpansionResponse sendErrorResponseForNotFoundConnector(String scopedConnectorId) {
     return ExpansionResponse.builder()
         .success(false)
-        .errorMessage("Could not find connector: " + scopedConnectorId)
+        .errorMessage("Could not find ConnectorDisconnectHandler: " + scopedConnectorId)
         .build();
   }
 }

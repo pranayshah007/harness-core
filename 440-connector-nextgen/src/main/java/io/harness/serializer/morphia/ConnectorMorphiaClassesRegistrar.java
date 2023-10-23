@@ -181,84 +181,84 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
 
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
-    h.put("connector.entities.embedded.kubernetescluster.KubernetesDelegateDetails", KubernetesDelegateDetails.class);
-    h.put("connector.entities.embedded.kubernetescluster.KubernetesClusterDetails", KubernetesClusterDetails.class);
-    h.put("connector.entities.embedded.kubernetescluster.K8sClientKeyCert", K8sClientKeyCert.class);
-    h.put("connector.entities.embedded.kubernetescluster.K8sOpenIdConnect", K8sOpenIdConnect.class);
-    h.put("connector.entities.embedded.kubernetescluster.K8sServiceAccount", K8sServiceAccount.class);
-    h.put("connector.entities.embedded.kubernetescluster.K8sUserNamePassword", K8sUserNamePassword.class);
-    h.put("connector.entities.embedded.gitconnector.GitSSHAuthentication", GitSSHAuthentication.class);
-    h.put("connector.entities.embedded.gitconnector.GitUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.KubernetesDelegateDetails", KubernetesDelegateDetails.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.KubernetesClusterDetails", KubernetesClusterDetails.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.K8sClientKeyCert", K8sClientKeyCert.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.K8sOpenIdConnect", K8sOpenIdConnect.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.K8sServiceAccount", K8sServiceAccount.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.kubernetescluster.K8sUserNamePassword", K8sUserNamePassword.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitconnector.GitSSHAuthentication", GitSSHAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitconnector.GitUserNamePasswordAuthentication",
         GitUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.gcpconnector.GcpDelegateDetails", GcpDelegateDetails.class);
-    h.put("connector.entities.embedded.gcpconnector.GcpServiceAccountKey", GcpServiceAccountKey.class);
-    h.put("connector.entities.embedded.awsconnector.AwsIamCredential", AwsIamCredential.class);
-    h.put("connector.entities.embedded.awsconnector.AwsAccessKeyCredential", AwsAccessKeyCredential.class);
-    h.put("connector.entities.embedded.awskmsconnector.AwsKmsIamCredential", AwsKmsIamCredential.class);
-    h.put("connector.entities.embedded.awskmsconnector.AwsKmsStsCredential", AwsKmsStsCredential.class);
-    h.put("connector.entities.embedded.awskmsconnector.AwsKmsManualCredential", AwsKmsManualCredential.class);
-    h.put("connector.entities.embedded.ceawsconnector.CURAttributes", CURAttributes.class);
-    h.put("connector.entities.embedded.ceawsconnector.S3BucketDetails", S3BucketDetails.class);
-    h.put("connector.entities.embedded.docker.DockerUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.gcpconnector.GcpDelegateDetails", GcpDelegateDetails.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gcpconnector.GcpServiceAccountKey", GcpServiceAccountKey.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsIamCredential", AwsIamCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsAccessKeyCredential", AwsAccessKeyCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awskmsconnector.AwsKmsIamCredential", AwsKmsIamCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awskmsconnector.AwsKmsStsCredential", AwsKmsStsCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awskmsconnector.AwsKmsManualCredential", AwsKmsManualCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.ceawsconnector.CURAttributes", CURAttributes.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.ceawsconnector.S3BucketDetails", S3BucketDetails.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.docker.DockerUserNamePasswordAuthentication",
         DockerUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.artifactoryconnector.ArtifactoryUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.artifactoryconnector.ArtifactoryUserNamePasswordAuthentication",
         ArtifactoryUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication",
         NexusUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.githubconnector.GithubAppApiAccess", GithubApiAccess.class);
-    h.put("connector.entities.embedded.githubconnector.GithubTokenApiAccess", GithubTokenApiAccess.class);
-    h.put("connector.entities.embedded.githubconnector.GithubSshAuthentication", GithubSshAuthentication.class);
-    h.put("connector.entities.embedded.githubconnector.GithubHttpAuthentication", GithubHttpAuthentication.class);
-    h.put("connector.entities.embedded.githubconnector.GithubUsernamePassword", GithubUsernamePassword.class);
-    h.put("connector.entities.embedded.githubconnector.GithubUsernameToken", GithubUsernameToken.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess", GitlabTokenApiAccess.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabSshAuthentication", GitlabSshAuthentication.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabHttpAuthentication", GitlabHttpAuthentication.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabUsernamePassword", GitlabUsernamePassword.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabUsernameToken", GitlabUsernameToken.class);
-    h.put("connector.entities.embedded.gitlabconnector.GitlabKerberos", GitlabKerberos.class);
-    h.put("connector.entities.ConnectorFilterProperties", ConnectorFilterProperties.class);
-    h.put("connector.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess",
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubAppApiAccess", GithubApiAccess.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubTokenApiAccess", GithubTokenApiAccess.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubSshAuthentication", GithubSshAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubHttpAuthentication", GithubHttpAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubUsernamePassword", GithubUsernamePassword.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.githubconnector.GithubUsernameToken", GithubUsernameToken.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabTokenApiAccess", GitlabTokenApiAccess.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabSshAuthentication", GitlabSshAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabHttpAuthentication", GitlabHttpAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabUsernamePassword", GitlabUsernamePassword.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabUsernameToken", GitlabUsernameToken.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.gitlabconnector.GitlabKerberos", GitlabKerberos.class);
+    h.put("ConnectorDisconnectHandler.entities.ConnectorFilterProperties", ConnectorFilterProperties.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess",
         BitbucketUsernamePasswordApiAccess.class);
     h.put(
-        "connector.entities.embedded.bitbucketconnector.BitbucketSshAuthentication", BitbucketSshAuthentication.class);
-    h.put("connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication",
+        "ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketSshAuthentication", BitbucketSshAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication",
         BitbucketHttpAuthentication.class);
-    h.put("connector.entities.embedded.bitbucketconnector.BitbucketUsernamePassword", BitbucketUsernamePassword.class);
-    h.put("connector.entities.embedded.awscodecommitconnector.AwsCodeCommitAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.bitbucketconnector.BitbucketUsernamePassword", BitbucketUsernamePassword.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.awscodecommitconnector.AwsCodeCommitAuthentication",
         AwsCodeCommitAuthentication.class);
-    h.put("connector.entities.embedded.awscodecommitconnector.AwsCodeCommitSecretKeyAccessKey",
+    h.put("ConnectorDisconnectHandler.entities.embedded.awscodecommitconnector.AwsCodeCommitSecretKeyAccessKey",
         AwsCodeCommitSecretKeyAccessKey.class);
-    h.put("connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication",
         HttpHelmUsernamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.helm.OciHelmUsernamePasswordAuthentication",
         OciHelmUsernamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.gcpccm.GcpBillingExportDetails", GcpBillingExportDetails.class);
-    h.put("connector.entities.embedded.azureconnector.AzureManualCredential", AzureManualCredential.class);
-    h.put("connector.entities.embedded.azureconnector.AzureManagedIdentityCredential",
+    h.put("ConnectorDisconnectHandler.entities.embedded.gcpccm.GcpBillingExportDetails", GcpBillingExportDetails.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azureconnector.AzureManualCredential", AzureManualCredential.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azureconnector.AzureManagedIdentityCredential",
         AzureManagedIdentityCredential.class);
-    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoAppApiAccess", AzureRepoApiAccess.class);
-    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess", AzureRepoTokenApiAccess.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoAppApiAccess", AzureRepoApiAccess.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess", AzureRepoTokenApiAccess.class);
     h.put(
-        "connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication", AzureRepoSshAuthentication.class);
-    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication",
+        "ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication", AzureRepoSshAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication",
         AzureRepoHttpAuthentication.class);
-    h.put("connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
-    h.put("connector.entities.embedded.azureartifacts.AzureRepoHttpAuthentication", AzureArtifactsAuthentication.class);
-    h.put("connector.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
-    h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azureartifacts.AzureRepoHttpAuthentication", AzureArtifactsAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
         ServiceNowUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
-    h.put("connector.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
+    h.put("ConnectorDisconnectHandler.entities.embedded.servicenow.ServiceNowRefreshTokenAuthentication",
         ServiceNowRefreshTokenAuthentication.class);
-    h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
+    h.put("ConnectorDisconnectHandler.entities.embedded.jira.JiraUserNamePasswordAuthentication",
         JiraUserNamePasswordAuthentication.class);
-    h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);
-    h.put("io.harness.connector.entities.embedded.awsconnecto.AwsEqualJitterBackoffStrategy",
+    h.put("ConnectorDisconnectHandler.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);
+    h.put("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnecto.AwsEqualJitterBackoffStrategy",
         AwsEqualJitterBackoffStrategy.class);
-    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy",
+    h.put("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy",
         AwsFixedDelayBackoffStrategy.class);
-    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy",
+    h.put("io.harness.ConnectorDisconnectHandler.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy",
         AwsFullJitterBackoffStrategy.class);
   }
 }

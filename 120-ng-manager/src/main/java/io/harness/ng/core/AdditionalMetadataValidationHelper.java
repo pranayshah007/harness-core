@@ -94,7 +94,7 @@ public class AdditionalMetadataValidationHelper {
     } else {
       if (secretTextSpecDTO.getAdditionalMetadata() == null) {
         throw new InvalidRequestException(
-            "Additional metadata must be present for reference secret created using google secret manager connector");
+            "Additional metadata must be present for reference secret created using google secret manager ConnectorDisconnectHandler");
       }
       validateExpectedKeyInValuesMap(secretTextSpecDTO.getAdditionalMetadata(), VERSION);
       validateVersionInformation(secretTextSpecDTO.getAdditionalMetadata().getValues().get(VERSION));

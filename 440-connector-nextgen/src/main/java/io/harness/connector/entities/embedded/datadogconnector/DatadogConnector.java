@@ -29,7 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.datadogconnector.DatadogConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.datadogconnector.DatadogConnector")
 @OwnedBy(CV)
 public class DatadogConnector extends Connector {
   private String url;

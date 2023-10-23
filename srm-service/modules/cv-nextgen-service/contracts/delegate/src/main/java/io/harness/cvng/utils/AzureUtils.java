@@ -42,14 +42,14 @@ public class AzureUtils {
 
   public AzureManualDetailsDTO validateConnectorConfigurationType(AzureCredentialSpecDTO azureCredentialSpecDTO) {
     if (!(azureCredentialSpecDTO instanceof AzureManualDetailsDTO)) {
-      throw new InvalidRequestException("Please configure the connector through \"specify credentials\" step");
+      throw new InvalidRequestException("Please configure the ConnectorDisconnectHandler through \"specify credentials\" step");
     }
     return (AzureManualDetailsDTO) azureCredentialSpecDTO;
   }
 
   public AzureClientSecretKeyDTO validateConnectorAuthenticationType(AzureAuthCredentialDTO azureAuthCredentialDTO) {
     if (!(azureAuthCredentialDTO instanceof AzureClientSecretKeyDTO)) {
-      throw new InvalidRequestException("Please configure the connector with client secret");
+      throw new InvalidRequestException("Please configure the ConnectorDisconnectHandler with client secret");
     }
     return (AzureClientSecretKeyDTO) azureAuthCredentialDTO;
   }

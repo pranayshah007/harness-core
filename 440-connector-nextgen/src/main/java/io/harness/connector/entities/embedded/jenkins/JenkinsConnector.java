@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.jenkins.JenkinsConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.jenkins.JenkinsConnector")
 public class JenkinsConnector extends Connector {
   String url;
   @NotEmpty JenkinsAuthType authType;

@@ -24,8 +24,8 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("CrossAccountAccess")
-@Schema(name = "CrossAccountAccess", description = "This contains AWS connector cross account access details")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO")
+@Schema(name = "CrossAccountAccess", description = "This contains AWS ConnectorDisconnectHandler cross account access details")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.CrossAccountAccessDTO")
 public class CrossAccountAccessDTO {
   @NotNull private String crossAccountRoleArn;
   private String externalId;

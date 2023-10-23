@@ -22,7 +22,7 @@ inputs:
     required: true
 options:
   repository:
-    connector: connector
+    connector: ConnectorDisconnectHandler
     name: harness-core
   registry:
     credentials:

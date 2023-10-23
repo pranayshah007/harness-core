@@ -93,12 +93,12 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     if (featuresEnabled.contains(CEFeatures.BILLING)
         && (projectId.isEmpty() || datasetId.isEmpty() || impersonatedServiceAccount.isEmpty())) {
       return ConnectorValidationResult.builder()
-          .errorSummary("Invalid connector configuration")
+          .errorSummary("Invalid ConnectorDisconnectHandler configuration")
           .errors(ImmutableList.of(ErrorDetail.builder()
                                        .code(400)
-                                       .message("Verify if valid projectId/datasetId exists in connector. "
+                                       .message("Verify if valid projectId/datasetId exists in ConnectorDisconnectHandler. "
                                            + "For more information, refer to the documentation.")
-                                       .reason("Invalid connector configuration")
+                                       .reason("Invalid ConnectorDisconnectHandler configuration")
                                        .build()))
           .status(ConnectivityStatus.FAILURE)
           .build();
@@ -144,7 +144,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
         if (connectorValidationResult != null) {
           return connectorValidationResult;
         } else {
-          // 4. Check for data at destination only when 24 hrs have elapsed since connector last modified at
+          // 4. Check for data at destination only when 24 hrs have elapsed since ConnectorDisconnectHandler last modified at
           long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
           if (connectorResponseDTO.getCreatedAt() < now) {
             if (featuresEnabled.contains(CEFeatures.BILLING)
@@ -177,7 +177,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .build();
     }
 
-    log.info("Validation successful for connector {}", connectorIdentifier);
+    log.info("Validation successful for ConnectorDisconnectHandler {}", connectorIdentifier);
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)
         .testedAt(Instant.now().toEpochMilli())
@@ -375,7 +375,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           // Check when this table was last modified on
           Long lastModifiedTime = tableGranularData.getLastModifiedTime();
           lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : tableGranularData.getCreationTime();
-          // Check for data at source only when 24 hrs have elapsed since connector last modified at
+          // Check for data at source only when 24 hrs have elapsed since ConnectorDisconnectHandler last modified at
           long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
           if (lastModifiedTime < now) {
             return ConnectorValidationResult.builder()
@@ -393,7 +393,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       }
     } catch (BigQueryException be) {
       // 3. Permissions check on the dataset
-      String message = "Please verify your billing export config in your GCP account and in the CCM connector."
+      String message = "Please verify your billing export config in your GCP account and in the CCM ConnectorDisconnectHandler."
           + " For more information, refer to the documentation.";
       log.error("Unable to access BigQuery Dataset", be);
       if (!be.getMessage().isEmpty() && be.getMessage().contains("has not enabled BigQuery")) {

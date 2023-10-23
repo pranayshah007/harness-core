@@ -104,7 +104,7 @@ public class OciHelmApiHelperUtilsTest extends CategoryTest {
 
     assertThatThrownBy(() -> ociHelmApiHelperUtils.normalizeUrl(""))
         .isInstanceOf(OciHelmDockerApiException.class)
-        .hasMessage("Hostname provided in URL field of OCI Helm connector is invalid");
+        .hasMessage("Hostname provided in URL field of OCI Helm ConnectorDisconnectHandler is invalid");
 
     normalizedUrl = ociHelmApiHelperUtils.normalizeUrl("/");
     assertThat(normalizedUrl).isEqualTo("https:///");

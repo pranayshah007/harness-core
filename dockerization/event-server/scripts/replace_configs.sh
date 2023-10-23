@@ -28,7 +28,7 @@ write_mongo_params() {
   done
 }
 
-# Remove the TLS connector (as ingress terminates TLS)
+# Remove the TLS ConnectorDisconnectHandler (as ingress terminates TLS)
 yq -i 'del(.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then

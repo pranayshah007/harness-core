@@ -56,7 +56,7 @@ public class SampleDataProviderServiceImpl implements SampleDataProviderService 
       SettingAttribute kubernetesClusterConfig =
           cloudProviderSeedDataProvider.createKubernetesClusterConfig(account.getUuid());
 
-      // Create Docker connector
+      // Create Docker ConnectorDisconnectHandler
       SettingAttribute dockerConnector = connectorGenerator.createDockerConnector(account.getUuid());
 
       createK8sSampleApp(account, kubernetesClusterConfig, dockerConnector);
@@ -115,7 +115,7 @@ public class SampleDataProviderServiceImpl implements SampleDataProviderService 
       SettingAttribute kubernetesClusterConfig =
           cloudProviderSeedDataProvider.createKubernetesClusterConfig(account.getUuid());
 
-      // Create Docker connector
+      // Create Docker ConnectorDisconnectHandler
       SettingAttribute dockerConnector = connectorGenerator.createDockerConnector(account.getUuid());
 
       createK8sV2SampleApp(account, kubernetesClusterConfig, dockerConnector, HARNESS_SAMPLE_APP);

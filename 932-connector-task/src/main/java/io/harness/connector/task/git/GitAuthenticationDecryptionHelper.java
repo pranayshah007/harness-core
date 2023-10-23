@@ -48,7 +48,7 @@ public class GitAuthenticationDecryptionHelper {
   public GithubHttpCredentialsDTO getGitHubAppAuthenticationDecryptableEntity(
       GithubConnectorDTO githubConnectorDTO, DecryptableEntity decryptableEntity) {
     if (githubConnectorDTO == null) {
-      throw new InvalidRequestException("The given connector can not be null");
+      throw new InvalidRequestException("The given ConnectorDisconnectHandler can not be null");
     }
     GithubHttpCredentialsDTO githubHttpCredentialsDTO =
         (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();

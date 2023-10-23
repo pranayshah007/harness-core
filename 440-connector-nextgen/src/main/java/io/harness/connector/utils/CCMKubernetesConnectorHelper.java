@@ -25,7 +25,7 @@ public class CCMKubernetesConnectorHelper {
   }
 
   /**
-   * Should return Account scoped connector identifier when the scope is not explicitly defined,
+   * Should return Account scoped ConnectorDisconnectHandler identifier when the scope is not explicitly defined,
    * since by default an identifier without an explicit scope is assumed at Project level.
    */
   @NotNull

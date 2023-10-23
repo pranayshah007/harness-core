@@ -50,15 +50,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_APPDYNAMICS_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createAppDynamicsConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -71,15 +71,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_NEWRELIC_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createNewrelicConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -92,15 +92,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_ELK_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createELKConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -113,15 +113,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_SPLUNK_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createSplunkConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -134,15 +134,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_BUGSNAG_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createBugsnagConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -155,15 +155,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_DATADOG_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createDatadogConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -176,15 +176,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_SUMOLOGIC_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createSumoLogicConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();
@@ -197,15 +197,15 @@ public class ConnectorsVerificationProvidersTest extends AbstractFunctionalTest 
     String connectorName = CONNECTOR_PROMETHEUS_PREFIX + System.currentTimeMillis();
     String connectorId = ConnectorUtils.createPrometheusConnector(bearerToken, connectorName, getAccount().getUuid());
 
-    // Verify connector is created i.e connector with specific name exist
+    // Verify ConnectorDisconnectHandler is created i.e ConnectorDisconnectHandler with specific name exist
     boolean connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isTrue();
 
-    // Delete the created connector
+    // Delete the created ConnectorDisconnectHandler
     SettingsUtils.delete(bearerToken, getAccount().getUuid(), connectorId);
 
-    // Verify connector is deleted i.e connector with specific name doesn't exist
+    // Verify ConnectorDisconnectHandler is deleted i.e ConnectorDisconnectHandler with specific name doesn't exist
     connectorFound =
         SettingsUtils.checkCloudproviderConnectorExist(bearerToken, getAccount().getUuid(), CATEGORY, connectorName);
     assertThat(connectorFound).isFalse();

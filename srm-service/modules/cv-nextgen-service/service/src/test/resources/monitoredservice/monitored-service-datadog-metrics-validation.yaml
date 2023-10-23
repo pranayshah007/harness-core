@@ -17,7 +17,7 @@ monitoredService:
         type: "DatadogMetrics"
         name: "ddm"
         spec:
-          connectorRef: "<+monitoredService.variables.connector>"
+          connectorRef: "<+monitoredService.variables.ConnectorDisconnectHandler>"
           feature: "Datadog Cloud Metrics"
           metricDefinitions:
             - identifier: "m1"
@@ -52,7 +52,7 @@ monitoredService:
     - name: "Query"
       type: "String"
       value: "kubernetes.cpu.usage.total{*}.rollup(avg, 60)"
-    - name: "connector"
+    - name: "ConnectorDisconnectHandler"
       type: "String"
       value: "dd"
     - name: "ServiceLabelInstance"

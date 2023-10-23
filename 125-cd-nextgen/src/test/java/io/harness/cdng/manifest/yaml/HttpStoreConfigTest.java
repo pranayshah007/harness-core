@@ -25,13 +25,13 @@ public class HttpStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverrides() {
     HttpStoreConfig original =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref")).build();
 
     HttpStoreConfig override =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("connector-ref-override")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref-override")).build();
 
     HttpStoreConfig result = (HttpStoreConfig) original.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref-override");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref-override");
   }
 
   @Test
@@ -39,12 +39,12 @@ public class HttpStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyOverridesEmpty() {
     HttpStoreConfig original =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref")).build();
 
     HttpStoreConfig override = HttpStoreConfig.builder().build();
 
     HttpStoreConfig result = (HttpStoreConfig) original.applyOverrides(override);
-    assertThat(result.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(result.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 
   @Test
@@ -52,11 +52,11 @@ public class HttpStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCloneInternal() {
     HttpStoreConfig original =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref")).build();
 
     HttpStoreConfig originClone = (HttpStoreConfig) original.cloneInternal();
 
-    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("connector-ref");
+    assertThat(originClone.getConnectorRef().getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 
   @Test
@@ -64,8 +64,8 @@ public class HttpStoreConfigTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractConnectorRefs() {
     HttpStoreConfig original =
-        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
+        HttpStoreConfig.builder().connectorRef(ParameterField.createValueField("ConnectorDisconnectHandler-ref")).build();
 
-    assertThat(original.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("connector-ref");
+    assertThat(original.extractConnectorRefs().get("connectorRef").getValue()).isEqualTo("ConnectorDisconnectHandler-ref");
   }
 }

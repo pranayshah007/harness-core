@@ -24,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.dynatraceconnector.DynatraceConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.dynatraceconnector.DynatraceConnector")
 public class DynatraceConnector extends Connector {
   String url;
   String apiTokenRef;

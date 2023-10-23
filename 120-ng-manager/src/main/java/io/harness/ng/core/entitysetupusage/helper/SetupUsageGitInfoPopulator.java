@@ -95,7 +95,7 @@ public class SetupUsageGitInfoPopulator {
 
   private void populateRepoBranchInReferredEntities(
       List<EntityDetail> referredEntities, String repo, String branch, Boolean isReferredByBranchDefault) {
-    // Currently in ng-core, we only support branching for the connectors, thus handling connector
+    // Currently in ng-core, we only support branching for the connectors, thus handling ConnectorDisconnectHandler
     if (isEmpty(referredEntities)) {
       return;
     }

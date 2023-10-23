@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName(AzureConstants.SECRET_KEY)
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO")
 public class AzureClientSecretKeyOutcomeDTO extends AzureAuthCredentialOutcomeDTO {
   @NotNull @SecretReference SecretRefData secretRef;
 }

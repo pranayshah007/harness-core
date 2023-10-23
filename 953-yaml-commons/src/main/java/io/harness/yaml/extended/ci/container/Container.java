@@ -33,7 +33,7 @@ public class Container implements WithIdentifier {
   @NotNull Resources resources;
 
   @Builder
-  @ConstructorProperties({"identifier", "connector", "imagePath", "resources"})
+  @ConstructorProperties({"identifier", "ConnectorDisconnectHandler", "imagePath", "resources"})
   public Container(String identifier, String connector, String imagePath, Resources resources) {
     this.identifier = identifier;
     this.connector = connector;

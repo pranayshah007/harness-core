@@ -168,7 +168,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
                   ecsGitFetchFileConfig.getIdentifier()),
             White, Bold));
     GitStoreDelegateConfig gitStoreDelegateConfig = ecsGitFetchFileConfig.getGitStoreDelegateConfig();
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+    executionLogCallback.saveExecutionLog("Git ConnectorDisconnectHandler Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo;
     GitConfigDTO gitConfigDTO = null;
     if (gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH) {

@@ -39,7 +39,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
     defaultFieldNamesToValue.put("isDefault", false);
     defaultFieldNamesToValue.put("onDelegate", false);
     defaultFieldNamesToValue.put("harnessManaged", false);
-    // Default of connector ref is secret ref data object which has all fields as null.
+    // Default of ConnectorDisconnectHandler ref is secret ref data object which has all fields as null.
     defaultFieldNamesToValue.put("connectorRef", new SecretRefData());
   }
 
@@ -47,7 +47,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testExecuteOnDelegateDefaultValue() {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector customSecretManagerConnector = CustomSecretManagerConnector.builder().build();
     // Map it to corresponding DTO
     CustomSecretManagerConnectorDTO customSecretManagerConnectorDTO =
@@ -61,7 +61,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testExecuteOnDelegateFalseValue() {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector customSecretManagerConnector = CustomSecretManagerConnector.builder().build();
     customSecretManagerConnector.setExecuteOnDelegate(false);
     // Map it to corresponding DTO
@@ -76,7 +76,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testNonDefaultFieldsAreNull() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector connector = CustomSecretManagerConnector.builder().build();
     CustomSecretManagerConnectorDTO connectorDTO = customSecretManagerEntitytoDTO.createConnectorDTO(connector);
     // Get all the fields in it
@@ -87,7 +87,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
       if (!defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
+        // Get its value in the ConnectorDisconnectHandler dto
         Object value = field.get(connectorDTO);
         // asset that the fields are null.
         assertThat(value).isNull();
@@ -99,7 +99,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsAreNotNull() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector connector = CustomSecretManagerConnector.builder().build();
     CustomSecretManagerConnectorDTO connectorDTO = customSecretManagerEntitytoDTO.createConnectorDTO(connector);
     // Get all the fields in it
@@ -110,7 +110,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
+        // Get its value in the ConnectorDisconnectHandler dto
         Object value = field.get(connectorDTO);
         // asset that the fields are not null.
         assertThat(value).isNotNull();
@@ -122,7 +122,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
   public void testDefaultFieldsHaveCorrectValue() throws IllegalAccessException {
-    // Create connector entity.
+    // Create ConnectorDisconnectHandler entity.
     CustomSecretManagerConnector connector = CustomSecretManagerConnector.builder().build();
     CustomSecretManagerConnectorDTO connectorDTO = customSecretManagerEntitytoDTO.createConnectorDTO(connector);
     // Get all the fields in it
@@ -133,7 +133,7 @@ public class CustomSecretManagerEntityToDTOTest extends CategoryTest {
       if (defaultFieldNamesToValue.containsKey(field.getName())) {
         // Set their accessibility as true
         field.setAccessible(true);
-        // Get its value in the connector dto
+        // Get its value in the ConnectorDisconnectHandler dto
         Object value = field.get(connectorDTO);
         // asset that default value is same as that defined in map created at test setup.
         assertThat(value).isEqualTo(defaultFieldNamesToValue.get(field.getName()));

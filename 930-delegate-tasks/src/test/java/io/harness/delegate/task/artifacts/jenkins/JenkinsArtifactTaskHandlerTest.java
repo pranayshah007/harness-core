@@ -507,7 +507,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     } catch (HintException ex) {
       assertThat(ex).isInstanceOf(HintException.class);
       assertEquals(
-          ex.getMessage(), "Check if the version exist & check if the right connector chosen for fetching the build.");
+          ex.getMessage(), "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.");
     }
   }
 
@@ -541,7 +541,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     } catch (HintException ex) {
       assertThat(ex).isInstanceOf(HintException.class);
       assertEquals(
-          ex.getMessage(), "Check if the version exist & check if the right connector chosen for fetching the build.");
+          ex.getMessage(), "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.");
     }
   }
 

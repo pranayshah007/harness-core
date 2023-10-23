@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awskmsconnector.AwsKmsConnector")
 public class AwsKmsConnector extends Connector {
   String kmsArn;
   String region;

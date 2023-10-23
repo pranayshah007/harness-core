@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @JsonDeserialize(using = AwsSdkClientBackoffStrategyDTODeserializer.class)
 @Schema(
     name = "AwsSdkClientBackoffStrategy", description = "This contains details of the AWS SDK Client Backoff Strategy")
-@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.awsconnector.AwsSdkClientBackoffStrategyDTO")
 public class AwsSdkClientBackoffStrategyDTO {
   @NotNull @JsonProperty("type") AwsSdkClientBackoffStrategyType awsSdkClientBackoffStrategyType;
 

@@ -65,13 +65,13 @@ public class ConnectorHearbeatPublisher {
   public void pushConnectivityCheckActivity(
       String accountId, ConnectorHeartbeatDelegateResponse heartbeatDelegateResponse) {
     if (heartbeatDelegateResponse == null) {
-      log.error("{} got null delegate heartbeat response in the connector heartbeat for the account {}",
+      log.error("{} got null delegate heartbeat response in the ConnectorDisconnectHandler heartbeat for the account {}",
           CONNECTOR_HEARTBEAT_LOG_PREFIX, accountId);
       return;
     }
     String connectorMessage = String.format(CONNECTOR_STRING, heartbeatDelegateResponse.getIdentifier(), accountId,
         heartbeatDelegateResponse.getOrgIdentifier(), heartbeatDelegateResponse.getProjectIdentifier());
-    log.info("Got validation task response for the connector {}", connectorMessage);
+    log.info("Got validation task response for the ConnectorDisconnectHandler {}", connectorMessage);
     EntityActivityCreateDTO ngActivityDTO = createConnectivityCheckActivityDTO(heartbeatDelegateResponse);
     try {
       eventProducer.send(
@@ -87,7 +87,7 @@ public class ConnectorHearbeatPublisher {
               heartbeatDelegateResponse.getAccountIdentifier(), heartbeatDelegateResponse.getOrgIdentifier(),
               heartbeatDelegateResponse.getProjectIdentifier()));
     }
-    log.info("Sent validation task response to the ng manager for the connector {}", connectorMessage);
+    log.info("Sent validation task response to the ng manager for the ConnectorDisconnectHandler {}", connectorMessage);
   }
 
   private EntityActivityCreateDTO createConnectivityCheckActivityDTO(

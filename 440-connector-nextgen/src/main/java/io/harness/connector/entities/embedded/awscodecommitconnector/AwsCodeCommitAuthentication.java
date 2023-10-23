@@ -21,7 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "AwsCodeCommitAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeCommitAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.awscodecommitconnector.AwsCodeCommitAuthentication")
 public class AwsCodeCommitAuthentication {
   AwsCodeCommitAuthType authType;
   AwsCodeCommitHttpsAuthType credentialsType;

@@ -358,7 +358,7 @@ public class ArtifactStepHelper {
         connectorDTO = getConnector(acrArtifactConfig.getConnectorRef().getValue(), ambiance);
         if (!(connectorDTO.getConnectorConfig() instanceof AzureConnectorDTO)) {
           throw new InvalidConnectorTypeException(
-              String.format("Provided connector %s is not compatible with %s artifact",
+              String.format("Provided ConnectorDisconnectHandler %s is not compatible with %s artifact",
                   acrArtifactConfig.getConnectorRef().getValue(), acrArtifactConfig.getSourceType()),
               WingsException.USER);
         }

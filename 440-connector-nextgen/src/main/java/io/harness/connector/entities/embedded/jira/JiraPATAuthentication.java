@@ -22,7 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "JiraAuthenticationKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.jira.JiraPATAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.jira.JiraPATAuthentication")
 public class JiraPATAuthentication implements JiraAuthentication {
   String patRef;
 

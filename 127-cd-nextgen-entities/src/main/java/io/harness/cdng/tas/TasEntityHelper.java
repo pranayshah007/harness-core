@@ -89,7 +89,7 @@ public class TasEntityHelper {
       }
     }
     throw new UnsupportedOperationException(
-        format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
+        format("Unsupported ConnectorDisconnectHandler type : [%s]", connectorDTO.getConnectorType()));
   }
 
   public ConnectorInfoDTO getConnectorInfoDTO(

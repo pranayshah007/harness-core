@@ -38,7 +38,7 @@ public class DisableServiceGuardsWithDeletedConnectorsMigration implements Migra
         final SettingAttribute settingAttribute = wingsPersistence.get(SettingAttribute.class, connectorId);
 
         if (settingAttribute == null) {
-          log.info("for {} in account {} the connector has been deleted. Disabling the service guard",
+          log.info("for {} in account {} the ConnectorDisconnectHandler has been deleted. Disabling the service guard",
               cvConfiguration.getUuid(), cvConfiguration.getAccountId());
           wingsPersistence.updateField(
               CVConfiguration.class, cvConfiguration.getUuid(), CVConfigurationKeys.enabled24x7, Boolean.FALSE);

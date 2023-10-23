@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.AcrArtifactOutcome")
 public class AcrArtifactOutcome implements ArtifactOutcome {
   /**
-   * ACR registry connector.
+   * ACR registry ConnectorDisconnectHandler.
    */
   String connectorRef;
   /**

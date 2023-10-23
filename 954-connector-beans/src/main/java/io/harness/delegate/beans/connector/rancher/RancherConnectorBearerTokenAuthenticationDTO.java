@@ -24,7 +24,7 @@ import lombok.Data;
 @Builder
 @Schema(
     name = "RancherConnectorBearerTokenAuthentication", description = "This contains rancher bearer token auth details")
-@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO")
+@RecasterAlias("io.harness.delegate.beans.ConnectorDisconnectHandler.rancher.RancherConnectorBearerTokenAuthenticationDTO")
 public class RancherConnectorBearerTokenAuthenticationDTO implements RancherConnectorConfigAuthenticationSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
 }

@@ -1722,7 +1722,7 @@ public class TasStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldPrepareTasGitValuesFetchTask() {
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-ConnectorDisconnectHandler"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"));
     StepElementParameters stepElementParameters =
@@ -1785,20 +1785,20 @@ public class TasStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldPrepareTasGitValuesFetchTaskWithTasManifestOverride() {
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-ConnectorDisconnectHandler"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"),
         "tasOverride",
         getTasManifestOutcome(2,
-            getGitStore("master", asList("path/to/tasOverride/manifest/tasManifest.yml"), "git-connector"),
+            getGitStore("master", asList("path/to/tasOverride/manifest/tasManifest.yml"), "git-ConnectorDisconnectHandler"),
             "tasOverride", asList("path/to/tasOverride/manifest/vars1.yml", "path/to/tasOverride/manifest/vars2.yml"),
             null),
         "autoScalarOverride",
         getAutoScalarManifestOutcome(
-            1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-connector"), "autoScalarOverride"),
+            1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-ConnectorDisconnectHandler"), "autoScalarOverride"),
         "varsOverride",
         getVarsManifestOutcome(3,
-            getGitStore("master", asList("path/to/varsOverride1.yml", "path/to/varsOverride2.yml"), "git-connector"),
+            getGitStore("master", asList("path/to/varsOverride1.yml", "path/to/varsOverride2.yml"), "git-ConnectorDisconnectHandler"),
             "varsOverride"));
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(TasBGAppSetupStepParameters.infoBuilder().build()).build();
@@ -1854,7 +1854,7 @@ public class TasStepHelperTest extends CategoryTest {
     HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
     String extractionScript = "git clone something.git";
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-ConnectorDisconnectHandler"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"),
         "autoscalar",
@@ -2142,7 +2142,7 @@ public class TasStepHelperTest extends CategoryTest {
     InlineStoreConfig inlineStoreConfig =
         InlineStoreConfig.builder().content(ParameterField.createValueField(COMMAND_SCRIPT)).build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest"), "git-connector"), "tas",
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest"), "git-ConnectorDisconnectHandler"), "tas",
             asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"));
     doReturn(
@@ -2205,7 +2205,7 @@ public class TasStepHelperTest extends CategoryTest {
     InlineStoreConfig inlineStoreConfig =
         InlineStoreConfig.builder().content(ParameterField.createValueField(COMMAND_SCRIPT_WITHOUT_REPOROOT)).build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/manifest.yml"), "git-connector"),
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/manifest.yml"), "git-ConnectorDisconnectHandler"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"));
     doReturn(
@@ -2303,7 +2303,7 @@ public class TasStepHelperTest extends CategoryTest {
             .shouldExecuteGitStoreFetch(true)
             .varsManifestOutcomeList(new ArrayList<>())
             .autoScalerManifestOutcome(getAutoScalarManifestOutcome(
-                1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-connector"), "autoScalarOverride"))
+                1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-ConnectorDisconnectHandler"), "autoScalarOverride"))
             .maxManifestOrder(1)
             .localStoreFileMapContents(localStoreFileMapContents)
             .build();

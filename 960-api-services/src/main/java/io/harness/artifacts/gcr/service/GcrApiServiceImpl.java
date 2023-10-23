@@ -77,7 +77,7 @@ public class GcrApiServiceImpl implements GcrApiService {
   private static final int TIMEOUT = 60; // TODO:: read from config
   public static final int RETRIES = 10; // TODO:: read from config
   String ERROR_MESSAGE = "There was an error reaching the Google container registry";
-  String CONNECTION_ERROR_MESSAGE = "The connector or the artifact source may not be setup correctly.";
+  String CONNECTION_ERROR_MESSAGE = "The ConnectorDisconnectHandler or the artifact source may not be setup correctly.";
   private static final String COULD_NOT_FETCH_IMAGE_MANIFEST = "Could not fetch image manifest";
 
   public Retry retry;

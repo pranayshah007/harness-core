@@ -55,7 +55,7 @@ public class ContainerStepImageUtils {
       url = new URL(registryUrl);
     } catch (MalformedURLException e) {
       throw new CIStageExecutionException(
-          format("Malformed registryUrl %s in docker connector id: %s", registryUrl, connectorId));
+          format("Malformed registryUrl %s in docker ConnectorDisconnectHandler id: %s", registryUrl, connectorId));
     }
 
     String registryHostName = url.getHost();

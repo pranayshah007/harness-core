@@ -21,7 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "TasManualCredentialKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.tasconnector.TasManualCredential")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.tasconnector.TasManualCredential")
 public class TasManualCredential implements TasCredential {
   String userName;
   String endpointUrl;

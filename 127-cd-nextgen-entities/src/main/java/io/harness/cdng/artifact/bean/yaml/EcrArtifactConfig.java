@@ -54,7 +54,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig")
 public class EcrArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * AWS connector to connect to Google Container Registry.
+   * AWS ConnectorDisconnectHandler to connect to Google Container Registry.
    */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
   /**

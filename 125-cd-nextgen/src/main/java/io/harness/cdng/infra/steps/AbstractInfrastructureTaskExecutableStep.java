@@ -687,7 +687,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
@@ -695,7 +695,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.SERVERLESS_AWS_LAMBDA.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -703,7 +703,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.GCP.name()));
       }
@@ -711,42 +711,42 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
 
     if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.SPOT.name()));
     }
 
     if (InfrastructureKind.ASG.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AWS.name()));
     }
 
     if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -754,7 +754,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }
@@ -762,14 +762,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AWS.name()));
     }
 
     if (InfrastructureKind.KUBERNETES_AWS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+        throw new InvalidRequestException(format("Invalid ConnectorDisconnectHandler type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
       }

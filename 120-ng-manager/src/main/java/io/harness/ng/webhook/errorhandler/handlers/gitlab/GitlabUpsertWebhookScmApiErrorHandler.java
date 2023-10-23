@@ -27,12 +27,12 @@ public class GitlabUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler
     switch (statusCode) {
       case 401:
         throw new ScmUnauthorizedException(
-            String.format("The credentials provided in the Gitlab connector %s are invalid or have expired. ",
+            String.format("The credentials provided in the Gitlab ConnectorDisconnectHandler %s are invalid or have expired. ",
                 errorMetadata.getConnectorRef())
             + errorMessage);
       case 403:
         throw new ScmBadRequestException(String.format(
-            "Please check if webhook read write permission is given to token used in connector %s. " + errorMessage,
+            "Please check if webhook read write permission is given to token used in ConnectorDisconnectHandler %s. " + errorMessage,
             errorMetadata.getConnectorRef()));
       case 404:
         throw new ScmBadRequestException(

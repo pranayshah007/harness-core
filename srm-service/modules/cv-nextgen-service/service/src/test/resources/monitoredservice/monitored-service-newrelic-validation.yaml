@@ -47,7 +47,7 @@ monitoredService:
           metricPacks:
             - identifier: "Performance"
   variables:
-    - name: "connector"
+    - name: "ConnectorDisconnectHandler"
       type: "String"
       value: "NewRelic"
     - name: "query"

@@ -30,5 +30,5 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(DX)
 @Schema(name = "Connector", description = "This is the view of Connector entity as defined in Harness.")
 public class ConnectorDTO implements YamlDTO {
-  @JsonProperty("connector") @Valid ConnectorInfoDTO connectorInfo;
+  @JsonProperty("ConnectorDisconnectHandler") @Valid ConnectorInfoDTO connectorInfo;
 }

@@ -254,11 +254,11 @@ public class GovernanceRuleResource {
         log.error("For rule enforcement setting {}: no rules exists in mongo. Nothing to enqueue", ruleEnforcementUuid);
         return ResponseDTO.newResponse(GovernanceEnqueueResponseDTO.builder().ruleExecutionId(null).build());
       }
-      // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
+      // Step-3 Figure out roleArn and externalId from the ConnectorDisconnectHandler listv2 api call for all target accounts.
       Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
           accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
       log.info(
-          "For rule enforcement setting {}: Got connector data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
+          "For rule enforcement setting {}: Got ConnectorDisconnectHandler data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
 
       // Step-4 Enqueue in faktory
       for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
@@ -599,7 +599,7 @@ public class GovernanceRuleResource {
   public List<ConnectorResponseDTO>
   listV2(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @Parameter(description = "View governance connector list") @QueryParam("view") boolean view,
+      @Parameter(description = "View governance ConnectorDisconnectHandler list") @QueryParam("view") boolean view,
       @QueryParam("connectorType") ConnectorType connectorType) {
     List<ConnectorType> connectorTypes = new ArrayList<>();
     if (connectorType == null) {

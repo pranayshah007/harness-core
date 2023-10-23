@@ -72,7 +72,7 @@ public class CIProvisionResource {
   }
 
   @POST
-  @Path("create-scm-connector")
+  @Path("create-scm-ConnectorDisconnectHandler")
   @ApiOperation(value = "Creates default scm Connector", nickname = "createDefaultScmConnector")
   public ResponseDTO<ScmConnectorResponse> createScmConnector(
       @RequestBody(required = true,

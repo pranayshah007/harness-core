@@ -97,11 +97,11 @@ public class GitResourceServiceHelper {
   }
 
   // This method needs to be here because if the repo was defined as an account repo, the repo url can be
-  // https://github.com/orgname/ or https://github.com/orgname and both are validated as correct by the connector
+  // https://github.com/orgname/ or https://github.com/orgname and both are validated as correct by the ConnectorDisconnectHandler
   // validator Same thing for repo name and /nameoftherepo and nameoftherepo
   private String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
     repoName = trimToEmpty(repoName);
-    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git ConnectorDisconnectHandler", repoName);
     String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
     String purgedRepoName = repoName.replaceAll("^/*", "");
     return purgedRepoUrl + "/" + purgedRepoName;

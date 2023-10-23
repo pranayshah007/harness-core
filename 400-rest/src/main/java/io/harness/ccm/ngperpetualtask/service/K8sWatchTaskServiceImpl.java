@@ -173,7 +173,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
     return builder.setTaskParams(perpetualTaskPack).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
   }
 
-  // TODO(UTSAV): Move it to sharable module, currently k8s connector validator also uses below implementation
+  // TODO(UTSAV): Move it to sharable module, currently k8s ConnectorDisconnectHandler validator also uses below implementation
   private ConnectorConfigDTO getConnectorConfig(@NotNull String scopedConnectorIdentifier, String accountIdentifier,
       String orgIdentifier, String projectIdentifier) {
     final String sanitizedScopedConnectorIdentifier = sanitizeK8sConnectorScope(scopedConnectorIdentifier);
@@ -186,12 +186,12 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
             connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier()));
 
     Preconditions.checkArgument(
-        connectorDTO.isPresent(), String.format("referenced connector %s not found", connectorRef.toString()));
+        connectorDTO.isPresent(), String.format("referenced ConnectorDisconnectHandler %s not found", connectorRef.toString()));
     return connectorDTO.get().getConnectorInfo().getConnectorConfig();
   }
 
   /**
-   * Should return Account scoped connector identifier when the scope is not explicitly defined,
+   * Should return Account scoped ConnectorDisconnectHandler identifier when the scope is not explicitly defined,
    * since by default an identifier without an explicit scope is assumed at Project level.
    */
   @NotNull

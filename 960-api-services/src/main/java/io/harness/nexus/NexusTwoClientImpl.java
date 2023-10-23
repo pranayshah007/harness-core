@@ -86,8 +86,8 @@ public class NexusTwoClientImpl {
     if (response.code() == 404) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Check if the Nexus URL & Nexus version are correct. Nexus URLs are different for different Nexus versions",
-          "The Nexus URL or the version for the connector is incorrect",
-          new InvalidArtifactServerException("Invalid Nexus connector details", USER));
+          "The Nexus URL or the version for the ConnectorDisconnectHandler is incorrect",
+          new InvalidArtifactServerException("Invalid Nexus ConnectorDisconnectHandler details", USER));
     }
     if (isSuccessful(response)) {
       log.info("Retrieving repositories success");

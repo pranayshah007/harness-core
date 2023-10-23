@@ -156,10 +156,10 @@ public class SetupUsageProducer {
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
-      log.info("Emitted idp connector event with id {} for entityReference {} and accountId {}", messageId,
+      log.info("Emitted idp ConnectorDisconnectHandler event with id {} for entityReference {} and accountId {}", messageId,
           entityReferenceDTO, accountIdentifier);
     } catch (EventsFrameworkDownException e) {
-      log.error("Failed to send event to events framework for idp connector {}, accountId {}, error {}",
+      log.error("Failed to send event to events framework for idp ConnectorDisconnectHandler {}, accountId {}, error {}",
           idpConnectorIdentifier, accountIdentifier, e.getMessage(), e);
     }
   }
@@ -183,10 +183,10 @@ public class SetupUsageProducer {
                   EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
-      log.info("Emitted delete idp connector event with id {} for entityReference {} and accountId {}", messageId,
+      log.info("Emitted delete idp ConnectorDisconnectHandler event with id {} for entityReference {} and accountId {}", messageId,
           entityReferenceDTO, accountIdentifier);
     } catch (EventsFrameworkDownException e) {
-      log.error("Failed to send event to events framework for delete idp connector {}, accountId: {}, error {}",
+      log.error("Failed to send event to events framework for delete idp ConnectorDisconnectHandler {}, accountId: {}, error {}",
           idpConnectorIdentifier, accountIdentifier, e.getMessage(), e);
     }
   }

@@ -55,7 +55,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig")
 public class AzureArtifactsConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * Azure Artifacts connector.
+   * Azure Artifacts ConnectorDisconnectHandler.
    */
   @NotNull
   @NotEmpty

@@ -17,12 +17,12 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class ScmErrorHints {
   public static final String INVALID_CREDENTIALS =
-      "Please check if your Azure credentials in connector<CONNECTOR> are valid.";
+      "Please check if your Azure credentials in ConnectorDisconnectHandler<CONNECTOR> are valid.";
   public static final String REPO_NOT_FOUND = "Please check if the requested Azure repository<REPO> exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / Azure repo name<REPO> if they exist or not.";
   public static final String MISSING_PERMISSION_CREDS_HINTS =
-      "Please provide the token with correct permissions in the Azure connector<CONNECTOR>.";
+      "Please provide the token with correct permissions in the Azure ConnectorDisconnectHandler<CONNECTOR>.";
   public static final String WRONG_REPO_OR_BRANCH =
       "Please check if the provided branch<BRANCH> or the Azure repo name<REPO> are valid.";
 }

@@ -84,7 +84,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         BillingExportSpecDTO billingExportSpec = ceAzureConnectorDTO.getBillingExportSpec();
         if (billingExportSpec == null) {
-          log.error("No billing export spec found for this connector {}", connectorIdentifier);
+          log.error("No billing export spec found for this ConnectorDisconnectHandler {}", connectorIdentifier);
           return ConnectorValidationResult.builder()
               .status(ConnectivityStatus.FAILURE)
               .errors(ImmutableList.of(
@@ -93,7 +93,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
                       .message(
                           "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
                       .build()))
-              .errorSummary("Invalid connector configuration")
+              .errorSummary("Invalid ConnectorDisconnectHandler configuration")
               .testedAt(Instant.now().toEpochMilli())
               .build();
         }
@@ -166,7 +166,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               ErrorDetail.builder()
                   .code(ex.getStatusCode())
                   .reason(ex.getMessage())
-                  .message("Review the billing export settings in your Azure account and in CCM connector."
+                  .message("Review the billing export settings in your Azure account and in CCM ConnectorDisconnectHandler."
                       + " For more information, refer to the documentation.")
                   .build()))
           .errorSummary("Exception while validating storage account details")
@@ -226,7 +226,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       }
     }
 
-    // Check for data at destination only when 24 hrs have elapsed since connector last modified at
+    // Check for data at destination only when 24 hrs have elapsed since ConnectorDisconnectHandler last modified at
     if (connectorResponseDTO.getCreatedAt() < oneDayOld) {
       if (featuresEnabled.contains(CEFeatures.BILLING)
           && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier, ConnectorType.CE_AZURE,
@@ -245,7 +245,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
             .build();
       }
     }
-    log.info("Validation successful for connector {}", connectorIdentifier);
+    log.info("Validation successful for ConnectorDisconnectHandler {}", connectorIdentifier);
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)
         .testedAt(Instant.now().toEpochMilli())

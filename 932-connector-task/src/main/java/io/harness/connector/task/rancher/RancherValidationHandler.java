@@ -25,7 +25,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-// Specific to Manager side connector validation
+// Specific to Manager side ConnectorDisconnectHandler validation
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class RancherValidationHandler implements ConnectorValidationHandler {
@@ -41,7 +41,7 @@ public class RancherValidationHandler implements ConnectorValidationHandler {
           (RancherTestConnectionTaskParams) connectorValidationParams;
       final RancherConnectorDTO connectorDTO = rancherTestConnectionTaskParams.getRancherConnectorDTO();
       final List<EncryptedDataDetail> encryptedDataDetails = rancherTestConnectionTaskParams.getEncryptedDataDetails();
-      log.info("Started performing rancher connector validation for accountId {} and connectorId {}", accountIdentifier,
+      log.info("Started performing rancher ConnectorDisconnectHandler validation for accountId {} and connectorId {}", accountIdentifier,
           connectorValidationParams.getConnectorName());
       return validateInternal(connectorDTO, encryptedDataDetails);
     } catch (Exception e) {

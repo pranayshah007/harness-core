@@ -196,7 +196,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
       if (gitConfigExp != null && !resolveGitTemplateExpression(gitConfigExp, context)) {
         return ExecutionResponse.builder()
             .executionStatus(FAILED)
-            .errorMessage("Git connector does not exist. Please update with an appropriate git connector.")
+            .errorMessage("Git ConnectorDisconnectHandler does not exist. Please update with an appropriate git ConnectorDisconnectHandler.")
             .build();
       }
     }

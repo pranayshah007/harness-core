@@ -756,7 +756,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     when(activityService.save(any())).thenReturn(Activity.builder().uuid(ACTIVITY_ID).build());
     assertThatThrownBy(() -> jiraCreateUpdateState.execute(context))
         .isInstanceOf(GeneralException.class)
-        .hasMessage("Jira connector doesn't exist");
+        .hasMessage("Jira ConnectorDisconnectHandler doesn't exist");
   }
 
   @Test

@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.helm.HttpHelmConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.helm.HttpHelmConnector")
 public class HttpHelmConnector extends Connector {
   String url;
   @NotEmpty HttpHelmAuthType authType;

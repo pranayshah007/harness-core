@@ -172,13 +172,13 @@ public class DefaultWebhookServiceImpl implements WebhookEventService {
         return (ScmConnector) connectorInfoDTO.getConnectorConfig();
       } else {
         throw new UnexpectedException(String.format(
-            "The connector with the  identifier [%s], accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s] is not an scm connector",
+            "The ConnectorDisconnectHandler with the  identifier [%s], accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s] is not an scm ConnectorDisconnectHandler",
             connectorInfoDTO.getIdentifier(), accountIdentifier, orgIdentifier, projectIdentifier));
       }
     }
     throw new ConnectorNotFoundException(
         String.format(
-            "No connector found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
+            "No ConnectorDisconnectHandler found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
             accountIdentifier, orgIdentifier, projectIdentifier, connectorRef),
         USER);
   }

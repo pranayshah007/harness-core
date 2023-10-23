@@ -124,7 +124,7 @@ public class GitCommandTaskHandler {
 
   public DelegateResponseData handleValidateTaskForGithubAppAuth(
       GithubConnectorDTO githubConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    log.info("validating github connector for github app authentication");
+    log.info("validating github ConnectorDisconnectHandler for github app authentication");
 
     githubConnectorDTO.getAuthentication().setCredentials(
         gitDecryptionHelper.decryptGitHubAppAuthenticationConfig(githubConnectorDTO, encryptedDataDetails));

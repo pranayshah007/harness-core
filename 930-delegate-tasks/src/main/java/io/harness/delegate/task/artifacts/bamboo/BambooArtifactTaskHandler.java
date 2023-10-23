@@ -124,7 +124,7 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
   private void checkIfEmptyBuilds(List<BuildDetails> buildDetails) {
     if (EmptyPredicate.isEmpty(buildDetails)) {
       throw NestedExceptionUtils.hintWithExplanationException(
-          "Check if the version exist & check if the right connector chosen for fetching the build.",
+          "Check if the version exist & check if the right ConnectorDisconnectHandler chosen for fetching the build.",
           "Version not found ", new InvalidRequestException("Version not found"));
     }
   }

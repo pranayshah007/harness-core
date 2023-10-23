@@ -225,7 +225,7 @@ public class MigratorExpressionUtils {
     context.put("pcf.inActiveAppName", "<+pcf.inActiveAppName>");
     context.put("pcf.oldAppGuid", "<+pcf.oldAppGuid>");
     context.put("pcf.oldAppRoutes[0]", "<+pcf.oldAppRoutes[0]>");
-    context.put("infra.pcf.cloudProvider.name", "<+infra.connector.name>");
+    context.put("infra.pcf.cloudProvider.name", "<+infra.ConnectorDisconnectHandler.name>");
     context.put("infra.pcf.organization", "<+infra.organization>");
     context.put("infra.pcf.space", "<+infra.space>");
     context.put("host.pcfElement.applicationId", "<+pcf.newAppGuid>");

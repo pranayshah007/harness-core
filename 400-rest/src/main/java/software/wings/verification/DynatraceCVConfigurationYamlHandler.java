@@ -37,7 +37,7 @@ public class DynatraceCVConfigurationYamlHandler
     yaml.setDynatraceServiceName("");
     yaml.setDynatraceServiceEntityId("");
     if (isEmpty(serviceList)) {
-      log.info("No dynatrace services found for the connector " + bean.getConnectorId());
+      log.info("No dynatrace services found for the ConnectorDisconnectHandler " + bean.getConnectorId());
     } else {
       if (isNotEmpty(bean.getServiceEntityId())) {
         for (DynaTraceApplication service : serviceList) {
@@ -77,7 +77,7 @@ public class DynatraceCVConfigurationYamlHandler
     bean.setStateType(StateType.DYNA_TRACE);
     List<DynaTraceApplication> serviceList = dynaTraceService.getServices(bean.getConnectorId(), true);
     if (isEmpty(serviceList)) {
-      throw new DataCollectionException("No dynatrace services found for the connector " + bean.getConnectorName());
+      throw new DataCollectionException("No dynatrace services found for the ConnectorDisconnectHandler " + bean.getConnectorName());
     }
 
     for (DynaTraceApplication service : serviceList) {

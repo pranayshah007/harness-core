@@ -34,7 +34,7 @@ public class GitStoreTypesTest extends CategoryTest {
   private static final ParameterField<String> BRANCH_OVERRIDE = ParameterField.createValueField("new_branch");
   private static final ParameterField<String> COMMIT = ParameterField.createValueField("commit");
   private static final ParameterField<String> COMMIT_OVERRIDE = ParameterField.createValueField("new_commit");
-  private static final ParameterField<String> CONNECTOR = ParameterField.createValueField("connector");
+  private static final ParameterField<String> CONNECTOR = ParameterField.createValueField("ConnectorDisconnectHandler");
   private static final ParameterField<String> CONNECTOR_OVERRIDE = ParameterField.createValueField("new_connector");
   private static final ParameterField<String> REPONAME = ParameterField.createValueField("reponame");
   private static final ParameterField<String> REPONAME_OVERRIDE = ParameterField.createValueField("new_reponame");

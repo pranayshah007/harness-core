@@ -14,7 +14,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication")
 public class AzureRepoSshAuthentication implements AzureRepoAuthentication {
   @NotEmpty String sshKeyRef;
 }

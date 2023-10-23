@@ -160,7 +160,7 @@ public class ImageSecretBuilder {
   private ImageCredentials getDockerCredentials(ConnectorDetails connectorDetails) {
     DockerConnectorDTO dockerConfig = (DockerConnectorDTO) connectorDetails.getConnectorConfig();
     if (dockerConfig.getAuth().getAuthType() == DockerAuthType.USER_PASSWORD) {
-      log.info("Decrypting docker username and password for  connector id:[{}], type:[{}]",
+      log.info("Decrypting docker username and password for  ConnectorDisconnectHandler id:[{}], type:[{}]",
           connectorDetails.getIdentifier(), connectorDetails.getConnectorType());
       DockerUserNamePasswordDTO dockerUserNamePasswordDTO = (DockerUserNamePasswordDTO) secretDecryptor.decrypt(
           dockerConfig.getAuth().getCredentials(), connectorDetails.getEncryptedDataDetails());
@@ -170,7 +170,7 @@ public class ImageSecretBuilder {
       if (dockerUserNamePasswordDTO == null || dockerUserNamePasswordDTO.getPasswordRef() == null
           || isEmpty(dockerUserNamePasswordDTO.getPasswordRef().getDecryptedValue())) {
         throw new InvalidArgumentsException(
-            format("Password should not be empty for docker connector: %s", connectorDetails.getIdentifier()),
+            format("Password should not be empty for docker ConnectorDisconnectHandler: %s", connectorDetails.getIdentifier()),
             WingsException.USER);
       }
       String username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
@@ -187,7 +187,7 @@ public class ImageSecretBuilder {
       return null;
     } else {
       throw new InvalidArgumentsException(
-          format("Invalid auth type: %s for docker connector: %s", dockerConfig.getAuth().getAuthType().toString(),
+          format("Invalid auth type: %s for docker ConnectorDisconnectHandler: %s", dockerConfig.getAuth().getAuthType().toString(),
               connectorDetails.getIdentifier()),
           WingsException.USER);
     }
@@ -198,7 +198,7 @@ public class ImageSecretBuilder {
     String[] imageParts = imageName.split(PATH_SEPARATOR);
     if (imageParts.length == 0 || !imageParts[0].endsWith(BASE_GCR_HOSTNAME)) {
       throw new InvalidArgumentsException(
-          format("Invalid image: %s for GCR connector. Please provide a fully qualified name in the format "
+          format("Invalid image: %s for GCR ConnectorDisconnectHandler. Please provide a fully qualified name in the format "
                   + "HOSTNAME/PROJECT-ID/IMAGE:TAG or HOSTNAME/PROJECT-ID/IMAGE@IMAGE_DIGEST",
               imageName),
           WingsException.USER);
@@ -209,17 +209,17 @@ public class ImageSecretBuilder {
     if (gcpConnectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
       return null;
     }
-    log.info("Decrypting GCP config for connector id:[{}], type:[{}]", connectorDetails.getIdentifier(),
+    log.info("Decrypting GCP config for ConnectorDisconnectHandler id:[{}], type:[{}]", connectorDetails.getIdentifier(),
         connectorDetails.getConnectorType());
     GcpManualDetailsDTO credentialConfig = (GcpManualDetailsDTO) secretDecryptor.decrypt(
         (GcpManualDetailsDTO) gcpConnectorConfig.getCredential().getConfig(),
         connectorDetails.getEncryptedDataDetails());
-    log.info("Decrypted GCP config for connector id:[{}], type:[{}]", connectorDetails.getIdentifier(),
+    log.info("Decrypted GCP config for ConnectorDisconnectHandler id:[{}], type:[{}]", connectorDetails.getIdentifier(),
         connectorDetails.getConnectorType());
     if (credentialConfig == null || credentialConfig.getSecretKeyRef() == null
         || credentialConfig.getSecretKeyRef().getDecryptedValue() == null) {
       throw new InvalidArgumentsException(
-          format("Credentials should not be empty for GCR connector: %s", connectorDetails.getIdentifier()),
+          format("Credentials should not be empty for GCR ConnectorDisconnectHandler: %s", connectorDetails.getIdentifier()),
           WingsException.USER);
     }
 
@@ -227,7 +227,7 @@ public class ImageSecretBuilder {
     String username = GCR_USERNAME;
     if (isEmpty(password)) {
       throw new InvalidArgumentsException(
-          format("Password should not be empty for gcp connector %s", connectorDetails.getIdentifier()),
+          format("Password should not be empty for gcp ConnectorDisconnectHandler %s", connectorDetails.getIdentifier()),
           WingsException.USER);
     }
     return ImageCredentials.builder().registryUrl(registryUrl).userName(username).password(password).build();
@@ -242,14 +242,14 @@ public class ImageSecretBuilder {
     String[] imageParts = imageName.split(PATH_SEPARATOR);
     if (imageParts.length == 0 || !imageParts[0].endsWith(BASE_ECR_HOSTNAME)) {
       throw new InvalidArgumentsException(
-          format("Invalid image: %s for ECR connector", imageName), WingsException.USER);
+          format("Invalid image: %s for ECR ConnectorDisconnectHandler", imageName), WingsException.USER);
     }
 
     String registry = imageParts[0];
     String[] registryParts = registry.split(DOT_SEPARATOR);
     if (registryParts.length != 6) {
       throw new InvalidArgumentsException(
-          format("Invalid image: %s for ECR connector", imageName), WingsException.USER);
+          format("Invalid image: %s for ECR ConnectorDisconnectHandler", imageName), WingsException.USER);
     }
     String account = registryParts[0];
     String region = registryParts[3];
@@ -285,19 +285,19 @@ public class ImageSecretBuilder {
   private void validateDecodedDockerCredentials(String username, String password, String connectorId) {
     if (isEmpty(username)) {
       throw new InvalidArgumentsException(
-          format("Username should not be empty for docker connector %s", connectorId), WingsException.USER);
+          format("Username should not be empty for docker ConnectorDisconnectHandler %s", connectorId), WingsException.USER);
     }
 
     if (isEmpty(password)) {
       throw new InvalidArgumentsException(
-          format("Password should not be empty for docker connector %s", connectorId), WingsException.USER);
+          format("Password should not be empty for docker ConnectorDisconnectHandler %s", connectorId), WingsException.USER);
     }
   }
 
   private void validateDecodedDockerRegistryUrl(String registryUrl, String connectorId) {
     if (isEmpty(registryUrl)) {
       throw new InvalidArgumentsException(
-          format("Registry url should not be empty for docker connector %s", connectorId), WingsException.USER);
+          format("Registry url should not be empty for docker ConnectorDisconnectHandler %s", connectorId), WingsException.USER);
     }
   }
 

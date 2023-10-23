@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class K8sEventCollectionBundle {
-  // this identifier should belong to io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO
+  // this identifier should belong to io.harness.delegate.beans.ConnectorDisconnectHandler.cek8s.CEKubernetesClusterConfigDTO
   @NotNull String connectorIdentifier;
   String orgIdentifier;
   String projectIdentifier;

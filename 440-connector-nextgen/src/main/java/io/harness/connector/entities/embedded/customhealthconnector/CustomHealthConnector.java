@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
-@TypeAlias("io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnector")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.customhealthconnector.CustomHealthConnector")
 public class CustomHealthConnector extends Connector {
   String baseURL;
   List<CustomHealthConnectorKeyAndValue> headers;

@@ -23,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @FieldNameConstants(innerTypeName = "GcpBillingExportDetailsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("io.harness.connector.entities.embedded.gcpccm.GcpBillingExportDetails")
+@TypeAlias("io.harness.ConnectorDisconnectHandler.entities.embedded.gcpccm.GcpBillingExportDetails")
 @OwnedBy(CE)
 public class GcpBillingExportDetails {
   @NotNull String datasetId;

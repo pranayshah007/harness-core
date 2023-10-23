@@ -505,7 +505,7 @@ public abstract class ConnectorProcessor {
 
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
-      log.info("Error in git push task for connector : [{}] with failure types [{}]",
+      log.info("Error in git push task for ConnectorDisconnectHandler : [{}] with failure types [{}]",
           errorNotifyResponseData.getErrorMessage(), errorNotifyResponseData.getFailureTypes());
       throw new UnexpectedException(errorNotifyResponseData.getErrorMessage());
     } else if (responseData instanceof RemoteMethodReturnValueData

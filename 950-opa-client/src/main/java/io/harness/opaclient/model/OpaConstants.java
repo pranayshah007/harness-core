@@ -16,7 +16,7 @@ import io.harness.annotations.dev.ProductModule;
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface OpaConstants {
-  String OPA_EVALUATION_TYPE_CONNECTOR = "connector";
+  String OPA_EVALUATION_TYPE_CONNECTOR = "ConnectorDisconnectHandler";
   String OPA_EVALUATION_TYPE_SECRET = "secret";
 
   String OPA_EVALUATION_ACTION_CONNECTOR_SAVE = "onsave";

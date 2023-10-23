@@ -205,7 +205,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
             .kind(HELM_CHART_OVERRIDE)
             .storeType(HelmSourceRepo)
             .envId("2")
-            .helmChartConfig(HelmChartConfig.builder().connectorId("env-connector").chartName("env-chart").build())
+            .helmChartConfig(HelmChartConfig.builder().connectorId("env-ConnectorDisconnectHandler").chartName("env-chart").build())
             .build();
     manifestMap.put(Environment, applicationManifestAtEnv);
     ApplicationManifest expectedManifest = applicationManifestAtService.cloneInternal();
@@ -215,10 +215,10 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
 
     applicationManifestAtService.setStoreType(HelmChartRepo);
     applicationManifestAtService.setHelmChartConfig(
-        HelmChartConfig.builder().connectorId("service-connector").chartName("service-chart").build());
+        HelmChartConfig.builder().connectorId("service-ConnectorDisconnectHandler").chartName("service-chart").build());
     expectedManifest = applicationManifestAtService.cloneInternal();
     expectedManifest.setHelmChartConfig(
-        HelmChartConfig.builder().connectorId("env-connector").chartName("service-chart").build());
+        HelmChartConfig.builder().connectorId("env-ConnectorDisconnectHandler").chartName("service-chart").build());
     manifestMap.get(Environment).setStoreType(HelmChartRepo);
     ApplicationManifest resultManifest = utils.getAppManifestByApplyingHelmChartOverride(context);
     assertThat(resultManifest.getHelmChartConfig()).isEqualTo(expectedManifest.getHelmChartConfig());
@@ -331,7 +331,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("service-chart")
                                                                    .basePath("/base")
@@ -342,7 +342,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
         ApplicationManifest.builder()
             .storeType(HelmChartRepo)
             .envId("envId")
-            .helmChartConfig(HelmChartConfig.builder().chartName("global-chart").connectorId("env-connector").build())
+            .helmChartConfig(HelmChartConfig.builder().chartName("global-chart").connectorId("env-ConnectorDisconnectHandler").build())
             .build());
     if (appManifestMap.containsKey(K8sValuesLocation.EnvironmentGlobal)
         && HelmChartRepo == serviceManifest.getStoreType()) {
@@ -350,7 +350,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
           serviceManifest, appManifestMap, EnvironmentGlobal);
     }
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("service-chart");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isEqualTo("/base");
@@ -365,7 +365,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("service-chart")
                                                                    .basePath("/base")
@@ -377,17 +377,17 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
             .storeType(HelmChartRepo)
             .envId("envId")
             .helmChartConfig(
-                HelmChartConfig.builder().chartName("global-chart").connectorId("global-connector").build())
+                HelmChartConfig.builder().chartName("global-chart").connectorId("global-ConnectorDisconnectHandler").build())
             .build());
     appManifestMap.put(Environment,
         ApplicationManifest.builder()
             .storeType(HelmChartRepo)
             .envId("envId")
-            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-connector").build())
+            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-ConnectorDisconnectHandler").build())
             .build());
     applicationManifestUtils.applyHelmChartOverride(serviceManifest, appManifestMap);
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("service-chart");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isEqualTo("/base");
@@ -402,7 +402,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("service-chart")
                                                                    .basePath("/base")
@@ -414,17 +414,17 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
             .storeType(HelmChartRepo)
             .envId("envId")
             .helmChartConfig(
-                HelmChartConfig.builder().chartName("global-chart").connectorId("global-connector").build())
+                HelmChartConfig.builder().chartName("global-chart").connectorId("global-ConnectorDisconnectHandler").build())
             .build());
     appManifestMap.put(Environment,
         ApplicationManifest.builder()
             .storeType(HelmChartRepo)
             .envId("envId")
-            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-connector").build())
+            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-ConnectorDisconnectHandler").build())
             .build());
     applicationManifestUtils.applyHelmChartOverride(serviceManifest, appManifestMap);
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("service-chart");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isEqualTo("/base");
@@ -439,7 +439,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("service-chart")
                                                                    .basePath("/base")
@@ -451,11 +451,11 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
             .storeType(HelmChartRepo)
             .envId("envId")
             .helmChartConfig(
-                HelmChartConfig.builder().chartName("global-chart").connectorId("global-connector").build())
+                HelmChartConfig.builder().chartName("global-chart").connectorId("global-ConnectorDisconnectHandler").build())
             .build());
     applicationManifestUtils.applyHelmChartOverride(serviceManifest, appManifestMap);
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("global-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("global-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("service-chart");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isEqualTo("/base");
@@ -470,7 +470,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("service-chart")
                                                                    .build())
@@ -480,11 +480,11 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
         ApplicationManifest.builder()
             .storeType(HelmChartRepo)
             .envId("envId")
-            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-connector").build())
+            .helmChartConfig(HelmChartConfig.builder().chartName("env-chart").connectorId("env-ConnectorDisconnectHandler").build())
             .build());
     applicationManifestUtils.applyHelmChartOverride(serviceManifest, appManifestMap);
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("env-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("service-chart");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isNullOrEmpty();
@@ -499,7 +499,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .serviceId("serviceId")
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("service-connector")
+                                                                   .connectorId("service-ConnectorDisconnectHandler")
                                                                    .chartVersion("1.1")
                                                                    .chartName("etcd")
                                                                    .basePath("/base")
@@ -512,7 +512,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
           serviceManifest, appManifestMap, EnvironmentGlobal);
     }
 
-    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("service-connector");
+    assertThat(serviceManifest.getHelmChartConfig().getConnectorId()).isEqualTo("service-ConnectorDisconnectHandler");
     assertThat(serviceManifest.getHelmChartConfig().getChartVersion()).isEqualTo("1.1");
     assertThat(serviceManifest.getHelmChartConfig().getChartName()).isEqualTo("etcd");
     assertThat(serviceManifest.getHelmChartConfig().getBasePath()).isEqualTo("/base");
@@ -529,7 +529,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .gitFileConfig(GitFileConfig.builder()
                                                                  .connectorName("git")
                                                                  .branch("master")
-                                                                 .connectorId("connector-id")
+                                                                 .connectorId("ConnectorDisconnectHandler-id")
                                                                  .filePath("a/b")
                                                                  .useBranch(true)
                                                                  .build())
@@ -541,7 +541,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
           serviceManifest, appManifestMap, EnvironmentGlobal);
     }
 
-    assertThat(serviceManifest.getGitFileConfig().getConnectorId()).isEqualTo("connector-id");
+    assertThat(serviceManifest.getGitFileConfig().getConnectorId()).isEqualTo("ConnectorDisconnectHandler-id");
     assertThat(serviceManifest.getGitFileConfig().getConnectorName()).isEqualTo("git");
     assertThat(serviceManifest.getGitFileConfig().getBranch()).isEqualTo("master");
     assertThat(serviceManifest.getGitFileConfig().isUseBranch()).isTrue();
@@ -557,7 +557,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                               .storeType(HelmChartRepo)
                                               .kind(K8S_MANIFEST)
                                               .helmChartConfig(HelmChartConfig.builder()
-                                                                   .connectorId("svc-connector")
+                                                                   .connectorId("svc-ConnectorDisconnectHandler")
                                                                    .chartVersion("3.1")
                                                                    .chartName("test-chart")
                                                                    .build())
@@ -568,7 +568,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
                                                  .storeType(HelmChartRepo)
                                                  .kind(HELM_CHART_OVERRIDE)
                                                  .helmChartConfig(HelmChartConfig.builder()
-                                                                      .connectorId("env-svc-connector")
+                                                                      .connectorId("env-svc-ConnectorDisconnectHandler")
                                                                       .chartVersion("4.1")
                                                                       .chartName("test-chart")
                                                                       .build())
@@ -578,7 +578,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
             .envId(ENV_ID)
             .storeType(HelmChartRepo)
             .kind(HELM_CHART_OVERRIDE)
-            .helmChartConfig(HelmChartConfig.builder().connectorId("env-connector").build())
+            .helmChartConfig(HelmChartConfig.builder().connectorId("env-ConnectorDisconnectHandler").build())
             .build();
 
     when(applicationManifestService.getByServiceId(APP_ID, SERVICE_ID, K8S_MANIFEST)).thenReturn(serviceManifest);

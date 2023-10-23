@@ -96,7 +96,7 @@ public class CCMConnectorDetailsServiceImpl implements CCMConnectorDetailsServic
       AbstractCEConnectorValidator ceConnectorValidator = ceConnectorValidatorFactory.getValidator(connectorType);
       ConnectorValidationResult validationResult = null;
       if (ceConnectorValidator != null) {
-        log.info("First connector dto {}", connector);
+        log.info("First ConnectorDisconnectHandler dto {}", connector);
         validationResult = ceConnectorValidator.validate(connector, accountId);
       }
 
