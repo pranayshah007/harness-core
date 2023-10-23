@@ -16,7 +16,8 @@ ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
 
 RUN chmod +x \
-    /app/build/feature_build.sh
+    /app/build/feature_build.sh \
+    && /app/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
