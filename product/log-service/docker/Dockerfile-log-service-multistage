@@ -8,9 +8,9 @@ FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
-COPY . /app/product
+COPY . /app
 
-WORKDIR /app/product
+WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
