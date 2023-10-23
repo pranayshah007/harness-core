@@ -188,6 +188,6 @@ public class ResourceGroupModule extends AbstractModule {
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
     install(new ProxyApiKeyClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCode().getBaseUrl()).build(),
-        resourceClients.getFfService().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+        resourceClients.getFfService().getBaseUrl(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }
 }
