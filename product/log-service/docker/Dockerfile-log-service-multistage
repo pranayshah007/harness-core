@@ -4,25 +4,19 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
-RUN cd /harness
+FROM golang:1.20-bullseye as builder
 RUN mkdir -p /app
 ARG GCP_KEY
-ENV SERVICE_NAME="log-service"
+ENV SERVICE_NAME="product/log-service"
 COPY . /app
 
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
-CMD sleep 100000
-
-CMD pwd
-
-CMD sleep 100000
 
 RUN chmod +x \
-    /log-service/build/feature_build.sh
+    /app/build/feature_build.sh
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
