@@ -27,8 +27,8 @@ public class ErrorTrackingNotificationRuleUtilsTest {
   public void getSingleEventStatusMessageTest() {
     List<ErrorTrackingEventStatus> errorTrackingEventStatus = new ArrayList<>();
     errorTrackingEventStatus.add(ErrorTrackingEventStatus.NEW_EVENTS);
-    final ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent event =
-        ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent.builder()
+    final ErrorTrackingNotificationRuleUtils.AggregatedEvents event =
+        ErrorTrackingNotificationRuleUtils.AggregatedEvents.builder()
             .version("V1.0")
             .errorTrackingEventStatus(errorTrackingEventStatus)
             .newCount(12)
@@ -52,8 +52,8 @@ public class ErrorTrackingNotificationRuleUtilsTest {
   public void getCriticalEventStatusMessageTest() {
     List<ErrorTrackingEventStatus> errorTrackingEventStatus = new ArrayList<>();
     errorTrackingEventStatus.add(ErrorTrackingEventStatus.CRITICAL_EVENTS);
-    final ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent event =
-        ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent.builder()
+    final ErrorTrackingNotificationRuleUtils.AggregatedEvents event =
+        ErrorTrackingNotificationRuleUtils.AggregatedEvents.builder()
             .version("V1.0")
             .errorTrackingEventStatus(errorTrackingEventStatus)
             .newCount(12)
@@ -77,8 +77,8 @@ public class ErrorTrackingNotificationRuleUtilsTest {
   @Category(UnitTests.class)
   public void getAllEventStatusMessageTest() {
     final List<ErrorTrackingEventStatus> errorTrackingEventStatus = Arrays.asList(ErrorTrackingEventStatus.values());
-    final ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent event =
-        ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent.builder()
+    final ErrorTrackingNotificationRuleUtils.AggregatedEvents event =
+        ErrorTrackingNotificationRuleUtils.AggregatedEvents.builder()
             .version("V1.0")
             .errorTrackingEventStatus(errorTrackingEventStatus)
             .newCount(11)
@@ -111,8 +111,8 @@ public class ErrorTrackingNotificationRuleUtilsTest {
   @Category(UnitTests.class)
   public void getAllEventStatusMessageNoEventsTest() {
     final List<ErrorTrackingEventStatus> errorTrackingEventStatus = Arrays.asList(ErrorTrackingEventStatus.values());
-    final ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent event =
-        ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent.builder()
+    final ErrorTrackingNotificationRuleUtils.AggregatedEvents event =
+        ErrorTrackingNotificationRuleUtils.AggregatedEvents.builder()
             .version("V2.0")
             .errorTrackingEventStatus(errorTrackingEventStatus)
             .newCount(0)
