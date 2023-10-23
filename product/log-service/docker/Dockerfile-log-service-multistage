@@ -5,6 +5,7 @@
 
 # To be used when building in CIE
 FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
+RUN cd /harness
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
@@ -14,12 +15,11 @@ WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
+CMD sleep 100000
 
-CMD echo $pwd
+CMD pwd
 
-CMD sleep 1000
-
-
+CMD sleep 100000
 
 RUN chmod +x \
     /log-service/build/feature_build.sh
