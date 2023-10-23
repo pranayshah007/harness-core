@@ -504,7 +504,6 @@ public enum FeatureName {
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   ON_NEW_ARTIFACT_TRIGGER_WITH_LAST_COLLECTED_FILTER,
   OPA_FF_GOVERNANCE,
-  OPA_GIT_GOVERNANCE,
   OPA_PIPELINE_GOVERNANCE,
   OPTIMIZED_GIT_FETCH_FILES,
   OPTIMIZED_TF_PLAN,
