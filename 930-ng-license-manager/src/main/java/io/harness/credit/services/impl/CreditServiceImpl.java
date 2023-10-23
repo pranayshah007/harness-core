@@ -16,6 +16,7 @@ import io.harness.credit.entities.Credit;
 import io.harness.credit.mappers.CreditObjectConverter;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.utils.CreditStatus;
+import io.harness.exception.InvalidRequestException;
 import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
@@ -23,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(GTM)
 public class CreditServiceImpl implements CreditService {
   private final CreditObjectConverter creditObjectConverter;
@@ -71,6 +74,13 @@ public class CreditServiceImpl implements CreditService {
 
   @Override
   public CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO) {
+    if (!accountIdentifier.equals(creditDTO.getAccountIdentifier())) {
+      String errorMessage =
+          String.format("AccountIdentifier: [%s] did not match with the Credit information", accountIdentifier);
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
     Credit credit = creditObjectConverter.toEntity(creditDTO);
     credit.setAccountIdentifier(accountIdentifier);
     Credit savedCredit = creditRepository.save(credit);

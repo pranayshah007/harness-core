@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: ami-ensure-encrypted
+cloudProvider: AWS
+resourceType: ami
+description: Ensure all ami are encrypted by copying and encrypting them with an encryption key
+rulesYamlPath: ../ami-ensure-encrypted.yml

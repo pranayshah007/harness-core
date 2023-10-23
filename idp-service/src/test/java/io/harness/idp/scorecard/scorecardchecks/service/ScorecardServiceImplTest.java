@@ -32,6 +32,7 @@ import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecardchecks.repositories.ScorecardRepository;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
@@ -53,6 +55,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -65,6 +70,10 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Mock BackstageResourceClient backstageResourceClient;
   @Mock Call<Object> call;
   @Mock ObjectMapper objectMapper;
+
+  @Mock TransactionTemplate transactionTemplate;
+
+  @Mock OutboxService outboxService;
   private static final String ACCOUNT_ID = "123";
   private static final String SCORECARD_ID = "service_maturity";
   private static final String SCORECARD_NAME = "Service Maturity";
@@ -74,11 +83,15 @@ public class ScorecardServiceImplTest extends CategoryTest {
   private static final String CATALOG_CHECK_ID = "catalog_checks";
   private static final String SAMPLE_CHECK_ID = "sample_check";
 
+  private static final String TEST_CHECK_IDENTIFIER = "test-check-identifier";
+  private static final boolean TEST_CHECK_IS_CUSTOM = false;
+  private static final double TEST_CHECK_WRIGHT = 1.0;
+
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    scorecardServiceImpl =
-        new ScorecardServiceImpl(scorecardRepository, checkService, setupUsageProducer, backstageResourceClient);
+    scorecardServiceImpl = new ScorecardServiceImpl(scorecardRepository, checkService, setupUsageProducer,
+        backstageResourceClient, transactionTemplate, outboxService);
   }
 
   @Test
@@ -154,8 +167,13 @@ public class ScorecardServiceImplTest extends CategoryTest {
     List<CheckEntity> checkEntities = new ArrayList<>(getCheckEntities());
     checkEntities.add(
         CheckEntity.builder().accountIdentifier(ACCOUNT_ID).identifier(SAMPLE_CHECK_ID).isCustom(true).build());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
-    when(scorecardRepository.saveOrUpdate(any())).thenReturn(ScorecardEntity.builder().build());
+    when(scorecardRepository.saveOrUpdate(any()))
+        .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
     doNothing().when(setupUsageProducer).publishScorecardSetupUsage(request, ACCOUNT_ID);
     assertThatCode(() -> scorecardServiceImpl.saveScorecard(request, ACCOUNT_ID)).doesNotThrowAnyException();
   }
@@ -168,8 +186,15 @@ public class ScorecardServiceImplTest extends CategoryTest {
     List<CheckEntity> checkEntities = new ArrayList<>(getCheckEntities());
     checkEntities.add(
         CheckEntity.builder().accountIdentifier(ACCOUNT_ID).identifier(SAMPLE_CHECK_ID).isCustom(true).build());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(scorecardRepository.findByAccountIdentifierAndIdentifier(any(), any()))
+        .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
     when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
-    when(scorecardRepository.update(any())).thenReturn(ScorecardEntity.builder().build());
+    when(scorecardRepository.update(any()))
+        .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
     doNothing().when(setupUsageProducer).deleteScorecardSetupUsage(ACCOUNT_ID, request.getScorecard().getIdentifier());
     doNothing().when(setupUsageProducer).publishScorecardSetupUsage(request, ACCOUNT_ID);
     assertThatCode(() -> scorecardServiceImpl.updateScorecard(request, ACCOUNT_ID)).doesNotThrowAnyException();
@@ -201,6 +226,16 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testDeleteScorecard() {
+    List<CheckEntity> checkEntities = new ArrayList<>(getCheckEntities());
+    checkEntities.add(
+        CheckEntity.builder().accountIdentifier(ACCOUNT_ID).identifier(SAMPLE_CHECK_ID).isCustom(true).build());
+    when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
+    when(scorecardRepository.findByAccountIdentifierAndIdentifier(any(), any()))
+        .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(getTestCheck())).build());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     DeleteResult deleteResult = DeleteResult.acknowledged(1);
     when(scorecardRepository.delete(ACCOUNT_ID, SCORECARD_ID)).thenReturn(deleteResult);
     doNothing().when(setupUsageProducer).deleteScorecardSetupUsage(ACCOUNT_ID, SCORECARD_ID);
@@ -211,6 +246,18 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testDeleteScorecardThrowsException() {
+    List<CheckEntity> checkEntities = new ArrayList<>(getCheckEntities());
+    checkEntities.add(
+        CheckEntity.builder().accountIdentifier(ACCOUNT_ID).identifier(SAMPLE_CHECK_ID).isCustom(true).build());
+    when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(checkEntities);
+    ScorecardEntity.Check check =
+        ScorecardEntity.Check.builder().weightage(1.0).isCustom(false).identifier("test").build();
+    when(scorecardRepository.findByAccountIdentifierAndIdentifier(any(), any()))
+        .thenReturn(ScorecardEntity.builder().checks(Collections.singletonList(check)).build());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     DeleteResult deleteResult = DeleteResult.acknowledged(0);
     when(scorecardRepository.delete(ACCOUNT_ID, SCORECARD_ID)).thenReturn(deleteResult);
     scorecardServiceImpl.deleteScorecard(ACCOUNT_ID, SCORECARD_ID);
@@ -333,5 +380,13 @@ public class ScorecardServiceImplTest extends CategoryTest {
       request.setChecks(List.of(scorecardChecks1, scorecardChecks2, scorecardChecks3));
     }
     return request;
+  }
+
+  private ScorecardEntity.Check getTestCheck() {
+    return ScorecardEntity.Check.builder()
+        .weightage(TEST_CHECK_WRIGHT)
+        .isCustom(TEST_CHECK_IS_CUSTOM)
+        .identifier(TEST_CHECK_IDENTIFIER)
+        .build();
   }
 }

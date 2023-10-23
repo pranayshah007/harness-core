@@ -7,9 +7,13 @@
 
 package io.harness.idp.app;
 
+import static io.harness.audit.ResourceTypeConstants.IDP_ALLOW_LIST;
 import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CATALOG_CONNECTOR;
+import static io.harness.audit.ResourceTypeConstants.IDP_CHECKS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
+import static io.harness.audit.ResourceTypeConstants.IDP_PROXY_HOST;
+import static io.harness.audit.ResourceTypeConstants.IDP_SCORECARDS;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
@@ -44,10 +48,14 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
-import io.harness.idp.audittrials.eventhandlers.AppConfigEventHandler;
-import io.harness.idp.audittrials.eventhandlers.BackstageSecretEnvEventHandler;
-import io.harness.idp.audittrials.eventhandlers.CatalogConnectorEventHandler;
-import io.harness.idp.audittrials.eventhandlers.IDPNextGenOutboxEventHandler;
+import io.harness.idp.audittrails.eventhandlers.AllowListEventHandler;
+import io.harness.idp.audittrails.eventhandlers.AppConfigEventHandler;
+import io.harness.idp.audittrails.eventhandlers.BackstageSecretEnvEventHandler;
+import io.harness.idp.audittrails.eventhandlers.CatalogConnectorEventHandler;
+import io.harness.idp.audittrails.eventhandlers.CheckEventHandler;
+import io.harness.idp.audittrails.eventhandlers.IDPNextGenOutboxEventHandler;
+import io.harness.idp.audittrails.eventhandlers.ProxyHostDetailsEventHandler;
+import io.harness.idp.audittrails.eventhandlers.ScorecardEventHandler;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
 import io.harness.idp.common.delegateselectors.cache.redis.DelegateSelectorsRedisCache;
@@ -76,6 +84,10 @@ import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
 import io.harness.idp.k8s.client.K8sClient;
+import io.harness.idp.license.usage.resources.LicenseUsageResourceApiImpl;
+import io.harness.idp.license.usage.service.IDPModuleLicenseUsage;
+import io.harness.idp.license.usage.service.impl.IDPLicenseUsageImpl;
+import io.harness.idp.license.usage.service.impl.IDPModuleLicenseUsageImpl;
 import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -133,6 +145,7 @@ import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
+import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedExecutorService;
@@ -174,6 +187,7 @@ import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.HarnessDataPointsApi;
 import io.harness.spec.server.idp.v1.KubernetesDataPointsApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
+import io.harness.spec.server.idp.v1.LicenseUsageResourceApi;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
@@ -445,6 +459,13 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+
+    bind(LicenseUsageInterface.class).to(IDPLicenseUsageImpl.class);
+    bind(IDPModuleLicenseUsage.class).to(IDPModuleLicenseUsageImpl.class);
+    bind(LicenseUsageResourceApi.class).to(LicenseUsageResourceApiImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("licenseUsageDailyCountJob"))
+        .toInstance(new ManagedScheduledExecutorService("licenseUsageDailyCountJob"));
   }
 
   private void registerOutboxEventHandlers() {
@@ -452,7 +473,11 @@ public class IdpModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_APP_CONFIGS).to(AppConfigEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CONFIG_ENV_VARIABLES).to(BackstageSecretEnvEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_PROXY_HOST).to(ProxyHostDetailsEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CATALOG_CONNECTOR).to(CatalogConnectorEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_SCORECARDS).to(ScorecardEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_CHECKS).to(CheckEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_ALLOW_LIST).to(AllowListEventHandler.class);
   }
 
   @Provides
@@ -668,5 +693,12 @@ public class IdpModule extends AbstractModule {
   @Named("enableAudit")
   public Boolean enableAudit() {
     return this.appConfig.isEnableAudit();
+  }
+
+  @Provides
+  @Singleton
+  @Named("internalAccounts")
+  public List<String> internalAccounts() {
+    return this.appConfig.getInternalAccounts();
   }
 }

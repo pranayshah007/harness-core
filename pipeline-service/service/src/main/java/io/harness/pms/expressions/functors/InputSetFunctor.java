@@ -10,11 +10,12 @@ package io.harness.pms.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.common.collect.Sets;
@@ -23,22 +24,21 @@ import java.util.HashMap;
 
 @OwnedBy(PIPELINE)
 public class InputSetFunctor implements LateBindingValue {
-  private final PmsExecutionSummaryService pmsExecutionService;
+  private final PlanExecutionMetadataService planExecutionMetadataService;
 
   private final Ambiance ambiance;
 
-  public InputSetFunctor(PmsExecutionSummaryService pmsExecutionService, Ambiance ambiance) {
-    this.pmsExecutionService = pmsExecutionService;
+  public InputSetFunctor(PlanExecutionMetadataService planExecutionMetadataService, Ambiance ambiance) {
+    this.planExecutionMetadataService = planExecutionMetadataService;
     this.ambiance = ambiance;
   }
   @Override
   public Object bind() {
     try {
-      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
-          pmsExecutionService.getPipelineExecutionSummaryWithProjections(ambiance.getPlanExecutionId(),
-              Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.inputSetYaml));
+      PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+          ambiance.getPlanExecutionId(), Sets.newHashSet(PlanExecutionMetadataKeys.inputSetYaml));
 
-      return YamlUtils.read(pipelineExecutionSummaryEntity.getInputSetYaml(), HashMap.class);
+      return YamlUtils.read(planExecutionMetadata.getInputSetYaml(), HashMap.class);
     } catch (IOException e) {
       throw new InvalidRequestException("Input Set Yaml could not be converted to a hashmap");
     }

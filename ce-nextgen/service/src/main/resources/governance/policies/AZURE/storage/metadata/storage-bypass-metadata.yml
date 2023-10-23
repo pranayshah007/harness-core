@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: storage-bypass
+cloudProvider: AZURE
+resourceType: azure.storage
+description: List storage accounts with enabled Azure Services, Metrics and Logging bypass rules
+rulesYamlPath: ../storage-bypass.yml

@@ -27,7 +27,8 @@ public class K8sReleaseDiffCalculator {
   final String DIFF_KEY_SVC_ID = "Service";
   final String DIFF_KEY_ENV_ID = "Environment";
   final String DIFF_KEY_INFRA_ID = "Infrastructure Definition";
-  final String ORIGINAL_OWNER_FORMAT = "Original release owners: %s: [%s], %s: [%s], %s: [%s]";
+  final String ORIGINAL_OWNER_FORMAT = "Original release owners: %s: [%s], %s: [%s], %s: [%s] %n";
+  final String CURRENT_OWNER_FORMAT = "Current release owners: %s: [%s], %s: [%s], %s: [%s] %n";
 
   public boolean releaseConflicts(
       ReleaseMetadata releaseMetadata, IK8sReleaseHistory releaseHistory, boolean inCanaryWorkflow) {
@@ -53,7 +54,9 @@ public class K8sReleaseDiffCalculator {
       sb.append(String.format(DIFF_FORMAT, DIFF_KEY_INFRA_ID, previous.getInfraId(), current.getInfraId()));
     }
     sb.append(String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, previous.getServiceId(), DIFF_KEY_ENV_ID,
-        previous.getEnvId(), DIFF_KEY_INFRA_ID, previous.getInfraId()));
+                  previous.getEnvId(), DIFF_KEY_INFRA_ID, previous.getInfraId()))
+        .append(String.format(CURRENT_OWNER_FORMAT, DIFF_KEY_SVC_ID, current.getServiceId(), DIFF_KEY_ENV_ID,
+            current.getEnvId(), DIFF_KEY_INFRA_ID, current.getInfraId()));
     return sb.toString();
   }
 

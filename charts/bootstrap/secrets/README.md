@@ -1,6 +1,6 @@
 # harness-secrets
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.0](https://img.shields.io/badge/AppVersion-0.0.0-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.0](https://img.shields.io/badge/AppVersion-0.0.0-informational?style=flat-square)
 
 A Helm chart to create Harness secrets
 
@@ -16,6 +16,9 @@ A Helm chart to create Harness secrets
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | clickhouse.adminPassword | string | `""` |  |
+| global.database.clickhouse.enabled | bool | `true` |  |
+| global.database.mongo.installed | bool | `true` |  |
+| global.database.postgres.installed | bool | `true` |  |
 | global.ngcustomdashboard.enabled | bool | `true` |  |
 | global.smtpCreateSecret.SMTP_HOST | string | `""` |  |
 | global.smtpCreateSecret.SMTP_PASSWORD | string | `""` |  |

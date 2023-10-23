@@ -35,6 +35,7 @@ public class TerraformStepConfigurationParameters implements TerraformStepConfig
   ParameterField<Boolean> skipTerraformRefresh;
   List<TerraformCliOptionFlag> commandFlags;
   TerraformEncryptOutput encryptOutput;
+  ParameterField<Boolean> skipStateStorage;
 
   @Override
   public TerraformStepConfigurationEnumInterface getType() {

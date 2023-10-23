@@ -7,8 +7,10 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
+import static io.harness.accesscontrol.roles.RoleMapper.toDTO;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
@@ -31,6 +33,7 @@ import io.harness.ModuleType;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
+import io.harness.accesscontrol.roles.api.RoleRequest;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleCreateEventV2;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
@@ -134,6 +137,8 @@ public class RoleEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -166,6 +171,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    RoleDTO roleDTO = toDTO(role);
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -242,6 +250,14 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
+  }
+
+  private void assertUpdateRoleAudit(AuditEntry auditEntry, RoleDTO oldRole, RoleDTO newRole) {
+    assertNotNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(oldRole).build()));
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(newRole).build()));
   }
 
   @Test
@@ -274,6 +290,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
   }
 
   @Test
@@ -307,6 +326,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
   }
 
   @Test
@@ -340,6 +360,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
   }
 
   @Test
@@ -432,6 +455,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
   }
 
   @Test
@@ -474,6 +498,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
   }
 
   @Test
@@ -571,7 +598,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
-    assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getOldYaml());
+    assertNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -603,7 +632,10 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
-    assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getOldYaml());
+    assertNull(auditEntry.getNewYaml());
+    RoleDTO deletedRoleDTO = toDTO(roleDeleteEvent.getRole());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(deletedRoleDTO).build()));
   }
 
   private void assertAuditEntry(String accountIdentifier, String orgIdentifier, String identifier,

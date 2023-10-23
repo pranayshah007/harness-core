@@ -10,6 +10,7 @@ package io.harness.cdng.k8s;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static java.lang.String.format;
 
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sApplyBaseStepInfo.K8sApplyBaseStepInfoKeys;
@@ -28,16 +30,18 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sApplyRequest.K8sApplyRequestBuilder;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -50,17 +54,22 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.inject.Inject;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac implements K8sStepExecutor {
+public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_APPLY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -70,6 +79,8 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
 
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
@@ -88,6 +99,8 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     if (isNotEmpty(k8sApplyStepParameters.getOverrides())) {
       k8sStepHelper.resolveManifestsConfigExpressions(ambiance, k8sApplyStepParameters.getOverrides());
     }
+
+    publishSecretRuntimeUsage(ambiance, k8sApplyStepParameters);
     validateFilePaths(k8sApplyStepParameters);
     validateManifestType(ambiance);
     return k8sStepHelper.startChainLink(this, ambiance, stepElementParameters);
@@ -119,7 +132,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return k8sStepHelper.executeNextLink(this, ambiance, stepElementParameters, passThroughData, responseSupplier);
@@ -180,8 +193,9 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepElementParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
     }
@@ -213,5 +227,37 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
       return K8sStepHelper.getFailureResponseBuilder(k8sTaskExecutionResponse, stepResponseBuilder).build();
     }
     return stepResponseBuilder.status(Status.SUCCEEDED).build();
+  }
+
+  private void publishSecretRuntimeUsage(Ambiance ambiance, K8sApplyStepParameters stepParameters) {
+    Set<VisitedSecretReference> secretReferences = new HashSet<>();
+    if (isNotEmpty(stepParameters.getOverrides())) {
+      stepParameters.getOverrides()
+          .stream()
+          .map(override -> entityReferenceExtractorUtils.extractReferredSecrets(ambiance, override))
+          .filter(EmptyPredicate::isNotEmpty)
+          .forEach(secretReferences::addAll);
+    }
+
+    if (stepParameters.getManifestSource() != null) {
+      Set<VisitedSecretReference> manifestSourceSecretRefs =
+          entityReferenceExtractorUtils.extractReferredSecrets(ambiance, stepParameters.getManifestSource());
+      if (isNotEmpty(manifestSourceSecretRefs)) {
+        secretReferences.addAll(manifestSourceSecretRefs);
+      }
+    }
+
+    if (isEmpty(secretReferences)) {
+      return;
+    }
+
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
   }
 }

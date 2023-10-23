@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-subnet-group-delete
+cloudProvider: AWS
+resourceType: rds-subnet-group
+description: Delete all RDS subnet groups that are not associated with any database instances
+rulesYamlPath: ../rds-subnet-group-delete.yml

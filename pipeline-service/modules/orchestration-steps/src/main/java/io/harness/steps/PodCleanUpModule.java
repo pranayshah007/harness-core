@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.threading.ThreadPool;
 import io.harness.threading.ThreadPoolConfig;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -22,26 +22,26 @@ import java.util.concurrent.ExecutorService;
 @OwnedBy(HarnessTeam.CDP)
 public class PodCleanUpModule extends AbstractModule {
   private static PodCleanUpModule instance;
-
+  private final MetricRegistry threadPoolMetricRegistry;
   private final ThreadPoolConfig podCleanUpThreadPoolConfig;
 
-  public static PodCleanUpModule getInstance(ThreadPoolConfig podCleanUpThreadPoolConfig) {
+  public static PodCleanUpModule getInstance(
+      ThreadPoolConfig podCleanUpThreadPoolConfig, MetricRegistry threadPoolMetricRegistry) {
     if (instance == null) {
-      instance = new PodCleanUpModule(podCleanUpThreadPoolConfig);
+      instance = new PodCleanUpModule(podCleanUpThreadPoolConfig, threadPoolMetricRegistry);
     }
     return instance;
   }
-
-  PodCleanUpModule(ThreadPoolConfig podCleanUpThreadPoolConfig) {
+  PodCleanUpModule(ThreadPoolConfig podCleanUpThreadPoolConfig, MetricRegistry threadPoolMetricRegistry) {
     this.podCleanUpThreadPoolConfig = podCleanUpThreadPoolConfig;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Provides
   @Singleton
   @Named("PodCleanUpExecutorService")
   public ExecutorService podCleanUpExecutorService() {
-    return ThreadPool.create(podCleanUpThreadPoolConfig.getCorePoolSize(), podCleanUpThreadPoolConfig.getMaxPoolSize(),
-        podCleanUpThreadPoolConfig.getIdleTime(), podCleanUpThreadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PodCleanUpExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(
+        podCleanUpThreadPoolConfig, "PodCleanUpExecutorService", threadPoolMetricRegistry);
   }
 }

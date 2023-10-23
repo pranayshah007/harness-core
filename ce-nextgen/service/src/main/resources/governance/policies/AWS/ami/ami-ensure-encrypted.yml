@@ -1,0 +1,11 @@
+policies:
+  - name: ami-ensure-encrypted
+    resource: ami
+    filters:
+      - type: value
+        key: encrypted
+        value: true
+    actions:
+      - type: copy
+        encrypt: true
+        key-id: 00000000-0000-0000-0000-000000000000

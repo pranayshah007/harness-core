@@ -28,6 +28,9 @@ import io.harness.idp.configmanager.jobs.ConfigPurgeJob;
 import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
+import io.harness.idp.events.consumers.IdpModuleLicenseUsageCaptureEventConsumer;
+import io.harness.idp.license.usage.jobs.LicenseUsageDailyCountJob;
+import io.harness.idp.license.usage.resources.IDPLicenseUsageResource;
 import io.harness.idp.migration.IdpMigrationProvider;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
@@ -36,8 +39,8 @@ import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
 import io.harness.idp.user.jobs.UserSyncJob;
+import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
-import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
@@ -198,6 +201,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerRequestContextFilter(environment);
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
+    environment.jersey().register(injector.getInstance(IdpServiceRequestInterceptor.class));
 
     //    initMetrics(injector);
     log.info("Starting app done");
@@ -213,6 +217,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(LicenseUsageDailyCountJob.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
@@ -225,6 +230,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+    controller.register(injector.getInstance(IdpModuleLicenseUsageCaptureEventConsumer.class), 2);
   }
 
   private void registerIterators(Injector injector, IteratorConfig iteratorConfig) {
@@ -251,6 +257,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
       environment.jersey().register(injector.getInstance(resource));
     }
+    environment.jersey().register(injector.getInstance(LicenseUsageResource.class));
+    environment.jersey().register(injector.getInstance(IDPLicenseUsageResource.class));
     environment.jersey().property(ServerProperties.RESOURCE_VALIDATION_DISABLE, true);
   }
 

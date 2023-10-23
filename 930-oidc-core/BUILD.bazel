@@ -3,15 +3,49 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 
 java_library(
     name = "module",
     visibility = ["//visibility:public"],
     exports = [
+        "//930-oidc-core/src/main/java/io/harness/oidc/accesstoken:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/config:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/dto:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/gcp:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/jwks:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/rsa:module",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "module",
+        "//:lombok",
+        "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
+        "//970-ng-commons/src/main/java/io/harness/rsa:module",
+        "//990-commons-test:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:io_jsonwebtoken_jjwt",
+        "@maven//:junit_junit",
+        "@maven//:org_jetbrains_annotations",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_zeroturnaround_zt_exec",
+        "@maven//:pl_pragmatists_JUnitParams",
+        "@maven//:xerces_xercesImpl",
+    ],
+)
+
+run_tests()

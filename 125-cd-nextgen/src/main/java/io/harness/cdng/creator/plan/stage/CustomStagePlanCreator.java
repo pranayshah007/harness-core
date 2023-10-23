@@ -69,6 +69,8 @@ import java.util.Set;
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
+  public static final String EMPTY_STRING = "";
+
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
 
@@ -154,15 +156,16 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     String specNextNodeUuid = executionFieldUuid;
 
     EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
-    boolean envNodeExists =
-        finalEnvironmentYamlV2 != null && ParameterField.isNotNull(finalEnvironmentYamlV2.getEnvironmentRef());
+    boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null
+        && !EMPTY_STRING.equals(finalEnvironmentYamlV2.getEnvironmentRef().getValue());
 
     String envNodeUuid;
     // Adding Env & Infra nodes
     if (envNodeExists) {
       String infraNodeUuid = null;
       if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())
-          || ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())) {
+          || (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())
+              && isNotEmpty(finalEnvironmentYamlV2.getInfrastructureDefinitions().getValue()))) {
         infraNodeUuid = addInfraNode(planCreationResponseMap, finalEnvironmentYamlV2, specField, ctx);
       }
       String envNextNodeUuid = EmptyPredicate.isNotEmpty(infraNodeUuid) ? infraNodeUuid : executionFieldUuid;

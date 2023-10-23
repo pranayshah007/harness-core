@@ -7,7 +7,6 @@
 
 package io.harness.polling.service.impl;
 import static io.harness.polling.bean.PollingType.ARTIFACT;
-import static io.harness.polling.bean.PollingType.MANIFEST;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.CodePulse;
@@ -60,21 +59,35 @@ public class PollingServiceImpl implements PollingService {
   @Inject @Getter private final Subject<PollingServiceObserver> subject = new Subject<>();
 
   @Override
-  public String save(PollingDocument pollingDocument) {
+  public PollingResponseDTO save(PollingDocument pollingDocument) {
+    List<String> lastPolled = new ArrayList<>();
+    Long lastPollingUpdate = null;
     validatePollingDocument(pollingDocument);
     PollingDocument savedPollingDoc = pollingRepository.addSubscribersToExistingPollingDoc(
         pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(), pollingDocument.getProjectIdentifier(),
         pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(),
         pollingDocument.getSignaturesLock());
+    if (savedPollingDoc != null) {
+      lastPollingUpdate = savedPollingDoc.getLastModifiedPolledResponseTime() == null
+          ? savedPollingDoc.getLastModifiedAt()
+          : savedPollingDoc.getLastModifiedPolledResponseTime();
+      lastPolled = getPolledKeys(savedPollingDoc);
+      return PollingResponseDTO.builder()
+          .isExistingPollingDoc(true)
+          .lastPolled(lastPolled)
+          .lastPollingUpdate(lastPollingUpdate)
+          .pollingDocId(savedPollingDoc.getUuid())
+          .build();
+    }
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
-    if (savedPollingDoc == null) {
+    else {
       // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
       // trigger might still be consuming that polling document
       pollingDocument.setUuid(null);
       savedPollingDoc = pollingRepository.save(pollingDocument);
       createPerpetualTask(savedPollingDoc);
+      return PollingResponseDTO.builder().isExistingPollingDoc(false).pollingDocId(savedPollingDoc.getUuid()).build();
     }
-    return savedPollingDoc.getUuid();
   }
 
   private void validatePollingDocument(PollingDocument pollingDocument) {
@@ -157,8 +170,7 @@ public class PollingServiceImpl implements PollingService {
 
     // Determine if update request
     if (existingPollingDoc == null) {
-      pollingDocId = save(pollingDocument);
-      return PollingResponseDTO.builder().isExistingPollingDoc(false).pollingDocId(pollingDocId).build();
+      return save(pollingDocument);
     }
 
     if (existingPollingDoc.getPollingInfo().equals(pollingDocument.getPollingInfo())) {
@@ -173,7 +185,7 @@ public class PollingServiceImpl implements PollingService {
       // Note: This is intentional. The pollingDocId sent to us is stale, we need to set it to null so that the save
       // call creates a new pollingDoc
       pollingDocument.setUuid(null);
-      pollingDocId = save(pollingDocument);
+      pollingDocId = save(pollingDocument).getPollingDocId();
     }
     return PollingResponseDTO.builder()
         .pollingDocId(pollingDocId)
@@ -187,31 +199,33 @@ public class PollingServiceImpl implements PollingService {
     if (pollingDocument.getPolledResponse() == null) {
       return Collections.emptyList();
     }
-    if (ARTIFACT.equals(pollingDocument.getPollingType())) {
-      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
-        return Collections.emptyList();
-      }
-      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
-          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
-        return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
-            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
-      } else {
+    int polledKeyCount = 0;
+    switch (pollingDocument.getPollingType()) {
+      case ARTIFACT:
+        if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+          return Collections.emptyList();
+        }
+        polledKeyCount = ((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size();
+        if (polledKeyCount > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+          return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+              .subList(polledKeyCount - MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS, polledKeyCount);
+        }
         return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
-      }
-    }
-    if (MANIFEST.equals(pollingDocument.getPollingType())) {
-      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
-        return Collections.emptyList();
-      }
-      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
-          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
-        return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
-            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
-      } else {
+
+      case MANIFEST:
+        if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+          return Collections.emptyList();
+        }
+        polledKeyCount = ((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size();
+        if (polledKeyCount > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+          return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+              .subList(polledKeyCount - MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS, polledKeyCount);
+        }
         return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
-      }
+
+      default:
+        return Collections.emptyList();
     }
-    return Collections.emptyList();
   }
 
   @Override

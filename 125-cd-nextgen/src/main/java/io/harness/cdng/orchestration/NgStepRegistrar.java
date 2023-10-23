@@ -104,7 +104,15 @@ import io.harness.cdng.k8s.K8sDryRunManifestStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
+import io.harness.cdng.k8s.asyncsteps.K8sApplyStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sBGStageScaleDownStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sBGSwapServicesStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sCanaryDeleteStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sCanaryStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sDeleteStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sScaleStepV2;
+import io.harness.cdng.k8s.ayncsteps.K8sRollingRollbackStepV2;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
@@ -370,6 +378,15 @@ public class NgStepRegistrar {
 
     // K8s ASYNC
     engineSteps.put(K8sBlueGreenStepV2.STEP_TYPE, K8sBlueGreenStepV2.class);
+    engineSteps.put(K8sBGSwapServicesStepV2.STEP_TYPE, K8sBGSwapServicesStepV2.class);
+    engineSteps.put(K8sScaleStepV2.STEP_TYPE, K8sScaleStepV2.class);
+    engineSteps.put(K8sCanaryStepV2.STEP_TYPE, K8sCanaryStepV2.class);
+    engineSteps.put(K8sCanaryDeleteStepV2.STEP_TYPE, K8sCanaryDeleteStepV2.class);
+    engineSteps.put(K8sRollingRollbackStepV2.STEP_TYPE, K8sRollingRollbackStepV2.class);
+    engineSteps.put(K8sBGStageScaleDownStepV2.STEP_TYPE, K8sBGStageScaleDownStepV2.class);
+
+    engineSteps.put(K8sDeleteStepV2.STEP_TYPE, K8sDeleteStepV2.class);
+    engineSteps.put(K8sApplyStepV2.STEP_TYPE, K8sApplyStepV2.class);
 
     return engineSteps;
   }

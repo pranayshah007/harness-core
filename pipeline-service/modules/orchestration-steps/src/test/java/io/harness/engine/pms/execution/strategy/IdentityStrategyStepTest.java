@@ -7,13 +7,13 @@
 
 package io.harness.engine.pms.execution.strategy;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -74,6 +74,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .setPlanId(generateUuid())
         .addLevels(Level.newBuilder().setStrategyMetadata(StrategyMetadata.newBuilder().build()).build())
         .build();
   }
@@ -91,12 +92,13 @@ public class IdentityStrategyStepTest extends CategoryTest {
     String PLAN_EXECUTION_ID = "PLAN_EXECUTION_ID";
     String ORIGINAL_PLAN_EXECUTION_ID = "originalPlanExecutionId";
     Ambiance oldAmbiance = buildAmbiance();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
-                            .setPlanExecutionId(PLAN_EXECUTION_ID)
-                            .build();
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
+                               .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
+                               .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+                               .setPlanId(generateUuid())
+                               .setPlanExecutionId(PLAN_EXECUTION_ID)
+                               .build();
     IdentityStepParameters stepParameters =
         IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build();
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
@@ -159,9 +161,9 @@ public class IdentityStrategyStepTest extends CategoryTest {
         .getWithFieldsIncluded(
             stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
-    doReturn(childNode1).when(planService).fetchNode(any(), eq("childId"));
-    doReturn(childNode2).when(planService).fetchNode(any(), eq("childId2"));
-    doReturn(childNode3).when(planService).fetchNode(any(), eq("childId3"));
+    doReturn(childNode1).when(planService).fetchNode(newAmbiance.getPlanId(), "childId");
+    doReturn(childNode2).when(planService).fetchNode(newAmbiance.getPlanId(), "childId2");
+    doReturn(childNode3).when(planService).fetchNode(newAmbiance.getPlanId(), "childId3");
 
     CloseableIterator<NodeExecution> iterator =
         OrchestrationStepsTestHelper.createCloseableIterator(childrenNodeExecutions.iterator());
@@ -173,7 +175,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
 
     ArgumentCaptor<List> identityNodesCaptor = ArgumentCaptor.forClass(List.class);
 
-    ChildrenExecutableResponse response = identityStrategyStep.obtainChildren(ambiance, stepParameters, null);
+    ChildrenExecutableResponse response = identityStrategyStep.obtainChildren(newAmbiance, stepParameters, null);
 
     assertEquals(response.getChildrenCount(), childrenNodeExecutions.size());
     assertEquals(response.getMaxConcurrency(), 0);
@@ -206,7 +208,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
             ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     doReturn(strategyNodeExecution).when(nodeExecutionService).get(originalNodeExecutionId);
-    response = identityStrategyStep.obtainChildren(ambiance, stepParameters, null);
+    response = identityStrategyStep.obtainChildren(newAmbiance, stepParameters, null);
     // -1 to exclude strategy node execution.
     assertEquals(response.getChildrenCount(), childrenNodeExecutions.size());
     assertEquals(response.getMaxConcurrency(), 2);
@@ -238,7 +240,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
             ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     doReturn(strategyNodeExecution).when(nodeExecutionService).get(originalNodeExecutionId);
-    response = identityStrategyStep.obtainChildren(ambiance, stepParameters, null);
+    response = identityStrategyStep.obtainChildren(newAmbiance, stepParameters, null);
     // -1 to exclude strategy node execution.
     assertEquals(response.getChildrenCount(), childrenNodeExecutions.size());
     assertEquals(response.getMaxConcurrency(), 4);

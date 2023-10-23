@@ -14,6 +14,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILE
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_INFRA;
+import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_OVERRIDES;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -167,7 +168,66 @@ public class SetupUsageHelper {
     }
   }
 
-  public void deleteServiceSetupUsages(@Valid SetupUsageOwnerEntity entity) {
+  public void publishOverridesEntitySetupUsage(
+      @Valid SetupUsageOwnerEntity ownerEntity, Set<EntityDetailProtoDTO> referredEntities, String overrideType) {
+    String accountId = ownerEntity.getAccountId();
+    EntityDetailProtoDTO referredByEntityDetail =
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(ownerEntity.getAccountId(),
+                ownerEntity.getOrgIdentifier(), ownerEntity.getProjectIdentifier(), ownerEntity.getIdentifier()))
+            .setType(ownerEntity.getType())
+            .setName(ownerEntity.getName())
+            .build();
+    Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
+    for (EntityDetailProtoDTO referredEntity : referredEntities) {
+      List<EntityDetailProtoDTO> entityDetailProtoDTOS =
+          referredEntityTypeToReferredEntities.getOrDefault(referredEntity.getType().name(), new ArrayList<>());
+      entityDetailProtoDTOS.add(referredEntity);
+      referredEntityTypeToReferredEntities.put(referredEntity.getType().name(), entityDetailProtoDTOS);
+    }
+
+    for (Map.Entry<String, List<EntityDetailProtoDTO>> entry : referredEntityTypeToReferredEntities.entrySet()) {
+      List<EntityDetailProtoDTO> entityDetailProtoDTOs = entry.getValue();
+      List<EntityDetailWithSetupUsageDetailProtoDTO> entityDetailWithSetupUsageDetailProtoDTOs = new ArrayList<>();
+      if (isNotEmpty(entityDetailProtoDTOs)) {
+        for (EntityDetailProtoDTO entityDetailProtoDTO : entityDetailProtoDTOs) {
+          entityDetailWithSetupUsageDetailProtoDTOs.add(
+              EntityDetailWithSetupUsageDetailProtoDTO.newBuilder()
+                  .setReferredEntity(entityDetailProtoDTO)
+                  .setType(ENTITY_REFERRED_BY_OVERRIDES.toString())
+                  .setOverridesDetail(
+                      EntityDetailWithSetupUsageDetailProtoDTO.OverridesDetailsSetupUsageDetailProtoDTO.newBuilder()
+                          .setIdentifier(ownerEntity.getIdentifier())
+                          .setOverrideType(overrideType)
+                          .setAccountId(ownerEntity.getAccountId())
+                          .setOrgId(ownerEntity.getOrgIdentifier())
+                          .setProjectId(ownerEntity.getProjectIdentifier())
+                          .build())
+                  .build());
+        }
+      }
+
+      EntitySetupUsageCreateV2DTO entityReferenceDTO =
+          EntitySetupUsageCreateV2DTO.newBuilder()
+              .setAccountIdentifier(accountId)
+              .setReferredByEntity(referredByEntityDetail)
+              .setDeleteOldReferredByRecords(true)
+              .addAllReferredEntityWithSetupUsageDetail(entityDetailWithSetupUsageDetailProtoDTOs)
+              .build();
+
+      String messageId = producer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of("accountId", accountId,
+                  EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+      log.info("Emitted override event with id {} for entityreference {} and accountId {}", messageId,
+          entityReferenceDTO, accountId);
+    }
+  }
+
+  public void deleteEntitySetupUsages(@Valid SetupUsageOwnerEntity entity) {
     EntityDetailProtoDTO entityDetail =
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
@@ -187,7 +247,7 @@ public class SetupUsageHelper {
                 EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
             .setData(entityReferenceDTO.toByteString())
             .build());
-    log.info("Emitted delete service event with id {} for entityreference {} and accountId {}", messageId,
+    log.info("Emitted delete {} event with id {} for entityreference {} and accountId {}", entity.getType(), messageId,
         entityReferenceDTO, entity.getAccountId());
   }
 

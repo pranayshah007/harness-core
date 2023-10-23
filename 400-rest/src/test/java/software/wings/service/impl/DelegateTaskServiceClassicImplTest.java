@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.JENNY;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
@@ -30,7 +29,6 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.cv.RateLimitExceededException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -253,8 +251,7 @@ public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
     String accountId = generateUuid();
     DelegateTask delegateTask = DelegateTask.builder().accountId(accountId).status(DelegateTask.Status.PARKED).build();
     when(delegateCache.getParkedTasksCount(accountId)).thenReturn(Integer.toUnsignedLong(5000));
-    assertThatExceptionOfType(RateLimitExceededException.class)
-        .isThrownBy(() -> delegateTaskServiceClassic.checkParkedTaskRateLimit(delegateTask));
+    assertThatCode(() -> delegateTaskServiceClassic.checkParkedTaskRateLimit(delegateTask)).doesNotThrowAnyException();
     // lower task count
     when(delegateCache.getParkedTasksCount(accountId)).thenReturn(Integer.toUnsignedLong(4000));
     assertThatCode(() -> delegateTaskServiceClassic.checkParkedTaskRateLimit(delegateTask)).doesNotThrowAnyException();

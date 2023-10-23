@@ -1,0 +1,59 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Storage/storageAccounts/StorageAccountId",
+  "name": "StorageAccountId",
+  "type": "Microsoft.Storage/storageAccounts",
+  "tags": {},
+  "location": "westeurope",
+  "sku": {
+    "name": "Standard_LRS",
+    "tier": "Standard"
+  },
+  "kind": "StorageV2",
+  "properties": {
+    "provisioningState": "Succeeded",
+    "primaryEndpoints": {
+      "blob": "https://StorageAccountId.blob.core.windows.net/",
+      "queue": "https://StorageAccountId.queue.core.windows.net/",
+      "table": "https://StorageAccountId.table.core.windows.net/",
+      "file": "https://StorageAccountId.file.core.windows.net/",
+      "web": "https://StorageAccountId.z6.web.core.windows.net/",
+      "dfs": "https://StorageAccountId.dfs.core.windows.net/"
+    },
+    "primaryLocation": "westeurope",
+    "statusOfPrimary": "available",
+    "creationTime": "2022-06-29T17:00:16.137099Z",
+    "keyCreationTime": {
+      "key1": "2022-06-29T17:00:16.277715Z",
+      "key2": "2022-06-29T17:00:16.277715Z"
+    },
+    "encryption": {
+      "services": {
+        "blob": {
+          "enabled": true,
+          "lastEnabledTime": "2022-06-29T17:00:16.277715Z",
+          "keyType": "Account"
+        },
+        "file": {
+          "enabled": true,
+          "lastEnabledTime": "2022-06-29T17:00:16.277715Z",
+          "keyType": "Account"
+        }
+      },
+      "keySource": "Microsoft.Storage",
+      "requireInfrastructureEncryption": false
+    },
+    "accessTier": "Cool",
+    "supportsHttpsTrafficOnly": true,
+    "networkAcls": {
+      "bypass": "AzureServices",
+      "virtualNetworkRules": [],
+      "ipRules": [],
+      "defaultAction": "Allow"
+    },
+    "privateEndpointConnections": [],
+    "allowBlobPublicAccess": true,
+    "minimumTlsVersion": "TLS1_2",
+    "allowSharedKeyAccess": true
+  },
+  "resourceGroup": "ResourceGroupId"
+}

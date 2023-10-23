@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.InputSetValidatorType.REGEX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -56,6 +58,7 @@ public class MergeHelper {
   public final Set<String> acceptAllChildrenKeys = new HashSet<>(
       Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
   public static final String PATH_SEP = "/";
+  public static final Pattern nonAsciiCharactersPattern = Pattern.compile("[^\\x00-\\x7F]");
 
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
@@ -387,7 +390,7 @@ public class MergeHelper {
 
   // Yaml Object Mapper can't handle emojis and non ascii characters
   public String removeNonASCII(String content) {
-    return content.replaceAll("[^\\x00-\\x7F]", "");
+    return nonAsciiCharactersPattern.matcher(content).replaceAll(EMPTY);
   }
 
   public String removeFQNs(String json, List<String> toBeRemovedFQNs) {

@@ -202,6 +202,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .skipColorLogs(featureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .providerCredentialDelegateInfo(
                 helper.getProviderCredentialDelegateInfo(configuration.getProviderCredential(), ambiance))
+            .skipStateStorage(ParameterFieldHelper.getBooleanParameterFieldValue(configuration.getSkipStateStorage()))
             .build();
 
     TaskData taskData =
@@ -252,10 +253,14 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       TerraformPlanOutcomeBuilder tfPlanOutcomeBuilder = TerraformPlanOutcome.builder();
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+
+      if (!ParameterFieldHelper.getBooleanParameterFieldValue(
+              planStepParameters.getConfiguration().getSkipStateStorage())) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
       tfPlanOutcomeBuilder.detailedExitCode(terraformTaskNGResponse.getDetailedExitCode());
 
       if (!planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()) {

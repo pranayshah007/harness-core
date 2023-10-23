@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -19,6 +20,7 @@ import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
@@ -70,6 +72,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDeta
 import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -580,7 +583,9 @@ public class TerraformStepHelper {
         .encryptedTfPlan(terraformTaskNGResponse.getEncryptedTfPlan())
         .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
         .planName(getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
-            planStepParameters.getProvisionerIdentifier().getValue()));
+            planStepParameters.getProvisionerIdentifier().getValue()))
+        .skipStateStorage(ParameterFieldHelper.getBooleanParameterFieldValue(
+            planStepParameters.getConfiguration().getSkipStateStorage()));
     String fullEntityId =
         generateFullIdentifier(getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     String inheritOutputName =
@@ -954,6 +959,7 @@ public class TerraformStepHelper {
             .workspace(inheritOutput.getWorkspace())
             .targets(inheritOutput.getTargets())
             .providerCredentialConfig(inheritOutput.getProviderCredentialConfig())
+            .skipStateStorage(inheritOutput.isSkipStateStorage())
             .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
@@ -1052,7 +1058,8 @@ public class TerraformStepHelper {
         .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .workspace(getParameterFieldValue(spec.getWorkspace()))
         .targets(getParameterFieldValue(spec.getTargets()))
-        .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()));
+        .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()))
+        .skipStateStorage(getBooleanParameterFieldValue(stepParameters.getConfiguration().getSkipStateStorage()));
     if (spec.getProviderCredential() != null) {
       builder.providerCredentialConfig(toTerraformProviderCredentialConfig(spec.getProviderCredential()));
     }
@@ -1750,9 +1757,15 @@ public class TerraformStepHelper {
                                        .fileStoreConfigDTO(fileStorageConfigDTO)
                                        .build());
               } else {
-                GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
-                    storeConfig, terraformPassThroughData.getFetchedCommitIdsMap().get(file.getIdentifier()))
-                                                          .toGitStoreConfigDTO();
+                GitStoreConfigDTO gitStoreConfigDTO;
+                String fetchedCommitId = getFetchedCommitId(terraformPassThroughData, file.getIdentifier());
+
+                if (isNotBlank(fetchedCommitId)) {
+                  gitStoreConfigDTO = getStoreConfigAtCommitId(storeConfig, fetchedCommitId).toGitStoreConfigDTO();
+                } else {
+                  GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig.cloneInternal();
+                  gitStoreConfigDTO = gitStoreConfig.toGitStoreConfigDTO();
+                }
 
                 varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
                                        .identifier(file.getIdentifier())
@@ -1766,6 +1779,29 @@ public class TerraformStepHelper {
       return varFileConfigs;
     }
     return Collections.emptyList();
+  }
+
+  @VisibleForTesting
+  protected String getFetchedCommitId(TerraformPassThroughData terraformPassThroughData, String fileIdentifier) {
+    String fetchedCommitId = null;
+    if (terraformPassThroughData.getFetchedCommitIdsMap() != null
+        && isNotEmpty(terraformPassThroughData.getFetchedCommitIdsMap()) && isNotBlank(fileIdentifier)) {
+      fetchedCommitId = terraformPassThroughData.getFetchedCommitIdsMap().get(fileIdentifier);
+    }
+
+    if (isNotBlank(fetchedCommitId)) {
+      return fetchedCommitId;
+    }
+
+    if (terraformPassThroughData.getGitVarFilesFromMultipleRepo() != null && isNotBlank(fileIdentifier)
+        && terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier) != null) {
+      FetchFilesResult gitFetchFilesResult =
+          terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier);
+      if (gitFetchFilesResult != null && gitFetchFilesResult.getCommitResult() != null) {
+        fetchedCommitId = gitFetchFilesResult.getCommitResult().getCommitId();
+      }
+    }
+    return fetchedCommitId;
   }
 
   public StepResponse handleStepExceptionFailure(StepExceptionPassThroughData stepExceptionPassThroughData) {

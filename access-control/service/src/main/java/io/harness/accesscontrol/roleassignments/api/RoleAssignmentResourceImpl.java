@@ -231,8 +231,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     List<String> userGroupsScopeIdentifiers = new ArrayList<>();
     if (principalFilter != null) {
       if (USER.equals(principalFilter.getType())) {
-        userGroups.addAll(
-            userGroupService.list(fromParams(harnessScopeParams).toString(), principalFilter.getIdentifier()));
+        userGroups.addAll(userGroupService.listUserGroupForUserInAccessibleScopes(
+            fromParams(harnessScopeParams).toString(), principalFilter.getIdentifier(), scopeFilter));
         userGroupsScopeIdentifiers.addAll(
             userGroups.stream()
                 .map(userGroup

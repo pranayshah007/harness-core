@@ -45,4 +45,5 @@ public class TerraformInheritOutput implements ExecutionSweepingOutput {
   EncryptedRecordData encryptedTfPlan;
   String planName;
   TerraformProviderCredentialConfig providerCredentialConfig;
+  boolean skipStateStorage;
 }

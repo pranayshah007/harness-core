@@ -60,7 +60,7 @@ public class ApprovalFunctor extends StepExpressionFunctor {
       newKey = "comments";
     }
 
-    return getFQN(newKey);
+    return getApprovalInputVariableFQN(newKey);
   }
 
   private String getFQN(String newKey) {

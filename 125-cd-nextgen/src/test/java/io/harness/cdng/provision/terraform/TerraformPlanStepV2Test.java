@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -229,6 +230,7 @@ public class TerraformPlanStepV2Test extends CategoryTest {
 
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
         StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);
+    planStepParameters.getConfiguration().setSkipStateStorage(ParameterField.createValueField(true));
 
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(planStepParameters).build();
 
@@ -279,6 +281,7 @@ public class TerraformPlanStepV2Test extends CategoryTest {
     assertThat(taskParameters.getTerraformCommandFlags().get("PLAN")).isEqualTo("-lock-timeout=0s");
     assertThat(taskParameters.getBackendConfig()).isEqualTo("back-content");
     assertThat(taskParameters.getConfigFile()).isNotNull();
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
     assertThat(((InlineTerraformVarFileInfo) taskParameters.getVarFileInfos().get(0)).getVarFileContent())
         .isEqualTo("var-file-inline");
 
@@ -763,6 +766,51 @@ public class TerraformPlanStepV2Test extends CategoryTest {
 
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper)
+        .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextSkipStateStorage() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformPlanStepParameters planStepParameters =
+        TerraformPlanStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("id"))
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .isTerraformCloudCli(ParameterField.createValueField(false))
+                               .command(TerraformPlanCommand.APPLY)
+                               .skipStateStorage(ParameterField.createValueField(true))
+                               .build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(planStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .detailedExitCode(2)
+                                                          .build();
+
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().hasGitFiles(false).hasS3Files(false).build();
+
+    StepResponse stepResponse = terraformPlanStepV2.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
+    assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+
+    verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), any());
+    verify(terraformStepHelper, times(0)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());

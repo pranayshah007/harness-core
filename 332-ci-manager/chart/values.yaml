@@ -97,7 +97,7 @@ securityImage:
   image:
     registry: docker.io
     repository: harness/sto-plugin
-    tag: 1.13.0
+    tag: 1.19.0
     digest: ""
     imagePullSecrets: []
 waitForInitContainer:
@@ -113,14 +113,14 @@ ci_images:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.16.22"
+      tag: "1.16.26"
       repository: harness/ci-addon
       imagePullSecrets: []
   lite_engine:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.16.22"
+      tag: "1.16.26"
       repository: harness/ci-lite-engine
       imagePullSecrets: []
   git_clone:
@@ -134,63 +134,63 @@ ci_images:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.7.5"
+      tag: "1.8.0"
       repository: plugins/kaniko
       imagePullSecrets: []
   kaniko_ecr:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.7.5"
+      tag: "1.8.0"
       repository: plugins/kaniko-ecr
       imagePullSecrets: []
   kaniko_gcr:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.7.5"
+      tag: "1.8.0"
       repository: plugins/kaniko-gcr
       imagePullSecrets: []
   kaniko_acr:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.7.5"
+      tag: "1.8.0"
       repository: plugins/kaniko-acr
       imagePullSecrets: []
   gcs_upload:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.4.1"
+      tag: "1.5.0"
       repository: plugins/gcs
       imagePullSecrets: []
   s3_upload:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.2.4"
+      tag: "1.2.7"
       repository: plugins/s3
       imagePullSecrets: []
   artifactory_upload:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.4.5"
+      tag: "1.4.7"
       repository: plugins/artifactory
       imagePullSecrets: []
   gcs_cache:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.5.12"
+      tag: "1.6.2"
       repository: plugins/cache
       imagePullSecrets: []
   s3_cache:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.5.12"
+      tag: "1.6.2"
       repository: plugins/cache
       imagePullSecrets: []
 stoServiceGlobalToken:

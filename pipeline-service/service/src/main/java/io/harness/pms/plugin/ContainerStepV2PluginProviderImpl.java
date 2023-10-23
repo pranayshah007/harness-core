@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plugin;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
@@ -35,6 +37,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
+import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.StepInfo;
@@ -54,6 +57,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
@@ -64,6 +68,8 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
       pluginInfoProviderServiceBlockingStubMap;
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject ContainerExecutionConfig containerExecutionConfig;
+
+  @Inject private ConnectorUtils connectorUtils;
 
   /**
    * Does the following:
@@ -95,15 +101,15 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
               .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
               .setAmbiance(ambiance)
               .build();
-      Map<String, StepInfo> stepInfoUuidToStepInfo =
-          entry.getValue().keySet().stream().collect(Collectors.toMap(StepInfo::getStepUuid, stepInfo -> stepInfo));
+      Map<String, StepInfo> requestIdToStepInfo = entry.getValue().keySet().stream().collect(
+          Collectors.toMap(this::getRequestIdForPluginCreation, stepInfo -> stepInfo));
       PluginCreationBatchResponse pluginCreationBatchResponse =
           pluginInfoProviderServiceBlockingStubMap.get(ModuleType.fromString(entry.getKey()))
               .getPluginInfosList(pluginCreationBatchRequest);
       for (Map.Entry<String, PluginCreationResponseList> response :
           pluginCreationBatchResponse.getRequestIdToResponseMap().entrySet()) {
-        stepInfoPluginCreationResponseListMap.put(stepInfoUuidToStepInfo.get(response.getKey()),
-            postProcessResponseList(initContainerV2StepInfo, response.getValue(), usedPorts));
+        stepInfoPluginCreationResponseListMap.put(requestIdToStepInfo.get(response.getKey()),
+            postProcessResponseList(initContainerV2StepInfo, response.getValue(), usedPorts, ambiance));
       }
     }
     return stepInfoPluginCreationResponseListMap;
@@ -134,7 +140,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                 .setAccountId(AmbianceUtils.getAccountId(ambiance))
                 .setOsType(os.getYamlName())
                 .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
-                .setRequestId(stepInfo.getStepUuid())
+                .setRequestId(getRequestIdForPluginCreation(stepInfo))
                 .build());
       }
       map.put(entry.getKey(), stepInfoToPluginCreationRequest);
@@ -142,16 +148,20 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     return map;
   }
 
-  private String getConnectorRef(InitContainerV2StepInfo initContainerV2StepInfo, String stepIdentifier) {
+  private String getConnectorRef(
+      InitContainerV2StepInfo initContainerV2StepInfo, String stepIdentifier, Ambiance ambiance) {
     if (initContainerV2StepInfo.getInfrastructure() instanceof ContainerK8sInfra) {
       ParameterField<String> harnessImageConnectorRef =
           ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getHarnessImageConnectorRef();
       if (!ParameterField.isBlank(harnessImageConnectorRef)) {
         return harnessImageConnectorRef.getValue();
+      } else if (isNotEmpty(containerExecutionConfig.getDefaultInternalImageConnector())
+          && connectorUtils.getDefaultInternalConnector(AmbianceUtils.getNgAccess(ambiance)) != null) {
+        log.info("Checking connectivity to default connector for step {}", stepIdentifier);
+        return containerExecutionConfig.getDefaultInternalImageConnector();
       }
     }
-    log.info("Defaulting to default connector for step {}", stepIdentifier);
-    return containerExecutionConfig.getDefaultInternalImageConnector();
+    return null;
   }
 
   private ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
@@ -224,7 +234,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
    * @param usedPorts
    */
   private PluginCreationResponseList postProcessResponseList(InitContainerV2StepInfo initContainerV2StepInfo,
-      PluginCreationResponseList responseList, Set<Integer> usedPorts) {
+      PluginCreationResponseList responseList, Set<Integer> usedPorts, Ambiance ambiance) {
     PluginCreationResponseList.Builder updatedResponseList = PluginCreationResponseList.newBuilder();
     for (PluginCreationResponseWrapper responseV2 : responseList.getResponseList()) {
       PluginCreationResponse pluginInfo = responseV2.getResponse();
@@ -234,18 +244,20 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
         throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
       }
       if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
-        ConnectorDetails connectorDetails =
-            pluginInfo.getPluginDetails()
-                .getImageDetails()
-                .getConnectorDetails()
-                .toBuilder()
-                .setConnectorRef(getConnectorRef(initContainerV2StepInfo, responseV2.getStepInfo().getIdentifier()))
-                .build();
+        ConnectorDetails.Builder connectorDetailsBuilder =
+            pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().toBuilder();
+
+        String connectorRef =
+            getConnectorRef(initContainerV2StepInfo, responseV2.getStepInfo().getIdentifier(), ambiance);
+        if (EmptyPredicate.isNotEmpty(connectorRef)) {
+          connectorDetailsBuilder.setConnectorRef(connectorRef);
+        }
+
         ImageDetails imageDetails = pluginInfo.toBuilder()
                                         .getPluginDetails()
                                         .getImageDetails()
                                         .toBuilder()
-                                        .setConnectorDetails(connectorDetails)
+                                        .setConnectorDetails(connectorDetailsBuilder.build())
                                         .build();
         pluginInfo =
             pluginInfo.toBuilder()
@@ -261,5 +273,13 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     }
 
     return updatedResponseList.build();
+  }
+
+  private String getRequestIdForPluginCreation(StepInfo stepInfo) {
+    String requestId = stepInfo.getStepUuid();
+    if (StringUtils.isNotBlank(stepInfo.getStepIdentifier())) {
+      requestId += stepInfo.getStepIdentifier();
+    }
+    return requestId;
   }
 }

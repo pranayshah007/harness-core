@@ -8,14 +8,18 @@
 package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
@@ -28,6 +32,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.remote.client.NGRestUtils;
@@ -42,15 +47,20 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
 public class GitXSettingsHelperTest extends CategoryTest {
   @Mock private NGSettingsClient ngSettingsClient;
   @Spy @InjectMocks GitXSettingsHelper gitXSettingsHelper;
 
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+
   private final String ACCOUNT_IDENTIFIER = "accountId";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
+  private final String CONNECTOR_REF = "connectorRef";
+  private final String REPO = "repo";
 
   @Before
   public void setup() {
@@ -157,5 +167,53 @@ public class GitXSettingsHelperTest extends CategoryTest {
     assertThat(listOfRepos.get(0)).isEqualTo("org1/repo1");
     assertThat(listOfRepos.get(1)).isEqualTo("org2/repo2");
     assertThat(listOfRepos.get(2)).isEqualTo("org3/  repo3");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testEnforceGitExperienceIfApplicableWhenGitEntityIsNotPresent() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().build();
+    setupGitContext(branchInfo);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    verify(ngSettingsClient, times(0)).getSetting(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testEnforceGitExperienceIfApplicableWhenGitEntityIsPresent() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
+    setupGitContext(branchInfo);
+    doReturn(CONNECTOR_REF).when(gitXSettingsHelper).getDefaultConnectorForGitX(any(), any(), any());
+    doReturn(request).when(ngSettingsClient).getSetting(any(), any(), any(), any());
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertEquals(GitAwareContextHelper.getGitRequestParamsInfo().getConnectorRef(), CONNECTOR_REF);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSetDefaultRepoForRemoteEntityWhenGitEntityIsNotPresent() {
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    verify(ngSettingsClient, times(0)).getSetting(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSetDefaultRepoForRemoteEntityWhenGitEntityIsPresent() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
+    setupGitContext(branchInfo);
+    doReturn(REPO).when(gitXSettingsHelper).getDefaultRepoForGitX(any(), any(), any());
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertEquals(GitAwareContextHelper.getGitRequestParamsInfo().getRepoName(), REPO);
+  }
+
+  private void setupGitContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

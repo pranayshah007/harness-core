@@ -400,7 +400,7 @@ public class CIStepGroupUtils {
     String uuid = generateUuid();
     // image is not controlled by user
     String restoreCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getImage();
-    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountId)) {
       restoreCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getImage();
     }
 
@@ -451,7 +451,7 @@ public class CIStepGroupUtils {
     String uuid = generateUuid();
     // image is not controlled by user
     String saveCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getImage();
-    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountId)) {
       saveCacheImage = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getImage();
     }
 

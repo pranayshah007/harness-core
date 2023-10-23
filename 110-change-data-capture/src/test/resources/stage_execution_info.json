@@ -61,6 +61,13 @@
   "startts" : 1682443561960,
   "_class" : "stageExecutionInfo",
   "envIdentifier" : "envRedesign",
+  "tags" : [
+    "hello\"\":ahello\"\\\"{}",
+    "hello\\\"\\\":a",
+    "simple:hello",
+    "secret:${ngSecretManager.obtain(\"account.pcf_pass\", -724166992)}",
+    "<+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\":<+pipeline.name>>"
+  ],
   "executionDetails" : {
     "artifactsOutcome" : [
       {

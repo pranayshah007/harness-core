@@ -1,0 +1,9 @@
+policies:
+  - name: rds-snapshot-delete-stale
+    resource: rds-snapshot
+    filters:
+      - type: age
+        days: 28
+        op: ge
+    actions:
+      - delete

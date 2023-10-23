@@ -694,21 +694,12 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartTeamTrialOnIDP() {
     when(clientMap.get(ModuleType.IDP)).thenReturn(new IDPLocalClient());
-    ModuleLicenseDTO expectedDTO = IDPModuleLicenseDTO.builder()
-                                       .numberOfDevelopers(300)
-                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                       .moduleType(ModuleType.IDP)
-                                       .licenseType(LicenseType.TRIAL)
-                                       .edition(Edition.TEAM)
-                                       .status(LicenseStatus.ACTIVE)
-                                       .startTime(0)
-                                       .expiryTime(0)
-                                       .build();
-    IDPModuleLicenseDTO dto = (IDPModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
-        Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.IDP);
-    dto.setStartTime(0L);
-    dto.setExpiryTime(0);
-    assertThat(dto).isEqualTo(expectedDTO);
+    Throwable thrown = catchThrowable(
+        () -> moduleLicenseInterface.generateTrialLicense(Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.IDP));
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
   }
 
   @Test
@@ -716,18 +707,11 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartFreeLicenseOnIDP() {
     when(clientMap.get(ModuleType.IDP)).thenReturn(new IDPLocalClient());
-    ModuleLicenseDTO expectedDTO = IDPModuleLicenseDTO.builder()
-                                       .numberOfDevelopers(UNLIMITED)
-                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                       .moduleType(ModuleType.IDP)
-                                       .status(LicenseStatus.ACTIVE)
-                                       .edition(Edition.FREE)
-                                       .startTime(0)
-                                       .expiryTime(Long.MAX_VALUE)
-                                       .build();
-    IDPModuleLicenseDTO dto =
-        (IDPModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.IDP);
-    dto.setStartTime(0L);
-    assertThat(dto).isEqualTo(expectedDTO);
+    Throwable thrown = catchThrowable(
+        () -> moduleLicenseInterface.generateTrialLicense(Edition.FREE, ACCOUNT_IDENTIFIER, ModuleType.IDP));
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
   }
 }

@@ -497,6 +497,27 @@ public class StepUtils {
     }
   }
 
+  public static ParameterField<List<TaskSelectorYaml>> getOriginDelegateSelectors(
+      PlanCreationContext ctx, String origin) {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectors = ParameterField.ofNull();
+    try {
+      delegateSelectors = delegateSelectorsFromFqn(ctx, origin);
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginInDelegateSelectors(delegateSelectors, origin);
+      }
+    } catch (Exception e) {
+      log.error("Error while appending delegate selector to spec params ", e);
+    }
+    return delegateSelectors;
+  }
+
+  private static void setOriginInDelegateSelectors(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String origin) {
+    if (!delegateSelectors.isExpression()) {
+      delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
+    }
+  }
+
   private static void setOriginAndDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       WithDelegateSelector withDelegateSelector, String origin) {
     if (!delegateSelectors.isExpression()) {

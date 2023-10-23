@@ -1,0 +1,3 @@
+filters: access-key, check-permissions, config-compliance, credential, event, finding, group, has-inline-policy, json-diff, list-item, login-profile, marked-for-op, mfa-device, ops-item, policy, reduce, ssh-key, usage, value
+actions: auto-tag-user, copy-related-tag, delete, delete-ssh-keys, invoke-lambda, invoke-sfn, mark-for-op, notify, post-finding, post-item, put-metric, remove-keys, remove-tag, set-boundary, set-groups, set-policy, tag, webhook
+customPrompt:

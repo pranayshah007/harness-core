@@ -299,6 +299,7 @@ public class TerraformApplyStepTest extends CategoryTest {
                     .commandType(TerraformCommandFlagType.APPLY)
                     .flag(ParameterField.createValueField("-lock-timeout=0s"))
                     .build()));
+    applyStepParameters.getConfiguration().setSkipStateStorage(ParameterField.createValueField(true));
 
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -343,6 +344,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
   }
 
   @Test
@@ -672,6 +674,7 @@ public class TerraformApplyStepTest extends CategoryTest {
                                                .backendConfig("back-content")
                                                .workspace("w1")
                                                .planName("plan")
+                                               .skipStateStorage(false)
                                                .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
@@ -686,6 +689,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformStepHelper).getRevisionsMap(anyList(), any());
     verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test

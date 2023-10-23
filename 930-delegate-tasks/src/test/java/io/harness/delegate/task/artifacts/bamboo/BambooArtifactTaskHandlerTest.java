@@ -8,16 +8,20 @@
 package io.harness.delegate.task.artifacts.bamboo;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.delegate.beans.connector.bamboo.BambooAuthType;
 import io.harness.delegate.beans.connector.bamboo.BambooAuthenticationDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
@@ -28,6 +32,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.intfc.BambooBuildService;
 
@@ -49,12 +54,14 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Spy @InjectMocks BambooArtifactTaskHandler bambooArtifactTaskHandler;
   @Mock BambooBuildService bambooBuildService;
+  @Mock BambooService bambooService;
 
   private static final String PLAN_KEY = "plan";
   private static final String VERSION_NOT_FOUND =
       "Check if the version exist & check if the right connector chosen for fetching the build.";
   private static final String INVALID_REGEX = "Check if the regex is correct";
   private static final List<String> ARTIFACT_PATH_LIST = Collections.singletonList("artifactPath");
+  private List<ArtifactFileMetadata> Artifact_MetadataList;
 
   private static final ArtifactStreamAttributes ARTIFACT_STREAM_ATTRIBUTES =
       ArtifactStreamAttributes.builder()
@@ -93,6 +100,11 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    Artifact_MetadataList = new ArrayList<>();
+    ArtifactFileMetadata artifactMetadata = new ArtifactFileMetadata();
+    artifactMetadata.setUrl("url");
+    artifactMetadata.setFileName("file_name");
+    Artifact_MetadataList.add(artifactMetadata);
   }
 
   @Test
@@ -178,19 +190,55 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildNumber("45")
                                                                       .build();
 
-    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
+    when(
+        bambooService.getBuildsWithoutTimeout(BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+            bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, Collections.emptyList(),
+            Integer.MAX_VALUE))
+        .thenReturn(BUILD_DETAILS_LIST);
+
+    when(bambooService.getArtifactFileMetadataList(
              BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
-             bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
+             bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, "45", ARTIFACT_PATH_LIST))
+        .thenReturn(Artifact_MetadataList);
+
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest);
+    BuildDetails buildDetails = artifactTaskExecutionResponse.getBuildDetails().get(0);
+    assertThat(artifactTaskExecutionResponse).isNotNull();
+    assertThat(artifactTaskExecutionResponse.getBuildDetails()).isNotNull();
+    assertThat(buildDetails.getBuildUrl()).isEqualTo("https://bamboo.com/test");
+    assertThat(buildDetails.getArtifactPath()).isEqualTo("artifactPath");
+    assertThat(buildDetails.getNumber()).isEqualTo("45");
+    assertThat(buildDetails.getArtifactDownloadMetadata()).isEqualTo(Artifact_MetadataList);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getLastSuccessfulBuildTest_EmptyArtifactPaths() {
+    doNothing().when(bambooArtifactTaskHandler).decryptRequestDTOs(any());
+    BambooArtifactDelegateRequest bambooArtifactDelegateRequest = BambooArtifactDelegateRequest.builder()
+                                                                      .artifactPaths(Collections.emptyList())
+                                                                      .encryptedDataDetails(Collections.EMPTY_LIST)
+                                                                      .planKey(PLAN_KEY)
+                                                                      .bambooConnectorDTO(BAMBOO_CONNECTOR_DTO)
+                                                                      .buildNumber("45")
+                                                                      .build();
+    when(
+        bambooService.getBuildsWithoutTimeout(BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+            bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, Collections.emptyList(),
+            Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest);
+    BuildDetails buildDetails = artifactTaskExecutionResponse.getBuildDetails().get(0);
+    verify(bambooService, never()).getArtifactFileMetadataList(any(), any(), any(), any(), any());
     assertThat(artifactTaskExecutionResponse).isNotNull();
     assertThat(artifactTaskExecutionResponse.getBuildDetails()).isNotNull();
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getBuildUrl())
-        .isEqualTo("https://bamboo.com/test");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getArtifactPath()).isEqualTo("artifactPath");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("45");
+    assertThat(buildDetails.getBuildUrl()).isEqualTo("https://bamboo.com/test");
+    assertThat(buildDetails.getArtifactPath()).isEqualTo("artifactPath");
+    assertThat(buildDetails.getNumber()).isEqualTo("45");
   }
 
   @Test
@@ -207,19 +255,25 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex(".*?")
                                                                       .build();
 
-    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
-             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
-             bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
+    when(
+        bambooService.getBuildsWithoutTimeout(BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+            bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, Collections.emptyList(),
+            Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
+    when(bambooService.getArtifactFileMetadataList(
+             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+             bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, "475", ARTIFACT_PATH_LIST))
+        .thenReturn(Artifact_MetadataList);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest);
+    BuildDetails buildDetails = artifactTaskExecutionResponse.getBuildDetails().get(0);
     assertThat(artifactTaskExecutionResponse).isNotNull();
     assertThat(artifactTaskExecutionResponse.getBuildDetails()).isNotNull();
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getBuildUrl())
-        .isEqualTo("https://bamboo.com/test");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getArtifactPath()).isEqualTo("artifactPath");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("475");
+    assertThat(buildDetails.getBuildUrl()).isEqualTo("https://bamboo.com/test");
+    assertThat(buildDetails.getArtifactPath()).isEqualTo("artifactPath");
+    assertThat(buildDetails.getNumber()).isEqualTo("475");
+    assertThat(buildDetails.getArtifactDownloadMetadata()).isEqualTo(Artifact_MetadataList);
   }
 
   @Test
@@ -236,19 +290,25 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex("45")
                                                                       .build();
 
-    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
-             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
-             bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
+    when(
+        bambooService.getBuildsWithoutTimeout(BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+            bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, Collections.emptyList(),
+            Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
+    when(bambooService.getArtifactFileMetadataList(
+             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+             bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, "457", ARTIFACT_PATH_LIST))
+        .thenReturn(Artifact_MetadataList);
 
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest);
+    BuildDetails buildDetails = artifactTaskExecutionResponse.getBuildDetails().get(0);
     assertThat(artifactTaskExecutionResponse).isNotNull();
     assertThat(artifactTaskExecutionResponse.getBuildDetails()).isNotNull();
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getBuildUrl())
-        .isEqualTo("https://bamboo.com/test");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getArtifactPath()).isEqualTo("artifactPath");
-    assertThat(artifactTaskExecutionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("457");
+    assertThat(buildDetails.getBuildUrl()).isEqualTo("https://bamboo.com/test");
+    assertThat(buildDetails.getArtifactPath()).isEqualTo("artifactPath");
+    assertThat(buildDetails.getNumber()).isEqualTo("457");
+    assertThat(buildDetails.getArtifactDownloadMetadata()).containsExactlyInAnyOrderElementsOf(Artifact_MetadataList);
   }
 
   @Test
@@ -336,9 +396,10 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex("*")
                                                                       .build();
 
-    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
-             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
-             bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
+    when(
+        bambooService.getBuildsWithoutTimeout(BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+            bambooArtifactDelegateRequest.getEncryptedDataDetails(), PLAN_KEY, Collections.emptyList(),
+            Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
 
     assertThatThrownBy(() -> bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest))

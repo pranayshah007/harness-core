@@ -81,6 +81,9 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
         if (StringUtils.isNotBlank(azureInfra.getHostConnectionAttrs())) {
           connectorIds.add(azureInfra.getHostConnectionAttrs());
         }
+        if (StringUtils.isNotBlank(azureInfra.getWinRmConnectionAttributes())) {
+          connectorIds.add(azureInfra.getWinRmConnectionAttributes());
+        }
         break;
       case PHYSICAL_DATA_CENTER:
         if (DeploymentType.WINRM.equals(infrastructureDefinition.getDeploymentType())) {

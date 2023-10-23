@@ -1,0 +1,7 @@
+policies:
+  - name: rds-subnet-group-delete
+    resource: rds-subnet-group
+    filters:
+      - Instances: []
+    actions:
+      - delete

@@ -455,3 +455,5 @@ io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.beans.steps.stepinfo.GARStepInfo
 io.harness.beans.yaml.extended.cache.CachePolicy
 io.harness.steps.servicenow.beans.ServiceNowCreateType
+io.harness.steps.http.v1.HttpStepParameters
+io.harness.steps.http.v1.HttpOutcome

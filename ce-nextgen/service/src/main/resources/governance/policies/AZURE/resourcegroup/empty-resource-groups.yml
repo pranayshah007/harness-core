@@ -1,0 +1,5 @@
+policies:
+  - name: empty-resource-groups
+    resource: azure.resourcegroup
+    filters:
+      - type: empty-group

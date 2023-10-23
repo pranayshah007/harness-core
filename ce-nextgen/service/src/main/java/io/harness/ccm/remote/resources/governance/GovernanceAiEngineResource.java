@@ -8,14 +8,18 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.views.helper.GovernancePoliciesPromptConstants.CLAIMS;
+import static io.harness.ccm.views.helper.GovernancePoliciesPromptConstants.GPT3;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
+import io.harness.ccm.commons.beans.config.GenAIServiceConfig;
 import io.harness.ccm.views.dto.GovernanceAiEngineRequestDTO;
 import io.harness.ccm.views.dto.GovernanceAiEngineResponseDTO;
 import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.service.GovernanceAiEngineService;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -24,7 +28,6 @@ import io.harness.security.JWTTokenServiceUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -44,6 +47,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -81,13 +86,14 @@ import org.springframework.stereotype.Service;
 public class GovernanceAiEngineResource {
   private final CENextGenConfiguration configuration;
   private final GovernanceRuleService governanceRuleService;
-
-  private static final ImmutableMap<String, String> claims = ImmutableMap.of("iss", "Harness Inc", "sub", "CCM");
+  private final GovernanceAiEngineService governanceAiEngineService;
 
   @Inject
-  public GovernanceAiEngineResource(CENextGenConfiguration configuration, GovernanceRuleService governanceRuleService) {
+  public GovernanceAiEngineResource(CENextGenConfiguration configuration, GovernanceRuleService governanceRuleService,
+      GovernanceAiEngineService governanceAiEngineService) {
     this.configuration = configuration;
     this.governanceRuleService = governanceRuleService;
+    this.governanceAiEngineService = governanceAiEngineService;
   }
 
   //@PublicApi
@@ -110,59 +116,28 @@ public class GovernanceAiEngineResource {
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountIdentifier,
       @RequestBody(required = true, description = "Request body for queuing the governance job")
       @Valid GovernanceAiEngineRequestDTO governanceAiEngineRequestDTO) throws IOException {
-    String PROMPT_PRIMING = "";
-    String finalPrompt = "";
     String error = "";
-    String prompt = governanceAiEngineRequestDTO.getPrompt();
+    GenAIServiceConfig genAIServiceConfig = configuration.getAiEngineConfig().getGenAIServiceConfig();
     // TODO: Need not generate new token in every request.
-    String jwtToken = JWTTokenServiceUtils.generateJWTToken(claims, TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES),
-        configuration.getAiEngineConfig().getGenAIServiceConfig().getServiceSecret());
+    String jwtToken = JWTTokenServiceUtils.generateJWTToken(
+        CLAIMS, TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES), genAIServiceConfig.getServiceSecret());
     // log.info("DEBUG: generated jwt {}", jwtToken);
     log.info("Using internal genai service");
-    String API_ENDPOINT = configuration.getAiEngineConfig().getGenAIServiceConfig().getApiEndpoint();
+    String API_ENDPOINT = genAIServiceConfig.getApiEndpoint();
     HttpURLConnection con = (HttpURLConnection) new URL(API_ENDPOINT).openConnection();
     con.setRequestMethod("POST");
     con.setRequestProperty("Content-Type", "application/json");
     con.setRequestProperty("Authorization", "Bearer " + jwtToken);
 
+    JSONObject data;
+
     if (!governanceAiEngineRequestDTO.getIsExplain()) {
-      PROMPT_PRIMING =
-          "You are a cloud custodian YAML generator, who generates Cloud custodian YAML outputs based on user inputs. "
-          + "Do not respond to questions not related to cloud custodian.\n"
-          + "\n"
-          + "Refer to the online documentation and examples here : https://cloudcustodian.io/docs/ "
-          + "\n "
-          + "input: Delete unattached EBS Volumes\n"
-          + "output: policies:\n"
-          + "  - name: delete-unattached-volumes\n"
-          + "    resource: ebs\n"
-          + "    filters:\n"
-          + "      - Attachments: []\n"
-          + "      - State: available\n"
-          + "    actions:\n"
-          + "      - delete"
-          + "\n\ninput: ";
-      finalPrompt = PROMPT_PRIMING.concat(CharMatcher.is('\"').trimFrom(prompt)) + "\n output: \n";
+      data = governanceAiEngineService.getDataObject(genAIServiceConfig, governanceAiEngineRequestDTO.getPrompt(),
+          governanceAiEngineRequestDTO.getRuleCloudProviderType(), governanceAiEngineRequestDTO.getResourceType());
     } else {
-      PROMPT_PRIMING = "Explain this cloud custodian yaml policy."
-          + "\n ";
-      finalPrompt = PROMPT_PRIMING.concat(CharMatcher.is('\"').trimFrom(prompt));
+      data =
+          governanceAiEngineService.getExplainDataObject(genAIServiceConfig, governanceAiEngineRequestDTO.getPrompt());
     }
-
-    log.info("input prompt is: {}", CharMatcher.is('\"').trimFrom(prompt));
-    log.info("finalPrompt prompt is: {}", finalPrompt);
-    // Prep request body for internalGenAIService
-
-    JSONObject data = new JSONObject();
-    JSONObject parameters = new JSONObject();
-    parameters.put("temperature", configuration.getAiEngineConfig().getGenAIServiceConfig().getTemperature());
-    parameters.put("max_output_tokens", configuration.getAiEngineConfig().getGenAIServiceConfig().getMaxDecodeSteps());
-    parameters.put("top_p", configuration.getAiEngineConfig().getGenAIServiceConfig().getTopP());
-    parameters.put("top_k", configuration.getAiEngineConfig().getGenAIServiceConfig().getTopK());
-    data.put("prompt", finalPrompt);
-    data.put("provider", "vertexai");
-    data.put("model_name", configuration.getAiEngineConfig().getGenAIServiceConfig().getModel());
-    data.put("model_parameters", parameters);
 
     log.info("request payload:  {}", data.toString());
 
@@ -176,6 +151,17 @@ public class GovernanceAiEngineResource {
     log.info("result:  {}", result);
     if (governanceAiEngineRequestDTO.getIsExplain()) {
       return ResponseDTO.newResponse(GovernanceAiEngineResponseDTO.builder().text(result).build());
+    }
+    if (genAIServiceConfig.getModel().equalsIgnoreCase(GPT3)) {
+      String pattern = "```([\\s\\S]*?)```";
+      Pattern r = Pattern.compile(pattern);
+      Matcher m = r.matcher(result);
+      if (m.find()) {
+        result = m.group(1);
+        if (result.charAt(0) == '\n') {
+          result = result.substring(1);
+        }
+      }
     }
     Rule validateRule = Rule.builder()
                             .rulesYaml(CharMatcher.is('\"').trimFrom(result))

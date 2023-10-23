@@ -7,6 +7,8 @@
 
 package io.harness.ccm.views.dto;
 
+import io.harness.ccm.views.helper.RuleCloudProviderType;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -17,5 +19,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GovernanceAiEngineRequestDTO {
   String prompt;
+  RuleCloudProviderType ruleCloudProviderType;
+  String resourceType;
   Boolean isExplain;
 }

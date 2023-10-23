@@ -1,0 +1,3 @@
+filters: advisor-recommendation, cost, event, list-item, metric, offhour, onhour, parent, policy-compliant, reduce, resource-lock, value
+actions: delete, lock, logic-app, notify, set-public-access, webhook
+customPrompt:

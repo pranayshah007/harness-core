@@ -65,6 +65,7 @@ import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.PipelineMigrationUtils;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -791,7 +792,7 @@ public class PipelineMigrationService extends NgMigrationService {
     // Set common runtime inputs
     if (templateInputs != null) {
       if (!workflowBarriers.isEmpty()) {
-        fixBarrierInputs(templateInputs);
+        PipelineMigrationUtils.fixBarrierInputs(templateInputs);
       }
       String whenInput = templateInputs.at("/when/condition").asText();
       if (RUNTIME_INPUT.equals(whenInput)) {
@@ -867,33 +868,6 @@ public class PipelineMigrationService extends NgMigrationService {
     populateEntityIdToStageMap(infraToStageMap, stageIdentifier, infraId);
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
-  }
-
-  private void fixBarrierInputs(JsonNode templateInputs) {
-    ArrayNode stepGroups = (ArrayNode) templateInputs.at("/spec/execution/steps");
-    if (stepGroups == null) {
-      log.warn("StepGroup is null, cant fix barrier identifiers");
-      return;
-    }
-    stepGroups.forEach(stepGroupNode -> {
-      ArrayNode stepsArray = (ArrayNode) stepGroupNode.get("stepGroup").get("steps");
-
-      stepsArray.elements().forEachRemaining(stepNode -> {
-        String type = stepNode.get("step").get("type").asText();
-
-        if ("Barrier".equals(type)) {
-          ObjectNode specNode = (ObjectNode) stepNode.get("step").get("spec");
-          if (specNode != null && specNode.has("barrierRef")) {
-            String barrierRef = specNode.get("barrierRef").asText();
-            if (barrierRef.contains("<+input>.default")) {
-              String contentInsideDefault = barrierRef.replace("<+input>.default('", "").replace("')", "");
-
-              specNode.put("barrierRef", contentInsideDefault);
-            }
-          }
-        }
-      });
-    });
   }
 
   private void populateEntityIdToStageMap(

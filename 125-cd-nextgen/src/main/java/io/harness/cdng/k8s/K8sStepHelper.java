@@ -151,7 +151,6 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
-
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
@@ -186,7 +185,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
         && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
             != null) {
-      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
     }
 
     if (k8sDeployRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {

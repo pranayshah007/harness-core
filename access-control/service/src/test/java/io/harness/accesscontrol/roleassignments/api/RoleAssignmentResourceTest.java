@@ -101,6 +101,7 @@ import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -435,13 +436,15 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentFilterDTOClone.getPrincipalFilter(), roleAssignmentFilter);
   }
 
-  private void testGetAggregatedV2Internal(RoleAssignmentFilterV2 roleAssignmentFilterV2DTO) {
+  private void testGetAggregatedV2Internal(
+      RoleAssignmentFilterV2 roleAssignmentFilterV2DTO, Set<ScopeSelector> scopeSelectors) {
     Scope scope = fromParams(harnessScopeParams);
     preViewPrincipalPermissions(true, false, false);
     boolean isUserPrincipal = roleAssignmentFilterV2DTO.getPrincipalFilter() != null
         && USER.equals(roleAssignmentFilterV2DTO.getPrincipalFilter().getType());
     if (isUserPrincipal) {
-      when(userGroupService.list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier()))
+      when(userGroupService.listUserGroupForUserInAccessibleScopes(
+               scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier(), scopeSelectors))
           .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
     }
     ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
@@ -465,7 +468,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2DTO);
     if (isUserPrincipal) {
       verify(userGroupService, times(1))
-          .list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
+          .listUserGroupForUserInAccessibleScopes(
+              scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier(), scopeSelectors);
     }
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
@@ -486,7 +490,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
     RoleAssignmentFilterV2 roleAssignmentFilterV2 =
         RoleAssignmentFilterV2.builder().resourceGroupFilter(resourceGroupFilter).roleFilter(roleFilter).build();
-    testGetAggregatedV2Internal(roleAssignmentFilterV2);
+    testGetAggregatedV2Internal(roleAssignmentFilterV2, Collections.emptySet());
   }
 
   @Test
@@ -501,7 +505,13 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
             .roleFilter(roleFilter)
             .principalFilter(PrincipalDTO.builder().identifier("user1").type(PrincipalType.USER).build())
             .build();
-    testGetAggregatedV2Internal(roleAssignmentFilterV2);
+    testGetAggregatedV2Internal(roleAssignmentFilterV2,
+        Set.of(ScopeSelector.builder()
+                   .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                   .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                   .projectIdentifier(null)
+                   .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                   .build()));
   }
 
   @Test

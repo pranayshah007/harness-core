@@ -12,4 +12,9 @@ public class CreateHarnessDateBinGraphqlFunction extends AbstractTimeScaleDBMigr
   public String getFileName() {
     return "timescaledb/create_harness_date_bin_graphql_function.sql";
   }
+
+  @Override
+  public boolean executeFullScript() {
+    return true;
+  }
 }

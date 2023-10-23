@@ -16,6 +16,5 @@ public class OrchestratorContext extends RecordContext {
   @Inject
   public OrchestratorContext(AnalysisOrchestrator orchestrator) {
     put("accountId", orchestrator.getAccountId());
-    put("verificationTaskId", orchestrator.getVerificationTaskId());
   }
 }

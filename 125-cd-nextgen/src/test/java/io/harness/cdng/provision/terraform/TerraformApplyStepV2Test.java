@@ -236,6 +236,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
                                     .url("https://github.com/wings-software")
                                     .branchName("master")
                                     .build();
+    applyStepParameters.getConfiguration().setSkipStateStorage(ParameterField.createValueField(true));
     GitStoreDelegateConfig gitStoreDelegateConfig =
         GitStoreDelegateConfig.builder().branch("master").connectorName("terraform").gitConfigDTO(gitConfigDTO).build();
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder()
@@ -286,6 +287,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
 
     TerraformPassThroughData terraformPassThroughData = tfPassThroughDataArgumentCaptor.getValue();
     assertThat(terraformPassThroughData).isNotNull();
@@ -397,6 +399,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
     assertThat(taskParameters.getConfigFile()).isNotNull();
+    assertThat(taskParameters.isSkipStateStorage()).isFalse();
     assertThat(((RemoteTerraformVarFileInfo) taskParameters.getVarFileInfos().get(0)).getGitFetchFilesConfig())
         .isNotNull();
   }
@@ -960,8 +963,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .skipStateStorage(ParameterField.createValueField(false))
+                               .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -999,6 +1004,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
     verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -1009,8 +1015,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .skipStateStorage(ParameterField.createValueField(false))
+                               .build())
             .build();
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
         TerraformStepDataGenerator.createStoreDelegateConfig();
@@ -1038,6 +1046,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -1337,6 +1346,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         put("test-output-name2", "test-output-value2");
       }
     });
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder().skipStateStorage(true).build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
 
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -1364,6 +1375,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformApplyOutcome.size()).isEqualTo(2);
     assertThat(terraformApplyOutcome.get("test-output-name1")).isEqualTo("test-output-value1");
     assertThat(terraformApplyOutcome.get("test-output-name2")).isEqualTo("test-output-value2");
+    verify(terraformStepHelper, times(0)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -1394,6 +1406,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         .thenReturn(new HashMap<>() {
           { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
         });
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder().skipStateStorage(false).build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
     commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
     commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
@@ -1421,6 +1435,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformApplyOutcome.size()).isEqualTo(1);
     assertThat(terraformApplyOutcome.get(TF_ENCRYPTED_JSON_OUTPUT_NAME))
         .isEqualTo("<+secrets.getValue(\"account.test-json-1\")>");
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test

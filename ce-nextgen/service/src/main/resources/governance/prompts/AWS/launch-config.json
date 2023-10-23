@@ -1,0 +1,41 @@
+{
+  "LaunchConfigurationName": "LaunchConfigurationName",
+  "LaunchConfigurationARN": "arn:aws:autoscaling:eu-west-1:AccountId:launchConfiguration:LaunchConfigurationId:launchConfigurationName/LaunchConfigurationName",
+  "ImageId": "ImageId",
+  "KeyName": "KeyName",
+  "SecurityGroups": [
+    "SecurityGroupId"
+  ],
+  "ClassicLinkVPCSecurityGroups": [],
+  "UserData": "UserData",
+  "InstanceType": "t2.xlarge",
+  "KernelId": "",
+  "RamdiskId": "",
+  "BlockDeviceMappings": [
+    {
+      "DeviceName": "/dev/xvda",
+      "Ebs": {
+        "SnapshotId": "SnapshotId",
+        "VolumeSize": 12,
+        "VolumeType": "gp2",
+        "DeleteOnTermination": true
+      }
+    },
+    {
+      "DeviceName": "/dev/xvdcz",
+      "Ebs": {
+        "VolumeSize": 22,
+        "VolumeType": "gp2",
+        "DeleteOnTermination": true,
+        "Encrypted": true
+      }
+    }
+  ],
+  "InstanceMonitoring": {
+    "Enabled": true
+  },
+  "SpotPrice": "0.2016",
+  "IamInstanceProfile": "IamInstanceProfile",
+  "CreatedTime": "2020-03-27T08:51:22.692000+00:00",
+  "EbsOptimized": false
+}

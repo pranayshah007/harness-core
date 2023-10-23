@@ -1,0 +1,12 @@
+policies:
+  - name: released-ec2-host-add-tag
+    resource: ec2-host
+    filters:
+      - type: value
+        key: State
+        value: released
+        op: eq
+    actions:
+      - type: tag
+        tags:
+          Released: true

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: launch-template-with-Encrypted-as-true
+cloudProvider: AWS
+resourceType: launch-template-version
+description: List launch template with ebs encrypted set to true
+rulesYamlPath: ../launch-template-with-Encrypted-as-true.yml

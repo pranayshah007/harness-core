@@ -23,15 +23,16 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
@@ -54,7 +55,6 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -175,10 +175,10 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
     PipelineStageSweepingOutput pipelineStageSweepingOutput = (PipelineStageSweepingOutput) sweepingOutput.getOutput();
 
-    NodeExecution nodeExecution;
+    NodeExecution nodeExecution = null;
     Ambiance childNodeAmbiance = null;
     Optional<NodeExecution> nodeExecutionOptional = nodeExecutionService.getPipelineNodeExecutionWithProjections(
-        pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
+        pipelineStageSweepingOutput.getChildExecutionId(), NodeProjectionUtils.WithAmbianceAndFailureInfo);
 
     PipelineStageOutcome resolvedOutcome;
     // NodeExecutionOptional can be empty when no node was executed in child execution
@@ -196,6 +196,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
     return StepResponse.builder()
         .status(pipelineStageResponseData.getStatus())
+        .failureInfo(nodeExecution != null ? nodeExecution.getFailureInfo() : FailureInfo.newBuilder().build())
         .stepOutcome(
             StepResponse.StepOutcome.builder().name(OutputExpressionConstants.OUTPUT).outcome(resolvedOutcome).build())
         .build();

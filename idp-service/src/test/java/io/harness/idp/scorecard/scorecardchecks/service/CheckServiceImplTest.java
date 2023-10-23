@@ -32,6 +32,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.DataPoint;
@@ -53,6 +54,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -63,6 +67,10 @@ public class CheckServiceImplTest extends CategoryTest {
   @Mock NGSettingsClient settingsClient;
   @Mock EntitySetupUsageClient entitySetupUsageClient;
   @Mock DataPointService dataPointService;
+
+  @Mock TransactionTemplate transactionTemplate;
+
+  @Mock OutboxService outboxService;
   @Captor private ArgumentCaptor<CheckEntity> checkEntityCaptor;
   private static final String ACCOUNT_ID = "123";
   private static final String GITHUB_CHECK_NAME = "Github Checks";
@@ -76,7 +84,8 @@ public class CheckServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    checkServiceImpl = new CheckServiceImpl(checkRepository, settingsClient, entitySetupUsageClient, dataPointService);
+    checkServiceImpl = new CheckServiceImpl(
+        checkRepository, settingsClient, entitySetupUsageClient, dataPointService, transactionTemplate, outboxService);
   }
 
   @Test
@@ -85,6 +94,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testCreateCheck() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).save(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
@@ -96,6 +110,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testCreateCheckThrowsException() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(new HashMap<>());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
 
@@ -105,6 +124,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testUpdateCheck() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).update(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
@@ -116,6 +140,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testUpdateCheckThrowsException() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(null), ACCOUNT_ID);
   }
 
@@ -125,6 +154,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testUpdateDefaultCheckThrowsException() {
     when(checkRepository.update(any())).thenReturn(null);
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
 
@@ -230,6 +264,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testDeleteCheckWhenForceDeleteIsDisabled() {
     Call<ResponseDTO<SettingValueResponseDTO>> response = getSettingValueResponseDTOCall(false);
     when(settingsClient.getSetting(any(), any(), any(), any())).thenReturn(response);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.deleteCustomCheck(ACCOUNT_ID, GITHUB_CHECK_ID, true);
   }
 
@@ -239,6 +278,11 @@ public class CheckServiceImplTest extends CategoryTest {
   public void testDeleteCheckThrowsReferencedEntityException() {
     Call<ResponseDTO<Boolean>> response = getResponseDTOCall(true);
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(response);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.deleteCustomCheck(ACCOUNT_ID, GITHUB_CHECK_ID, false);
   }
 

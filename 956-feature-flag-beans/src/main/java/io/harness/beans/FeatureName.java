@@ -100,9 +100,6 @@ public enum FeatureName {
   CDS_AWS_CDK("Enable AWS CDK integration", HarnessTeam.CDP),
   CDS_AZURE_WEBAPP_NG_LISTING_APP_NAMES_AND_SLOTS(
       "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP),
-  CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
-      "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
-      HarnessTeam.CDP),
   CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_DISABLE_FABRIC8_CG(
@@ -117,8 +114,7 @@ public enum FeatureName {
   CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR(
       "FF for turning on new parameterField processor which handles all expression resolution for ParameterField",
       HarnessTeam.CDC),
-  CDS_ENV_PROPAGATION("FF for enabling env infra propagation for CD", HarnessTeam.CDC),
-  CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
+
   CDS_HELM_FETCH_CHART_METADATA_NG(
       "Enables option to fetch helm chart details from the Chart.yaml and expose this as expressions. Epic: https://harness.atlassian.net/browse/CDS-58036",
       HarnessTeam.CDP),
@@ -294,6 +290,7 @@ public enum FeatureName {
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
   CI_DLITE_DISTRIBUTED("Feature flag to use dlite in distributed mode", HarnessTeam.CI),
+  CI_CODEBASE_SELECTOR("Feature flag to select delegate selector for codebase tasks", HarnessTeam.CI),
   CLEAN_UP_OLD_MANAGER_VERSIONS(Scope.PER_ACCOUNT),
   CLOUDFORMATION_CHANGE_SET,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
@@ -931,7 +928,10 @@ public enum FeatureName {
   CDS_K8S_ASYNC_STEP_STRATEGY("This Flag enables the usage of ASYNC chain orchestration for K8s step", HarnessTeam.CDP),
   CDS_MERGE_PIPELINE_EXECUTION_SUMMARY_UPDATE_FLOW(
       "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
-  PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE);
+  PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
+  PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
+  SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
+  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE);
 
   // keep-sorted end
 

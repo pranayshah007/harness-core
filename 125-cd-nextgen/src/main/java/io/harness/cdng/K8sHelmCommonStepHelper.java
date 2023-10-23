@@ -1091,7 +1091,7 @@ public class K8sHelmCommonStepHelper {
   private TaskType getHelmValuesFetchTaskType(StoreDelegateConfig storeDelegateConfig) {
     if (OCI_HELM.equals(storeDelegateConfig.getType())
         && ((OciHelmStoreDelegateConfig) storeDelegateConfig).getAwsConnectorDTO() != null) {
-      return TaskType.HELM_VALUES_FETCH_NG_OCI_ECR_CONFIG;
+      return TaskType.HELM_VALUES_FETCH_NG_OCI_ECR_CONFIG_V2;
     }
     return TaskType.HELM_VALUES_FETCH_NG;
   }

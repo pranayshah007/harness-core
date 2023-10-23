@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: elb-low-request-count-list
+cloudProvider: AWS
+resourceType: elb
+description: List ELBs with low request count
+rulesYamlPath: ../elb-low-request-count-list.yml

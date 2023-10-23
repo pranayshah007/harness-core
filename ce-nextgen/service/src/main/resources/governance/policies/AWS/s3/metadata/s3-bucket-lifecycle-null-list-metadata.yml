@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-bucket-lifecycle-null-list
+cloudProvider: AWS
+resourceType: s3
+description: List s3 buckets that have no defined lifecycle configuration
+rulesYamlPath: ../s3-bucket-lifecycle-null-list.yml

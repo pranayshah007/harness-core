@@ -1,0 +1,11 @@
+policies:
+  - name: delete-nic-with-user-routes
+    resource: azure.networkinterface
+    filters:
+      - type: effective-route-table
+        key: routes.value[].source
+        op: in
+        value_type: swap
+        value: User
+    actions:
+      - type: delete

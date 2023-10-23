@@ -79,6 +79,7 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
+import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.common.ExpressionMode;
@@ -146,6 +147,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock AccessControlClient accessControlClient;
   @Mock CustomResourceService customResourceService;
   @Mock CDYamlExpressionEvaluator cdYamlExpressionEvaluator;
+  @Mock CDExpressionEvaluator cdExpressionEvaluator;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -881,24 +883,114 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                               .value(null)
                               .build())
                    .build());
-    Map<String, String> inputVariables = new HashMap<>();
-    inputVariables.put("var1", "<+pipeline.variables.filename>");
-    inputVariables.put("var2", "test");
-    inputVariables.put("var3", "<+pipeline.variables.path>");
+    inputs.add(StringNGVariable.builder()
+                   .name("var4")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.var4>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
     Map<String, String> resolvedInputVariables = new HashMap<>();
     resolvedInputVariables.put("var1", "json-payload");
     resolvedInputVariables.put("var2", "test");
     resolvedInputVariables.put("var3", "/Users/Desktop/json-payload");
+    resolvedInputVariables.put("var4", null);
     doReturn(cdYamlExpressionEvaluator)
         .when(spyartifactResourceUtils)
         .getYamlExpressionEvaluator(
-            eq("accountId"), eq("orgId"), eq("projectId"), eq(null), eq(null), eq(null), eq(null), eq("test"));
-    when(cdYamlExpressionEvaluator.renderExpression(
+            eq("accountId"), eq("orgId"), eq("projectId"), eq(null), eq(null), eq(FQN), eq(null), eq("test"));
+    doReturn(cdExpressionEvaluator)
+        .when(spyartifactResourceUtils)
+        .getCDExpressionEvaluator(eq("accountId"), eq("orgId"), eq("projectId"), eq(PIPELINE_ID),
+            eq(pipelineYamlWithoutTemplates), eq(FQN), eq(null), eq("test"), anyInt());
+    when(cdExpressionEvaluator.renderExpression(
              "<+pipeline.variables.filename>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .thenReturn("json-payload");
-    when(cdYamlExpressionEvaluator.renderExpression(
+    when(cdExpressionEvaluator.renderExpression(
              "<+pipeline.variables.path>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .thenReturn("/Users/Desktop/json-payload");
+    when(cdExpressionEvaluator.renderExpression(
+             "<+pipeline.variables.var4>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .thenReturn("<+pipeline.variables.var4>");
+    doReturn(customArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withArtifactPath("Test").build()))
+        .when(customResourceService)
+        .getBuilds(eq("cat $var1 > $HARNESS_ARTIFACT_RESULT_PATH"), eq("version"), eq("path"),
+            eq(resolvedInputVariables), eq("accountId"), eq("orgId"), eq("projectId"), anyInt(), eq(null));
+    List<BuildDetails> buildDetails = spyartifactResourceUtils.getCustomGetBuildDetails("path", "version",
+        CustomScriptInfo.builder()
+            .script("cat $var1 > $HARNESS_ARTIFACT_RESULT_PATH")
+            .inputs(inputs)
+            .runtimeInputYaml(pipelineYamlWithoutTemplates)
+            .build(),
+        "test", "accountId", "orgId", "projectId", FQN, PIPELINE_ID, null);
+    assertThat(buildDetails.size()).isEqualTo(1);
+    verify(spyartifactResourceUtils, times(1))
+        .getCDExpressionEvaluator(any(), any(), any(), any(), any(), any(), any(), any(), anyInt());
+    verify(cdExpressionEvaluator)
+        .renderExpression("<+pipeline.variables.filename>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    verify(cdExpressionEvaluator)
+        .renderExpression("<+pipeline.variables.path>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    verify(cdExpressionEvaluator)
+        .renderExpression("<+pipeline.variables.var4>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2CustomWithInputAsExpressionWithoutFQN() {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
+
+    List<NGVariable> inputs = new ArrayList<>();
+    inputs.add(StringNGVariable.builder()
+                   .name("var1")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.filename>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
+    inputs.add(StringNGVariable.builder()
+                   .name("var2")
+                   .value(ParameterField.<String>builder().value("test").expression(false).build())
+                   .build());
+    inputs.add(StringNGVariable.builder()
+                   .name("var3")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.path>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
+    inputs.add(StringNGVariable.builder()
+                   .name("var4")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.var4>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
+    Map<String, String> resolvedInputVariables = new HashMap<>();
+    resolvedInputVariables.put("var1", "<+pipeline.variables.filename>");
+    resolvedInputVariables.put("var2", "test");
+    resolvedInputVariables.put("var3", "<+pipeline.variables.path>");
+    resolvedInputVariables.put("var4", "<+pipeline.variables.var4>");
     doReturn(customArtifactConfig)
         .when(spyartifactResourceUtils)
         .locateArtifactInService(any(), any(), any(), any(), any());
@@ -910,7 +1002,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         CustomScriptInfo.builder().script("cat $var1 > $HARNESS_ARTIFACT_RESULT_PATH").inputs(inputs).build(), "test",
         "accountId", "orgId", "projectId", null, null, null);
     assertThat(buildDetails.size()).isEqualTo(1);
-    verify(spyartifactResourceUtils, times(1))
+    verify(spyartifactResourceUtils, times(0))
         .getYamlExpressionEvaluator(any(), any(), any(), any(), any(), any(), any(), any());
   }
 

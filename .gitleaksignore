@@ -1,6 +1,10 @@
 #For More Info: https://github.com/zricethezav/gitleaks/blob/master/.gitleaksignore
 
 #CommitID:FilePath:TypeOfSecret:LineNumber
+4e1823a4f83dedba2c405db4c5d621a51ed641f7:srm-service/modules/cv-nextgen-service/service/src/test/resources/test-config.yml:generic-api-key:90
+7ce9ff5b71809cc4ebad9f46efbfa0c9ec5cebd0:srm-service/modules/cv-nextgen-service/service/src/test/resources/test-config.yml:generic-api-key:90
+7ce9ff5b71809cc4ebad9f46efbfa0c9ec5cebd0:srm-service/config/cv-nextgen-config.yml:generic-api-key:100
+5873ee52b3fd560344c9c8918c51d7bdcb404193:srm-service/config/cv-nextgen-config.yml:generic-api-key:100
 aee83e4f314e220afbf237a39d6520e292823d6e:batch-processing/service/src/test/java/io/harness/batch/processing/anomalydetection/AnomalyAlertsServiceImplTest.java:slack-web-hook:57
 c413d0c2f7894d2a8c202422abaca4e05fb9a531:930-delegate-tasks/src/test/resources/servicenow/rsa-key-valid.pem:private-key:1
 c413d0c2f7894d2a8c202422abaca4e05fb9a531:980-commons/src/test/resources/io/harness/security/certs/adfs-test/rsa-key-valid.pem:private-key:1

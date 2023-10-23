@@ -28,7 +28,6 @@ import java.util.Scanner;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-
 @OwnedBy(HarnessTeam.CDC)
 public class CDPMSStepPlanCreatorV2Test extends CDNGTestBase {
   @Inject @InjectMocks K8sRollingRollbackStepPlanCreator stepsPlanCreator;

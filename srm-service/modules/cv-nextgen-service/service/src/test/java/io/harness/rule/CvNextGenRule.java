@@ -26,10 +26,12 @@ import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.CVServiceModule;
 import io.harness.cvng.EventsFrameworkModule;
 import io.harness.cvng.VerificationConfiguration;
+import io.harness.cvng.autodiscovery.services.AutoDiscoveryClient;
 import io.harness.cvng.client.ErrorTrackingClient;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.FakeAccessControlClient;
 import io.harness.cvng.client.FakeAccountClient;
+import io.harness.cvng.client.FakeAutoDiscoveryClient;
 import io.harness.cvng.client.FakeNextGenService;
 import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.client.MockedVerificationManagerService;
@@ -200,6 +202,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(AccountClient.class).to(FakeAccountClient.class);
       binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
       binder.bind(OpaServiceClient.class).toInstance(Mockito.mock(OpaServiceClient.class));
+      binder.bind(AutoDiscoveryClient.class).to(FakeAutoDiscoveryClient.class);
       binder.bind(EngineGrpcExpressionService.class).toInstance(getMockedEngineGrpcExpressionService());
     }));
     MongoBackendConfiguration mongoBackendConfiguration =

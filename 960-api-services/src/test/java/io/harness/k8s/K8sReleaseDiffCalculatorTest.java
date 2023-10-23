@@ -7,6 +7,7 @@
 
 package io.harness.k8s;
 
+import static io.harness.k8s.K8sReleaseDiffCalculator.CURRENT_OWNER_FORMAT;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_FORMAT;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_ENV_ID;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_INFRA_ID;
@@ -102,7 +103,9 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
 
     String expectedMessage = String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, "svcId1", "svcId2")
         + String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata1.getServiceId(), DIFF_KEY_ENV_ID,
-            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId());
+            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId())
+        + String.format(CURRENT_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata2.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata2.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata2.getInfraId());
     assertThat(K8sReleaseDiffCalculator.calculateDiffForLogging(sampleMetadata2, sampleMetadata1))
         .isEqualTo(expectedMessage);
   }
@@ -120,7 +123,9 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
         + String.format(DIFF_FORMAT, DIFF_KEY_ENV_ID, "envId1", "envId2")
         + String.format(DIFF_FORMAT, DIFF_KEY_INFRA_ID, "infraId1", "infraId2")
         + String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata1.getServiceId(), DIFF_KEY_ENV_ID,
-            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId());
+            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId())
+        + String.format(CURRENT_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata2.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata2.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata2.getInfraId());
     assertThat(K8sReleaseDiffCalculator.calculateDiffForLogging(sampleMetadata2, sampleMetadata1))
         .isEqualTo(expectedMessage);
   }

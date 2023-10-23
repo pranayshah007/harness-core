@@ -8,6 +8,7 @@
 package io.harness.pms.helpers;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -125,6 +126,25 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
     assertThatCode(()
                        -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
                            arrayTypeString, "planExecutionId", ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void resolveExpressionsInYamlPassingAmbianceTest() throws IOException {
+    String arrayTypeString = "pipeline: \n"
+        + " name: pipelineName\n"
+        + " delegateSelector: \n"
+        + "   - value1\n"
+        + "   - <+pipeline.name>\n";
+    EngineExpressionEvaluator expressionEvaluator =
+        prepareEngineExpressionEvaluator(YamlUtils.read(arrayTypeString, Map.class));
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    doReturn(expressionEvaluator).when(pmsEngineExpressionService).prepareExpressionEvaluator(any());
+    assertThatCode(()
+                       -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
+                           arrayTypeString, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS, ambiance))
         .doesNotThrowAnyException();
   }
 

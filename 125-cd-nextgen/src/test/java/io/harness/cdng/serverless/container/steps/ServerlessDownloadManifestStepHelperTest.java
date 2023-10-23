@@ -10,6 +10,7 @@ package io.harness.cdng.serverless.container.steps;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -34,6 +35,7 @@ import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.GitCloneStep;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -60,6 +62,7 @@ import java.util.HashSet;
 import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -245,5 +248,41 @@ public class ServerlessDownloadManifestStepHelperTest extends CategoryTest {
     assertThat(asyncExecutableResponse1.getCallbackIdsList().size()).isEqualTo(2);
     assertThat(asyncExecutableResponse1.getLogKeysList().size()).isEqualTo(2);
     assertThat(asyncExecutableResponse1.getStatus()).isEqualTo(Status.RUNNING);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetValuesManifestContent() {
+    String valuesYamlPath = "harness/path/to/values.yaml";
+    String valuesManifestContent = serverlessDownloadManifestsStepHelper.getValuesManifestContent(
+        StepMapOutput.builder().map(Maps.of(valuesYamlPath, "dmFsdWVzIHlhbW wgY29udGVudA--")).build(), valuesYamlPath);
+
+    assertThat(valuesManifestContent).isEqualTo("values yaml content");
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetValuesManifestContentEmpty() {
+    String valuesYamlPath = "harness/path/to/values.yaml";
+    String valuesManifestContent = serverlessDownloadManifestsStepHelper.getValuesManifestContent(
+        StepMapOutput.builder().map(Maps.of(valuesYamlPath, null)).build(), valuesYamlPath);
+
+    assertThat(valuesManifestContent).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetValuesManifestContentWithIllegalBase64Character() {
+    String valuesYamlPath = "harness/path/to/values.yaml";
+    assertThatThrownBy(
+        ()
+            -> serverlessDownloadManifestsStepHelper.getValuesManifestContent(
+                StepMapOutput.builder().map(Maps.of(valuesYamlPath, "$dmFsdWVzIHlhbWwgY29udGVudA--")).build(),
+                valuesYamlPath))
+        .hasMessage("Unable to fetch values YAML, valuesYamlPath: harness/path/to/values.yaml")
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

@@ -31,6 +31,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
+import io.harness.cvng.autodiscovery.beans.AutoDiscoveryRequestDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DeviationType;
@@ -1836,6 +1837,13 @@ public class BuilderFactory {
         .duration(RuntimeParameter.builder().value("15m").build());
   }
 
+  public AutoDiscoveryRequestDTO getAutoDiscoveryRequestDTO() {
+    return AutoDiscoveryRequestDTO.builder()
+        .agentIdentifier("agentIdentifier")
+        .autoCreateMonitoredService(true)
+        .build();
+  }
+
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {
       BuilderFactory builder = unsafeBuild();
@@ -2228,6 +2236,21 @@ public class BuilderFactory {
                          .description("desc")
                          .name("name")
                          .webhookUrl("webhookUrl")
+                         .build());
+  }
+
+  public CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilderWithChannelId() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .webhookUrl("webhookUrl")
+                         .channelId("channelId")
                          .build());
   }
 }

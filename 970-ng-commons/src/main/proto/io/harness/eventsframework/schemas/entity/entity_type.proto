@@ -249,4 +249,5 @@ enum EntityTypeProtoEnum {
   CHAOS_INFRASTRUCTURE = 236;
   BUILD_AND_PUSH_GAR = 237;
   ANCHORE = 238;
+  OVERRIDES = 239;
 }

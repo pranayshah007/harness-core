@@ -1,0 +1,22 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/publicIPAddresses/Name",
+  "name": "Name",
+  "type": "Microsoft.Network/publicIPAddresses",
+  "location": "eastus",
+  "tags": {},
+  "sku": {
+    "name": "Standard",
+    "tier": "Regional"
+  },
+  "etag": "Etag",
+  "properties": {
+    "publicIPAllocationMethod": "Static",
+    "publicIPAddressVersion": "IPv4",
+    "ipTags": [],
+    "ipAddress": "0.0.0.0",
+    "idleTimeoutInMinutes": 4,
+    "resourceGuid": "ResourceGuid",
+    "provisioningState": "Succeeded"
+  },
+  "resourceGroup": "ResourceGroupId"
+}

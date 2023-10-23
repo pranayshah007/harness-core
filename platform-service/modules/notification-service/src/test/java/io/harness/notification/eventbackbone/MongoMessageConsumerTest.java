@@ -7,8 +7,10 @@
 
 package io.harness.notification.eventbackbone;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.notification.NotificationRequest.ChannelCase.SLACK;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.JENNY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
@@ -18,6 +20,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.manage.GlobalContextManager;
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.notification.utils.NotificationRequestTestUtils;
@@ -27,7 +30,9 @@ import io.harness.rule.Owner;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,6 +44,11 @@ public class MongoMessageConsumerTest extends CategoryTest {
   @Mock private NotificationService notificationService;
   @Mock private QueueConsumer<MongoNotificationRequest> queueConsumer;
   private MongoMessageConsumer mongoMessageConsumer;
+
+  private static final String ACCOUNT_IDENTIFIER = "AccountId";
+  private static final String ORG_IDENTIFIER = "OrgId";
+  private static final String PROJECT_IDENTIFIER = "ProjectId";
+  private static final String EMAIL_ID = "test@harness.com";
 
   @Before
   public void setUp() throws Exception {
@@ -72,6 +82,53 @@ public class MongoMessageConsumerTest extends CategoryTest {
     List<ILoggingEvent> logList = listAppender.list;
     assertThat(logList.get(logList.size() - 1).getMessage())
         .isEqualTo("Corrupted message received off the mongo queue");
+    assertThat(GlobalContextManager.isAvailable()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void onMessage_ValidNotificationTriggerRequest() {
+    String notificationTriggerRequestId = generateUuid();
+    Map<String, String> templateData = new HashMap<>();
+    templateData.put("DELEGATE_HOST", "hostname1");
+    templateData.put("DELEGATE_NAME", "delegateName");
+    templateData.put("TEMPLATE_IDENTIFIER", "email_test");
+    NotificationTriggerRequest notificationTriggerRequest = NotificationTriggerRequest.newBuilder()
+                                                                .setId(notificationTriggerRequestId)
+                                                                .setAccountId(ACCOUNT_IDENTIFIER)
+                                                                .setOrgId(ORG_IDENTIFIER)
+                                                                .setProjectId(PROJECT_IDENTIFIER)
+                                                                .setEventEntity("DELEGATE")
+                                                                .setEvent("DELEGATE_DOWN")
+                                                                .putAllTemplateData(templateData)
+                                                                .build();
+    MongoNotificationRequest mongoNotificationRequest =
+        MongoNotificationRequest.builder()
+            .bytes(notificationTriggerRequest.toByteArray())
+            .requestType(notificationTriggerRequest.getClass().getSimpleName())
+            .build();
+    mongoMessageConsumer.onMessage(mongoNotificationRequest);
+    verify(notificationService, times(1)).processNewMessage(notificationTriggerRequest);
+    assertThat(GlobalContextManager.isAvailable()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void onMessage_InValidNotificationTriggerRequest() {
+    String notificationTriggerRequestId = generateUuid();
+    NotificationTriggerRequest notificationTriggerRequest = NotificationTriggerRequest.newBuilder()
+                                                                .setId(notificationTriggerRequestId)
+                                                                .setAccountId(ACCOUNT_IDENTIFIER)
+                                                                .setOrgId(ORG_IDENTIFIER)
+                                                                .setProjectId(PROJECT_IDENTIFIER)
+                                                                .setEventEntity("DELEGATE")
+                                                                .setEvent("DELEGATE_DOWN")
+                                                                .build();
+    MongoNotificationRequest mongoNotificationRequest =
+        MongoNotificationRequest.builder().bytes(notificationTriggerRequest.toByteArray()).build();
+    verify(notificationService, times(0)).processNewMessage(notificationTriggerRequest);
     assertThat(GlobalContextManager.isAvailable()).isEqualTo(false);
   }
 }

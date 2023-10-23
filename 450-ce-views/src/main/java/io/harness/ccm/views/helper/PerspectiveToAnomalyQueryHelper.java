@@ -14,6 +14,7 @@ import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AWS_U
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_METER_CATEGORY;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_RESOURCE_GROUP;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.AZURE_SUBSCRIPTION_GUID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.CLOUD_PROVIDER_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PRODUCT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_PROJECT_FIELD_ID;
@@ -197,6 +198,22 @@ public class PerspectiveToAnomalyQueryHelper {
           case REGION_FIELD_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.REGION, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
+            break;
+          case CLOUD_PROVIDER_FIELD_ID:
+            String[] emptyArray = new String[0];
+            for (String value : filter.getIdFilter().getValues()) {
+              if (value.toLowerCase().equals(ViewFieldIdentifier.AWS.getDisplayName().toLowerCase())) {
+                stringFilters.add(buildStringFilter(CCMField.AWS_ACCOUNT, emptyArray, QLCEViewFilterOperator.NOT_NULL));
+              } else if (value.toLowerCase().equals(ViewFieldIdentifier.GCP.getDisplayName().toLowerCase())) {
+                stringFilters.add(buildStringFilter(CCMField.GCP_PROJECT, emptyArray, QLCEViewFilterOperator.NOT_NULL));
+              } else if (value.toLowerCase().equals(ViewFieldIdentifier.AZURE.getDisplayName().toLowerCase())) {
+                stringFilters.add(
+                    buildStringFilter(CCMField.AZURE_SUBSCRIPTION_GUID, emptyArray, QLCEViewFilterOperator.NOT_NULL));
+              } else {
+                stringFilters.add(
+                    buildStringFilter(CCMField.CLUSTER_NAME, emptyArray, QLCEViewFilterOperator.NOT_NULL));
+              }
+            }
             break;
           default:
             if (filter.getIdFilter().getField().getIdentifier() == BUSINESS_MAPPING) {

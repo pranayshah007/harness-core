@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-snapshot-orphan
+cloudProvider: AWS
+resourceType: rds-snapshot
+description: List all snapshots without an extant database or orphaned rds snapshot
+rulesYamlPath: ../rds-snapshot-orphan.yml

@@ -25,7 +25,7 @@ import javax.validation.Valid;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
-  String save(@Valid PollingDocument pollingDocument);
+  PollingResponseDTO save(@Valid PollingDocument pollingDocument);
 
   PollingDocument get(String accountId, String pollingDocId);
 

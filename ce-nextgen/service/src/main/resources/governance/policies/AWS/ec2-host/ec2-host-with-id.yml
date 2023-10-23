@@ -1,0 +1,5 @@
+policies:
+  - name: ec2-host-with-id
+    resource: ec2-host
+    filters:
+      - "HostId": "HostId"

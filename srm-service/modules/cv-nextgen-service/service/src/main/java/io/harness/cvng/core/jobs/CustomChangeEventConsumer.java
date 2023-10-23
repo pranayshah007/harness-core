@@ -15,6 +15,7 @@ import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata.CustomChangeEventMetadataBuilder;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -90,8 +91,8 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
                     .changeEventDetailsLink(customChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
                     .externalLinkToEntity(customChangeEventDTO.getEventDetails().getExternalLinkToEntity())
                     .description(customChangeEventDTO.getEventDetails().getDescription())
-                    .channelUrl(customChangeEventDTO.getEventDetails().getChannelUrl())
                     .webhookUrl(customChangeEventDTO.getEventDetails().getWebhookUrl())
+                    .channelId(customChangeEventDTO.getEventDetails().getChannelId())
                     .build())
             .type(changeSource.getType());
 
@@ -109,9 +110,12 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
             .metadata(customChangeEventMetadataBuilder.build())
             .build();
 
-    if (isNotEmpty(customChangeEventDTO.getEventDetails().getWebhookUrl())) {
-      changeEventService.registerWithHealthReport(
-          changeEventDTO, customChangeEventDTO.getEventDetails().getWebhookUrl());
+    if ((isNotEmpty(customChangeEventDTO.getEventDetails().getChannelId())
+            && isNotEmpty(((CustomChangeSource) changeSource).getAuthorizationToken()))
+        || isNotEmpty(customChangeEventDTO.getEventDetails().getWebhookUrl())) {
+      changeEventService.registerWithHealthReport(changeEventDTO,
+          customChangeEventDTO.getEventDetails().getWebhookUrl(),
+          ((CustomChangeSource) changeSource).getAuthorizationToken());
     } else {
       changeEventService.register(changeEventDTO);
     }

@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -36,11 +37,13 @@ import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestSourceWrapper;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -50,12 +53,16 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -67,6 +74,8 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
   @InjectMocks private K8sApplyStep k8sApplyStep;
   private static final String COMMAND_FLAG = "--server-side";
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
 
   @Test
   @Owner(developers = ABOSII)
@@ -279,6 +288,48 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     verify(k8sStepHelper, times(1)).handleHelmValuesFetchFailure(any());
     verify(cdStepHelper, times(1)).handleGitTaskFailure(any());
     verify(k8sStepHelper, times(1)).handleTaskException(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testPublishSecretRuntimeUsageOverrides() {
+    final ManifestConfigWrapper manifestOverride = ManifestConfigWrapper.builder().build();
+    final K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
+    stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setOverrides(List.of(manifestOverride));
+
+    testPublishSecretRuntimeUsage(stepParameters, manifestOverride);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testPublishSecretRuntimeUsageManifestSource() {
+    final K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
+    final ManifestSourceWrapper manifestSourceWrapper = ManifestSourceWrapper.builder().build();
+    stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setManifestSource(manifestSourceWrapper);
+
+    testPublishSecretRuntimeUsage(stepParameters, manifestSourceWrapper);
+  }
+
+  private void testPublishSecretRuntimeUsage(K8sApplyStepParameters applyStepParameters, Object visitable) {
+    final Set<VisitedSecretReference> secretReferences = Set.of(VisitedSecretReference.builder().build());
+    final ManifestsOutcome manifestsOutcomes = new ManifestsOutcome();
+
+    doReturn(secretReferences).when(entityReferenceExtractorUtils).extractReferredSecrets(ambiance, visitable);
+    doReturn(manifestsOutcomes).when(k8sStepHelper).resolveManifestsOutcome(ambiance);
+    doReturn(K8sManifestOutcome.builder().build()).when(k8sStepHelper).getK8sSupportedManifestOutcome(any());
+
+    final StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(applyStepParameters).timeout(ParameterField.ofNull()).build();
+    k8sApplyStep.startChainLink(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    ArgumentCaptor<EntityUsageDetailProto> entityUsageCaptor = ArgumentCaptor.forClass(EntityUsageDetailProto.class);
+    verify(secretRuntimeUsageService, times(1))
+        .createSecretRuntimeUsage(eq(secretReferences), entityUsageCaptor.capture());
+    assertThat(entityUsageCaptor.getValue().getUsageType()).isEqualTo(PIPELINE_EXECUTION);
   }
 
   private void assertFilePathsValidation(StepElementParameters stepElementParameters) {

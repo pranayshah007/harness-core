@@ -1,0 +1,37 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Sql/servers/Server1/databases/Database",
+  "name": "Database",
+  "type": "Microsoft.Sql/servers/databases",
+  "location": "westeurope",
+  "sku": {
+    "name": "System",
+    "tier": "System",
+    "capacity": 0
+  },
+  "kind": "v12.0,system",
+  "managedBy": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Sql/servers/Server1",
+  "properties": {
+    "collation": "SQL_Latin1_General_CP1_CI_AS",
+    "maxSizeBytes": 32212254720,
+    "status": "Online",
+    "databaseId": "DatabaseId",
+    "creationDate": "2016-02-13T19:00:46.860Z",
+    "currentServiceObjectiveName": "System3",
+    "requestedServiceObjectiveName": "System3",
+    "defaultSecondaryLocation": "northeurope",
+    "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+    "zoneRedundant": false,
+    "readScale": "Disabled",
+    "readReplicaCount": 0,
+    "currentSku": {
+      "name": "System",
+      "tier": "System",
+      "capacity": 0
+    },
+    "transparentDataEncryption": {
+      "status": "Disabled"
+    }
+  },
+  "c7n:parent-id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Sql/servers/Server1",
+  "resourceGroup": "ResourceGroupId"
+}
