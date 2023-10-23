@@ -64,6 +64,10 @@ postgresql:
     # primary.initdb.scriptsConfigMap
     database: overops
     existingSecret: "postgres"
+  serviceAccount:
+    create: true
+    name: "postgres"
+
   commonLabels:
     app: postgres
   primary:

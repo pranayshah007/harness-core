@@ -31,7 +31,7 @@ public class PipelineServiceStepRegistrarTest {
   @Category(UnitTests.class)
   public void testGetEngineFacilitators() {
     Map<StepType, Class<? extends Step>> engineSteps = PipelineServiceStepRegistrar.getEngineSteps();
-    assertEquals(47L, engineSteps.size());
+    assertEquals(48L, engineSteps.size());
     assertEquals(true, engineSteps.containsValue(PipelineStageStep.class));
     assertEquals(true, engineSteps.containsValue(PipelineRollbackStageStep.class));
 

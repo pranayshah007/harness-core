@@ -42,8 +42,13 @@ import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
+import io.harness.ngmigration.service.workflow.WorkflowHandler;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.PipelineMigrationUtils;
 import io.harness.persistence.HPersistence;
+import io.harness.plancreator.flowcontrol.FlowControlConfig;
+import io.harness.plancreator.flowcontrol.barriers.BarrierInfoConfig;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
@@ -99,6 +104,7 @@ public class WorkflowImportService implements ImportService {
   @Inject HPersistence hPersistence;
   @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+  @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     WorkflowFilter filter = (WorkflowFilter) importConnectorDTO.getFilter();
@@ -248,6 +254,8 @@ public class WorkflowImportService implements ImportService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = String.format("Pipeline generated from a First Gen Workflow - %s", workflow.getName());
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    Set<String> workflowBarriers = workflowHandler.getBarriers(workflow);
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
@@ -255,6 +263,7 @@ public class WorkflowImportService implements ImportService {
         migrationHelperService.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
+      PipelineMigrationUtils.fixBarrierInputs(templateInputs);
       fixServiceDetails(templateInputs, workflow, inputDTO, summaryDTO);
       fixEnvAndInfraDetails(templateInputs, workflow, inputDTO, summaryDTO);
     }
@@ -270,15 +279,27 @@ public class WorkflowImportService implements ImportService {
         StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
 
     return PipelineConfig.builder()
-        .pipelineInfoConfig(PipelineInfoConfig.builder()
-                                .identifier(identifier)
-                                .name(name)
-                                .description(ParameterField.createValueField(description))
-                                .projectIdentifier(projectIdentifier)
-                                .orgIdentifier(orgIdentifier)
-                                .stages(Collections.singletonList(stage))
-                                .allowStageExecutions(true)
-                                .build())
+        .pipelineInfoConfig(
+            PipelineInfoConfig.builder()
+                .flowControl(FlowControlConfig.builder()
+                                 .barriers(workflowBarriers.stream()
+                                               .distinct()
+                                               .map(barrierName
+                                                   -> BarrierInfoConfig.builder()
+                                                          .name(barrierName)
+                                                          .identifier(MigratorUtility.generateIdentifier(
+                                                              barrierName, inputDTO.getIdentifierCaseFormat()))
+                                                          .build())
+                                               .collect(Collectors.toList()))
+                                 .build())
+                .identifier(identifier)
+                .name(name)
+                .description(ParameterField.createValueField(description))
+                .projectIdentifier(projectIdentifier)
+                .orgIdentifier(orgIdentifier)
+                .stages(Collections.singletonList(stage))
+                .allowStageExecutions(true)
+                .build())
         .build();
   }
 

@@ -48,7 +48,8 @@ public class ExpiryInterruptCallbackTest extends OrchestrationTestBase {
   @Spy
   @InjectMocks
   ExpiryInterruptCallback expiryInterruptCallback =
-      new ExpiryInterruptCallback("", "", InterruptConfig.newBuilder().build(), InterruptType.MARK_EXPIRED, false);
+      new ExpiryInterruptCallback("", "", InterruptConfig.newBuilder().build(), InterruptType.MARK_EXPIRED, false,
+          Collections.singletonMap("group", "STAGE"));
 
   @Test
   @Owner(developers = YUVRAJ)

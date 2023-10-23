@@ -343,35 +343,91 @@ public class ArtifactResourceUtils {
     return parameterField.isExpression() && !parameterField.isExecutionInput();
   }
 
-  public String getResolvedExpression(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String runtimeInputYaml, String param, String fqnPath,
-      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId, int secretFunctor) {
+  public ResolvedFieldValueWithYamlExpressionEvaluator getResolvedExpression(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String runtimeInputYaml, String param, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId, int secretFunctor,
+      CDExpressionEvaluator cdExpressionEvaluator) {
     if (EngineExpressionEvaluator.hasExpressions(param)) {
-      String mergedCompleteYaml = getMergedCompleteYaml(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
-      if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
-        mergedCompleteYaml = applyTemplatesOnGivenYaml(
-            accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+      if (cdExpressionEvaluator == null) {
+        cdExpressionEvaluator = getCDExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, fqnPath, gitEntityBasicInfo, serviceId, secretFunctor);
       }
-      String[] split = fqnPath.split("\\.");
-      String stageIdentifier = split[2];
-      YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
-      Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
-      EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
-      if (isEmpty(serviceId)) {
-        // pipelines with inline service definitions
-        serviceId = serviceRefAndFQN.getEntityRef();
-      }
-      serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
-      // get environment ref
-      String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
-      List<YamlField> aliasYamlField =
-          getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
-      CDExpressionEvaluator CDExpressionEvaluator =
-          new CDExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField, secretFunctor);
-      param = CDExpressionEvaluator.renderExpression(param);
+      param = cdExpressionEvaluator.renderExpression(param);
     }
-    return param;
+    return ResolvedFieldValueWithYamlExpressionEvaluator.builder()
+        .cdExpressionEvaluator(cdExpressionEvaluator)
+        .value(param)
+        .build();
+  }
+
+  public ResolvedFieldValueWithYamlExpressionEvaluator getResolvedFieldValueWithCDExpressionEvaluator(String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String runtimeInputYaml, String param,
+      String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId, int secretFunctor,
+      CDExpressionEvaluator cdExpressionEvaluator) {
+    final ParameterField<String> fieldValueParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(param);
+    if (fieldValueParameterField == null) {
+      return ResolvedFieldValueWithYamlExpressionEvaluator.builder()
+          .cdExpressionEvaluator(cdExpressionEvaluator)
+          .value(param)
+          .build();
+    } else if (!fieldValueParameterField.isExpression()) {
+      return ResolvedFieldValueWithYamlExpressionEvaluator.builder()
+          .cdExpressionEvaluator(cdExpressionEvaluator)
+          .value(fieldValueParameterField.getValue())
+          .build();
+    } else {
+      // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
+      if ("-1".equals(pipelineIdentifier)) {
+        throw new InvalidRequestException(String.format(
+            "Couldn't resolve artifact image path expression %s, as pipeline has not been saved yet.", param));
+      }
+      if (cdExpressionEvaluator == null) {
+        cdExpressionEvaluator = getCDExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, fqnPath, gitEntityBasicInfo, serviceId, secretFunctor);
+      }
+      String resolvedFieldValuePath =
+          cdExpressionEvaluator.renderExpression(param, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      final ParameterField<String> fieldValueParameter =
+          RuntimeInputValuesValidator.getInputSetParameterField(resolvedFieldValuePath);
+      if (fieldValueParameter == null || fieldValueParameter.isExpression()) {
+        return ResolvedFieldValueWithYamlExpressionEvaluator.builder()
+            .cdExpressionEvaluator(cdExpressionEvaluator)
+            .value(null)
+            .build();
+      } else {
+        return ResolvedFieldValueWithYamlExpressionEvaluator.builder()
+            .cdExpressionEvaluator(cdExpressionEvaluator)
+            .value(fieldValueParameter.getValue())
+            .build();
+      }
+    }
+  }
+
+  CDExpressionEvaluator getCDExpressionEvaluator(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String serviceId, int secretFunctor) {
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+      mergedCompleteYaml = applyTemplatesOnGivenYaml(
+          accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+    }
+    String[] split = fqnPath.split("\\.");
+    String stageIdentifier = split[2];
+    YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+    Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+    EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
+    if (isEmpty(serviceId)) {
+      // pipelines with inline service definitions
+      serviceId = serviceRefAndFQN.getEntityRef();
+    }
+    serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
+    // get environment ref
+    String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
+    List<YamlField> aliasYamlField =
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+    return new CDExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField, secretFunctor);
   }
 
   /**
@@ -1041,9 +1097,24 @@ public class ArtifactResourceUtils {
       throw new io.harness.exception.HintException("Version path can not be empty");
     }
     ResolvedFieldValueWithYamlExpressionEvaluator resolvedFieldValueWithYamlExpressionEvaluator = null;
+    ResolvedFieldValueWithYamlExpressionEvaluator resolvedFieldValueWithCDExpressionEvaluator = null;
+    Map<String, String> inputVariables = NGVariablesUtils.getStringMapVariables(inputs, 0L);
+
     if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
-      script = getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
+      resolvedFieldValueWithCDExpressionEvaluator = getResolvedExpression(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef,
+          secretFunctor, null);
+      script = resolvedFieldValueWithCDExpressionEvaluator.getValue();
+
+      for (Map.Entry<String, String> entry : inputVariables.entrySet()) {
+        resolvedFieldValueWithCDExpressionEvaluator = getResolvedFieldValueWithCDExpressionEvaluator(accountId,
+            orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(),
+            entry.getValue(), fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor,
+            resolvedFieldValueWithCDExpressionEvaluator.getCdExpressionEvaluator());
+
+        inputVariables.put(entry.getKey(), resolvedFieldValueWithCDExpressionEvaluator.getValue());
+      }
+
       resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
           orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(), arrayPath,
           fqnPath, gitEntityBasicInfo, serviceRef, null);
@@ -1054,17 +1125,7 @@ public class ArtifactResourceUtils {
               serviceRef, resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator());
       versionPath = resolvedFieldValueWithYamlExpressionEvaluator.getValue();
     }
-    Map<String, String> inputVariables = NGVariablesUtils.getStringMapVariables(inputs, 0L);
 
-    for (Map.Entry<String, String> entry : inputVariables.entrySet()) {
-      resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(),
-          entry.getValue(), fqnPath, gitEntityBasicInfo, serviceRef,
-          resolvedFieldValueWithYamlExpressionEvaluator != null
-              ? resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator()
-              : null);
-      inputVariables.put(entry.getKey(), resolvedFieldValueWithYamlExpressionEvaluator.getValue());
-    }
     return customResourceService.getBuilds(script, versionPath, arrayPath, inputVariables, accountId, orgIdentifier,
         projectIdentifier, secretFunctor, delegateSelector);
   }

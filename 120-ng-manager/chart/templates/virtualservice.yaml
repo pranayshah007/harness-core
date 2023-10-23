@@ -1,4 +1,5 @@
 # Moving virtual services from next-gen-ui to here as istio takes higher precendence on rules that are created earlier.
+# Moved virtual service from ng-dashboard-aggregator to here as istio takes higher precendence on rules that are created earlier, hence preventing issues on upgrade[SMP-2201]
 {{- if .Values.global.istio.enabled }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -44,6 +45,19 @@ spec:
         port:
           number: {{ .Values.service.port }}
         host: ng-manager
+  - name: ng-dashboard-aggregator
+    match:
+    - uri:
+        prefix: /ng-dashboard/api/
+    - uri:
+        prefix: /ng-dashboard/api
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 7100
+        host: ng-dashboard-aggregator
   - name: next-gen-ui
     match:
     - uri:

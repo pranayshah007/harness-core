@@ -8,6 +8,7 @@
 package io.harness.ng.core.setupusage;
 
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -164,6 +165,93 @@ public class SetupUsageHelperTest extends CDNGEntitiesTestBase {
             EventsFrameworkMetadataConstants.ACTION);
     assertThat(message.getMetadataMap().values())
         .containsExactlyInAnyOrder("accountId", "CONNECTORS", EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testPublishOverridesEntitySetupUsage() throws InvalidProtocolBufferException {
+    final EntityDetailProtoDTO referredEntityDetail =
+        EntityDetailProtoDTO.newBuilder()
+            .setInfraDefRef(
+                InfraDefinitionReferenceProtoDTO.newBuilder().setIdentifier(StringValue.of("secretId")).build())
+            .setType(EntityTypeProtoEnum.SECRETS)
+            .setName("secretName")
+            .build();
+
+    final SetupUsageOwnerEntity ownerEntity = SetupUsageOwnerEntity.builder()
+                                                  .accountId("accountId")
+                                                  .orgIdentifier("orgId")
+                                                  .projectIdentifier("projectId")
+                                                  .identifier("overrideId")
+                                                  .name("overrideId")
+                                                  .type(EntityTypeProtoEnum.OVERRIDES)
+                                                  .build();
+
+    setupUsageHelper.publishOverridesEntitySetupUsage(
+        ownerEntity, Collections.singleton(referredEntityDetail), "ENV_GLOBAL_OVERRIDE");
+    ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+    verify(producer, times(1)).send(captor.capture());
+    assertThat(captor.getValue()).isNotNull();
+    final Message message = captor.getValue();
+    EntitySetupUsageCreateV2DTO entitySetupUsageCreateV2DTO = EntitySetupUsageCreateV2DTO.parseFrom(message.getData());
+    assertThat(entitySetupUsageCreateV2DTO.getAccountIdentifier()).isEqualTo("accountId");
+    assertThat(entitySetupUsageCreateV2DTO.getReferredByEntity().getInfraDefRef()).isNotNull();
+
+    assertThat(entitySetupUsageCreateV2DTO.getReferredByEntity().getIdentifierRef()).isNotNull();
+    assertThat(entitySetupUsageCreateV2DTO.getReferredByEntity().getIdentifierRef().getIdentifier())
+        .isEqualTo(StringValue.of("overrideId"));
+    Set<Descriptors.FieldDescriptor> fieldDescriptorsSet = entitySetupUsageCreateV2DTO.getAllFields().keySet();
+    assertThat(fieldDescriptorsSet).isNotEmpty();
+    ArrayList<Descriptors.FieldDescriptor> fieldDescriptorsList = new ArrayList<>(fieldDescriptorsSet);
+    Set<String> fieldDescriptorsFullName =
+        fieldDescriptorsList.stream().map(Descriptors.FieldDescriptor::getFullName).collect(Collectors.toSet());
+    assertThat(fieldDescriptorsFullName)
+        .containsExactlyInAnyOrder(
+            "io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO.accountIdentifier",
+            "io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO.referredByEntity",
+            "io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO.deleteOldReferredByRecords",
+            "io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO.referredEntityWithSetupUsageDetail");
+
+    Collection<Object> entitySetupUsageValueFields = entitySetupUsageCreateV2DTO.getAllFields().values();
+
+    int typesOfFields = 0;
+    for (Object value : entitySetupUsageValueFields) {
+      if (value instanceof String) {
+        typesOfFields++;
+        assertThat((String) value).isEqualTo("accountId");
+      } else if (value instanceof EntityDetailProtoDTO) {
+        typesOfFields++;
+        EntityDetailProtoDTO referredByEntity = (EntityDetailProtoDTO) value;
+        assertThat(referredByEntity.getName()).isEqualTo("overrideId");
+        assertThat(referredByEntity.getIdentifierRef().getIdentifier()).isEqualTo(StringValue.of("overrideId"));
+      } else if (value instanceof Boolean) {
+        typesOfFields++;
+        assertThat((Boolean) value).isTrue();
+      } else if (value instanceof List) {
+        typesOfFields++;
+        List<EntityDetailWithSetupUsageDetailProtoDTO> entityDetailWithSetupUsageList =
+            (List<EntityDetailWithSetupUsageDetailProtoDTO>) value;
+        assertThat(entityDetailWithSetupUsageList).hasSize(1);
+        EntityDetailWithSetupUsageDetailProtoDTO entityDetailWithSetupUsageDetailProtoDTO =
+            entityDetailWithSetupUsageList.get(0);
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getType()).isEqualTo("ENTITY_REFERRED_BY_OVERRIDES");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getOverridesDetail().getOverrideType())
+            .isEqualTo("ENV_GLOBAL_OVERRIDE");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getOverridesDetail().getIdentifier())
+            .isEqualTo("overrideId");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getOverridesDetail().getAccountId()).isEqualTo("accountId");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getOverridesDetail().getOrgId()).isEqualTo("orgId");
+        assertThat(entityDetailWithSetupUsageDetailProtoDTO.getOverridesDetail().getProjectId()).isEqualTo("projectId");
+      }
+    }
+    assertThat(typesOfFields).isEqualTo(4);
+
+    assertThat(message.getMetadataMap().keySet())
+        .containsExactlyInAnyOrder("accountId", EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE,
+            EventsFrameworkMetadataConstants.ACTION);
+    assertThat(message.getMetadataMap().values())
+        .containsExactlyInAnyOrder("accountId", "SECRETS", EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION);
   }
 
   @Test

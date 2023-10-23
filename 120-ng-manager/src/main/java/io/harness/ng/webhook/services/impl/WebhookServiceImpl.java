@@ -9,6 +9,7 @@ package io.harness.ng.webhook.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eventsframework.EventsFrameworkConstants.NG_GITX_WEBHOOK_PUSH_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_BRANCH_HOOK_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_PUSH_EVENT;
@@ -25,6 +26,7 @@ import io.harness.beans.FeatureName;
 import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
@@ -59,6 +61,7 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private HsqsClientService hsqsClientService;
   private WebhookHelper webhookHelper;
+  private GitSyncSdkService gitSyncSdkService;
 
   NextGenConfiguration nextGenConfiguration;
 
@@ -125,10 +128,16 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   private EnqueueRequest getEnqueueRequestBasedOnGitEvent(String moduleName, String topic, WebhookDTO webhookDTO) {
     // Consumer for push events stream: WebhookPushEventQueueProcessor (in NG manager)
     if (PUSH == webhookDTO.getGitDetails().getEvent()) {
+      String producerName;
+      if (gitSyncSdkService.isGitSimplificationEnabled(webhookDTO.getAccountId(), "", "")) {
+        producerName = NG_GITX_WEBHOOK_PUSH_EVENT;
+      } else {
+        producerName = moduleName + WEBHOOK_PUSH_EVENT;
+      }
       return EnqueueRequest.builder()
-          .topic(topic + WEBHOOK_PUSH_EVENT)
+          .topic(producerName)
           .subTopic(webhookDTO.getAccountId())
-          .producerName(moduleName + WEBHOOK_PUSH_EVENT)
+          .producerName(producerName)
           .payload(RecastOrchestrationUtils.toJson(webhookDTO))
           .build();
     }

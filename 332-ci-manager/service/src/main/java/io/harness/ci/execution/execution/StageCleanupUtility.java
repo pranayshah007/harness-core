@@ -188,7 +188,7 @@ public class StageCleanupUtility {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+      throw new CIStageExecutionException("Unable to fetch stage details. Please retry or verify pipeline yaml");
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
@@ -205,7 +205,7 @@ public class StageCleanupUtility {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+      throw new CIStageExecutionException("Unable to fetch stage details. Please retry or verify pipeline yaml");
     }
 
     String baseLogKey = LogStreamingStepClientFactory.getLogBaseKey(ambiance);

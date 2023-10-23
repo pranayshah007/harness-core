@@ -36,6 +36,7 @@ import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.helpers.TemplatePreProcessorHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
@@ -59,6 +60,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+  @Mock TemplatePreProcessorHelper templatePreProcessorHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";

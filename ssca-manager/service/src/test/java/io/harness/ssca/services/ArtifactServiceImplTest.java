@@ -22,7 +22,12 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
+import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.EnvironmentTypeEnum;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.PolicyViolationEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
+import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
 import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryBuilder;
@@ -40,6 +45,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -48,7 +54,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Inject ArtifactService artifactService;
@@ -189,6 +194,26 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
+  public void testGetArtifactDetails() {
+    Mockito.when(artifactRepository.findOne(Mockito.any()))
+        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+
+    ArtifactDetailResponse response = artifactService.getArtifactDetails(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        "artifactId", "tag");
+    assertThat(response.getArtifactId()).isEqualTo("artifactId");
+    assertThat(response.getArtifactName()).isEqualTo("test/image");
+    assertThat(response.getTag()).isEqualTo("tag");
+    assertThat(response.getComponentsCount()).isEqualTo(35);
+    assertThat(response.getProdEnvCount()).isEqualTo(2);
+    assertThat(response.getNonProdEnvCount()).isEqualTo(1);
+    assertThat(response.getBuildPipelineId()).isEqualTo("pipelineId");
+    assertThat(response.getBuildPipelineExecutionId()).isEqualTo("pipelineExecutionId");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
   public void testGenerateArtifactId() {
     String generatedId = artifactService.generateArtifactId("https://index.docker.com/v2/", "arpit/image-5");
     assertThat(generatedId).isEqualTo("fab60212-b5a7-3449-97fb-792c4d9c9bff");
@@ -218,9 +243,6 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
 
-    Mockito.when(cdInstanceSummaryRepo.findAll(Mockito.any(Criteria.class)))
-        .thenReturn(List.of(builderFactory.getCdInstanceSummaryBuilder().build()));
-
     Page<ArtifactListingResponse> artifactEntityPage = artifactService.listLatestArtifacts(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
         builderFactory.getContext().getProjectIdentifier(), Pageable.ofSize(2).withPage(0));
@@ -237,8 +259,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getComponentsCount()).isEqualTo(35);
-    assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(0);
-    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(1);
+    assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(1);
+    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(2);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
@@ -249,8 +271,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getComponentsCount()).isEqualTo(35);
-    assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(0);
-    assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(1);
+    assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(2);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
     assertThat(artifactListingResponses.get(1).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
@@ -267,19 +289,21 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
         builderFactory.getArtifactEntityBuilder()
             .artifactId("artifact2")
             .artifactCorrelationId("artifactCorrelation2")
+            .prodEnvCount(0l)
+            .nonProdEnvCount(1l)
             .build());
     Mockito.when(artifactRepository.findAll(Mockito.any(), Mockito.any()))
         .thenReturn(new PageImpl<>(artifactEntities, Pageable.ofSize(2).withPage(0), 3));
 
     Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
-
-    Mockito.when(cdInstanceSummaryRepo.findAll(Mockito.any(Criteria.class)))
-        .thenReturn(List.of(builderFactory.getCdInstanceSummaryBuilder().build()));
+    ArtifactListingRequestBody filterBody = new ArtifactListingRequestBody()
+                                                .environmentType(EnvironmentTypeEnum.ALL)
+                                                .policyViolation(PolicyViolationEnum.ALLOW);
 
     Page<ArtifactListingResponse> artifactEntityPage = artifactService.listArtifacts(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
-        builderFactory.getContext().getProjectIdentifier(), null, Pageable.ofSize(2).withPage(0));
+        builderFactory.getContext().getProjectIdentifier(), filterBody, Pageable.ofSize(2).withPage(0));
 
     List<ArtifactListingResponse> artifactListingResponses = artifactEntityPage.toList();
 
@@ -293,9 +317,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getComponentsCount()).isEqualTo(35);
-    assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(0);
-    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(1);
-    // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
+    assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(1);
+    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(2);
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
 
@@ -305,7 +328,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getComponentsCount()).isEqualTo(35);
-    assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(1);
     assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(0);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
     assertThat(artifactListingResponses.get(1).getUpdatedAt())
@@ -364,5 +387,37 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(responseList.get(0).getPipelineExecutionId()).isEqualTo("lastExecutionId");
     assertThat(responseList.get(0).getTriggeredBy()).isEqualTo("username");
     assertThat(responseList.get(0).getAttestedStatus()).isEqualTo(AttestedStatusEnum.PASS);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdateArtifactEnvCount_prod() {
+    ArtifactEntity artifact = builderFactory.getArtifactEntityBuilder().build();
+    artifactService.updateArtifactEnvCount(artifact, EnvType.Production, 1);
+    ArgumentCaptor<ArtifactEntity> argument = ArgumentCaptor.forClass(ArtifactEntity.class);
+    Mockito.verify(artifactRepository).save(argument.capture());
+    assertThat(argument.getValue().getNonProdEnvCount()).isEqualTo(1);
+    assertThat(argument.getValue().getProdEnvCount()).isEqualTo(3);
+
+    artifactService.updateArtifactEnvCount(artifact, EnvType.Production, -4);
+    assertThat(argument.getValue().getNonProdEnvCount()).isEqualTo(1);
+    assertThat(argument.getValue().getProdEnvCount()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testUpdateArtifactEnvCount_nonProd() {
+    ArtifactEntity artifact = builderFactory.getArtifactEntityBuilder().build();
+    artifactService.updateArtifactEnvCount(artifact, EnvType.PreProduction, 1);
+    ArgumentCaptor<ArtifactEntity> argument = ArgumentCaptor.forClass(ArtifactEntity.class);
+    Mockito.verify(artifactRepository).save(argument.capture());
+    assertThat(argument.getValue().getNonProdEnvCount()).isEqualTo(2);
+    assertThat(argument.getValue().getProdEnvCount()).isEqualTo(2);
+
+    artifactService.updateArtifactEnvCount(artifact, EnvType.PreProduction, -4);
+    assertThat(argument.getValue().getNonProdEnvCount()).isEqualTo(0);
+    assertThat(argument.getValue().getProdEnvCount()).isEqualTo(2);
   }
 }

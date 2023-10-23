@@ -8,6 +8,7 @@
 package io.harness.ng.core.refresh.helper;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.NAMANG;
 
@@ -206,6 +207,23 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
         CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithServiceRuntimeAndServiceInputsNotPresent() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
+    String pipelineYmlWithService = readFile("pipeline-with-svc-runtime-serviceInputs-not-present.yaml");
+
+    InputsValidationResponse validationResponse =
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isTrue();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
   }
 

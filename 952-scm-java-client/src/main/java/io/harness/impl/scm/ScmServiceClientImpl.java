@@ -801,7 +801,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       if (cause != null) {
         throw new ExplanationException("A PR already exist for given branches", e);
       } else {
-        throw new ExplanationException("Failed to create PR", e);
+        throw new ExplanationException("Create PR failed with error message, " + e.getMessage(), e);
       }
     }
     return prResponse;

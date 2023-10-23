@@ -108,8 +108,8 @@ public class LicenseServiceImpl implements LicenseService {
 
   private static final String TRIAL_EXPIRATION_DAY_0_TEMPLATE = "trial_expiration_day0";
   private static final String TRIAL_EXPIRATION_DAY_30_TEMPLATE = "trial_expiration_day30";
-  private static final String TRIAL_EXPIRATION_DAY_60_TEMPLATE = "trial_expiration_day60";
-  private static final String TRIAL_EXPIRATION_DAY_89_TEMPLATE = "trial_expiration_day89";
+  private static final String TRIAL_EXPIRATION_DAY_45_TEMPLATE = "trial_expiration_day45";
+  private static final String TRIAL_EXPIRATION_DAY_59_TEMPLATE = "trial_expiration_day59";
   private static final String TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE = "trial_expiration_before_deletion";
 
   private final AccountService accountService;
@@ -245,7 +245,7 @@ public class LicenseServiceImpl implements LicenseService {
   void handleTrialAccountExpiration(Account account, long expiryTime) {
     long expiredSinceDays = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - expiryTime);
     LicenseInfo licenseInfo = account.getLicenseInfo();
-    if (expiredSinceDays >= 90 && !AccountStatus.MARKED_FOR_DELETION.equals(licenseInfo.getAccountStatus())
+    if (expiredSinceDays >= 60 && !AccountStatus.MARKED_FOR_DELETION.equals(licenseInfo.getAccountStatus())
         && allRemindersSent(account)) {
       updateAccountStatusToMarkedForDeletion(account);
       getResponse(ngLicenseHttpClient.softDelete(account.getUuid()));
@@ -289,11 +289,11 @@ public class LicenseServiceImpl implements LicenseService {
         templateName = TRIAL_EXPIRATION_DAY_0_TEMPLATE;
       } else if (expiredSinceDays == 30) {
         templateName = TRIAL_EXPIRATION_DAY_30_TEMPLATE;
-      } else if (expiredSinceDays == 60) {
-        templateName = TRIAL_EXPIRATION_DAY_60_TEMPLATE;
-      } else if (expiredSinceDays == 89) {
-        templateName = TRIAL_EXPIRATION_DAY_89_TEMPLATE;
-      } else if (expiredSinceDays >= 90 && expiredSinceDays <= 92) {
+      } else if (expiredSinceDays == 45) {
+        templateName = TRIAL_EXPIRATION_DAY_45_TEMPLATE;
+      } else if (expiredSinceDays == 59) {
+        templateName = TRIAL_EXPIRATION_DAY_59_TEMPLATE;
+      } else if (expiredSinceDays >= 60 && expiredSinceDays <= 62) {
         templateName = TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE;
       }
     }

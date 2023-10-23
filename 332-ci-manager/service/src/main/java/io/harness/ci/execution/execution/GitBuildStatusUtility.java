@@ -38,6 +38,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
 import io.harness.code.HarnessCodePayload;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -71,6 +72,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.net.URL;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -176,8 +178,13 @@ public class GitBuildStatusUtility {
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
         if (executeOnDelegate) {
+          List<TaskSelector> selectors = new ArrayList<>();
+          if (featureFlagService.isEnabled(FeatureName.CI_CODEBASE_SELECTOR, accountId)) {
+            selectors = connectorUtils.fetchCodebaseDelegateSelector(
+                ambiance, connectorDetails, executionSweepingOutputResolver);
+          }
           sendStatusViaDelegate(
-              ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+              ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier(), selectors);
         } else {
           sendStatus(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         }
@@ -197,8 +204,8 @@ public class GitBuildStatusUtility {
     gitStatusCheckHelper.sendStatus(gitStatusCheckParams);
   }
 
-  private void sendStatusViaDelegate(
-      Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+  private void sendStatusViaDelegate(Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters,
+      String accountId, String stageId, List<TaskSelector> taskSelectors) {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
                                                   .accountId(accountId)
@@ -207,6 +214,7 @@ public class GitBuildStatusUtility {
                                                   .taskType("BUILD_STATUS")
                                                   .taskParameters(ciBuildStatusPushParameters)
                                                   .taskDescription("CI git build status task")
+                                                  .selectors(taskSelectors)
                                                   .build();
 
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);

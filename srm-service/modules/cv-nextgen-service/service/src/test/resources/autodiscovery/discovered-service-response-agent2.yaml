@@ -1,0 +1,60 @@
+[
+  {
+    "id": "65130e1c457bae2f07823c0a",
+    "agentID": "65130e119d0cdfa09eaa02fc",
+    "type": "Kubernetes",
+    "version": "v1",
+    "spec": {
+      "ip": null,
+      "fqdn": null,
+      "port": null,
+      "harnessServiceIdentity": {
+        "identifier": "service1",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject"
+      },
+      "harnessEnvironmentIdentity": {
+        "identifier": "envIdentifier",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject",
+        "infraIdentifier": "hce_test_new"
+      },
+    "createdAt": "2023-10-11T06:15:56.173Z",
+    "updatedAt": "2023-10-11T06:30:30.839Z",
+    "createdBy": "",
+    "updatedBy": "",
+    "removed": false
+    }
+  },
+  {
+    "id": "65130e1c457bae2f07823c10",
+    "agentID": "65130e119d0cdfa09eaa02fc",
+    "type": "Kubernetes",
+    "version": "v1",
+    "spec": {
+      "ip": null,
+      "fqdn": null,
+      "port": null,
+      "harnessServiceIdentity": {
+        "identifier": "service2",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject"
+      },
+      "harnessEnvironmentIdentity": {
+        "identifier": "envIdentifier",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject",
+        "infraIdentifier": "hce_test_new"
+      },
+      "createdAt": "2023-10-11T06:15:56.173Z",
+      "updatedAt": "2023-10-11T06:30:30.839Z",
+      "createdBy": "",
+      "updatedBy": "",
+      "removed": false
+    }
+  }
+]

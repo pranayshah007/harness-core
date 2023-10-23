@@ -30,6 +30,7 @@ import software.wings.dl.WingsMongoPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,7 +51,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 @Singleton
 public class CgCdLicenseUsageQueryHelper {
-  @Inject private TimeScaleDBService timeScaleDBService;
+  @Inject @Named("LicenseUsageTimeScaleDBService") private TimeScaleDBService timeScaleDBService;
   @Inject private WingsMongoPersistence wingsPersistence;
 
   public long fetchServiceInstancesOver30Days(String accountId) {

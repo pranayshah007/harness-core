@@ -13,5 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 
 @OwnedBy(HarnessTeam.SSCA)
-@JsonSubTypes({ @JsonSubTypes.Type(value = SlsaDockerSourceSpec.class, name = SlsaVerificationSourceConstants.DOCKER) })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = SlsaDockerSourceSpec.class, name = SlsaVerificationSourceConstants.DOCKER)
+  , @JsonSubTypes.Type(value = SlsaGcrSourceSpec.class, name = SlsaVerificationSourceConstants.GCR)
+})
 public interface SlsaVerificationSourceSpec {}

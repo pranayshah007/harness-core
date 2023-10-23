@@ -200,8 +200,8 @@ virtualService:
 s3:
   ### Default values are configured to work with Minio, override if you are using own s3 buckets
   endpoint: ""
-  sbomBucketName: "sbom_store"
-  policyBucketName: "policy_store"
+  sbomBucketName: "sbom-store"
+  policyBucketName: "policy-store"
   region: "us-east-1"
   accessKeyId: ""
   secretAccessKey: ""

@@ -53,7 +53,6 @@ for EXCLUDE_KEY in ${EXCLUDED_KEYS_LIST}; do
 KEYS=( "${KEYS[@]/$EXCLUDE_KEY}" )
 done
 
-
 #Getting the dummy commits that are made to the branch and creating a ticket out of it
 #git log --pretty=oneline --abbrev-commit |\
 #      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
@@ -95,7 +94,6 @@ done
 #else
 #  KEYS="${KEYS} ${ticketId}"
 #fi
-
 #Updating all the Jira tickets with the Release Build Number
 if [ "${PURPOSE}" = "saas" ]
 then
@@ -117,14 +115,27 @@ do
     if [[ $EXCLUDE_PROJECTS == *",$PROJ,"* ]]; then
       echo "Skipping $KEY - project is archived or not relevant to versions."
     else
-      curl \
-         -X PUT \
-         --data "{ \"fields\" : { \"${FIELD_ID}\" : \"${VERSION}00\" }}" \
-         -H "Content-Type: application/json" \
-         https://harness.atlassian.net/rest/api/2/issue/${KEY} \
-         --user $JIRA_USERNAME:$JIRA_PASSWORD
+      jira_response=$(curl -X GET -H "Content-Type: application/json" "https://harness.atlassian.net/rest/api/2/issue/${KEY}"?fields=components --user $JIRA_USERNAME:$JIRA_PASSWORD)
+      components=`echo "$jira_response" | jq --raw-output '.fields.components[0].name'`
+      echo $components
+      exclude_pipeline_component="Pipeline"
+      exclude_templatelibrary_component="Templates Library"
+      exclude_pipelinenotification_component="Pipeline Notifications"
+      exclude_expressionengine_component="Expression Engine"
+      if [[ "$components" == *"$exclude_pipeline_component"*  || "$components" == *"$exclude_templatelibrary_component"* || "$components" == *"$exclude_pipelinenotification_component"* || "$components" == *"$exclude_expressionengine_component"*  ]];
+      then
+        echo "Pipeline/Template Library/Pipeline Notifications/Expression Engine components is there,so no need to update the version"
+      else
+        curl \
+           -X PUT \
+           --data "{ \"fields\" : { \"${FIELD_ID}\" : \"${VERSION}00\" }}" \
+           -H "Content-Type: application/json" \
+           https://harness.atlassian.net/rest/api/2/issue/${KEY} \
+           --user $JIRA_USERNAME:$JIRA_PASSWORD
+    fi
     fi
 done
+
 # Note - $EXECUTE_NEW_VERSION_CODE should be added to the appropriate ci Jobs for this to work
 # Also, once this is rolled out for good, then this code needs to be integrated into the loop above instead
 # of having two loops over the same jira cases.

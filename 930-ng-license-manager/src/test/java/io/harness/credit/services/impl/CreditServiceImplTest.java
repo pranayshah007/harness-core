@@ -13,6 +13,7 @@ import static io.harness.credit.CreditTestConstant.DEFAULT_CREDIT;
 import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -24,6 +25,7 @@ import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.credit.entities.Credit;
 import io.harness.credit.mappers.CreditObjectConverter;
 import io.harness.credit.utils.CreditStatus;
+import io.harness.exception.InvalidRequestException;
 import io.harness.repositories.CreditRepository;
 import io.harness.rule.Owner;
 
@@ -75,5 +77,14 @@ public class CreditServiceImplTest extends CategoryTest {
     assertThat(creditDTOS.size()).isEqualTo(1);
     assertThat(creditDTOS.get(0).getAccountIdentifier()).isEqualTo(ACCOUNT_IDENTIFIER);
     assertThat(creditDTOS.get(0).getCreditStatus()).isEqualTo(CreditStatus.EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testPurchaseCredit() {
+    assertThatThrownBy(() -> creditService.purchaseCredit("random_account", DEFAULT_CI_CREDIT_DTO))
+        .hasMessage("AccountIdentifier: [random_account] did not match with the Credit information")
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

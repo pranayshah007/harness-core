@@ -458,3 +458,14 @@ io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.beans.yaml.extended.cache.CachePolicy
 io.harness.beans.steps.stepinfo.GARStepInfo
 io.harness.steps.servicenow.beans.ServiceNowCreateType
+io.harness.steps.shellscript.v1.OutputAlias
+io.harness.steps.shellscript.v1.ShellType
+io.harness.steps.shellscript.v1.ExecutionTarget
+io.harness.steps.shellscript.v1.ShellScriptStepParameters
+io.harness.steps.shellscript.v1.HarnessFileStoreSource
+io.harness.steps.shellscript.v1.ShellScriptInlineSource
+io.harness.steps.shellscript.v1.ShellScriptSourceWrapper
+io.harness.steps.shellscript.v1.ShellScriptOutcome
+io.harness.steps.shellscript.v1.ExportScope
+io.harness.steps.http.v1.HttpStepParameters
+io.harness.steps.http.v1.HttpOutcome

@@ -9,11 +9,13 @@ package io.harness.ng.core.entitysetupusage.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_INFRA;
+import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_OVERRIDES;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.SECRET_REFERRED_BY_CONNECTOR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferredByInfraSetupUsageDetail;
+import io.harness.ng.core.entitysetupusage.dto.EntityReferredByOverridesSetupUsageDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferredByPipelineSetupUsageDetail;
 import io.harness.ng.core.entitysetupusage.dto.SecretReferredByConnectorSetupUsageDetail;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetail;
@@ -37,6 +39,16 @@ public class SetupUsageDetailProtoToRestMapper {
       return EntityReferredByInfraSetupUsageDetail.builder()
           .environmentIdentifier(setupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentIdentifier())
           .environmentName(setupUsageDetailProtoDTO.getEntityInInfraDetail().getEnvironmentName())
+          .build();
+    }
+
+    if (ENTITY_REFERRED_BY_OVERRIDES.toString().equals(setupUsageDetailProtoDTO.getType())) {
+      return EntityReferredByOverridesSetupUsageDetail.builder()
+          .identifier(setupUsageDetailProtoDTO.getOverridesDetail().getIdentifier())
+          .overrideType(setupUsageDetailProtoDTO.getOverridesDetail().getOverrideType())
+          .accountId(setupUsageDetailProtoDTO.getOverridesDetail().getAccountId())
+          .orgId(setupUsageDetailProtoDTO.getOverridesDetail().getOrgId())
+          .projectId(setupUsageDetailProtoDTO.getOverridesDetail().getProjectId())
           .build();
     }
 

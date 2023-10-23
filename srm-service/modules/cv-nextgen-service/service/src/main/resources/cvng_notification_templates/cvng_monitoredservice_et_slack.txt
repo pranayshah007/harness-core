@@ -1,20 +1,9 @@
 {
-    "text" : "*Monitored Service has observed error events.*\n",
-    "text" : "*Monitored Service <${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has detected error events.*\n",
+    "text" : "*Monitored Service <${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has detected new error events for code errors*\n",
     "attachments": [
         {
             "color": "${COLOR}",
             "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "${SLACK_FORMATTED_VERSION_LIST}"
-                    }
-                },
-                {
-                    "type": "divider"
-                },
                 {
                     "type": "section",
                     "text": {
@@ -27,6 +16,17 @@
                     "text": {
                         "type": "mrkdwn",
                         "text": "Trigger *When ${EVENT_STATUS} with the event type (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed*"
+                    }
+                },
+                {
+                    "type": "divider"
+                },
+                ${SLACK_SAVED_SEARCH_FILTER_SECTION}
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "${SLACK_FORMATTED_VERSION_LIST}"
                     }
                 },
                 {
@@ -57,7 +57,8 @@
                             "text": "Environment\n*${ENVIRONMENT_NAME}*"
                         }
                     ]
-                }
+                },
+                ${SLACK_EVENT_DETAILS_BUTTON}
             ]
         }
     ]

@@ -6,12 +6,14 @@
  */
 
 package io.harness.plancreator.steps.common;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.LinkedList;
@@ -23,5 +25,9 @@ public interface SpecParameters {
   @JsonIgnore
   default List<String> stepInputsKeyExclude() {
     return new LinkedList<>();
+  }
+
+  default String getVersion() {
+    return HarnessYamlVersion.V0;
   }
 }

@@ -16,7 +16,7 @@ import io.harness.network.SafeHttpCall;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.Collections;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +37,8 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   private final String token;
   private final String accountId;
   private final String baseLogKey;
-  private final @NonNull ThreadPoolExecutor logStreamingClientExecutor;
+  private final long delayToClosePrefixLogStream;
+  private final @NonNull ScheduledExecutorService logStreamingDelayExecutor;
   private static final @NonNull Cache<Object, Object> logKeyCache =
       Caffeine.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).maximumSize(1000).build();
 
@@ -55,7 +56,7 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   @Override
   public void closeStream(String logKeySuffix) {
     // we don't want steps to hang because of any log reasons.
-    logStreamingClientExecutor.submit(() -> {
+    logStreamingDelayExecutor.submit(() -> {
       try {
         String logKey = generateLogKey(baseLogKey, logKeySuffix);
         SafeHttpCall.executeWithExceptions(logStreamingClient.closeLogStream(token, accountId, logKey, true));
@@ -92,7 +93,7 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
   @Override
   public void closeAllOpenStreamsWithPrefix(String prefix) {
     // we don't want steps to hang because of any log reasons.
-    logStreamingClientExecutor.submit(() -> {
+    logStreamingDelayExecutor.schedule(() -> {
       try {
         SafeHttpCall.executeWithExceptions(
             logStreamingClient.closeLogStreamWithPrefix(token, accountId, prefix, true, true));
@@ -100,7 +101,7 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
         log.warn(
             String.format("Unable to close log stream for account %s and logKeySuffix %s ", accountId, prefix), ex);
       }
-    });
+    }, delayToClosePrefixLogStream, TimeUnit.SECONDS);
   }
 
   private String generateLogKey(String baseLogKey, String logKeySuffix) {

@@ -111,6 +111,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 public class PollingResponseHandler {
   private static final int MAX_FAILED_ATTEMPTS = 7200;
+  public static final int LOG_EVERY_N_FAILED_COUNT = 20;
   private PollingService pollingService;
   private PollingPerpetualTaskService pollingPerpetualTaskService;
   private PolledItemPublisher polledItemPublisher;
@@ -339,9 +340,12 @@ public class PollingResponseHandler {
 
   private void handleFailureResponse(PollingDocument pollingDocument, String errorMessage) {
     int failedCount = pollingDocument.getFailedAttempts() + 1;
-    log.error(
-        "Received failure response from polling delegate perpetual task for pollingDocId: {} , failedCount: {}, errorMessage: {}",
-        pollingDocument.getUuid(), failedCount, errorMessage);
+
+    if (failedCount == 1 || failedCount % LOG_EVERY_N_FAILED_COUNT == 0) {
+      log.error(
+          "Received failure response from polling delegate perpetual task for pollingDocId: {} , failedCount: {}, errorMessage: {}",
+          pollingDocument.getUuid(), failedCount, errorMessage);
+    }
     pollingService.updateFailedAttempts(pollingDocument.getAccountId(), pollingDocument.getUuid(), failedCount);
     pollingService.updateTriggerPollingStatus(
         pollingDocument.getAccountId(), pollingDocument.getSignatures(), false, errorMessage, Collections.emptyList());

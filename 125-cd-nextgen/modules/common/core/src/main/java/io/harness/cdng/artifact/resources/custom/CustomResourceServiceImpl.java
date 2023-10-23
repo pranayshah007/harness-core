@@ -40,6 +40,8 @@ import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConst
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -72,6 +74,13 @@ public class CustomResourceServiceImpl implements CustomResourceService {
         new CustomScriptSecretExpressionEvaluator(script, secretFunctor);
     script = customScriptSecretExpressionEvaluator.renderExpression(
         script, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+
+    for (String key : inputs.keySet()) {
+      String resolvedValue = customScriptSecretExpressionEvaluator.renderExpression(
+          inputs.get(key), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      inputs.put(key, ifExpressionReturnNull(resolvedValue));
+    }
+
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
         inputs, null, null, timeoutInSecs, accountIdentifier);
@@ -88,6 +97,14 @@ public class CustomResourceServiceImpl implements CustomResourceService {
       throw new HintException(
           HintException.HINT_CUSTOM_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
+  }
+
+  private String ifExpressionReturnNull(String value) {
+    ParameterField<String> fieldValueParameter = RuntimeInputValuesValidator.getInputSetParameterField(value);
+    if (fieldValueParameter == null || fieldValueParameter.isExpression()) {
+      return null;
+    }
+    return fieldValueParameter.getValue();
   }
 
   private ArtifactTaskExecutionResponse executeSyncTask(CustomArtifactDelegateRequest customArtifactDelegateRequest,

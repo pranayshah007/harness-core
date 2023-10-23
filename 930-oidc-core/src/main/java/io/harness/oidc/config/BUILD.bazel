@@ -12,6 +12,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-oidc-core/src/main/java/io/harness/oidc/accesstoken:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
     ],
 )
 

@@ -1,6 +1,6 @@
 # networking
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -30,6 +30,11 @@ A Helm chart for Kubernetes
 | defaultbackend.tolerations | list | `[]` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
+| global.ggIngress.className | string | `"harness-global"` |  |
+| global.ggIngress.enabled | bool | `false` |  |
+| global.ggIngress.hosts[0] | string | `"myhost.example.com"` |  |
+| global.ggIngress.tls.enabled | bool | `true` |  |
+| global.ggIngress.tls.secretName | string | `"harness-cert"` |  |
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.enabled | bool | `false` |  |
 | global.ingress.hosts[0] | string | `"myhost.example.com"` |  |

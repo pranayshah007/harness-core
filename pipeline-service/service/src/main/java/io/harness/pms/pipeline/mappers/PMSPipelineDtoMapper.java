@@ -236,8 +236,8 @@ public class PMSPipelineDtoMapper {
             String.format("Expected Pipeline description in YAML to be [%s], but was [%s]",
                 requestInfoDTO.getDescription(), basicPipeline.getDescription()));
       }
-      if (isNotEmpty(basicPipeline.getTags()) && isNotEmpty(requestInfoDTO.getTags())
-          && !basicPipeline.getTags().equals(requestInfoDTO.getTags())) {
+      if (isNotEmpty(requestInfoDTO.getTags())
+          && (isEmpty(basicPipeline.getTags()) || !basicPipeline.getTags().equals(requestInfoDTO.getTags()))) {
         throw new InvalidRequestException(String.format("Expected Pipeline tags in YAML to be [%s], but was [%s]",
             requestInfoDTO.getTags(), basicPipeline.getTags()));
       }

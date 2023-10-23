@@ -141,6 +141,12 @@ public class DockerStep extends AbstractStepExecutable {
         "dockerfile", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getDockerfile(), false);
     Map<String, String> labels =
         resolveMapParameter("labels", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getLabels(), false);
-    return new BuildMetadata(repo, buildArgs, context, dockerFile, labels);
+    return BuildMetadata.builder()
+        .image(repo)
+        .dockerFile(dockerFile)
+        .buildArgs(buildArgs)
+        .context(context)
+        .labels(labels)
+        .build();
   }
 }

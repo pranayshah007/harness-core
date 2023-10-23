@@ -33,6 +33,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.helpers.TemplatePreProcessorHelper;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -52,6 +53,8 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
+  @Mock TemplatePreProcessorHelper templatePreProcessorHelper;
+
   private static final String ACCOUNT_ID = "accountId";
 
   private String refreshedYaml;

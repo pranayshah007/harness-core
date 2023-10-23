@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -55,13 +56,22 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
             "Instance skipped because of missing correlated artifactEntity, {InstanceId: %s}", instance.getId()));
         return true;
       }
-      cdInstanceSummaryRepo.save(createInstanceSummary(instance));
+      CdInstanceSummary newCdInstanceSummary = createInstanceSummary(instance);
+      artifactService.updateArtifactEnvCount(artifact, newCdInstanceSummary.getEnvType(), 1);
+      cdInstanceSummaryRepo.save(newCdInstanceSummary);
     }
     return true;
   }
 
   @Override
   public boolean removeInstance(Instance instance) {
+    if (Objects.isNull(instance.getPrimaryArtifact())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity().getImage())) {
+      log.info(
+          String.format("Instance skipped because of missing artifact identity, {InstanceId: %s}", instance.getId()));
+      return true;
+    }
     CdInstanceSummary cdInstanceSummary = getCdInstanceSummary(instance.getAccountIdentifier(),
         instance.getOrgIdentifier(), instance.getProjectIdentifier(),
         instance.getPrimaryArtifact().getArtifactIdentity().getImage(), instance.getEnvIdentifier());
@@ -69,6 +79,10 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
     if (Objects.nonNull(cdInstanceSummary)) {
       cdInstanceSummary.getInstanceIds().remove(instance.getId());
       if (cdInstanceSummary.getInstanceIds().isEmpty()) {
+        ArtifactEntity artifact =
+            artifactService.getArtifactByCorrelationId(instance.getAccountIdentifier(), instance.getOrgIdentifier(),
+                instance.getProjectIdentifier(), instance.getPrimaryArtifact().getArtifactIdentity().getImage());
+        artifactService.updateArtifactEnvCount(artifact, cdInstanceSummary.getEnvType(), -1);
         cdInstanceSummaryRepo.delete(cdInstanceSummary);
       } else {
         cdInstanceSummaryRepo.save(cdInstanceSummary);
@@ -89,6 +103,17 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
                             .is(orgIdentifier)
                             .and(CdInstanceSummaryKeys.projectIdentifier)
                             .is(projectIdentifier);
+
+    if (Objects.nonNull(filterBody)) {
+      if (Objects.nonNull(filterBody.getEnvironment())) {
+        Pattern pattern = Pattern.compile("[.]*" + filterBody.getEnvironment() + "[.]*");
+        criteria.and(CdInstanceSummaryKeys.envName).regex(pattern);
+      }
+      if (Objects.nonNull(filterBody.getEnvironmentType_())) {
+        Pattern pattern = Pattern.compile("[.]*" + filterBody.getEnvironmentType_() + "[.]*");
+        criteria.and(CdInstanceSummaryKeys.envName).regex(pattern);
+      }
+    }
 
     return cdInstanceSummaryRepo.findAll(criteria, pageable);
   }

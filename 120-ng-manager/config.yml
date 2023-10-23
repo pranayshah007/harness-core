@@ -334,10 +334,8 @@ logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
   threadPoolConfig:
-    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-1}
-    maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
-    idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
-    timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-10}
+  delayToClosePrefixLogStreamInSeconds: ${LOG_STREAMING_CLIENT_DELAY_TO_CLOSE_LOG_STREAM_IN_SECONDS:-5}
 
 cannyApiConfig:
   token: dummyToken
@@ -575,6 +573,10 @@ gitXWebhookEventQueueConfig:
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
 useQueueServiceForGitXWebhook: ${USE_QUEUE_SERVICE_FOR_GITX_WEBHOOK:-false}
+
+webhookGitXPushEventQueueConfig:
+  batchSize: ${WEBHOOK_GITX_PUSH_EVENT_QUEUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_GITX_PUSH_EVENT_QUEUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
 proxy:
   enabled: false

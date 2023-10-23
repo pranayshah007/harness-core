@@ -11,9 +11,11 @@ import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
+import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 
@@ -39,6 +41,9 @@ public interface ArtifactService {
   ArtifactEntity getLatestArtifact(
       String accountId, String orgIdentifier, String projectIdentifier, String artifactId, String tag);
 
+  ArtifactDetailResponse getArtifactDetails(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactId, String tag);
+
   String generateArtifactId(String registryUrl, String name);
 
   void saveArtifactAndInvalidateOldArtifact(ArtifactEntity artifact);
@@ -56,4 +61,6 @@ public interface ArtifactService {
   Page<ArtifactDeploymentViewResponse> getArtifactDeploymentView(String accountId, String orgIdentifier,
       String projectIdentifier, String artifactId, String tag, ArtifactDeploymentViewRequestBody filterBody,
       Pageable pageable);
+
+  void updateArtifactEnvCount(ArtifactEntity artifact, EnvType envType, long count);
 }

@@ -297,8 +297,13 @@ public class DockerStepTest extends CIExecutionTestBase {
         "dockerfile", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getDockerfile(), false);
     Map<String, String> labels = resolveMapParameter(
         "labels", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getLabels(), false);
-    BuildMetadata buildMetadata = new BuildMetadata(repo, buildArgs, context, dockerFile, labels);
-    return buildMetadata;
+    return BuildMetadata.builder()
+        .image(repo)
+        .dockerFile(dockerFile)
+        .buildArgs(buildArgs)
+        .context(context)
+        .labels(labels)
+        .build();
   }
 
   @Test
