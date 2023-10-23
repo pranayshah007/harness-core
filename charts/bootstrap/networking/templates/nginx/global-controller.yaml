@@ -23,7 +23,9 @@ spec:
     app: harness-global-ingress-controller
   {{- if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
+  {{- if not (empty .Values.nginx.loadBalancerIP) }}
   loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
+  {{- end }}
   {{- else }}
   type: 'NodePort'
   {{- end }}

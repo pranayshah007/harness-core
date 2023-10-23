@@ -21,11 +21,16 @@ metadata:
 spec:
   selector:
     app: harness-ingress-controller
-  {{- if .Values.global.ggIngress.enabled }}
+  {{- if or .Values.global.ggIngress.enabled .Values.nginx.clusterIPEnabled }}
   type: 'ClusterIP'
+  {{- if not (empty .Values.nginx.clusterIP) }}
+  clusterIP: {{ .Values.nginx.clusterIP }}
+  {{- end }}
   {{- else if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
+  {{- if not (empty .Values.nginx.loadBalancerIP) }}
   loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
+  {{- end }}
   {{- else }}
   type: 'NodePort'
   {{- end }}
