@@ -226,6 +226,7 @@ public class MonitoredServiceResource {
   @PUT
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/health-monitoring-flag")
   @ApiOperation(value = "updates monitored service data", nickname = "setHealthMonitoringFlag")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = TOGGLE_PERMISSION)
@@ -240,6 +241,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/overall-health-score")
   @ApiOperation(
       value = "get monitored service overall health score data ", nickname = "getMonitoredServiceOverAllHealthScore")
@@ -339,6 +341,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/all/time-series-health-sources")
   @ApiOperation(value = "get all of monitored service data with time series health sources",
       nickname = "getAllMonitoredServicesWithTimeSeriesHealthSources")
@@ -374,6 +377,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/scores")
   @ApiOperation(value = "get monitored service scores", nickname = "getMonitoredServiceScores")
@@ -393,6 +397,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/secondary-events")
   @ApiOperation(value = "get monitored service secondary events", nickname = "getMSSecondaryEvents")
@@ -407,6 +412,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/secondary-events-details")
   @ApiOperation(value = "get monitored service secondary events details", nickname = "getMSSecondaryEventsDetails")
@@ -432,8 +438,7 @@ public class MonitoredServiceResource {
         ApiResponse(responseCode = "default", description = "Delete monitored service data")
       })
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = DELETE_PERMISSION)
-  public RestResponse<Boolean>
-  delete(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
+  public RestResponse<Boolean> delete(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
       @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) @ApiParam(
           required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(monitoredServiceService.delete(projectParams.getProjectParams(), identifier));
@@ -507,6 +512,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/health-sources")
   @ApiOperation(value = "get all health sources for service and environment",
@@ -521,6 +527,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @Path("{identifier}/anomaliesCount")
   @ExceptionMetered
   @ApiOperation(value = "get anomalies summary details", nickname = "getAnomaliesSummary")
@@ -540,6 +547,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/count-of-services")
   @ApiOperation(value = "get count of types of services like Monitored Service, Services at Risk ",
@@ -568,6 +576,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",
@@ -584,6 +593,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",
