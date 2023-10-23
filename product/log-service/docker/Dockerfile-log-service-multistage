@@ -4,8 +4,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
-
+FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as builder
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
