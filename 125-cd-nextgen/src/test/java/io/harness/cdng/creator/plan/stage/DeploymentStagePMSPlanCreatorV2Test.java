@@ -13,19 +13,12 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.accesscontrol.acl.api.Principal;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,14 +38,6 @@ import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.NGFreezeException;
-import io.harness.freeze.beans.FreezeStatus;
-import io.harness.freeze.beans.FreezeType;
-import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
-import io.harness.freeze.beans.yaml.FreezeConfig;
-import io.harness.freeze.beans.yaml.FreezeInfoConfig;
-import io.harness.freeze.entity.FreezeConfigEntity;
-import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
@@ -60,10 +45,7 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
-import io.harness.pms.contracts.plan.PlanExecutionContext;
-import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -85,7 +67,6 @@ import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -233,79 +214,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
           .containsExactlyInAnyOrder(
               "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
     }
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void failIfProjectIsFrozen() {
-    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
-    doReturn(freezeSummaryResponseDTOList)
-        .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
-    PlanCreationContext ctx = PlanCreationContext.builder()
-                                  .globalContext(Map.of("metadata",
-                                      PlanCreationContextValue.newBuilder()
-                                          .setAccountIdentifier("accountId")
-                                          .setOrgIdentifier("orgId")
-                                          .setProjectIdentifier("projId")
-                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
-                                              ExecutionPrincipalInfo.newBuilder()
-                                                  .setPrincipal("prinicipal")
-                                                  .setPrincipalType(PrincipalType.USER)
-                                                  .build()))
-                                          .build()))
-                                  .build();
-    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(false);
-    assertThatThrownBy(() -> deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx))
-        .isInstanceOf(NGFreezeException.class)
-        .matches(ex -> ex.getMessage().equals("Execution can't be performed because project is frozen"));
-
-    verify(freezeEvaluateService, times(1)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void failIfProjectIsFrozenWithOverridePermission() {
-    doReturn(false).when(featureFlagHelperService).isEnabled(anyString(), any());
-    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
-    doReturn(freezeSummaryResponseDTOList)
-        .when(freezeEvaluateService)
-        .getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
-    PlanCreationContext ctx = PlanCreationContext.builder()
-                                  .globalContext(Map.of("metadata",
-                                      PlanCreationContextValue.newBuilder()
-                                          .setAccountIdentifier("accountId")
-                                          .setOrgIdentifier("orgId")
-                                          .setProjectIdentifier("projId")
-                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
-                                              ExecutionPrincipalInfo.newBuilder()
-                                                  .setPrincipal("prinicipal")
-                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
-                                                  .build()))
-                                          .build()))
-                                  .build();
-    when(
-        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
-        .thenReturn(true);
-    deploymentStagePMSPlanCreator.failIfProjectIsFrozen(ctx);
-
-    verify(freezeEvaluateService, times(0)).getActiveFreezeEntities(anyString(), anyString(), anyString(), anyString());
-  }
-
-  private FreezeSummaryResponseDTO createGlobalFreezeResponse() {
-    FreezeConfig freezeConfig = FreezeConfig.builder()
-                                    .freezeInfoConfig(FreezeInfoConfig.builder()
-                                                          .identifier("_GLOBAL_")
-                                                          .name("Global Freeze")
-                                                          .status(FreezeStatus.DISABLED)
-                                                          .build())
-                                    .build();
-    String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
-    FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", "orgId", "projId", yaml, FreezeType.GLOBAL);
-    return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 
   private Object[][] getDeploymentStageConfig() {

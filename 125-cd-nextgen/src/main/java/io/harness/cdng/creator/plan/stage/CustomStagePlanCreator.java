@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.plan.stage;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
@@ -128,6 +129,8 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, CustomStageNode field) {
+    stagePlanCreatorHelper.failIfProjectIsFrozen(ctx);
+
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();

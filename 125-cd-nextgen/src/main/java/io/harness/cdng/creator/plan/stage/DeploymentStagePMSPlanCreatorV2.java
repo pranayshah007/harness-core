@@ -47,9 +47,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.NGFreezeException;
-import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
-import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -90,7 +87,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.rbac.CDNGRbacUtility;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -244,7 +240,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, DeploymentStageNode stageNode) {
-    failIfProjectIsFrozen(ctx);
+    stagePlanCreatorHelper.failIfProjectIsFrozen(ctx);
 
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     try {
@@ -805,28 +801,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (!GenericStepPMSPlanCreator.containsOnlyAllErrorsInSomeConfig(stageFailureStrategies)) {
       throw new InvalidRequestException(
           "There should be a Failure strategy that contains one error type as AllErrors, with no other error type along with it in that Failure Strategy.");
-    }
-  }
-
-  protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
-    List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
-    try {
-      String accountId = ctx.getAccountIdentifier();
-      String orgId = ctx.getOrgIdentifier();
-      String projectId = ctx.getProjectIdentifier();
-      String pipelineId = ctx.getPipelineIdentifier();
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
-              accessControlClient, CDNGRbacUtility.getExecutionPrincipalInfo(ctx))) {
-        return;
-      }
-
-      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, pipelineId);
-    } catch (Exception e) {
-      log.error(
-          "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");
-    }
-    if (EmptyPredicate.isNotEmpty(projectFreezeConfigs)) {
-      throw new NGFreezeException("Execution can't be performed because project is frozen");
     }
   }
 
