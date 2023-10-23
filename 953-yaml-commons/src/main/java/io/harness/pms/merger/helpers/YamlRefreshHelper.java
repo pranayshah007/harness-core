@@ -124,7 +124,7 @@ public class YamlRefreshHelper {
       Object sourceValue = sourceNodeFqnToValueMap.get(key);
       if (nodeToRefreshFqnToValueMap.containsKey(key)) {
         Object linkedValue = nodeToRefreshFqnToValueMap.get(key);
-        if (key.isType() || key.isIdentifierOrVariableName() || key.isDefault()) {
+        if (key.isType() || key.isIdentifierOrVariableName() || key.isDefault() || key.isRequired()) {
           refreshedFqnToValueMap.put(key, sourceValue);
         } else {
           // validate if linkedValue can replace runtime input value or not.

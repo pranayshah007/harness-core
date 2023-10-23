@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -365,6 +366,43 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
         + "                serviceRef: service_1";
     assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testValidateServiceVariablesWithRequiredField() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
+    String sourceEntityYaml = "spec:\n"
+        + "          deploymentType: Kubernetes\n"
+        + "          service:\n"
+        + "            serviceRef: testDummy1\n"
+        + "            serviceInputs:\n"
+        + "              serviceDefinition:\n"
+        + "                type: Kubernetes\n"
+        + "                spec:\n"
+        + "                  variables:\n"
+        + "                    - name: var1\n"
+        + "                      type: String\n"
+        + "                      required: false\n"
+        + "                      value: <+input>";
+
+    String yamlToValidate = "spec:\n"
+        + "          deploymentType: Kubernetes\n"
+        + "          service:\n"
+        + "            serviceRef: testDummy1\n"
+        + "            serviceInputs:\n"
+        + "              serviceDefinition:\n"
+        + "                type: Kubernetes\n"
+        + "                spec:\n"
+        + "                  variables:\n"
+        + "                    - name: var1\n"
+        + "                      type: String\n"
+        + "                      required: true\n"
+        + "                      value: <+input>";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isFalse();
   }
 
   @Test

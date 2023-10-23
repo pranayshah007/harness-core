@@ -146,6 +146,10 @@ public class FQN {
     FQNNode lastNode = fqnList.get(fqnList.size() - 1);
     return lastNode.getKey().equals(YAMLFieldNameConstants.DEFAULT);
   }
+  public boolean isRequired() {
+    FQNNode lastNode = fqnList.get(fqnList.size() - 1);
+    return lastNode.getKey().equals(YAMLFieldNameConstants.REQUIRED);
+  }
 
   public boolean isVariableName() {
     if (fqnList.size() < 2) {
