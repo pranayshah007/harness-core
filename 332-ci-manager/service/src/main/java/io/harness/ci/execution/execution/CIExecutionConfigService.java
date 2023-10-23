@@ -151,6 +151,9 @@ public class CIExecutionConfigService {
       case SLSA_VERIFICATION:
         executionConfig.setSlsaVerificationTag(value);
         break;
+      case PROVENANCE_GCR:
+        executionConfig.setProvenanceGcrTag(value);
+        break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
     }
@@ -201,6 +204,12 @@ public class CIExecutionConfigService {
         break;
       case SECURITY:
         vmImageConfig.setSecurity(value);
+        break;
+      case SSCA_ORCHESTRATION:
+        vmImageConfig.setSscaOrchestration(value);
+        break;
+      case SSCA_ENFORCEMENT:
+        vmImageConfig.setSscaEnforcement(value);
         break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: VM", field));

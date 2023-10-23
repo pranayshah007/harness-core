@@ -1154,4 +1154,75 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
         .windowsEntrypoint(List.of("windowsEntrypoint"))
         .build();
   }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testUpdateCIContainerTags_sscaPlugins_forVM() {
+    VmImageConfig vmImageConfig =
+        VmImageConfig.builder().sscaEnforcement("sscaEnforcement").buildAndPushDockerRegistry("docker").build();
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder().vmImageConfig(vmImageConfig).build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+
+    ArrayList<Operation> operations = new ArrayList<>();
+    Operation operation1 = new Operation();
+    operation1.setField(PluginField.SSCA_ENFORCEMENT.getLabel());
+    operation1.setValue("tag3");
+    Operation operation2 = new Operation();
+    operation2.setField(PluginField.SSCA_ORCHESTRATION.getLabel());
+    operation2.setValue("tag4");
+    operations.add(operation1);
+    operations.add(operation2);
+
+    ciExecutionConfigService.updateCIContainerTags("acct", operations, StageInfraDetails.Type.VM);
+    assertThat(executionConfig.getVmImageConfig().getBuildAndPushDockerRegistry()).isEqualTo("docker");
+    assertThat(executionConfig.getVmImageConfig().getSscaEnforcement()).isEqualTo("tag3");
+    assertThat(executionConfig.getVmImageConfig().getSscaOrchestration()).isEqualTo("tag4");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testUpdateCIContainerTags_sscaPlugins_forK8() {
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .addOnImage("addon")
+                                            .accountIdentifier("acct")
+                                            .sscaEnforcementTag("sscaEnforcementTag")
+                                            .sscaOrchestrationTag("sscaOrchestrationTag")
+                                            .slsaVerificationTag("slsaVerificationTag")
+                                            .provenanceTag("provenanceTag")
+                                            .provenanceGcrTag("provenanceGcrTag")
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+
+    ArrayList<Operation> operations = new ArrayList<>();
+    Operation operation1 = new Operation();
+    operation1.setField(PluginField.PROVENANCE.getLabel());
+    operation1.setValue("tag1");
+    Operation operation2 = new Operation();
+    operation2.setField(PluginField.PROVENANCE_GCR.getLabel());
+    operation2.setValue("tag2");
+    Operation operation3 = new Operation();
+    operation3.setField(PluginField.SSCA_ENFORCEMENT.getLabel());
+    operation3.setValue("tag3");
+    Operation operation4 = new Operation();
+    operation4.setField(PluginField.SSCA_ORCHESTRATION.getLabel());
+    operation4.setValue("tag4");
+    Operation operation5 = new Operation();
+    operation5.setField(PluginField.SLSA_VERIFICATION.getLabel());
+    operation5.setValue("tag5");
+    operations.add(operation1);
+    operations.add(operation2);
+    operations.add(operation3);
+    operations.add(operation4);
+    operations.add(operation5);
+
+    ciExecutionConfigService.updateCIContainerTags("acct", operations, StageInfraDetails.Type.K8);
+    assertThat(executionConfig.getAddOnImage()).isEqualTo("addon");
+    assertThat(executionConfig.getSscaEnforcementTag()).isEqualTo("tag3");
+    assertThat(executionConfig.getSscaOrchestrationTag()).isEqualTo("tag4");
+    assertThat(executionConfig.getSlsaVerificationTag()).isEqualTo("tag5");
+    assertThat(executionConfig.getProvenanceGcrTag()).isEqualTo("tag2");
+    assertThat(executionConfig.getProvenanceTag()).isEqualTo("tag1");
+  }
 }
