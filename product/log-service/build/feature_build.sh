@@ -3,10 +3,10 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-// Copyright 2020 Harness Inc. All rights reserved.
-// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
-// that can be found in the licenses directory at the root of this repository, also available at
-// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+#// Copyright 2020 Harness Inc. All rights reserved.
+#// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+#// that can be found in the licenses directory at the root of this repository, also available at
+#// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 export BUILD_PURPOSE=RELEASE
 touch bazel-credentials.bzl
@@ -28,9 +28,10 @@ export PATH=$PATH:/usr/local/go/bin
 apt-get install patch git gcc openjdk-11-jdk -y
 go install github.com/bazelbuild/bazelisk@latest
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-export BAZEL_BIN=$(bazelisk info bazel-bin)/product/log-service
+export BAZEL_BIN=/root/.cache/bazel/_bazel_root/e85355a115859841eef4526236539ac3/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service
 apt-get install build-essential -y
 apt-get install zlib1g-dev -y
+
 
 bazelisk build //product/log-service/... --define=ABSOLUTE_JAVABASE=$JAVA_HOME --javabase=@bazel_tools//tools/jdk:absolute_javabase --host_javabase=@bazel_tools//tools/jdk:absolute_javabase --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
 bazelisk test //product/log-service/... --define=ABSOLUTE_JAVABASE=$JAVA_HOME --javabase=@bazel_tools//tools/jdk:absolute_javabase --host_javabase=@bazel_tools//tools/jdk:absolute_javabase --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
