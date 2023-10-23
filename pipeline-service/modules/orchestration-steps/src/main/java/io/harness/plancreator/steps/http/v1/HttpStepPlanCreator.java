@@ -34,7 +34,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstantsV1;
-import io.harness.steps.http.v1.HttpStepNodeV1;
+import io.harness.steps.http.v1.HttpStepNode;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 
-public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
+public class HttpStepPlanCreator implements PartialPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
 
   @Override
@@ -65,7 +65,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     final boolean isStepInsideRollback = PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency());
-    HttpStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNodeV1.class);
+    HttpStepNode stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNode.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
 
     PlanNodeBuilder builder =

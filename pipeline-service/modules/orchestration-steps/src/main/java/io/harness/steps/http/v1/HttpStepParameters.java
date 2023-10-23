@@ -9,9 +9,11 @@ package io.harness.steps.http.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
@@ -23,7 +25,8 @@ import lombok.Value;
 @OwnedBy(PIPELINE)
 @Value
 @EqualsAndHashCode(callSuper = true)
-public class HttpStepParametersV1 extends HttpBaseStepInfoV1 implements SpecParameters {
+@RecasterAlias("io.harness.steps.http.v1.HttpStepParameters")
+public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
   ParameterField<Map<String, Object>> output_vars;
   ParameterField<Map<String, Object>> input_vars;
   Map<String, String> headers;
@@ -32,7 +35,7 @@ public class HttpStepParametersV1 extends HttpBaseStepInfoV1 implements SpecPara
   ParameterField<List<TaskSelectorYaml>> delegate;
 
   @Builder(builderMethodName = "infoBuilder")
-  public HttpStepParametersV1(ParameterField<String> url, ParameterField<String> method, ParameterField<String> body,
+  public HttpStepParameters(ParameterField<String> url, ParameterField<String> method, ParameterField<String> body,
       ParameterField<String> assertion, Map<String, Object> output_vars, Map<String, String> headers,
       ParameterField<String> cert, ParameterField<String> cert_key, ParameterField<List<TaskSelectorYaml>> delegate,
       Map<String, Object> input_vars) {
@@ -43,5 +46,25 @@ public class HttpStepParametersV1 extends HttpBaseStepInfoV1 implements SpecPara
     this.cert = cert;
     this.cert_key = cert_key;
     this.delegate = delegate;
+  }
+
+  public io.harness.steps.http.HttpStepParameters toHttpStepParametersV0() {
+    return io.harness.steps.http.HttpStepParameters.infoBuilder()
+        .outputVariables(output_vars != null ? output_vars.getValue() : null)
+        .assertion(assertion)
+        .certificate(cert)
+        .certificateKey(cert_key)
+        .delegateSelectors(delegate)
+        .inputVariables(input_vars != null ? input_vars.getValue() : null)
+        .headers(headers)
+        .method(method)
+        .url(url)
+        .requestBody(body)
+        .build();
+  }
+
+  @Override
+  public String getVersion() {
+    return HarnessYamlVersion.V1;
   }
 }

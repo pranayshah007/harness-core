@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @OwnedBy(PIPELINE)
-public class HttpBaseStepInfoV1 {
+public class HttpBaseStepInfo {
   ParameterField<String> url;
   ParameterField<String> method;
   ParameterField<String> body;

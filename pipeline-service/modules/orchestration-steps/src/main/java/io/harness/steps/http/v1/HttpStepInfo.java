@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps.http.v1;
+package io.harness.steps.http.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,22 +16,17 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstantsV1;
-import io.harness.steps.http.v1.HttpBaseStepInfoV1;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.v1.NGVariableV1Wrapper;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Value
 @JsonTypeName(StepSpecTypeConstantsV1.HTTP)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class HttpStepInfoV1 extends HttpBaseStepInfoV1 implements Visitable, PMSStepInfo {
+public class HttpStepInfo extends HttpBaseStepInfo implements Visitable, PMSStepInfo {
   NGVariableV1Wrapper output_vars;
   NGVariableV1Wrapper input_vars;
   List<HttpHeaderConfig> headers;
