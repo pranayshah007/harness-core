@@ -95,8 +95,14 @@ public class RuntimeInputFormHelper {
   }
 
   public YamlConfig createRuntimeInputFormYamlConfig(
-      YamlConfig yamlConfig, boolean keepInput, boolean keepDefaultValues) {
+      YamlConfig yamlConfig, boolean keepInput, boolean keepDefaultAndRequiredValues) {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, Object> templateMap = createRuntimeInputFormInternal(fullMap, keepInput, keepDefaultAndRequiredValues);
+    return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+  }
+
+  public Map<FQN, Object> createRuntimeInputFormInternal(
+      Map<FQN, Object> fullMap, boolean keepInput, boolean keepDefaultAndRequiredValues) {
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
@@ -124,20 +130,24 @@ public class RuntimeInputFormHelper {
     key, it checks if it has a sibling with key "default" in the full pipeline map. If it is there, then the default key
     is added to the template. In the above example, the "default" key for v2 is not even looped over
      */
-    if (keepDefaultValues && EmptyPredicate.isNotEmpty(templateMap)) {
+    if (keepDefaultAndRequiredValues && EmptyPredicate.isNotEmpty(templateMap)) {
       Map<FQN, Object> defaultKeys = new LinkedHashMap<>();
       templateMap.keySet().forEach(key -> {
         FQN parent = key.getParent();
         FQN defaultSibling = FQN.duplicateAndAddNode(
             parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+        FQN requiredSibling = FQN.duplicateAndAddNode(
+            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.REQUIRED).build());
         if (fullMap.containsKey(defaultSibling)) {
           defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
+        }
+        if (fullMap.containsKey(requiredSibling)) {
+          defaultKeys.put(requiredSibling, fullMap.get(requiredSibling));
         }
       });
       templateMap.putAll(defaultKeys);
     }
-
-    return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+    return templateMap;
   }
 
   public Map<FQN, String> createExpressionFormYamlConfig(YamlConfig yamlConfig) {
@@ -153,48 +163,10 @@ public class RuntimeInputFormHelper {
     return fqnExpressionMap;
   }
 
-  public JsonNode createRuntimeInputFormJsonNode(JsonNode jsonNode, boolean keepInput, boolean keepDefaultValues) {
+  public JsonNode createRuntimeInputFormJsonNode(
+      JsonNode jsonNode, boolean keepInput, boolean keepDefaultAndRequiredValues) {
     Map<FQN, Object> fullMap = FQNMapGenerator.generateFQNMap(jsonNode);
-    Map<FQN, Object> templateMap = new LinkedHashMap<>();
-    fullMap.keySet().forEach(key -> {
-      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
-      // keepInput can be considered always true if value matches executionInputPattern. As the input will be provided
-      // at execution time.
-      if (NGExpressionUtils.matchesExecutionInputPattern(value)
-          || (keepInput && NGExpressionUtils.matchesInputSetPattern(value))
-          || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
-              && !key.isType())) {
-        templateMap.put(key, fullMap.get(key));
-      }
-    });
-
-    /* we only want to keep "default" keys if they have a sibling as runtime input
-    For example, over here, the default of v1 should be kept, while v2 should not be kept at all
-    - name: v1
-      type: String
-      default: v1Val
-      value: <+input>
-    - name: v2
-      type: String
-      default: v2Val
-      value: fixedValue
-      This code block goes over all the runtime input fields (all of them are in templateMap). For every runtime input
-    key, it checks if it has a sibling with key "default" in the full pipeline map. If it is there, then the default key
-    is added to the template. In the above example, the "default" key for v2 is not even looped over
-     */
-    if (keepDefaultValues && EmptyPredicate.isNotEmpty(templateMap)) {
-      Map<FQN, Object> defaultKeys = new LinkedHashMap<>();
-      templateMap.keySet().forEach(key -> {
-        FQN parent = key.getParent();
-        FQN defaultSibling = FQN.duplicateAndAddNode(
-            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
-        if (fullMap.containsKey(defaultSibling)) {
-          defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
-        }
-      });
-      templateMap.putAll(defaultKeys);
-    }
-
+    Map<FQN, Object> templateMap = createRuntimeInputFormInternal(fullMap, keepInput, keepDefaultAndRequiredValues);
     return YamlMapGenerator.generateYamlMap(templateMap, jsonNode, false);
   }
   public Map<FQN, Object> getRuntimeInputFormYamlConfig(YamlConfig pipelineTemplate, YamlConfig inputSet) {

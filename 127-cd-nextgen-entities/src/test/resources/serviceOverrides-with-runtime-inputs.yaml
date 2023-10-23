@@ -4,6 +4,7 @@ serviceOverrides:
   variables:
     - name: memory
       value: <+input>
+      required: true
       type: String
     - name: cpu
       value: <+input>
