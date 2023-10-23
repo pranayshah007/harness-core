@@ -15,9 +15,9 @@ WORKDIR /app
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
 
-CMD pwd
+CMD echo $pwd
 
-CMD sleep 200
+CMD sleep 1000
 
 
 
