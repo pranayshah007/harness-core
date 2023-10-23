@@ -5,7 +5,6 @@
 
 # To be used when building in CIE
 FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
-us.gcr.io/platform-205701/harness/ubi8/go1:1.21
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
