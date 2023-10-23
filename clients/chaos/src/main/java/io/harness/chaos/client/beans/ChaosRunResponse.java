@@ -14,21 +14,21 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class ChaosRerunResponse {
+public class ChaosRunResponse {
   @Data
   @Builder
-  public static class ReRunChaosWorkflow {
+  public static class RunPipelineExperiment {
     String notifyID;
   }
 
-  ReRunChaosWorkflow reRunChaosWorkFlow;
+  RunPipelineExperiment runPipelineExperiment;
   List<ChaosErrorDTO> errors;
 
   public boolean isSuccessful() {
-    return reRunChaosWorkFlow != null && !EmptyPredicate.isEmpty(reRunChaosWorkFlow.getNotifyID());
+    return runPipelineExperiment != null && !EmptyPredicate.isEmpty(runPipelineExperiment.getNotifyID());
   }
 
   public String getNotifyId() {
-    return reRunChaosWorkFlow.getNotifyID();
+    return runPipelineExperiment.getNotifyID();
   }
 }

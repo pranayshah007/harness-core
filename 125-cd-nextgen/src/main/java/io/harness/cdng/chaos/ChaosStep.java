@@ -10,7 +10,7 @@ package io.harness.cdng.chaos;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import io.harness.chaos.client.beans.ChaosQuery;
-import io.harness.chaos.client.beans.ChaosRerunResponse;
+import io.harness.chaos.client.beans.ChaosRunResponse;
 import io.harness.chaos.client.remote.ChaosHttpClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
@@ -38,6 +38,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.utils.PolicyEvalUtils;
 
 import com.google.inject.Inject;
+import java.util.Locale;
 import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +52,7 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
   @Inject OpaServiceClient opaServiceClient;
 
   private static final String BODY =
-      "mutation{reRunChaosWorkFlow(workflowID: \"%s\",identifiers:{orgIdentifier: \"%s\",projectIdentifier: \"%s\",accountIdentifier: \"%s\"}){notifyID}}";
-
+      "mutation{runPipelineExperiment(workflowID: \"%s\",identifiers:{orgIdentifier: \"%s\",projectIdentifier: \"%s\",accountIdentifier: \"%s\"}, metaData:{name: \"%s\",userName: \"%s\",email: \"%s\"}){notifyID}}";
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
     return StepBaseParameters.class;
@@ -70,8 +70,8 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
   @SneakyThrows
   private String triggerWorkflow(Ambiance ambiance, ChaosStepParameters params) {
     try {
-      ChaosRerunResponse response =
-          NGRestUtils.getResponse(client.reRunWorkflow(buildPayload(ambiance, params.getExperimentRef())));
+      ChaosRunResponse response =
+          NGRestUtils.getResponse(client.runPipelineExperiment(buildPayload(ambiance, params.getExperimentRef())));
       if (response != null && response.isSuccessful()) {
         return response.getNotifyId();
       }
@@ -146,7 +146,9 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
 
   private ChaosQuery buildPayload(Ambiance ambiance, String experimentRef) {
     String query = String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
-        AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getAccountId(ambiance));
+        AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getTriggerBy(ambiance).getUuid(), AmbianceUtils.getTriggerBy(ambiance).getIdentifier(),
+        AmbianceUtils.getEmail(ambiance));
     return ChaosQuery.builder().query(query).build();
   }
 
