@@ -25,12 +25,16 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
   @Override
   public String persistEnforcementSummary(String enforcementId, List<EnforcementResultEntity> denyListResult,
-      List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact) {
+      List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact, String pipelineExecutionId) {
     String status = EnforcementStatus.ENFORCEMENT_STATUS_PASS.getValue();
     if (!denyListResult.isEmpty() || !allowListResult.isEmpty()) {
       status = EnforcementStatus.ENFORCEMENT_STATUS_FAIL.getValue();
     }
     EnforcementSummaryEntity summary = EnforcementSummaryEntity.builder()
+                                           .accountId(artifact.getAccountId())
+                                           .orgIdentifier(artifact.getOrgId())
+                                           .projectIdentifier(artifact.getProjectId())
+                                           .pipelineExecutionId(pipelineExecutionId)
                                            .enforcementId(enforcementId)
                                            .artifact(Artifact.builder()
                                                          .artifactId(artifact.getArtifactId())

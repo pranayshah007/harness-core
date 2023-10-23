@@ -65,7 +65,7 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
     List<EnforcementResultEntity> allowListResult = engine.executeRules();
 
     String status = enforcementSummaryService.persistEnforcementSummary(
-        body.getEnforcementId(), denyListResult, allowListResult, artifactEntity);
+        body.getEnforcementId(), denyListResult, allowListResult, artifactEntity, body.getPipelineExecutionId());
 
     EnforceSbomResponseBody responseBody = new EnforceSbomResponseBody();
     responseBody.setEnforcementId(body.getEnforcementId());

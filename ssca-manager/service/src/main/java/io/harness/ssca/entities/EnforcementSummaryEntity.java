@@ -40,11 +40,15 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @HarnessEntity(exportable = true)
 public class EnforcementSummaryEntity implements PersistentEntity {
   @Id String id;
+  String accountId;
+  String orgIdentifier;
+  String projectIdentifier;
   Artifact artifact;
   @Field("enforcementid") String enforcementId;
   @Field("orchestrationid") String orchestrationId;
   @Field("denylistviolationcount") int denyListViolationCount;
   @Field("allowlistviolationcount") int allowListViolationCount;
   String status;
+  String pipelineExecutionId;
   @NonFinal @Setter Long createdAt;
 }
