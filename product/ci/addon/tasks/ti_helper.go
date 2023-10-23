@@ -351,7 +351,7 @@ func getCommitInfo(ctx context.Context, stepID string, log *zap.SugaredLogger) (
 	return commitInfo.LastSuccessfulCommitId, nil
 }
 
-func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
 	if err != nil {
 		return changedFiles, err
@@ -360,6 +360,7 @@ func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommi
 	req := &pb.GetChangedFilesPushTriggerRequest{
 		StepId:         stepID,
 		LastSuccCommit: lastSuccessfulCommitID,
+		CurrentCommit: currentCommitID,
 	}
 	resp, err := client.Client().GetChangedFilesPushTrigger(ctx, req)
 	if err != nil {
