@@ -44,6 +44,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDC)
 public class CustomStagePlanCreatorTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private StagePlanCreatorHelper stagePlanCreatorHelper;
   @InjectMocks CustomStagePlanCreator customStagePlanCreator;
 
   private String SOURCE_PIPELINE_YAML;

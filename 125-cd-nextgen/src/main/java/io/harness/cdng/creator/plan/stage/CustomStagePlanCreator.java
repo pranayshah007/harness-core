@@ -65,13 +65,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
-  public static final String EMPTY_STRING = "";
-
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
 
@@ -160,7 +159,7 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
 
     EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
     boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null
-        && !EMPTY_STRING.equals(finalEnvironmentYamlV2.getEnvironmentRef().getValue());
+        && !StringUtils.EMPTY.equals(finalEnvironmentYamlV2.getEnvironmentRef().getValue());
 
     String envNodeUuid;
     // Adding Env & Infra nodes
