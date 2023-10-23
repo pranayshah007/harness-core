@@ -167,9 +167,7 @@ public enum FeatureName {
   CDS_SERVICENOW_USE_METADATA_V2(
       "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
       HarnessTeam.CDC),
-  CDS_SERVICE_CONFIG_LAST_STEP(
-      "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
-      HarnessTeam.CDP),
+
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
