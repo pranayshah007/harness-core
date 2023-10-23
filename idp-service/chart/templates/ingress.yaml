@@ -212,6 +212,20 @@ spec:
                 name: {{.Values.name}}
                 port:
                   number: 12003
+          - path: /(v1/license.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(usage.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
     {{- range .Values.global.ingress.hosts }}
       host: {{ . | quote }}
     {{- end }}
