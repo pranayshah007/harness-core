@@ -48,7 +48,7 @@ import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
-import io.harness.steps.shellscript.ShellScriptStep;
+import io.harness.steps.shellscript.v1.ShellScriptStep;
 import io.harness.steps.wait.WaitStep;
 
 import java.util.HashMap;
@@ -78,6 +78,8 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(io.harness.steps.http.HttpStep.STEP_TYPE, io.harness.steps.http.HttpStep.class);
     engineSteps.put(HttpStep.STEP_TYPE, HttpStep.class);
     engineSteps.put(EmailStep.STEP_TYPE, EmailStep.class);
+    engineSteps.put(
+        io.harness.steps.shellscript.ShellScriptStep.STEP_TYPE, io.harness.steps.shellscript.ShellScriptStep.class);
     engineSteps.put(ShellScriptStep.STEP_TYPE, ShellScriptStep.class);
     engineSteps.put(ServiceNowApprovalStep.STEP_TYPE, ServiceNowApprovalStep.class);
     engineSteps.put(ServiceNowCreateStep.STEP_TYPE, ServiceNowCreateStep.class);

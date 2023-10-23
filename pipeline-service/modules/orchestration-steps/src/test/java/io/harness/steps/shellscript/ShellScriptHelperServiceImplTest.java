@@ -10,9 +10,11 @@ package io.harness.steps.shellscript;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +48,7 @@ import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
@@ -54,6 +57,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
@@ -550,7 +554,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testPrepareShellScriptOutcome() {
-    ShellScriptOutcome shellScriptOutcome =
+    ShellScriptBaseOutcome shellScriptOutcome =
         shellScriptHelperServiceImpl.prepareShellScriptOutcome(null, new HashMap<>());
     assertThat(shellScriptOutcome).isNull();
 
@@ -579,7 +583,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testPrepareShellScriptOutcomeWithSecretVars() {
-    ShellScriptOutcome shellScriptOutcome =
+    ShellScriptBaseOutcome shellScriptOutcome =
         ShellScriptHelperService.prepareShellScriptOutcome(null, new HashMap<>(), new HashSet<>());
     assertThat(shellScriptOutcome).isNull();
 
@@ -667,5 +671,36 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
                                ShellScriptOutcome.builder().outputVariables(outputVars).build()))
         .isInstanceOf(InternalServerErrorException.class)
         .hasMessage("Error while publishing outputAlias for the key abc for scope Pipeline: GENERAL_ERROR");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetShellScriptStepParameters() {
+    assertEquals(ShellScriptHelperService.getShellScriptStepParameters(
+                     StepElementParameters.builder()
+                         .spec(ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build())
+                         .build()),
+        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build());
+    assertEquals(ShellScriptHelperService.getShellScriptStepParameters(
+                     StepElementParameters.builder()
+                         .spec(io.harness.steps.shellscript.v1.ShellScriptStepParameters.infoBuilder()
+                                   .shell(io.harness.steps.shellscript.v1.ShellType.PowerShell)
+                                   .build())
+                         .build()),
+        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetShellScriptOutcome() {
+    assertEquals(ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), HarnessYamlVersion.V0),
+        io.harness.steps.shellscript.ShellScriptOutcome.builder().outputVariables(new HashMap<>()).build());
+    assertEquals(ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), HarnessYamlVersion.V1),
+        io.harness.steps.shellscript.v1.ShellScriptOutcome.builder().output_vars(new HashMap<>()).build());
+    assertThatThrownBy(() -> ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), "v1"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version v1 not supported");
   }
 }

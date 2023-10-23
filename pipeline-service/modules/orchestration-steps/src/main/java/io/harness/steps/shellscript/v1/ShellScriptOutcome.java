@@ -5,12 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.shellscript;
+package io.harness.steps.shellscript.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.steps.shellscript.ShellScriptBaseOutcome;
 
 import java.util.Map;
 import lombok.Builder;
@@ -19,7 +20,12 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDC)
-@RecasterAlias("io.harness.steps.shellscript.ShellScriptOutcome")
+@RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptOutcome")
 public class ShellScriptOutcome extends ShellScriptBaseOutcome {
-  Map<String, String> outputVariables;
+  Map<String, String> output_vars;
+
+  @Override
+  public Map<String, String> getOutputVariables() {
+    return output_vars;
+  }
 }

@@ -103,9 +103,8 @@ import io.harness.steps.servicenow.ServiceNowUpdateStepVariableCreator;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepPlanCreator;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStepPlanCreator;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
-import io.harness.steps.shellscript.ShellScriptStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
-import io.harness.steps.shellscript.v1.ShellScriptStepPlanCreatorV1;
+import io.harness.steps.shellscript.v1.ShellScriptStepPlanCreator;
 import io.harness.steps.wait.WaitStepPlanCreator;
 import io.harness.steps.wait.WaitStepVariableCreator;
 
@@ -136,8 +135,8 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new EmailStepPlanCreator());
     planCreators.add(new JiraCreateStepPlanCreator());
     planCreators.add(new JiraUpdateStepPlanCreator());
+    planCreators.add(new io.harness.steps.shellscript.ShellScriptStepPlanCreator());
     planCreators.add(new ShellScriptStepPlanCreator());
-    planCreators.add(new ShellScriptStepPlanCreatorV1());
     planCreators.add(new ApprovalStagePlanCreatorV2());
     planCreators.add(new ResourceConstraintStepPlanCreator());
     planCreators.add(new QueueStepPlanCreator());
