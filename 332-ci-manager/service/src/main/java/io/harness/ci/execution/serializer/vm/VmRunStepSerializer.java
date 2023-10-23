@@ -114,7 +114,7 @@ public class VmRunStepSerializer {
 
     VmRunStepBuilder runStepBuilder = VmRunStep.builder()
                                           .image(image)
-                                          .entrypoint(SerializerUtils.getEntrypoint(runStepInfo.getShell()))
+                                          .entrypoint(SerializerUtils.getEntrypoint(runStepInfo.getShell());)
                                           .command(command)
                                           .outputVariables(outputVarNames)
                                           .envVariables(envVars)
@@ -131,6 +131,11 @@ public class VmRunStepSerializer {
       }
     }
 
+    boolean runAsUserContainerLess = runAsUserContainerLess(runStepInfo, ngAccess.getAccountIdentifier(), image);
+    if(runAsUserContainerLess){
+      runStepBuilder.runAsUser(runStepInfo.getRunAsUser().getValue().toString());
+    }
+
     if (runStepInfo.getReports().getValue() != null) {
       if (runStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) runStepInfo.getReports().getValue().getSpec();
@@ -141,5 +146,14 @@ public class VmRunStepSerializer {
     }
 
     return runStepBuilder.build();
+  }
+
+  public boolean runAsUserContainerLess(RunStepInfo runStepInfo, String accountId, String image) {
+    boolean flag = featureFlagService.isEnabled(FeatureName.CI_CONTAINERLESS_RUN_ASUSER, accountId);
+    if (flag && runStepInfo.getRunAsUser() != null && runStepInfo.getRunAsUser().getValue() != null
+        && StringUtils.isEmpty(image)) {
+      return true;
+    }
+    return false;
   }
 }
