@@ -2,8 +2,8 @@ serviceOverrideInputs:
   variables:
     - name: memory
       type: String
-      required: true
       value: <+input>
+      required: true
     - name: cpu
       type: String
       value: <+input>
