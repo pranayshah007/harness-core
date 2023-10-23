@@ -15,8 +15,8 @@ WORKDIR /app
 ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
 
-RUN chmod +x \
-    product/log-service/build/feature_build.sh
+#RUN chmod +x \
+#    product/log-service/build/feature_build.sh
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
