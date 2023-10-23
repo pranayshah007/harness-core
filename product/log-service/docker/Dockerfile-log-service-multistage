@@ -4,7 +4,8 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as builder
+FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
+us.gcr.io/platform-205701/harness/ubi8/go1:1.21
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
@@ -18,7 +19,7 @@ ENV PLATFORM="jenkins"
 RUN chmod +x \
     /app/product/log-service/build/feature_build.sh
 
-FROM us.gcr.io/platform-205701/harness/ubi8:8.8
+FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
 COPY log-service_/log-service /usr/local/bin/log-service
 USER root
