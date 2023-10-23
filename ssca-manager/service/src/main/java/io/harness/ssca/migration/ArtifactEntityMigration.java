@@ -42,42 +42,47 @@ public class ArtifactEntityMigration implements NGMigration {
         mongoTemplate.getCollection(mongoTemplate.getCollectionName(ArtifactEntity.class)).find(query.getQueryObject());
 
     for (Document document : iterable) {
-      ArtifactEntity artifact = mongoTemplate.getConverter().read(ArtifactEntity.class, document);
+      try {
+        ArtifactEntity artifact = mongoTemplate.getConverter().read(ArtifactEntity.class, document);
 
-      ArtifactEntity recentArtifact = artifactRepository.findOne(Criteria.where(ArtifactEntityKeys.accountId)
-                                                                     .is(artifact.getAccountId())
-                                                                     .and(ArtifactEntityKeys.orgId)
-                                                                     .is(artifact.getOrgId())
-                                                                     .and(ArtifactEntityKeys.projectId)
-                                                                     .is(artifact.getProjectId())
-                                                                     .and(ArtifactEntityKeys.artifactId)
-                                                                     .is(artifact.getArtifactId())
-                                                                     .and(ArtifactEntityKeys.tag)
-                                                                     .is(artifact.getTag())
-                                                                     .and(ArtifactEntityKeys.createdOn)
-                                                                     .gt(artifact.getCreatedOn()));
+        ArtifactEntity recentArtifact = artifactRepository.findOne(Criteria.where(ArtifactEntityKeys.accountId)
+                                                                       .is(artifact.getAccountId())
+                                                                       .and(ArtifactEntityKeys.orgId)
+                                                                       .is(artifact.getOrgId())
+                                                                       .and(ArtifactEntityKeys.projectId)
+                                                                       .is(artifact.getProjectId())
+                                                                       .and(ArtifactEntityKeys.artifactId)
+                                                                       .is(artifact.getArtifactId())
+                                                                       .and(ArtifactEntityKeys.tag)
+                                                                       .is(artifact.getTag())
+                                                                       .and(ArtifactEntityKeys.createdOn)
+                                                                       .gt(artifact.getCreatedOn()));
 
-      if (Objects.isNull(recentArtifact)) {
-        artifact.setInvalid(false);
-      } else {
-        artifact.setInvalid(true);
+        if (Objects.isNull(recentArtifact)) {
+          artifact.setInvalid(false);
+        } else {
+          artifact.setInvalid(true);
+        }
+
+        query = new Query(Criteria.where(NormalizedSBOMEntityKeys.accountId)
+                              .is(artifact.getAccountId())
+                              .and(NormalizedSBOMEntityKeys.orgIdentifier)
+                              .is(artifact.getOrgId())
+                              .and(NormalizedSBOMEntityKeys.projectIdentifier)
+                              .is(artifact.getProjectId())
+                              .and(NormalizedSBOMEntityKeys.orchestrationId)
+                              .is(artifact.getOrchestrationId()));
+        Long count = mongoTemplate.count(query, NormalizedSBOMComponentEntity.class);
+
+        artifact.setComponentsCount(count);
+        artifact.setLastUpdatedAt(artifact.getCreatedOn().toEpochMilli());
+        artifact.setNonProdEnvCount(0l);
+        artifact.setProdEnvCount(0l);
+        artifactRepository.save(artifact);
+      } catch (Exception e) {
+        log.error(String.format(
+            "Skipping Migration for Artifact {id: %s}, {Exception: %s}", document.get("_id").toString(), e));
       }
-
-      query = new Query(Criteria.where(NormalizedSBOMEntityKeys.accountId)
-                            .is(artifact.getAccountId())
-                            .and(NormalizedSBOMEntityKeys.orgIdentifier)
-                            .is(artifact.getOrgId())
-                            .and(NormalizedSBOMEntityKeys.projectIdentifier)
-                            .is(artifact.getProjectId())
-                            .and(NormalizedSBOMEntityKeys.orchestrationId)
-                            .is(artifact.getOrchestrationId()));
-      Long count = mongoTemplate.count(query, NormalizedSBOMComponentEntity.class);
-
-      artifact.setComponentsCount(count);
-      artifact.setLastUpdatedAt(artifact.getCreatedOn().toEpochMilli());
-      artifact.setNonProdEnvCount(0l);
-      artifact.setProdEnvCount(0l);
-      artifactRepository.save(artifact);
     }
     log.info("Artifact Entity Migration Successful");
   }

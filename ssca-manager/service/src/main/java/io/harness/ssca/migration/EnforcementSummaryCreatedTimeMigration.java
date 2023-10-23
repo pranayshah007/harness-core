@@ -40,10 +40,15 @@ public class EnforcementSummaryCreatedTimeMigration implements NGMigration {
             .find(query.getQueryObject());
 
     for (Document document : iterable) {
-      EnforcementSummaryEntity summaryEntity =
-          mongoTemplate.getConverter().read(EnforcementSummaryEntity.class, document);
-      summaryEntity.setCreatedAt(currentTime);
-      enforcementSummaryRepo.save(summaryEntity);
+      try {
+        EnforcementSummaryEntity summaryEntity =
+            mongoTemplate.getConverter().read(EnforcementSummaryEntity.class, document);
+        summaryEntity.setCreatedAt(currentTime);
+        enforcementSummaryRepo.save(summaryEntity);
+      } catch (Exception e) {
+        log.error(String.format(
+            "Skipping Migration for Enforcement Summary {id: %s}, {Exception: %s}", document.get("_id").toString(), e));
+      }
     }
     log.info("Enforcement Summary Entity Migration Successful");
   }
