@@ -7,7 +7,7 @@
 FROM golang:1.20-bullseye as builder
 RUN mkdir -p /app
 ARG GCP_KEY
-ENV SERVICE_NAME="product/log-service"
+ENV SERVICE_NAME="log-service"
 COPY . /app
 
 WORKDIR /app
@@ -16,8 +16,8 @@ ENV BUILD_PURPOSE=DEVELOPMENT
 ENV PLATFORM="jenkins"
 
 RUN chmod +x \
-    /app/build/feature_build.sh \
-    && /app/build/feature_build.sh $GCP_KEY
+    /app/product/log-service/build/feature_build.sh \
+    && /app/product/log-service/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
