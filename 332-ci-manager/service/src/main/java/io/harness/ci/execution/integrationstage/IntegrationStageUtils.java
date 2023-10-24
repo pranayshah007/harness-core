@@ -695,6 +695,7 @@ public class IntegrationStageUtils {
         return ManualExecutionSource.builder().prNumber(numberString).build();
       }
     }
+
     return null;
   }
 
