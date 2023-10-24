@@ -33,4 +33,9 @@ public interface GitStoreConfig extends StoreConfig {
     manifestStoreInfoBuilder.repoName(getParameterFieldValue(this.getRepoName()));
     manifestStoreInfoBuilder.paths(getParameterFieldValue(this.getPaths()));
   }
+
+  @Override
+  default List<String> getFilePaths() {
+    return this.getPaths().getValue();
+  }
 }

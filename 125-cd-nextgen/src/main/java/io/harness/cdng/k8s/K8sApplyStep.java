@@ -101,7 +101,11 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
     }
 
     publishSecretRuntimeUsage(ambiance, k8sApplyStepParameters);
-    validateFilePaths(k8sApplyStepParameters);
+    if (k8sApplyStepParameters.getManifestSource() != null) {
+      validateManifestSource(k8sApplyStepParameters);
+    } else {
+      validateFilePaths(k8sApplyStepParameters);
+    }
     validateManifestType(ambiance);
     return k8sStepHelper.startChainLink(this, ambiance, stepElementParameters);
   }
@@ -131,6 +135,13 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
     }
   }
 
+  private void validateManifestSource(K8sApplyStepParameters k8sApplyStepParameters) {
+    if (!ManifestType.K8Manifest.equals(k8sApplyStepParameters.getManifestSource().getType().getDisplayName())) {
+      throw new UnsupportedOperationException(
+          format("K8s Apply step manifest source only supports manifests of type: [%s], and [%s] is provided",
+              ManifestType.K8Manifest, k8sApplyStepParameters.getManifestSource().getType()));
+    }
+  }
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
@@ -169,7 +180,6 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
                     k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .accountId(accountId)
             .deprecateFabric8Enabled(true)
-            .filePaths(k8sApplyStepParameters.getFilePaths().getValue())
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
@@ -180,6 +190,13 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       applyRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+
+    if (k8sApplyStepParameters.getFilePaths() != null && k8sApplyStepParameters.getFilePaths().getValue() != null) {
+      applyRequestBuilder.filePaths(k8sApplyStepParameters.getFilePaths().getValue());
+    } else {
+      applyRequestBuilder.filePaths(
+          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().getFilePaths());
     }
 
     Map<String, String> k8sCommandFlag =
