@@ -13,5 +13,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: cv-nextgen
+    matchLabels:
+      {{- include "cv-nextgen.selectorLabels" . | nindent 6 }}
