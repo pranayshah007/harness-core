@@ -188,8 +188,12 @@ public class BuilderFactory {
 
   public EnforcementSummaryEntityBuilder getEnforcementSummaryBuilder() {
     return EnforcementSummaryEntity.builder()
+        .accountId(context.accountId)
+        .orgIdentifier(context.orgIdentifier)
+        .projectIdentifier(context.projectIdentifier)
+        .pipelineExecutionId("pipelineExecutionId")
         .enforcementId("enforcementId")
-        .createdAt(clock.millis())
+        .createdAt(1000l)
         .denyListViolationCount(1)
         .allowListViolationCount(5)
         .artifact(io.harness.ssca.beans.Artifact.builder()
@@ -205,6 +209,11 @@ public class BuilderFactory {
 
   public EnforcementSummaryDTO getEnforcementSummaryDTO() {
     return new EnforcementSummaryDTO()
+        .accountId(context.accountId)
+        .orgIdentifier(context.orgIdentifier)
+        .projectIdentifier(context.projectIdentifier)
+        .pipelineExecutionId("pipelineExecutionId")
+        .created(new BigDecimal(1000))
         .enforcementId("enforcementId")
         .allowListViolationCount(new BigDecimal(5))
         .denyListViolationCount(new BigDecimal(1))

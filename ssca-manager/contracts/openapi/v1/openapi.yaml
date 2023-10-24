@@ -917,6 +917,16 @@ components:
           type: number
         status:
           type: string
+        account_id:
+          type: string
+        org_identifier:
+          type: string
+        project_identifier:
+          type: string
+        pipeline_execution_id:
+          type: string
+        created:
+          type: number
       required:
         - artifact
         - enforcement_id
@@ -924,6 +934,11 @@ components:
         - deny_list_violation_count
         - allow_list_violation_count
         - status
+        - account_id
+        - org_identifier
+        - project_identifier
+        - pipeline_execution_id
+        - created
     NormalisedSbomComponentRequestBody:
       $ref: '#/components/schemas/Artifact'
     ArtifactListingRequestBody:

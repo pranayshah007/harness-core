@@ -168,6 +168,10 @@ public class ArtifactServiceImpl implements ArtifactService {
   public ArtifactDetailResponse getArtifactDetails(
       String accountId, String orgIdentifier, String projectIdentifier, String artifactId, String tag) {
     ArtifactEntity artifact = getLatestArtifact(accountId, orgIdentifier, projectIdentifier, artifactId, tag);
+    if (Objects.isNull(artifact)) {
+      throw new NotFoundException(
+          String.format("Artifact with artifactId [%s] and tag [%s] is not found", artifactId, tag));
+    }
     return new ArtifactDetailResponse()
         .artifactId(artifact.getArtifactId())
         .artifactName(artifact.getName())

@@ -41,28 +41,33 @@ public class EnforcementSummaryProjectParamMigration implements NGMigration {
             .find(query.getQueryObject());
 
     for (Document document : iterable) {
-      EnforcementSummaryEntity summaryEntity =
-          mongoTemplate.getConverter().read(EnforcementSummaryEntity.class, document);
-      criteria =
-          Criteria.where(ArtifactEntity.ArtifactEntityKeys.orchestrationId).is(summaryEntity.getOrchestrationId());
+      try {
+        EnforcementSummaryEntity summaryEntity =
+            mongoTemplate.getConverter().read(EnforcementSummaryEntity.class, document);
+        criteria =
+            Criteria.where(ArtifactEntity.ArtifactEntityKeys.orchestrationId).is(summaryEntity.getOrchestrationId());
 
-      ArtifactEntity artifact = artifactRepository.findOne(criteria);
-      EnforcementSummaryEntity newSummaryEntity =
-          EnforcementSummaryEntity.builder()
-              .id(summaryEntity.getId())
-              .artifact(summaryEntity.getArtifact())
-              .enforcementId(summaryEntity.getEnforcementId())
-              .orchestrationId(summaryEntity.getOrchestrationId())
-              .denyListViolationCount(summaryEntity.getDenyListViolationCount())
-              .allowListViolationCount(summaryEntity.getAllowListViolationCount())
-              .status(summaryEntity.getStatus())
-              .createdAt(summaryEntity.getCreatedAt())
-              .accountId(artifact.getAccountId())
-              .orgIdentifier(artifact.getOrgId())
-              .projectIdentifier(artifact.getProjectId())
-              .build();
+        ArtifactEntity artifact = artifactRepository.findOne(criteria);
+        EnforcementSummaryEntity newSummaryEntity =
+            EnforcementSummaryEntity.builder()
+                .id(summaryEntity.getId())
+                .artifact(summaryEntity.getArtifact())
+                .enforcementId(summaryEntity.getEnforcementId())
+                .orchestrationId(summaryEntity.getOrchestrationId())
+                .denyListViolationCount(summaryEntity.getDenyListViolationCount())
+                .allowListViolationCount(summaryEntity.getAllowListViolationCount())
+                .status(summaryEntity.getStatus())
+                .createdAt(summaryEntity.getCreatedAt())
+                .accountId(artifact.getAccountId())
+                .orgIdentifier(artifact.getOrgId())
+                .projectIdentifier(artifact.getProjectId())
+                .build();
 
-      enforcementSummaryRepo.save(newSummaryEntity);
+        enforcementSummaryRepo.save(newSummaryEntity);
+      } catch (Exception e) {
+        log.error(String.format(
+            "Skipping Migration for Enforcement Summary {id: %s}, {Exception: %s}", document.get("_id").toString(), e));
+      }
     }
     log.info("Enforcement Summary Entity Migration Project Identifiers Successful");
   }
