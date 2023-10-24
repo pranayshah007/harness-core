@@ -30,6 +30,7 @@ public class OidcConfigStructure {
   @JsonProperty(OidcConfigConstants.OPENID_CONFIGURATION) private OidcConfiguration oidcConfiguration;
   @JsonProperty(OidcConfigConstants.GCP_OIDC) private OidcTokenStructure gcpOidcToken;
 
+  @Builder
   @Data
   public static class OidcConfiguration {
     @JsonProperty(OidcConfigConstants.ISSUER) private String issuer;
