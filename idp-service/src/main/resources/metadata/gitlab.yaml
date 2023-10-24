@@ -87,6 +87,6 @@ exports:
       defaultRoute: /gitlab
       layoutSchemaSpecs:
         name: EntityGitlabContent
-        title: Gitlab
+        title: GitLab
         contents:
           - component: EntityGitlabContent
