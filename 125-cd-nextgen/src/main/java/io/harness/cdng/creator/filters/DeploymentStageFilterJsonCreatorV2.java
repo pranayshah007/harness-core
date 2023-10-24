@@ -345,7 +345,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
             "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      Optional<Environment> environmentEntityOptional = environmentService.get(
+      Optional<Environment> environmentEntityOptional = environmentService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
       environmentEntityOptional.ifPresent(environment -> {

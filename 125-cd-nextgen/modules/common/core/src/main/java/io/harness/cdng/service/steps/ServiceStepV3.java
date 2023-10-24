@@ -452,7 +452,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     if (envRef.fetchFinalValue() != null) {
       Optional<Environment> environment =
-          environmentService.get(accountId, orgIdentifier, projectIdentifier, envRef.getValue(), false);
+          getEnvironmentWithYaml(accountId, orgIdentifier, projectIdentifier, parameters);
       if (environment.isEmpty()) {
         throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", envRef.getValue()));
       }
@@ -759,10 +759,19 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private Optional<ServiceEntity> getServiceEntityWithYaml(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
-    String gitBranch = stepParameters.getGitBranch() != null ? stepParameters.getGitBranch() : null;
+    String gitBranch = stepParameters.getServiceGitBranch() != null ? stepParameters.getServiceGitBranch() : null;
     try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
       return serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+    }
+  }
+
+  private Optional<Environment> getEnvironmentWithYaml(
+      String accountId, String orgIdentifier, String projectIdentifier, ServiceStepV3Parameters stepParameters) {
+    String envGitBranch = stepParameters.getEnvGitBranch();
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(envGitBranch)) {
+      return environmentService.get(
+          accountId, orgIdentifier, projectIdentifier, stepParameters.getEnvRef().getValue(), false);
     }
   }
 
