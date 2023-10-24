@@ -20,4 +20,7 @@
 
 <suppressions>
   <suppress checks="SingleLineJavadoc" files=".*"/>
+  <!-- To supress a check in an entire file
+  <suppress checks="ForbidCertainMethodCheck" files="420-delegate-service/src/main/java/io/harness/metrics/impl/DelegateMetricsPublisher.java"/> 
+  -->
 </suppressions>

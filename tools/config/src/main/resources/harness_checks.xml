@@ -37,8 +37,42 @@
     <property name="severity" value="warning"/>
 
     <property name="fileExtensions" value="java, properties, xml"/>
+    <!--   CHECK SUPRESSIONS -->
+    <!--
+        Supress chek hits by defining a file wide supression in the file tools/checkstyle/checkstyle-suppressions.xml
+        
+        Note: This suppressions apply to the entire file.
+    -->
+    <module name="SuppressionFilter">
+        <property name="file" value="tools/checkstyle/checkstyle-suppressions.xml"/>
+    </module>
+    <!--
+        Ignore check hits with @SuppressWarnings({"<checkname>"}) or @SuppressWarnings({"checkstyle:<id>"})
 
+        needs module TreeWalker.SuppressWarningsHolder
+    -->
+    <module name="SuppressWarningsFilter" />
     <module name="TreeWalker">
+        <!--   CHECK SUPRESSIONS  -->
+
+        <!--
+            Ignore check hits with @SuppressWarnings({"<checkname>"}) or @SuppressWarnings({"checkstyle:<id>"})
+
+            needs module SuppressionFilter
+        -->
+        <module name="SuppressWarningsHolder" />
+        <!-- 
+            Ignore Specific Check Hit
+
+            To skip a check hit that should not be blocking the build,
+            surround the code with comments in the form of '// CSOFF: <checkname>' and '// CSON: <checkname>'
+         -->
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="CSOFF\: ([\w\|]+)"/>
+            <property name="onCommentFormat" value="CSON\: ([\w\|]+)"/>
+            <property name="checkFormat" value="$1"/>
+        </module>
+
         <!-- ANNOTATIONS -->
 
         <!-- Having the following annotations in the suggested order seems very natural ... and it is extremely easy
@@ -127,6 +161,7 @@
 
         <!-- Use aggregate method with setting maxTimeMs in aggregate options -->
         <module name="com.github.sevntu.checkstyle.checks.coding.ForbidCertainMethodCheck">
+            <property name="id" value="forbidenaggregate" />
             <property name="methodName" value="aggregate"/>
             <property name="argumentCount" value="1"/>
         </module>
