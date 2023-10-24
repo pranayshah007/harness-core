@@ -20,4 +20,3 @@ function download_onprem_apm_binaries(){
 export OCELET_AGENT='https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."
-download_onprem_apm_binaries
