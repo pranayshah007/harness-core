@@ -48,7 +48,7 @@ public class OidcIdTokenUtilityTest extends CategoryTest {
                                       .iss(oidc_iss)
                                       .iat(Long.toString(base))
                                       .exp(base + 3599)
-                                      .account_id("kmpySmUISimoRrJL6NL73w")
+                                      .accountId("kmpySmUISimoRrJL6NL73w")
                                       .build();
 
     rsaKeysUtils = new RSAKeysUtils();

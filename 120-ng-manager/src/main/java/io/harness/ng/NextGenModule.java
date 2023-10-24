@@ -923,6 +923,7 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new NGLdapModule(appConfig));
+    install(new NGOidcModule(appConfig));
     install(new NgVariableModule(appConfig));
     install(new NGIpAllowlistModule(appConfig));
     install(new NGFavoriteModule(appConfig));

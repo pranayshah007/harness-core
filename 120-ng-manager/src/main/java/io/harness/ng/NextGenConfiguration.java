@@ -302,6 +302,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
   @JsonProperty("serviceGitXThreadConfig") private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
   @JsonProperty("environmentGitXThreadConfig") private EnvironmentGitXThreadConfiguration environmentGitXThreadConfig;
+  @JsonProperty("oidcConfigPath") private String oidcConfigPath;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

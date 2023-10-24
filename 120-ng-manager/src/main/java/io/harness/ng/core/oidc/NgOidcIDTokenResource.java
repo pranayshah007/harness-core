@@ -14,6 +14,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.oidc.gcp.GcpOidcTokenRequestDTO;
+import io.harness.oidc.gcp.GcpOidcTokenUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -68,6 +69,8 @@ import lombok.extern.slf4j.Slf4j;
 @NextGenManagerAuth
 @Slf4j
 public class NgOidcIDTokenResource {
+  GcpOidcTokenUtility gcpOidcTokenUtility;
+
   @POST
   @Path("gcp")
   @Consumes({"application/json", "application/yaml"})
@@ -81,8 +84,7 @@ public class NgOidcIDTokenResource {
   public ResponseDTO<String>
   getOidcIdTokenForGcp(@RequestBody(required = true,
       description = "Details of GCP Workload Identity") @Valid GcpOidcTokenRequestDTO gcpOidcTokenRequestDTO) {
-    String idToken = "";
-    // TODO - OIDC Token library API call to get the ID token
+    String idToken = gcpOidcTokenUtility.generateGcpOidcIdToken(gcpOidcTokenRequestDTO);
     return ResponseDTO.newResponse(idToken);
   }
 }

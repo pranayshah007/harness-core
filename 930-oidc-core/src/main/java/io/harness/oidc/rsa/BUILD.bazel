@@ -12,8 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//930-oidc-core/src/main/java/io/harness/oidc/jwks:module",
         "//940-secret-manager-client:module",
+        "@maven//:com_google_inject_guice",
     ],
 )
 
