@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.List;
@@ -67,16 +68,26 @@ public class CheckDetailsMapper {
   }
 
   String getExpression(Rule rule, String dpValueSuffix, boolean getLhsOnly) {
-    String expression = rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier();
-    if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
-      expression += DOT_SEPARATOR + rule.getConditionalInputValue();
+    StringBuilder expressionBuilder =
+        new StringBuilder(rule.getDataSourceIdentifier()).append(DOT_SEPARATOR).append(rule.getDataPointIdentifier());
+
+    for (InputValue inputValue : rule.getInputValues()) {
+      if (StringUtils.isNotBlank(inputValue.getValue())) {
+        expressionBuilder.append(DOT_SEPARATOR);
+        expressionBuilder.append(inputValue.getValue());
+      }
     }
+
     if (StringUtils.isNotBlank(dpValueSuffix)) {
-      expression += DOT_SEPARATOR + dpValueSuffix;
+      expressionBuilder.append(DOT_SEPARATOR);
+      expressionBuilder.append(dpValueSuffix);
     }
+
     if (!getLhsOnly) {
-      expression += rule.getOperator() + rule.getValue();
+      expressionBuilder.append(rule.getOperator());
+      expressionBuilder.append(rule.getValue());
     }
-    return expression;
+
+    return expressionBuilder.toString();
   }
 }

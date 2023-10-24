@@ -12,14 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
+import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
@@ -29,14 +31,15 @@ public class NoOpDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      DataSourceLocationEntity dataSourceLocationEntity, List<Pair<DataPointEntity, List<InputValue>>> inputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs) {
     return mapper.convertValue(backstageCatalogEntity, new TypeReference<>() {});
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

@@ -10,9 +10,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.spec.server.idp.v1.model.DataPoint;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataPointService {
@@ -23,4 +25,6 @@ public interface DataPointService {
 
   List<DataPointEntity> getAllDataPointsForAccount(String accountIdentifier);
   Map<String, DataPoint> getDataPointsMap(String accountIdentifier);
+  Map<String, List<Pair<DataPointEntity, List<InputValue>>>> getDslDataPointsInfo(
+      String identifier, String s, List<Pair<String, List<InputValue>>> dataPointIdsAndInputValues);
 }

@@ -13,6 +13,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_DEPENDABOT_ALERTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.SEVERITY_TYPE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
@@ -27,6 +28,7 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
@@ -35,9 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
+import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
@@ -47,39 +49,31 @@ public class GithubOpenDependabotAlertsDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      DataSourceLocationEntity dataSourceLocationEntity,
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs)
+      throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     Map<String, Object> data = new HashMap<>();
-
-    Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
-        dataPointsAndInputValues.entrySet()
-            .stream()
-            .filter(entry -> entry.getKey().getIdentifier().equals(OPEN_DEPENDABOT_ALERTS))
-            .findFirst();
-
-    if (dataPointAndInputValuesOpt.isEmpty()) {
-      return data;
-    }
-
-    DataPointEntity dataPoint = dataPointAndInputValuesOpt.get().getKey();
-    Set<String> inputValues = dataPointAndInputValuesOpt.get().getValue();
     String tempUrl = apiRequestDetails.getUrl(); // using temp variable to store unchanged url
 
-    for (String inputValue : inputValues) {
+    for (Pair<DataPointEntity, List<InputValue>> dataPointAndInputValues : dataPointsAndInputValues) {
+      DataPointEntity dataPoint = dataPointAndInputValues.getFirst();
+      List<InputValue> inputValues = dataPointAndInputValues.getSecond();
+
       if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
-        data.put(inputValue, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
-        continue;
+        addInputValueResponse(
+            data, dataPoint.getIdentifier(), inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        return data;
       }
-      Map<DataPointEntity, String> dataPointAndInputValueToFetch = Map.of(dataPoint, inputValue);
+
       Map<String, String> replaceablePairs = new HashMap<>();
       replaceablePairs.putAll(possibleReplaceableUrlPairs);
       replaceablePairs.putAll(possibleReplaceableRequestBodyPairs);
-      String url = constructUrl(tempUrl, replaceablePairs, dataPointAndInputValueToFetch);
+      String url = constructUrl(tempUrl, replaceablePairs, dataPoint, inputValues);
       apiRequestDetails.setUrl(url);
       DslClient dslClient =
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
@@ -94,16 +88,24 @@ public class GithubOpenDependabotAlertsDsl implements DataSourceLocation {
         inputValueData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
-      data.put(inputValue, inputValueData);
+      addInputValueResponse(data, dataPoint.getIdentifier(), inputValues, inputValueData);
     }
+
     return data;
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String url) {
-    if (!isEmpty(dataPointIdsAndInputValue.get(OPEN_DEPENDABOT_ALERTS))) {
-      String inputValue = dataPointIdsAndInputValue.get(OPEN_DEPENDABOT_ALERTS);
-      url = url.replace(SEVERITY_REPLACER, inputValue.toLowerCase());
+  public String replaceInputValuePlaceholdersIfAny(
+      String url, DataPointEntity dataPoint, List<InputValue> inputValues) {
+    if (dataPoint.getIdentifier().equals(OPEN_DEPENDABOT_ALERTS)) {
+      Optional<InputValue> inputValueOpt =
+          inputValues.stream().filter(inputValue -> inputValue.getKey().equals(SEVERITY_TYPE)).findFirst();
+      if (inputValueOpt.isPresent()) {
+        String inputValue = inputValueOpt.get().getValue();
+        if (!inputValue.isEmpty()) {
+          url = url.replace(SEVERITY_REPLACER, inputValue.toLowerCase());
+        }
+      }
     }
     return url;
   }

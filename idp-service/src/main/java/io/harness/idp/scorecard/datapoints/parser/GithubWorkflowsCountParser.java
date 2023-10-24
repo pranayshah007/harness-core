@@ -14,14 +14,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GithubWorkflowsCountParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
+  public Object parseDataPoint(
+      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
       return constructDataPointInfoWithoutInputValue(null, errorMessage);

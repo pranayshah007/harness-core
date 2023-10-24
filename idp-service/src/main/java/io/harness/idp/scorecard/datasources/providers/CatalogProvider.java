@@ -16,14 +16,16 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.math3.util.Pair;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
@@ -36,7 +38,7 @@ public class CatalogProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier, null),
         Collections.emptyMap(), Collections.emptyMap());

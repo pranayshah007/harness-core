@@ -23,14 +23,16 @@ import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
@@ -49,7 +51,7 @@ public class BitbucketProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);

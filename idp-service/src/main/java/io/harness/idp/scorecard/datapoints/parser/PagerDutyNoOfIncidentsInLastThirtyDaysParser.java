@@ -13,12 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.gson.internal.LinkedTreeMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PagerDutyNoOfIncidentsInLastThirtyDaysParser implements DataPointParser {
   private static final String INCIDENTS_RESPONSE_KEY = "incidents";
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
     log.info(
         "Parser for is eNoOfIncidentsInLastThirtyDaysParser is invoked data - {}, data point - {}, input values - {}",
         data, dataPoint, inputValues);

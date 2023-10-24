@@ -2486,6 +2486,12 @@ components:
           type: string
           x-stoplight:
             id: oepovwbe5sp3v
+        input_values:
+          type: array
+          x-stoplight:
+            id: cllifz4ua1knq
+          items:
+            $ref: '#/components/schemas/InputValue'
       required:
         - data_source_identifier
         - data_point_identifier
@@ -2810,6 +2816,12 @@ components:
           type: string
           x-stoplight:
             id: ktfl6zmiaxrv8
+        input_values:
+          type: array
+          x-stoplight:
+            id: 7gpxma8wy54sh
+          items:
+            $ref: '#/components/schemas/InputDetails'
       required:
         - type
         - name
@@ -3298,6 +3310,40 @@ components:
             id: uva00wdpw7tkp
       required:
         - status
+    InputDetails:
+      title: InputDetails
+      x-stoplight:
+        id: 9bevzs2ntadh9
+      type: object
+      properties:
+        key:
+          type: string
+          x-stoplight:
+            id: raxmdmy2r7q9y
+        description:
+          type: string
+          x-stoplight:
+            id: aqhb6cu8ooj5t
+      required:
+        - key
+        - description
+    InputValue:
+      title: InputValue
+      x-stoplight:
+        id: optt6zoyoj558
+      type: object
+      properties:
+        key:
+          type: string
+          x-stoplight:
+            id: g1gwgcsubi0n0
+        value:
+          type: string
+          x-stoplight:
+            id: uf1wutejszt8j
+      required:
+        - key
+        - value
   parameters:
     AccountHeader:
       name: Harness-Account
