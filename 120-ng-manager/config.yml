@@ -602,3 +602,5 @@ serviceGitXThreadConfig:
     maxPoolSize: ${SERVICE_GITX_POOL_MAX_SIZE:-10}
     idleTime: ${SERVICE_GITX_POOL_IDLE_TIME:-30}
     timeUnit: ${SERVICE_GITX_POOL_TIME_UNIT:-SECONDS}
+
+oidcConfigPath: ${OIDC_CONFIG_PATH:-""}

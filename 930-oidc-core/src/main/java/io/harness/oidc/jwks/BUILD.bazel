@@ -11,8 +11,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/rsa:module",
         "//960-persistence/src/main/java/io/harness/persistence:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
