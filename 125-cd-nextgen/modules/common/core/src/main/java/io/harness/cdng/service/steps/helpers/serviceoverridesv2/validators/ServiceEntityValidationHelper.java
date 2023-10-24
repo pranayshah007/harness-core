@@ -42,14 +42,15 @@ public class ServiceEntityValidationHelper {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     // project level entity or org/account level entity with identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
-      service = serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
+      service =
+          serviceEntityService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
     } else {
       // org/account level
       IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           serviceRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.SERVICE);
-      service =
-          serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-              serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
+      service = serviceEntityService.getMetadata(serviceIdentifierRef.getAccountIdentifier(),
+          serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier(),
+          serviceIdentifierRef.getIdentifier(), false);
     }
     if (service.isEmpty()) {
       throw new NotFoundException(String.format("Service with ref [%s] not found", serviceRef));
