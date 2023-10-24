@@ -80,7 +80,9 @@ import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -105,6 +107,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.NGTemplateConstants;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
@@ -120,6 +123,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -150,6 +154,9 @@ public class ArtifactResourceUtils {
   @Inject ArtifactoryResourceService artifactoryResourceService;
   @Inject AccessControlClient accessControlClient;
   @Inject CustomResourceService customResourceService;
+
+  public final String SERVICE_GIT_BRANCH = "serviceGitBranch";
+  public final String ENV_GIT_BRANCH = "envGitBranch";
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -196,6 +203,13 @@ public class ArtifactResourceUtils {
         && artifactConfig.getInputSetValidator().getValidatorType() == InputSetValidatorType.REGEX;
   }
 
+  public boolean isRemoteService(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceRef) {
+    Optional<ServiceEntity> optionalService =
+        serviceEntityService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
+    return optionalService.filter(serviceEntity -> StoreType.REMOTE.equals(serviceEntity.getStoreType())).isPresent();
+  }
+
   public ResolvedFieldValueWithYamlExpressionEvaluator getResolvedFieldValueWithYamlExpressionEvaluator(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
       String runtimeInputYaml, String fieldValuePath, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo,
@@ -219,8 +233,10 @@ public class ArtifactResourceUtils {
             "Couldn't resolve artifact image path expression %s, as pipeline has not been saved yet.", fieldValuePath));
       }
       if (yamlExpressionEvaluator == null) {
-        yamlExpressionEvaluator = getYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, fqnPath, gitEntityBasicInfo, serviceId);
+        YamlExpressionEvaluatorWithContext evaluatorWithContext =
+            getYamlExpressionEvaluatorWithContext(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+                runtimeInputYaml, fqnPath, gitEntityBasicInfo, serviceId);
+        yamlExpressionEvaluator = evaluatorWithContext.getYamlExpressionEvaluator();
       }
       String resolvedFieldValuePath = yamlExpressionEvaluator.renderExpression(
           fieldValuePath, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
@@ -264,8 +280,66 @@ public class ArtifactResourceUtils {
     // get environment ref
     String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
     List<YamlField> aliasYamlField =
-        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId, new HashMap<>());
     return new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField);
+  }
+
+  public YamlExpressionEvaluatorWithContext getYamlExpressionEvaluatorWithContext(String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String runtimeInputYaml,
+      String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+      mergedCompleteYaml = applyTemplatesOnGivenYaml(
+          accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+    }
+    String[] split = fqnPath.split("\\.");
+    String stageIdentifier = split[2];
+    YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+    Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+
+    EntityRefAndFQN serviceRefAndFQN = getEntityRefAndFQN(fqnObjectMap, stageIdentifier, YamlTypes.SERVICE_REF);
+    if (isEmpty(serviceId)) {
+      // pipelines with inline service definitions
+      serviceId = serviceRefAndFQN.getEntityRef();
+    }
+    serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
+
+    // get environment ref
+    String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
+
+    // add context needed for fetching git entities
+    Map<String, String> contextMap = buildContextMap(fqnObjectMap, stageIdentifier);
+
+    List<YamlField> aliasYamlField =
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId, contextMap);
+    return YamlExpressionEvaluatorWithContext.builder()
+        .yamlExpressionEvaluator(new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField))
+        .contextMap(contextMap)
+        .build();
+  }
+
+  private Map<String, String> buildContextMap(Map<FQN, Object> fqnObjectMap, String stageIdentifier) {
+    Map<String, String> contextMap = new HashMap<>();
+
+    for (Map.Entry<FQN, Object> mapEntry : fqnObjectMap.entrySet()) {
+      String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
+      String fieldName = mapEntry.getKey().getFieldName();
+      if (stageIdentifier.equals(nodeStageIdentifier) && NGTemplateConstants.GIT_BRANCH.equals(fieldName)
+          && mapEntry.getValue() instanceof TextNode) {
+        String parentFieldName = mapEntry.getKey().getParent().getFieldName();
+        if (YamlTypes.SERVICE_ENTITY.equals(parentFieldName)) {
+          contextMap.put(SERVICE_GIT_BRANCH, ((TextNode) mapEntry.getValue()).asText());
+          continue;
+        }
+
+        if (YamlTypes.ENVIRONMENT_YAML.equals(parentFieldName)) {
+          contextMap.put(ENV_GIT_BRANCH, ((TextNode) mapEntry.getValue()).asText());
+        }
+      }
+    }
+
+    return contextMap;
   }
 
   @Nullable
@@ -328,7 +402,7 @@ public class ArtifactResourceUtils {
     // get environment ref
     String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
     List<YamlField> aliasYamlField =
-        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId, new HashMap<>());
     CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
         new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField);
     for (ParameterField<String> param : parameterFields) {
@@ -425,8 +499,12 @@ public class ArtifactResourceUtils {
     serviceId = resolveEntityIdIfExpression(serviceId, mergedCompleteYaml, serviceRefAndFQN);
     // get environment ref
     String environmentId = getResolvedEnvironmentId(mergedCompleteYaml, stageIdentifier, fqnObjectMap);
+
+    // add context needed for fetching git entities
+    Map<String, String> contextMap = buildContextMap(fqnObjectMap, stageIdentifier);
+
     List<YamlField> aliasYamlField =
-        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId, contextMap);
     return new CDExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField, secretFunctor);
   }
 
@@ -486,14 +564,17 @@ public class ArtifactResourceUtils {
     return null;
   }
 
-  private List<YamlField> getAliasYamlFields(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceId, String environmentId) {
+  private List<YamlField> getAliasYamlFields(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceId, String environmentId, Map<String, String> contextMap) {
     List<YamlField> yamlFields = new ArrayList<>();
+    String serviceGitBranch = contextMap.get(SERVICE_GIT_BRANCH);
     if (isNotEmpty(serviceId)) {
-      Optional<ServiceEntity> optionalService =
-          serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false);
-      optionalService.ifPresent(
-          service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
+      try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(serviceGitBranch)) {
+        Optional<ServiceEntity> optionalService =
+            serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false);
+        optionalService.ifPresent(
+            service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
+      }
     }
     if (isNotEmpty(environmentId)) {
       Optional<Environment> optionalEnvironment =
@@ -512,7 +593,6 @@ public class ArtifactResourceUtils {
       throw new InvalidRequestException("Invalid service yaml passed.");
     }
   }
-
   /**
    * Locates ArtifactConfig in a service entity for a given FQN of type
    * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag
@@ -522,9 +602,24 @@ public class ArtifactResourceUtils {
   @NotNull
   public ArtifactConfig locateArtifactInService(
       String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn) {
+    return locateArtifactInService(accountId, orgId, projectId, serviceRef, imageTagFqn, null);
+  }
+
+  /**
+   * Locates ArtifactConfig in a service entity picked from a git branch for a given FQN of type
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag
+   * @return ArtifactConfig
+   */
+  @NotNull
+  public ArtifactConfig locateArtifactInService(
+      String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn, String gitBranch) {
     String TEMPLATE_ACCESS_PERMISSION = "core_template_access";
-    YamlNode artifactTagLeafNode =
-        serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
+    YamlNode artifactTagLeafNode;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+      artifactTagLeafNode =
+          serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
+    }
 
     // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
