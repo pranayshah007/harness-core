@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.environment.custom;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -45,4 +46,6 @@ public interface EnvironmentRepositoryCustom {
   Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
+
+  Environment getRemoteEntityWithYaml(Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch);
 }

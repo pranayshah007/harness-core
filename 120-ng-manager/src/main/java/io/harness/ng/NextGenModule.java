@@ -669,6 +669,17 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("service-gitx-pool-%d").build());
   }
 
+  private ThreadPoolExecutor environmentGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getEnvironmentGitXThreadConfig() != null
+            && appConfig.getEnvironmentGitXThreadConfig().getThreadPoolConfig() != null
+        ? appConfig.getEnvironmentGitXThreadConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("environment-gitx-pool-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
@@ -1053,6 +1064,10 @@ public class NextGenModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("service-gitx-executor"))
         .toInstance(new ManagedExecutorService(serviceGitXThreadPool()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("environment-gitx-executor"))
+        .toInstance(new ManagedExecutorService(environmentGitXThreadPool()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);
