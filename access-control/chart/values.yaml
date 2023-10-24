@@ -64,7 +64,6 @@ global:
     enabled: false
     port: 8889
     path: /metrics
-
   ingress:
     # -- create ingress objects
     enabled: false
@@ -91,10 +90,8 @@ global:
       gateways:
       hosts:
   imagePullSecrets: []
-  
 # --mongoHosts List of mongo hosts
 mongoHosts: []
-
 # --replicaCount Number of pods
 ##
 replicaCount: 1
@@ -186,10 +183,10 @@ pdb:
 # --image.pullPolicy Image pull policy
 # --image.imagePullSecrets Specify docker-registry secret names as an array
 image:
-  registry: docker.io
-  repository: harness/accesscontrol-service-signed
+  registry: us.gcr.io
+  repository: platform-205701/access-control
   pullPolicy: IfNotPresent
-  tag: "79802"
+  tag: "1.22.0"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -227,7 +224,6 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 # --nameOverride String to partially override common.names.fullname template (will maintain the release name)
 ##
 nameOverride: ""
@@ -244,11 +240,9 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 containerSecurityContext:
   runAsUser: 65534
@@ -259,7 +253,6 @@ containerSecurityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 service:
   annotations: {}
   type: ClusterIP
@@ -323,7 +316,6 @@ resources:
 #         echo $(date '+%s') > $loc/end
 #         kill -15
 lifecycleHooks: {}
-
 ## Autoscaling configuration
 # --autoscaling.enabled Enable autoscaling for pods
 # --autoscaling.minReplicas Minimum number of replicas
@@ -337,7 +329,6 @@ autoscaling:
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 ## Configure extra options for liveness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- livenessProbe.enabled Enable livenessProbe
@@ -466,14 +457,11 @@ nodeSelector: {}
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ##
 tolerations: []
-
 mongoSSL:
   enabled: false
-
 # -- additionalConfigs Additional configurations for the deployment
 additionalConfigs: {}
 java17flags: ""
-
 virtualService:
   annotations: {}
 ingress:
