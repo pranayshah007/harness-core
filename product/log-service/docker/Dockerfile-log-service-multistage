@@ -17,12 +17,15 @@ ENV PLATFORM="jenkins"
 
 RUN chmod +x \
     /app/product/log-service/build/feature_build.sh \
-    && /app/product/log-service/build/feature_build.sh $GCP_KEY
+    && /app/product/log-service/build/feature_build.sh $GCP_KEY \
+
+ENV CONTEXT_PATH $BAZEL_BIN
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
 ENV CONTEXT_PATH $BAZEL_BIN
-COPY log-service_/log-service /usr/local/bin/log-service
+RUN echo $CONTEXT_PATH
+COPY $BAZEL_BIN/log-service_/log-service /usr/local/bin/log-service
 USER root
 RUN chown -R 65534:65534 /usr/local/bin
 USER 65534:65534
