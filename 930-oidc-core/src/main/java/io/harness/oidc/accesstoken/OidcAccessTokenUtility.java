@@ -45,7 +45,8 @@ public class OidcAccessTokenUtility {
     OidcAccessTokenStsApi oidcAccessTokenExchangeApi = retrofit.create(OidcAccessTokenStsApi.class);
 
     // Make the POST request and handle the response
-    Call<OidcWorkloadAccessTokenResponse> call = oidcAccessTokenExchangeApi.exchangeToken(oidcAccessTokenRequest);
+    Call<OidcWorkloadAccessTokenResponse> call =
+        oidcAccessTokenExchangeApi.exchangeWorkloadAccessToken(oidcAccessTokenRequest);
 
     try {
       Response<OidcWorkloadAccessTokenResponse> response = call.execute();

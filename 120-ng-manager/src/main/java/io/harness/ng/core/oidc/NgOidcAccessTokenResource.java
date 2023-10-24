@@ -15,6 +15,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.oidc.accesstoken.OidcWorkloadAccessTokenResponse;
 import io.harness.oidc.gcp.GcpOidcAccessTokenRequestDTO;
+import io.harness.oidc.gcp.GcpOidcServiceAccountAccessTokenResponse;
 import io.harness.oidc.gcp.GcpOidcTokenUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -72,18 +73,21 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class NgOidcAccessTokenResource {
   GcpOidcTokenUtility gcpOidcTokenUtility;
+
   @POST
   @Path("gcp/workload-access")
   @Consumes({"application/json", "application/yaml"})
-  @ApiOperation(value = "Generate an OIDC Access Token for GCP", nickname = "generateOidcAccessTokenForGcp")
-  @Operation(operationId = "generateOidcAccessTokenForGcp", summary = "Generates an OIDC Access Token for GCP",
+  @ApiOperation(
+      value = "Generate an OIDC Workload Access Token for GCP", nickname = "generateOidcWorkloadAccessTokenForGcp")
+  @Operation(operationId = "OidcWorkloadAccessTokenResponse",
+      summary = "Generates an OIDC Workload Access Token for GCP",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns OIDC Access Token as an encoded string")
+        ApiResponse(responseCode = "default", description = "Returns OIDC Workload Access Token response")
       })
   public ResponseDTO<OidcWorkloadAccessTokenResponse>
-  getOidcIdTokenForGcp(@RequestBody(required = true, description = "Details of GCP Workload Identity")
+  getOidcWorkloadAccessTokenForGcp(@RequestBody(required = true, description = "Details of GCP Workload Identity")
       @Valid GcpOidcAccessTokenRequestDTO gcpOidcAccessTokenRequestDTO) {
     GcpOidcAccessTokenRequestDTO gcpOidcAccessTokenRequestDTO1 = new GcpOidcAccessTokenRequestDTO();
 
@@ -96,5 +100,24 @@ public class NgOidcAccessTokenResource {
 
     // Get the Workload Access Token
     return ResponseDTO.newResponse(gcpOidcTokenUtility.exchangeOidcWorkloadAccessToken(gcpOidcAccessTokenRequestDTO1));
+  }
+
+  @POST
+  @Path("gcp/service-account-access")
+  @Consumes({"application/json", "application/yaml"})
+  @ApiOperation(
+      value = "Generate an OIDC Service Account Access Token for GCP", nickname = "generateOidcSAAccessTokenForGcp")
+  @Operation(operationId = "getOidcServiceAccountAccessTokenForGcp",
+      summary = "Generates an OIDC Service Account Access Token for GCP",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns OIDC Service Account Access Token response")
+      })
+  public ResponseDTO<GcpOidcServiceAccountAccessTokenResponse>
+  getOidcServiceAccountAccessTokenForGcp(@RequestBody(required = true, description = "Details of GCP Workload Identity")
+      @Valid GcpOidcAccessTokenRequestDTO gcpOidcAccessTokenRequestDTO) {
+    return ResponseDTO.newResponse(
+        gcpOidcTokenUtility.exchangeOidcServiceAccountAccessToken(gcpOidcAccessTokenRequestDTO));
   }
 }

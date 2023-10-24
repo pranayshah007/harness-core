@@ -15,12 +15,14 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
 @Schema(name = "GcpOidcAccessTokenRequest", description = "This contains GCP OIDC Access Token request details")
+@Setter
 public class GcpOidcAccessTokenRequestDTO {
   @NotNull @NotEmpty @Schema(description = "The OIDC ID Token") private String oidcIdToken;
   @NotNull

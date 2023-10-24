@@ -18,6 +18,7 @@ import static io.harness.oidc.idtoken.OidcIdTokenUtility.generateOidcIdToken;
 
 import static java.lang.System.currentTimeMillis;
 
+import io.harness.network.Http;
 import io.harness.oidc.accesstoken.OidcWorkloadAccessTokenRequest;
 import io.harness.oidc.accesstoken.OidcWorkloadAccessTokenResponse;
 import io.harness.oidc.config.OidcConfigurationUtility;
@@ -28,9 +29,18 @@ import io.harness.oidc.jwks.OidcJwksUtility;
 import io.harness.oidc.rsa.OidcRsaKeyService;
 
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 @Slf4j
 public class GcpOidcTokenUtility {
@@ -70,7 +80,7 @@ public class GcpOidcTokenUtility {
    * Utility function to exchange for the OIDC GCP Workload Access Token.
    *
    * @param gcpOidcAccessTokenRequestDTO GCP metadata needed to exchange for Access token
-   * @return OIDC Access Token for GCP
+   * @return OIDC Workload Access Token for GCP
    */
   public OidcWorkloadAccessTokenResponse exchangeOidcWorkloadAccessToken(
       GcpOidcAccessTokenRequestDTO gcpOidcAccessTokenRequestDTO) {
@@ -86,6 +96,77 @@ public class GcpOidcTokenUtility {
             gcpOidcAccessTokenRequestDTO.getGcpOidcTokenRequestDTO());
 
     return getOidcWorkloadAccessToken(oidcAccessTokenExchangeEndpoint, finalOidcAccessTokenRequest);
+  }
+
+  /**
+   * Utility function to exchange for the OIDC GCP Service Account Access Token.
+   *
+   * @param gcpOidcAccessTokenRequestDTO GCP metadata needed to exchange for Access token
+   * @return OIDC Service Account Access Token for GCP
+   */
+  public GcpOidcServiceAccountAccessTokenResponse exchangeOidcServiceAccountAccessToken(
+      GcpOidcAccessTokenRequestDTO gcpOidcAccessTokenRequestDTO) {
+    // Get the Workload Access Token to be used as bearer
+    OidcWorkloadAccessTokenResponse oidcWorkloadAccessTokenResponse =
+        exchangeOidcWorkloadAccessToken(gcpOidcAccessTokenRequestDTO);
+    String oidcIamSaTokenExchangeEndpoint =
+        oidcConfigurationUtility.getGcpOidcTokenStructure().getOidcAccessTokenIamSaEndpoint();
+    GcpOidcServiceAccountAccessTokenRequest gcpOidcServiceAccountAccessTokenRequest =
+        GcpOidcServiceAccountAccessTokenRequest.builder()
+            .delegates(null)
+            .scope(new ArrayList<>(Arrays.asList("https://www.googleapis.com/auth/cloud-platform")))
+            .lifetime(null)
+            .build();
+    return getOidcServiceAccountAccessToken(oidcIamSaTokenExchangeEndpoint, gcpOidcServiceAccountAccessTokenRequest,
+        oidcWorkloadAccessTokenResponse.getAccessToken());
+  }
+
+  /**
+   * Utility function to exchange for the OIDC GCP Service Account Access Token.
+   *
+   * @param gcpOidcIamSaApiEndpoint The GCP IAM endpoint to make the token exchange with.
+   * @param gcpOidcServiceAccountAccessTokenRequest The Token exchange request body.
+   * @param workloadAccessToken The OIDC Workload Access Token which will be used as Authorization bearer.
+   * @return Service Account Access Token
+   */
+  public GcpOidcServiceAccountAccessTokenResponse getOidcServiceAccountAccessToken(String gcpOidcIamSaApiEndpoint,
+      GcpOidcServiceAccountAccessTokenRequest gcpOidcServiceAccountAccessTokenRequest, String workloadAccessToken) {
+    // Create an OkHttpClient with any desired configurations (e.g., timeouts, interceptors)
+    OkHttpClient httpClient = new OkHttpClient.Builder()
+                                  .connectionPool(Http.connectionPool)
+                                  .readTimeout(60, TimeUnit.SECONDS)
+                                  .retryOnConnectionFailure(true)
+                                  .addInterceptor(new GcpOidcAccessTokenIamSaApiInterceptor(workloadAccessToken))
+                                  .build();
+
+    // Create a Retrofit client with the base URL
+    Retrofit retrofit = new Retrofit.Builder()
+                            .baseUrl(String.valueOf(gcpOidcIamSaApiEndpoint))
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .client(httpClient)
+                            .build();
+
+    // Create an instance of the API interface
+    GcpOidcAccessTokenIamSaAPI gcpOidcAccessTokenIamSaAPI = retrofit.create(GcpOidcAccessTokenIamSaAPI.class);
+
+    // Make the POST request and handle the response
+    Call<GcpOidcServiceAccountAccessTokenResponse> call =
+        gcpOidcAccessTokenIamSaAPI.exchangeServiceAccountAccessToken(gcpOidcServiceAccountAccessTokenRequest);
+
+    try {
+      Response<GcpOidcServiceAccountAccessTokenResponse> response = call.execute();
+      if (response.isSuccessful()) {
+        GcpOidcServiceAccountAccessTokenResponse gcpOidcServiceAccountAccessTokenResponse = response.body();
+        return gcpOidcServiceAccountAccessTokenResponse;
+      } else {
+        log.error("Error encountered while obtaining OIDC Access Token from STS for {}",
+            gcpOidcServiceAccountAccessTokenRequest);
+      }
+    } catch (IOException e) {
+      log.error("Exception encountered while exchanging OIDC Service Account Access Token {} ", e);
+    }
+
+    return null;
   }
 
   /**
