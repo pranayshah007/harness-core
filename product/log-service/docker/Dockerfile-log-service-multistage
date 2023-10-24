@@ -21,9 +21,9 @@ RUN chmod +x \
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
-
-RUN SLEEP 1000
-ENV CONTEXT_PATH=/root/.cache/bazel/_bazel_root/e85355a115859841eef4526236539ac3/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service
+ENV CONTEXT_PATH=$BAZEL_BIN
+RUN echo "Test Path"
+RUN echo $CONTEXT_PATH
 COPY log-service_/log-service /usr/local/bin/log-service
 USER root
 RUN chown -R 65534:65534 /usr/local/bin
