@@ -64,8 +64,7 @@ public class JiraIssuesOpenCloseRatioDsl implements DataSourceLocation {
       List<InputValue> inputValues = dataPointAndInputValues.getSecond();
 
       if (isEmpty(possibleReplaceableRequestBodyPairs.get(PROJECT_COMPONENT_REPLACER))) {
-        addInputValueResponse(
-            data, dataPoint.getIdentifier(), inputValues, Map.of(ERROR_MESSAGE_KEY, PROJECT_KEY_ANNOTATION_ERROR));
+        addInputValueResponse(data, inputValues, Map.of(ERROR_MESSAGE_KEY, PROJECT_KEY_ANNOTATION_ERROR));
         continue;
       }
 
@@ -94,7 +93,7 @@ public class JiraIssuesOpenCloseRatioDsl implements DataSourceLocation {
                 .get(ERROR_MESSAGES_KEY)
                 .toString());
       }
-      addInputValueResponse(data, dataPoint.getIdentifier(), inputValues, inputValueData);
+      addInputValueResponse(data, inputValues, inputValueData);
     }
 
     return data;

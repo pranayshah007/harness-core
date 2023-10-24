@@ -90,10 +90,10 @@ public interface DataSourceLocation {
   }
 
   default void addInputValueResponse(
-      Map<String, Object> data, String dataPointIdentifier, List<InputValue> inputValues, Map<String, Object> value) {
+      Map<String, Object> data, List<InputValue> inputValues, Map<String, Object> value) {
     for (int i = inputValues.size() - 1; i >= 0; i--) {
       value = Map.of(inputValues.get(i).getValue(), value);
     }
-    data.put(dataPointIdentifier, value);
+    data.putAll(value);
   }
 }

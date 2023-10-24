@@ -9,7 +9,7 @@
     "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
     "isConditional": true,
     "conditionalInputValueDescription": "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description": "Branch name"
@@ -40,7 +40,7 @@
     "dataSourceLocationIdentifier": "github_is_branch_protection_set",
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description":  "Branch name"
@@ -83,7 +83,7 @@
     "dataSourceLocationIdentifier": "github_is_file_exists",
     "isConditional": true,
     "conditionalInputValueDescription": "File path (e.g. src/index.js)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "filePath",
         "description": "File path (e.g. src/index.js)"
@@ -216,7 +216,7 @@
     "dataSourceLocationIdentifier": "bitbucket_mean_time_to_merge_pr",
     "isConditional": true,
     "conditionalInputValueDescription": "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description": "Branch name"
@@ -235,7 +235,7 @@
     "dataSourceLocationIdentifier": "bitbucket_is_branch_protection_set",
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description":  "Branch name"
@@ -254,7 +254,7 @@
     "dataSourceLocationIdentifier": "jira_mean_time_to_resolve",
     "isConditional": true,
     "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "jql",
         "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)"
@@ -273,7 +273,7 @@
     "dataSourceLocationIdentifier": "jira_issues_count",
     "isConditional": true,
     "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "jql",
         "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)"
@@ -292,7 +292,7 @@
     "dataSourceLocationIdentifier": "jira_issues_open_close_ratio",
     "isConditional": true,
     "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "jql",
         "description":  "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)"
@@ -311,7 +311,7 @@
     "dataSourceLocationIdentifier": "gitlab_mean_time_to_merge_pr",
     "isConditional": true,
     "conditionalInputValueDescription": "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description": "Branch name"
@@ -330,7 +330,7 @@
     "dataSourceLocationIdentifier": "gitlab_is_branch_protection_set",
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "branchName",
         "description":  "Branch name"
@@ -349,7 +349,7 @@
     "dataSourceLocationIdentifier": "gitlab_is_file_exists",
     "isConditional": true,
     "conditionalInputValueDescription": "File path (e.g. src/index.js)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "filePath",
         "description": "File path (e.g. src/index.js)"
@@ -379,7 +379,7 @@
     "dataSourceLocationIdentifier": "github_workflow_success_rate",
     "isConditional": true,
     "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "filePath",
         "description": "YAML filename with extension (ci-workflow.yml)"
@@ -398,7 +398,7 @@
     "dataSourceLocationIdentifier": "github_mean_time_to_complete_workflow_runs",
     "isConditional": true,
     "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "filePath",
         "description": "YAML filename with extension (ci-workflow.yml)"
@@ -417,7 +417,7 @@
     "dataSourceLocationIdentifier": "github_mean_time_to_complete_success_workflow_runs",
     "isConditional": true,
     "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "filePath",
         "description": "YAML filename with extension (ci-workflow.yml)"
@@ -436,7 +436,7 @@
     "dataSourceLocationIdentifier": "github_open_dependabot_alerts",
     "isConditional": true,
     "conditionalInputValueDescription": "Severity type (critical or high)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "severityType",
         "description": "Severity type (critical or high)"
@@ -455,7 +455,7 @@
     "dataSourceLocationIdentifier": "github_open_code_scanning_alerts",
     "isConditional": true,
     "conditionalInputValueDescription": "Severity type (critical or high)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "severityType",
         "description": "Severity type (critical or high)"
@@ -486,7 +486,7 @@
     "dataSourceLocationIdentifier": "github_open_pull_requests_by_account",
     "isConditional": true,
     "conditionalInputValueDescription": "Account name (e.g: app/dependabot)",
-    "inputValues": [
+    "inputDetails": [
       {
         "key": "accountName",
         "description": "Account name (e.g: app/dependabot)"

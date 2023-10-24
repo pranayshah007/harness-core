@@ -67,8 +67,7 @@ public class GitlabMeanTimeToMergePRDsl implements DataSourceLocation {
 
       if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(PROJECT_PATH))) {
-        addInputValueResponse(
-            data, dataPoint.getIdentifier(), inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        addInputValueResponse(data, inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
         continue;
       }
 
@@ -91,7 +90,7 @@ public class GitlabMeanTimeToMergePRDsl implements DataSourceLocation {
                 .get(ERRORS);
         inputValueData.put(ERROR_MESSAGE_KEY, errors.get(0).get(MESSAGE_KEY));
       }
-      addInputValueResponse(data, dataPoint.getIdentifier(), inputValues, inputValueData);
+      addInputValueResponse(data, inputValues, inputValueData);
     }
 
     return data;

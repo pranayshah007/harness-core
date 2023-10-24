@@ -62,8 +62,7 @@ public class BitbucketIsBranchProtectionSetDsl implements DataSourceLocation {
       List<InputValue> inputValues = dataPointAndInputValues.getSecond();
       if (isEmpty(possibleReplaceableUrlPairs.get(REPO_SCM)) || isEmpty(possibleReplaceableUrlPairs.get(WORKSPACE))
           || isEmpty(possibleReplaceableUrlPairs.get(REPOSITORY_NAME))) {
-        addInputValueResponse(
-            data, dataPoint.getIdentifier(), inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        addInputValueResponse(data, inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
         continue;
       }
 
@@ -82,7 +81,7 @@ public class BitbucketIsBranchProtectionSetDsl implements DataSourceLocation {
         inputValueData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
-      addInputValueResponse(data, dataPoint.getIdentifier(), inputValues, inputValueData);
+      addInputValueResponse(data, inputValues, inputValueData);
     }
 
     return data;

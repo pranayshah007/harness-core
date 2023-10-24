@@ -67,8 +67,7 @@ public class GithubMeanTimeToCompleteSuccessWorkflowRunsDsl implements DataSourc
       if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
-        addInputValueResponse(
-            data, dataPoint.getIdentifier(), inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        addInputValueResponse(data, inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
         continue;
       }
       Map<String, String> replaceablePairs = new HashMap<>();
@@ -89,7 +88,7 @@ public class GithubMeanTimeToCompleteSuccessWorkflowRunsDsl implements DataSourc
         inputValueData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
-      addInputValueResponse(data, dataPoint.getIdentifier(), inputValues, inputValueData);
+      addInputValueResponse(data, inputValues, inputValueData);
     }
 
     return data;
