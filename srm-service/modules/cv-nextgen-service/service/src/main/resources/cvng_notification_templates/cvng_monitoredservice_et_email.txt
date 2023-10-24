@@ -1,4 +1,4 @@
-subject: Harness SRM
+subject: Harness CET
 body: "<html>
         <div
           style=\"
@@ -28,30 +28,26 @@ body: "<html>
           >
 
             <div style=\"font-size: 15px; padding: 15px;\">
-              <p style=\"color: #e43326; font-weight: 600;\">
-                  Monitored Service has observed error events.
-              </p>
               <p style=\"color: #0b0b0d; font-weight: 600\">
-                Monitored Service ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has
-                observed error events
+                Monitored Service (${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK}) has
+                detected new error events for code errors
               </p>
-
-              <div>${EMAIL_FORMATTED_VERSION_LIST}</div>
-
-              <hr style=\"border-top: 1px solid #b0b1c3\" />
               <div>
-                <div style=\"margin-bottom: 8.5px\">
-                  <span style=\"color: #6b6d85\">Notification Name </span>
-                  <span>${EMAIL_NOTIFICATION_NAME_HYPERLINK}</span>
+                  <div style=\"margin-bottom: 8.5px\">
+                    <span style=\"color: #6b6d85\">Notification Name </span>
+                    <span>${EMAIL_NOTIFICATION_NAME_HYPERLINK}</span>
+                  </div>
+                  <div style=\"margin-bottom: 8.5px\">
+                    <span style=\"color: #6b6d85\">Trigger </span>
+                    <span
+                      >When ${EVENT_STATUS} with the event type
+                      (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed.</span
+                    >
+                  </div>
                 </div>
-                <div style=\"margin-bottom: 8.5px\">
-                  <span style=\"color: #6b6d85\">Trigger </span>
-                  <span
-                    >When ${EVENT_STATUS} with the event type
-                    (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed.</span
-                  >
-                </div>
-              </div>
+              <hr style=\"border-top: 1px solid #b0b1c3\" />
+              ${EMAIL_SAVED_SEARCH_FILTER_SECTION}
+              ${EMAIL_FORMATTED_VERSION_LIST}
               <hr style=\"border-top: 1px solid #b0b1c3\" />
               <div style=\"width: 100%;\">
                   <div>
@@ -74,6 +70,7 @@ body: "<html>
                           <p style=\"margin-top: 0\">${ENVIRONMENT_NAME}</p>
                       </div>
                   </div>
+                  ${EMAIL_EVENT_DETAILS_BUTTON}
             </div>
           </div>
         </div>
