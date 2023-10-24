@@ -1,3 +1,4 @@
-BUILD_SCRIPT_PATH: log-service/build/feature_build.sh
+BUILD_SCRIPT_PATH: product/log-service/build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/product/log-service/docker/Dockerfile-log-service-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/product/log-service/chart
+CONTEXT_PATH: /root/.cache/bazel/_bazel_root/e85355a115859841eef4526236539ac3/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service
