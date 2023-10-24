@@ -188,7 +188,10 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
             .match(query)
             .group(DelegateTaskKeys.accountId, grouping("count", new Accumulator("$sum", 1)))
             .project(projection(DelegateTaskKeys.accountId, ID_KEY), projection("count"));
-    aggregationPipeline.aggregate(AccountIdVsTask.class)
+    aggregationPipeline
+        // CSOFF: ForbidCertainMethodCheck
+        .aggregate(AccountIdVsTask.class)
+        // CSON: ForbidCertainMethodCheck
         .forEachRemaining(
             accountIdVsTask -> recordDelegateTaskMetrics(accountIdVsTask.getAccountId(), accountIdVsTask.getCount()));
   }
