@@ -745,7 +745,7 @@
         "input_values":  [
           {
             "key": "filePath",
-            "value": "bazelrc"
+            "value": "\"bazelrc\""
           },
           {
             "key": "branchName",
@@ -760,9 +760,43 @@
         "value": "17"
       }
     ],
-    "expression": "github.github_file_contents.bazelrc.develop.\"^build --java_language_version=(\\d+)\" == 17",
+    "expression": "github.github_file_contents.\"bazelrc\".develop.\"^build --java_language_version=(\\d+)\" == 17",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Java version is not 17"
+  },
+  {
+    "id": "6537ca43af2121ac13f0e39b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__7ca38db5-fe42-4ef3-ac93-f15b28e0aaba",
+    "name": "MiniCssExtract plugin exists",
+    "description": "Webpack config file contains MiniCssExtract plugin",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "fileContains",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\"webpack.prod.js\""
+          },
+          {
+            "key": "branchName",
+            "value": "develop"
+          },
+          {
+            "key": "pattern",
+            "value": "\"require\\('mini-css-extract-plugin'\\)\""
+          }
+        ],
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "github.github_file_contents.\"webpack.prod.js\".develop.\"require\\('mini-css-extract-plugin'\\)\" == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Webpack config file contains MiniCssExtract plugin"
   }
 ]

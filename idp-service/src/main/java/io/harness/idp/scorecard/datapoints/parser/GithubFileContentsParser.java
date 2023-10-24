@@ -28,50 +28,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @OwnedBy(HarnessTeam.IDP)
-public class GithubFileContentsParser implements DataPointParser {
+public class GithubFileContentsParser extends GithubFileParser {
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
-    Map<String, Object> dataPointData = new HashMap<>();
-    if (inputValues.size() != 3) {
-      dataPointData.putAll(constructDataPointInfoWithoutInputValue(null, INVALID_CONDITIONAL_INPUT));
-    }
-
-    for (InputValue inputValue : inputValues) {
-      data = (Map<String, Object>) data.get(inputValue.getValue());
-    }
-
-    if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
-      String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
-      dataPointData.putAll(
-          constructDataPointInfo(inputValues, null, !isEmpty(errorMessage) ? errorMessage : INVALID_FILE_NAME_ERROR));
-      return dataPointData;
-    }
-
-    if (CommonUtils.findObjectByName(data, "object") == null) {
-      dataPointData.putAll(constructDataPointInfo(inputValues, null, INVALID_FILE_NAME_ERROR));
-      return dataPointData;
-    }
-
-    String text = (String) CommonUtils.findObjectByName(data, "text");
-    Optional<InputValue> patternOpt =
-        inputValues.stream().filter(inputValue -> inputValue.getKey().equals(PATTERN)).findFirst();
-    if (patternOpt.isEmpty()) {
-      dataPointData.putAll(constructDataPointInfo(inputValues, null, INVALID_PATTERN));
-      return dataPointData;
-    }
-
-    String regex = patternOpt.get().getValue().replace("\"", "");
-    Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
-    Matcher matcher = pattern.matcher(text);
-
-    if (matcher.find()) {
-      String capturedValue = matcher.group(1);
-      dataPointData.putAll(constructDataPointInfo(inputValues, capturedValue, null));
-    } else {
-      dataPointData.putAll(constructDataPointInfo(inputValues, null, INVALID_PATTERN));
-    }
-
-    return dataPointData;
+  Object parseRegex(Matcher matcher) {
+    return matcher.find() ? matcher.group(1) : null;
   }
 }

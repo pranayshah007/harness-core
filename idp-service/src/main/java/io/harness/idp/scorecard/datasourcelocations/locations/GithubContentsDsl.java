@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTAINS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTENTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.Inputs.FILE_PATH;
@@ -95,7 +96,7 @@ public class GithubContentsDsl implements DataSourceLocation {
   @Override
   public String replaceInputValuePlaceholdersIfAny(
       String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
-    if (dataPoint.getIdentifier().equals(FILE_CONTENTS)) {
+    if (dataPoint.getIdentifier().equals(FILE_CONTENTS) || dataPoint.getIdentifier().equals(FILE_CONTAINS)) {
       Optional<InputValue> inputValueOpt =
           inputValues.stream().filter(inputValue -> inputValue.getKey().equals(FILE_PATH)).findFirst();
       if (inputValueOpt.isPresent()) {

@@ -520,5 +520,31 @@
     ],
     "description": "Gets the string matching the pattern from given file from the branch.",
     "detailedDescription": "**How it's calculated:** "
+  },
+  {
+    "id": "6537ca6bf4f2d0d2eb140d32",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "fileContains",
+    "name": "File contains",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_file_contents",
+    "isConditional": true,
+    "inputDetails": [
+      {
+        "key": "branchName",
+        "description": "Branch Name"
+      },
+      {
+        "key": "filePath",
+        "description": "File path (e.g. src/index.js)"
+      },
+      {
+        "key": "pattern",
+        "description": "Regex Pattern to search for in the file"
+      }
+    ],
+    "description": "Matches the pattern in the given file from the branch.",
+    "detailedDescription": "**How it's calculated:** "
   }
 ]
