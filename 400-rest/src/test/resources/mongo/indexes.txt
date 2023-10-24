@@ -11,6 +11,7 @@ accounts {"name": "accountName_1", "unique": true} {"accountName": 1}
 accounts {"name": "accountStatus_accountType_workflowDataCollectionIteration", "background": true} {"licenseInfo.accountStatus": 1, "licenseInfo.accountType": 1, "workflowDataCollectionIteration": 1}
 accounts {"name": "account_status_deletion_iteration", "background": true} {"licenseInfo.accountStatus": 1, "accountDeletionIteration": 1}
 accounts {"name": "appId_1", "background": true} {"appId": 1}
+accounts {"name": "appId_uuid_accountName_companyName_licenseInfo_encryptedLicenseInfo", "background": true} {"appId": 1, "uuid": 1, "accountName": 1, "companyName": 1, "licenseInfo": 1, "encryptedLicenseInfo": 1}
 accounts {"name": "ceLicenseExpiryIteration_1", "background": true} {"ceLicenseExpiryIteration": 1}
 accounts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 accounts {"name": "delegateTaskRebroadcastIteration_1", "background": true} {"delegateTaskRebroadcastIteration": 1}
