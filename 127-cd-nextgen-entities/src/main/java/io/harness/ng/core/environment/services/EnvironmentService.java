@@ -78,12 +78,19 @@ public interface EnvironmentService {
   String createEnvironmentInputsYaml(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
+  String createEnvironmentInputsYaml(String envIdentifier, String environmentYaml);
+
   List<Map<String, String>> getAttributes(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
 
   EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs, List<String> serviceRefs,
       boolean isServiceOverrideV2Enabled);
+
+  EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs,
+      Map<String, String> environmentRefBranchMap, List<String> serviceRefs, boolean isServiceOverrideV2Enabled,
+      boolean loadFromCache);
 
   EnvironmentInputsMergedResponseDto mergeEnvironmentInputs(
       String accountId, String orgId, String projectId, String serviceId, String oldEnvironmentInputsYaml);

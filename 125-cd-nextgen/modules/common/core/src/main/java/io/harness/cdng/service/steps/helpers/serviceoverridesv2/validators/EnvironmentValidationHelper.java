@@ -44,13 +44,15 @@ public class EnvironmentValidationHelper {
     String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
 
     if (envRefSplit == null || envRefSplit.length == 1) {
-      environment = environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
+      environment =
+          environmentService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
     } else {
       // env ref for org/account level entity
       IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           environmentRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.ENVIRONMENT);
-      environment = environmentService.get(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
+      environment =
+          environmentService.getMetadata(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
     }
 
     if (environment.isEmpty()) {

@@ -272,6 +272,31 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
     return Optional.of(savedEntity);
   }
 
+  @Override
+  public Environment getRemoteEntityWithYaml(
+      @NonNull Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    try {
+      String branchName = gitAwareEntityHelper.getWorkingBranch(environment.getRepo());
+      if (loadFromFallbackBranch) {
+        environment = fetchRemoteEntityWithFallBackBranch(environment.getAccountId(), environment.getOrgIdentifier(),
+            environment.getProjectIdentifier(), environment, branchName, loadFromCache);
+      } else {
+        environment = fetchRemoteEntity(environment.getAccountId(), environment.getOrgIdentifier(),
+            environment.getProjectIdentifier(), environment, branchName, loadFromCache);
+      }
+
+      return environment;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving yaml for environment: [%s]", environment.getIdentifier()), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format("Unexpected error occurred while yaml for environment: [%s]", environment.getIdentifier()), e);
+      throw new InternalServerErrorException(String.format(
+          "Unexpected error occurred while retrieving yaml for environment: [%s]", environment.getIdentifier()));
+    }
+  }
+
   private Environment fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
       Environment savedEntity, String branchName, boolean loadFromCache) {
     return (Environment) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,

@@ -157,7 +157,7 @@ public class EnvironmentMapper {
         .build();
   }
 
-  private EntityGitDetails getEntityGitDetails(Environment environment) {
+  public EntityGitDetails getEntityGitDetails(Environment environment) {
     if (environment.getStoreType() == StoreType.REMOTE) {
       EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
 
