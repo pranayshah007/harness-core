@@ -768,6 +768,26 @@ public class AccountResource {
     }
   }
 
+  @PUT
+  @Path("{accountId}/ng/credit")
+  public RestResponse<CreditDTO> updateNgCredit(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
+    validateAccountExistence(clientAccountId);
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.updateAccountCredit(clientAccountId, creditDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to update credit").build()))
+          .build();
+    }
+  }
+
   @POST
   @Path("{accountId}/smp/licenses/validate")
   @Hidden
