@@ -10,9 +10,11 @@ package io.harness.steps.http;
 import static io.harness.expression.EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,15 +33,18 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.LogStreamingStepClientImpl;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -193,5 +198,66 @@ public class HttpStepUtilsTest {
                            -> httpStepUtils.createCertificate(
                                ParameterField.createValueField(""), ParameterField.createValueField("value")))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetHttpStepParameters() {
+    assertEquals(httpStepUtils.getHttpStepParameters(
+                     StepElementParameters.builder()
+                         .spec(HttpStepParameters.infoBuilder()
+                                   .url(ParameterField.createValueField("https://www.google.com"))
+                                   .method(ParameterField.createValueField("GET"))
+                                   .build())
+                         .build()),
+        HttpStepParameters.infoBuilder()
+            .url(ParameterField.createValueField("https://www.google.com"))
+            .method(ParameterField.createValueField("GET"))
+            .build());
+    assertEquals(httpStepUtils.getHttpStepParameters(
+                     StepElementParameters.builder()
+                         .spec(io.harness.steps.http.v1.HttpStepParameters.infoBuilder()
+                                   .url(ParameterField.createValueField("https://www.google.com"))
+                                   .method(ParameterField.createValueField("GET"))
+                                   .build())
+                         .build()),
+        HttpStepParameters.infoBuilder()
+            .url(ParameterField.createValueField("https://www.google.com"))
+            .method(ParameterField.createValueField("GET"))
+            .build());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetHttpOutcome() {
+    assertEquals(httpStepUtils.getHttpOutcome(HarnessYamlVersion.V0,
+                     HttpStepParameters.infoBuilder()
+                         .url(ParameterField.createValueField("https://www.google.com"))
+                         .method(ParameterField.createValueField("GET"))
+                         .build(),
+                     HttpStepResponse.builder().build(), new HashMap<>()),
+        HttpOutcome.builder()
+            .httpUrl("https://www.google.com")
+            .httpMethod("GET")
+            .outputVariables(new HashMap<>())
+            .build());
+    assertEquals(httpStepUtils.getHttpOutcome(HarnessYamlVersion.V1,
+                     HttpStepParameters.infoBuilder()
+                         .url(ParameterField.createValueField("https://www.google.com"))
+                         .method(ParameterField.createValueField("GET"))
+                         .build(),
+                     HttpStepResponse.builder().build(), new HashMap<>()),
+        io.harness.steps.http.v1.HttpOutcome.builder()
+            .url("https://www.google.com")
+            .method("GET")
+            .output_vars(new HashMap<>())
+            .build());
+    assertThatThrownBy(()
+                           -> httpStepUtils.getHttpOutcome("v2", HttpStepParameters.infoBuilder().build(),
+                               HttpStepResponse.builder().build(), new HashMap<>()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version v2 not supported");
   }
 }

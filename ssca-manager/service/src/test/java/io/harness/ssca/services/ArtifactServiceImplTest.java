@@ -22,6 +22,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
+import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.EnvironmentTypeEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.PolicyViolationEnum;
@@ -193,6 +194,26 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
+  public void testGetArtifactDetails() {
+    Mockito.when(artifactRepository.findOne(Mockito.any()))
+        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
+
+    ArtifactDetailResponse response = artifactService.getArtifactDetails(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        "artifactId", "tag");
+    assertThat(response.getArtifactId()).isEqualTo("artifactId");
+    assertThat(response.getArtifactName()).isEqualTo("test/image");
+    assertThat(response.getTag()).isEqualTo("tag");
+    assertThat(response.getComponentsCount()).isEqualTo(35);
+    assertThat(response.getProdEnvCount()).isEqualTo(2);
+    assertThat(response.getNonProdEnvCount()).isEqualTo(1);
+    assertThat(response.getBuildPipelineId()).isEqualTo("pipelineId");
+    assertThat(response.getBuildPipelineExecutionId()).isEqualTo("pipelineExecutionId");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
   public void testGenerateArtifactId() {
     String generatedId = artifactService.generateArtifactId("https://index.docker.com/v2/", "arpit/image-5");
     assertThat(generatedId).isEqualTo("fab60212-b5a7-3449-97fb-792c4d9c9bff");
@@ -268,8 +289,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
         builderFactory.getArtifactEntityBuilder()
             .artifactId("artifact2")
             .artifactCorrelationId("artifactCorrelation2")
-            .prodEnvCount(0)
-            .nonProdEnvCount(1)
+            .prodEnvCount(0l)
+            .nonProdEnvCount(1l)
             .build());
     Mockito.when(artifactRepository.findAll(Mockito.any(), Mockito.any()))
         .thenReturn(new PageImpl<>(artifactEntities, Pageable.ofSize(2).withPage(0), 3));

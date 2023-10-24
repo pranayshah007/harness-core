@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -132,7 +133,7 @@ public class ErrorTrackingNotificationServiceImplTest extends CvNextGenTestBase 
              eq(builderFactory.getContext().getAccountId()), eq(SRM_CODE_ERROR_NOTIFICATIONS)))
         .thenReturn(true);
 
-    Scorecard scorecard = Scorecard.builder().build();
+    Scorecard scorecard = Scorecard.builder().newHitCount(1).build();
     List<Scorecard> scorecards = new ArrayList<>();
     scorecards.add(scorecard);
     ErrorTrackingNotificationData errorTrackingNotificationData = ErrorTrackingNotificationData.builder()
@@ -140,8 +141,8 @@ public class ErrorTrackingNotificationServiceImplTest extends CvNextGenTestBase 
                                                                       .to(Timestamp.from(clock.instant()))
                                                                       .scorecards(scorecards)
                                                                       .build();
-    when(errorTrackingService.getNotificationData(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyList(), anyList(), anyString()))
+    when(errorTrackingService.getNotificationData(anyString(), anyString(), anyString(), anyString(), anyString(),
+             anyList(), anyList(), anyString(), nullable(Integer.class)))
         .thenReturn(errorTrackingNotificationData);
 
     NotificationRuleDTO notificationRuleDTO =

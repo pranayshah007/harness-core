@@ -39,8 +39,7 @@ import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.customstage.v1.CustomStageStepV1;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
-import io.harness.steps.http.HttpStep;
-import io.harness.steps.http.v1.HttpStepV1;
+import io.harness.steps.http.v1.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
 import io.harness.steps.policy.step.PolicyStep;
@@ -49,7 +48,7 @@ import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
-import io.harness.steps.shellscript.ShellScriptStep;
+import io.harness.steps.shellscript.v1.ShellScriptStep;
 import io.harness.steps.wait.WaitStep;
 
 import java.util.HashMap;
@@ -76,9 +75,11 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(JiraCreateStep.STEP_TYPE, JiraCreateStep.class);
     engineSteps.put(JiraUpdateStep.STEP_TYPE, JiraUpdateStep.class);
 
+    engineSteps.put(io.harness.steps.http.HttpStep.STEP_TYPE, io.harness.steps.http.HttpStep.class);
     engineSteps.put(HttpStep.STEP_TYPE, HttpStep.class);
-    engineSteps.put(HttpStepV1.STEP_TYPE, HttpStepV1.class);
     engineSteps.put(EmailStep.STEP_TYPE, EmailStep.class);
+    engineSteps.put(
+        io.harness.steps.shellscript.ShellScriptStep.STEP_TYPE, io.harness.steps.shellscript.ShellScriptStep.class);
     engineSteps.put(ShellScriptStep.STEP_TYPE, ShellScriptStep.class);
     engineSteps.put(ServiceNowApprovalStep.STEP_TYPE, ServiceNowApprovalStep.class);
     engineSteps.put(ServiceNowCreateStep.STEP_TYPE, ServiceNowCreateStep.class);

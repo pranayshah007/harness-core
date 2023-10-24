@@ -66,6 +66,8 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
+  @Mock TemplatePreProcessorHelper templatePreProcessorHelper;
+
   @Before
   public void setup() throws IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);

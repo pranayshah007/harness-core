@@ -26,6 +26,7 @@ import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.TypeEnum;
+import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
@@ -161,6 +162,22 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
     return artifactRepository.findOne(criteria);
+  }
+
+  @Override
+  public ArtifactDetailResponse getArtifactDetails(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactId, String tag) {
+    ArtifactEntity artifact = getLatestArtifact(accountId, orgIdentifier, projectIdentifier, artifactId, tag);
+    return new ArtifactDetailResponse()
+        .artifactId(artifact.getArtifactId())
+        .artifactName(artifact.getName())
+        .tag(artifact.getTag())
+        .componentsCount(artifact.getComponentsCount().intValue())
+        .updated(String.format("%d", artifact.getLastUpdatedAt()))
+        .prodEnvCount(artifact.getProdEnvCount().intValue())
+        .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
+        .buildPipelineId(artifact.getPipelineId())
+        .buildPipelineExecutionId(artifact.getPipelineExecutionId());
   }
 
   @Override

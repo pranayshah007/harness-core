@@ -104,6 +104,7 @@ import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
 import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.listener.WebhookGitXPushEventQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -920,6 +921,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(WebhookGitXPushEventQueueProcessor.class));
     }
     if (appConfig.isUseQueueServiceForGitXWebhook()) {
       environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));

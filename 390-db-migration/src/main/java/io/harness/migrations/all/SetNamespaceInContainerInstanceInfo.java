@@ -50,7 +50,7 @@ public class SetNamespaceInContainerInstanceInfo implements Migration {
   @Override
   public void migrate() {
     for (Account account :
-        wingsPersistence.createQuery(Account.class, excludeAuthority).project(Account.ID_KEY2, true)) {
+        wingsPersistence.createAnalyticsQuery(Account.class, excludeAuthority).project(Account.ID_KEY2, true)) {
       for (Application app : wingsPersistence.createQuery(Application.class)
                                  .filter(Application.ACCOUNT_ID_KEY2, account.getUuid())
                                  .project(Application.ID_KEY2, true)) {

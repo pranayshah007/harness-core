@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.StepExecutionParameters;
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ExecutionSource;
@@ -38,6 +39,8 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.ci.execution.buildstate.CodebaseUtils;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.utils.WebhookTriggerProcessorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -49,6 +52,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -96,7 +100,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
   @Inject private ScmGitRefManager scmGitRefManager;
-
+  @Inject private CIFeatureFlagService featureFlagService;
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
 
   @Override
@@ -133,6 +137,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         RunTimeInputHandler.resolveStringParameterV2(
             "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false));
 
+    List<TaskSelector> selectors = new ArrayList<>();
+    if (featureFlagService.isEnabled(FeatureName.CI_CODEBASE_SELECTOR, accountId)) {
+      selectors =
+          connectorUtils.fetchCodebaseDelegateSelector(ambiance, connectorDetails, executionSweepingOutputResolver);
+    }
+
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(Duration.ofSeconds(30).toMillis())
@@ -141,8 +151,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build();
 
     log.info("Created delegate task to fetch codebase info");
-    return TaskRequestsUtils.prepareTaskRequest(
-        ambiance, taskData, referenceFalseKryoSerializer, false, Collections.emptyList(), false, null);
+    return TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, selectors);
   }
 
   @Override

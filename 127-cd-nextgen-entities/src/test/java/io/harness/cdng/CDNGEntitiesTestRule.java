@@ -250,6 +250,9 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(ExecutorService.class)
             .annotatedWith(Names.named("service-gitx-executor"))
             .toInstance(mock(ExecutorService.class));
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("environment-gitx-executor"))
+            .toInstance(mock(ExecutorService.class));
         bind(SecretCrudService.class).toProvider(() -> mock(SecretCrudService.class)).asEagerSingleton();
       }
     });

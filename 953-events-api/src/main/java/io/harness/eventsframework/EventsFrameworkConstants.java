@@ -37,6 +37,7 @@ public final class EventsFrameworkConstants {
   public static final String GITX_WEBHOOK_PUSH_EVENT_STREAM = "gitx_webhook_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
+  public static final String NG_GITX_WEBHOOK_PUSH_EVENT = "NGGitXWebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
   public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GITX_WEBHOOK_EVENT = "GitXWebhookEvent";

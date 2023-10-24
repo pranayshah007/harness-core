@@ -408,6 +408,29 @@ paths:
             schema:
               $ref: '#/components/schemas/ArtifactDeploymentViewRequestBody'
         description: ''
+  '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/details':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/Artifact'
+      - $ref: '#/components/parameters/Tag'
+    get:
+      summary: Artifact Details
+      operationId: getArtifactDetails
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactDetailResponseBody'
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+      description: Get artifact details
+      security:
+        - x-api-key: []
+      tags:
+        - artifact
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     Artifact:
@@ -982,6 +1005,35 @@ components:
         - artifact_id
         - artifact_name
         - tag
+    ArtifactDetailResponse:
+      title: ArtifactDetailResponse
+      type: object
+      x-examples: {}
+      x-stoplight:
+        id: 763c316659901
+      properties:
+        artifact_id:
+          type: string
+        artifact_name:
+          type: string
+        tag:
+          type: string
+        components_count:
+          type: integer
+        updated:
+          type: string
+        prod_env_count:
+          type: integer
+        non_prod_env_count:
+          type: integer
+        build_pipeline_id:
+          type: string
+        build_pipeline_execution_id:
+          type: string
+      required:
+        - artifact_id
+        - artifact_name
+        - tag
     ArtifactComponentViewRequestBody:
       title: ArtifactComponentViewRequestBody
       x-stoplight:
@@ -1316,5 +1368,11 @@ components:
           schema:
             type: string
           description: Maximum page size in Paginated response.
+    ArtifactDetailResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ArtifactDetailResponse'
 tags:
   - name: sbomProcessor

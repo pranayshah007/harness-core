@@ -78,12 +78,13 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
-import io.harness.pms.plan.execution.preprocess.PipelineV1Preprocessor;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
+import io.harness.pms.yaml.preprocess.YamlV1PreProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
@@ -136,8 +137,8 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanService planService;
   @Mock NGSettingsClient settingsClient;
-  @Mock PipelinePreprocessorFactory pipelinePreprocessorFactory;
-  @Mock PipelineV1Preprocessor preprocessor;
+  @Mock YamlPreProcessorFactory yamlPreprocessorFactory;
+  @Mock YamlV1PreProcessor preProcessor;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -946,8 +947,11 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     pipelineEntity.setYaml(pipelineYamlV1);
     pipelineEntity.setHarnessVersion(HarnessYamlVersion.V1);
-    doReturn(preprocessor).when(pipelinePreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
-    doReturn(pipelineYamlV1).when(preprocessor).preProcess(pipelineYamlV1);
+    doReturn(preProcessor).when(yamlPreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
+    doReturn(
+        YamlPreprocessorResponseDTO.builder().preprocessedJsonNode(YamlUtils.readAsJsonNode(pipelineYamlV1)).build())
+        .when(preProcessor)
+        .preProcess(pipelineYamlV1);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         null);

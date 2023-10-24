@@ -73,7 +73,7 @@ public abstract class AbstractIdpServiceRedisStreamConsumer extends RedisTraceCo
       lock = resourceLocker.acquireLock(lockName);
       processInternal(data);
     } finally {
-      if (resourceLocker != null) {
+      if (lock != null) {
         resourceLocker.releaseLock(lock);
       }
     }

@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.buildstate;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.ALL_TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -40,6 +41,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.JWTTokenServiceUtils;
 
@@ -140,6 +142,37 @@ public class ConnectorUtils extends BaseConnectorUtils {
     } catch (Exception ex) {
       log.error("Failed to fetch task selector", ex);
     }
+    return taskSelectors;
+  }
+
+  public List<TaskSelector> fetchCodebaseDelegateSelector(Ambiance ambiance, ConnectorDetails connectorDetails,
+      ExecutionSweepingOutputService executionSweepingOutputResolver) {
+    List<TaskSelector> taskSelectors = new ArrayList<>();
+
+    // Delegate Selector Precedence: 1)Pipeline -> 2)Connector. If not specified use any delegate
+    OptionalSweepingOutput optionalTaskSelectorSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ALL_TASK_SELECTORS));
+
+    if (optionalTaskSelectorSweepingOutput.isFound()) {
+      TaskSelectorSweepingOutput taskSelectorSweepingOutput =
+          (TaskSelectorSweepingOutput) optionalTaskSelectorSweepingOutput.getOutput();
+
+      // only select pipeline delegate selectors for codebase since it's defined on pipeline level
+      taskSelectors = taskSelectorSweepingOutput.getTaskSelectors()
+                          .stream()
+                          .filter(taskSelector -> YAMLFieldNameConstants.PIPELINE.equals(taskSelector.getOrigin()))
+                          .toList();
+      if (isNotEmpty(taskSelectors)) {
+        return taskSelectors;
+      }
+    }
+
+    // fetch from git connector
+    if (connectorDetails != null && isNotEmpty(connectorDetails.getDelegateSelectors())) {
+      taskSelectors = TaskSelectorYaml.toTaskSelector(
+          connectorDetails.getDelegateSelectors().stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
+    }
+
     return taskSelectors;
   }
 

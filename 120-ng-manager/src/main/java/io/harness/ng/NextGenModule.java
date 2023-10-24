@@ -647,15 +647,14 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("logStreamingClientThreadPool")
-  public ThreadPoolExecutor logStreamingClientThreadPool() {
+  @Named("logStreamingDelayExecutor")
+  public ScheduledExecutorService logStreamingDelayExecutor() {
     ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getLogStreamingServiceConfig() != null
             && appConfig.getLogStreamingServiceConfig().getThreadPoolConfig() != null
         ? appConfig.getLogStreamingServiceConfig().getThreadPoolConfig()
-        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
-    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
-        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
+        : ThreadPoolConfig.builder().corePoolSize(10).build();
+    return new ScheduledThreadPoolExecutor(threadPoolConfig.getCorePoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   // this should be used with a managed executor service
@@ -668,6 +667,17 @@ public class NextGenModule extends AbstractModule {
     return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
         threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("service-gitx-pool-%d").build());
+  }
+
+  private ThreadPoolExecutor environmentGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getEnvironmentGitXThreadConfig() != null
+            && appConfig.getEnvironmentGitXThreadConfig().getThreadPoolConfig() != null
+        ? appConfig.getEnvironmentGitXThreadConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("environment-gitx-pool-%d").build());
   }
 
   @Provides
@@ -689,6 +699,13 @@ public class NextGenModule extends AbstractModule {
   @Named("webhookPushEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
     return appConfig.getWebhookPushEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookGitXPushEventQueueConfig")
+  public HsqsDequeueConfig getWebhookGitXPushEventQueueConfig() {
+    return appConfig.getWebhookGitXPushEventQueueConfig();
   }
 
   @Override
@@ -1047,6 +1064,10 @@ public class NextGenModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("service-gitx-executor"))
         .toInstance(new ManagedExecutorService(serviceGitXThreadPool()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("environment-gitx-executor"))
+        .toInstance(new ManagedExecutorService(environmentGitXThreadPool()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);

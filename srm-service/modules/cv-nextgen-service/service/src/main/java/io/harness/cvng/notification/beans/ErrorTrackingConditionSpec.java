@@ -12,7 +12,6 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
@@ -22,8 +21,12 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ErrorTrackingConditionSpec extends NotificationRuleConditionSpec {
-  @NonNull List<ErrorTrackingEventType> errorTrackingEventTypes;
-  @NonNull List<ErrorTrackingEventStatus> errorTrackingEventStatus;
+  List<ErrorTrackingEventType> errorTrackingEventTypes;
+  List<ErrorTrackingEventStatus> errorTrackingEventStatus;
+  Boolean aggregated;
+  Long savedFilterId;
+  Integer volumeThresholdCount;
+  Integer volumeThresholdMinutes;
 
   @Override
   public NotificationRuleConditionType getType() {

@@ -114,7 +114,7 @@ public enum FeatureName {
   CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR(
       "FF for turning on new parameterField processor which handles all expression resolution for ParameterField",
       HarnessTeam.CDC),
-  CDS_ENV_PROPAGATION("FF for enabling env infra propagation for CD", HarnessTeam.CDC),
+
   CDS_HELM_FETCH_CHART_METADATA_NG(
       "Enables option to fetch helm chart details from the Chart.yaml and expose this as expressions. Epic: https://harness.atlassian.net/browse/CDS-58036",
       HarnessTeam.CDP),
@@ -167,9 +167,7 @@ public enum FeatureName {
   CDS_SERVICENOW_USE_METADATA_V2(
       "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
       HarnessTeam.CDC),
-  CDS_SERVICE_CONFIG_LAST_STEP(
-      "Allows landing users on the last step of manifest/artifact/config files, if these configs are in edit mode",
-      HarnessTeam.CDP),
+
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
@@ -290,6 +288,7 @@ public enum FeatureName {
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
   CI_DLITE_DISTRIBUTED("Feature flag to use dlite in distributed mode", HarnessTeam.CI),
+  CI_CODEBASE_SELECTOR("Feature flag to select delegate selector for codebase tasks", HarnessTeam.CI),
   CLEAN_UP_OLD_MANAGER_VERSIONS(Scope.PER_ACCOUNT),
   CLOUDFORMATION_CHANGE_SET,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
@@ -407,7 +406,6 @@ public enum FeatureName {
   FFM_6683_ALL_ENVIRONMENTS_FLAGS,
   FFM_6800_FF_MFE_ONBOARDING("Enable Feature Flag MFE Onboarding page", HarnessTeam.CF),
   FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
-  FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
   FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
   FFM_8261_EXPRESSIONS_IN_PIPELINE_STEP("Enable expressions support in the FF pipeline step", HarnessTeam.CF),
   FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
@@ -517,7 +515,6 @@ public enum FeatureName {
       "Enables saving of monitored service created during template verify step", HarnessTeam.CV),
   PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE),
   PIE_ASYNC_FILTER_CREATION("Pipeline CRUD calls filter creation asynchronously", HarnessTeam.PIPELINE),
-  PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_CONCATENATION(
       "Support for new string concatenation support in expression engine", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT(
@@ -930,7 +927,8 @@ public enum FeatureName {
   PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
   PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
   SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
-  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE);
+  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE),
+  CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI);
 
   // keep-sorted end
 

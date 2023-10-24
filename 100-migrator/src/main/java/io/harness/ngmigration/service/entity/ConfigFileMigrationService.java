@@ -231,7 +231,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists(MigrationContext migrationContext) {
     NGMigrationEntityType rootType = migrationContext.getRoot();
-    return NGMigrationEntityType.APPLICATION == rootType;
+    return NGMigrationEntityType.APPLICATION == rootType || NGMigrationEntityType.SERVICE == rootType;
   }
 
   public List<ConfigFileWrapper> getConfigFiles(MigrationContext migrationContext, Set<CgEntityId> configFileIds) {

@@ -7,6 +7,7 @@
 
 package io.harness.idp.app;
 
+import static io.harness.audit.ResourceTypeConstants.IDP_ALLOW_LIST;
 import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CATALOG_CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.IDP_CHECKS;
@@ -47,6 +48,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
+import io.harness.idp.audittrails.eventhandlers.AllowListEventHandler;
 import io.harness.idp.audittrails.eventhandlers.AppConfigEventHandler;
 import io.harness.idp.audittrails.eventhandlers.BackstageSecretEnvEventHandler;
 import io.harness.idp.audittrails.eventhandlers.CatalogConnectorEventHandler;
@@ -475,6 +477,7 @@ public class IdpModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(IDP_CATALOG_CONNECTOR).to(CatalogConnectorEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_SCORECARDS).to(ScorecardEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CHECKS).to(CheckEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_ALLOW_LIST).to(AllowListEventHandler.class);
   }
 
   @Provides

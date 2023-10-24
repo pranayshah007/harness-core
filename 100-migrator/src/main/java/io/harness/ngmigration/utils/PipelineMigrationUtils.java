@@ -21,38 +21,18 @@ public class PipelineMigrationUtils {
   }
 
   private static void fixBarrierInputsForExecution(JsonNode templateInputs) {
-    ArrayNode stepGroups = (ArrayNode) templateInputs.at("/spec/execution/steps");
-    if (stepGroups == null) {
-      log.warn("StepGroup is null, cant fix barrier identifiers");
-      return;
-    }
-    stepGroups.forEach(stepGroupNode -> {
-      ArrayNode stepsArray = (ArrayNode) stepGroupNode.get("stepGroup").get("steps");
-
-      stepsArray.elements().forEachRemaining(stepNode -> {
-        Optional<String> optionalStepType =
-            Optional.ofNullable(stepNode.get("step")).map(step -> step.get("type")).map(JsonNode::asText);
-        if (optionalStepType.isPresent()) {
-          if ("Barrier".equals(optionalStepType.get())) {
-            ObjectNode specNode = (ObjectNode) stepNode.get("step").get("spec");
-            if (specNode != null && specNode.has("barrierRef")) {
-              String barrierRef = specNode.get("barrierRef").asText();
-              if (barrierRef.contains("<+input>.default")) {
-                String contentInsideDefault = barrierRef.replace("<+input>.default('", "").replace("')", "");
-
-                specNode.put("barrierRef", contentInsideDefault);
-              }
-            }
-          }
-        }
-      });
-    });
+    JsonNode node = templateInputs.at("/spec/execution/steps");
+    fixBarrierInputsInternal(node);
   }
 
   private static void fixBarrierInputsForRollback(JsonNode templateInputs) {
-    ArrayNode stepGroups = (ArrayNode) templateInputs.at("/spec/execution/rollbackSteps");
-    if (stepGroups == null) {
-      log.warn("StepGroup is null, cant fix barrier identifiers");
+    JsonNode node = templateInputs.at("/spec/execution/rollbackSteps");
+    fixBarrierInputsInternal(node);
+  }
+
+  private static void fixBarrierInputsInternal(JsonNode stepGroups) {
+    if (!(stepGroups instanceof ArrayNode)) {
+      log.warn("StepGroup is null or empty, cant fix barrier identifiers");
       return;
     }
     stepGroups.forEach(stepGroupNode -> {

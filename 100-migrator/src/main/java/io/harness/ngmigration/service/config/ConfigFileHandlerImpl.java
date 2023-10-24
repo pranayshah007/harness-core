@@ -6,7 +6,7 @@
  */
 
 package io.harness.ngmigration.service.config;
-import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -62,7 +62,7 @@ public class ConfigFileHandlerImpl extends FileHandler<ConfigFile> {
 
   @Override
   public String getContent(MigrationContext context, ConfigFile manifestFile) {
-    return new String(fileContent, UTF_16);
+    return new String(fileContent, UTF_8);
   }
 
   @Override

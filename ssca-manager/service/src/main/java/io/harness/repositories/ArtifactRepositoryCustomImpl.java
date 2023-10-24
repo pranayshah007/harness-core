@@ -17,6 +17,7 @@ import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -79,9 +81,11 @@ public class ArtifactRepositoryCustomImpl implements ArtifactRepositoryCustom {
 
   @Override
   public long getCount(Aggregation aggregation) {
-    return Long.valueOf(mongoTemplate.aggregate(aggregation, ArtifactEntity.class, Map.class)
-                            .getUniqueMappedResult()
-                            .get("count")
-                            .toString());
+    AggregationResults<Map> aggregationResults = mongoTemplate.aggregate(aggregation, ArtifactEntity.class, Map.class);
+    if (Objects.isNull(aggregationResults) || Objects.isNull(aggregationResults.getUniqueMappedResult())
+        || Objects.isNull(aggregationResults.getUniqueMappedResult().get("count"))) {
+      return 0;
+    }
+    return Long.valueOf(aggregationResults.getUniqueMappedResult().get("count").toString());
   }
 }

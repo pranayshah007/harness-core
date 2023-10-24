@@ -37,7 +37,7 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
   public void testToEntity() {
     EnforcementSummaryEntity enforcementSummaryEntity =
         EnforcementSummaryTransformer.toEntity(builderFactory.getEnforcementSummaryDTO());
-    assertThat(enforcementSummaryEntity.equals(builderFactory.getEnforcementSummaryBuilder().createdAt(0l).build()))
+    assertThat(enforcementSummaryEntity.equals(builderFactory.getEnforcementSummaryBuilder().createdAt(null).build()))
         .isEqualTo(true);
   }
   @Test

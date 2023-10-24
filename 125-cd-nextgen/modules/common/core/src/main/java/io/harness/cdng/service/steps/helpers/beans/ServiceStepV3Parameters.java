@@ -48,8 +48,9 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ServiceDefinitionType deploymentType;
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
-  // gitBranch for remote service
-  private String gitBranch;
+  // gitBranch for remote entities
+  private String serviceGitBranch;
+  private String envGitBranch;
 
   @Override
   public List<String> excludeKeysFromStepInputs() {

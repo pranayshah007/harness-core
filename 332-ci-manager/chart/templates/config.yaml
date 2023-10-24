@@ -61,6 +61,10 @@ data:
   TI_SERVICE_INTERNAL_URL: 'http://ti-service:8078/'
   API_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
   STO_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/sto/'
+  {{- if .Values.global.ssca.enabled }}
+  SSCA_MANAGER_ENABLED: "true"
+  SSCA_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ssca-manager/'
+  {{- end }}
   GITNESS_INTERNAL_URL: 'http://code-api:80/'
 
   LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82

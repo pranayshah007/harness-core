@@ -591,15 +591,14 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("logStreamingClientThreadPool")
-  public ThreadPoolExecutor logStreamingClientThreadPool() {
+  @Named("logStreamingDelayExecutor")
+  public ScheduledExecutorService logStreamingDelayExecutor() {
     ThreadPoolConfig threadPoolConfig = configuration != null && configuration.getLogStreamingServiceConfig() != null
             && configuration.getLogStreamingServiceConfig().getThreadPoolConfig() != null
         ? configuration.getLogStreamingServiceConfig().getThreadPoolConfig()
-        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
-    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
-        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
+        : ThreadPoolConfig.builder().corePoolSize(10).build();
+    return new ScheduledThreadPoolExecutor(threadPoolConfig.getCorePoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides
