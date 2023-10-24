@@ -28,7 +28,9 @@ export PATH=$PATH:/usr/local/go/bin
 apt-get install patch git gcc openjdk-11-jdk -y
 go install github.com/bazelbuild/bazelisk@latest
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-export BAZEL_BIN=/root/.cache/bazel/_bazel_root/e85355a115859841eef4526236539ac3/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service
+export BAZEL_BIN=$(bazelisk info bazel-bin)/product/log-service
+echo "Path Here"
+echo $BAZEL_BIN
 apt-get install build-essential -y
 apt-get install zlib1g-dev -y
 
