@@ -49,13 +49,15 @@ public class ServiceStepV3Parameters implements StepParameters {
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
   // gitBranch for remote entities
+  // Excluding from stepInputs as in case of default branch this info will not be provided
   private String serviceGitBranch;
   private String envGitBranch;
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
-    return new LinkedList<>(Arrays.asList("inputs", "envRef", "infraId", "envGroupRef", "envRefs",
-        "gitOpsMultiSvcEnvEnabled", "envInputs", "envToEnvInputs", "envToSvcOverrideInputs", "serviceOverrideInputs",
-        "childrenNodeIds", "deploymentType", "environmentGroupYaml", "environmentsYaml"));
+    return new LinkedList<>(
+        Arrays.asList("inputs", "envRef", "infraId", "envGroupRef", "envRefs", "gitOpsMultiSvcEnvEnabled", "envInputs",
+            "envToEnvInputs", "envToSvcOverrideInputs", "serviceOverrideInputs", "childrenNodeIds", "deploymentType",
+            "environmentGroupYaml", "environmentsYaml", "serviceGitBranch", "envGitBranch"));
   }
 }

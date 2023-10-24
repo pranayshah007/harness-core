@@ -35,6 +35,14 @@ import org.apache.commons.lang3.StringUtils;
 public class EnvironmentValidationHelper {
   @Inject private EnvironmentService environmentService;
 
+  /***
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param environmentRef
+   * @return Returns only environment metadata, This should not be used if environment yaml is required
+   */
   @NonNull
   public Environment checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotEmpty String environmentRef) {
