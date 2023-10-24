@@ -1,0 +1,7 @@
+FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as base
+
+COPY dockerization/base-images/apm/*.sh /opt/harness/
+
+USER root
+
+CMD ["/bin/bash", "/opt/harness/inject-saas-apm-bins-into-dockerimage.sh"]
