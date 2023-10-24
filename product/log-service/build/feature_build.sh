@@ -29,8 +29,6 @@ apt-get install patch git gcc openjdk-11-jdk -y
 go install github.com/bazelbuild/bazelisk@latest
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 export BAZEL_BIN=$(bazelisk info bazel-bin)/product/log-service
-echo "Path Here"
-echo $BAZEL_BIN
 apt-get install build-essential -y
 apt-get install zlib1g-dev -y
 
