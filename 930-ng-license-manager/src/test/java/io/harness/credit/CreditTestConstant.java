@@ -18,9 +18,11 @@ import io.harness.credit.utils.CreditStatus;
 @OwnedBy(HarnessTeam.GTM)
 public class CreditTestConstant {
   public static final String ACCOUNT_IDENTIFIER = "account_identifier";
+  public static final String MISMATCH_ACCOUNT_IDENTIFIER = "mismatch_account_identifier";
   public static final String DEFAULT_ID = "id";
   public static final ModuleType DEFAULT_MODULE_TYPE = ModuleType.CI;
   public static final int QUANTITY = 100;
+  public static final int UPDATE_QUANTITY = 10000000;
   public static final long PURCHASE_TIME = 1684424719000L;
   public static final long EXPIRY_TIME = 2631195919000L;
 
@@ -34,6 +36,24 @@ public class CreditTestConstant {
                                                             .moduleType(DEFAULT_MODULE_TYPE)
                                                             .build();
 
+  public static final CreditDTO TO_BE_UPDATE_CI_CREDIT_DTO = CICreditDTO.builder()
+                                                                 .id(DEFAULT_ID)
+                                                                 .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                 .creditStatus(CreditStatus.ACTIVE)
+                                                                 .quantity(UPDATE_QUANTITY)
+                                                                 .purchaseTime(PURCHASE_TIME)
+                                                                 .expiryTime(EXPIRY_TIME)
+                                                                 .moduleType(DEFAULT_MODULE_TYPE)
+                                                                 .build();
+
+  public static final CreditDTO TO_BE_UPDATE_CI_CREDIT_DTO_WRONG_UUID = CICreditDTO.builder()
+                                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                            .creditStatus(CreditStatus.ACTIVE)
+                                                                            .quantity(UPDATE_QUANTITY)
+                                                                            .purchaseTime(PURCHASE_TIME)
+                                                                            .expiryTime(EXPIRY_TIME)
+                                                                            .moduleType(DEFAULT_MODULE_TYPE)
+                                                                            .build();
   public static final Credit DEFAULT_CREDIT = CICredit.builder().build();
   static {
     DEFAULT_CREDIT.setId(DEFAULT_ID);
@@ -45,9 +65,21 @@ public class CreditTestConstant {
     DEFAULT_CREDIT.setModuleType(DEFAULT_MODULE_TYPE);
   }
 
+  public static final Credit UPDATE_CREDIT = CICredit.builder().build();
+  static {
+    UPDATE_CREDIT.setId(DEFAULT_ID);
+    UPDATE_CREDIT.setAccountIdentifier(ACCOUNT_IDENTIFIER);
+    UPDATE_CREDIT.setCreditStatus(CreditStatus.ACTIVE);
+    UPDATE_CREDIT.setQuantity(UPDATE_QUANTITY);
+    UPDATE_CREDIT.setPurchaseTime(PURCHASE_TIME);
+    UPDATE_CREDIT.setExpiryTime(EXPIRY_TIME);
+    UPDATE_CREDIT.setModuleType(DEFAULT_MODULE_TYPE);
+  }
+
   public static final CreditDTO REQUEST_CREDIT_DTO = CICreditDTO.builder()
+                                                         .id(DEFAULT_ID)
                                                          .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                         .creditStatus(CreditStatus.EXPIRED)
+                                                         .creditStatus(CreditStatus.ACTIVE)
                                                          .quantity(QUANTITY)
                                                          .purchaseTime(PURCHASE_TIME)
                                                          .expiryTime(EXPIRY_TIME)
