@@ -24,15 +24,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OidcConfigurationUtility {
   public static final String GENERATE_AT_RUNTIME = "GENERATE_AT_RUNTIME";
-  private io.harness.oidc.config.OidcConfigStructure.OidcTokenStructure gcpOidcTokenStructure;
+  private OidcConfigStructure.OidcTokenStructure gcpOidcTokenStructure;
+  private OidcConfigStructure.OidcConfiguration oidcConfiguration;
   private ObjectMapper objectMapper;
 
   public OidcConfigurationUtility(String oidcConfigFile) {
     objectMapper = new ObjectMapper();
     try {
       File oidcIdTokenConfigFile = new File(oidcConfigFile);
-      io.harness.oidc.config.OidcConfigStructure oidcConfigStructure =
-          objectMapper.readValue(oidcIdTokenConfigFile, io.harness.oidc.config.OidcConfigStructure.class);
+      OidcConfigStructure oidcConfigStructure =
+          objectMapper.readValue(oidcIdTokenConfigFile, OidcConfigStructure.class);
+      this.oidcConfiguration = oidcConfigStructure.getOidcConfiguration();
       this.gcpOidcTokenStructure = oidcConfigStructure.getGcpOidcToken();
     } catch (JsonProcessingException ex) {
       log.error("Json read error encountered while doing OidcIdTokenConfiguration : {}", ex);
