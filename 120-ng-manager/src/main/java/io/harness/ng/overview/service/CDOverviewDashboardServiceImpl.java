@@ -4236,7 +4236,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private Boolean isGitopsEnabled(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+        serviceEntityServiceImpl.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
     if (serviceEntity.isPresent()) {
       ServiceEntity service = serviceEntity.get();
       return service.getGitOpsEnabled() != null ? service.getGitOpsEnabled() : Boolean.FALSE;
@@ -4247,7 +4247,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private Boolean isK8sOrHelm(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+        serviceEntityServiceImpl.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
     if (serviceEntity.isPresent()) {
       ServiceEntity service = serviceEntity.get();
       return (ServiceDefinitionType.KUBERNETES.equals(service.getType())

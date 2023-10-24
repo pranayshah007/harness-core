@@ -58,7 +58,7 @@ public class InstanceSyncHelper {
   }
 
   public ServiceEntity fetchService(InfrastructureMappingDTO infrastructureMappingDTO) {
-    Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
+    Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.getMetadata(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getServiceIdentifier(), false);
     return serviceEntityOptional.orElseThrow(()
@@ -67,7 +67,7 @@ public class InstanceSyncHelper {
   }
 
   public Environment fetchEnvironment(InfrastructureMappingDTO infrastructureMappingDTO) {
-    Optional<Environment> environmentServiceOptional = environmentService.get(
+    Optional<Environment> environmentServiceOptional = environmentService.getMetadata(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getEnvIdentifier(), false);
     return environmentServiceOptional.orElseThrow(
