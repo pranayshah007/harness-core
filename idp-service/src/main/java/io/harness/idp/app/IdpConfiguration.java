@@ -21,7 +21,6 @@ import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
-import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -119,12 +118,11 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("enableAudit") private boolean enableAudit;
-  @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
-  @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
-  @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
-  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
+  //  @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
+  //  @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
+  //  @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
+  //  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("logServiceConfig") private LogServiceConfig logServiceConfig;
-  @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConficg;
   @JsonProperty("sscaServiceConfig") private SSCAServiceConfig sscaServiceConfig;
   @JsonProperty("stoServiceConfig") private STOServiceConfig stoServiceConfig;
   @JsonProperty("apiUrl") private String apiUrl;
@@ -138,6 +136,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("ciExecutionServiceConfig") private CIExecutionServiceConfig ciExecutionServiceConfig;
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
+  @JsonProperty("harnessCodeGitUrl") private String harnessCodeGitUrl;
 
   private String managerTarget;
   private String managerAuthority;

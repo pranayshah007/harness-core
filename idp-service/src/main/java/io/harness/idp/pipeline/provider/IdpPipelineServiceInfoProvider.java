@@ -10,9 +10,9 @@ package io.harness.idp.pipeline.provider;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
-import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
+import io.harness.ci.execution.creator.variables.GitCloneStepVariableCreator;
+import io.harness.ci.execution.creator.variables.PluginStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RunStepVariableCreator;
 import io.harness.ci.plancreator.GitCloneStepPlanCreator;
 import io.harness.ci.plancreator.InitializeStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;

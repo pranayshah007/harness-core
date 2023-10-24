@@ -15,7 +15,7 @@ import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
 import static io.harness.audit.ResourceTypeConstants.IDP_PROXY_HOST;
 import static io.harness.audit.ResourceTypeConstants.IDP_SCORECARDS;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
-import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
+import static io.harness.ci.execution.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.lock.DistributedLockImplementation.REDIS;
@@ -27,36 +27,33 @@ import io.harness.ScmConnectionConfig;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.NoOpCache;
-import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
-import io.harness.ci.beans.entities.TIServiceConfig;
-import io.harness.ci.tiserviceclient.TIServiceClientModule;
-import io.harness.cistatus.service.GithubService;
-import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
-import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.execution.serializer.PluginCompatibleStepSerializer;
+import io.harness.ci.execution.validation.CIAccountValidationService;
+import io.harness.ci.execution.validation.CIAccountValidationServiceImpl;
+import io.harness.ci.execution.validation.CIYAMLSanitizationService;
+import io.harness.ci.execution.validation.CIYAMLSanitizationServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
-import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
-import io.harness.ci.validation.CIAccountValidationService;
-import io.harness.ci.validation.CIAccountValidationServiceImpl;
-import io.harness.ci.validation.CIYAMLSanitizationService;
-import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.cistatus.service.azurerepo.AzureRepoService;
@@ -72,7 +69,6 @@ import io.harness.dashboard.DashboardResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
@@ -133,6 +129,7 @@ import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
 import io.harness.idp.onboarding.service.OnboardingService;
 import io.harness.idp.onboarding.service.impl.OnboardingServiceImpl;
+import io.harness.idp.pipeline.IDPBuildEnforcerImpl;
 import io.harness.idp.pipeline.stages.yamlschema.IDPYamlSchemaService;
 import io.harness.idp.pipeline.stages.yamlschema.IDPYamlSchemaServiceImpl;
 import io.harness.idp.plugin.resources.AuthInfoApiImpl;
@@ -198,20 +195,20 @@ import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
-import io.harness.opaclient.OpaClientModule;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
-import io.harness.packages.HarnessPackages;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.dashboards.PMSDashboardResourceClientModule;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
 import io.harness.plugin.service.PluginService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
-import io.harness.pipeline.dashboards.PMSDashboardResourceClientModule;
-import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
@@ -275,8 +272,8 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
-import java.util.HashMap;
 import io.dropwizard.jackson.Jackson;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -426,13 +423,10 @@ public class IdpModule extends AbstractModule {
     install(PersistentLockModule.getInstance());
     install(TimeModule.getInstance());
     install(new CILogServiceClientModule(appConfig.getLogServiceConfig()));
-    install(new TIServiceClientModule(appConfig.getTiServiceConficg()));
     install(NgLicenseHttpClientModule.getInstance(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new SSCAServiceClientModuleV2(appConfig.getSscaServiceConfig(), IDP_SERVICE.getServiceId()));
     install(new STOServiceClientModule(appConfig.getStoServiceConfig()));
-    install(new EntitySetupUsageClientModule(
-        appConfig.getNgManagerServiceHttpClientConfig(), appConfig.getNgManagerServiceSecret(), IDP_SERVICE.name()));
     install(UserClientModule.getInstance(
         appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new OpaClientModule(
@@ -542,6 +536,7 @@ public class IdpModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    bind(CIBuildEnforcer.class).to(IDPBuildEnforcerImpl.class);
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
@@ -746,13 +741,6 @@ public class IdpModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("tiServiceConfig")
-  public TIServiceConfig tiServiceConfig() {
-    return this.appConfig.getTiServiceConficg();
-  }
-
-  @Provides
-  @Singleton
   @Named("sscaServiceConfig")
   public SSCAServiceConfig sscaServiceConfig() {
     return this.appConfig.getSscaServiceConfig();
@@ -951,5 +939,16 @@ public class IdpModule extends AbstractModule {
   @Named("internalAccounts")
   public List<String> internalAccounts() {
     return this.appConfig.getInternalAccounts();
+  }
+
+  @Provides
+  @Singleton
+  @Named("harnessCodeGitBaseUrl")
+  String getHarnessCodeGitBaseUrl() {
+    String gitUrl = this.appConfig.getHarnessCodeGitUrl();
+    if (gitUrl.endsWith("/")) {
+      return gitUrl.substring(0, gitUrl.length() - 1);
+    }
+    return gitUrl;
   }
 }

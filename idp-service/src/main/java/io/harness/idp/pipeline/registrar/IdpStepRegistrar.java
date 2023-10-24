@@ -9,7 +9,13 @@ package io.harness.idp.pipeline.registrar;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.states.*;
+import io.harness.ci.execution.states.BackgroundStep;
+import io.harness.ci.execution.states.CleanupStep;
+import io.harness.ci.execution.states.GitCloneStep;
+import io.harness.ci.execution.states.InitializeTaskStep;
+import io.harness.ci.execution.states.PluginStep;
+import io.harness.ci.execution.states.RunStep;
+import io.harness.ci.execution.states.RunTestsStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
