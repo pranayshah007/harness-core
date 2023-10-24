@@ -163,6 +163,7 @@ public class K8sHelmCommonStepHelper {
       "Incompatible manifest store type. Cannot convert manifest outcome to HelmChartManifestOutcome.";
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+  public static final String MANIFEST_SOURCE_IDENTIFIER = "APPLY_STEP_MANIFEST_SOURCE_ID";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
 
@@ -825,6 +826,22 @@ public class K8sHelmCommonStepHelper {
       default:
         throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
     }
+  }
+
+  public Optional<ManifestOutcome> getStepLevelSourceOutcome(StepBaseParameters stepElementParameters) {
+    if (!(stepElementParameters.getSpec() instanceof K8sApplyStepParameters)) {
+      return Optional.empty();
+    }
+    if (((K8sApplyStepParameters) stepElementParameters.getSpec()).getManifestSource() == null) {
+      return Optional.empty();
+    }
+    ManifestAttributes manifestAttributes =
+        ((K8sApplyStepParameters) stepElementParameters.getSpec()).getManifestSource().getSpec();
+    if (manifestAttributes == null) {
+      return Optional.empty();
+    }
+    manifestAttributes.setIdentifier(MANIFEST_SOURCE_IDENTIFIER);
+    return Optional.of(ManifestOutcomeMapper.toManifestOutcome(manifestAttributes, 0));
   }
 
   public List<ManifestOutcome> getStepLevelManifestOutcomes(StepBaseParameters stepElementParameters) {
