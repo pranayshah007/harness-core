@@ -65,6 +65,8 @@ import org.apache.commons.math3.util.Pair;
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableService {
+  private static final String UNSUPPORTED_SECRET_MANAGER_MESSAGE =
+      "Invalid request: Decryption is supported only for secrets encrypted via harness managed secret managers";
   private final BackstageEnvVariableRepository backstageEnvVariableRepository;
   private final K8sClient k8sClient;
   private final SecretManagerClientService ngSecretService;
@@ -502,6 +504,9 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         return new Pair<>(decryptedValue.getDecryptedValue(), decryptedValue.getLastModifiedAt());
       } catch (Exception e) {
         exceptionMessage = e.getMessage();
+        if (exceptionMessage.contains(UNSUPPORTED_SECRET_MANAGER_MESSAGE)) {
+          break;
+        }
         log.warn("Error while decrypting secret {} for account {}", secretIdentifier, accountIdentifier, e);
 
         int delayMillis = (int) (baseDelayMillis * Math.pow(2, retryAttempts));
