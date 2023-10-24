@@ -2816,7 +2816,7 @@ components:
           type: string
           x-stoplight:
             id: ktfl6zmiaxrv8
-        input_values:
+        input_details:
           type: array
           x-stoplight:
             id: 7gpxma8wy54sh
