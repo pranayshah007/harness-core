@@ -67,11 +67,13 @@ public class GitlabServiceImpl implements GitlabService {
           continue;
         }
         // Possible status codes https://docs.gitlab.com/ee/api/merge_requests.html#merge-a-merge-request
-        if (response.code() != 405) {
+        // 422 could happen intermittently in Gitlab
+        // https://platform.harness.internal/ng/account/W50osoQJS42JItbue3ddhA/cd/orgs/default/projects/meenatest/pipelines/test/deployments/xVWJQ9D0RTeIzVgmtixYXA/pipeline?storeType=INLINE
+        if (response.code() != 405 && response.code() != 422) {
           break;
         }
-        // no need of exponential backoff for status 405, because this retry mechanism is mainly focussed at handling
-        // temporary failures
+        // no need of exponential backoff for status 405 or 422, because this retry mechanism is mainly focussed at
+        // handling temporary failures
         sleepAndRetry(response, i);
       }
 
