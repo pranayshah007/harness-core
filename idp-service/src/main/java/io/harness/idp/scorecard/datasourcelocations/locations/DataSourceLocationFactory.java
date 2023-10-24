@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_CONTENTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS;
@@ -47,6 +48,7 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
+  private GithubContentsDsl githubContentsDsl;
   private GithubWorkflowsCountDsl githubWorkflowsCountDsl;
   private GithubWorkflowSuccessRateDsl githubWorkflowSuccessRateDsl;
   private GithubMeanTimeToCompleteWorkflowRunsDsl githubMeanTimeToCompleteWorkflowRunsDsl;
@@ -78,6 +80,8 @@ public class DataSourceLocationFactory {
         return githubIsBranchProtectionSetDsl;
       case GITHUB_FILE_EXISTS:
         return githubFileExistsDsl;
+      case GITHUB_FILE_CONTENTS:
+        return githubContentsDsl;
       case GITHUB_WORKFLOWS_COUNT:
         return githubWorkflowsCountDsl;
       case GITHUB_WORKFLOW_SUCCESS_RATE:

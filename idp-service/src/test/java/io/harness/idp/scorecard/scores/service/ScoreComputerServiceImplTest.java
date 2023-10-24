@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -139,7 +140,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyList(), any()))
         .thenReturn(data1)
         .thenReturn(data2);
 
@@ -215,7 +216,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyList(), any()))
         .thenReturn(data);
 
     scoreComputerService.computeScores(ACCOUNT_ID, scorecardIdentifiers, entityIdentifiers);

@@ -21,6 +21,7 @@ public class DataSourceLocations {
   public static final String GITHUB_MEAN_TIME_TO_MERGE_PR = "github_mean_time_to_merge_pr";
   public static final String GITHUB_IS_BRANCH_PROTECTION_SET = "github_is_branch_protection_set";
   public static final String GITHUB_FILE_EXISTS = "github_is_file_exists";
+  public static final String GITHUB_FILE_CONTENTS = "github_file_contents";
   public static final String GITHUB_WORKFLOWS_COUNT = "github_workflows_count";
   public static final String GITHUB_WORKFLOW_SUCCESS_RATE = "github_workflow_success_rate";
   public static final String GITHUB_MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "github_mean_time_to_complete_workflow_runs";

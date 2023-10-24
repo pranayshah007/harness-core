@@ -730,5 +730,39 @@
     "tags": ["Software quality"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Number of open pull requests raised by Dependabot is more than 5."
+  },
+  {
+    "id": "653782c2900e5b0d79195308",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__0dfa7236-0341-4b05-ac23-141cde6fc89d",
+    "name": "Java version is 17",
+    "description": "Java version is 17",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "fileContents",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "bazelrc"
+          },
+          {
+            "key": "branchName",
+            "value": "develop"
+          },
+          {
+            "key": "pattern",
+            "value": "\"^build --java_language_version=(\\d+)\""
+          }
+        ],
+        "operator": "==",
+        "value": "17"
+      }
+    ],
+    "expression": "github.github_file_contents.bazelrc.develop.\"^build --java_language_version=(\\d+)\" == 17",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Java version is not 17"
   }
 ]

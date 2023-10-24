@@ -40,6 +40,18 @@ public interface DataPointParser {
     }
   }
 
+  default Map<String, Object> constructDataPointInfo(List<InputValue> inputValues, Object value, String errorMessage) {
+    Map<String, Object> data = new HashMap<>();
+    data.put(DATA_POINT_VALUE_KEY, value);
+    data.put(ERROR_MESSAGE_KEY, errorMessage);
+
+    for (int i = inputValues.size() - 1; i >= 0; i--) {
+      data = Map.of(inputValues.get(i).getValue().replace("\"", ""), data);
+    }
+
+    return data;
+  }
+
   default Map<String, Object> constructDataPointInfoWithoutInputValue(Object value, String errorMessage) {
     Map<String, Object> data = new HashMap<>();
     data.put(DATA_POINT_VALUE_KEY, value);

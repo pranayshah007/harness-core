@@ -494,5 +494,31 @@
     ],
     "description": "Calculates the total number of open pull requests raised by the given account",
     "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by account.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
+  },
+  {
+    "id": "653772979a42f41b2bd082fe",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "fileContents",
+    "name": "File contents",
+    "type": "STRING",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_file_contents",
+    "isConditional": true,
+    "inputDetails": [
+      {
+        "key": "branchName",
+        "description": "Branch Name"
+      },
+      {
+        "key": "filePath",
+        "description": "File path (e.g. src/index.js)"
+      },
+      {
+        "key": "pattern",
+        "description": "Regex Pattern to search for in the file"
+      }
+    ],
+    "description": "Gets the string matching the pattern from given file from the branch.",
+    "detailedDescription": "**How it's calculated:** "
   }
 ]
