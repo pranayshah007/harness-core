@@ -7,6 +7,9 @@
 
 package io.harness.cdng.creator.plan.stage;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -20,6 +23,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -58,18 +62,16 @@ public class DeploymentStagePlanCreationInfo implements PersistentEntity, UuidAw
   @NotNull private String accountIdentifier;
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
-  @Nullable private String envIdentifier;
-  @Nullable private String envName;
-  @Nullable private String infraIdentifier;
-  @Nullable private String infraName;
-  @Nullable private String serviceIdentifier;
-  @Nullable private String serviceName;
   @NotNull private String planExecutionId;
   private String pipelineIdentifier;
   private String stageName;
   @NotNull private String stageIdentifier;
-  @Nullable private String[] artifactsIdentifiers;
   private ServiceDefinitionType deploymentType;
+
+  @NotNull private DeploymentStageType stageType;
+  @JsonTypeInfo(use = NAME, property = "stageType", include = EXTERNAL_PROPERTY, visible = true)
+  @Nullable
+  private DeploymentStageDetailsInfo deploymentStageDetailsInfo;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

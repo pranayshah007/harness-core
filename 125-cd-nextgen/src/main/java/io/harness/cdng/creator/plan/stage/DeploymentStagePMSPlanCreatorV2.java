@@ -286,7 +286,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
           String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
-          saveDeploymentStagePlanCreationSummary(planCreationResponseMap.get(serviceNodeId), ctx, stageNode);
+          saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+              planCreationResponseMap.get(serviceNodeId), ctx, stageNode);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
         }
       } else {
@@ -867,9 +868,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return StrategyUtils.getSwappedPlanNodeId(ctx, uuid);
   }
 
-  protected void saveDeploymentStagePlanCreationSummary(PlanCreationResponse planCreationResponse,
+  protected void saveSingleServiceEnvDeploymentStagePlanCreationSummary(PlanCreationResponse planCreationResponse,
       @NotNull PlanCreationContext ctx, @NotNull DeploymentStageNode stageNode) {
-    // TODO: get names if possible
+    // TODO: get names of ser/env/infra if possible
+    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    // TODO: to confirm whether we need to check for multi service and (or) env propagation that seems to be not allowed
+    // in io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.validateMultiServiceInfra
+    if (stageConfig.getServices() != null || stageConfig.getEnvironments() != null
+        || stageConfig.getEnvironmentGroup() != null) {
+      // since multi-service / env configured, info will be saved while adding multi dependency
+      return;
+    }
     if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode())) {
       log.warn("Plan node corresponding to service not found while saving deployment info at plan creation, returning");
       return;
@@ -891,9 +900,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                 .orgIdentifier(ctx.getOrgIdentifier())
                 .projectIdentifier(ctx.getProjectIdentifier())
                 .pipelineIdentifier(ctx.getPipelineIdentifier())
-                .envIdentifier((String) serviceStepV3Parameters.getEnvRef().fetchFinalValue())
-                .serviceIdentifier((String) serviceStepV3Parameters.getServiceRef().fetchFinalValue())
-                .infraIdentifier((String) serviceStepV3Parameters.getInfraId().fetchFinalValue())
+                .stageType(DeploymentStageType.SINGLE_SERVICE_ENVIRONMENT)
+                .deploymentStageDetailsInfo(
+                    // saving the expressions as well, so we know in notifications that these fields were expressions
+                    SingleServiceEnvDeploymentStageDetailsInfo.builder()
+                        .envIdentifier((String) serviceStepV3Parameters.getEnvRef().fetchFinalValue())
+                        .serviceIdentifier((String) serviceStepV3Parameters.getServiceRef().fetchFinalValue())
+                        .infraIdentifier((String) serviceStepV3Parameters.getInfraId().fetchFinalValue())
+                        .build())
                 .deploymentType(serviceStepV3Parameters.getDeploymentType())
                 .stageIdentifier(stageNode.getIdentifier())
                 .stageName(stageNode.getIdentifier())
