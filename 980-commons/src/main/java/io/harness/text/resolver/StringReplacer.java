@@ -114,9 +114,17 @@ public class StringReplacer {
 
         // Resolve the expression
         String expressionValue = expressionResolver.resolve(expression);
-        if (checkRenderExpression
-            && checkIfExpressionValueCanBeConcatenated(expressionValue, expressionStartPos, expressionEndPos, buf)) {
-          expressionValue = (String) expressionResolver.getContextValue(expressionValue);
+        if (checkRenderExpression) {
+          boolean checkIfExpressionValueCanBeConcatenated = checkIfExpressionValueCanBeConcatenated(
+              expressionValue, expressionStartPos, expressionEndPos, buf, false);
+          boolean checkIfExpressionValueCanBeConcatenatedWithTwoPatterns =
+              checkIfExpressionValueCanBeConcatenated(expressionValue, expressionStartPos, expressionEndPos, buf, true);
+          if (checkIfExpressionValueCanBeConcatenated != checkIfExpressionValueCanBeConcatenatedWithTwoPatterns) {
+            log.info("[Expression with method concatenation mismatch]: expression: {}", expression);
+          }
+          if (checkIfExpressionValueCanBeConcatenated) {
+            expressionValue = (String) expressionResolver.getContextValue(expressionValue);
+          }
         } else {
           onlyRenderedExpressions = false;
         }
@@ -148,7 +156,7 @@ public class StringReplacer {
    * @return
    */
   private boolean checkIfExpressionValueCanBeConcatenated(
-      String expressionValue, int expressionStartPos, int expressionEndPos, StringBuffer buf) {
+      String expressionValue, int expressionStartPos, int expressionEndPos, StringBuffer buf, boolean withTwoPatterns) {
     Object contextValue = expressionResolver.getContextValue(expressionValue);
     if (expressionValue == null || contextValue == null) {
       return false;
@@ -163,8 +171,14 @@ public class StringReplacer {
     }
 
     // Check if right substring has method invocation, then return false
-    if (checkIfValueHasMethodInvocation(buf, expressionEndPos)) {
-      return false;
+    if (withTwoPatterns) {
+      if (checkIfValueHasMethodInvocationWithTwoPatterns(buf, expressionEndPos)) {
+        return false;
+      }
+    } else {
+      if (checkIfValueHasMethodInvocation(buf, expressionEndPos)) {
+        return false;
+      }
     }
 
     // Check on left if any first string mathematical operator found or not
@@ -224,17 +238,19 @@ public class StringReplacer {
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
     Pattern pattern = Pattern.compile("\\.\\w+\\(");
     Matcher matcher = pattern.matcher(charSequence);
-    boolean isMatch = matcher.find();
+    return matcher.find();
+  }
+
+  private boolean checkIfValueHasMethodInvocationWithTwoPatterns(StringBuffer buf, int expressionEndPos) {
+    // Right substring
+    CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
     Pattern pattern2 = Pattern.compile("^\\.\\w+\\(");
     Matcher matcher2 = pattern2.matcher(charSequence);
     boolean isMatch2 = matcher2.find();
     Pattern pattern3 = Pattern.compile("^\\)\\.\\w+\\(");
     Matcher matcher3 = pattern3.matcher(charSequence);
     boolean isMatch3 = matcher3.find();
-    if (isMatch != (isMatch2 || isMatch3)) {
-      log.info("[Expression Method Invocation]: charSequence: {}, buf: {}", charSequence, buf);
-    }
-    return isMatch;
+    return isMatch2 || isMatch3;
   }
 
   private boolean checkBooleanOperators(StringBuffer s, int currentPos, boolean leftSubString) {
