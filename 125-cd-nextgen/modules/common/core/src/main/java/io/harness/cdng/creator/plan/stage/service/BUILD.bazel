@@ -1,4 +1,4 @@
-# Copyright 2023 Harness Inc. All rights reserved.
+# Copyright 2022 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -19,21 +19,16 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/executions:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/provision/terraform/executions:module",
-        "//884-pms-commons:module",
-        "//960-persistence:module",
-        "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/repositories/executions:module",
         "//970-ng-commons:module",
-        "//980-commons/src/main/java/io/harness/data/structure:module",
-        "//980-commons/src/main/java/io/harness/exception:module",
-        "//980-commons/src/main/java/io/harness/utils:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
+        "//980-commons/src/main/java/io/harness/validation:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_inject_guice",
-        "@maven//:org_mongodb_mongodb_driver_core",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
         "@maven//:org_springframework_data_spring_data_commons",
-        "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
 

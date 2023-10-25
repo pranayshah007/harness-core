@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -22,6 +23,7 @@ import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
+import io.harness.cdng.creator.plan.stage.service.DeploymentStagePlanCreationInfoService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
@@ -42,7 +44,9 @@ import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
@@ -82,6 +86,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
@@ -113,8 +118,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Stage plan graph V1 -
@@ -163,6 +171,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
+  @Inject private DeploymentStagePlanCreationInfoService deploymentStagePlanCreationInfoService;
+  @Inject ExecutorService executorService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -276,6 +286,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
           String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
+          saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+              planCreationResponseMap.get(serviceNodeId), ctx, stageNode);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
         }
       } else {
@@ -442,6 +454,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         && EmptyPredicate.isNotEmpty(stageConfig.getEnvironment().getServicesOverrides())) {
       servicesOverrides = stageConfig.getEnvironment().getServicesOverrides();
     }
+
+    saveDeploymentStagePlanCreationSummaryForMultiServiceMultiEnv(ctx, stageConfig);
 
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
@@ -851,5 +865,97 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private String getFinalPlanNodeId(PlanCreationContext ctx, DeploymentStageNode stageNode) {
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
     return StrategyUtils.getSwappedPlanNodeId(ctx, uuid);
+  }
+
+  protected void saveSingleServiceEnvDeploymentStagePlanCreationSummary(PlanCreationResponse planCreationResponse,
+      @NotNull PlanCreationContext ctx, @NotNull DeploymentStageNode stageNode) {
+    // TODO: get names of ser/env/infra if possible
+    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode()) || isNull(stageConfig)) {
+      log.warn(
+          "Plan node or stage config corresponding to service not found while saving deployment info at plan creation, returning");
+      return;
+    }
+    // TODO: to confirm whether we need to check for multi service and (or) env propagation that seems to be not allowed
+    // in io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.validateMultiServiceInfra
+    if (stageConfig.getServices() != null || stageConfig.getEnvironments() != null
+        || stageConfig.getEnvironmentGroup() != null) {
+      // since multi-service / env configured, info will be saved while adding multi dependency
+      log.debug("Multi service and(or) environment deployment stage encountered, skipping saving info");
+      return;
+    }
+
+    StepParameters stepParameters = planCreationResponse.getPlanNode().getStepParameters();
+    if (isNull(stepParameters) || !(stepParameters instanceof ServiceStepV3Parameters)) {
+      log.warn(
+          "Step params for service node not of type ServiceStepV3Parameters while saving deployment info at plan creation, returning");
+      return;
+    }
+
+    ServiceStepV3Parameters serviceStepV3Parameters = (ServiceStepV3Parameters) stepParameters;
+    executorService.submit(() -> {
+      try {
+        deploymentStagePlanCreationInfoService.save(
+            DeploymentStagePlanCreationInfo.builder()
+                .planExecutionId(ctx.getExecutionUuid())
+                .accountIdentifier(ctx.getAccountIdentifier())
+                .orgIdentifier(ctx.getOrgIdentifier())
+                .projectIdentifier(ctx.getProjectIdentifier())
+                .pipelineIdentifier(ctx.getPipelineIdentifier())
+                .stageType(DeploymentStageType.SINGLE_SERVICE_ENVIRONMENT)
+                .deploymentStageDetailsInfo(
+                    // saving the expressions as well, so we know in notifications that these fields were expressions
+                    SingleServiceEnvDeploymentStageDetailsInfo.builder()
+                        .envIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getEnvRef()))
+                        .serviceIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getServiceRef()))
+                        .infraIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getInfraId()))
+                        .build())
+                .deploymentType(serviceStepV3Parameters.getDeploymentType())
+                .stageIdentifier(stageNode.getIdentifier())
+                .stageName(stageNode.getName())
+                .build());
+      } catch (Exception ex) {
+        log.warn("Exception occurred while async saving deployment stage plan creation info: {}",
+            ExceptionUtils.getMessage(ex), ex);
+      }
+    });
+  }
+
+  protected void saveDeploymentStagePlanCreationSummaryForMultiServiceMultiEnv(
+      @NotNull PlanCreationContext ctx, DeploymentStageConfig stageNode) {
+    // TODO: get names if possible
+    executorService.submit(() -> {
+      try {
+        deploymentStagePlanCreationInfoService.save(
+            DeploymentStagePlanCreationInfo.builder()
+                .planExecutionId(ctx.getExecutionUuid())
+                .accountIdentifier(ctx.getAccountIdentifier())
+                .orgIdentifier(ctx.getOrgIdentifier())
+                .projectIdentifier(ctx.getProjectIdentifier())
+                .pipelineIdentifier(ctx.getPipelineIdentifier())
+                .stageType(DeploymentStageType.SINGLE_SERVICE_ENVIRONMENT)
+                .deploymentStageDetailsInfo(
+                    // saving the expressions as well, so we know in notifications that these fields were expressions
+                    SingleServiceEnvDeploymentStageDetailsInfo
+                        .builder()
+                        //                                        .envIdentifier((List<String>)
+                        //                                        stageNode.getEnvironments().getValues().fetchFinalValue())
+                        //                                        .serviceIdentifier((String)
+                        //                                        serviceStepV3Parameters.getServiceRef().fetchFinalValue())
+                        //                                        .infraIdentifier((String)
+                        //                                        serviceStepV3Parameters.getInfraId().fetchFinalValue())
+                        .build())
+                .deploymentType(stageNode.getDeploymentType())
+                .stageIdentifier(stageNode.getUuid())
+                .stageName(stageNode.getUuid())
+                .build());
+      } catch (Exception ex) {
+        log.warn("Exception occurred while async saving deployment stage plan creation info: {}",
+            ExceptionUtils.getMessage(ex), ex);
+      }
+    });
   }
 }

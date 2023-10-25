@@ -10,6 +10,7 @@ package io.harness.common;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,7 +33,10 @@ import org.junit.experimental.categories.Category;
 public class ParameterFieldHelperTest extends CategoryTest {
   ParameterField<String> nullField = ParameterField.createValueField(null);
   ParameterField<String> emptyField = ParameterField.createValueField("");
+  ParameterField<String> blankField = ParameterField.createValueField("   ");
   ParameterField<String> stringField = ParameterField.createValueField("value");
+  ParameterField<String> blankExpressionField = ParameterField.createExpressionField(true, " ", null, true);
+  ParameterField<String> stringExpressionField = ParameterField.createExpressionField(true, "<+dummy.val>", null, true);
   ParameterField<Integer> intField = ParameterField.createValueField(23);
   ParameterField<Boolean> booleanField = ParameterField.createValueField(false);
   ParameterField<List<Boolean>> booleanListField = ParameterField.createValueField(Collections.singletonList(false));
@@ -140,5 +144,18 @@ public class ParameterFieldHelperTest extends CategoryTest {
     assertThat(ParameterFieldHelper.getIntegerParameterFieldValue(str23)).isEqualTo(23);
 
     assertThat(ParameterFieldHelper.getIntegerParameterFieldValue(doubleField)).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetParameterFieldFinalValueStringOrNullIfBlank() {
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(nullField)).isNull();
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(emptyField)).isNull();
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(blankField)).isNull();
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(stringField)).isEqualTo("value");
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(blankExpressionField)).isNull();
+    assertThat(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(stringExpressionField))
+        .isEqualTo("<+dummy.val>");
   }
 }

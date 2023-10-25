@@ -21,6 +21,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.acl.api.Principal;
@@ -31,6 +32,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.creator.plan.stage.service.DeploymentStagePlanCreationInfoService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterType;
@@ -43,6 +45,8 @@ import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.cdng.service.steps.ServiceStepParameters;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGFreezeException;
@@ -96,6 +100,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -121,6 +129,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
   @Spy private StagePlanCreatorHelper stagePlanCreatorHelper;
+  @Mock private DeploymentStagePlanCreationInfoService deploymentStagePlanCreationInfoService;
+  @Spy private ExecutorService executorService;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
@@ -132,6 +142,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   ObjectMapper mapper = new ObjectMapper();
   @Before
   public void setUp() throws Exception {
+    executorService = Executors.newSingleThreadExecutor();
     mocks = MockitoAnnotations.openMocks(this);
 
     Reflect.on(stagePlanCreatorHelper).set("kryoSerializer", kryoSerializer);
@@ -689,6 +700,135 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("service1", "service2");
     assertThat(services.getServicesMetadata().getParallel().getValue()).isEqualTo(Boolean.TRUE);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testSaveSingleServiceEnvDeploymentStagePlanCreationSummary_NegativeCases() throws InterruptedException {
+    PlanCreationContext ctx = PlanCreationContext.builder().build();
+    PlanCreationResponse faultyServicePlanCreationResponse =
+        PlanCreationResponse.builder()
+            .planNode(PlanNode.builder().stepParameters(ServiceStepParameters.builder().build()).build())
+            .build();
+
+    // plan creation response cases
+    DeploymentStageNode deploymentStageNode = (DeploymentStageNode) getDeploymentStageConfig()[0][0];
+    DeploymentStageNode multiDeploymentStageNode =
+        (DeploymentStageNode) getDeploymentStageConfigForMultiSvcMultiEvs()[0][0];
+    CountDownLatch latch = new CountDownLatch(7);
+
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          null, ctx, deploymentStageNode);
+      latch.countDown();
+    });
+
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          PlanCreationResponse.builder().build(), ctx, deploymentStageNode);
+      latch.countDown();
+    });
+
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          PlanCreationResponse.builder().planNode(PlanNode.builder().build()).build(), ctx, deploymentStageNode);
+      latch.countDown();
+    });
+
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          faultyServicePlanCreationResponse, ctx, deploymentStageNode);
+      latch.countDown();
+    });
+
+    // multi deployment cases
+    // multiSvcMultiEnvsNodeWithFilter
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          faultyServicePlanCreationResponse, ctx,
+          (DeploymentStageNode) getDeploymentStageConfigForMultiSvcMultiEvs()[0][0]);
+      latch.countDown();
+    });
+
+    // multiSvcWithEnvGroupNodeWithFilter
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          faultyServicePlanCreationResponse, ctx,
+          (DeploymentStageNode) getDeploymentStageConfigForMultiSvcMultiEvs()[1][0]);
+      latch.countDown();
+    });
+
+    // nodeEnvsFilters
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          faultyServicePlanCreationResponse, ctx,
+          (DeploymentStageNode) getDeploymentStageConfigForMultiSvcMultiEvs()[2][0]);
+      latch.countDown();
+    });
+    assertThat(latch.await(20, TimeUnit.SECONDS)).isTrue();
+    verify(executorService, times(7)).submit(any(Runnable.class));
+    verifyNoMoreInteractions(deploymentStagePlanCreationInfoService);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testSaveSingleServiceEnvDeploymentStagePlanCreationSummary() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder()
+                                          .setAccountIdentifier("accountId")
+                                          .setOrgIdentifier("orgId")
+                                          .setProjectIdentifier("projId")
+                                          .setExecutionContext(PlanExecutionContext.newBuilder()
+                                                                   .setExecutionUuid("planExeId")
+                                                                   .setPipelineIdentifier("pipelineId")
+                                                                   .build())
+                                          .build()))
+                                  .build();
+    PlanCreationResponse servicePlanCreationResponse =
+        PlanCreationResponse.builder()
+            .planNode(PlanNode.builder()
+                          .stepParameters(ServiceStepV3Parameters.builder()
+                                              .envRef(ParameterField.createValueField("acc.env"))
+                                              .infraId(ParameterField.createValueField("acc.infra"))
+                                              .serviceRef(ParameterField.createValueField("acc.ser"))
+                                              .deploymentType(KUBERNETES)
+                                              .build())
+                          .build())
+            .build();
+
+    // plan creation response cases
+    DeploymentStageNode deploymentStageNode = (DeploymentStageNode) getDeploymentStageConfig()[0][0];
+    deploymentStageNode.setIdentifier("stageId");
+    deploymentStageNode.setName("stage Name");
+    executorService.submit(() -> {
+      deploymentStagePMSPlanCreator.saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+          servicePlanCreationResponse, ctx, deploymentStageNode);
+      latch.countDown();
+    });
+
+    verify(executorService, times(2)).submit(any(Runnable.class));
+    assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+    verify(deploymentStagePlanCreationInfoService, times(1))
+        .save(DeploymentStagePlanCreationInfo.builder()
+                  .planExecutionId("planExeId")
+                  .accountIdentifier("accountId")
+                  .orgIdentifier("orgId")
+                  .projectIdentifier("projId")
+                  .pipelineIdentifier("pipelineId")
+                  .stageType(DeploymentStageType.SINGLE_SERVICE_ENVIRONMENT)
+                  .deploymentType(KUBERNETES)
+                  .stageIdentifier("stageId")
+                  .stageName("stage Name")
+                  .deploymentStageDetailsInfo(SingleServiceEnvDeploymentStageDetailsInfo.builder()
+                                                  .envIdentifier("acc.env")
+                                                  .serviceIdentifier("acc.ser")
+                                                  .infraIdentifier("acc.infra")
+                                                  .build())
+                  .build());
   }
 
   private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {
