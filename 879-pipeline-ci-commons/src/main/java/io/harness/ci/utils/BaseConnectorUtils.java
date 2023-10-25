@@ -25,6 +25,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
 import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
@@ -500,6 +501,11 @@ public class BaseConnectorUtils {
 
   private ConnectorDetails getGitConnectorDetails(
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof DelegateSelectable) {
+      DelegateSelectable delegateSelectable = (DelegateSelectable) connectorDTO.getConnectorInfo().getConnectorConfig();
+      connectorDetailsBuilder = connectorDetailsBuilder.delegateSelectors(delegateSelectable.getDelegateSelectors());
+    }
+
     if (connectorDTO.getConnectorInfo().getConnectorType() == GITHUB) {
       return buildGithubConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == AZURE_REPO) {

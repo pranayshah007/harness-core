@@ -10,6 +10,7 @@ package io.harness.ci.execution.states;
 import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.beans.FeatureName.CODE_ENABLED;
 import static io.harness.beans.steps.outcome.CIOutcomeNames.INTEGRATION_STAGE_OUTCOME;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.ALL_TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -31,16 +32,19 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
+import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -67,6 +71,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -159,6 +164,21 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
 
     executionSweepingOutputResolver.consume(
         ambiance, ContextElement.stageDetails, stageDetails, StepOutcomeGroup.STAGE.name());
+    
+    List<TaskSelector> selectorList =
+        TaskSelectorYaml.toTaskSelector(integrationStageStepParametersPMS.getPipelineDelegateSelectors());
+    if (isNotEmpty(selectorList)) {
+      // Add to selectorList also add to sweeping output so that it can be used during other tasks
+      selectorList = selectorList.stream()
+                         .map(selector -> selector.toBuilder().setOrigin(YAMLFieldNameConstants.PIPELINE).build())
+                         .collect(Collectors.toList());
+
+      // currently only adding pipeline delegate selectors here. We can modify to add others.
+      TaskSelectorSweepingOutput taskSelectorSweepingOutput =
+          TaskSelectorSweepingOutput.builder().taskSelectors(selectorList).build();
+      executionSweepingOutputResolver.consume(
+          ambiance, ALL_TASK_SELECTORS, taskSelectorSweepingOutput, StepOutcomeGroup.STAGE.name());
+    }
 
     final String executionNodeId = integrationStageStepParametersPMS.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
