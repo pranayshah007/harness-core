@@ -9,12 +9,14 @@ package io.harness.accesscontrol.principals.usergroups;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -24,6 +26,8 @@ public interface UserGroupService {
   UserGroup upsert(@NotNull @Valid UserGroup userGroup);
 
   List<UserGroup> list(@NotEmpty String scopeIdentifier, String userIdentifier);
+  List<UserGroup> listUserGroupForUserInAccessibleScopes(
+      @NotEmpty String scopeIdentifier, @NotEmpty String userIdentifier, Set<ScopeSelector> scopeFilter);
 
   PageResponse<UserGroup> list(@NotNull PageRequest pageRequest, @NotEmpty String scopeIdentifier);
 
