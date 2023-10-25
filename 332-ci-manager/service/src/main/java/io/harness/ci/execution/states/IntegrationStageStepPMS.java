@@ -380,6 +380,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     if (codeBase == null) {
       return null;
     }
+
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
     TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();
     // setPrincipalForHarnessSCM(ambiance, codeBase.getConnectorRef().getValue(), triggerInfo);
