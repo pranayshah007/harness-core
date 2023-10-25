@@ -46,6 +46,7 @@ import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
@@ -872,6 +873,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       @NotNull PlanCreationContext ctx, @NotNull DeploymentStageNode stageNode) {
     // TODO: get names of ser/env/infra if possible
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode()) || isNull(stageConfig)) {
+      log.warn(
+          "Plan node or stage config corresponding to service not found while saving deployment info at plan creation, returning");
+      return;
+    }
     // TODO: to confirm whether we need to check for multi service and (or) env propagation that seems to be not allowed
     // in io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.validateMultiServiceInfra
     if (stageConfig.getServices() != null || stageConfig.getEnvironments() != null
@@ -880,12 +886,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       log.debug("Multi service and(or) environment deployment stage encountered, skipping saving info");
       return;
     }
-    if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode())) {
-      log.warn("Plan node corresponding to service not found while saving deployment info at plan creation, returning");
-      return;
-    }
+
     StepParameters stepParameters = planCreationResponse.getPlanNode().getStepParameters();
-    if (!(stepParameters instanceof ServiceStepV3Parameters)) {
+    if (isNull(stepParameters) || !(stepParameters instanceof ServiceStepV3Parameters)) {
       log.warn(
           "Step params for service node not of type ServiceStepV3Parameters while saving deployment info at plan creation, returning");
       return;
@@ -905,13 +908,16 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                 .deploymentStageDetailsInfo(
                     // saving the expressions as well, so we know in notifications that these fields were expressions
                     SingleServiceEnvDeploymentStageDetailsInfo.builder()
-                        .envIdentifier((String) serviceStepV3Parameters.getEnvRef().fetchFinalValue())
-                        .serviceIdentifier((String) serviceStepV3Parameters.getServiceRef().fetchFinalValue())
-                        .infraIdentifier((String) serviceStepV3Parameters.getInfraId().fetchFinalValue())
+                        .envIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getEnvRef()))
+                        .serviceIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getServiceRef()))
+                        .infraIdentifier(ParameterFieldHelper.getParameterFieldFinalValueStringOrNullIfBlank(
+                            serviceStepV3Parameters.getInfraId()))
                         .build())
                 .deploymentType(serviceStepV3Parameters.getDeploymentType())
                 .stageIdentifier(stageNode.getIdentifier())
-                .stageName(stageNode.getIdentifier())
+                .stageName(stageNode.getName())
                 .build());
       } catch (Exception ex) {
         log.warn("Exception occurred while async saving deployment stage plan creation info: {}",

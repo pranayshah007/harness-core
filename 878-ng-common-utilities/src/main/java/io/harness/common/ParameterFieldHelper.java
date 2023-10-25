@@ -43,6 +43,13 @@ public class ParameterFieldHelper {
     return (String) fieldValue.fetchFinalValue();
   }
 
+  public String getParameterFieldFinalValueStringOrNullIfBlank(ParameterField<String> fieldValue) {
+    if (ParameterField.isBlank(fieldValue)) {
+      return null;
+    }
+    return (String) fieldValue.fetchFinalValue();
+  }
+
   public Boolean getBooleanParameterFieldValue(ParameterField<?> fieldValue) {
     Object value = getParameterFieldValue(fieldValue);
 

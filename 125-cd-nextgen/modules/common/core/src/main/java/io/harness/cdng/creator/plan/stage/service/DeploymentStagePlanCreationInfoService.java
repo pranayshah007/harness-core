@@ -26,14 +26,4 @@ public interface DeploymentStagePlanCreationInfoService {
    * @return deployment stage plan creation info
    */
   DeploymentStagePlanCreationInfo save(DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfo);
-
-  //    /**
-  //     * Update deployment stage plan creation info.
-  //     *
-  //     * @param scope the scope
-  //     * @param planExecutionId : execution identifier
-  //     * @param stageIdentifier : stage identifier
-  //     * @param updates : updates map
-  //     */
-  //    void update(Scope scope, String planExecutionId, String stageIdentifier,Map<String, Object> updates);
 }
