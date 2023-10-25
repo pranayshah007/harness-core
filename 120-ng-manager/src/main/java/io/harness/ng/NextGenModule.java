@@ -907,6 +907,7 @@ public class NextGenModule extends AbstractModule {
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(ManagerRegistrars.springConverters)
+            .addAll(NextGenRegistrars.springConvertors)
             .build();
       }
 

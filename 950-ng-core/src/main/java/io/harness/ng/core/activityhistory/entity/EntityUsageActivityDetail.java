@@ -8,10 +8,10 @@
 package io.harness.ng.core.activityhistory.entity;
 
 import io.harness.annotations.StoreIn;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ErrorDetail;
-import io.harness.ng.core.entityusageactivity.EntityUsageDetail;
 
 import dev.morphia.annotations.Entity;
 import java.util.List;
@@ -38,7 +38,7 @@ public class EntityUsageActivityDetail extends NGActivity {
   @NotBlank String referredByEntityFQN;
   @NotBlank String referredByEntityType;
   @NotNull EntityDetail referredByEntity;
-  EntityUsageDetail usageDetail;
+  EntityUsageDetailProto usageDetail;
   @NotEmpty String activityStatusMessage;
   List<ErrorDetail> errors;
   String errorSummary;
