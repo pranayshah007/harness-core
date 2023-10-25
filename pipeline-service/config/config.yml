@@ -329,8 +329,8 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.16.20
-    liteEngineImage: harness/ci-lite-engine:1.16.20
+    addonImage: harness/ci-addon:1.16.25
+    liteEngineImage: harness/ci-lite-engine:1.16.25
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
