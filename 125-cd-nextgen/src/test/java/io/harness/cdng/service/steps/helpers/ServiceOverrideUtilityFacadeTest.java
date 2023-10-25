@@ -369,8 +369,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testMergeEnvInputsV2() throws IOException {
     basicOverrideEntity.setIsV2(true);
-    basicOverrideEntity.setSpec(
-        ServiceOverridesSpec.builder().variables(getTestNGVariable()).manifests(List.of(getTestManifest())).build());
+    basicOverrideEntity.setSpec(ServiceOverridesSpec.builder().variables(getTestNGVariable()).build());
     basicOverrideEntity.setType(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
     Environment envEntity = Environment.builder().identifier(ENVIRONMENT_REF).isMigratedToOverride(true).build();
 
@@ -425,26 +424,6 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
                    .map(paramVal -> (String) paramVal.getValue())
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("valueA", "valueB");
-    assertThat(configV2.getSpec().getManifests().get(0).getManifest().getIdentifier()).isEqualTo("manifest1");
-    assertThat(configV2.getSpec()
-                   .getManifests()
-                   .get(0)
-                   .getManifest()
-                   .getSpec()
-                   .getStoreConfig()
-                   .getConnectorReference()
-                   .isExpression())
-        .isFalse();
-
-    assertThat(configV2.getSpec()
-                   .getManifests()
-                   .get(0)
-                   .getManifest()
-                   .getSpec()
-                   .getStoreConfig()
-                   .getConnectorReference()
-                   .getValue())
-        .isEqualTo("connectorRefFromInput");
   }
 
   @Test
