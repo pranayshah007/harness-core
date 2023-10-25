@@ -127,7 +127,7 @@ public class ErrorTrackingNotificationRuleUtils {
       }
 
       String slackVersionList =
-          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\\\n"));
+          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
 
       final String emailVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toEmailString).collect(Collectors.joining());
@@ -352,8 +352,8 @@ public class ErrorTrackingNotificationRuleUtils {
     private String arcScreenUrl;
 
     public String toSlackString() {
-      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\\\n");
-      slack.append("```").append(stackTrace.replace(",", "\\\n")).append("```");
+      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
+      slack.append("_BEGIN_BLOCK_\n").append(stackTrace.replace(",", "\n")).append("_END_BLOCK_\n");
       return slack.toString();
     }
 
