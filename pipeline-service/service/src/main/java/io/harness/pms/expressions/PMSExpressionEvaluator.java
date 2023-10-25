@@ -38,10 +38,9 @@ import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
 import io.harness.pms.expressions.functors.ProjectFunctor;
 import io.harness.pms.expressions.functors.RemoteExpressionFunctor;
 import io.harness.pms.expressions.functors.ServiceVariableOverridesFunctor;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
-import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -64,13 +63,10 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
-  @Inject private PMSExecutionService pmsExecutionService;
+  @Inject PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
   @Inject ExecutionInputService executionInputService;
-
-  @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
-
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
   @Inject ApprovalInstanceService approvalInstanceService;
   @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
@@ -91,7 +87,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
 
     addToContext("pipeline",
         new PipelineExecutionFunctor(
-            pmsExecutionService, pipelineExpressionHelper, planExecutionMetadataService, ambiance));
+            pipelineExpressionHelper, planExecutionMetadataService, pmsGitSyncHelper, ambiance));
     addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
 
     addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache, getNodeExecutionInfoService()));
