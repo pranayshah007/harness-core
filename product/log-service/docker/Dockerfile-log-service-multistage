@@ -23,9 +23,6 @@ ENV CONTEXT_PATH $BAZEL_BIN
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
-ENV CONTEXT_PATH $BAZEL_BIN
-RUN echo $CONTEXT_PATH
-RUN cd /
 COPY /root/.cache/bazel/_bazel_root/8c069df52082beee3c95ca17836fb8e2/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service/log-service_/log-service /usr/local/bin/log-service
 USER root
 RUN chown -R 65534:65534 /usr/local/bin
