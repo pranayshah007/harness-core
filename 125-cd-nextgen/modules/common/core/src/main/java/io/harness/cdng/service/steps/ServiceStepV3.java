@@ -729,12 +729,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     final ServiceEntity serviceEntity = serviceOpt.get();
 
-    if (serviceEntity.getType() != null && stepParameters.getDeploymentType() != null
-        && serviceEntity.getType() != stepParameters.getDeploymentType()) {
-      throw new InvalidRequestException(format("Deployment type of the stage [%s] and the service [%s] do not match",
-          stepParameters.getDeploymentType().getYamlName(), serviceEntity.getType().getYamlName()));
-    }
-
     String mergedServiceYaml;
     if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
@@ -755,6 +749,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           format("Service Definition is not defined for service [Name: %s, Identifier: %s]", serviceEntity.getName(),
               serviceEntity.getIdentifier()));
     }
+
+    if (ngServiceV2InfoConfig.getServiceDefinition().getType() != null && stepParameters.getDeploymentType() != null
+        && ngServiceV2InfoConfig.getServiceDefinition().getType() != stepParameters.getDeploymentType()) {
+      throw new InvalidRequestException(format("Deployment type of the stage [%s] and the service [%s] do not match",
+          stepParameters.getDeploymentType().getYamlName(),
+          ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName()));
+    }
+
     serviceCustomSweepingOutputHelper.saveAdditionalServiceFieldsToSweepingOutput(ngServiceConfig, ambiance);
 
     serviceStepsHelper.checkForVariablesAccessOrThrow(

@@ -81,7 +81,7 @@ public class InstanceSyncHelperTest extends InstancesTestBase {
                                                             .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
                                                             .build();
     ServiceEntity serviceEntity = ServiceEntity.builder().build();
-    when(serviceEntityService.get(infrastructureMappingDTO.getAccountIdentifier(),
+    when(serviceEntityService.getMetadata(infrastructureMappingDTO.getAccountIdentifier(),
              infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
              infrastructureMappingDTO.getServiceIdentifier(), false))
         .thenReturn(Optional.of(serviceEntity));
@@ -103,7 +103,7 @@ public class InstanceSyncHelperTest extends InstancesTestBase {
                                                             .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
                                                             .build();
     Environment environment = Environment.builder().build();
-    when(environmentService.get(infrastructureMappingDTO.getAccountIdentifier(),
+    when(environmentService.getMetadata(infrastructureMappingDTO.getAccountIdentifier(),
              infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
              infrastructureMappingDTO.getEnvIdentifier(), false))
         .thenReturn(Optional.of(environment));
