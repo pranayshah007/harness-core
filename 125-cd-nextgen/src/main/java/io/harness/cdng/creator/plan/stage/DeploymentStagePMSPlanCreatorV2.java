@@ -877,6 +877,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (stageConfig.getServices() != null || stageConfig.getEnvironments() != null
         || stageConfig.getEnvironmentGroup() != null) {
       // since multi-service / env configured, info will be saved while adding multi dependency
+      log.debug("Multi service and(or) environment deployment stage encountered, skipping saving info");
       return;
     }
     if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode())) {
