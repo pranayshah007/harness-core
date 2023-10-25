@@ -379,6 +379,10 @@ public class K8sRecommendationDAO {
     InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
         nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
     try {
+      if (instanceData == null || instanceData.getMetaData() == null) {
+        log.warn("Error fetching instanceData/metadata. Returning default value.");
+        return defaultK8sServiceProvider();
+      }
       Map<String, String> metaData = instanceData.getMetaData();
       String region = metaData.get(InstanceMetaDataConstants.REGION);
       String instanceFamily = metaData.get(InstanceMetaDataConstants.INSTANCE_FAMILY);
