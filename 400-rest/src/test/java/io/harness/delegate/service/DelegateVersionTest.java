@@ -36,6 +36,7 @@ import org.mockito.Mock;
 public class DelegateVersionTest extends WingsBaseTest {
   public static final String ACCOUNT_ID = "accountId";
   public static final String HARNESS_DELEGATE_RING_IMAGE = "harness/delegate:ring";
+  public static final String HARNESS_DELEGATE_RING_IMAGE_NO_TAG = "ring";
 
   @Mock private DelegateRingService delegateRingService;
   @Inject private HPersistence persistence;
@@ -54,7 +55,7 @@ public class DelegateVersionTest extends WingsBaseTest {
     when(delegateRingService.getDelegateImageTag(ACCOUNT_ID)).thenReturn(HARNESS_DELEGATE_RING_IMAGE);
     SupportedDelegateVersion supportedDelegateVersion = delegateVersionService.getSupportedDelegateVersion(ACCOUNT_ID);
     assertThat(supportedDelegateVersion).isNotNull();
-    assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo(HARNESS_DELEGATE_RING_IMAGE);
+    assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo(HARNESS_DELEGATE_RING_IMAGE_NO_TAG);
     assertThat(supportedDelegateVersion.getLatestSupportedMinimalVersion()).isEqualTo("ring.minimal");
   }
 
@@ -68,7 +69,7 @@ public class DelegateVersionTest extends WingsBaseTest {
 
     SupportedDelegateVersion supportedDelegateVersion = delegateVersionService.getSupportedDelegateVersion(ACCOUNT_ID);
     assertThat(supportedDelegateVersion).isNotNull();
-    assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo("latest:88");
+    assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo("88");
     assertThat(supportedDelegateVersion.getLatestSupportedMinimalVersion()).isEqualTo("88.minimal");
   }
 
