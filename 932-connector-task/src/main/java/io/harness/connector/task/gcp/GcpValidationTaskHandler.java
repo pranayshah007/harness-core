@@ -59,12 +59,18 @@ public class GcpValidationTaskHandler implements ConnectorValidationHandler {
   }
 
   public ConnectorValidationResult validate(GcpRequest gcpRequest) {
-    GcpCredentialType gcpCredentialType =
-        (gcpRequest.getGcpManualDetailsDTO() != null && gcpRequest.getGcpManualDetailsDTO().getSecretKeyRef() != null)
-        ? GcpCredentialType.MANUAL_CREDENTIALS
-        : GcpCredentialType.INHERIT_FROM_DELEGATE;
+    GcpCredentialType gcpCredentialType = null;
+    boolean executeOnDelegate = true;
+    if (gcpRequest.getGcpManualDetailsDTO() != null && gcpRequest.getGcpManualDetailsDTO().getSecretKeyRef() != null) {
+      gcpCredentialType = GcpCredentialType.MANUAL_CREDENTIALS;
+    } else if (gcpRequest.getGcpOidcDetailsDTO() != null) {
+      gcpCredentialType = GcpCredentialType.OIDC_AUTHENTICATION;
+      executeOnDelegate = false;
+    } else {
+      gcpCredentialType = GcpCredentialType.INHERIT_FROM_DELEGATE;
+    }
     return validateInternal(
-        gcpCredentialType, gcpRequest.getGcpManualDetailsDTO(), gcpRequest.getEncryptionDetails(), true);
+        gcpCredentialType, gcpRequest.getGcpManualDetailsDTO(), gcpRequest.getEncryptionDetails(), executeOnDelegate);
   }
 
   private ConnectorValidationResult validateInternal(GcpCredentialType gcpCredentialType,
@@ -79,7 +85,7 @@ public class GcpValidationTaskHandler implements ConnectorValidationHandler {
       GcpManualDetailsDTO config =
           validateAndDecryptManualCredential((GcpManualDetailsDTO) gcpCredentialSpecDTO, encryptionDetails);
       gcpClient.getGkeContainerService(config.getSecretKeyRef().getDecryptedValue());
-    } else {
+    } else if (gcpCredentialType != GcpCredentialType.OIDC_AUTHENTICATION) {
       gcpClient.validateDefaultCredentials();
     }
 
