@@ -106,13 +106,6 @@ public class AdminAccountResource {
   public RestResponse<AccountSummary> getAccountSummaryByAccountId(@PathParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(adminAccountService.getAccountSummaryByAccountId(accountId));
   }
-
-//  @POST
-//  @Path("/update-accounts/accountIds")
-//  public RestResponse<List<AccountSummary>> getAccountSummariesByAccountIds(@Body List<String> accountIds) {
-//    return new RestResponse<>(adminAccountService.getAccountSummariesByAccountIds(accountIds));
-//  }
-
   @GET
   @Path("{accountId}/license")
   public RestResponse<LicenseInfo> getLicenseInfoForAccount(@PathParam("accountId") @NotEmpty String accountId) {
@@ -204,7 +197,6 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.getLimitsConfiguredForAccount(accountId));
   }
 
-  // getRecent AccountUpdates
 
   @GET
   @Path("get-recent-updates-account")
