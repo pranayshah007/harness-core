@@ -52,7 +52,7 @@ public class ErrorTrackingTemplateDataGenerator
       "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Saved Search Filter ${SAVED_SEARCH_FILTER_NAME}\"}},";
   public static final String SLACK_EVENT_DETAILS_BUTTON = "SLACK_EVENT_DETAILS_BUTTON";
   public static final String SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE =
-      "{\"type\": \"actions\",\"elements\": [{\"type\": \"button\",\"text\": {\"type\": \"plain_text\",\"text\": \"View Event Details\",\"emoji\": true},\"url\": ${ARC_SCREEN_URL}}]}";
+      "{\"type\": \"actions\",\"elements\": [{\"type\": \"button\",\"text\": {\"type\": \"plain_text\",\"text\": \"View Event Details\",\"emoji\": true},\"url\": \"http://url.com\"}]}";
   public static final String EMAIL_EVENT_DETAILS_BUTTON = "EMAIL_EVENT_DETAILS_BUTTON";
   public static final String EMAIL_EVENT_DETAILS_BUTTON_VALUE =
       "<button style=\"background-color: white;border-width: 1px;border-radius: 3px;border-color: #BABABA;padding: 8px;padding-left: 16px;padding-right: 16px;\"onclick=\"window.location.href='${ARC_SCREEN_URL}';\">View Event Details </button>";
@@ -68,21 +68,17 @@ public class ErrorTrackingTemplateDataGenerator
     final Map<String, String> templateData =
         super.getTemplateData(projectParams, entityDetails, condition, notificationDataMap);
 
-    templateData.put(ENVIRONMENT_NAME, replaceNullWithBlank(notificationDataMap.get(ENVIRONMENT_NAME)));
+    templateData.put(ENVIRONMENT_NAME, "ENVIRONMENT_NAME");
 
     // Slack variables
-    templateData.put(EVENT_STATUS, replaceNullWithBlank(notificationDataMap.get(EVENT_STATUS)));
-    templateData.put(NOTIFICATION_EVENT_TRIGGER_LIST,
-        replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_EVENT_TRIGGER_LIST)));
-    templateData.put(MONITORED_SERVICE_URL, replaceNullWithBlank(templateData.get(URL)));
-    templateData.put(
-        SLACK_FORMATTED_VERSION_LIST, replaceNullWithBlank(notificationDataMap.get(SLACK_FORMATTED_VERSION_LIST)));
-    templateData.put(NOTIFICATION_URL, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_URL)));
-    templateData.put(NOTIFICATION_NAME, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_NAME)));
-    templateData.put(SLACK_SAVED_SEARCH_FILTER_SECTION,
-        replaceNullWithBlank(notificationDataMap.get(SLACK_SAVED_SEARCH_FILTER_SECTION)));
-    templateData.put(
-        SLACK_EVENT_DETAILS_BUTTON, replaceNullWithBlank(notificationDataMap.get(SLACK_EVENT_DETAILS_BUTTON)));
+    templateData.put(EVENT_STATUS, "EVENT_STATUS");
+    templateData.put(NOTIFICATION_EVENT_TRIGGER_LIST, "NOTIFICATION_EVENT_TRIGGER_LIST");
+    templateData.put(MONITORED_SERVICE_URL, "URL");
+    templateData.put(SLACK_FORMATTED_VERSION_LIST, "SLACK_FORMATTED_VERSION_LIST");
+    templateData.put(NOTIFICATION_URL, "NOTIFICATION_URL");
+    templateData.put(NOTIFICATION_NAME, "NOTIFICATION_NAME");
+    templateData.put(SLACK_SAVED_SEARCH_FILTER_SECTION, "");
+    templateData.put(SLACK_EVENT_DETAILS_BUTTON, SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE);
 
     // Email variables
     String emailMonitoredServiceLink = EMAIL_LINK_BEGIN + templateData.get(MONITORED_SERVICE_URL) + EMAIL_LINK_MIDDLE
