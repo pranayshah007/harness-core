@@ -114,39 +114,24 @@ function print_log() {
   echo "false" >/tmp/COMPILE
 }
 
-CodeformatRequired() {
-  local run_codeformat=true
+function CodeformatRequired() {
+  Total_Files=${#merge_summary[@]}
+  General_Files=0
 
-  for file in "${merge_summary[@]}"; do
+  for file in "${merge_summary[@]}";do
     case "${file##*.}" in
-      MD|md|txt)
-      run_codeformat=false
-	continue
-        ;;
-
-      yml|yaml)
-        if [[ "$file" == **/chart/**/* || "$file" == **/charts/**/* ]]; then
-	  run_codeformat=false
-          continue
-        fi
-        ;;
-
-      *)
-        run_codeformat=true  # Unsupported extension, set flag to false
-        break
-        ;;
+        MD|md|txt)
+          General_Files=`expr $General_Files + 1`
+          ;;
     esac
   done
 
-  if [ "$run_codeformat" = true ]; then
-    echo "Run codeformat"
+  echo ${General_Files}
+  echo ${Total_Files}
+  if [ $General_Files == $Total_Files ]; then
     PR_Name+=("SmartPRChecks-CodeformatCheckstyle")
-    echo "CodeFormat Result: True"
-    echo "true" > /tmp/codeformatcheck
-  else
-    echo "CodeFormat Result: False"
+    echo "false" > /tmp/codeformatcheck
   fi
-
 }
 
 function send_webhook() {
