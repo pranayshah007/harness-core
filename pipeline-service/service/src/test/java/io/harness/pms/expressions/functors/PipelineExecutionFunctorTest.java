@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -21,19 +20,18 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
-import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.*;
-import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStoreType;
+import io.harness.pms.contracts.plan.RetryExecutionInfo;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.helpers.PipelineExpressionHelper;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
@@ -45,7 +43,6 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineExecutionFunctorTest extends CategoryTest {
-  @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PipelineExpressionHelper pipelineExpressionHelper;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @InjectMocks private PipelineExecutionFunctor pipelineExecutionFunctor;
