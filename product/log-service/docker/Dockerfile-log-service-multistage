@@ -19,7 +19,6 @@ RUN chmod +x \
     /app/product/log-service/build/feature_build.sh \
     && /app/product/log-service/build/feature_build.sh $GCP_KEY \
 
-ENV CONTEXT_PATH $BAZEL_BIN
 
 FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
 # Copy go binary
