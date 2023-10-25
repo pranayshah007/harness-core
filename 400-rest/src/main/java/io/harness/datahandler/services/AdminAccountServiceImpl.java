@@ -36,6 +36,12 @@ import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.executable.ValidateOnExecution;
@@ -226,5 +232,19 @@ public class AdminAccountServiceImpl implements AdminAccountService {
       return null;
     }
     return createAccount(account, adminUserEmail);
+  }
+
+  @Override
+  public List<Account> getUpdatedAccounts(long timestamp) {
+    return accountService.getByLastUpdated(timestamp);
+  }
+
+  @Override
+  public List<AccountSummary> getAccountSummariesByAccounts(List<String> accountIds) {
+    List<AccountSummary> accountSummaries = new ArrayList<>();
+    for (String id : accountIds) {
+      accountSummaries.add(getAccountSummaryByAccountId(id));
+    }
+    return accountSummaries;
   }
 }

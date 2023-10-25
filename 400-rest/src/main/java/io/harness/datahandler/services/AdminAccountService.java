@@ -79,4 +79,8 @@ public interface AdminAccountService {
   boolean updateRingName(String accountId, String ringName);
 
   Account createGlobalDelegateAccount(Account account, String adminUserEmail);
+
+  List<Account> getUpdatedAccounts(long timestamp);
+
+  List<AccountSummary> getAccountSummariesByAccounts(List<String> accountIds);
 }

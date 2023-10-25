@@ -937,5 +937,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
     public static final String accountStatusKey = "licenseInfo.accountStatus";
     public static final String accountType = "licenseInfo.accountType";
+    public  static  final String lastUpdatedAt = "lastUpdatedAt";
   }
 }
