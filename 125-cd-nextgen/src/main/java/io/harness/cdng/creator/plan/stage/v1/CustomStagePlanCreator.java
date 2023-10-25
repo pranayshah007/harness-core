@@ -5,16 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.customstage.v1;
+package io.harness.cdng.creator.plan.stage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
+import io.harness.cdng.pipeline.steps.v1.CustomStageStep;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.common.v1.StageElementParametersV1.StageElementParametersV1Builder;
-import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -38,8 +39,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstantsV1;
-import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
@@ -54,7 +53,7 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
+public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
 
   @Override
@@ -65,7 +64,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstantsV1.CUSTOM_STAGE));
+        YAMLFieldNameConstants.STAGE, Collections.singleton(YAMLFieldNameConstants.CUSTOM_V1));
   }
 
   @Override
@@ -141,22 +140,22 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    CustomStageNodeV1 customStageNodeV1;
+    CustomStageNode customStageNode;
     try {
-      customStageNodeV1 = YamlUtils.read(config.getNode().toString(), CustomStageNodeV1.class);
+      customStageNode = YamlUtils.read(config.getNode().toString(), CustomStageNode.class);
     } catch (Exception e) {
       throw new InvalidYamlException(
           "Unable to parse custom stage yaml. Please ensure that it is in correct format", e);
     }
-    StageElementParametersV1Builder stageParameters = StepParametersUtilsV1.getStageParameters(customStageNodeV1);
-    stageParameters.type(StepSpecTypeConstantsV1.CUSTOM_STAGE);
+    StageElementParametersV1Builder stageParameters = StepParametersUtils.getStageParameters(customStageNode);
+    stageParameters.type(YAMLFieldNameConstants.CUSTOM_V1);
     stageParameters.spec(CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build());
     String name = config.getNodeName();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
-            .stepType(CustomStageStepV1.STEP_TYPE)
+            .stepType(CustomStageStep.STEP_TYPE)
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)

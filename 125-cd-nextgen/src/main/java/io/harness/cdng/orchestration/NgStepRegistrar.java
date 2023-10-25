@@ -374,6 +374,8 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
 
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
+    engineSteps.put(io.harness.cdng.pipeline.steps.v1.CustomStageStep.STEP_TYPE,
+        io.harness.cdng.pipeline.steps.v1.CustomStageStep.class);
     engineSteps.put(CustomStageEnvironmentStepConstants.STEP_TYPE, CustomStageEnvironmentStep.class);
 
     // K8s ASYNC

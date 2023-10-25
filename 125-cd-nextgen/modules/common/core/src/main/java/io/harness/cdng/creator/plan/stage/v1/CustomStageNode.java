@@ -5,26 +5,27 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.customstage.v1;
+package io.harness.cdng.creator.plan.stage.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.stages.v1.PmsAbstractStageNodeV1;
-import io.harness.steps.StepSpecTypeConstantsV1;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Data;
+import lombok.Value;
 
-@Data
-@JsonTypeName(StepSpecTypeConstantsV1.CUSTOM_STAGE)
+@Value
+@JsonTypeName(YAMLFieldNameConstants.CUSTOM_V1)
 @OwnedBy(PIPELINE)
-public class CustomStageNodeV1 extends PmsAbstractStageNodeV1 {
-  String type = StepSpecTypeConstantsV1.CUSTOM_STAGE;
-  CustomStageConfigV1 spec;
+@RecasterAlias("io.harness.cdng.creator.plan.stage.v1.CustomStageNode")
+public class CustomStageNode extends CustomAbstractStageNode {
+  String type = YAMLFieldNameConstants.CUSTOM_V1;
+  CustomStageConfig spec;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstantsV1.CUSTOM_STAGE;
+    return YAMLFieldNameConstants.CUSTOM_V1;
   }
 }

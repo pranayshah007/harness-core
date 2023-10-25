@@ -30,6 +30,7 @@ import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_HOOKS;
 import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
 import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
+import static io.harness.cdng.visitor.YamlTypes.STAGE;
 import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
@@ -311,6 +312,7 @@ import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -554,6 +556,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
     planCreators.add(new CustomStagePlanCreator());
+    planCreators.add(new io.harness.cdng.creator.plan.stage.v1.CustomStagePlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -575,6 +578,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
 
     filterJsonCreators.add(new CustomStageFilterCreator());
+    filterJsonCreators.add(new io.harness.cdng.creator.filters.v1.CustomStageFilterCreator());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -584,6 +588,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   @Override
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new EmptyVariableCreator(STAGE, Set.of(YAMLFieldNameConstants.CUSTOM_V1)));
     variableCreators.add(new EmptyAnyVariableCreator(new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS)));
     variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));

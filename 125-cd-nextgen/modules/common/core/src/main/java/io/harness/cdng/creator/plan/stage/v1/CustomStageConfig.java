@@ -5,23 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.customstage.v1;
+package io.harness.cdng.creator.plan.stage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@Data
+@Value
 @Builder
-public class CustomStageConfigV1 {
+public class CustomStageConfig {
   String uuid;
   @NotNull @Size(min = 1) List<JsonNode> steps;
-  List<JsonNode> rollbackSteps;
+  @JsonProperty("rollback_steps") List<JsonNode> rollbackSteps;
 }
