@@ -911,21 +911,21 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
           CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branchInfo)) {
-              ServiceEntity temp = serviceRepository.getRemoteServiceWithYaml(serviceEntity, loadFromCache, false);
-              yamlMetadata.add(createServiceV2YamlMetadata(temp));
+              serviceRepository.getRemoteServiceWithYaml(serviceEntity, loadFromCache, false);
             }
           }, executorService);
 
           batchFutures.add(future);
-        } else {
-          // For inline services, process YAML immediately
-          yamlMetadata.add(createServiceV2YamlMetadata(serviceEntity));
         }
       }
 
       // Wait for the batch to complete
       CompletableFuture<Void> allOf = CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
       allOf.join();
+    }
+
+    for (ServiceEntity entity : serviceEntities) {
+      yamlMetadata.add(createServiceV2YamlMetadata(entity));
     }
 
     return yamlMetadata;
