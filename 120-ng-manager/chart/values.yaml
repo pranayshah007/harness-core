@@ -510,12 +510,20 @@ secrets:
     LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
     OPA_SERVER_SECRET: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
     GITOPS_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
+    CE_AWS_ACCESS_KEY: ""
+    CE_AWS_SECRET_KEY: ""
+    CE_AWS_DESTINATION_BUCKET: ""
+    CE_AWS_TEMPLATE_URL: ""
   kubernetesSecrets:
     - secretName: ""
       keys:
         LOG_STREAMING_SERVICE_TOKEN: ""
         OPA_SERVER_SECRET: ""
         GITOPS_SERVICE_SECRET: ""
+        CE_AWS_ACCESS_KEY: ""
+        CE_AWS_SECRET_KEY: ""
+        CE_AWS_DESTINATION_BUCKET: ""
+        CE_AWS_TEMPLATE_URL: ""
         SMTP_HOST: ""
         SMTP_USERNAME: ""
         SMTP_PASSWORD: ""
@@ -536,6 +544,18 @@ secrets:
           GITOPS_SERVICE_SECRET:
             name: ""
             property: ""
+          CE_AWS_ACCESS_KEY:
+            name: ""
+            property: ""
+          CE_AWS_SECRET_KEY:
+            name: ""
+            property: ""
+          CE_AWS_DESTINATION_BUCKET:
+            name: ""
+            property: ""  
+          CE_AWS_TEMPLATE_URL:
+            name: ""
+            property: ""             
           SMTP_HOST:
             name: ""
             property: ""

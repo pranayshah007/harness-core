@@ -75,17 +75,33 @@ default LOG_STREAMING_SERVICE_TOKEN was c76e567a-b341-404d-a8dd-d9738714eb82 and
     {{- $ := .ctx }}
     {{- $hasAtleastOneSecret := false }}
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 GITOPS_SERVICE_SECRET: {{ .ctx.Values.secrets.default.GITOPS_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_ACCESS_KEY")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+CE_AWS_ACCESS_KEY: {{ default $.Values.ceSecret.access_key.name .ctx.Values.secrets.default.CE_AWS_ACCESS_KEY | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_SECRET_KEY")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+CE_AWS_SECRET_KEY: {{ default $.Values.ceSecret.secret_key.name .ctx.Values.secrets.default.CE_AWS_SECRET_KEY | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_DESTINATION_BUCKET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+CE_AWS_DESTINATION_BUCKET: {{ default $.Values.ceSecret.destination_bucket.name .ctx.Values.secrets.default.CE_AWS_DESTINATION_BUCKET | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+CE_AWS_TEMPLATE_URL: {{ default $.Values.ceSecret.template_url.name .ctx.Values.secrets.default.CE_AWS_TEMPLATE_URL | b64enc }}
     {{- end }}
     {{- if not $hasAtleastOneSecret }}
 {}

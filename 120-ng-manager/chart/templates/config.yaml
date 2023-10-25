@@ -63,11 +63,6 @@ data:
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
   WEBHOOK_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/ng/api/'
   MONGO_TRANSACTIONS_ALLOWED: "false"
-  {{ $length := len .Values.global.license.ng }}
-  {{- if gt $length 0}}
-  ENABLE_SMP_LICENSING: 'true'
-  SMP_LICENSE: '{{ .Values.global.license.ng }}'
-  {{- end}}
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
   OPA_CONNECTIVITY_ENABLED: 'true'
