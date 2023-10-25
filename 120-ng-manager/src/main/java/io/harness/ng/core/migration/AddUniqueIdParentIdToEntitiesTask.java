@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -63,12 +64,13 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
     log.info(format("%s starting...", NG_MANAGER_ENTITIES_MIGRATION_LOG));
 
     for (Class<? extends UniqueIdAware> clazz : entitiesSet) {
+      final String typeAliasName = getTypeAliasValueOrNameForClass(clazz);
       NGManagerUniqueIdParentIdMigrationStatus foundEntity = mongoTemplate.findOne(
-          new Query(Criteria.where(NGManagerUniqueIdParentIdMigrationStatusKeys.entityClassName).is(clazz.getName())),
+          new Query(Criteria.where(NGManagerUniqueIdParentIdMigrationStatusKeys.entityClassName).is(typeAliasName)),
           NGManagerUniqueIdParentIdMigrationStatus.class);
       if (foundEntity == null) {
         foundEntity = NGManagerUniqueIdParentIdMigrationStatus.builder()
-                          .entityClassName(clazz.getName())
+                          .entityClassName(typeAliasName)
                           .parentIdMigrationCompleted(Boolean.FALSE)
                           .uniqueIdMigrationCompleted(Boolean.FALSE)
                           .build();
@@ -93,7 +95,7 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
   private void performUniqueIdMigrationTask(
       NGManagerUniqueIdParentIdMigrationStatus migrationStatusEntity, final Class<? extends UniqueIdAware> clazz) {
     log.info(format(
-        "%s Starting uniqueId migration for entity: [%s]", NG_MANAGER_ENTITIES_MIGRATION_LOG, clazz.getSimpleName()));
+        "%s Starting uniqueId migration for Entity: [%s]", NG_MANAGER_ENTITIES_MIGRATION_LOG, clazz.getSimpleName()));
 
     int migratedCounter = 0;
     int batchSizeCounter = 0;
@@ -171,6 +173,7 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
     int migratedCounter = 0;
     int updateCounter = 0;
     int batchSizeCounter = 0;
+    int skippedCounter = 0;
     final String LOCAL_MAP_DELIMITER = "|";
 
     try (AcquiredLock<?> lock =
@@ -209,6 +212,12 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
                   if (organization != null && isNotEmpty(organization.getUniqueId())) {
                     uniqueIdOfOrg = organization.getUniqueId();
                     orgIdentifierUniqueIdMap.put(mapKey, uniqueIdOfOrg);
+                  } else {
+                    log.warn(format(
+                        "%s For EntityType: %s and ParentType: %s having identifier: %s, not found or uniqueId on parent not present. Skipping...",
+                        NG_MANAGER_ENTITIES_MIGRATION_LOG, clazz.getSimpleName(), "Organization",
+                        nextProject.getOrgIdentifier()));
+                    skippedCounter++;
                   }
                 }
 
@@ -241,8 +250,9 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
             exc);
         return;
       }
-      log.info(format("%s task on entity [%s] for parentId. Successful: [%d], Failed: [%d]",
-          NG_MANAGER_ENTITIES_MIGRATION_LOG, clazz.getSimpleName(), migratedCounter, updateCounter - migratedCounter));
+      log.info(format("%s task on entity [%s] for parentId. Successful: [%d], Failed: [%d], Skipped: [%d]",
+          NG_MANAGER_ENTITIES_MIGRATION_LOG, clazz.getSimpleName(), migratedCounter,
+          updateCounter - (migratedCounter + skippedCounter), skippedCounter));
       foundEntity.setParentIdMigrationCompleted(Boolean.TRUE);
       mongoTemplate.save(foundEntity);
     }
@@ -276,7 +286,7 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
               batchSizeCounter++;
               Update update = new Update().set(OrganizationKeys.parentId, nextOrg.getAccountIdentifier());
               bulkOperations.updateOne(new Query(Criteria.where("_id").is(idValue)), update);
-              if (batchSizeCounter == 500) {
+              if (batchSizeCounter == BATCH_SIZE) {
                 migratedCounter += bulkOperations.execute().getModifiedCount();
                 bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Organization.class);
                 batchSizeCounter = 0;
@@ -300,5 +310,13 @@ public class AddUniqueIdParentIdToEntitiesTask implements Runnable {
         NG_MANAGER_ENTITIES_MIGRATION_LOG, "Organization", migratedCounter, updateCounter - migratedCounter));
     foundEntity.setParentIdMigrationCompleted(Boolean.TRUE);
     mongoTemplate.save(foundEntity);
+  }
+
+  private String getTypeAliasValueOrNameForClass(Class<? extends UniqueIdAware> clazz) {
+    if (clazz.isAnnotationPresent(TypeAlias.class)) {
+      TypeAlias annotation = clazz.getAnnotation(TypeAlias.class);
+      return annotation.value();
+    }
+    return clazz.getName();
   }
 }
