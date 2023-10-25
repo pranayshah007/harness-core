@@ -4,7 +4,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM golang:1.20-bullseye as builder
+FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as builder
 RUN mkdir -p /app
 ARG GCP_KEY
 ENV SERVICE_NAME="log-service"
@@ -21,10 +21,10 @@ RUN chmod +x \
 
 ENV CONTEXT_PATH $BAZEL_BIN
 
-FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
+FROM builder as base
 # Copy go binary
 ENV CONTEXT_PATH $BAZEL_BIN
-WORKDIR /
+RUN ls-ltr
 COPY /root/.cache/bazel/_bazel_root/8c069df52082beee3c95ca17836fb8e2/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service/log-service_/log-service /usr/local/bin/log-service
 USER root
 RUN chown -R 65534:65534 /usr/local/bin
