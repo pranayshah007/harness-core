@@ -35,7 +35,7 @@ public interface GitStoreConfig extends StoreConfig {
   }
 
   @Override
-  default List<String> getFilePaths() {
+  default List<String> retrieveFilePaths() {
     return this.getPaths().getValue();
   }
 }

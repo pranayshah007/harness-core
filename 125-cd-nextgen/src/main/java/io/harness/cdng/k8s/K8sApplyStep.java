@@ -196,7 +196,7 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
       applyRequestBuilder.filePaths(k8sApplyStepParameters.getFilePaths().getValue());
     } else {
       applyRequestBuilder.filePaths(
-          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().getFilePaths());
+          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().retrieveFilePaths());
     }
 
     Map<String, String> k8sCommandFlag =
