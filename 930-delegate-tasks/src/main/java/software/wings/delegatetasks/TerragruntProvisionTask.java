@@ -186,7 +186,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       try {
         encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
-        gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+        gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext, parameters.isHardResetForGitRef());
       } catch (RuntimeException ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
         log.error("Exception in processing git operation", sanitizedException);

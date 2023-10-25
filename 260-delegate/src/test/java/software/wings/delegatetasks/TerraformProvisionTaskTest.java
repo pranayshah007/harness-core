@@ -32,6 +32,7 @@ import static software.wings.utils.WingsTestConstants.WORKSPACE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -212,7 +213,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
       return null;
     })
         .when(gitClient)
-        .cloneRepoAndCopyToDestDir(any(GitOperationContext.class), anyString(), any(LogCallback.class));
+        .cloneRepoAndCopyToDestDir(any(GitOperationContext.class), anyString(), any(LogCallback.class), anyBoolean());
 
     doReturn(GIT_REPO_DIRECTORY).when(gitClientHelper).getRepoDirectory(any(GitOperationContext.class));
 
@@ -1042,7 +1043,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
 
   private void verify(TerraformExecutionData terraformExecutionData, TerraformCommand command) {
     Mockito.verify(mockEncryptionService, times(1)).decrypt(gitConfig, sourceRepoEncryptionDetails, false);
-    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
+    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class), eq(true));
     Mockito.verify(gitClientHelper, times(1)).getRepoDirectory(any(GitOperationContext.class));
     Mockito.verify(delegateFileManager, times(1)).upload(any(DelegateFile.class), any(InputStream.class));
     assertThat(terraformExecutionData.getWorkspace()).isEqualTo(WORKSPACE);
@@ -1110,7 +1111,8 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
         .skipRefreshBeforeApplyingPlan(skipRefresh)
         .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
         .analyseTfPlanSummary(shouldAnalyseTfPlanSummary)
-        .syncGitCloneAndCopyToDestDir(false);
+        .syncGitCloneAndCopyToDestDir(false)
+        .hardResetForGitRef(true);
   }
 
   @Test

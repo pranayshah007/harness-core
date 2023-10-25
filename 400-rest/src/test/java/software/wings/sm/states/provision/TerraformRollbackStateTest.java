@@ -10,6 +10,7 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
+import static io.harness.beans.FeatureName.CDS_TF_TG_HARD_RESET_GIT_REF;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
@@ -230,18 +231,20 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
   public void testExecuteInternal() {
     setUp("sourceRepoBranch", true, WORKFLOW_EXECUTION_ID);
     ExecutionResponse executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
-    verifyResponse(executionResponse, "sourceRepoBranch", true, 1, TerraformCommand.DESTROY);
+    verifyResponse(executionResponse, "sourceRepoBranch", true, 1, TerraformCommand.DESTROY, false);
     verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
 
     // no variables, no backend configs, no source repo branch
     setUp(null, false, WORKFLOW_EXECUTION_ID);
+    doReturn(true).when(featureFlagService).isEnabled(eq(CDS_TF_TG_HARD_RESET_GIT_REF), any());
     executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
-    verifyResponse(executionResponse, null, false, 2, TerraformCommand.DESTROY);
+    verifyResponse(executionResponse, null, false, 2, TerraformCommand.DESTROY, true);
 
     // Inheriting terraform execution from last successful terraform execution
     setUp("sourceRepoBranch", true, null);
+    doReturn(false).when(featureFlagService).isEnabled(eq(CDS_TF_TG_HARD_RESET_GIT_REF), any());
     executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
-    verifyResponse(executionResponse, "sourceRepoBranch", true, 3, TerraformCommand.APPLY);
+    verifyResponse(executionResponse, "sourceRepoBranch", true, 3, TerraformCommand.APPLY, false);
   }
 
   @Test
@@ -274,7 +277,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     doReturn(settingAttribute).when(settingsService).get(any());
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
     ExecutionResponse executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
-    verifyResponse(executionResponse, "sourceRepoBranch", true, 1, TerraformCommand.DESTROY);
+    verifyResponse(executionResponse, "sourceRepoBranch", true, 1, TerraformCommand.DESTROY, false);
     verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(delegateService, times(1)).queueTaskV2(captor.capture());
@@ -417,7 +420,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
   }
 
   private void verifyResponse(ExecutionResponse executionResponse, String branch, boolean checkVarsAndBackendConfigs,
-      int i, TerraformCommand command) {
+      int i, TerraformCommand command, boolean isHardResetForGitRef) {
     verify(wingsPersistence, times(i)).createQuery(TerraformConfig.class);
     assertThat(executionResponse.getCorrelationIds().get(0)).isEqualTo(ACTIVITY_ID);
     assertThat(((ScriptStateExecutionData) executionResponse.getStateExecutionData()).getActivityId())
@@ -430,6 +433,7 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     TerraformProvisionParameters parameters = (TerraformProvisionParameters) delegateTask.getData().getParameters()[0];
     assertThat(parameters.getSourceRepoSettingId()).isEqualTo("sourceRepoSettingsId");
     assertThat(parameters.getCommand()).isEqualTo(command);
+    assertThat(parameters.isHardResetForGitRef()).isEqualTo(isHardResetForGitRef);
     if (checkVarsAndBackendConfigs) {
       assertThat(parameters.getVariables()).containsOnlyKeys("vpc_id", "region");
       assertThat(parameters.getEncryptedVariables()).containsOnlyKeys("access_key", "secret_key");
