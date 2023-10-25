@@ -53,6 +53,7 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.utils.ExecutionModeUtils;
+import io.harness.utils.RetryExecutionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -132,28 +133,16 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       planExecutionMetadata.setPipelineYaml(pipelineEntity.get().getYaml());
     }
     // RetryInfo
-    String rootExecutionId = planExecutionId;
-    String parentExecutionId = planExecutionId;
+    String rootExecutionId =
+        RetryExecutionUtils.getRootExecutionId(ambiance, planExecutionMetadata.getRetryExecutionInfo());
+    String parentExecutionId =
+        RetryExecutionUtils.getParentExecutionId(ambiance, planExecutionMetadata.getRetryExecutionInfo());
     if (planExecutionMetadata.getRetryExecutionInfo() != null
         && planExecutionMetadata.getRetryExecutionInfo().getIsRetry()) {
-      rootExecutionId = planExecutionMetadata.getRetryExecutionInfo().getRootExecutionId();
-      parentExecutionId = planExecutionMetadata.getRetryExecutionInfo().getParentRetryId();
-
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
       pmsExecutionSummaryService.update(parentExecutionId, update);
-    } else {
-      // remove after next release
-      if (metadata.hasRetryInfo() && metadata.getRetryInfo().getIsRetry()) {
-        rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
-        parentExecutionId = metadata.getRetryInfo().getParentRetryId();
-
-        // updating isLatest and canRetry
-        Update update = new Update();
-        update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
-        pmsExecutionSummaryService.update(parentExecutionId, update);
-      }
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
