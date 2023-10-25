@@ -96,6 +96,51 @@ public class CVNGNotificationChannelTest {
   }
 
   @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testToNotificationChannel_forWebhookWithSecret() {
+    CVNGWebhookChannel cvngWebhookChannel =
+        new CVNGWebhookChannel(userGroups, "testURL", "<+secrets.getValue(\"BearerToken\")>");
+    NotificationChannel notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+
+    assertThat(notificationChannel.getAccountId()).isEqualTo(accountIdentifier);
+    assertThat(notificationChannel.getTeam()).isEqualTo(Team.CV);
+    assertThat(notificationChannel.getTemplateId()).isEqualTo(templateId);
+    assertThat(notificationChannel.getUserGroups()).isNotEqualTo(null);
+    assertThat(((WebhookChannel) notificationChannel).getWebhookUrls()).isEqualTo(Arrays.asList("testURL"));
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).isNotEmpty();
+    assertThat(((WebhookChannel) notificationChannel).getHeaders().get("Authorization"))
+        .startsWith("${ngSecretManager.obtain(\"BearerToken\",");
+
+    cvngWebhookChannel = new CVNGWebhookChannel(userGroups, "testURL", "<+secrets.getValue(\"account.BearerToken\")>");
+    notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).isNotEmpty();
+    assertThat(((WebhookChannel) notificationChannel).getHeaders().get("Authorization"))
+        .startsWith("${ngSecretManager.obtain(\"account.BearerToken\",");
+
+    cvngWebhookChannel = new CVNGWebhookChannel(userGroups, "testURL", "<+secrets.getValue(\"org.BearerToken123\")>");
+    notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).isNotEmpty();
+    assertThat(((WebhookChannel) notificationChannel).getHeaders().get("Authorization"))
+        .startsWith("${ngSecretManager.obtain(\"org.BearerToken123\",");
+
+    cvngWebhookChannel = new CVNGWebhookChannel(userGroups, "testURL", "<+secrets.getValue('org.BearerToken123')>");
+    notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).isNotEmpty();
+    assertThat(((WebhookChannel) notificationChannel).getHeaders().get("Authorization"))
+        .startsWith("${ngSecretManager.obtain(\"org.BearerToken123\",");
+
+    cvngWebhookChannel.setUserGroups(null);
+    notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+    assertThat(notificationChannel.getUserGroups()).isEqualTo(Collections.emptyList());
+  }
+
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testToNotificationChannel_forEmail() {
