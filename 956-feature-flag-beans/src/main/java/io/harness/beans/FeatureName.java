@@ -931,7 +931,8 @@ public enum FeatureName {
   PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
   PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
   SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
-  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE);
+  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE),
+  CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI);
 
   // keep-sorted end
 
