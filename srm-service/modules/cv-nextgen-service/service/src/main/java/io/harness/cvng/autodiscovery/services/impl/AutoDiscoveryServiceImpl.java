@@ -115,6 +115,7 @@ public class AutoDiscoveryServiceImpl implements AutoDiscoveryService {
     }
     autoDiscoveryReImport.getAutoDiscoveryResponse().setServiceDependenciesImported(serviceDependenciesImported);
     autoDiscoveryReImport.setStatus(AsyncStatus.COMPLETED);
+    hPersistence.save(autoDiscoveryReImport);
   }
 
   @Override
