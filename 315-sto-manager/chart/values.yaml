@@ -120,7 +120,7 @@ addOnImage:
     registry: docker.io
     repository: harness/ci-addon
     pullPolicy: IfNotPresent
-    tag: "1.16.22"
+    tag: "1.16.26"
     digest: ""
     imagePullSecrets: []
 leImage:
@@ -128,7 +128,7 @@ leImage:
     registry: docker.io
     repository: harness/ci-lite-engine
     pullPolicy: IfNotPresent
-    tag: "1.16.22"
+    tag: "1.16.26"
     digest: ""
     imagePullSecrets: []
 s3UploadImage:
@@ -136,7 +136,7 @@ s3UploadImage:
     registry: docker.io
     repository: plugins/s3
     pullPolicy: IfNotPresent
-    tag: "1.2.4"
+    tag: "1.2.7"
     digest: ""  
     imagePullSecrets: []
 mongoSecrets:
