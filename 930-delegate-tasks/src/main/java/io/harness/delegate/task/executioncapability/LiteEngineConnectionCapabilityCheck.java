@@ -51,8 +51,7 @@ public class LiteEngineConnectionCapabilityCheck implements CapabilityCheck, Pro
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     LiteEngineConnectionCapability liteEngineConnectionCapability = (LiteEngineConnectionCapability) delegateCapability;
-    boolean valid = isConnectibleLiteEngine(liteEngineConnectionCapability.getIp(),
-        liteEngineConnectionCapability.getPort(), liteEngineConnectionCapability.isLocal());
+    boolean valid = true;
     try {
       if (liteEngineConnectionCapability.getPodName() != null && valid) {
         ConnectorDetails k8sConnectorDetails = liteEngineConnectionCapability.getK8sConnectorDetails();
