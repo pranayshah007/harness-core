@@ -517,6 +517,18 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(taskParams.getOutputVars()).isEqualTo(taskOutputVars);
     assertThat(taskParams.getEnvironmentVariables()).isEqualTo(taskEnvVariables);
 
+    // onDelegate parameter field null/empty cases
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(null);
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isTrue();
+
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(ExecutionTarget.builder().build());
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isFalse();
+    stepParameters.setOnDelegate(ParameterField.createValueField(true));
+
     // negative cases for output alias configuration
     stepParameters.setOutputAlias(OutputAlias.builder().build());
     assertThatThrownBy(

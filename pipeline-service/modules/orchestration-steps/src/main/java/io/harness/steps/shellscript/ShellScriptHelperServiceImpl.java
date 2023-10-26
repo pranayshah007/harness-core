@@ -334,6 +334,22 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
                             .getValue());
   }
 
+  private void updateShellScriptStepOnDelegateParameterField(ShellScriptStepParameters shellScriptStepParameters) {
+    if (ParameterField.isNull(shellScriptStepParameters.onDelegate)) {
+      if (shellScriptStepParameters.getExecutionTarget() == null) {
+        shellScriptStepParameters.setOnDelegate(ParameterField.createValueField(true));
+      } else {
+        shellScriptStepParameters.setOnDelegate(ParameterField.createValueField(false));
+      }
+    } else {
+      if (!Boolean.class.isInstance(shellScriptStepParameters.onDelegate.getValue())) {
+        throw new InvalidRequestException(
+            "Provide a valid value for onDelegate as it is a boolean field. Provided onDelegate value is: "
+            + shellScriptStepParameters.onDelegate.getValue());
+      }
+    }
+  }
+
   @Override
   public TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout) {
@@ -344,6 +360,10 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         ? shellScriptStepParameters.getExecutionTarget().getWorkingDirectory()
         : ParameterField.ofNull();
     validateExportVariables(shellScriptStepParameters.getOutputAlias());
+
+    // [TO BE REMOVED]: updating onDelegate Parameter Field in case it's empty
+    updateShellScriptStepOnDelegateParameterField(shellScriptStepParameters);
+
     if (ScriptType.BASH.equals(scriptType)) {
       return buildBashTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
     } else {
