@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step;
+
+import static io.harness.jira.JiraAction.CREATE_TICKET;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -130,7 +133,9 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     addJiraField(jiraFields, Field.DESCRIPTION, state.getDescription());
     addJiraField(jiraFields, Field.PRIORITY, state.getPriority());
     addJiraField(jiraFields, "Comment", state.getComment());
-    addJiraField(jiraFields, Field.STATUS, state.getStatus());
+    if (CREATE_TICKET == state.getJiraAction()) {
+      addJiraField(jiraFields, Field.STATUS, state.getStatus());
+    }
     if (EmptyPredicate.isNotEmpty(state.getLabels())) {
       addJiraField(jiraFields, Field.LABELS, String.join(",", state.getLabels()));
     }

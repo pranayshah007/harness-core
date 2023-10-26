@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -490,5 +491,19 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     assertThat(document.get("status").toString()).isEqualTo("ABORTED");
     assertThat(document.get("endTs")).isEqualTo(planExecution.getEndTs());
     assertThat(document.get("abortedBy")).isEqualTo(abortedBy);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateResolvedUserInputSetYaml() {
+    String planExecutionId = "planExecutionId";
+    String resolvedInputSetYaml = "resolved-input-set-yaml";
+    pmsExecutionSummaryService.updateResolvedUserInputSetYaml(planExecutionId, resolvedInputSetYaml);
+    Update expectedUpdate = new Update();
+    expectedUpdate.set(PlanExecutionSummaryKeys.resolvedUserInputSetYaml, resolvedInputSetYaml);
+    verify(pmsExecutionSummaryRepositoryMock, times(1))
+        .update(
+            new Query(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId)), expectedUpdate);
   }
 }

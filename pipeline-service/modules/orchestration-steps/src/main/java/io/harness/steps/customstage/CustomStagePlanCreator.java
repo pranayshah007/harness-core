@@ -26,6 +26,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.utils.PlanCreatorUtilsCommon;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -118,8 +119,11 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
     parentInfo.putData(PlanCreatorConstants.STAGE_ID,
         HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, stageNode)).build());
     if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      String strategyId = stageNode.getUuid();
       parentInfo.putData(
-          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(stageNode.getUuid()).build());
+          PlanCreatorConstants.NEAREST_STRATEGY_ID, HarnessValue.newBuilder().setStringValue(strategyId).build());
+      parentInfo.putData(PlanCreatorConstants.ALL_STRATEGY_IDS,
+          PlanCreatorUtilsCommon.appendToParentInfoList(PlanCreatorConstants.ALL_STRATEGY_IDS, strategyId, ctx));
       parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
           HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STAGE).build());
     }

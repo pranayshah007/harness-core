@@ -169,10 +169,10 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .amiImageId(amiImageId)
             .build();
 
-    TaskType taskType =
-        asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
-            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers(),
-            asgInfraConfig, asgBlueGreenDeployStepParameters)
+    TaskType taskType = asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
+                            asgBlueGreenDeployStepParameters.getInstances(),
+                            getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()), asgInfraConfig,
+                            asgBlueGreenDeployStepParameters)
         ? AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2
         : AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
 
@@ -195,8 +195,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     List<AsgLoadBalancerConfig> loadBalancers = null;
     if (asgStepCommonHelper.isV2Feature(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent(),
-            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers(),
-            asgInfraConfig, asgBlueGreenDeployStepParameters)) {
+            asgBlueGreenDeployStepParameters.getInstances(),
+            getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()), asgInfraConfig,
+            asgBlueGreenDeployStepParameters)) {
       loadBalancers = getLoadBalancers(asgBlueGreenDeployStepParameters);
     }
 
@@ -213,8 +214,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .asgName(getParameterFieldValue(asgBlueGreenDeployStepParameters.getAsgName()))
             .build();
 
-    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null, asgBlueGreenDeployStepParameters.getLoadBalancers(),
-                            asgInfraConfig, asgBlueGreenDeployStepParameters)
+    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null,
+                            getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()), asgInfraConfig,
+                            asgBlueGreenDeployStepParameters)
         ? AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2
         : AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
 
@@ -357,7 +359,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
   }
 
   List<AsgLoadBalancerConfig> getLoadBalancers(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
-    if (isEmpty(asgBlueGreenDeployStepParameters.getLoadBalancers())) {
+    if (isEmpty(getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers()))) {
       AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenDeployStepParameters);
       if (asgLoadBalancerConfig == null) {
         return null;
@@ -365,7 +367,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
       return Arrays.asList(asgLoadBalancerConfig);
     }
 
-    return asgBlueGreenDeployStepParameters.getLoadBalancers()
+    return getParameterFieldValue(asgBlueGreenDeployStepParameters.getLoadBalancers())
         .stream()
         .map(lb
             -> AsgLoadBalancerConfig.builder()

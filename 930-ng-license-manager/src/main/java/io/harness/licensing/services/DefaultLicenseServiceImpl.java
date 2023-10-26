@@ -698,7 +698,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     cache.put(key, licenses);
   }
 
-  private void evictCache(String accountIdentifier, ModuleType moduleType) {
+  protected void evictCache(String accountIdentifier, ModuleType moduleType) {
     String key = generateCacheKey(accountIdentifier, moduleType);
     cache.remove(key);
   }

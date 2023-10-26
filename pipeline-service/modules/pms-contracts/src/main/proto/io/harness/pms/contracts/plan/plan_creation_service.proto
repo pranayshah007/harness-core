@@ -86,6 +86,10 @@ message PlanExecutionContext {
   string processedYamlVersion = 10;
 
   ExecutionMode executionMode = 11;
+  // storing Pipeline and Stage timeout settings details
+  map<string, string> settingToValueMap = 12;
+  // storing featureFlags to value map used as per need in execution flow
+  map<string, bool> featureFlagToValueMap = 13;
 }
 
 message YamlFieldBlob {
@@ -205,7 +209,9 @@ message HarnessValue {
   }
 }
 
-enum NullValue { NULL_VALUE = 0; }
+enum NullValue {
+  NULL_VALUE = 0;
+}
 
 message ListValue {
   repeated HarnessValue values = 1;

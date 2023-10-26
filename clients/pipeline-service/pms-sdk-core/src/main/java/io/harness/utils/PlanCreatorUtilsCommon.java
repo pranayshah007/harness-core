@@ -24,6 +24,7 @@ import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.contracts.plan.ListValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
@@ -152,5 +153,17 @@ public class PlanCreatorUtilsCommon {
       return HarnessValue.newBuilder().build();
     }
     return result;
+  }
+
+  public HarnessValue appendToParentInfoList(String key, String value, PlanCreationContext ctx) {
+    ListValue.Builder newListValues = ListValue.newBuilder();
+    if (ctx.getDependency() != null) {
+      HarnessValue currentValue = ctx.getDependency().getParentInfo().getDataMap().get(key);
+      if (currentValue != null && currentValue.getListValue().isInitialized()) {
+        newListValues.addAllValues(currentValue.getListValue().getValuesList());
+      }
+    }
+    newListValues.addValues(HarnessValue.newBuilder().setStringValue(value).build());
+    return HarnessValue.newBuilder().setListValue(newListValues.build()).build();
   }
 }

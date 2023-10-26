@@ -47,7 +47,8 @@ public class LicenseUsageDailyCountJob implements Managed {
         new ThreadFactoryBuilder().setNameFormat("license-usage-daily-count-job").build());
     long midnight = LocalDateTime.now(ZoneId.of(ZONE_ID_IST))
                         .until(LocalDate.now(ZoneId.of(ZONE_ID_IST)).plusDays(1).atStartOfDay(), ChronoUnit.MINUTES);
-    executorService.scheduleAtFixedRate(this::run, midnight, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
+    log.info("Scheduling LicenseUsageDailyCountJob with initial delay of {} minutes from current time", midnight);
+    executorService.scheduleAtFixedRate(this::run, midnight + 3, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
   }
 
   @Override

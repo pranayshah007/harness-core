@@ -146,6 +146,7 @@ public class InfrastructureMapper {
         .cacheState(cacheResponse.getCacheState())
         .ttlLeft(cacheResponse.getTtlLeft())
         .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 }

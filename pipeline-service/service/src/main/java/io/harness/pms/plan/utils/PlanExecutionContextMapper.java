@@ -15,13 +15,15 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanExecutionContext;
 
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanExecutionContextMapper {
-  public PlanExecutionContext toExecutionContext(ExecutionMetadata metadata) {
+  public PlanExecutionContext toExecutionContext(
+      ExecutionMetadata metadata, Map<String, String> settingsMap, Map<String, Boolean> featureFlagMap) {
     if (metadata == null) {
       return PlanExecutionContext.newBuilder().build();
     }
@@ -37,6 +39,8 @@ public class PlanExecutionContextMapper {
         .setHarnessVersion(metadata.getHarnessVersion())
         .setProcessedYamlVersion(metadata.getProcessedYamlVersion())
         .setExecutionMode(metadata.getExecutionMode())
+        .putAllSettingToValueMap(settingsMap)
+        .putAllFeatureFlagToValueMap(featureFlagMap)
         .build();
   }
 }

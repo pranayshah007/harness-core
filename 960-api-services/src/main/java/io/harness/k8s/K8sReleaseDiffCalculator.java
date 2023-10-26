@@ -8,6 +8,7 @@
 package io.harness.k8s;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -44,13 +45,13 @@ public class K8sReleaseDiffCalculator {
       return StringUtils.EMPTY;
     }
     StringBuilder sb = new StringBuilder();
-    if (!current.getServiceId().equals(previous.getServiceId())) {
+    if (isNotEmpty(current.getServiceId()) && !current.getServiceId().equals(previous.getServiceId())) {
       sb.append(String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, previous.getServiceId(), current.getServiceId()));
     }
-    if (!current.getEnvId().equals(previous.getEnvId())) {
+    if (isNotEmpty(current.getEnvId()) && !current.getEnvId().equals(previous.getEnvId())) {
       sb.append(String.format(DIFF_FORMAT, DIFF_KEY_ENV_ID, previous.getEnvId(), current.getEnvId()));
     }
-    if (!current.getInfraId().equals(previous.getInfraId())) {
+    if (isNotEmpty(current.getInfraId()) && !current.getInfraId().equals(previous.getInfraId())) {
       sb.append(String.format(DIFF_FORMAT, DIFF_KEY_INFRA_ID, previous.getInfraId(), current.getInfraId()));
     }
     sb.append(String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, previous.getServiceId(), DIFF_KEY_ENV_ID,

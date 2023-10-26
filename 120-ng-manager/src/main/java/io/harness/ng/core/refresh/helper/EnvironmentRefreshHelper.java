@@ -6,6 +6,9 @@
  */
 
 package io.harness.ng.core.refresh.helper;
+
+import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
+
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -92,8 +95,9 @@ public class EnvironmentRefreshHelper {
         return;
       }
 
+      String gitBranch = envJsonNode.get(GIT_BRANCH) != null ? envJsonNode.get(GIT_BRANCH).asText() : null;
       // If envInputs not valid, no need to check infraDefs inputs
-      if (!validateEnvInputs(context, errorNodeSummary, envRefValue, mapper, envInputsNode)) {
+      if (!validateEnvInputs(context, errorNodeSummary, envRefValue, mapper, envInputsNode, gitBranch)) {
         return;
       }
 
@@ -489,12 +493,18 @@ public class EnvironmentRefreshHelper {
 
   private void refreshEnvInputs(EntityRefreshContext context, String envRefValue, ObjectMapper mapper,
       ObjectNode envObjectNode, JsonNode linkedEnvInputsValue) {
-    String envInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
-                               context.getAccountId(), context.getOrgId(), context.getProjectId())
-        ? serviceOverridesServiceV2.createEnvOverrideInputsYaml(
-            context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue)
-        : environmentService.createEnvironmentInputsYaml(
-            context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue);
+    String envInputsYaml = null;
+    boolean overridesV2Enabled = overrideV2ValidationHelper.isOverridesV2Enabled(
+        context.getAccountId(), context.getOrgId(), context.getProjectId());
+    if (overridesV2Enabled) {
+      envInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue);
+    } else {
+      String gitBranch = envObjectNode.get(GIT_BRANCH) != null ? envObjectNode.get(GIT_BRANCH).asText() : null;
+      envInputsYaml = environmentService.createEnvironmentInputsYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, gitBranch);
+    }
+
     if (EmptyPredicate.isEmpty(envInputsYaml)) {
       envObjectNode.remove(YamlTypes.ENVIRONMENT_INPUTS);
       return;
@@ -558,13 +568,19 @@ public class EnvironmentRefreshHelper {
   }
 
   private boolean validateEnvInputs(EntityRefreshContext context, InputsValidationResponse errorNodeSummary,
-      String envRefValue, ObjectMapper mapper, JsonNode envInputsNode) {
-    String envInputsYaml = overrideV2ValidationHelper.isOverridesV2Enabled(
-                               context.getAccountId(), context.getOrgId(), context.getProjectId())
-        ? serviceOverridesServiceV2.createEnvOverrideInputsYaml(
-            context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue)
-        : environmentService.createEnvironmentInputsYaml(
-            context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue);
+      String envRefValue, ObjectMapper mapper, JsonNode envInputsNode, String gitBranch) {
+    boolean overridesV2Enabled = overrideV2ValidationHelper.isOverridesV2Enabled(
+        context.getAccountId(), context.getOrgId(), context.getProjectId());
+
+    String envInputsYaml = null;
+    if (overridesV2Enabled) {
+      envInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue);
+    } else {
+      envInputsYaml = environmentService.createEnvironmentInputsYaml(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, gitBranch);
+    }
+
     if (EmptyPredicate.isEmpty(envInputsYaml)) {
       if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)) {
         errorNodeSummary.setValid(false);

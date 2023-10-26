@@ -1307,3 +1307,4 @@ io.harness.cdng.ecs.EcsBasicPrepareRollbackDataOutcome
 io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
 io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
 io.harness.cdng.manifest.yaml.ManifestSourceWrapper
+io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1

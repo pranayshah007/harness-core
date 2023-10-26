@@ -87,6 +87,7 @@ import io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters;
 import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.Producer;
 import io.harness.jira.JiraActionNG;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.network.LocalhostUtils;
 import io.harness.ng.core.BaseNGAccess;
@@ -131,7 +132,6 @@ import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sInstanceSyncTaskParameters;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
-import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.AssignDelegateServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
@@ -141,6 +141,7 @@ import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 import software.wings.service.impl.EventEmitter;
+import software.wings.service.impl.LoggingTokenCache;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.TimeSeriesMlAnalysisType;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesRequest;
@@ -228,7 +229,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
   @Mock private Producer eventProducer;
   @Mock private OutboxService outboxService;
   @Mock private LoadingCache<String, List<Delegate>> accountDelegatesCache;
-  @Mock private LoadingCache<String, String> logStreamingAccountTokenCache;
+  @Mock private LoggingTokenCache loggingTokenCache;
 
   @Mock
   private LoadingCache<ImmutablePair<String, String>, Optional<DelegateConnectionResult>> delegateConnectionResultCache;
@@ -310,7 +311,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     FieldUtils.writeField(delegateService, "subject", subject, true);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
     when(accountDelegatesCache.get(anyString())).thenReturn(Collections.emptyList());
-    when(logStreamingAccountTokenCache.get(anyString())).thenReturn("");
+    when(loggingTokenCache.getToken(anyString())).thenReturn(new AccessTokenBean("proj", "token", 1000L));
   }
 
   @Test
@@ -614,7 +615,6 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                                                     .build())
                                     .build();
-    when(logStreamingAccountTokenCache.get(delegateTask.getAccountId())).thenReturn("");
 
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
@@ -675,7 +675,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
                                                     .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                                                     .build())
                                     .build();
-    when(logStreamingAccountTokenCache.get(delegateTask.getAccountId())).thenReturn("");
+
     DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
                                                     .accountId(accountId)
                                                     .delegateId(delegate.getUuid())
@@ -1466,14 +1466,5 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
         .tags(ImmutableList.of("aws-delegate", "sel1", "sel2"))
         .status(DelegateInstanceStatus.ENABLED)
         .lastHeartBeat(System.currentTimeMillis());
-  }
-
-  private static JreConfig getOpenjdkJreConfig() {
-    return JreConfig.builder()
-        .version("1.8.0_242")
-        .jreDirectory("jdk8u242-b08-jre")
-        .jreMacDirectory("jdk8u242-b08-jre")
-        .jreTarPath("jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz")
-        .build();
   }
 }

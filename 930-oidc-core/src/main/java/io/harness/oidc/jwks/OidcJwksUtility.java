@@ -16,7 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.oidc.entities.OidcJwks;
 import io.harness.oidc.entities.OidcJwks.OidcJwksKeys;
+import io.harness.oidc.rsa.OidcRsaKeyService;
 import io.harness.persistence.HPersistence;
+import io.harness.rsa.RsaKeyPair;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -27,12 +29,15 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton
+@Slf4j
 public class OidcJwksUtility {
   private static final Duration CACHE_EXPIRATION = Duration.ofHours(12);
   @Inject private HPersistence persistence;
+  @Inject private OidcRsaKeyService oidcRsaKeyService;
 
   private LoadingCache<String, OidcJwks> jwksCache =
       CacheBuilder.newBuilder()
@@ -57,14 +62,13 @@ public class OidcJwksUtility {
   public OidcJwks getJwksKeys(String accountId) {
     try {
       OidcJwks oidcJwks = jwksCache.getUnchecked(accountId);
-      if (oidcJwks == null) {
-        // TODO: OidcJwks for this accountId is not created yet. Create it.
-        String kid = generateOidcIdTokenKid();
+      if (!isNull(oidcJwks)) {
+        return oidcJwks;
       }
-      return oidcJwks;
     } catch (CacheLoader.InvalidCacheLoadException e) {
-      return null;
+      log.debug("Invalid Cache load exception received {}. Generating new OIDC JWKS for account {} ", e, accountId);
     }
+    return generateOidcJwks(accountId);
   }
 
   /**
@@ -93,8 +97,6 @@ public class OidcJwksUtility {
    * @return key identifier
    */
   public String generateOidcIdTokenKid() {
-    // Check if the KID is already generated for the given accountId or not
-
     // Generate random bytes
     byte[] randomBytes = new byte[KID_LENGTH];
     new SecureRandom().nextBytes(randomBytes);
@@ -106,5 +108,20 @@ public class OidcJwksUtility {
     kid = kid.replace('+', '-').replace('/', '_');
 
     return kid;
+  }
+
+  /**
+   * Utility method to generate new OIDC JWKS for the given accountId.
+   *
+   * @param accountId acocuntId for which OIDC JWKS has to be generated
+   * @return newly generated OIDC JWKS
+   */
+  private OidcJwks generateOidcJwks(String accountId) {
+    String kid = generateOidcIdTokenKid();
+    RsaKeyPair rsaKeyPair = oidcRsaKeyService.generateRsaKeyPair(accountId);
+    OidcJwks newOidcJwks = OidcJwks.builder().accountId(accountId).keyId(kid).rsaKeyPair(rsaKeyPair).build();
+    this.saveOidcJwks(newOidcJwks);
+
+    return newOidcJwks;
   }
 }

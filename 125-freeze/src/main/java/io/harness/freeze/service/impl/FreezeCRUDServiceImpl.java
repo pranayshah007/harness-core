@@ -9,9 +9,12 @@ package io.harness.freeze.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.events.FreezeEntityCreateEvent;
@@ -20,7 +23,9 @@ import io.harness.events.FreezeEntityUpdateEvent;
 import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ngexception.NGFreezeException;
+import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeStatus;
+import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.response.FreezeErrorResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
@@ -48,6 +53,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +75,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   private final FrozenExecutionService frozenExecutionService;
   private final NotificationHelper notificationHelper;
   private final TransactionTemplate transactionTemplate;
+  private final NgExpressionHelper ngExpressionHelper;
   private final OutboxService outboxService;
 
   static final String FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE =
@@ -82,13 +89,14 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   @Inject
   public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, FreezeSchemaService freezeSchemaService,
       FrozenExecutionService frozenExecutionService, NotificationHelper notificationHelper,
-      TransactionTemplate transactionTemplate, OutboxService outboxService) {
+      TransactionTemplate transactionTemplate, OutboxService outboxService, NgExpressionHelper ngExpressionHelper) {
     this.freezeConfigRepository = freezeConfigRepository;
     this.freezeSchemaService = freezeSchemaService;
     this.frozenExecutionService = frozenExecutionService;
     this.notificationHelper = notificationHelper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.ngExpressionHelper = ngExpressionHelper;
   }
 
   @Override
@@ -129,11 +137,38 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       updateShouldSendNotification(freezeConfigEntity);
       Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         FreezeConfigEntity freezeConfig = freezeConfigRepository.save(freezeConfigEntity);
+        sendNotificationForCurrentActiveAndEnabledFreeze(freezeConfig);
         outboxService.save(new FreezeEntityCreateEvent(freezeConfig.getAccountId(), freezeConfig));
         return freezeConfig;
       }));
     }
     return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+  }
+
+  // Sends notification if the freeze is enabled or freeze is enabled and is currently active
+  private void sendNotificationForCurrentActiveAndEnabledFreeze(FreezeConfigEntity entity) {
+    if (isNull(entity) || !FreezeStatus.ENABLED.equals(entity.getStatus())) {
+      return;
+    }
+    FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(entity.getYaml());
+    String baseUrl = ngExpressionHelper.getBaseUrl(entity.getAccountId());
+    FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+    List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+    CurrentOrUpcomingWindow currentOrUpcomingWindow = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows);
+    long currentTime = new Date().getTime();
+    boolean freezeWindowActive = (currentTime >= currentOrUpcomingWindow.getStartTime())
+        && (currentTime <= (currentOrUpcomingWindow.getEndTime()));
+    try {
+      if (!freezeWindowActive) {
+        notificationHelper.sendNotification(entity.getYaml(), false, false, true, null, entity.getAccountId(), null,
+            baseUrl, entity.getType() == FreezeType.GLOBAL);
+        return;
+      }
+      notificationHelper.sendNotification(entity.getYaml(), false, true, true, null, entity.getAccountId(), null,
+          baseUrl, entity.getType() == FreezeType.GLOBAL);
+    } catch (IOException e) {
+      log.error("Unable to send notification for active freeze");
+    }
   }
 
   private void updateShouldSendNotification(FreezeConfigEntity freezeConfigEntity) {
@@ -179,6 +214,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     FreezeConfigEntity finalUpdatedFreezeConfigEntity = updatedFreezeConfigEntity;
     updatedFreezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalUpdatedFreezeConfigEntity);
+      sendNotificationForCurrentActiveAndEnabledFreeze(newFreezeConfigEntity);
       outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
       return newFreezeConfigEntity;
     }));
@@ -245,6 +281,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     FreezeConfigEntity finalUpdatedFreezeConfigEntity = updatedFreezeConfigEntity;
     updatedFreezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalUpdatedFreezeConfigEntity);
+      sendNotificationForCurrentActiveAndEnabledFreeze(newFreezeConfigEntity);
       outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
       return newFreezeConfigEntity;
     }));
@@ -562,6 +599,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       FreezeConfigEntity finalFreezeConfigEntity = freezeConfigEntity;
       freezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalFreezeConfigEntity);
+        sendNotificationForCurrentActiveAndEnabledFreeze(newFreezeConfigEntity);
         outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
         return newFreezeConfigEntity;
       }));

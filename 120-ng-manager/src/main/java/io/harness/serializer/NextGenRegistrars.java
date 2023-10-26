@@ -30,12 +30,15 @@ import io.harness.serializer.morphia.NgUserMorphiaRegistrar;
 import io.harness.serializer.morphia.NgUserProfileMorphiaRegistrars;
 import io.harness.serializer.morphia.ServiceAccountMorphiaRegistrars;
 import io.harness.serializer.morphia.WebhookMorphiaRegistrars;
+import io.harness.serializer.spring.convertors.EntityUsageDetailReadConvertor;
+import io.harness.serializer.spring.convertors.EntityUsageDetailWriteConvertor;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
+import org.springframework.core.convert.converter.Converter;
 
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
@@ -145,4 +148,7 @@ public class NextGenRegistrars {
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
       ImmutableSet.<Class<? extends TypeConverter>>builder().build();
+
+  public static final ImmutableList<Class<? extends Converter<?, ?>>> springConvertors =
+      ImmutableList.of(EntityUsageDetailReadConvertor.class, EntityUsageDetailWriteConvertor.class);
 }

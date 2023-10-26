@@ -21,6 +21,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.steps.StepSpecTypeConstantsV1;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -28,11 +29,11 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EmptyVariableCreatorV1 extends ChildrenVariableCreatorV1<DummyNodeV1> {
   public Set<String> getSupportedStepTypes() {
-    return Set.of(StepSpecTypeConstantsV1.HTTP);
+    return Set.of(StepSpecTypeConstantsV1.HTTP, StepSpecTypeConstantsV1.SHELL_SCRIPT);
   }
 
   public Set<String> getSupportedStageTypes() {
-    return Set.of(StepSpecTypeConstantsV1.CUSTOM_STAGE);
+    return new HashSet<>();
   }
 
   @Override

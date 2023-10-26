@@ -465,7 +465,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
 	}()
-	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 		called++
 		return []types.File{}, nil
 	}
@@ -565,7 +565,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
 	}()
-	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 		called++
 		return []types.File{}, nil
 	}
@@ -665,7 +665,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
 	}()
-	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 		called++
 		return []types.File{}, errors.New("error in getting changed files")
 	}
@@ -765,7 +765,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
 	}()
-	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 		called++
 		return []types.File{}, nil
 	}
@@ -869,7 +869,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
 	}()
-	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 		called++
 		return []types.File{{Name: "abc.java", Status: types.FileModified}}, nil
 	}

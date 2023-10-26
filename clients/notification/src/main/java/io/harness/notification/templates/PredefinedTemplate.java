@@ -111,6 +111,11 @@ public enum PredefinedTemplate {
   FREEZE_SLACK_ALERT("notification_templates/slack_test.txt", "freeze_slack_alert"),
   FREEZE_PD_ALERT("notification_templates/pd_test.txt", "freeze_pagerduty_alert"),
   FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert"),
+  FREEZE_ENABLED_EMAIL_ALERT("notification_templates/freeze_enabled_email_test.txt", "freeze_enabled_email_alert"),
+  FREEZE_ENABLED_SLACK_ALERT("notification_templates/freeze_enabled_slack_test.txt", "freeze_enabled_slack_alert"),
+  FREEZE_ENABLED_PD_ALERT("notification_templates/freeze_enabled_pd_test.txt", "freeze_enabled_pagerduty_alert"),
+  FREEZE_ENABLED_MSTEAMS_ALERT(
+      "notification_templates/freeze_enabled_msteams_test.txt", "freeze_enabled_msteams_alert"),
   EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert"),
   PIPELINE_REJECTED_EMAIL_ALERT(
       "notification_templates/pipeline_rejected_email_test.txt", "pipeline_rejected_email_alert"),

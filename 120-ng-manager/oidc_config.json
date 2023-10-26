@@ -22,7 +22,7 @@
       "aud": "https://iam.googleapis.com/projects/{gcp_project_id}/locations/global/workloadIdentityPools/{workload_pool_id}/providers/{provider_id}",
       "iss": "https://token.oidc.harness.io/account/{account_id}",
       "exp": 3600,
-      "iat": "GENERATE_AT_RUNTIME",
+      "iat": 0,
       "account_id": "{account_id}"
     },
     "access_token_sts_endpoint": "https://sts.googleapis.com/v1/token",

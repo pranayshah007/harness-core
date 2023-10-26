@@ -36,6 +36,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.OutputExpressionConstants;
@@ -74,7 +75,8 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
-    ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
+    io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters =
+        ShellScriptHelperService.getShellScriptStepParameters(stepParameters);
     TaskParameters taskParameters = shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance,
         shellScriptStepParameters, stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null);
 
@@ -89,7 +91,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   }
 
   private TaskRequest obtainBashTask(Ambiance ambiance, StepBaseParameters stepParameters,
-      ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
+      io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     final List<String> units = shellScriptStepParameters.getAllCommandUnits();
     units.forEach(logStreamingStepClient::openStream);
@@ -107,7 +109,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   }
 
   private TaskRequest obtainPowerShellTask(Ambiance ambiance, StepBaseParameters stepParameters,
-      ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
+      io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
 
     final List<String> units = shellScriptStepParameters.getAllCommandUnits();
@@ -129,10 +131,16 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<ShellScriptTaskResponseNG> responseSupplier) throws Exception {
+    return handleTaskResultWithSecurityContext(ambiance, stepParameters, responseSupplier, HarnessYamlVersion.V0);
+  }
+
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
+      ThrowingSupplier<ShellScriptTaskResponseNG> responseSupplier, String version) throws Exception {
     try {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder();
       ShellScriptTaskResponseNG taskResponse = responseSupplier.get();
-      ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
+      io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters =
+          ShellScriptHelperService.getShellScriptStepParameters(stepParameters);
       List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
           ? emptyList()
           : taskResponse.getUnitProgressData().getUnitProgresses();
@@ -149,9 +157,9 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       if (taskResponse.getStatus() == CommandExecutionStatus.SUCCESS) {
         ShellExecutionData commandExecutionData =
             (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
-        ShellScriptOutcome shellScriptOutcome =
-            ShellScriptHelperService.prepareShellScriptOutcome(commandExecutionData.getSweepingOutputEnvVariables(),
-                shellScriptStepParameters.getOutputVariables(), shellScriptStepParameters.getSecretOutputVariables());
+        ShellScriptBaseOutcome shellScriptOutcome = ShellScriptHelperService.prepareShellScriptOutcome(
+            commandExecutionData.getSweepingOutputEnvVariables(), shellScriptStepParameters.getOutputVariables(),
+            shellScriptStepParameters.getSecretOutputVariables(), version);
         if (shellScriptOutcome != null) {
           stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                               .name(OutputExpressionConstants.OUTPUT)
@@ -192,9 +200,9 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
       // Once log-service provide the API to pass list of log-keys as parameter. Then only one call will be enough to
       // close all log-stream. Right now we are doing forEach.
-      ((ShellScriptStepParameters) stepParameters.getSpec())
-          .getAllCommandUnits()
-          .forEach(logStreamingStepClient::closeStream);
+      io.harness.steps.shellscript.ShellScriptStepParameters shellScriptStepParameters =
+          ShellScriptHelperService.getShellScriptStepParameters(stepParameters);
+      shellScriptStepParameters.getAllCommandUnits().forEach(logStreamingStepClient::closeStream);
     }
   }
 }

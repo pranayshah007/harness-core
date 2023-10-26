@@ -1639,6 +1639,12 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sei_seiconfigurationsettings_create
+    name: SEI create configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: sei_seiconfigurationsettings_view
     name: SEI view configuration settings
     status: ACTIVE

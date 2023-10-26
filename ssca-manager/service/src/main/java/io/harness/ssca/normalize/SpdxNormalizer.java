@@ -16,7 +16,7 @@ import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMComp
 import io.harness.ssca.utils.SBOMUtils;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +31,11 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
     List<NormalizedSBOMComponentEntity> sbomEntityList = new ArrayList<>();
 
     for (SpdxDTO.Package spdxPackage : sbom.getPackages()) {
+      Instant createdOn = Instant.now();
+      if (SBOMUtils.parseDateTime(sbom.getCreationInfo().getCreated()) != null) {
+        createdOn = SBOMUtils.parseDateTime(sbom.getCreationInfo().getCreated()).toInstant();
+      }
+
       NormalizedSBOMComponentEntityBuilder normalizedSBOMEntityBuilder =
           NormalizedSBOMComponentEntity.builder()
               .sbomVersion(sbom.getSpdxVersion())
@@ -38,9 +43,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .artifactId(settings.getArtifactID())
               .artifactName(sbom.getName())
               .tags(Collections.singletonList(settings.getArtifactTag()))
-              .createdOn(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-                             .parse(sbom.getCreationInfo().getCreated())
-                             .toInstant())
+              .createdOn(createdOn)
               .toolVersion(settings.getTool().getVersion())
               .toolName(settings.getTool().getName())
               .toolVendor(settings.getTool().getVendor())
@@ -49,6 +52,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .packageDescription(spdxPackage.getDescription())
               .packageLicense(getPackageLicenses(spdxPackage.getLicenseConcluded(), spdxPackage.getLicenseDeclared()))
               .packageVersion(spdxPackage.getVersionInfo())
+              .packageOriginatorName(spdxPackage.getOriginator())
               .packageSourceInfo(spdxPackage.getSourceInfo())
               .orchestrationId(settings.getOrchestrationID())
               .pipelineIdentifier(settings.getPipelineIdentifier())
@@ -58,10 +62,10 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
 
       if (spdxPackage.getOriginator() != null && spdxPackage.getOriginator().contains(":")) {
         String[] splitOriginator = Strings.split(spdxPackage.getOriginator(), ':');
-        normalizedSBOMEntityBuilder.originatorType(splitOriginator[0].trim());
-        normalizedSBOMEntityBuilder.packageOriginatorName(splitOriginator[1].trim());
-      } else {
-        normalizedSBOMEntityBuilder.packageOriginatorName(spdxPackage.getOriginator());
+        if (splitOriginator.length >= 2) {
+          normalizedSBOMEntityBuilder.originatorType(splitOriginator[0].trim());
+          normalizedSBOMEntityBuilder.packageOriginatorName(splitOriginator[1].trim());
+        }
       }
 
       List<Integer> versionInfo = SBOMUtils.getVersionInfo(spdxPackage.getVersionInfo());
@@ -95,8 +99,10 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
 
     for (int i = 0; i < licenses.size(); i++) {
       if (licenses.get(i).contains(SBOMUtils.LICENSE_REF_DELIM)) {
-        String newLicense = licenses.get(i).split(SBOMUtils.LICENSE_REF_DELIM)[1];
-        licenses.set(i, newLicense);
+        String[] splitLicense = licenses.get(i).split(SBOMUtils.LICENSE_REF_DELIM);
+        if (splitLicense.length >= 2) {
+          licenses.set(i, splitLicense[1]);
+        }
       }
     }
     return licenses;

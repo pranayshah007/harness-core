@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface FreezeEventTypeConstants {
-  String FREEZE_WINDOW_ENABLED = "FreezeWindowEnabled";
+  String FREEZE_WINDOW_ENABLED = "FreezeWindowEnabled"; // If freeze window is enabled and active
+  String ON_ENABLE_FREEZE_WINDOW = "OnEnableFreezeWindow"; // On enabling of the freeze window
   String DEPLOYMENT_REJECTED_DUE_TO_FREEZE = "DeploymentRejectedDueToFreeze";
 }

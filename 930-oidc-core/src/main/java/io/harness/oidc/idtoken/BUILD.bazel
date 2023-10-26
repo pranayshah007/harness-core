@@ -15,6 +15,7 @@ java_library(
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
         "@maven//:io_jsonwebtoken_jjwt",
     ],
 )

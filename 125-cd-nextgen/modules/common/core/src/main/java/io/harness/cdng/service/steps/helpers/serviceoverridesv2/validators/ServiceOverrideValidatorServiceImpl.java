@@ -63,6 +63,7 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   @Override
   public void validateEnvWithRBACOrThrow(
       @NonNull String accountId, String orgId, String projectId, @NonNull String environmentRef) {
+    // in case of remote environment only metadata is return
     Environment environment = checkIfEnvExistAndReturn(accountId, orgId, projectId, environmentRef);
     validateEnvironmentRBACOrThrow(environment);
   }

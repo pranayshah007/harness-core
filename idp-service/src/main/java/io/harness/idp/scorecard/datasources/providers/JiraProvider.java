@@ -17,6 +17,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-public class JiraProvider extends DataSourceProvider {
+public class JiraProvider extends HttpDataSourceProvider {
   private static final String JIRA_PROJECT_ANNOTATION = "jira/project-key";
   private static final String JIRA_COMPONENT_ANNOTATION = "jira/component";
   private static final String JIRA_TARGET_URL_EXPRESSION_KEY = "appConfig.proxy.\"/jira/api\".target";
@@ -38,9 +39,9 @@ public class JiraProvider extends DataSourceProvider {
   final ConfigReader configReader;
   protected JiraProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
-      ConfigReader configReader) {
+      ConfigReader configReader, DataSourceRepository dataSourceRepository) {
     super(JIRA_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
     this.configReader = configReader;
   }
 
@@ -52,8 +53,8 @@ public class JiraProvider extends DataSourceProvider {
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
     Map<String, String> requestBodyPairs = prepareRequestBodyReplaceablePairs(entity);
     Map<String, String> requestUrlPairs = prepareUrlReplaceablePairs(configs, accountIdentifier);
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, requestBodyPairs, requestUrlPairs);
+    return processOut(accountIdentifier, JIRA_IDENTIFIER, entity, replaceableHeaders, requestBodyPairs, requestUrlPairs,
+        dataPointsAndInputValues);
   }
 
   @Override

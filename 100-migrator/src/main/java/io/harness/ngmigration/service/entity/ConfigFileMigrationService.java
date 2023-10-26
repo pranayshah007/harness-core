@@ -271,7 +271,11 @@ public class ConfigFileMigrationService extends NgMigrationService {
       SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, configFile.getEncryptedFileId());
       secretFiles = Collections.singletonList(secretRefData.toSecretRefStringValue());
     } else {
-      files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+      if (file == null) {
+        return null;
+      } else {
+        files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+      }
     }
     return ConfigFileWrapper.builder()
         .configFile(io.harness.cdng.configfile.ConfigFile.builder()

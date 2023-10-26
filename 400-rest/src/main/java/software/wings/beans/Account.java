@@ -100,6 +100,15 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                 .field(AccountKeys.accountStatusKey)
                 .field(AccountKeys.accountType)
                 .field(AccountKeys.workflowDataCollectionIteration)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("appId_uuid_accountName_companyName_licenseInfo_encryptedLicenseInfo")
+                .field(AccountKeys.appId)
+                .field(AccountKeys.uuid)
+                .field(AccountKeys.accountName)
+                .field(AccountKeys.companyName)
+                .field(AccountKeys.licenseInfo)
+                .field(AccountKeys.encryptedLicenseInfo)
                 .build())
         .build();
   }
@@ -937,5 +946,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
     public static final String accountStatusKey = "licenseInfo.accountStatus";
     public static final String accountType = "licenseInfo.accountType";
+    public static final String appId = "appId";
   }
 }

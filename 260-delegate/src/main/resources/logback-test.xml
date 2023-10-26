@@ -40,10 +40,16 @@
 
     <if condition='isNull("STACK_DRIVER_LOGGING_ENABLED") || property("STACK_DRIVER_LOGGING_ENABLED").equalsIgnoreCase("true")'>
         <then>
-            <appender name="REST2" class="io.harness.delegate.logging.DelegateStackdriverLogAppender">
+            <appender name="REST2" class="io.harness.logging.remote.RemoteStackdriverLogAppender">
                 <threshold>TRACE</threshold>
                 <managerHost>${MANAGER_HOST_AND_PORT}</managerHost>
                 <accountId>${ACCOUNT_ID}</accountId>
+                <clientCertPath>${DELEGATE_CLIENT_CERTIFICATE_PATH:- }</clientCertPath>
+                <clientCertKey>${DELEGATE_CLIENT_CERTIFICATE_KEY_PATH:- }</clientCertKey>
+                <trustAllCerts>${TRUST_ALL_CERTIFICATES:-false}</trustAllCerts>
+                <logStreamingUrl>${LOG_STREAMING_SERVICE_URL:-${MANAGER_HOST_AND_PORT}/log-service/}</logStreamingUrl>
+                <delegateToken>${DELEGATE_TOKEN:-${ACCOUNT_SECRET}}</delegateToken>
+                <appName>delegate</appName>
             </appender>
         </then>
     </if>

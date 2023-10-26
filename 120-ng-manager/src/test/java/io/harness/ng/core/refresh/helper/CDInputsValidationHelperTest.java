@@ -158,7 +158,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
     doReturn("infrastructureDefinitions:\n"
         + "  - identifier: \"infra2\"\n")
         .when(infrastructureEntityService)
@@ -333,7 +335,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
 
     InputsValidationResponse validationResponse =
         CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
@@ -351,7 +355,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
     doReturn("infrastructureDefinitions:\n"
         + "- identifier: \"IDENTIFIER\"")
         .when(infrastructureEntityService)

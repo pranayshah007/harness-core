@@ -13,7 +13,8 @@ import static junit.framework.TestCase.assertEquals;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.entity.HttpDataSourceEntity;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.DataSource;
 
@@ -29,7 +30,7 @@ public class DataSourceMapperTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testToDTO() {
-    DataSourceEntity dataSourceEntity = DataSourceEntity.builder()
+    DataSourceEntity dataSourceEntity = HttpDataSourceEntity.builder()
                                             .name(TEST_DATA_SOURCE_NAME)
                                             .identifier(TEST_DATA_SOURCE_IDENTIFIER)
                                             .description(TEST_DATA_SOURCE_DESCRIPTION)

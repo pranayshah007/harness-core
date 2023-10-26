@@ -1,2 +1,3 @@
 DOCKER_FILE_PATH: /harness/harness-core/dockerization/ng-manager/Dockerfile-ng-manager-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/120-ng-manager/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml

@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:ch_qos_logback_contrib_logback_jackson",
         "@maven//:ch_qos_logback_contrib_logback_json_core",
         "@maven//:ch_qos_logback_logback_classic",

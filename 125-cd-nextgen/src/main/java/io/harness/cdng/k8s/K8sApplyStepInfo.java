@@ -24,6 +24,7 @@ import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
 import io.harness.exception.InvalidYamlException;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.WithConnectorRef;
 import io.harness.filters.WithExtraValidations;
 import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -58,8 +59,8 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sApplyStepInfoVisitorHelper.class)
 @TypeAlias("k8sApplyStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sApplyStepInfo")
-public class K8sApplyStepInfo
-    extends K8sApplyBaseStepInfo implements CDAbstractStepInfo, Visitable, WithFileRefs, WithExtraValidations {
+public class K8sApplyStepInfo extends K8sApplyBaseStepInfo
+    implements CDAbstractStepInfo, Visitable, WithFileRefs, WithExtraValidations, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -137,5 +138,13 @@ public class K8sApplyStepInfo
           "Configured Apply Step: %s contains both filePath and manifestSource. Please configure only one option to proceed",
           stepName));
     }
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractConnectorRefs() {
+    Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
+    K8sApplyStepHelper.addOverrideConnectorRef(connectorRefMap, overrides);
+    K8sApplyStepHelper.addManifestSourceConnectorRef(connectorRefMap, manifestSource);
+    return connectorRefMap;
   }
 }

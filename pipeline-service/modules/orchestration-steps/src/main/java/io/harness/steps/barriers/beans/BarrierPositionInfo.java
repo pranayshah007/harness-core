@@ -49,6 +49,13 @@ public class BarrierPositionInfo {
     /* `strategySetupId` contains the setupId of the closest parent node containing a looping strategy
      (if there is any). */
     String strategySetupId;
+    /* `allStrategySetupIds` contains the setupIds of all parent nodes containing a looping strategy
+     (if there is any). */
+    List<String> allStrategySetupIds;
+    /* dummy positions are created in order to be later expanded by BarrierWithinStrategyExpander observer.
+       Once expansion is finished, they are deleted from `barrierPositionList`. This flow is carried out in
+       BarrierWithinStrategyExpander class. */
+    Boolean isDummyPosition;
 
     /* `strategyNodeType` is used to store whether the closest parent node containing a looping strategy
      is of type STEP_GROUP or STAGE. This field is used in `BarrierServiceImpl.obtainRuntimeIdUpdate` and

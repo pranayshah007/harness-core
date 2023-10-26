@@ -50,7 +50,8 @@ func (s *Stackdriver) Close() error {
 
 // Line represents a structured line in the stackdriver logs.
 type Line struct {
-	Labels   map[string]string      `json:"labels"`
-	Payload  map[string]interface{} `json:"payload"`
-	Severity int                    `json:"severity"`
+	Labels    map[string]string      `json:"labels"`
+	Payload   map[string]interface{} `json:"payload"`
+	Severity  int                    `json:"severity"`
+	Timestamp int64                  `json:"timestamp"`
 }

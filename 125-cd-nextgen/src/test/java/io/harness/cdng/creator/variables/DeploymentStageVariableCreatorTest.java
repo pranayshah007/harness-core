@@ -371,7 +371,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     // mocks
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false), anyBoolean(), anyBoolean()))
         .thenReturn(Optional.of(serviceEntity));
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    when(environmentService.get(any(), any(), any(), any(), eq(false), eq(true), eq(false)))
+        .thenReturn(Optional.of(environmentEntity));
     HIterator iteratorMock = Mockito.mock(HIterator.class);
     when(infrastructureEntityService.listIterator(any(), any(), any(), any(), any())).thenReturn(iteratorMock);
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());
@@ -467,7 +468,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     // mocks
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false), anyBoolean(), anyBoolean()))
         .thenReturn(Optional.of(serviceEntity));
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    when(environmentService.get(any(), any(), any(), any(), eq(false), eq(true), eq(false)))
+        .thenReturn(Optional.of(environmentEntity));
     HIterator iteratorMock = Mockito.mock(HIterator.class);
     when(infrastructureEntityService.listIterator(any(), any(), any(), any(), any())).thenReturn(iteratorMock);
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());

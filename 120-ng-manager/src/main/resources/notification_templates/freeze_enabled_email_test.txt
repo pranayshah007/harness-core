@@ -1,0 +1,2 @@
+subject: Deployment Freeze Window ${BLACKOUT_WINDOW_NAME} Enabled
+body: A deployment freeze <b><a href="${BLACKOUT_WINDOW_URL}" target="_blank">${BLACKOUT_WINDOW_NAME}</a></b> has been enabled on ${CURRENT_TIME}(${CURRENT_TIME_IN_UTC} UTC). ${CUSTOMIZED_MESSAGE}

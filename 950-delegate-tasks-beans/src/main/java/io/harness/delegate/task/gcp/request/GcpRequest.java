@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorTaskParams;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -38,6 +39,7 @@ public abstract class GcpRequest extends ConnectorTaskParams implements Executio
   // Below 2 are NG specific.
   private List<EncryptedDataDetail> encryptionDetails;
   private GcpManualDetailsDTO gcpManualDetailsDTO;
+  private GcpOidcDetailsDTO gcpOidcDetailsDTO;
 
   public Duration getExecutionTimeout() {
     return Duration.ofSeconds(30);

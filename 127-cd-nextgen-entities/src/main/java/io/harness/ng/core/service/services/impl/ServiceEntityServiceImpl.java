@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.services.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -47,9 +48,12 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
@@ -228,8 +232,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
+    } catch (ExplanationException | HintException | ScmException ex) {
+      log.error(String.format("Error error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
+      throw ex;
     } catch (Exception ex) {
-      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      log.error(String.format("Unexpected error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
       throw new InvalidRequestException(
           String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
     }

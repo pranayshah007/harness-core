@@ -34,7 +34,10 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -158,6 +161,9 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       }
       return createdInfra;
 
+    } catch (ExplanationException | HintException | ScmException ex) {
+      log.error(String.format("Error while saving infrastructure: [%s]", infraEntity.getIdentifier()), ex);
+      throw ex;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateInfrastructureExistsErrorMessage(infraEntity.getAccountId(), infraEntity.getOrgIdentifier(),

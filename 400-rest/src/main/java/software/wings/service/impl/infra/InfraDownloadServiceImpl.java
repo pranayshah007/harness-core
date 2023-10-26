@@ -93,12 +93,8 @@ public class InfraDownloadServiceImpl implements InfraDownloadService {
                   throw new InvalidInfraException("Failed to refresh token");
                 }
 
-                return AccessTokenBean.builder()
-                    .projectId(credential.getServiceAccountProjectId())
-                    .tokenValue(credential.getAccessToken())
-                    .expirationTimeMillis(credential.getExpirationTimeMilliseconds())
-                    .build();
-
+                return new AccessTokenBean(credential.getServiceAccountProjectId(), credential.getAccessToken(),
+                    credential.getExpirationTimeMilliseconds());
               } catch (Exception e) {
                 throw new InvalidInfraException("Error getting logging token", e);
               }

@@ -27,7 +27,7 @@ import (
 var (
 	getRemoteTiClient = external.GetTiHTTPClient
 	getWrkspcPath     = external.GetWrkspcPath
-	getChFiles        = external.GetChangedFiles
+	getChFiles        = external.GetChangedFilesPush
 )
 
 const (
@@ -309,13 +309,14 @@ func (h *tiProxyHandler) GetChangedFilesPushTrigger(ctx context.Context, req *pb
 	if lastSuccessfulCommitID == "" {
 		return nil, fmt.Errorf("last Successful Commit ID not present in request")
 	}
-
+	currentCommitID := req.GetCurrentCommit()
+	
 	workspace, err := getWrkspcPath()
 	if err != nil {
 		return nil, err
 	}
 
-	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, true, h.log, h.procWriter)
+	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, currentCommitID, h.log, h.procWriter)
 	if err != nil {
 		h.log.Errorw("failed to get changed files for push trigger in runTests step", "step_id", stepID, zap.Error(err))
 		return nil, err

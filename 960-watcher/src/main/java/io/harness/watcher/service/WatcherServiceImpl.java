@@ -100,7 +100,6 @@ import io.harness.utils.ProcessControl;
 import io.harness.version.VersionInfoManager;
 import io.harness.watcher.app.WatcherApplication;
 import io.harness.watcher.app.WatcherConfiguration;
-import io.harness.watcher.logging.WatcherStackdriverLogAppender;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
@@ -235,8 +234,6 @@ public class WatcherServiceImpl implements WatcherService {
 
   @Override
   public void run(boolean upgrade) {
-    WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
-    WatcherStackdriverLogAppender.setManagerClient(managerClient);
     log.info("Watcher will start running on JRE {}", watcherJreVersion);
 
     performRecencyCheck();

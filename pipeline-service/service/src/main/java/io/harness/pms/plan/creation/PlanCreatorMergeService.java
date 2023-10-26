@@ -9,12 +9,17 @@ package io.harness.pms.plan.creation;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
+import static io.harness.pms.plan.execution.ExecutionHelper.PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_PIPELINE_TIMEOUT;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
+import static io.harness.pms.utils.PmsConstants.DEFAULT_TIMEOUT;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
@@ -23,6 +28,11 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -48,7 +58,9 @@ import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -67,6 +79,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
@@ -83,13 +96,15 @@ public class PlanCreatorMergeService {
   PlanCreationValidator planCreationValidator;
   private final Integer planCreatorMergeServiceDependencyBatch;
   private final KryoSerializer kryoSerializer;
+  private final NGSettingsClient ngSettingsClient;
+  private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Inject
   public PlanCreatorMergeService(PmsSdkHelper pmsSdkHelper, PmsEventSender pmsEventSender,
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
       @Named("PlanCreatorMergeExecutorService") Executor executor,
       @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch,
-      KryoSerializer kryoSerializer) {
+      KryoSerializer kryoSerializer, NGSettingsClient ngSettingsClient, PmsFeatureFlagHelper pmsFeatureFlagHelper) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
@@ -97,6 +112,8 @@ public class PlanCreatorMergeService {
     this.executor = executor;
     this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
     this.kryoSerializer = kryoSerializer;
+    this.ngSettingsClient = ngSettingsClient;
+    this.pmsFeatureFlagHelper = pmsFeatureFlagHelper;
   }
 
   public String getPublisher() {
@@ -181,6 +198,8 @@ public class PlanCreatorMergeService {
   @VisibleForTesting
   Map<String, PlanCreationContextValue> createInitialPlanCreationContext(String accountId, String orgIdentifier,
       String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
+    Map<String, String> settingsMap = getTimeoutSettingsMap(accountId);
+    Map<String, Boolean> featureFlagMap = getFeatureFlagMap(accountId);
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
         : HarnessYamlVersion.V0;
@@ -194,7 +213,7 @@ public class PlanCreatorMergeService {
                                                    .setIsExecutionInputEnabled(true);
     if (metadata != null) {
       builder.setMetadata(metadata);
-      builder.setExecutionContext(PlanExecutionContextMapper.toExecutionContext(metadata));
+      builder.setExecutionContext(PlanExecutionContextMapper.toExecutionContext(metadata, settingsMap, featureFlagMap));
     }
     if (planExecutionMetadata != null) {
       if (planExecutionMetadata.getTriggerPayload() != null) {
@@ -208,6 +227,32 @@ public class PlanCreatorMergeService {
     }
     planCreationContextMap.put("metadata", builder.build());
     return planCreationContextMap;
+  }
+
+  public Map<String, String> getTimeoutSettingsMap(String accountId) {
+    Map<String, String> settingsMap = new HashMap<>();
+    try {
+      Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall = ngSettingsClient.listSettings(
+          accountId, null, null, SettingCategory.PMS, PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER);
+      List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
+
+      for (SettingResponseDTO settingDto : response) {
+        SettingDTO setting = settingDto.getSetting();
+        settingsMap.put(setting.getIdentifier(), setting.getValue());
+      }
+    } catch (Exception exception) {
+      settingsMap.put(MAX_STAGE_TIMEOUT.getName(), DEFAULT_TIMEOUT);
+      settingsMap.put(MAX_PIPELINE_TIMEOUT.getName(), DEFAULT_TIMEOUT);
+    }
+    return settingsMap;
+  }
+
+  public Map<String, Boolean> getFeatureFlagMap(String accountId) {
+    Map<String, Boolean> featureFlagMap = new HashMap<>();
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString())) {
+      featureFlagMap.put(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString(), true);
+    }
+    return featureFlagMap;
   }
 
   PlanCreationBlobResponse createPlanForDependenciesRecursive(String accountId, String orgIdentifier,

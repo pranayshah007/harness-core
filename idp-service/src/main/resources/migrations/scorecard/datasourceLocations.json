@@ -7,10 +7,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/graphql",
+      "url": "/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    pullRequests(states: MERGED, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      edges {\\n        node {\\n          number\\n          createdAt\\n          mergedAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -30,10 +29,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/graphql",
+      "url": "/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER} {\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -46,10 +44,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/graphql",
+      "url": "/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"{\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{GITHUB_FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -62,12 +59,9 @@
     "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
+      "url": "/v1/data-sources/harness/data-point/values",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
-        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
-        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{BODY}"
     }
@@ -80,12 +74,9 @@
     "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
+      "url": "/v1/data-sources/harness/data-point/values",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
-        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
-        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{BODY}"
     }
@@ -98,12 +89,9 @@
     "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
+      "url": "/v1/data-sources/harness/data-point/values",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
-        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
-        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{BODY}"
     }
@@ -116,12 +104,9 @@
     "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
+      "url": "/v1/data-sources/harness/data-point/values",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
-        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
-        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{BODY}"
     }
@@ -134,11 +119,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{TARGET_URL}/service_directory/{SERVICE_ID}",
+      "url": "/service_directory/{SERVICE_ID}",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{TOKEN_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -150,11 +134,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
+      "url": "/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{TOKEN_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -166,12 +149,9 @@
     "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{HOST}/v1/data-sources/kubernetes/data-point/values",
+      "url": "/v1/data-sources/kubernetes/data-point/values",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
-        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
-        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{BODY}"
     }
@@ -184,10 +164,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
+      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BASIC_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -199,10 +178,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
+      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BASIC_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -214,11 +192,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&statuses[]=resolved&limit=10&sort_by=created_at:desc",
+      "url": "/incidents?service_ids[]={SERVICE_ID}&statuses[]=resolved&limit=10&sort_by=created_at:desc",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{TOKEN_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -230,10 +207,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/rest/api/2/search",
+      "url": "/rest/api/2/search",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
     }
@@ -246,10 +222,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/rest/api/2/search",
+      "url": "/rest/api/2/search",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
     }
@@ -262,10 +237,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/rest/api/2/search",
+      "url": "/rest/api/2/search",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"status\"],\n    \"maxResults\": 100}"
     }
@@ -278,10 +252,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{API_BASE_URL}/api/graphql",
+      "url": "/api/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    mergeRequests(state: merged, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      nodes {\\n        title\\n        createdAt\\n        mergedAt\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -294,10 +267,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{API_BASE_URL}/api/graphql",
+      "url": "/api/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    branchRules {\\n      nodes {\\n        name\\n        branchProtection {\\n          allowForcePush\\n        }\\n        approvalRules {\\n          nodes {\\n            approvalsRequired\\n          }\\n        }\\n        isDefault\\n        isProtected\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{}}"
     }
@@ -310,10 +282,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://{API_BASE_URL}/api/graphql",
+      "url": "/api/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -326,11 +297,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -342,11 +312,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -358,11 +327,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -374,11 +342,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=success&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=success&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -390,11 +357,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/dependabot/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/dependabot/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -406,11 +372,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/code-scanning/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/code-scanning/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -422,11 +387,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/secret-scanning/alerts?state=open&per_page=100",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/secret-scanning/alerts?state=open&per_page=100",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       }
     }
   },
@@ -438,11 +402,10 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "{API_BASE_URL}/graphql",
+      "url": "/graphql",
       "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"{\\n  search(query: \\\"repo:{REPOSITORY_OWNER}/{REPOSITORY_NAME} is:pr is:open author:{AUTHOR_NAME}\\\", type: ISSUE, last: 100) {\\n    edges {\\n      node {\\n        ... on PullRequest {\\n          url\\n          title\\n          createdAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }

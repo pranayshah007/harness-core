@@ -103,6 +103,8 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
     public static final String stepPositionSetupId = positions + "." + BarrierPositionKeys.stepSetupId;
     public static final String strategySetupIds =
         BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.strategySetupIds;
+    public static final String strategyConcurrencyMap =
+        BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.strategyConcurrencyMap;
   }
 
   public static List<MongoIndex> mongoIndexes() {

@@ -129,4 +129,9 @@ public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig,
   public void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
     manifestStoreInfoBuilder.paths(getParameterFieldValue(this.getFiles()));
   }
+
+  @Override
+  public List<String> retrieveFilePaths() {
+    return this.getFiles().getValue();
+  }
 }

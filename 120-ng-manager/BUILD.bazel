@@ -7,6 +7,14 @@ load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
+filegroup(
+    name = "oidc_config",
+    srcs = [
+        "oidc_config.json",
+    ],
+    visibility = ["//visibility:private"],
+)
+
 shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_grpc_grpc_alts",
@@ -645,7 +653,10 @@ java_binary(
         ["src/main/java/**/*.java"],
         exclude = ["src/main/java/io/harness/ng/accesscontrol/**/*"],
     ),
-    data = ["//:resource"],
+    data = [
+        ":oidc_config",
+        "//:resource",
+    ],
     main_class = "io.harness.ng.NextGenApplication",
     resources = [
         "//120-ng-manager/src/main/resources:resource",

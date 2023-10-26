@@ -62,16 +62,11 @@ public class PrometheusQueryUtils {
           bracketPairs = mapBracketPairIndexes(query.toString());
           int nextBrk = bracketPairs.get(startBracketIdx) + 1;
           int endLHSBrk = bracketPairs.get(nextBrk);
-          additionalMove = wrapWithSameOperator(query, matchAggOperator.start() - 1, SII, operator, endLHSBrk);
         } else { // Operate at RHS
           if (endBracketIdx + 4 <= query.length()
               && "by(".equals(query.substring(endBracketIdx + 1, endBracketIdx + 4))) {
             int startBracketOfByRHSClause = endBracketIdx + 3;
             appendInsideAByClause(SII, query, startBracketOfByRHSClause);
-            bracketPairs = mapBracketPairIndexes(query.toString());
-            int endBracketOfByRHSClause = bracketPairs.get(startBracketOfByRHSClause);
-            additionalMove =
-                wrapWithSameOperator(query, matchAggOperator.start() - 1, SII, operator, endBracketOfByRHSClause);
           } else {
             appendAtEndWithFullClause(SII, query, endBracketIdx);
           }
@@ -111,17 +106,6 @@ public class PrometheusQueryUtils {
     pattern.deleteCharAt(pattern.length() - 1);
     pattern.append(")\\b");
     return pattern;
-  }
-
-  private static int wrapWithSameOperator(
-      StringBuilder query, int startBracketIdx, String SII, String operator, int endBracketIdx) {
-    String byClause = " by (" + SII + ")";
-    String suffix = ")" + byClause; // edge case we have reached end
-    query.insert(Math.min(endBracketIdx + 1, query.length()), suffix);
-    String prefix =
-        operator.replaceAll(PROMQL_CLAUSE_BY, "") + '('; // we always use one style sum() by() and not sum by()()
-    query.insert(startBracketIdx + 1, prefix);
-    return prefix.length();
   }
 
   private static void appendInsideAByClause(String SII, StringBuilder query, int startByBracket) {

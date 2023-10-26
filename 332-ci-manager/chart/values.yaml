@@ -81,6 +81,8 @@ global:
     virtualService:
       gateways:
       hosts:
+  ssca: 
+    enabled: false
 enableAuth: true
 replicaCount: 1
 maxSurge: 1

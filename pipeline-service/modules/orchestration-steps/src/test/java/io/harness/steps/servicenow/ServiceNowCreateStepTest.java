@@ -12,6 +12,7 @@ import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET;
 import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET_USING_STANDARD_TEMPLATE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +26,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -36,10 +38,12 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.servicenow.beans.ServiceNowCreateType;
 import io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
+import io.harness.steps.servicenow.create.ServiceNowCreateStepInfo;
 
 import java.util.Arrays;
 import java.util.List;
@@ -193,5 +197,53 @@ public class ServiceNowCreateStepTest extends CategoryTest {
                   .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
                   .build())
         .build();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.vivekveman)
+  @Category(UnitTests.class)
+  public void testValidateServiceNowTemplateForOneOffCheck() {
+    ServiceNowCreateStepInfo serviceNowCreateStepInfoNormal =
+        ServiceNowCreateStepInfo.builder()
+            .connectorRef(ParameterField.createValueField("ConnectorRef"))
+            .useServiceNowTemplate(ParameterField.createValueField(true))
+            .ticketType(ParameterField.createValueField("TicketType"))
+            .templateName(ParameterField.createValueField("templateName"))
+            .build();
+    ServiceNowCreateStepInfo serviceNowCreateStepInfoNormal1 =
+        ServiceNowCreateStepInfo.builder()
+            .connectorRef(ParameterField.createValueField("ConnectorRef"))
+            .createType(ServiceNowCreateType.NORMAL)
+            .ticketType(ParameterField.createValueField("TicketType"))
+            .build();
+    ServiceNowCreateStepInfo serviceNowCreateStepInfoMalformed =
+        ServiceNowCreateStepInfo.builder()
+            .connectorRef(ParameterField.createValueField("ConnectorRef"))
+            .ticketType(ParameterField.createValueField("TicketType"))
+            .templateName(ParameterField.createValueField("templateName"))
+            .build();
+    ServiceNowCreateStepInfo serviceNowCreateStepInfoMalformed1 =
+        ServiceNowCreateStepInfo.builder()
+            .connectorRef(ParameterField.createValueField("ConnectorRef"))
+            .ticketType(ParameterField.createValueField("INCIDENT"))
+            .createType(ServiceNowCreateType.STANDARD)
+            .templateName(ParameterField.createValueField("templateName"))
+            .build();
+    serviceNowCreateStep.checkOneoffCreateTypeOrUseServiceNowTemplate(
+        (ServiceNowCreateSpecParameters) serviceNowCreateStepInfoNormal.getSpecParameters());
+    serviceNowCreateStep.checkOneoffCreateTypeOrUseServiceNowTemplate(
+        (ServiceNowCreateSpecParameters) serviceNowCreateStepInfoNormal1.getSpecParameters());
+    assertThatThrownBy(()
+                           -> serviceNowCreateStep.checkOneoffCreateTypeOrUseServiceNowTemplate(
+                               (ServiceNowCreateSpecParameters) serviceNowCreateStepInfoMalformed.getSpecParameters()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "One of createType or useServiceNowTemplate is required when creating ticket from ServiceNow in ServiceNowCreate step");
+    assertThatThrownBy(()
+                           -> serviceNowCreateStep.validateStandardTemplateAndTicketType(
+                               (ServiceNowCreateSpecParameters) serviceNowCreateStepInfoMalformed1.getSpecParameters()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "ServiceNow create using standard template is supported only for ticket type change Request for ServiceNowCreate step");
   }
 }

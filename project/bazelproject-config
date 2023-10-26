@@ -4,6 +4,9 @@ derive_targets_from_directories: true
 workspace_type: java
 java_language_level: 11
 
+additional_languages:
+  go
+
 build_flags:
   --announce_rc
   --show_timestamps

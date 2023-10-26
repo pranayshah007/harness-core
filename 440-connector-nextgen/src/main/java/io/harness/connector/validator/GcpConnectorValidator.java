@@ -18,6 +18,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
@@ -35,12 +36,13 @@ public class GcpConnectorValidator extends AbstractCloudProviderConnectorValidat
     final GcpValidationRequestBuilder<?, ?> gcpValidationRequestBuilder = GcpValidationRequest.builder();
     switch (gcpConnector.getGcpCredentialType()) {
       case MANUAL_CREDENTIALS:
-        final GcpManualDetailsDTO gcpDetailsDTO = (GcpManualDetailsDTO) gcpConnector.getConfig();
-        GcpValidationRequest manualCredentialsRequest = gcpValidationRequestBuilder.gcpManualDetailsDTO(gcpDetailsDTO)
-                                                            .encryptionDetails(super.getEncryptionDetail(gcpDetailsDTO,
-                                                                accountIdentifier, orgIdentifier, projectIdentifier))
-                                                            .delegateSelectors(gcpConnectorDTO.getDelegateSelectors())
-                                                            .build();
+        final GcpManualDetailsDTO gcpManualDetailsDTO = (GcpManualDetailsDTO) gcpConnector.getConfig();
+        GcpValidationRequest manualCredentialsRequest =
+            gcpValidationRequestBuilder.gcpManualDetailsDTO(gcpManualDetailsDTO)
+                .encryptionDetails(
+                    super.getEncryptionDetail(gcpManualDetailsDTO, accountIdentifier, orgIdentifier, projectIdentifier))
+                .delegateSelectors(gcpConnectorDTO.getDelegateSelectors())
+                .build();
         return GcpTaskParameters.builder()
             .gcpRequest(manualCredentialsRequest)
             .gcpTaskType(GcpTaskType.VALIDATE)
@@ -49,6 +51,12 @@ public class GcpConnectorValidator extends AbstractCloudProviderConnectorValidat
         GcpValidationRequest inheritDelegateRequest =
             gcpValidationRequestBuilder.delegateSelectors(gcpConnectorDTO.getDelegateSelectors()).build();
         return GcpTaskParameters.builder().gcpRequest(inheritDelegateRequest).gcpTaskType(GcpTaskType.VALIDATE).build();
+      case OIDC_AUTHENTICATION:
+        final GcpOidcDetailsDTO gcpOidcDetailsDTO = (GcpOidcDetailsDTO) gcpConnector.getConfig();
+        return GcpTaskParameters.builder()
+            .gcpTaskType(GcpTaskType.VALIDATE)
+            .gcpRequest(GcpValidationRequest.builder().gcpOidcDetailsDTO(gcpOidcDetailsDTO).build())
+            .build();
       default:
         throw new InvalidRequestException("Invalid credential type: " + gcpConnector.getGcpCredentialType());
     }

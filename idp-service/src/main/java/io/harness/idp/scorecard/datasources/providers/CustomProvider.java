@@ -16,6 +16,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,11 +27,12 @@ import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class CustomProvider extends DataSourceProvider {
+public class CustomProvider extends HttpDataSourceProvider {
   protected CustomProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
-      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
+      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
+      DataSourceRepository dataSourceRepository) {
     super(CUSTOM_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
   }
 
   @Override

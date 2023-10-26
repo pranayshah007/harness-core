@@ -38,6 +38,7 @@ import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.core.environment.EnvironmentGitXThreadConfiguration;
 import io.harness.ng.core.service.ServiceGitXThreadConfiguration;
 import io.harness.ng.support.client.CannyConfig;
 import io.harness.notification.NotificationClientConfiguration;
@@ -299,7 +300,9 @@ public class NextGenConfiguration extends Configuration {
   private boolean useQueueServiceForWebhookTriggers;
   @JsonProperty("useQueueServiceForGitXWebhook") private boolean useQueueServiceForGitXWebhook;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
-  @JsonProperty("serviceGitXThreadConfig") @ConfigSecret private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
+  @JsonProperty("serviceGitXThreadConfig") private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
+  @JsonProperty("environmentGitXThreadConfig") private EnvironmentGitXThreadConfiguration environmentGitXThreadConfig;
+  @JsonProperty("oidcConfigPath") private String oidcConfigPath;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

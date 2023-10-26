@@ -740,8 +740,10 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .identifier(barrierId)
             .planExecutionId(planExecutionId)
             .barrierState(STANDING)
-            .setupInfo(
-                BarrierSetupInfo.builder().stages(Set.of(StageDetail.builder().identifier("stage1").build())).build())
+            .setupInfo(BarrierSetupInfo.builder()
+                           .stages(Set.of(StageDetail.builder().identifier("stage1").build()))
+                           .strategySetupIds(Set.of("strategyId1"))
+                           .build())
             .positionInfo(
                 BarrierPositionInfo.builder()
                     .planExecutionId(planExecutionId)
@@ -755,8 +757,10 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .identifier(barrierId)
             .planExecutionId(planExecutionId)
             .barrierState(STANDING)
-            .setupInfo(
-                BarrierSetupInfo.builder().stages(Set.of(StageDetail.builder().identifier("stage2").build())).build())
+            .setupInfo(BarrierSetupInfo.builder()
+                           .stages(Set.of(StageDetail.builder().identifier("stage2").build()))
+                           .strategySetupIds(Set.of("strategyId2"))
+                           .build())
             .positionInfo(
                 BarrierPositionInfo.builder()
                     .planExecutionId(planExecutionId)
@@ -779,6 +783,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .map(StageDetail::getIdentifier)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("stage1");
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds().size()).isEqualTo(1);
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds()).containsExactlyInAnyOrder("strategyId1");
     assertThat(barrierExecutionInstance.getPositionInfo()
                    .getBarrierPositionList()
                    .stream()
@@ -806,6 +812,9 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .map(StageDetail::getIdentifier)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("stage1", "stage2");
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds().size()).isEqualTo(2);
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds())
+        .containsExactlyInAnyOrder("strategyId1", "strategyId2");
     assertThat(barrierExecutionInstance.getPositionInfo()
                    .getBarrierPositionList()
                    .stream()
@@ -824,7 +833,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
 
-  public void testUpdateBarrierPositionInfoList() {
+  public void testUpdateBarrierPositionInfoListAndStrategyConcurrency() {
     String barrierId = "id1";
     String planExecutionId = "planId";
     BarrierPositionInfo initialPositionInfo =
@@ -893,8 +902,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .collect(Collectors.toSet()))
         .containsOnlyNulls();
 
-    barrierService.updateBarrierPositionInfoList(
-        barrierId, planExecutionId, updatedPositionInfo.getBarrierPositionList());
+    barrierService.updateBarrierPositionInfoListAndStrategyConcurrency(
+        barrierId, planExecutionId, updatedPositionInfo.getBarrierPositionList(), "strategyId", 2);
     result = barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, "stepSetupId1");
     assertThat(result).isNotNull();
     assertThat(result).isNotEmpty();
@@ -925,6 +934,10 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .map(BarrierPosition::getStrategyNodeType)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder(BarrierPositionType.STAGE);
+    assertThat(updatedBarrierExecutionInstance.getSetupInfo().getStrategyConcurrencyMap().keySet())
+        .containsExactlyInAnyOrder("strategyId");
+    assertThat(updatedBarrierExecutionInstance.getSetupInfo().getStrategyConcurrencyMap().get("strategyId"))
+        .isEqualTo(2);
   }
 
   @Test
@@ -937,7 +950,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     barrierField.setBarrierStepInfo(BarrierStepInfo.builder().identifier("barrierId").name("barrierName").build());
 
     barrierService.upsertBarrierExecutionInstance(
-        barrierField, "executionId", "stepGroup", "stageId", "stepGroupId", "stepGroupId");
+        barrierField, "executionId", "stepGroup", "stageId", "stepGroupId", "stepGroupId", List.of("stepGroupId"));
     List<BarrierExecutionInstance> result =
         barrierService.findByPosition("executionId", BarrierPositionType.STEP, "barrierStepId");
     assertThat(result).isNotNull();
@@ -955,6 +968,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .map(StageDetail::getIdentifier)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("stageId");
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds().size()).isEqualTo(1);
+    assertThat(barrierExecutionInstance.getSetupInfo().getStrategySetupIds()).containsExactlyInAnyOrder("stepGroupId");
     assertThat(barrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(1);
     BarrierPosition barrierPosition = barrierExecutionInstance.getPositionInfo().getBarrierPositionList().get(0);
     assertThat(barrierPosition.getStepSetupId()).isEqualTo("barrierStepId");

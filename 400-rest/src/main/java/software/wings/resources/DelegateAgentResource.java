@@ -47,9 +47,9 @@ import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.managerclient.AccountPreference;
 import io.harness.managerclient.AccountPreferenceQuery;
 import io.harness.managerclient.DelegateVersions;
@@ -80,6 +80,7 @@ import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.security.annotations.Scope;
+import software.wings.service.impl.LoggingTokenCache;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
@@ -94,9 +95,11 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -109,7 +112,6 @@ import javax.ws.rs.core.Context;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -123,35 +125,34 @@ import org.jetbrains.annotations.NotNull;
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class DelegateAgentResource {
   private static final String PT_LOG_ERROR_TEMPLATE = "Failed to process results for perpetual task: [{}] due to [{}]";
-  private DelegateService delegateService;
-  private AccountService accountService;
-  private HPersistence persistence;
-  private SubdomainUrlHelperIntfc subdomainUrlHelper;
-  private ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
-  private InstanceHelper instanceHelper;
-  private ManifestCollectionResponseHandler manifestCollectionResponseHandler;
-  private ConnectorHearbeatPublisher connectorHearbeatPublisher;
-  private KryoSerializer kryoSerializer;
-  private ConfigurationController configurationController;
-  private FeatureFlagService featureFlagService;
-  private DelegateTaskServiceClassic delegateTaskServiceClassic;
-  private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
-  private PollingResourceClient pollingResourceClient;
-  private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
-  private DelegateCapacityManagementService delegateCapacityManagementService;
-
-  private DelegateRingService delegateRingService;
+  private final DelegateService delegateService;
+  private final AccountService accountService;
+  private final HPersistence persistence;
+  private final SubdomainUrlHelperIntfc subdomainUrlHelper;
+  private final ArtifactCollectionResponseHandler artifactCollectionResponseHandler;
+  private final InstanceHelper instanceHelper;
+  private final ManifestCollectionResponseHandler manifestCollectionResponseHandler;
+  private final ConnectorHearbeatPublisher connectorHearbeatPublisher;
+  private final KryoSerializer kryoSerializer;
+  private final ConfigurationController configurationController;
+  private final DelegateTaskServiceClassic delegateTaskServiceClassic;
+  private final InstanceSyncResponsePublisher instanceSyncResponsePublisher;
+  private final PollingResourceClient pollingResourceClient;
+  private final DelegatePollingHeartbeatService delegatePollingHeartbeatService;
+  private final DelegateCapacityManagementService delegateCapacityManagementService;
+  private final DelegateRingService delegateRingService;
+  private final LoggingTokenCache loggingTokenCache;
 
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
       SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
       InstanceHelper instanceHelper, ManifestCollectionResponseHandler manifestCollectionResponseHandler,
       ConnectorHearbeatPublisher connectorHearbeatPublisher, KryoSerializer kryoSerializer,
-      ConfigurationController configurationController, FeatureFlagService featureFlagService,
-      DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
-      InstanceSyncResponsePublisher instanceSyncResponsePublisher,
+      ConfigurationController configurationController, DelegateTaskServiceClassic delegateTaskServiceClassic,
+      PollingResourceClient pollingResourceClient, InstanceSyncResponsePublisher instanceSyncResponsePublisher,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
-      DelegateCapacityManagementService delegateCapacityManagementService, DelegateRingService delegateRingService) {
+      DelegateCapacityManagementService delegateCapacityManagementService, DelegateRingService delegateRingService,
+      final LoggingTokenCache loggingTokenCache) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -162,13 +163,13 @@ public class DelegateAgentResource {
     this.connectorHearbeatPublisher = connectorHearbeatPublisher;
     this.kryoSerializer = kryoSerializer;
     this.configurationController = configurationController;
-    this.featureFlagService = featureFlagService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.pollingResourceClient = pollingResourceClient;
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
     this.delegateCapacityManagementService = delegateCapacityManagementService;
     this.delegateRingService = delegateRingService;
+    this.loggingTokenCache = loggingTokenCache;
   }
 
   @DelegateAuth
@@ -406,6 +407,20 @@ public class DelegateAgentResource {
 
   @DelegateAuth
   @GET
+  @Path("logging-token")
+  @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+  @Timed
+  @ExceptionMetered
+  public RestResponse<AccessTokenBean> getLoggingToken(@QueryParam("accountId") @NotEmpty final String accountId) {
+    try {
+      return new RestResponse<>(loggingTokenCache.getToken(accountId));
+    } catch (ExecutionException e) {
+      throw new InvalidRequestException("Please ensure log service is running.");
+    }
+  }
+
+  @DelegateAuth
+  @GET
   @Path("{delegateId}/upgrade")
   @Timed
   @ExceptionMetered
@@ -502,10 +517,8 @@ public class DelegateAgentResource {
       List<ThirdPartyApiCallLog> logs = (List<ThirdPartyApiCallLog>) kryoSerializer.asObject(logsBlob);
       log.debug("LogsBlob byte array converted successfully into ThirdPartyApiCallLog.");
 
-      persistence.save(logs.stream()
-                           .map(thirdPartyApiCallLog
-                               -> software.wings.service.impl.ThirdPartyApiCallLog.fromDto(thirdPartyApiCallLog))
-                           .collect(Collectors.toList()));
+      persistence.save(
+          logs.stream().map(software.wings.service.impl.ThirdPartyApiCallLog::fromDto).collect(Collectors.toList()));
     }
   }
 

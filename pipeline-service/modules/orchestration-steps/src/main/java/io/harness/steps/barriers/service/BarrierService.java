@@ -47,11 +47,11 @@ public interface BarrierService {
    */
   void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
   void upsert(BarrierExecutionInstance barrierExecutionInstance);
-  void updateBarrierPositionInfoList(
-      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions);
+  void updateBarrierPositionInfoListAndStrategyConcurrency(String barrierIdentifier, String planExecutionId,
+      List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyId, int concurrency);
   boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId);
   List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
       String planExecutionId, String strategySetupId);
   void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId, String parentInfoStrategyNodeType,
-      String stageId, String stepGroupId, String strategyId);
+      String stageId, String stepGroupId, String strategyId, List<String> allStrategyIds);
 }

@@ -7,16 +7,18 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.rule.Owner;
-import io.harness.rule.OwnerRule;
 import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
 import io.harness.spec.server.ng.v1.model.ProjectResponse;
 import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
@@ -103,16 +105,18 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProjectDtoMapping() throws JsonProcessingException {
     testProjectDtoMappingFromCreateRequest("create-project-request-1.json", "project-2.json");
     testProjectDtoMappingFromUpdateRequest("update-project-request-1.json", "project-2.json");
   }
 
   @Test(expected = JerseyViolationException.class)
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProjectDtoMappingValidationExceptionForMissingIdentifier() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
@@ -124,8 +128,9 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test(expected = JerseyViolationException.class)
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProjectDtoMappingValidationExceptionForMissingName() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
@@ -137,8 +142,9 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProjectDtoMappingValidationForMissingTags() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
@@ -150,8 +156,9 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testProjectDtoMappingValidationForMissingColor() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
@@ -163,8 +170,9 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testResponseMapping() {
     Project project = Project.builder()
                           .identifier(identifier)
@@ -195,8 +203,9 @@ public class ProjectApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testPageRequestSortAndOrder() {
     Pageable pageRequest = projectApiUtils.getPageRequest(0, 10, "identifier", "desc");
     assertThat(pageRequest.getSort()).isNotNull();

@@ -60,6 +60,7 @@ var (
 	getStageStrategyIterations   = external.GetStageStrategyIterations
 	isStepParallelismEnabled     = external.IsStepParallelismEnabled
 	isStageParallelismEnabled    = external.IsStageParallelismEnabled
+	getSha				         = external.GetSha
 )
 
 // RunTestsTask represents an interface to run tests intelligently
@@ -359,7 +360,8 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, runner testintellig
 		}
 		log.Infof("Using reference commit: %s", lastSuccessfulCommitID)
 		var errChangedFiles error
-		files, errChangedFiles = getChangedFilesPushTriggerFn(ctx, r.id, lastSuccessfulCommitID, r.log)
+		currentCommitID, _ := getSha()
+		files, errChangedFiles = getChangedFilesPushTriggerFn(ctx, r.id, lastSuccessfulCommitID, currentCommitID, r.log)
 		if errChangedFiles != nil {
 			// Select all tests if unable to find changed files list
 			log.Infow("Unable to get changed files list. Running all the tests.")

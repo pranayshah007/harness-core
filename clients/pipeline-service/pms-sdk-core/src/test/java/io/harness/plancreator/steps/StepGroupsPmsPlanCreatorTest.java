@@ -156,7 +156,7 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
                    .get(stepsField.getNode().getUuid())
                    .getParentInfo()
                    .getDataMap()
-                   .get("strategyId")
+                   .get("nearestStrategyId")
                    .getStringValue())
         .isEqualTo(stepGroupYamlField1.getUuid());
   }

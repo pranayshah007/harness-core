@@ -8,6 +8,7 @@
 package io.harness.ng.core.refresh.helper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -313,7 +314,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         .get(anyString(), anyString(), anyString(), eq(identifier), eq(false));
     doReturn(null)
         .when(environmentService)
-        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier));
+        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), null);
   }
 
   private void mockEnvWithRuntimeInputs(String identifier) {
@@ -338,7 +339,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         + "        type: Number\n"
         + "        value: <+input>")
         .when(environmentService)
-        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier));
+        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), any());
   }
 
   private void mockEnvWithServiceOverrideInputs(String serviceId, String envId) {

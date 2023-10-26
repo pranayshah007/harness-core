@@ -7,21 +7,18 @@
 
 package io.harness.service.impl;
 
-import static java.util.Base64.getUrlDecoder;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.service.intfc.DelegateAuthService;
 
 import com.google.inject.Inject;
-import java.util.Base64;
 
 public class DelegateAuthServiceImpl implements DelegateAuthService {
   @Inject private DelegateTokenAuthenticator delegateTokenAuthenticator;
   @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext) {
-    Base64.Decoder decoder = getUrlDecoder();
+  public void validateDelegateToken(final String accountId, final String tokenString, final String delegateId,
+      final String delegateTokenName, final String agentMtlAuthority, final boolean shouldSetTokenNameInGlobalContext) {
     final String authHeader = substringBefore(tokenString, ".").trim();
     if (authHeader.contains("HS256")) {
       delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString, agentMtlAuthority);

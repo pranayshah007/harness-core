@@ -6,6 +6,7 @@
  */
 
 package io.harness.registrars;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
@@ -36,7 +37,6 @@ import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.container.InitContainerStep;
 import io.harness.steps.container.execution.RunContainerStep;
 import io.harness.steps.customstage.CustomStageStep;
-import io.harness.steps.customstage.v1.CustomStageStepV1;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.steps.http.v1.HttpStep;
@@ -48,7 +48,7 @@ import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
-import io.harness.steps.shellscript.ShellScriptStep;
+import io.harness.steps.shellscript.v1.ShellScriptStep;
 import io.harness.steps.wait.WaitStep;
 
 import java.util.HashMap;
@@ -78,6 +78,8 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(io.harness.steps.http.HttpStep.STEP_TYPE, io.harness.steps.http.HttpStep.class);
     engineSteps.put(HttpStep.STEP_TYPE, HttpStep.class);
     engineSteps.put(EmailStep.STEP_TYPE, EmailStep.class);
+    engineSteps.put(
+        io.harness.steps.shellscript.ShellScriptStep.STEP_TYPE, io.harness.steps.shellscript.ShellScriptStep.class);
     engineSteps.put(ShellScriptStep.STEP_TYPE, ShellScriptStep.class);
     engineSteps.put(ServiceNowApprovalStep.STEP_TYPE, ServiceNowApprovalStep.class);
     engineSteps.put(ServiceNowCreateStep.STEP_TYPE, ServiceNowCreateStep.class);
@@ -86,7 +88,6 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
     engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
-    engineSteps.put(CustomStageStepV1.STEP_TYPE, CustomStageStepV1.class);
 
     // Feature Flag
     engineSteps.put(FlagConfigurationStep.STEP_TYPE, FlagConfigurationStep.class);

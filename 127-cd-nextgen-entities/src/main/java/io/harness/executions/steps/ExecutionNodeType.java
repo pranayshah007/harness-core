@@ -187,7 +187,8 @@ public enum ExecutionNodeType {
   ECS_SERVICE_SETUP("ECS_SERVICE_SETUP", YamlTypes.ECS_SERVICE_SETUP),
   ECS_UPGRADE_CONTAINER("ECS_UPGRADE_CONTAINER", YamlTypes.ECS_UPGRADE_CONTAINER),
   ECS_BASIC_ROLLBACK("ECS_BASIC_ROLLBACK", YamlTypes.ECS_BASIC_ROLLBACK),
-  CUSTOM_STAGE("CUSTOM_STAGE", "custom");
+  CUSTOM_STAGE("CUSTOM_STAGE", "custom"),
+  CUSTOM_STAGE_V1("CUSTOM_STAGE_V1", "custom");
 
   private final String name;
   private final String yamlType;

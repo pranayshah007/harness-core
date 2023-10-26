@@ -1,2 +1,3 @@
 DOCKER_FILE_PATH: /harness/harness-core/ssca-manager/build/container/Dockerfile-ssca-manager-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/ssca-manager/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml

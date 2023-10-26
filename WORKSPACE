@@ -995,13 +995,6 @@ go_repository(
 )
 
 go_repository(
-    name = "org_golang_google_genproto",
-    importpath = "google.golang.org/genproto",
-    sum = "h1:aCsSLXylHWFno0r4S3joLpiaWayvqd2Mn4iSvx4WZZc=",
-    version = "v0.0.0-20220114231437-d2e6a121cae0",
-)
-
-go_repository(
     name = "org_golang_google_grpc",
     importpath = "google.golang.org/grpc",
     sum = "h1:LAv2ds7cmFV/XTS3XG1NneeENYrXGmorPxsBbptIjNc=",
@@ -4089,13 +4082,6 @@ go_repository(
 )
 
 go_repository(
-    name = "com_github_gogo_googleapis",
-    importpath = "github.com/gogo/googleapis",
-    sum = "h1:kFkMAZBNAn4j7K0GiZr8cRYzejq68VbheufiV3YuyFI=",
-    version = "v1.1.0",
-)
-
-go_repository(
     name = "com_github_golang_snappy",
     importpath = "github.com/golang/snappy",
     sum = "h1:fHPg5GQYlCeLIPB9BZqMVR5nR9A+IM5zcgeTdjMYmLA=",
@@ -4811,8 +4797,8 @@ plain_artifacts = [
     "com.google.apis:google-api-services-monitoring:v3-rev477-1.25.0",
     "com.google.apis:google-api-services-servicecontrol:v1-rev142-1.25.0",
     "com.google.apis:google-api-services-storage:v1-rev131-1.22.0",
-    "com.google.auth:google-auth-library-credentials:0.18.0",
-    "com.google.auth:google-auth-library-oauth2-http:0.20.0",
+    "com.google.auth:google-auth-library-credentials:1.19.0",
+    "com.google.auth:google-auth-library-oauth2-http:1.19.0",
     "com.google.auto.service:auto-service:1.0-rc6",
     "com.google.auto.value:auto-value-annotations:1.7.4",
     "com.google.cloud.datastore:datastore-v1-proto-client:1.6.0",

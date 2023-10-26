@@ -245,7 +245,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                     .putData(PlanCreatorConstants.STAGE_ID, HarnessValue.newBuilder().setStringValue("stageId").build())
                     .putData(PlanCreatorConstants.STEP_GROUP_ID,
                         HarnessValue.newBuilder().setStringValue("stepGroupId").build())
-                    .putData(PlanCreatorConstants.STRATEGY_ID,
+                    .putData(PlanCreatorConstants.NEAREST_STRATEGY_ID,
                         HarnessValue.newBuilder().setStringValue("strategyId").build())
                     .build())
             .build();
@@ -277,7 +277,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue("stepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreatorConstants.STRATEGY_ID))
+            PlanCreatorConstants.NEAREST_STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("strategyId").build());
 
     newDependencies =
@@ -292,7 +292,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                                            HarnessValue.newBuilder().setStringValue("otherStageId").build())
                                        .putData(PlanCreatorConstants.STEP_GROUP_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStepGroupId").build())
-                                       .putData(PlanCreatorConstants.STRATEGY_ID,
+                                       .putData(PlanCreatorConstants.NEAREST_STRATEGY_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStrategyId").build())
                                        .build())
                     .build())
@@ -315,7 +315,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreatorConstants.STRATEGY_ID))
+            PlanCreatorConstants.NEAREST_STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStrategyId").build());
   }
 }

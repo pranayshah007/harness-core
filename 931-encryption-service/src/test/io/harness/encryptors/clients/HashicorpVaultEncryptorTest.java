@@ -9,6 +9,7 @@ package io.harness.encryptors.clients;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -943,6 +944,36 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
       assertThat(e.getMessage())
           .isEqualTo("Decryption failed after 3 retries for secret " + record.getEncryptionKey() + " or path null");
     }
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    String plainText = "true";
+    String fullPath = vaultConfig.getBasePath() + "/" + name;
+    when(vaultRestClient.writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
+             vaultConfig.getSecretEngineName(), fullPath, plainText))
+        .thenAnswer(invocationOnMock -> true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(1))
+        .writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
+            fullPath, plainText);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret_forReadOnlyVault() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    vaultConfig.setReadOnly(true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(0)).writeSecret(anyString(), anyString(), anyString(), anyString(), anyString());
   }
 
   @NotNull

@@ -273,9 +273,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   private Update buildUpdate(UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
     long currentTimeInMilliseconds = System.currentTimeMillis();
     Update update = new Update();
-    if (isNotEmpty(updateGitXWebhookRequestDTO.getFolderPaths())) {
-      update.set(GitXWebhookKeys.folderPaths, updateGitXWebhookRequestDTO.getFolderPaths());
-    }
+    update.set(GitXWebhookKeys.folderPaths, updateGitXWebhookRequestDTO.getFolderPaths());
     if (isNotEmpty(updateGitXWebhookRequestDTO.getRepoName())) {
       update.set(GitXWebhookKeys.repoName, updateGitXWebhookRequestDTO.getRepoName());
     }

@@ -47,8 +47,8 @@ const (
 	wrkspcPath         = "HARNESS_WORKSPACE"
 	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin             = "git"
-	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
-	diffFilesCmdPush   = "%s diff --name-status --diff-filter=MADR %s"
+	diffFilesCmdPR     = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	diffFilesCmdPush   = "%s diff --name-status --diff-filter=MADR %s %s"
 	safeDirCommand     = "%s config --global --add safe.directory '*'"
 	harnessStepIndex   = "HARNESS_STEP_INDEX"
 	harnessStepTotal   = "HARNESS_STEP_TOTAL"
@@ -58,9 +58,19 @@ const (
 	delegateTiURLEnv   = "HARNESS_LE_DELEGATE_TI_URL"
 )
 
+func GetChangedFilesPR(ctx context.Context, workspace string, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
+	diffFilesCmdPR := fmt.Sprintf(diffFilesCmdPR, gitBin)
+	return getChangedFiles(ctx, workspace, log, procWriter, diffFilesCmdPR)
+}
+
+func GetChangedFilesPush(ctx context.Context, workspace, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
+	diffFilesCmdPush := fmt.Sprintf(diffFilesCmdPush, gitBin, lastSuccessfulCommitID, currentCommitID)
+	return getChangedFiles(ctx, workspace, log, procWriter, diffFilesCmdPush)
+}
+
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
 // along with their corresponding status
-func GetChangedFiles(ctx context.Context, workspace, lastSuccessfulCommitID string, isPushTrigger bool, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
+func getChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogger, procWriter io.Writer, diffFilesCmd string) ([]types.File, error) {
 	cmdContextFactory := exec.OsCommandContextGracefulWithLog(log)
 	cmd := cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(safeDirCommand, gitBin)).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
@@ -69,12 +79,7 @@ func GetChangedFiles(ctx context.Context, workspace, lastSuccessfulCommitID stri
 		return nil, err
 	}
 
-	diffFilesCmdFinal := fmt.Sprintf(diffFilesCmd, gitBin)
-	if isPushTrigger {
-		diffFilesCmdFinal = fmt.Sprintf(diffFilesCmdPush, gitBin, lastSuccessfulCommitID)
-	}
-
-	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", diffFilesCmdFinal).
+	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", diffFilesCmd).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
 	out, err = cmd.Output()
 	if err != nil {

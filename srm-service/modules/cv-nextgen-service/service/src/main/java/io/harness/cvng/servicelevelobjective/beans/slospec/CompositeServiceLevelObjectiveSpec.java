@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CompositeServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
-  @Size(min = 2, max = 20) @Valid @NotNull List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
+  @Size(min = 2, max = 30) @Valid @NotNull List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
   SLIEvaluationType evaluationType;
 
   CompositeSLOFormulaType sloFormulaType;
