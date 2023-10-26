@@ -4,7 +4,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as builder
+FROM ubuntu:latest as builder
 
 # Install curl
 RUN apt-get update -y && apt-get install -y curl
@@ -28,7 +28,7 @@ RUN chmod +x \
 
 ENV CONTEXT_PATH $BAZEL_BIN
 
-FROM builder as base
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as base
 # Copy go binary
 
 COPY --from=builder /root/.cache/bazel/_bazel_root/8c069df52082beee3c95ca17836fb8e2/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service /usr/local/bin/log-service
