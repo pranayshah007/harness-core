@@ -8,18 +8,13 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.rule.OwnerRule.HANTANG;
-import static io.harness.rule.OwnerRule.UTSAV;
-import static io.harness.rule.OwnerRule.VIKAS;
-import static io.harness.rule.OwnerRule.ZHUO;
 
+import static io.harness.rule.OwnerRule.*;
+import static org.mockito.ArgumentMatchers.*;
 import static software.wings.beans.Account.Builder.anAccount;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.license.CeLicenseInfo;
+import io.harness.datahandler.models.AccountSummary;
 import io.harness.datahandler.services.AdminAccountService;
 import io.harness.datahandler.services.AdminUserService;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
@@ -48,6 +44,8 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.utils.ResourceTestRule;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -100,6 +98,13 @@ public class AdminAccountResourceTest extends CategoryTest {
     Call<ResponseDTO<AccountLicenseDTO>> adminLicenseQueryCall = mock(Call.class);
     AccountLicenseDTO accountLicenseDTO = AccountLicenseDTO.builder().build();
     when(adminLicenseQueryCall.execute()).thenReturn(Response.success(ResponseDTO.newResponse(accountLicenseDTO)));
+
+    Account updatedAccount = new Account();
+    List<Account> updatedAccounts = Arrays.asList(updatedAccount);
+    AccountSummary accountSummary = mock(AccountSummary.class);
+    List<AccountSummary> expectedAccountSummaries = Arrays.asList(accountSummary);
+    when(adminAccountService.getUpdatedAccounts(anyLong())).thenReturn(updatedAccounts);
+    when(adminAccountService.getAccountSummariesByAccounts(any())).thenReturn(expectedAccountSummaries);
 
     when(adminLicenseHttpClient.createAccountLicense(any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
     when(adminLicenseHttpClient.updateModuleLicense(any(), any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
@@ -186,5 +191,16 @@ public class AdminAccountResourceTest extends CategoryTest {
         .request()
         .delete(new GenericType<RestResponse<Void>>() {});
     verify(adminLicenseHttpClient).deleteModuleLicense(any(), any());
+  }
+  @Test
+  @Owner(developers = ASHUTOSH_TRIPATHI)
+  @Category(UnitTests.class)
+  public void testGetRecentUpdatedAccount() {
+    RestResponse<List<AccountSummary>> response = RESOURCES.client()
+            .target("/admin/accounts/get-recent-updates-account")
+            .request()
+            .get(new GenericType<RestResponse<List<AccountSummary>>>() {});
+    verify(adminAccountService).getUpdatedAccounts(anyLong());
+    verify(adminAccountService).getAccountSummariesByAccounts(any());
   }
 }

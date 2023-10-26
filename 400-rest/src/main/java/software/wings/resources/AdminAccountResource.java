@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
@@ -34,6 +35,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.rest.RestResponse;
+import io.harness.persistence.UuidAware;
 
 import software.wings.beans.Account;
 import software.wings.beans.CeLicenseUpdateInfo;
@@ -49,6 +51,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -201,14 +204,12 @@ public class AdminAccountResource {
   @GET
   @Path("get-recent-updates-account")
   public RestResponse<List<AccountSummary>> getRecentAccountUpdates() {
-      long currentTime = System.currentTimeMillis();
-      long thirtySecondsAgo = currentTime - 30*1000*60;
-      List<Account> updatedAccounts = adminAccountService.getUpdatedAccounts(thirtySecondsAgo);
-      List<String> updatedAccountIds = new ArrayList<>();
-      for(Account account : updatedAccounts){
-        updatedAccountIds.add(account.getUuid());
-      }
-      return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountIds));
+    long currentTime = System.currentTimeMillis();
+    long thirtySecondsAgo = currentTime - TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS);
+    List<String> updatedAccountsIds = adminAccountService.getUpdatedAccounts(thirtySecondsAgo).stream()
+            .map(UuidAware::getUuid)
+            .collect(toList());
+    return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountsIds));
   }
 
 
