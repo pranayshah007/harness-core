@@ -294,6 +294,7 @@ public enum FeatureName {
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
   CI_DLITE_DISTRIBUTED("Feature flag to use dlite in distributed mode", HarnessTeam.CI),
+  CI_EXTRA_ADDON_RESOURCE("Feature flag for extra addon resource", HarnessTeam.CI),
   CLEAN_UP_OLD_MANAGER_VERSIONS(Scope.PER_ACCOUNT),
   CLOUDFORMATION_CHANGE_SET,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
