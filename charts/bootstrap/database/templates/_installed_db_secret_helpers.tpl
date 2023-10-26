@@ -60,7 +60,11 @@ USAGE:
   {{- $ := .ctx }}
   {{- $dbKey := .dbKey -}}
   {{- $defaultSecret := .defaultSecret -}}
-  {{- $isInstalled := (dig $dbKey "installed" false $.Values.global.database) }}
+  {{- if eq $dbKey "clickhouse"  -}}
+    {{- $isInstalled := (dig $dbKey "enabled" false $.Values.global.database) }}
+  {{- else }}
+    {{- $isInstalled := (dig $dbKey "installed" false $.Values.global.database) }}
+  {{- end }}
   {{- $dbSecretsCtx := (dig $dbKey "secrets" false $.Values.global.database) }}
   {{- if and $dbKey $isInstalled $dbSecretsCtx }}
     {{- $secretName := "" }}

@@ -128,8 +128,8 @@ USAGE:
   {{- $ := .ctx }}
   {{- if and $.Values.global.database.minio.installed (eq (len $.Values.global.database.minio.secrets.secretManagement.externalSecretsOperator) 1) (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $.Values.global.database.minio.secrets)) "true") }}
     {{- $esoSecretName := "minio-ext-secret" }}
-    {{- $minioUserKey := "MINIO_USER" }}
-    {{- $minioPasswordKey := "MINIO_PASSWORD" }}
+    {{- $minioUserKey := "S3_USER" }}
+    {{- $minioPasswordKey := "S3_PASSWORD" }}
     {{- $installedMinioSecretKeys := dict $minioUserKey "root-user" $minioPasswordKey "root-password" }}
     {{- $esoSecret := first $.Values.global.database.minio.secrets.secretManagement.externalSecretsOperator }}
     {{- if and (dig "secretStore" "name" "" $esoSecret) (dig "secretStore" "kind" "" $esoSecret) (or (dig $minioUserKey "name" "" $esoSecret.remoteKeys) (dig $minioPasswordKey "name" "" $esoSecret.remoteKeys)) }}
@@ -212,6 +212,65 @@ spec:
   data:
     {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
     {{- if and (hasKey $installedClickhouseSecretKeys $remoteKeyName) (not (empty $remoteKey.name)) }}
+  - secretKey: {{ lower $remoteKeyName }}
+    remoteRef:
+      key: {{ $remoteKey.name }}
+      {{- if not (empty $remoteKey.property) }}
+      property: {{ $remoteKey.property }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
+Generate External Secret CRD with for Harness Installed Clickhouse
+
+The generated K8S Secret contains the following keys:
+1. PATRONI_SUPERUSER_PASSWORD
+2. PATRONI_REPLICATION_PASSWORD
+3. PATRONI_admin_PASSWORD
+
+Note:
+If input ESO secrets do not contain the required keys, the corresponding secret keys will be silently ignored in the generated secret
+
+USAGE:
+{{ include "harnesssecrets.secrets.generateInstalledTimescaleDBExternalSecret" (dict "ctx" $) }}
+*/}}
+{{- define "harnesssecrets.secrets.generateInstalledTimescaleDBExternalSecret" }}
+  {{- $ := .ctx }}
+  {{- if and $.Values.global.database.timescaledb.installed (eq (len $.Values.global.database.timescaledb.secrets.secretManagement.externalSecretsOperator) 1) (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $.Values.global.database.timescaledb.secrets)) "true") }}
+    {{- $esoSecretName := "timescaledb-ext-secret" }}
+    {{- $timescaledbPatroniSuperuserPasswordKey := "TIMESCALEDB_PASSWORD" }}
+    {{- $timescaledbPatroniReplicationPasswordKey := "TIMESCALEDB_REPLICATION_PASSWORD" }}
+    {{- $timescaledbPatroniAdminPasswordKey := "TIMESCALEDB_ADMIN_PASSWORD" }}
+    {{- $installedTimescaledbSecretKeys := dict $timescaledbPatroniSuperuserPasswordKey "PATRONI_SUPERUSER_PASSWORD" $timescaledbPatroniReplicationPasswordKey "PATRONI_REPLICATION_PASSWORD" $timescaledbPatroniAdminPasswordKey "PATRONI_admin_PASSWORD" }}
+    {{- $esoSecret := first $.Values.global.database.timescaledb.secrets.secretManagement.externalSecretsOperator }}
+    {{- if and (dig "secretStore" "name" "" $esoSecret) (dig "secretStore" "kind" "" $esoSecret) (or (dig $timescaledbPatroniSuperuserPasswordKey "name" "" $esoSecret.remoteKeys) (dig $timescaledbPatroniReplicationPasswordKey "name" "" $esoSecret.remoteKeys) (dig $timescaledbPatroniAdminPasswordKey "name" "" $esoSecret.remoteKeys)) }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ $esoSecretName }}
+spec:
+  secretStoreRef:
+    name: {{ $esoSecret.secretStore.name }}
+    kind: {{ $esoSecret.secretStore.kind }}
+  target:
+    name: {{ $esoSecretName }}
+    template:
+      engineVersion: v2
+      mergePolicy: Replace
+      data:
+        {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
+          {{- if and (hasKey $installedTimescaledbSecretKeys $remoteKeyName) (not (empty $remoteKey.name)) }}
+          {{- $esoSecretKeyName := (get $installedTimescaledbSecretKeys $remoteKeyName) }}
+        {{ $esoSecretKeyName }}: "{{ printf "{{ .%s }}" (lower $remoteKeyName) }}"
+          {{- end }}
+        {{- end }}
+  data:
+    {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
+    {{- if and (hasKey $installedTimescaledbSecretKeys $remoteKeyName) (not (empty $remoteKey.name)) }}
   - secretKey: {{ lower $remoteKeyName }}
     remoteRef:
       key: {{ $remoteKey.name }}

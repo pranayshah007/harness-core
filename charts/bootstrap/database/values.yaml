@@ -66,6 +66,36 @@ global:
                   property: ""
     timescaledb:
       installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+              TIMESCALEDB_REPLICATION_PASSWORD: ""
+              TIMESCALEDB_ADMIN_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_REPLICATION_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_ADMIN_PASSWORD:
+                  name: ""
+                  property: ""
     redis:
       installed: true
     clickhouse:
@@ -149,6 +179,9 @@ postgresql:
       requests:
         cpu: 4
         memory: 8192Mi
+timescaledb:
+  secrets:
+    credentialsSecretName: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "timescaledb" "defaultSecret" "harness-secrets") }}'
 clickhouse:
   fullnameOverride: "clickhouse"
   auth:

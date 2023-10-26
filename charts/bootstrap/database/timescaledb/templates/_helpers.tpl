@@ -103,7 +103,7 @@ ${HOME}/.pgbackrest_environment
 {{- end -}}
 
 {{- define "secrets_credentials" -}}
-{{ .Values.secrets.credentialsSecretName | default (printf "%s-credentials" (include "clusterName" .)) | quote }}
+{{ tpl .Values.secrets.credentialsSecretName . | default (printf "%s-credentials" (include "clusterName" .)) | quote }}
 {{- end -}}
 
 {{- define "secrets_certificate" -}}

@@ -109,7 +109,9 @@ global:
               TIMESCALEDB_USERNAME: ""
               TIMESCALEDB_PASSWORD: ""
               TIMESCALEDB_SSL_ROOT_CERT: ""
-        secretManagement: 
+              TIMESCALEDB_REPLICATION_PASSWORD: ""
+              TIMESCALEDB_ADMIN_PASSWORD: ""
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -122,6 +124,12 @@ global:
                   name: ""
                   property: ""
                 TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_REPLICATION_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_ADMIN_PASSWORD:
                   name: ""
                   property: ""
     redis:
