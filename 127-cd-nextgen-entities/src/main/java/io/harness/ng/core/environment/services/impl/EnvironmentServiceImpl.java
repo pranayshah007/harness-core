@@ -42,9 +42,12 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.beans.StoreType;
@@ -202,8 +205,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       publishEvent(environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier(),
           environment.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdEnvironment;
+    } catch (ExplanationException | HintException | ScmException ex) {
+      log.error(String.format("Error error while saving environment: [%s]", environment.getIdentifier()), ex);
+      throw ex;
     } catch (Exception ex) {
-      log.error(String.format("Error while saving environment [%s]", environment.getIdentifier()), ex);
+      log.error(String.format("Unexpected error while saving environment [%s]", environment.getIdentifier()), ex);
       throw new InvalidRequestException(
           String.format("Error while saving environment [%s]: %s", environment.getIdentifier(), ex.getMessage()));
     }
