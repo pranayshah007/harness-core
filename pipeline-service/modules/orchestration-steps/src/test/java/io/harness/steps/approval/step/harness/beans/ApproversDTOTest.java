@@ -9,6 +9,7 @@ package io.harness.steps.approval.step.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.VINIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,7 +63,20 @@ public class ApproversDTOTest extends CategoryTest {
         .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
         .build();
   }
-
+  private Approvers createApprovweWithNULLUserGroup() {
+    return Approvers.builder()
+        .userGroups(ParameterField.<List<String>>builder().value(null).build())
+        .minimumCount(ParameterField.<Integer>builder().value(1).build())
+        .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+        .build();
+  }
+  private Approvers createApproveWithEmptyListUserGroup() {
+    return Approvers.builder()
+        .userGroups(ParameterField.<List<String>>builder().value(Collections.emptyList()).build())
+        .minimumCount(ParameterField.<Integer>builder().value(1).build())
+        .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+        .build();
+  }
   @Test
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
@@ -77,7 +91,22 @@ public class ApproversDTOTest extends CategoryTest {
     assertThatThrownBy(() -> ApproversDTO.fromApprovers(createApproversBeanWithUnResolvedUserGroups()))
         .isInstanceOf(InvalidRequestException.class);
   }
-
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void fromApproversWithNullUserGroups() {
+    assertThatThrownBy(() -> ApproversDTO.fromApprovers(createApprovweWithNULLUserGroup()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("At least 1 user group is required");
+  }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void fromApproversWithEmptyUserGroupsList() {
+    assertThatThrownBy(() -> ApproversDTO.fromApprovers(createApproveWithEmptyListUserGroup()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("At least 1 user group is required");
+  }
   @Test
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
@@ -85,7 +114,14 @@ public class ApproversDTOTest extends CategoryTest {
     assertThatThrownBy(() -> ApproversDTO.fromApprovers(createInValidApproversBean()))
         .isInstanceOf(InvalidRequestException.class);
   }
-
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void fromApproversWithInvalidMinimumCountValue() {
+    assertThatThrownBy(() -> ApproversDTO.fromApprovers(createInValidApproversBean()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Minimum count should be > 0");
+  }
   @Test
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
