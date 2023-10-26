@@ -166,7 +166,7 @@ image:
   repository: harness/manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80915"
+  tag: "80917"
   digest: ""
   imagePullSecrets: []
 
@@ -200,7 +200,7 @@ timescaleSecret:
     name: harness-secrets
     key: timescaledbPostgresPassword
 
-version: 1.0.80909
+version: 1.0.80917
 
 delegate_docker_image:
   image:
