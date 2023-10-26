@@ -20,15 +20,9 @@ java_library(
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/repositories/executions:module",
-        "//970-ng-commons:module",
-        "//979-recaster/src/main/java/io/harness/annotation:module",
-        "//980-commons/src/main/java/io/harness/validation:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_inject_guice",
-        "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
-        "@maven//:org_springframework_data_spring_data_commons",
     ],
 )
 
