@@ -20,7 +20,6 @@ import io.harness.delegate.SecurityContext;
 import io.harness.delegate.SetupExecutionInfrastructureRequest;
 import io.harness.delegate.StepSpec;
 import io.harness.delegate.TaskSelector;
-import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.RunnerType;
 import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
@@ -101,7 +100,6 @@ public class InfraRequestTestFactory {
                            .setAccountId("accountId")
                            .setCallbackToken(DelegateCallbackToken.newBuilder().setToken("callbackToken").build())
                            .setExecutionTimeout(Duration.newBuilder().setSeconds(100).build())
-                           .setSetupAbstractions(TaskSetupAbstractions.newBuilder().build())
                            .addSelectors(TaskSelector.newBuilder().build())
                            .addSelectors(TaskSelector.newBuilder().build())
                            .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
