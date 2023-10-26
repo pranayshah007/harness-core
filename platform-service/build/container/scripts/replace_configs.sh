@@ -412,6 +412,9 @@ replace_key_value resourceGroupServiceConfig.resourceClients.code.baseUrl "$CODE
 replace_key_value resourceGroupServiceConfig.resourceClients.code.secret "$CODE_SERVICE_SECRET"
 replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.secret "$CE_NEXTGEN_SECRET"
 
+replace_key_value resourceGroupServiceConfig.resourceClients.ff-server.baseUrl "$FF_SERVICE_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.ff-server.secret "$FF_SERVICE_SECRET"
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
