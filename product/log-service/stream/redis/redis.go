@@ -255,8 +255,9 @@ func sanitizeLines(lines []*stream.Line, maxLineLimit, maxStreamSize int, key st
 	for i := range lines {
 		// truncate any lines longer than maxLineLimit
 		if len(lines[i].Message) > maxLineLimit {
+			totalLength := len(lines[i].Message)
 			lines[i].Message = lines[i].Message[:maxLineLimit] + "... (log line truncated)"
-			logrus.Infof("trimmed line with length %d for key %s", len(lines[i].Message), key)
+			logrus.Infof("trimmed line with length %d for key %s", totalLength, key)
 			cnt++
 		}
 	}

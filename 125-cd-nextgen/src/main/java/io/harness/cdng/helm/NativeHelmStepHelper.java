@@ -156,7 +156,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
         && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
             != null) {
-      return TaskType.HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+      return TaskType.HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
     }
 
     if (helmCommandRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {

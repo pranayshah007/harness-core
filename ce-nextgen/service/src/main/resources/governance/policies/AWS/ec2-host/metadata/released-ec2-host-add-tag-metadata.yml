@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: released-ec2-host-add-tag
+cloudProvider: AWS
+resourceType: ec2-host
+description: Add Released tag with value as true to all ec2 released host
+rulesYamlPath: ../released-ec2-host-add-tag.yml

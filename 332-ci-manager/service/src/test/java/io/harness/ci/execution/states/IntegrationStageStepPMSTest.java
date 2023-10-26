@@ -9,13 +9,17 @@ package io.harness.ci.execution.states;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
+import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.CIResourceCleanup;
 import io.harness.beans.execution.PublishedImageArtifact;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
@@ -24,6 +28,7 @@ import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -40,6 +45,8 @@ import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
 
 import com.google.common.collect.ImmutableMap;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,6 +64,9 @@ import org.mockito.Mock;
 public class IntegrationStageStepPMSTest extends CIExecutionTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Mock private OutcomeService outcomeService;
+  @Mock HPersistence hPersistence;
+  @Mock UpdateOperations<CIResourceCleanup> mockUpdateOperations;
+  @Mock Query<CIResourceCleanup> mockQuery;
   @InjectMocks private IntegrationStageStepPMS integrationStageStepPMS;
   private Ambiance ambiance;
   private IntegrationStageStepParametersPMS integrationStageStepParametersPMS;
@@ -93,6 +103,10 @@ public class IntegrationStageStepPMSTest extends CIExecutionTestBase {
                 .found(true)
                 .output(UniqueStepIdentifiersSweepingOutput.builder().uniqueStepIdentifiers(uniqueIdentifiers).build())
                 .build());
+    when(hPersistence.createUpdateOperations(CIResourceCleanup.class)).thenReturn(mockUpdateOperations);
+    when(mockUpdateOperations.set(anyString(), any())).thenReturn(mockUpdateOperations);
+    when(hPersistence.createQuery(CIResourceCleanup.class, excludeAuthority)).thenReturn(mockQuery);
+    when(mockQuery.filter(anyString(), any())).thenReturn(mockQuery);
 
     uniqueIdentifiers.forEach(uid
         -> when(outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("artifact_" + uid)))
@@ -159,6 +173,10 @@ public class IntegrationStageStepPMSTest extends CIExecutionTestBase {
                                                                .build())
                                             .build())
                                .build()));
+    when(hPersistence.createUpdateOperations(CIResourceCleanup.class)).thenReturn(mockUpdateOperations);
+    when(mockUpdateOperations.set(anyString(), any())).thenReturn(mockUpdateOperations);
+    when(hPersistence.createQuery(CIResourceCleanup.class, excludeAuthority)).thenReturn(mockQuery);
+    when(mockQuery.filter(anyString(), any())).thenReturn(mockQuery);
 
     StepResponse stepResponse =
         integrationStageStepPMS.handleChildResponse(ambiance, stageElementParameters, responseDataMap);

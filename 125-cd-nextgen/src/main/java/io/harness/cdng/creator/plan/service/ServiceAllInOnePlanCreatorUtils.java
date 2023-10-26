@@ -124,13 +124,14 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
-                                                              .gitBranch(finalServiceYaml.getGitBranch())
+                                                              .serviceGitBranch(finalServiceYaml.getGitBranch())
                                                               .inputs(finalServiceYaml.getServiceInputs())
                                                               .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
                                                               .serviceOverrideInputs(serviceOverrideInputs)
                                                               .deploymentType(serviceType)
                                                               .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
+                                                              .envGitBranch(finalEnvironmentYamlV2.getGitBranch())
                                                               .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
                                                               .envGroupRef(envGroupRef);
 
@@ -151,7 +152,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
-            .gitBranch(finalServiceYaml.getGitBranch())
+            .serviceGitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -190,7 +191,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
-            .gitBranch(finalServiceYaml.getGitBranch())
+            .serviceGitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)

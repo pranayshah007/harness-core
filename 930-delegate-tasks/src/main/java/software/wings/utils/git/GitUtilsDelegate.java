@@ -54,7 +54,7 @@ public class GitUtilsDelegate {
     GitOperationContext gitOperationContext =
         GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(gitFileConfig.getConnectorId()).build();
     encryptionService.decrypt(gitConfig, sourceRepoEncryptionDetails, false);
-    gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+    gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext, false);
     return gitOperationContext;
   }
 

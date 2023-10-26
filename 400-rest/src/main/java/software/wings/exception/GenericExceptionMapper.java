@@ -58,7 +58,7 @@ public class GenericExceptionMapper<T> implements ExceptionMapper<Throwable> {
     if (exception instanceof ClientErrorException) {
       return getHttpErrorResponse((ClientErrorException) exception);
     } else if (exception instanceof WebApplicationException && causeIs(AccountMigratedException.class, exception)) {
-      return getHttpErrorResponse((WebApplicationException) exception);
+      return getHttpForbiddenResponse((WebApplicationException) exception);
     } else {
       return getDefaultResponse();
     }
@@ -83,6 +83,21 @@ public class GenericExceptionMapper<T> implements ExceptionMapper<Throwable> {
       return resourceInfo.getResourceMethod().getAnnotation(ExposeInternalException.class).withStackTrace();
     }
     throw new IllegalStateException("Check if it has ExposeInternalException annotation.");
+  }
+
+  private Response getHttpForbiddenResponse(WebApplicationException exception) {
+    RestResponse<T> restResponse = new RestResponse<>();
+
+    restResponse.getResponseMessages().add(ResponseMessage.builder()
+                                               .code(ErrorCode.ACCOUNT_MIGRATED_TO_NEXT_GEN)
+                                               .level(Level.ERROR)
+                                               .message(exception.getCause().getMessage())
+                                               .build());
+
+    return Response.status(exception.getResponse().getStatus())
+        .entity(restResponse)
+        .type(MediaType.APPLICATION_JSON)
+        .build();
   }
 
   private Response getHttpErrorResponse(WebApplicationException exception) {

@@ -1,0 +1,13 @@
+policies:
+  - name: azure-keyvault-update-access-policies
+    resource: azure.keyvault
+    actions:
+      - type: update-access-policy
+        operation: add
+        access-policies:
+          - tenant-id: 00000000-0000-0000-0000-000000000000
+            object-id: 11111111-1111-1111-1111-111111111111
+            permissions:
+              keys:
+                - Get
+                - List

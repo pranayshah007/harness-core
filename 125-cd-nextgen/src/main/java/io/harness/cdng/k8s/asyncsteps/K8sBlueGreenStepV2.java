@@ -18,10 +18,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 
-import lombok.extern.slf4j.Slf4j;
-
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
-@Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public class K8sBlueGreenStepV2 extends CdAsyncChainExecutable<K8sBlueGreenStep> {
   public static final StepType STEP_TYPE = StepType.newBuilder()

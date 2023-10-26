@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
@@ -387,7 +389,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
         query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
     if (oldEntityFromDB == null) {
-      return null;
+      throw new EntityNotFoundException(
+          String.format("Pipeline with identifier %s does not exist in account: %s org: %s, project: %s",
+              pipelineToUpdate.getIdentifier(), pipelineToUpdate.getAccountIdentifier(),
+              pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier()));
     }
     PipelineEntity pipelineEntityAfterUpdate =
         PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);

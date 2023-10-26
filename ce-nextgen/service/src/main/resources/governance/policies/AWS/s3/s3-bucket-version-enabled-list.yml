@@ -1,0 +1,6 @@
+policies:
+  - name: s3-bucket-version-enabled-list
+    resource: s3
+    description: List buckets where versioning is enabled
+    filters:
+      - 'Versioning.Status': 'Enabled'

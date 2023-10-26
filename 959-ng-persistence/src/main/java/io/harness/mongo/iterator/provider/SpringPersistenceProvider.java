@@ -115,8 +115,8 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
-  public Iterator<T> obtainNextInstances(
-      Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, boolean unsorted, int limit) {
+  public Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, SpringFilterExpander filterExpander,
+      boolean unsorted, int limit, boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query query = createQuery(now, fieldName, filterExpander, unsorted);
     query.limit(limit);

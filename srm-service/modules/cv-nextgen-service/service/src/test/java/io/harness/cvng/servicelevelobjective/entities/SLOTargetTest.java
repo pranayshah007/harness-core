@@ -141,6 +141,53 @@ public class SLOTargetTest extends CvNextGenTestBase {
   @Test()
   @Owner(developers = SHASHWAT_SACHAN)
   @Category(UnitTests.class)
+  public void testGeTimeRangeForQuarterlyCalendarWithQuarterCycle1() {
+    SLOTarget sloTarget = QuarterlyCalenderTarget.builder().quarterStart(QuarterStart.JAN_APR_JUL_OCT).build();
+    TimePeriod currentTimeRange =
+        sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    TimePeriod prevTimeRange =
+        sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-07-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-10-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-04-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS2 = Instant.parse("2020-01-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS2, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-04-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-10-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS3 = Instant.parse("2020-04-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS3, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-04-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-07-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+  }
+
+  @Test()
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
   public void testGeTimeRangeForQuarterlyCalendarWithQuarterCycle2() {
     SLOTarget sloTarget = QuarterlyCalenderTarget.builder().quarterStart(QuarterStart.FEB_MAY_AUG_NOV).build();
     TimePeriod currentTimeRange =
@@ -154,6 +201,34 @@ public class SLOTargetTest extends CvNextGenTestBase {
 
     assertThat(prevTimeRange.getStartTime())
         .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-02-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS2 = Instant.parse("2020-01-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS2, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-11-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-02-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-08-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS3 = Instant.parse("2020-04-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS3, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-02-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-05-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-11-01T00:00:00Z"), ZoneOffset.UTC));
     assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
   }
 
@@ -173,6 +248,34 @@ public class SLOTargetTest extends CvNextGenTestBase {
 
     assertThat(prevTimeRange.getStartTime())
         .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-03-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS2 = Instant.parse("2020-01-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS2, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-12-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-03-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-09-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
+
+    Instant TIME_FOR_TESTS3 = Instant.parse("2020-04-01T10:50:00Z");
+    clock = Clock.fixed(TIME_FOR_TESTS3, ZoneOffset.UTC);
+
+    currentTimeRange = sloTarget.getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    prevTimeRange = sloTarget.getTimeRangeForHistory(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-03-01T00:00:00Z"), ZoneOffset.UTC));
+    assertThat(currentTimeRange.getEndTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2020-06-01T00:00:00Z"), ZoneOffset.UTC));
+
+    assertThat(prevTimeRange.getStartTime())
+        .isEqualTo(LocalDateTime.ofInstant(Instant.parse("2019-12-01T00:00:00Z"), ZoneOffset.UTC));
     assertThat(prevTimeRange.getEndTime()).isEqualTo(currentTimeRange.getStartTime());
   }
 }

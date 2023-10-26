@@ -1,0 +1,33 @@
+{
+  "PublicIp": "0.0.0.0",
+  "AllocationId": "eipalloc-AllocationId",
+  "AssociationId": "eipassoc-AssociationId",
+  "Domain": "vpc",
+  "NetworkInterfaceId": "eni-NetworkInterfaceId",
+  "NetworkInterfaceOwnerId": "AccountId",
+  "PrivateIpAddress": "192.168.18.40",
+  "Tags": [
+    {
+      "Key": "aws:cloudformation:logical-id",
+      "Value": "LogicalId"
+    },
+    {
+      "Key": "eksctl.cluster.k8s.io/v1alpha1/cluster-name",
+      "Value": "ClusterName"
+    },
+    {
+      "Key": "alpha.eksctl.io/cluster-name",
+      "Value": "ClusterName"
+    },
+    {
+      "Key": "aws:cloudformation:stack-name",
+      "Value": "StackName"
+    },
+    {
+      "Key": "aws:cloudformation:stack-id",
+      "Value": "arn:aws:cloudformation:us-east-1:AccountId:stack/StackName/StackId"
+    }
+  ],
+  "PublicIpv4Pool": "amazon",
+  "NetworkBorderGroup": "us-east-1"
+}

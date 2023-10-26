@@ -52,10 +52,13 @@ global:
 nginx:
   # -- Create Nginx Controller.  True will deploy a controller into your cluster
   create: false
-  # setting true sets it to enable loadBalancer nginx service, otherwise uses nodePort
+  # -- Creates clusterIP
+  clusterIPEnabled: false
+  clusterIP:
+  # if clusterIP is disabled and this is set, it uses type:Loadbalancer, otherwise uses nodePort
   loadBalancerEnabled: false
   # set loadbalancer IP when loadBalancer service is enabled.
-  loadBalancerIP: '0.0.0.0'
+  loadBalancerIP:
   healthPort: ""
   healthNodePort: ""
   httpNodePort: ""
@@ -70,11 +73,11 @@ nginx:
   tolerations: []
   affinity: {}
   image:
-    registry:  us.gcr.io
-    repository: k8s-artifacts-prod/ingress-nginx/controller
+    registry:  registry.k8s.io
+    repository: ingress-nginx/controller
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "v1.0.0-alpha.2"
+    tag: "v1.3.0"
     digest: ""
   resources:
     limits:

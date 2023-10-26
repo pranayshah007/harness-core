@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 61
+version: 62
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1624,6 +1624,12 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sei_seiconfigurationsettings_create
+    name: SEI create configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: sei_seiconfigurationsettings_view
     name: SEI view configuration settings
     status: ACTIVE

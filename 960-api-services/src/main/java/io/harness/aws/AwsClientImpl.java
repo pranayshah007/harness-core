@@ -74,6 +74,7 @@ import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecr.model.AmazonECRException;
+import com.amazonaws.services.ecr.model.AuthorizationData;
 import com.amazonaws.services.ecr.model.DescribeImagesRequest;
 import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
@@ -239,14 +240,18 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public String getAmazonEcrAuthToken(AwsConfig awsConfig, String account, String region) {
+    return getAmazonEcrAuthData(awsConfig, account, region).getAuthorizationToken();
+  }
+
+  @Override
+  public AuthorizationData getAmazonEcrAuthData(AwsConfig awsConfig, String account, String region) {
     try (CloseableAmazonWebServiceClient<AmazonECRClient> closeableAmazonECRClient =
              new CloseableAmazonWebServiceClient(getAmazonEcrClient(region, awsConfig))) {
       tracker.trackECRCall("Get Auth Token");
       return closeableAmazonECRClient.getClient()
           .getAuthorizationToken(new GetAuthorizationTokenRequest().withRegistryIds(singletonList(account)))
           .getAuthorizationData()
-          .get(0)
-          .getAuthorizationToken();
+          .get(0);
     } catch (AmazonEC2Exception amazonEC2Exception) {
       if (amazonEC2Exception.getStatusCode() == 401) {
         checkCredentials(awsConfig);

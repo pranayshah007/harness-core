@@ -17,6 +17,7 @@ import com.google.inject.Singleton;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class SecretVolumesHelper {
   public static final String CI_MOUNT_VOLUMES = "CI_MOUNT_VOLUMES";
+  public static final String HARNESS_SHARED_CERTS_PATH = "/harness-shared-certs-path/";
 
   // Reads the list of volumes to be mounted on the build containers and returns
   // a mapping from source paths to a list of destination paths.
@@ -39,16 +41,22 @@ public class SecretVolumesHelper {
   // /src/path/a.crt:/dest/path/b.crt,/src/path/a.crt:/dest/path/c.crt,/src/path/d.crt:/dest/d.crt
   public Map<String, List<String>> getSecretVolumeMappings() {
     Map<String, List<String>> secretVolumeMappings = new HashMap<>();
+
+    String sourceDirPath = getEnvVariable(SHARED_CA_CERTS_PATH);
+    String destinationPaths = getEnvVariable(DESTINATION_CA_PATH);
+
+    // Check if SHARED_CA_CERTS_PATH is set, then create secretVolumeMappings with the default location within pod
+    if (!isEmpty(sourceDirPath)) {
+      List<String> fileList = listFilesInDir(sourceDirPath);
+
+      fileList.forEach(
+          (f) -> secretVolumeMappings.put(f, Collections.singletonList(HARNESS_SHARED_CERTS_PATH + getName(f))));
+    }
+
     // Check if SHARED_CA_CERTS_PATH and DESTINATION_CA_PATH is set, then create the secretVolumeMappings from these
     // if not then add from CI_MOUNT_VOLUMES
-    if (checkSecretVolumesConfiguredV2()) {
-      String sourceDirPath = SystemWrapper.getenv(SHARED_CA_CERTS_PATH);
+    if (checkSecretVolumesConfiguredV2(sourceDirPath, destinationPaths)) {
       String sourceCertPathConcatenated = sourceDirPath + "/single-cert-path/all-certs.pem";
-
-      String destinationPaths = SystemWrapper.getenv(DESTINATION_CA_PATH);
-
-      log.info("{} is set with value: {}", DESTINATION_CA_PATH, destinationPaths);
-      log.info("{} is set with value: {}", SHARED_CA_CERTS_PATH, sourceDirPath);
 
       List<String> destinationList = Arrays.asList(destinationPaths.split(","));
 
@@ -116,19 +124,20 @@ public class SecretVolumesHelper {
     return true;
   }
 
-  public boolean checkSecretVolumesConfiguredV2() {
+  private String getEnvVariable(String variableName) {
+    String envVariableValue = "";
     try {
-      String srcPath = SystemWrapper.getenv(SHARED_CA_CERTS_PATH);
-      String destPath = SystemWrapper.getenv(DESTINATION_CA_PATH);
-
-      if (isEmpty(srcPath) || isEmpty(destPath)) {
-        return false;
-      }
+      envVariableValue = SystemWrapper.getenv(variableName);
+      log.info("{} is set with value: {}", variableName, envVariableValue);
     } catch (SecurityException e) {
-      log.error("Don't have sufficient permission to query SHARED_CA_CERTS_PATH or DESTINATION_CA_PATH", e);
-      return false;
+      log.error("Don't have sufficient permissions to query {}", variableName, e);
+      return "";
     }
-    return true;
+    return envVariableValue;
+  }
+
+  public boolean checkSecretVolumesConfiguredV2(String srcPath, String destPath) {
+    return !isEmpty(srcPath) && !isEmpty(destPath);
   }
 
   public boolean fileExists(String path) {

@@ -8,6 +8,7 @@
 package io.harness.freeze.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -95,8 +96,8 @@ public class NotificationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testsendNotification() throws IOException {
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
-    notificationHelper.sendNotification(yaml, true, true, null, ACCOUNT_ID, "", "", false);
-    verify(notificationClient, times(6)).sendNotificationAsync(any());
+    notificationHelper.sendNotification(yaml, true, true, true, null, ACCOUNT_ID, "", "", false);
+    verify(notificationClient, times(8)).sendNotificationAsync(any());
   }
 
   @Test
@@ -197,11 +198,11 @@ public class NotificationHelperTest extends CategoryTest {
         FreezeInfoConfig.builder().orgIdentifier(ORG_IDENTIFIER).identifier(FREEZE_IDENTIFIER).build();
     FreezeInfoConfig freezeInfoConfig3 = FreezeInfoConfig.builder().identifier(FREEZE_IDENTIFIER).build();
     assertThat(notificationHelper.getManualFreezeUrl(baseUrl, freezeInfoConfig1, ACCOUNT_ID))
-        .isEqualTo("baseUrl/account/accountId/cd/orgs/oId/projects/pId/setup/freeze-window-studio/window/freezeId");
+        .isEqualTo("baseUrl/account/accountId/cd/orgs/oId/projects/pId/setup/freeze-windows/studio/window/freezeId");
     assertThat(notificationHelper.getManualFreezeUrl(baseUrl, freezeInfoConfig2, ACCOUNT_ID))
-        .isEqualTo("baseUrl/account/accountId/settings/organizations/oId/setup/freeze-window-studio/window/freezeId");
+        .isEqualTo("baseUrl/account/accountId/settings/organizations/oId/setup/freeze-windows/studio/window/freezeId");
     assertThat(notificationHelper.getManualFreezeUrl(baseUrl, freezeInfoConfig3, ACCOUNT_ID))
-        .isEqualTo("baseUrl/account/accountId/settings/freeze-window-studio/window/freezeId");
+        .isEqualTo("baseUrl/account/accountId/settings/freeze-windows/studio/window/freezeId");
     assertThat(notificationHelper.getGlobalFreezeUrl(baseUrl, freezeInfoConfig1, ACCOUNT_ID))
         .isEqualTo("baseUrl/account/accountId/cd/orgs/oId/projects/pId/setup/freeze-windows");
     assertThat(notificationHelper.getGlobalFreezeUrl(baseUrl, freezeInfoConfig2, ACCOUNT_ID))
@@ -226,12 +227,14 @@ public class NotificationHelperTest extends CategoryTest {
     Map<String, String> templateData =
         notificationHelper.constructTemplateData(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE, freezeInfoConfig1,
             Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true, freezeNotifications);
-    assertThat(templateData.size()).isEqualTo(6);
+    assertThat(templateData.size()).isEqualTo(7);
     assertThat(templateData.get("BLACKOUT_WINDOW_URL"))
         .isEqualTo("baseUrl/account/accountId/cd/orgs/oId/projects/pId/setup/freeze-windows");
     assertThat(templateData.get("BLACKOUT_WINDOW_NAME")).isEqualTo(FREEZE_IDENTIFIER);
     assertThat(templateData.get("WORKFLOW_URL")).isEqualTo("executionUrl");
     assertThat(templateData.get("CUSTOMIZED_MESSAGE")).isEqualTo(" message");
+    assertThat(templateData.get("CURRENT_TIME")).isNull();
+    assertThat(templateData.get("CURRENT_TIME_IN_UTC")).isNotNull();
 
     FreezeWindow freezeWindow = new FreezeWindow();
     freezeWindow.setTimeZone("Asia/Calcutta");
@@ -247,7 +250,9 @@ public class NotificationHelperTest extends CategoryTest {
     Map<String, String> templateData2 =
         notificationHelper.constructTemplateData(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE, freezeInfoConfig2,
             Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true, freezeNotifications);
-    assertThat(templateData2.size()).isEqualTo(9);
+    assertThat(templateData2.get("CURRENT_TIME")).isNotNull();
+    assertThat(templateData2.get("CURRENT_TIME_IN_UTC")).isNotNull();
+    assertThat(templateData2.size()).isEqualTo(11);
   }
 
   @Test
@@ -255,7 +260,7 @@ public class NotificationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testsendNotification_2() throws IOException {
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
-    notificationHelper.sendNotification(yamlWithoutNotifications, false, true, null, ACCOUNT_ID, "", "", false);
+    notificationHelper.sendNotification(yamlWithoutNotifications, false, true, false, null, ACCOUNT_ID, "", "", false);
     verify(notificationClient, times(2)).sendNotificationAsync(any());
   }
 
@@ -264,7 +269,16 @@ public class NotificationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testsendNotification_3() throws IOException {
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
-    notificationHelper.sendNotification(yamlWithoutNotifications, true, false, null, ACCOUNT_ID, "", "", false);
+    notificationHelper.sendNotification(yamlWithoutNotifications, true, false, false, null, ACCOUNT_ID, "", "", false);
     verify(notificationClient, times(3)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testsendNotification_4() throws IOException {
+    when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
+    notificationHelper.sendNotification(yamlWithoutNotifications, false, false, true, null, ACCOUNT_ID, "", "", false);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
   }
 }

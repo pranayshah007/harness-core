@@ -264,7 +264,7 @@ public class HelmChartManifestTaskService {
               .basePath(ociHelm.getBasePath())
               .cacheRepoUrl(format("%s/%s", ociHelm.getRepoUrl(), ociHelm.getBasePath()));
         } else if (ociHelm.getAwsConnectorDTO() != null) {
-          String repoUrl = getEcrRepoUrl(ociHelm);
+          String repoUrl = getEcrRepoUrl(ociHelm, config.getChartName());
           metadataBuilder.url(repoUrl)
               .region(ociHelm.getRegion())
               .registryId(ociHelm.getRegistryId())
@@ -298,11 +298,11 @@ public class HelmChartManifestTaskService {
     return metadataBuilder.build();
   }
 
-  private static String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig) {
+  private static String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig, String chartName) {
     AwsInternalConfig awsInternalConfig =
         awsNgConfigMapper.createAwsInternalConfig(ociHelmStoreDelegateConfig.getAwsConnectorDTO());
     return awsClient.getEcrImageUrl(awsInternalConfig, ociHelmStoreDelegateConfig.getRegistryId(),
-        ociHelmStoreDelegateConfig.getRegion(), ociHelmStoreDelegateConfig.getRepoName());
+        ociHelmStoreDelegateConfig.getRegion(), chartName);
   }
 
   @Value

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-power-on
+cloudProvider: AWS
+resourceType: ec2
+description: Power on ec2 instances with instanceType p3.8xlarge or tag name with pattern '.*blah-blah.*'
+rulesYamlPath: ../ec2-power-on.yml

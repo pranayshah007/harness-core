@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.template.v1.SchemasApi;
+import io.harness.spec.server.template.v1.model.TemplateInputSchemaDetailsResponseBody;
+import io.harness.spec.server.template.v1.model.TemplateInputsSchemaRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateSchemaResponse;
 import io.harness.template.services.NGTemplateSchemaService;
 
@@ -26,6 +28,12 @@ import lombok.AllArgsConstructor;
 @NextGenManagerAuth
 public class SchemasApiImpl implements SchemasApi {
   private final NGTemplateSchemaService ngTemplateSchemaService;
+
+  @Override
+  public Response getInputsSchema(TemplateInputsSchemaRequestBody body, String harnessAccount) {
+    TemplateInputSchemaDetailsResponseBody response = new TemplateInputSchemaDetailsResponseBody();
+    return Response.ok().entity(response).build();
+  }
 
   @Override
   public Response getTemplateSchema(String nodeGroup, String nodeType, String harnessAccount, String version) {

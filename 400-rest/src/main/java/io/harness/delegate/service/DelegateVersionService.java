@@ -180,7 +180,7 @@ public class DelegateVersionService {
     String latestVersion = split[1];
 
     return SupportedDelegateVersion.builder()
-        .latestSupportedVersion(latestSupportedDelegateImage)
+        .latestSupportedVersion(latestVersion)
         .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
         .build();
   }

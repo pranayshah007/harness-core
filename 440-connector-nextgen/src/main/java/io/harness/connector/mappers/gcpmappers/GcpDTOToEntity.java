@@ -60,6 +60,7 @@ public class GcpDTOToEntity implements ConnectorDTOToEntityMapper<GcpConnectorDT
                                       .workloadPoolId(connectorConfig.getWorkloadPoolId())
                                       .providerId(connectorConfig.getProviderId())
                                       .gcpProjectId(connectorConfig.getGcpProjectId())
+                                      .serviceAccountEmail(connectorConfig.getServiceAccountEmail())
                                       .build();
 
     return GcpConfig.builder().credentialType(GcpCredentialType.OIDC_AUTHENTICATION).credential(gcpOidcConfig).build();

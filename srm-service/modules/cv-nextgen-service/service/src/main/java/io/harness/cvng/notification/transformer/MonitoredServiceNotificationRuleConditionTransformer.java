@@ -99,6 +99,10 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         return MonitoredServiceCodeErrorCondition.builder()
             .errorTrackingEventTypes(errorTrackingConditionSpec.getErrorTrackingEventTypes())
             .errorTrackingEventStatus(errorTrackingConditionSpec.getErrorTrackingEventStatus())
+            .aggregated(errorTrackingConditionSpec.getAggregated())
+            .savedFilterId(errorTrackingConditionSpec.getSavedFilterId())
+            .volumeThresholdCount(errorTrackingConditionSpec.getVolumeThresholdCount())
+            .volumeThresholdMinutes(errorTrackingConditionSpec.getVolumeThresholdMinutes())
             .build();
       case DEPLOYMENT_IMPACT_REPORT:
         DeploymentImpactReportConditionSpec deploymentImpactReportConditionSpec =
@@ -146,6 +150,10 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         return ErrorTrackingConditionSpec.builder()
             .errorTrackingEventTypes(codeErrorCondition.getErrorTrackingEventTypes())
             .errorTrackingEventStatus(codeErrorCondition.getErrorTrackingEventStatus())
+            .aggregated(codeErrorCondition.getAggregated())
+            .savedFilterId(codeErrorCondition.getSavedFilterId())
+            .volumeThresholdCount(codeErrorCondition.getVolumeThresholdCount())
+            .volumeThresholdMinutes(codeErrorCondition.getVolumeThresholdMinutes())
             .build();
       case DEPLOYMENT_IMPACT_REPORT:
         MonitoredServiceNotificationRule

@@ -9,8 +9,10 @@ package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_LIMIT;
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -52,6 +54,8 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsD
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
@@ -621,6 +625,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     Set<String> nullableFields = Sets.newHashSet();
     nullableFields.add(AnalysisOrchestratorKeys.analysisOrchestrationIteration);
+    nullableFields.add(AnalysisOrchestratorKeys.lastQueueSizeMetricIteration);
 
     List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(AnalysisOrchestrator.class);
     fields.stream().filter(field -> !nullableFields.contains(field.getName())).forEach(field -> {
@@ -665,6 +670,112 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(orchestrator.getAnalysisStateMachineQueue().get(0).getCurrentState().getType())
         .isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testExecuteAfterCompositeSLODeletion() {
+    MonitoredServiceDTO monitoredServiceDTO1 =
+        builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
+    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
+    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                  .weightagePercentage(25.0)
+                                  .accountId(simpleServiceLevelObjective2.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+
+    CompositeServiceLevelObjective compositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    verificationTaskService.createCompositeSLOVerificationTask(
+        builderFactory.getContext().getAccountId(), compositeServiceLevelObjective.getUuid(), new HashMap<>());
+    Instant startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
+    UpdateOperations<CompositeServiceLevelObjective> updateOperations =
+        hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
+            .set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.startedAt, startTime.toEpochMilli());
+    String verificationTaskId = compositeServiceLevelObjective.getUuid();
+    hPersistence.update(compositeServiceLevelObjective, updateOperations);
+
+    serviceLevelObjectiveV2Service.delete(
+        builderFactory.getProjectParams(), compositeServiceLevelObjective.getIdentifier());
+    serviceLevelObjectiveV2Service.delete(
+        builderFactory.getProjectParams(), simpleServiceLevelObjective2.getIdentifier());
+    serviceLevelObjectiveV2Service.delete(
+        builderFactory.getProjectParams(), simpleServiceLevelObjective1.getIdentifier());
+    orchestrate(verificationTaskId);
+    AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                                            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
+                                            .get();
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    orchestrate(verificationTaskId);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
+                       .get();
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    AnalysisStateMachine analysisStateMachine =
+        hPersistence.createQuery(AnalysisStateMachine.class)
+            .filter(AnalysisStateMachineKeys.verificationTaskId, verificationTaskId)
+            .get();
+    assertThat(analysisStateMachine).isNotNull();
+    assertThat(analysisStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.TERMINATED.name());
+    orchestrate(verificationTaskId);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
+                       .get();
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.TERMINATED.name());
+    assertThat(orchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(0);
+    analysisStateMachine = hPersistence.createQuery(AnalysisStateMachine.class)
+                               .filter(AnalysisStateMachineKeys.verificationTaskId, verificationTaskId)
+                               .get();
+    assertThat(analysisStateMachine).isNotNull();
+    assertThat(analysisStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.TERMINATED.name());
   }
 
   @Test

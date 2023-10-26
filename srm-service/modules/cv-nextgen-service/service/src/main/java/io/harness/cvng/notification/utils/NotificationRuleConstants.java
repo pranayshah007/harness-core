@@ -17,6 +17,7 @@ public class NotificationRuleConstants {
   public static final String REMAINING_MINUTES = "REMAINING_MINUTES";
   public static final String BURN_RATE = "BURN_RATE";
   public static final String ENTITY_IDENTIFIER = "ENTITY_IDENTIFIER";
+  public static final String CHANNEL_ID = "CHANNEL_ID";
   public static final String SERVICE_IDENTIFIER = "SERVICE_IDENTIFIER";
   public static final String MONITORED_SERVICE_IDENTIFIER = "MONITORED_SERVICE_IDENTIFIER";
   public static final String ENTITY_NAME = "ENTITY_NAME";

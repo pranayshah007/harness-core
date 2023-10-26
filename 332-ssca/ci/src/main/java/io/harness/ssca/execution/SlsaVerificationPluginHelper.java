@@ -40,10 +40,14 @@ public class SlsaVerificationPluginHelper {
   private static final String PLUGIN_DIGEST = "PLUGIN_DIGEST";
   public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
   public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
+  private static final String PLUGIN_REGISTRY_TYPE = "PLUGIN_REGISTRY_TYPE";
 
   public Map<String, String> getSlsaVerificationStepEnvVariables(
       SlsaVerificationStepInfo slsaVerificationStepInfo, String identifier, Ambiance ambiance) {
     Map<String, String> envMap = new HashMap<>();
+    if (slsaVerificationStepInfo.getSource() != null && slsaVerificationStepInfo.getSource().getType() != null) {
+      envMap.put(PLUGIN_REGISTRY_TYPE, slsaVerificationStepInfo.getSource().getType().getRegistryType());
+    }
     if (slsaVerificationStepInfo.getSource() != null
         && slsaVerificationStepInfo.getSource().getType() == SlsaVerificationSourceType.DOCKER) {
       SlsaDockerSourceSpec spec = (SlsaDockerSourceSpec) slsaVerificationStepInfo.getSource().getSpec();

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: sql-database-masking
+cloudProvider: AZURE
+resourceType: azure.sql-database
+description: List SQL databases with data masking enabled
+rulesYamlPath: ../sql-database-masking.yml

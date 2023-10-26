@@ -1,0 +1,9 @@
+policies:
+  - name: rds-unencrypted-public-list
+    description: |
+      List all unencrypted or publicly available RDS
+    resource: rds
+    filters:
+      - or:
+          - StorageEncrypted: false
+          - PubliclyAccessible: true

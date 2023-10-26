@@ -139,6 +139,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .spotInstConfig(spotInstConfig)
             .elastigroupConfiguration(executionPassThroughData.getElastigroupConfiguration())
             .startupScript(executionPassThroughData.getBase64EncodedStartupScript())
+            .decodedStartupScript(executionPassThroughData.getBase64DecodedStartupScript())
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .image(executionPassThroughData.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))

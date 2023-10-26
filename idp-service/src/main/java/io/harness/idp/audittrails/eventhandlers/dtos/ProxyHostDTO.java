@@ -6,6 +6,8 @@
  */
 package io.harness.idp.audittrails.eventhandlers.dtos;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@OwnedBy(HarnessTeam.IDP)
 public class ProxyHostDTO implements YamlDTO {
   String pluginId;
   String host;

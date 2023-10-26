@@ -416,3 +416,8 @@ fi
 if [[ "" != "$AUDIT_ENABLED" ]]; then
   export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi
+
+if [[ "" != "$INTERNAL_ACCOUNTS" ]]; then
+  yq -i 'del(.internalAccounts)' $CONFIG_FILE
+  export INTERNAL_ACCOUNTS; yq -i '.internalAccounts=(env(INTERNAL_ACCOUNTS) | split(",") | map(trim))' $CONFIG_FILE
+fi

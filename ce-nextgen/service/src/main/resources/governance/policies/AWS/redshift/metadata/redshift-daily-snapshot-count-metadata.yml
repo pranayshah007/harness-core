@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: redshift-daily-snapshot-count
+cloudProvider: AWS
+resourceType: redshift
+description: List all Redshift clusters where snapshot was available consecutively over a period of 7 days
+rulesYamlPath: ../redshift-daily-snapshot-count.yml

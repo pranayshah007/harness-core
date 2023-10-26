@@ -355,7 +355,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
 
         startTime = currentTimeMillis();
-        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, unsorted, limit);
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(
+            clazz, fieldName, filterExpander, unsorted, limit, isDelegateTaskMigrationEnabled);
         processTime = currentTimeMillis() - startTime;
         log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 

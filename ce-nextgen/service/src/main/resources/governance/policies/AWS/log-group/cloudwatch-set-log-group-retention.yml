@@ -1,0 +1,6 @@
+policies:
+  - name: cloudwatch-set-log-group-retention
+    resource: log-group
+    actions:
+      - type: retention
+        days: 200

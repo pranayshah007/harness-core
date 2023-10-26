@@ -1230,6 +1230,25 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
+  /v1/license/usage/save:
+    post:
+      summary: Save IDP module license usage
+      operationId: idp-license-usage-save
+      responses:
+        '200':
+          $ref: '#/components/responses/LicenseUsageSaveResponse'
+      x-stoplight:
+        id: 7ptx9noskc4vz
+      x-internal: true
+      description: Save IDP module license usage
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LicenseUsageResource
+      requestBody:
+        $ref: '#/components/requestBodies/LicenseUsageSaveRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -3237,6 +3256,48 @@ components:
       properties:
         identifiers:
           $ref: '#/components/schemas/ScorecardRecalibrateIdentifiers'
+    LicenseUsageSaveRequest:
+      title: LicenseUsageSaveRequest
+      x-stoplight:
+        id: p4t22zv37yivm
+      type: object
+      description: User details and accessedAt to capture license usage
+      properties:
+        user_identifier:
+          type: string
+          x-stoplight:
+            id: kwshwrjsp0kw0
+        email:
+          type: string
+          x-stoplight:
+            id: gg9ozxyv4slx8
+        user_name:
+          type: string
+          x-stoplight:
+            id: gg9ozxyv4slx8
+        accessed_at:
+          type: integer
+          x-stoplight:
+            id: w7yl3d8j1xce2
+          format: int64
+      required:
+        - user_identifier
+        - email
+        - user_name
+        - accessed_at
+    LicenseUsageSaveResponse:
+      title: LicenseUsageSaveResponse
+      x-stoplight:
+        id: zavwissy2n6kj
+      type: object
+      description: Response for license usage save
+      properties:
+        status:
+          type: string
+          x-stoplight:
+            id: uva00wdpw7tkp
+      required:
+        - status
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3561,6 +3622,12 @@ components:
           schema:
             $ref: '#/components/schemas/KubernetesRequest'
       description: Kubernetes Configuration
+    LicenseUsageSaveRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LicenseUsageSaveRequest'
+      description: User details and accessedAt to capture license usage
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -3941,6 +4008,12 @@ components:
           schema:
             type: object
             properties: {}
+    LicenseUsageSaveResponse:
+      description: Response for license usage save
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LicenseUsageSaveResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3971,6 +4044,8 @@ tags:
     description: Kubernetes DataPoints Information
   - name: LayoutProxy
     description: Layout Proxy
+  - name: LicenseUsageResource
+    description: License Usage Resource
   - name: MergedPluginsConfig
     description: Merged Plugins Configurations
   - name: Namespace

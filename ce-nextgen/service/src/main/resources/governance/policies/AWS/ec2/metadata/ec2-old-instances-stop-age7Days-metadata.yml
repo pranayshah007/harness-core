@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-old-instances-stop-age7Days
+cloudProvider: AWS
+resourceType: ec2
+description: Stop all EC2s where instance age is more than 7 days
+rulesYamlPath: ../ec2-old-instances-stop-age7Days.yml

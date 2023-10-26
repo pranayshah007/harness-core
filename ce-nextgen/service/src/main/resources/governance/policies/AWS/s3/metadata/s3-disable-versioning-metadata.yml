@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: s3-disable-versioning
+cloudProvider: AWS
+resourceType: s3
+description: Disable bucket versioning where versioning is enabled
+rulesYamlPath: ../s3-disable-versioning.yml

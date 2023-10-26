@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.version.Version;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
@@ -27,14 +26,11 @@ public class CreateCommand extends AbstractExecutable {
   @Override
   public String command() {
     StringBuilder command = new StringBuilder(128);
-    command.append(client.command()).append("create -f ").append(this.createdManifestName).append(" -o=yaml ");
-
-    int versionCheck = client.getVersion().compareTo(Version.parse("1.18"));
-    if (versionCheck < 0) {
-      command.append("--dry-run");
-    } else {
-      command.append("--dry-run=client");
-    }
+    command.append(client.command())
+        .append("create -f ")
+        .append(this.createdManifestName)
+        .append(" -o=yaml ")
+        .append(Kubectl.flag(Flag.dryrun.getForVersion(client.getVersion(), client.getClientType())));
     return command.toString().trim();
   }
 }

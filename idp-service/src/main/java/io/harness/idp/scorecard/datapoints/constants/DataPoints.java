@@ -23,6 +23,10 @@ public class DataPoints {
   public static final String WORKFLOW_SUCCESS_RATE = "workflowSuccessRate";
   public static final String MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "meanTimeToCompleteWorkflowRuns";
   public static final String MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS = "meanTimeToCompleteSuccessWorkflowRuns";
+  public static final String OPEN_DEPENDABOT_ALERTS = "openDependabotAlerts";
+  public static final String OPEN_CODE_SCANNING_ALERTS = "openCodeScanningAlerts";
+  public static final String OPEN_SECRET_SCANNING_ALERTS = "openSecretScanningAlerts";
+  public static final String OPEN_PULL_REQUESTS_BY_ACCOUNT = "openPullRequestsByAccount";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";
@@ -49,6 +53,7 @@ public class DataPoints {
       "Invalid or missing jira/project-key annotation in the catalog info YAML";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
+  public static final String INVALID_CONDITIONAL_INPUT = "Invalid conditional input";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 
   // Kubernetes

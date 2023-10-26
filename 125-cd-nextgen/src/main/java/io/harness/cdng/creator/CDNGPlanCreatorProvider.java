@@ -30,6 +30,7 @@ import static io.harness.cdng.visitor.YamlTypes.SERVICE_ENTITY;
 import static io.harness.cdng.visitor.YamlTypes.SERVICE_HOOKS;
 import static io.harness.cdng.visitor.YamlTypes.SIDECAR;
 import static io.harness.cdng.visitor.YamlTypes.SIDECARS;
+import static io.harness.cdng.visitor.YamlTypes.STAGE;
 import static io.harness.cdng.visitor.YamlTypes.STARTUP_COMMAND;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
@@ -311,6 +312,7 @@ import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -554,6 +556,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
     planCreators.add(new CustomStagePlanCreator());
+    planCreators.add(new io.harness.cdng.creator.plan.stage.v1.CustomStagePlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -575,6 +578,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
 
     filterJsonCreators.add(new CustomStageFilterCreator());
+    filterJsonCreators.add(new io.harness.cdng.creator.filters.v1.CustomStageFilterCreator());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -584,6 +588,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   @Override
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
+    variableCreators.add(new EmptyVariableCreator(STAGE, Set.of(YAMLFieldNameConstants.CUSTOM_V1)));
     variableCreators.add(new EmptyAnyVariableCreator(new HashSet<>(EMPTY_VARIABLE_IDENTIFIERS)));
     variableCreators.add(new EmptyVariableCreator(SIDECAR, EMPTY_SIDECAR_TYPES));
     variableCreators.add(new EmptyVariableCreator(MANIFEST_CONFIG, EMPTY_MANIFEST_TYPES));
@@ -771,7 +776,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Rolling Deployment")
             .setType(StepSpecTypeConstants.K8S_ROLLING_DEPLOY)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_ROLLING_DEPLOY.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
 
@@ -779,20 +783,17 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Canary Deployment")
             .setType(StepSpecTypeConstants.K8S_CANARY_DEPLOY)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_CANARY_DEPLOY.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
     StepInfo canaryDelete =
         StepInfo.newBuilder()
             .setName("Canary Delete")
             .setType(StepSpecTypeConstants.K8S_CANARY_DELETE)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_CANARY_DELETE.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
     StepInfo delete = StepInfo.newBuilder()
                           .setName("Delete")
                           .setType(StepSpecTypeConstants.K8S_DELETE)
-                          .setFeatureRestrictionName(FeatureRestrictionName.K8S_DELETE.name())
                           .setStepMetaData(StepMetaData.newBuilder()
                                                .addCategory("Kubernetes")
                                                .addCategory("Helm")
@@ -804,21 +805,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Stage Deployment")
             .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_DEPLOY.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
     StepInfo bgSwapServices =
         StepInfo.newBuilder()
             .setName("BG Swap Services")
             .setType(StepSpecTypeConstants.K8S_BG_SWAP_SERVICES)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_BG_SWAP_SERVICES.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
 
     StepInfo apply = StepInfo.newBuilder()
                          .setName("Apply")
                          .setType(StepSpecTypeConstants.K8S_APPLY)
-                         .setFeatureRestrictionName(FeatureRestrictionName.K8S_APPLY.name())
                          .setStepMetaData(StepMetaData.newBuilder()
                                               .addCategory("Kubernetes")
                                               .addCategory("Helm")
@@ -828,7 +826,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     StepInfo scale = StepInfo.newBuilder()
                          .setName("Scale")
                          .setType(StepSpecTypeConstants.K8S_SCALE)
-                         .setFeatureRestrictionName(FeatureRestrictionName.K8S_SCALE.name())
                          .setStepMetaData(StepMetaData.newBuilder()
                                               .addCategory("Kubernetes")
                                               .addCategory("Helm")
@@ -840,7 +837,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Rolling Rollback")
             .setType(StepSpecTypeConstants.K8S_ROLLING_ROLLBACK)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_ROLLING_ROLLBACK.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
 
@@ -1403,7 +1399,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     StepInfo k8sDryRunManifest = StepInfo.newBuilder()
                                      .setName("Dry Run")
                                      .setType(StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST)
-                                     .setFeatureRestrictionName(FeatureRestrictionName.K8S_DRY_RUN.name())
                                      .setStepMetaData(StepMetaData.newBuilder()
                                                           .addCategory("Kubernetes")
                                                           .addCategory("Helm")
@@ -1492,7 +1487,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Blue Green Stage Scale Down")
             .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
-            .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
             .build();
 

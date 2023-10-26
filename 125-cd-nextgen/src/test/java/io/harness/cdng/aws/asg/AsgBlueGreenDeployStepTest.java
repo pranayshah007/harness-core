@@ -383,13 +383,14 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
     // loadBalancers of type AwsAsgLoadBalancerConfigYaml provided
     asgBlueGreenDeployStepParameters =
         AsgBlueGreenDeployStepParameters.infoBuilder()
-            .loadBalancers(List.of(AwsAsgLoadBalancerConfigYaml.builder()
-                                       .loadBalancer(ParameterField.createValueField("loadBalancer"))
-                                       .prodListener(ParameterField.createValueField("prodListener"))
-                                       .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
-                                       .stageListener(ParameterField.createValueField("stageListener"))
-                                       .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
-                                       .build()))
+            .loadBalancers(ParameterField.createValueField(
+                List.of(AwsAsgLoadBalancerConfigYaml.builder()
+                            .loadBalancer(ParameterField.createValueField("loadBalancer"))
+                            .prodListener(ParameterField.createValueField("prodListener"))
+                            .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+                            .stageListener(ParameterField.createValueField("stageListener"))
+                            .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
+                            .build())))
             .build();
 
     ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);

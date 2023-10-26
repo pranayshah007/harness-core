@@ -10,6 +10,7 @@ package io.harness.notification.eventbackbone;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.queue.QueueConsumer;
@@ -25,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MongoMessageConsumer extends QueueListener<MongoNotificationRequest> implements MessageConsumer {
   private NotificationService notificationService;
 
+  private static final String NOTIFICATION_TRIGGER_TYPE = "NotificationTriggerRequest";
+
   @Inject
   public MongoMessageConsumer(
       QueueConsumer<MongoNotificationRequest> queueConsumer, NotificationService notificationService) {
@@ -34,6 +37,10 @@ public class MongoMessageConsumer extends QueueListener<MongoNotificationRequest
 
   @Override
   public void onMessage(MongoNotificationRequest message) {
+    if (message.getRequestType() != null && message.getRequestType().equals(NOTIFICATION_TRIGGER_TYPE)) {
+      processNotificationTriggerRequest(message);
+      return;
+    }
     try {
       NotificationRequest notificationRequest = NotificationRequest.parseFrom(message.getBytes());
       if (!notificationRequest.getUnknownFields().asMap().isEmpty()) {
@@ -41,6 +48,22 @@ public class MongoMessageConsumer extends QueueListener<MongoNotificationRequest
       }
       SecurityContextBuilder.setContext(new ServicePrincipal(NOTIFICATION_SERVICE.getServiceId()));
       notificationService.processNewMessage(notificationRequest);
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Corrupted message received off the mongo queue");
+    } finally {
+      SecurityContextBuilder.unsetCompleteContext();
+    }
+  }
+
+  private void processNotificationTriggerRequest(MongoNotificationRequest message) {
+    try {
+      NotificationTriggerRequest notificationTriggerRequest = NotificationTriggerRequest.parseFrom(message.getBytes());
+      if (!notificationTriggerRequest.getUnknownFields().asMap().isEmpty()) {
+        throw new InvalidProtocolBufferException(
+            "Unknown fields detected. Check Notification Trigger Request producer");
+      }
+      SecurityContextBuilder.setContext(new ServicePrincipal(NOTIFICATION_SERVICE.getServiceId()));
+      notificationService.processNewMessage(notificationTriggerRequest);
     } catch (InvalidProtocolBufferException e) {
       log.error("Corrupted message received off the mongo queue");
     } finally {

@@ -1,0 +1,11 @@
+policies:
+  - name: ebs-old-ebs-snapshots-list
+    resource: ebs-snapshot
+    description: |
+      List old ebsSnapshots aged more than 30 days
+    filters:
+      - type: age
+        days: 30
+        op: ge
+    actions:
+      - type: delete
