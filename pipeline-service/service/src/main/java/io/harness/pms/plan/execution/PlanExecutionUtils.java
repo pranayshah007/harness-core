@@ -13,20 +13,27 @@ import static io.harness.plan.Plan.PlanBuilder;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dto.LevelDTO;
+import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanNodeProto;
+import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
-@UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionUtils {
+  @Inject NodeTypeLookupService nodeTypeLookupService;
   public Plan extractPlan(PlanCreationBlobResponse planCreationBlobResponse) {
     PlanBuilder planBuilder = Plan.builder();
     return buildPlan(planCreationBlobResponse, planBuilder);
@@ -42,6 +49,7 @@ public class PlanExecutionUtils {
     for (PlanNodeProto planNodeProto : planNodeProtoList) {
       planBuilder.planNode(PlanNode.fromPlanNodeProto(planNodeProto));
     }
+
     if (isNotEmpty(planCreationBlobResponse.getStartingNodeId())) {
       planBuilder.startingNodeId(planCreationBlobResponse.getStartingNodeId());
     }
@@ -49,6 +57,21 @@ public class PlanExecutionUtils {
       planBuilder.graphLayoutInfo(planCreationBlobResponse.getGraphLayoutInfo());
     }
     planBuilder.preservedNodesInRollbackMode(planCreationBlobResponse.getPreservedNodesInRollbackModeList());
+
+    Plan plan = planBuilder.build();
+    Set<String> modules = new HashSet<>();
+    // Set<String> modules12 = new HashSet<>();
+    for (Node planNode : plan.getPlanNodes()) {
+      //      if(planNode.getStepType() != null && planNode.getStepType().getType() != null){
+      //        modules.add(planNode.getStepType().getType());
+      //      }
+
+      modules.add(planNode.getServiceName());
+    }
+    planBuilder.modules(modules);
+    // planBuilder.modules(nodeTypeLookupService.findStepNodeTypeServiceName(modules));
+    // nodeTypeLookupService.findStepNodeTypeServiceName(modules);
+    // nodeTypeLookupService.listOfDistinctModules(modules);
 
     return planBuilder.build();
   }

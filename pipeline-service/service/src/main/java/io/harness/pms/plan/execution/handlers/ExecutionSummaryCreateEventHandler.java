@@ -161,6 +161,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     updateExecutionInfoInPipelineEntity(
         accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecutionId);
     Plan plan = planService.fetchPlan(ambiance.getPlanId());
+
+    // List of node type chahiye jo upar se milega, of all nodes then go to NodeTYpeLookUpSErvice
     Map<String, GraphLayoutNode> layoutNodeMap = new HashMap<>(plan.getGraphLayoutInfo().getLayoutNodesMap());
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
 
@@ -183,7 +185,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       layoutNodeMap = modifiedLayoutNodeMap;
     }
     Map<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
-    Set<String> modules = new LinkedHashSet<>();
+    //
+    Set<String> modules = plan.getModules();
+    // modules set kar do
     for (Map.Entry<String, GraphLayoutNode> entry : layoutNodeMap.entrySet()) {
       GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(entry.getValue());
       if (INTERNAL_NODE_TYPES.contains(entry.getValue().getNodeType())

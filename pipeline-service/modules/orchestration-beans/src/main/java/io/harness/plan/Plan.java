@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -84,6 +85,8 @@ public class Plan implements PersistentEntity, Node {
   @Builder.Default boolean valid = true;
   ErrorResponse errorResponse;
   List<String> preservedNodesInRollbackMode;
+
+  Set<String> modules;
 
   public boolean isEmpty() {
     return EmptyPredicate.isEmpty(nodes);

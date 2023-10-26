@@ -168,6 +168,8 @@ public class ExecutionHelper {
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
   YamlPreProcessorFactory yamlPreProcessorFactory;
+  //
+  PlanExecutionUtils planExecutionUtils;
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
       List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT, PIE_SIMPLIFY_LOG_BASE_KEY,
@@ -578,7 +580,7 @@ public class ExecutionHelper {
         String version = executionMetadata.getProcessedYamlVersion();
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
-        plan = PlanExecutionUtils.extractPlan(resp);
+        plan = planExecutionUtils.extractPlan(resp);
       } catch (IOException e) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
         throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);

@@ -53,6 +53,7 @@ public class PartialPlanResponseCallback extends AsyncResponseCallback<PartialPl
   @Inject PmsSdkHelper pmsSdkHelper;
   @Inject PlanService planService;
   @Inject PmsEventSender pmsEventSender;
+  @Inject PlanExecutionUtils planExecutionUtils;
 
   public String getPublisherName() {
     return PMS_PLAN_CREATION;
@@ -154,7 +155,7 @@ public class PartialPlanResponseCallback extends AsyncResponseCallback<PartialPl
 
   @Override
   public void finalizeCreation() {
-    Plan plan = PlanExecutionUtils.extractPlan(planUuid, finalResponse.getBlobResponse());
+    Plan plan = planExecutionUtils.extractPlan(planUuid, finalResponse.getBlobResponse());
     planService.save(plan);
   }
 

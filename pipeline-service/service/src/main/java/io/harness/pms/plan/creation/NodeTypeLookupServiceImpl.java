@@ -17,6 +17,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 
 import com.google.inject.Inject;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,4 +54,65 @@ public class NodeTypeLookupServiceImpl implements NodeTypeLookupService {
 
     throw new InvalidRequestException("Unknown Node type: " + nodeType);
   }
+  // create another function here
+  @Override
+  public Set<String> listOfDistinctModules(List<String> nodeType) {
+    Map<String, Map<String, Set<String>>> map = pmsSdkInstanceService.getInstanceNameToSupportedTypes();
+    Set<String> modules = new HashSet<>();
+    if (isEmpty(map)) {
+      throw new InvalidRequestException("Supported Types Map is empty");
+    }
+
+    for (String node : nodeType) {
+      for (Map.Entry<String, Map<String, Set<String>>> entry : map.entrySet()) {
+        Set<String> supportedNodeTypes = new HashSet<>();
+        for (Set<String> stringSet : entry.getValue().values()) {
+          supportedNodeTypes.addAll(stringSet);
+          if (isEmpty(supportedNodeTypes)) {
+            continue;
+          }
+
+          if (supportedNodeTypes.stream().anyMatch(st -> st.equals(node))) {
+            if (node.equals(FEATURE_FLAG_SUPPORTED_TYPE)) {
+              modules.add("cf");
+            }
+            if (node.equals("Custom")) {
+              modules.add("pms");
+            }
+            // return entry.getKey();
+            modules.add(entry.getKey());
+          }
+        }
+      }
+    }
+    return modules;
+  }
+
+  @Override
+  public Set<String> findStepNodeTypeServiceName(List<String> stepType) {
+    Map<String, Map<String, Set<String>>> map = pmsSdkInstanceService.getInstanceNameToSupportedTypes();
+
+    Set<String> modules = new HashSet<>();
+    if (isEmpty(map)) {
+      throw new InvalidRequestException("Supported Types Map is empty");
+    }
+
+    for (String nodeType : stepType) {
+      for (Map.Entry<String, Map<String, Set<String>>> entry : map.entrySet()) {
+        Set<String> supportedNodeTypes = new HashSet<>();
+        for (Set<String> stringSet : entry.getValue().values()) {
+          supportedNodeTypes.addAll(stringSet);
+          if (isEmpty(supportedNodeTypes)) {
+            continue;
+          }
+
+          if (supportedNodeTypes.stream().anyMatch(st -> st.equals(nodeType))) {
+            modules.add(entry.getKey());
+          }
+        }
+      }
+    }
+    return modules;
+  }
+  //    throw new InvalidRequestException("Unknown Node type: " + nodeType);
 }

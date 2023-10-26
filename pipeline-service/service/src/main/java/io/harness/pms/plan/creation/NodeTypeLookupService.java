@@ -7,6 +7,12 @@
 
 package io.harness.pms.plan.creation;
 
+import java.util.List;
+import java.util.Set;
+
 public interface NodeTypeLookupService {
   String findNodeTypeServiceName(String nodeType);
+  Set<String> listOfDistinctModules(List<String> nodeType);
+
+  Set<String> findStepNodeTypeServiceName(List<String> stepType);
 }

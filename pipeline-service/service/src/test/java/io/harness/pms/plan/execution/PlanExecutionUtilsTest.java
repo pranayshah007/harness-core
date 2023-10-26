@@ -22,6 +22,7 @@ import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.rule.Owner;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import org.junit.Before;
@@ -36,6 +37,8 @@ public class PlanExecutionUtilsTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
   }
 
+  @Inject PlanExecutionUtils planExecutionUtils;
+
   @Test
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
@@ -46,7 +49,7 @@ public class PlanExecutionUtilsTest extends CategoryTest {
             .setStartingNodeId("startingNodeId")
             .setGraphLayoutInfo(GraphLayoutInfo.newBuilder().build())
             .build();
-    Plan plan = PlanExecutionUtils.extractPlan("planNodeUuid", planCreationBlobResponse);
+    Plan plan = planExecutionUtils.extractPlan("planNodeUuid", planCreationBlobResponse);
     assertThat(plan.getStartingNodeId()).isEqualTo("startingNodeId");
   }
 
