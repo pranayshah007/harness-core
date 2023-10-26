@@ -14,6 +14,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfo;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInstanceInfo;
@@ -67,6 +68,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CDLicenseReportAccounts.class);
     set.add(AwsCdkConfig.class);
     set.add(GitRestraintInstance.class);
+    set.add(DeploymentStagePlanCreationInfo.class);
   }
 
   @Override
@@ -91,5 +93,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
         TerraformApplyExecutionDetails.class);
     h.put("io.harness.cdng.provision.awscdk.beans.AwsCdkConfig", AwsCdkConfig.class);
     h.put("io.harness.cdng.gitops.resume.GitopsStepFinishCallback", GitopsStepFinishCallback.class);
+    h.put("io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfo", DeploymentStagePlanCreationInfo.class);
   }
 }
