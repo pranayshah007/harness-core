@@ -4,7 +4,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM ubuntu:latest as builder
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as builder
 
 # Install curl
 RUN apt-get update -y && apt-get install -y curl
