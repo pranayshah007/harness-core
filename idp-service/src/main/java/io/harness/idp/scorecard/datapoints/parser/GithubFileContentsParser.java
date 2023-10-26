@@ -9,6 +9,10 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_CONDITIONAL_INPUT;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_FILE_NAME_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_PATTERN;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.PATTERN;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,19 +20,17 @@ import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @OwnedBy(HarnessTeam.IDP)
-public class GithubWorkflowsCountParser implements DataPointParser {
+public class GithubFileContentsParser extends GithubFileParser {
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
-    String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
-    if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
-    }
-    double count = (double) CommonUtils.findObjectByName(data, "total_count");
-    return constructDataPointInfoWithoutInputValue(count, null);
+  Object parseRegex(Matcher matcher) {
+    return matcher.find() ? matcher.group(1) : null;
   }
 }

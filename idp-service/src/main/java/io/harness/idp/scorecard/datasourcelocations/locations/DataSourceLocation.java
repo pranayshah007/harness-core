@@ -16,34 +16,37 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.ws.rs.core.Response;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceLocation {
   Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
-      throws NoSuchAlgorithmException, KeyManagementException;
+      DataSourceLocationEntity dataSourceLocationEntity,
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
+      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException;
 
-  String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody);
+  String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues);
 
   default ApiRequestDetails fetchApiRequestDetails(DataSourceLocationEntity dataSourceLocationEntity) {
     return ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
   }
 
   default String constructRequestBody(ApiRequestDetails apiRequestDetails,
-      Map<String, String> possibleReplaceableRequestBodyPairs, Map<DataPointEntity, String> dataPointAndInputValue) {
+      Map<String, String> possibleReplaceableRequestBodyPairs, DataPointEntity dataPoint,
+      List<InputValue> inputValues) {
     String requestBody = apiRequestDetails.getRequestBody();
     requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
-    Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
-    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
+    return replaceInputValuePlaceholdersIfAny(requestBody, dataPoint, inputValues);
   }
 
   default String constructUrl(String baseUrl, String url, Map<String, String> replaceableUrls) {
@@ -52,10 +55,9 @@ public interface DataSourceLocation {
   }
 
   default String constructUrl(String baseUrl, String url, Map<String, String> replaceableUrls,
-      Map<DataPointEntity, String> dataPointAndInputValue) {
+      DataPointEntity dataPoint, List<InputValue> inputValues) {
     String replacedUrl = constructUrl(baseUrl, url, replaceableUrls);
-    Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
-    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, replacedUrl);
+    return replaceInputValuePlaceholdersIfAny(replacedUrl, dataPoint, inputValues);
   }
 
   default void matchAndReplaceHeaders(Map<String, String> headers, Map<String, String> replaceableHeaders) {
@@ -91,6 +93,14 @@ public interface DataSourceLocation {
   default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier)
       throws NoSuchAlgorithmException, KeyManagementException {
     return dslClient.call(accountIdentifier, apiRequestDetails);
+  }
+
+  default void addInputValueResponse(
+      Map<String, Object> data, List<InputValue> inputValues, Map<String, Object> value) {
+    for (int i = inputValues.size() - 1; i >= 0; i--) {
+      value = Map.of(inputValues.get(i).getValue(), value);
+    }
+    data.putAll(value);
   }
 
   private String removeTrailingSlash(String url) {

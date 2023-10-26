@@ -15,17 +15,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class GenericExpressionParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
     String outcomeExpression = dataPoint.getOutcomeExpression();
     Map<String, Map<String, Object>> expressionData = new HashMap<>();
     expressionData.put(dataPoint.getDataSourceIdentifier(), data);

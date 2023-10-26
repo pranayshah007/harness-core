@@ -17,11 +17,11 @@ import io.harness.expression.common.ExpressionMode;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -30,7 +30,7 @@ public abstract class KubernetesExpressionParser implements DataPointParser {
   public static final String WORKLOAD_PREFIX = "workload";
 
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
     Map<String, Object> dataPointResponse = new HashMap<>();
     if (!data.containsKey(DSL_RESPONSE) && data.containsKey(ERROR_MESSAGE_KEY)) {
       dataPointResponse.put(DATA_POINT_VALUE_KEY, null);

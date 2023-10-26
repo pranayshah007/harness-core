@@ -11,9 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_CODE_SCANNING_ALERTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTAINS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTENTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
-import static io.harness.idp.scorecard.datapoints.constants.Inputs.SEVERITY_TYPE;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.FILE_PATH;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
@@ -23,8 +24,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
-import io.harness.idp.scorecard.common.beans.DataSourceConfig;
-import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
@@ -45,22 +44,21 @@ import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class GithubOpenCodeScanningAlertsDsl implements DataSourceLocation {
+public class GithubContentsDsl implements DataSourceLocation {
+  private static final String FILE_PATH_REPLACER = "{FILE_PATH_REPLACER}";
   DslClientFactory dslClientFactory;
-  private static final String SEVERITY_REPLACER = "{SEVERITY_REPLACER}";
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity,
       List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
-      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
-      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException {
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs)
+      throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
-    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
-    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
+    apiRequestDetails.setUrl(replaceUrlsPlaceholdersIfAny(apiRequestDetails.getUrl(), possibleReplaceableUrlPairs));
     Map<String, Object> data = new HashMap<>();
 
-    String tempUrl = apiRequestDetails.getUrl(); // using temp variable to store unchanged url
+    String tempRequestBody = apiRequestDetails.getRequestBody(); // using temp variable to store unchanged requestBody
 
     for (Pair<DataPointEntity, List<InputValue>> dataPointAndInputValues : dataPointsAndInputValues) {
       DataPointEntity dataPoint = dataPointAndInputValues.getFirst();
@@ -70,21 +68,19 @@ public class GithubOpenCodeScanningAlertsDsl implements DataSourceLocation {
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
           || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
         addInputValueResponse(data, inputValues, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
-        return data;
+        continue;
       }
-
-      Map<String, String> replaceablePairs = new HashMap<>();
-      replaceablePairs.putAll(possibleReplaceableUrlPairs);
-      replaceablePairs.putAll(possibleReplaceableRequestBodyPairs);
-      String url = constructUrl(httpConfig.getTarget(), tempUrl, replaceablePairs, dataPoint, inputValues);
-      apiRequestDetails.setUrl(url);
+      apiRequestDetails.setRequestBody(tempRequestBody);
+      String requestBody =
+          constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPoint, inputValues);
+      apiRequestDetails.setRequestBody(requestBody);
       DslClient dslClient =
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
       Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
       Map<String, Object> inputValueData = new HashMap<>();
       if (response.getStatus() == 200) {
         inputValueData.put(
-            DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), List.class));
+            DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
       } else if (response.getStatus() == 500) {
         inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
       } else {
@@ -99,17 +95,18 @@ public class GithubOpenCodeScanningAlertsDsl implements DataSourceLocation {
 
   @Override
   public String replaceInputValuePlaceholdersIfAny(
-      String url, DataPointEntity dataPoint, List<InputValue> inputValues) {
-    if (dataPoint.getIdentifier().equals(OPEN_CODE_SCANNING_ALERTS)) {
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
+    if (dataPoint.getIdentifier().equals(FILE_CONTENTS) || dataPoint.getIdentifier().equals(FILE_CONTAINS)) {
       Optional<InputValue> inputValueOpt =
-          inputValues.stream().filter(inputValue -> inputValue.getKey().equals(SEVERITY_TYPE)).findFirst();
+          inputValues.stream().filter(inputValue -> inputValue.getKey().equals(FILE_PATH)).findFirst();
       if (inputValueOpt.isPresent()) {
         String inputValue = inputValueOpt.get().getValue();
         if (!inputValue.isEmpty()) {
-          url = url.replace(SEVERITY_REPLACER, inputValue.toLowerCase());
+          inputValue = inputValue.replace("\"", "");
+          requestBody = requestBody.replace(FILE_PATH_REPLACER, inputValue);
         }
       }
     }
-    return url;
+    return requestBody;
   }
 }
