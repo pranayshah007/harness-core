@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
@@ -359,6 +360,11 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                                   .put("spec", configSpec)
                                   .put("type", ngTemplateService.getNgTemplateStepName(template))
                                   .put("timeout", ngTemplateService.getTimeoutString(template))
+                                  .put("when",
+                                      ImmutableMap.<String, String>builder()
+                                          .put("stageStatus", "Success")
+                                          .put("condition", RUNTIME_INPUT)
+                                          .build())
                                   .build());
     }
   }

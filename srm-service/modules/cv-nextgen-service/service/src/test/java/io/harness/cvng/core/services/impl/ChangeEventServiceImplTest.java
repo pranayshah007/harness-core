@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,6 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.impl.ChangeEventServiceImpl.TimelineObject;
-import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -94,9 +94,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
     MockitoAnnotations.initMocks(this);
     featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)))
-        .thenReturn(true);
     FieldUtils.writeField(changeEventService, "featureFlagService", featureFlagService, true);
   }
 
@@ -286,7 +283,23 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
     ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
     changeEventService.registerWithHealthReport(
-        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier());
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier(), null);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    assertThat(activityFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testRegisterWithHealthReportWithAuthToken() {
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setChannelId("channelId");
+
+    changeEventService.registerWithHealthReport(
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier(), "TestToken");
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     assertThat(activityFromDb).isNotNull();
@@ -512,26 +525,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(7);
     assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(4);
     assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(75.0, offset(0.1));
-  }
-
-  @Test
-  @Owner(developers = KARAN_SARASWAT)
-  @Category(UnitTests.class)
-  public void testGetChangeSummary_withCEFeatureFlagOff() {
-    hPersistence.save(
-        Arrays.asList(builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(50)).build(),
-            builderFactory.getInternalChangeActivity_CEBuilder().eventTime(Instant.ofEpochSecond(300)).build()));
-
-    when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)))
-        .thenReturn(false);
-    ChangeSummaryDTO changeSummaryDTO =
-        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
-            null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500));
-
-    assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(0);
-    assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(0);
-    assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(0.0, offset(0.1));
   }
 
   @Test

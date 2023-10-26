@@ -31,6 +31,24 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD:
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
@@ -43,8 +61,51 @@ global:
       extraArgs: ""
       certName: ""
       certKey: ""
+       # -- Enable TimescaleDB SSL
+      sslEnabled: false
+      # -- TimescaleDB secrets
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: "" 
     clickhouse:
-      enabled: false
+      enabled: false 
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              CLICKHOUSE_USERNAME: ""
+              CLICKHOUSE_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                CLICKHOUSE_USERNAME:
+                  name: ""
+                  property: ""
+                CLICKHOUSE_PASSWORD:
+                  name: ""
+                  property: ""
   ingress:
     enabled: false
     className: harness
@@ -55,6 +116,42 @@ global:
       secretName: ''
   smtpCreateSecret:
     enabled: false
+    SMTP_PASSWORD: ""
+    SMTP_HOST: ""
+    SMTP_USERNAME: ""
+    SMTP_USE_SSL: "true"
+    SMTP_PORT: "465"
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            SMTP_USERNAME: ""
+            SMTP_PASSWORD: ""
+            SMTP_HOST: ""
+            SMTP_PORT: ""
+            SMTP_USE_SSL: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              SMTP_USERNAME:
+                name: ""
+                property: ""
+              SMTP_PASSWORD:
+                name: ""
+                property: ""
+              SMTP_HOST:
+                name: ""
+                property: ""
+              SMTP_PORT:
+                name: ""
+                property: ""
+              SMTP_USE_SSL:
+                name: ""
+                property: ""
+
   ccm:
     gcpProjectId: "placeHolder"
   # image pull secrets to use for every image
@@ -73,6 +170,7 @@ global:
     stsEndPointUrl: https://sts.us-east-2.amazonaws.com
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
+  deployMode: KUBERNETES_ONPREM
 
 replicaCount: 1
 
@@ -80,6 +178,62 @@ isolatedReplica: 0
 
 java:
   memory: "7168"
+
+
+mongo:
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          MONGO_USER: ""
+          MONGO_PASSWORD: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            MONGO_USER:
+              name: ""
+              property: ""
+            MONGO_PASSWORD:
+              name: ""
+              property: ""
+
+timescaledb:
+  # -- TimescaleDB host names
+  hosts: []
+  # -- Enable TimescaleDB SSL
+  # sslEnabled: false
+  # -- TimescaleDB secrets
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          TIMESCALEDB_USERNAME: ""
+          TIMESCALEDB_PASSWORD: ""
+          TIMESCALEDB_SSL_ROOT_CERT: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            TIMESCALEDB_USERNAME:
+              name: ""
+              property: ""
+            TIMESCALEDB_PASSWORD:
+              name: ""
+              property: ""
+            TIMESCALEDB_SSL_ROOT_CERT:
+              name: ""
+              property: ""              
 
 image:
   registry: docker.io
@@ -228,3 +382,36 @@ lifecycleHooks: {}
 #   preStop:
 #     exec:
 #       command:
+
+# application level secrets
+secrets:
+  default:
+    NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    CE_NG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    S3_SYNC_CONFIG_ACCESSKEY: ""
+    S3_SYNC_CONFIG_SECRETKEY: ""
+  kubernetesSecrets:
+    - secretName: ""
+      keys:
+        NEXT_GEN_MANAGER_SECRET: ""
+        CE_NG_SERVICE_SECRET: ""
+        S3_SYNC_CONFIG_ACCESSKEY: ""
+        S3_SYNC_CONFIG_SECRETKEY: ""
+  secretManagement:
+    externalSecretsOperator:
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          NEXT_GEN_MANAGER_SECRET:
+            name: ""
+            property: ""
+          CE_NG_SERVICE_SECRET:
+            name: ""
+            property: ""
+          S3_SYNC_CONFIG_ACCESSKEY:
+            name: ""
+            property: ""
+          S3_SYNC_CONFIG_SECRETKEY:
+            name: ""
+            property: ""   

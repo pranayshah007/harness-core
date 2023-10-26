@@ -69,6 +69,7 @@ public class GcpEntityToDTO implements ConnectorEntityToDTOMapper<GcpConnectorDT
                                                     .workloadPoolId(gcpOidcConfig.getWorkloadPoolId())
                                                     .providerId(gcpOidcConfig.getProviderId())
                                                     .gcpProjectId(gcpOidcConfig.getGcpProjectId())
+                                                    .serviceAccountEmail(gcpOidcConfig.getServiceAccountEmail())
                                                     .build();
 
     return GcpConnectorDTO.builder()

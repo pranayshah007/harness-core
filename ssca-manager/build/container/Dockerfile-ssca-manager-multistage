@@ -27,6 +27,7 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:java-17.0.7_7 as base
 COPY --chown=65534:65534  --from=builder \
   /app/dist/ssca-manager/ssca-manager-capsule.jar  \
   /app/dist/ssca-manager/ssca-manager-config.yml \
+  /app/dist/ssca-manager/redisson-jcache.yaml \
   /app/dist/ssca-manager/protocol.info \
   /app/dist/ssca-manager/profile.jfc \
   /app/dist/ssca-manager/default.jfc \

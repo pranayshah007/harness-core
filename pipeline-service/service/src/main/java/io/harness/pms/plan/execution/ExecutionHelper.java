@@ -95,8 +95,6 @@ import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessor;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -105,6 +103,9 @@ import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessor;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -166,7 +167,7 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
-  PipelinePreprocessorFactory pipelinePreprocessorFactory;
+  YamlPreProcessorFactory yamlPreProcessorFactory;
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
       List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT, PIE_SIMPLIFY_LOG_BASE_KEY,
@@ -312,9 +313,12 @@ public class ExecutionHelper {
       case HarnessYamlVersion.V1:
         pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
-        PipelinePreprocessor preprocessor = pipelinePreprocessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
-        if (preprocessor != null) {
-          pipelineYaml = preprocessor.preProcess(pipelineYaml);
+        // Adds ids in all the stages and steps where it doesn't already exists
+        // For templates, the ids will be added by template service during template resolution
+        YamlPreProcessor preProcessor = yamlPreProcessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
+        if (preProcessor != null) {
+          YamlPreprocessorResponseDTO yamlPreprocessorResponseDTO = preProcessor.preProcess(pipelineYaml);
+          pipelineYaml = YamlUtils.writeYamlString(yamlPreprocessorResponseDTO.getPreprocessedJsonNode());
         }
         pipelineYamlWithTemplateRef = pipelineYaml;
         templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(

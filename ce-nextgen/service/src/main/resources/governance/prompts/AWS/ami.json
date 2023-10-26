@@ -1,0 +1,69 @@
+{
+  "Architecture": "x86_64",
+  "CreationDate": "2023-01-10T20:13:25.000Z",
+  "ImageId": "ImageId",
+  "ImageLocation": "AccountId/Name",
+  "ImageType": "machine",
+  "Public": false,
+  "OwnerId": "AccountId",
+  "PlatformDetails": "Linux/UNIX",
+  "UsageOperation": "RunInstances",
+  "State": "available",
+  "BlockDeviceMappings": [
+    {
+      "DeviceName": "/dev/sda1",
+      "Ebs": {
+        "DeleteOnTermination": true,
+        "SnapshotId": "SnapshotId",
+        "VolumeSize": 8,
+        "VolumeType": "gp2",
+        "Encrypted": false
+      }
+    },
+    {
+      "DeviceName": "/dev/sdb",
+      "VirtualName": "ephemeral0"
+    },
+    {
+      "DeviceName": "/dev/sdc",
+      "VirtualName": "ephemeral1"
+    }
+  ],
+  "EnaSupport": true,
+  "Hypervisor": "xen",
+  "Name": "Name",
+  "RootDeviceName": "/dev/sda1",
+  "RootDeviceType": "ebs",
+  "SriovNetSupport": "simple",
+  "Tags": [
+    {
+      "Key": "Base_AMI_Name",
+      "Value": "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20210928"
+    },
+    {
+      "Key": "source",
+      "Value": "hashicorp/learn"
+    },
+    {
+      "Key": "Name",
+      "Value": "nomad-alb"
+    },
+    {
+      "Key": "purpose",
+      "Value": "demo"
+    },
+    {
+      "Key": "OS_Version",
+      "Value": "Ubuntu"
+    },
+    {
+      "Key": "Release",
+      "Value": "Latest"
+    },
+    {
+      "Key": "Base_AMI_ID",
+      "Value": "Base_AMI_ID"
+    }
+  ],
+  "VirtualizationType": "hvm"
+}

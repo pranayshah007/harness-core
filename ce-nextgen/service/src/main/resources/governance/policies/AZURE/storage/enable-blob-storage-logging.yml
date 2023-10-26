@@ -1,0 +1,8 @@
+policies:
+  - name: enable-blob-storage-logging
+    resource: azure.storage
+    actions:
+      - type: set-log-settings
+        storage-types: [blob]
+        retention: 5
+        log: [write, delete]

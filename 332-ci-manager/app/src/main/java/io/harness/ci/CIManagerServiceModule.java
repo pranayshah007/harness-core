@@ -375,6 +375,15 @@ public class CIManagerServiceModule extends AbstractModule {
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
 
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("resourceCleanupExecutor"))
+        .toInstance(
+            new ScheduledThreadPoolExecutor(ciManagerConfiguration.getAsyncResourceCleanupPool().getCorePoolSize(),
+                new ThreadFactoryBuilder()
+                    .setNameFormat("Resource-Cleanup-Thread-%d")
+                    .setPriority(Thread.NORM_PRIORITY)
+                    .build()));
+
     install(new CIExecutionServiceModule(
         ciManagerConfiguration.getCiExecutionServiceConfig(), ciManagerConfiguration.getShouldConfigureWithPMS()));
     install(DelegateServiceDriverModule.getInstance(false, true));

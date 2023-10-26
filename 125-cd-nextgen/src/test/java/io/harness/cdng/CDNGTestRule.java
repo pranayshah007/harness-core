@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng;
+
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
@@ -328,6 +329,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
             .to(NoOpAccessControlClientImpl.class);
         bind(ExecutorService.class)
             .annotatedWith(Names.named("service-gitx-executor"))
+            .toInstance(mock(ExecutorService.class));
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("environment-gitx-executor"))
             .toInstance(mock(ExecutorService.class));
         bind(SecretCrudService.class).toProvider(() -> mock(SecretCrudService.class)).asEagerSingleton();
       }

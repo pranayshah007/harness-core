@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: stop-underutilized-vms
+cloudProvider: AZURE
+resourceType: azure.vm
+description: Stop underutilised virtual machines based on average CPU utilisation
+rulesYamlPath: ../stop-underutilized-vms.yml

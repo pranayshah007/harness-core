@@ -1,0 +1,37 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/logging/client:module",
+        "//980-commons/src/main/java/io/harness/logging/common:module",
+        "//980-commons/src/main/java/io/harness/network:module",
+        "//980-commons/src/main/java/io/harness/version:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:ch_qos_logback_contrib_logback_jackson",
+        "@maven//:ch_qos_logback_contrib_logback_json_classic",
+        "@maven//:ch_qos_logback_contrib_logback_json_core",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:ch_qos_logback_logback_core",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_logging",
+        "@maven//:io_dropwizard_dropwizard_logging",
+    ],
+)
+
+run_analysis_per_module()

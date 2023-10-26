@@ -13,4 +13,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.SSCA)
 public interface SlsaVerificationSourceConstants {
   String DOCKER = "Docker";
+  String GCR = "Gcr";
 }

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: cosmosdb-low-usage
+cloudProvider: AZURE
+resourceType: azure.cosmosdb
+description: List cosmosdb where total request count is less than 1000 in last 3 days
+rulesYamlPath: ../cosmosdb-low-usage.yml

@@ -323,12 +323,14 @@ public class TriggerImportService implements ImportService {
       String envCGId = workflowVariables.get("Environment");
       if (envCGId != null) {
         Environment env = environmentService.get(trigger.getAppId(), envCGId);
-        String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+        if (env != null) {
+          String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
 
-        String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
-        if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
-          ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-          envNode.put("environmentRef", envNGId);
+          String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+          if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+            ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+            envNode.put("environmentRef", envNGId);
+          }
         }
       }
     }

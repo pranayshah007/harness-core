@@ -63,7 +63,7 @@ public class GenerateACLsFromRoleAssignmentsJob {
   }
 
   private long upsertACLs(RoleAssignmentDBO roleAssignment) {
-    aclRepository.deleteByRoleAssignmentId(roleAssignment.getId());
+    // aclRepository.deleteByRoleAssignmentId(roleAssignment.getId());
     long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
     numberOfACLsCreated +=
         aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());

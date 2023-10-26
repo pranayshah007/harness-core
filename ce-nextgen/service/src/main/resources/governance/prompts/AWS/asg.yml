@@ -1,0 +1,3 @@
+filters: capacity-delta, config-compliance, event, finding, image, image-age, invalid, json-diff, launch-config, list-item, marked-for-op, metrics, network-location, not-encrypted, offhour, onhour, ops-item, propagated-tags, reduce, scaling-policy, security-group, subnet, tag-count, user-data, valid, value, vpc-id
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, notify, post-finding, post-item, propagate-tags, put-metric, remove-tag, rename-tag, resize, resume, suspend, tag, tag-trim, update, webhook
+customPrompt:

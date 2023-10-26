@@ -1,0 +1,7 @@
+policies:
+  - name: rds-cluster-snapshots-expired
+    resource: rds-cluster-snapshot
+    filters:
+      - type: age
+        days: 30
+        op: gt

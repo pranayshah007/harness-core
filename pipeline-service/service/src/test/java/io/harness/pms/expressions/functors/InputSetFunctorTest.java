@@ -18,12 +18,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.TriggerType;
-import io.harness.pms.contracts.plan.TriggeredBy;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
 import java.util.Map;
@@ -36,7 +33,8 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputSetFunctorTest extends CategoryTest {
-  @Mock private PmsExecutionSummaryService pmsExecutionSummaryService;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
+  ;
 
   @InjectMocks private InputSetFunctor inputSetFunctor;
 
@@ -84,18 +82,9 @@ public class InputSetFunctorTest extends CategoryTest {
   public void testBind() {
     on(inputSetFunctor).set("ambiance", ambiance);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
-        PipelineExecutionSummaryEntity.builder()
-            .inputSetYaml(inputYaml)
-            .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
-                                      .setTriggerType(TriggerType.WEBHOOK)
-                                      .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("system").build())
-                                      .build())
-            .build();
+    PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().inputSetYaml(inputYaml).build();
 
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionSummaryService)
-        .getPipelineExecutionSummaryWithProjections(any(), any());
+    doReturn(planExecutionMetadata).when(planExecutionMetadataService).getWithFieldsIncludedFromSecondary(any(), any());
 
     Map<String, Object> inputSetMap = (Map<String, Object>) inputSetFunctor.bind();
 

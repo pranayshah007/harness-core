@@ -1,0 +1,8 @@
+policies:
+  - name: delete-unattached-volumes
+    resource: ebs
+    filters:
+      - Attachments: []
+      - State: available
+    actions:
+      - delete

@@ -1,0 +1,22 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Sql/servers/ServerId",
+  "name": "ServerId",
+  "type": "Microsoft.Sql/servers",
+  "location": "westeurope",
+  "identity": {
+    "principalId": "PrincipalId",
+    "type": "SystemAssigned",
+    "tenantId": "TenantId"
+  },
+  "kind": "v12.0",
+  "properties": {
+    "administratorLogin": "AdministratorLogin",
+    "version": "12.0",
+    "state": "Ready",
+    "fullyQualifiedDomainName": "ServerId.database.windows.net",
+    "privateEndpointConnections": [],
+    "minimalTlsVersion": "None",
+    "publicNetworkAccess": "Enabled"
+  },
+  "resourceGroup": "ResourceGroupId"
+}

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ebs-unencrypted-ebs-list
+cloudProvider: AWS
+resourceType: ebs
+description: List all unencrypted EBS volumes
+rulesYamlPath: ../ebs-unencrypted-ebs-list.yml

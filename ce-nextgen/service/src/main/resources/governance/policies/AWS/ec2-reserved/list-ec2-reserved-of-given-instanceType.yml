@@ -1,0 +1,5 @@
+policies:
+  - name: list-ec2-reserved-of-given-instanceType
+    resource: ec2-reserved
+    filters:
+      - "InstanceType": "t3a.2xlarge"

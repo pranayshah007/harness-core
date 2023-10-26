@@ -262,6 +262,8 @@ logging:
       archivedLogFilenamePattern: portal.%d.%i.log
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
 
+licenseUsageTimescaleSocketTimeout: 60
+
 timescaledb:
   timescaledbUrl: ""
   timescaledbUsername: ""

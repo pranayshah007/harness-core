@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: rds-resize-down
+cloudProvider: AWS
+resourceType: rds
+description:  List rds instance whose size can be reduced by changing their DBInstanceClass when the FreeStorageSpace exceeds 90% of AllocatedStorage and db is not serverless
+rulesYamlPath: ../rds-resize-down.yml

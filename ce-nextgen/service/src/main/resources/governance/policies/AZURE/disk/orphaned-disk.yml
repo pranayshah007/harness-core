@@ -1,0 +1,7 @@
+policies:
+  - name: orphaned-disk
+    resource: azure.disk
+    filters:
+      - type: value
+        key: managedBy
+        value: null

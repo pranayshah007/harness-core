@@ -20,7 +20,6 @@ import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
 import static io.harness.ci.execution.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
@@ -842,8 +841,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   private void addExternalDelegateSelector(
       List<TaskSelector> taskSelectors, InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    List<TaskSelector> selectorList = TaskSelectorYaml.toTaskSelector(
-        CollectionUtils.emptyIfNull(getParameterFieldValue(initializeStepInfo.getDelegateSelectors())));
+    List<TaskSelector> selectorList = TaskSelectorYaml.toTaskSelector(initializeStepInfo.getDelegateSelectors());
     if (isNotEmpty(selectorList)) {
       // Add to selectorList also add to sweeping output so that it can be used during cleanup task
       taskSelectors.addAll(selectorList);

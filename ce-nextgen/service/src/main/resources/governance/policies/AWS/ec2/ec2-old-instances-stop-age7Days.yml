@@ -1,0 +1,11 @@
+policies:
+  - name: ec2-old-instances-stop
+    resource: ec2
+    description: |
+      Stop all EC2s where instance age is more than 7 days
+    filters:
+      - 'State.Name': running
+      - type: instance-age
+        days: 7
+    actions:
+      - type: stop

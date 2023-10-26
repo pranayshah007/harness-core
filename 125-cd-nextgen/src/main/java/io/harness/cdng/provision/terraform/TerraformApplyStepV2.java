@@ -298,6 +298,8 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .useOptimizedTfPlan(true)
         .isTerraformCloudCli(isTerraformCloudCli)
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+        .skipStateStorage(
+            ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getConfiguration().getSkipStateStorage()))
         .skipTerraformRefresh(skipRefreshCommand)
         .providerCredentialDelegateInfo(
             helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
@@ -353,6 +355,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .encryptDecryptPlanForHarnessSMOnManager(
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+        .skipStateStorage(inheritOutput.isSkipStateStorage())
         .useOptimizedTfPlan(true);
   }
 
@@ -365,13 +368,16 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     StepResponseBuilder stepResponseBuilder =
         createStepResponseBuilder(terraformTaskNGResponse, terraformPassThroughData);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
       helper.saveRollbackDestroyConfigInline(
           stepParameters, terraformTaskNGResponse, ambiance, terraformPassThroughData);
-      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      if (!ParameterFieldHelper.getBooleanParameterFieldValue(
+              stepParameters.getConfiguration().getSkipStateStorage())) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
@@ -389,12 +395,17 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     StepResponseBuilder stepResponseBuilder =
         createStepResponseBuilder(terraformTaskNGResponse, terraformPassThroughData);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
-      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
       addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
+      TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(
+          ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(),
+          ambiance);
+      if (!inheritOutput.isSkipStateStorage()) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys = new HashMap<>();

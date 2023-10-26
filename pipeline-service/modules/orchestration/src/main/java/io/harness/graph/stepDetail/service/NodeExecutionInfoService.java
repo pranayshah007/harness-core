@@ -65,7 +65,7 @@ public interface NodeExecutionInfoService {
    */
   void updateTTLForNodesForGivenPlanExecutionId(String planExecutionId, Date ttlDate);
 
-  Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName);
+  Map<String, Object> fetchStrategyObjectMap(String nodeExecutionId, boolean useMatrixFieldName);
 
   Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName);
 

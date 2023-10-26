@@ -1,0 +1,12 @@
+policies:
+  - name: stop-underutilized-vms
+    resource: azure.vm
+    filters:
+      - type: metric
+        metric: Percentage CPU
+        op: le
+        aggregation: average
+        threshold: 20
+        timeframe: 188
+    actions:
+      - type: stop

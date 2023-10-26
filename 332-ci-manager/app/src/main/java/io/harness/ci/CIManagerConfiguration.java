@@ -109,6 +109,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+  @JsonProperty("asyncResourceCleanupPool") private ThreadPoolConfig asyncResourceCleanupPool;
+  @JsonProperty("enableAsyncResourceCleanup") private boolean enableAsyncResourceCleanup;
 
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;

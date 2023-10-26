@@ -47,7 +47,8 @@ public class PlanExecutionMetadataRepositoryCustomImpl implements PlanExecutionM
     }
     PlanExecutionMetadata planExecutionMetadata = secondaryMongoTemplate.findOne(query, PlanExecutionMetadata.class);
     if (planExecutionMetadata == null) {
-      throw new EntityNotFoundException("Plan Execution Metadata not found for planExecutionId: " + planExecutionId);
+      throw new EntityNotFoundException("Plan Execution Metadata not found for planExecutionId: " + planExecutionId
+          + " . Please note that this data is not available for executions older than 30 days.");
     }
     return planExecutionMetadata;
   }

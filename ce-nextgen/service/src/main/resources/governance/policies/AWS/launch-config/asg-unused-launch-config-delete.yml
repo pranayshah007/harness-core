@@ -1,0 +1,7 @@
+policies:
+  - name: asg-unused-launch-config-delete
+    resource: launch-config
+    filters:
+      - unused
+    actions:
+      - delete

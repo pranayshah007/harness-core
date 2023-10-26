@@ -104,6 +104,7 @@ import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
 import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.listener.WebhookGitXPushEventQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -138,6 +139,7 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
+import io.harness.ng.core.migration.AddUniqueIdParentIdToEntitiesJob;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UniqueIdParentIdMigrationProvider;
@@ -319,6 +321,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private static final String APPLICATION_NAME = "CD NextGen Application";
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -397,7 +400,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         return appConfig.getDbAliases();
       }
     });
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new LogStreamingModule(appConfig.getLogStreamingServiceConfig().getBaseUrl()));
     modules.add(new AbstractCfModule() {
@@ -452,7 +455,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     });
     // Pipeline Service Modules
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(appConfig);
-    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
+    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration, threadPoolMetricRegistry));
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
@@ -912,11 +915,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(AddUniqueIdParentIdToEntitiesJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(WebhookGitXPushEventQueueProcessor.class));
     }
     if (appConfig.isUseQueueServiceForGitXWebhook()) {
       environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));

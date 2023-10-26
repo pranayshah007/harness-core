@@ -112,6 +112,7 @@ public class IdpConfiguration extends Configuration {
   private String managerTarget;
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+  @JsonProperty("internalAccounts") private List<String> internalAccounts;
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";

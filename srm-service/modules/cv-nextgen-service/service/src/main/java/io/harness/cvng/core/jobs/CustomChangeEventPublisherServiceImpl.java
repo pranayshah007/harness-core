@@ -46,11 +46,12 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
       customChangeEventDetailsBuilder.setExternalLinkToEntity(
           customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity());
     }
-    if (customChangeWebhookPayload.getEventDetail().getChannelUrl() != null) {
-      customChangeEventDetailsBuilder.setChannelUrl(customChangeWebhookPayload.getEventDetail().getChannelUrl());
-    }
     if (customChangeWebhookPayload.getEventDetail().getWebhookUrl() != null) {
       customChangeEventDetailsBuilder.setWebhookUrl(customChangeWebhookPayload.getEventDetail().getWebhookUrl());
+    }
+
+    if (customChangeWebhookPayload.getEventDetail().getChannelId() != null) {
+      customChangeEventDetailsBuilder.setChannelId(customChangeWebhookPayload.getEventDetail().getChannelId());
     }
 
     CustomChangeEventDTO.Builder customChangeEventDTOBuilder =

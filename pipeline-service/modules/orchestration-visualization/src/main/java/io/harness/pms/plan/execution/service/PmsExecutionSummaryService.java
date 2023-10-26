@@ -26,8 +26,9 @@ import org.springframework.data.util.CloseableIterator;
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
-  // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
   void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId);
+  void updateResolvedUserInputSetYaml(String planExecutionId, String resolvedInputSetYaml);
+  // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
   PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**

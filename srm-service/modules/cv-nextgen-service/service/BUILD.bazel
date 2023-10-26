@@ -41,6 +41,7 @@ shared_dependencies = [
     "//clients/pipeline-service/pms-sdk:module",
     "//clients/template-service:module",
     "//clients/pipeline-service/pms-client:module",
+    "//clients/servicediscovery:module",
     "//srm-service/modules/cv-nextgen-service/contracts/api:module",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     "@maven//:com_fasterxml_jackson_core_jackson_core",

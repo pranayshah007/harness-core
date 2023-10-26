@@ -137,6 +137,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.GovernanceAiEngineService;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.RuleEnforcementService;
@@ -151,6 +152,7 @@ import io.harness.ccm.views.service.impl.CEViewPreferenceServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
+import io.harness.ccm.views.service.impl.GovernanceAiEngineServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
@@ -452,6 +454,7 @@ public class CENextGenModule extends AbstractModule {
     bind(MspValidationService.class).to(MspValidationServiceImpl.class);
     bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CCMServiceNowHelper.class).to(CCMServiceNowHelperImpl.class);
+    bind(GovernanceAiEngineService.class).to(GovernanceAiEngineServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

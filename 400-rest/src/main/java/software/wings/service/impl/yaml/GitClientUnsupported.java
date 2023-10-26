@@ -25,12 +25,12 @@ import software.wings.service.intfc.yaml.GitClient;
 @TargetModule(HarnessModule._970_API_SERVICES_BEANS)
 public class GitClientUnsupported implements GitClient {
   @Override
-  public void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext) {
+  public void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext, boolean hardResetForGitRef) {
     throw new UnsupportedOperationException("Git operations not supported.");
   }
 
-  public void cloneRepoAndCopyToDestDir(
-      GitOperationContext gitOperationContext, String destinationDir, LogCallback logCallback) {
+  public void cloneRepoAndCopyToDestDir(GitOperationContext gitOperationContext, String destinationDir,
+      LogCallback logCallback, boolean hardResetForGitRef) {
     throw new UnsupportedOperationException("Git operations not supported.");
   }
 

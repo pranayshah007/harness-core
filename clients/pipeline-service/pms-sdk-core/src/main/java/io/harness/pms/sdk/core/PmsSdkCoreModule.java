@@ -10,7 +10,6 @@ package io.harness.pms.sdk.core;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
-import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.sdk.PmsSdkModuleUtils;
 import io.harness.pms.sdk.core.exception.InvalidYamlExceptionHandler;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -27,7 +26,7 @@ import io.harness.pms.sdk.core.response.publishers.RedisSdkResponseEventPublishe
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
 import io.harness.threading.ThreadPool;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -41,16 +40,25 @@ import java.util.concurrent.ExecutorService;
 public class PmsSdkCoreModule extends AbstractModule {
   private static PmsSdkCoreModule instance;
   private final PmsSdkCoreConfig config;
+  private final MetricRegistry threadPoolMetricRegistry;
 
   public static PmsSdkCoreModule getInstance(PmsSdkCoreConfig config) {
     if (instance == null) {
-      instance = new PmsSdkCoreModule(config);
+      instance = new PmsSdkCoreModule(config, new MetricRegistry());
     }
     return instance;
   }
 
-  private PmsSdkCoreModule(PmsSdkCoreConfig config) {
+  public static PmsSdkCoreModule getInstance(PmsSdkCoreConfig config, MetricRegistry threadPoolMetricRegistry) {
+    if (instance == null) {
+      instance = new PmsSdkCoreModule(config, threadPoolMetricRegistry);
+    }
+    return instance;
+  }
+
+  private PmsSdkCoreModule(PmsSdkCoreConfig config, MetricRegistry threadPoolMetricRegistry) {
     this.config = config;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Override
@@ -87,8 +95,8 @@ public class PmsSdkCoreModule extends AbstractModule {
   @Singleton
   @Named(PmsSdkModuleUtils.CORE_EXECUTOR_NAME)
   public ExecutorService coreExecutorService() {
-    return ThreadPool.create(config.getExecutionPoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("PmsSdkCoreEventListener-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(
+        config.getExecutionPoolConfig(), "PmsSdkCoreEventListener", threadPoolMetricRegistry);
   }
 
   @Provides
@@ -96,15 +104,15 @@ public class PmsSdkCoreModule extends AbstractModule {
   @Named(PmsSdkModuleUtils.PLAN_CREATOR_SERVICE_EXECUTOR)
   public Executor planCreatorInternalExecutorService() {
     // ManagedExecutorService is used to pass parent thread context to children
-    return new ManagedExecutorService(ThreadPool.create(config.getPlanCreatorServicePoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("PlanCreatorInternalExecutorService-%d").build()));
+    return ThreadPool.getInstrumentedManagedExecutorService(
+        config.getPlanCreatorServicePoolConfig(), "PlanCreatorInternalExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides
   @Singleton
   @Named(PmsSdkModuleUtils.ORCHESTRATION_EVENT_EXECUTOR_NAME)
   public ExecutorService orchestrationEventExecutorService() {
-    return ThreadPool.create(config.getOrchestrationEventPoolConfig(),
-        new ThreadFactoryBuilder().setNameFormat("PmsSdkOrchestrationEventListener-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(
+        config.getOrchestrationEventPoolConfig(), "PmsSdkOrchestrationEventListener", threadPoolMetricRegistry);
   }
 }

@@ -1,0 +1,3 @@
+filters: age, config-compliance, event, finding, json-diff, list-item, ops-item, reduce, unused, value
+actions: delete, invoke-lambda, invoke-sfn, notify, post-finding, post-item, put-metric, webhook
+customPrompt:

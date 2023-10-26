@@ -10,12 +10,14 @@ package io.harness.accesscontrol.principals.usergroups.persistence;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -25,6 +27,7 @@ public interface UserGroupDao {
   UserGroup upsert(@NotNull @Valid UserGroup userGroupUpdate);
 
   List<UserGroup> list(@NotEmpty String scopeIdentifier, String userIdentifier);
+  List<UserGroup> list(@NotEmpty String scopeIdentifier, String userIdentifier, Set<ScopeSelector> scopeSelectors);
 
   PageResponse<UserGroup> list(@NotNull PageRequest pageRequest, @NotEmpty String scopeIdentifier);
 

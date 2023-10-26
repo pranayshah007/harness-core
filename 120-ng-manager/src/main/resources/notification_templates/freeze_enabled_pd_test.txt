@@ -1,0 +1,4 @@
+summary: A deployment freeze <b>${BLACKOUT_WINDOW_NAME}</b> has been enabled on ${CURRENT_TIME}(${CURRENT_TIME_IN_UTC} UTC). ${CUSTOMIZED_MESSAGE}
+link:
+    href: ${BLACKOUT_WINDOW_URL}
+    text: ${BLACKOUT_WINDOW_NAME}

@@ -50,6 +50,11 @@ public class K8SSecret extends V1Secret {
     return this;
   }
 
+  public K8SSecret putCharDataItem(final String key, final char[] dataItems) {
+    putDataItem(key, String.valueOf(dataItems).getBytes(Charsets.UTF_8));
+    return this;
+  }
+
   public K8SSecret putAllCharDataItems(final Map<String, char[]> dataItems) {
     dataItems.forEach((key, value) -> putDataItem(key, String.valueOf(value).getBytes(Charsets.UTF_8)));
     return this;

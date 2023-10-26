@@ -146,6 +146,9 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .when(serviceEntityService)
         .getMetadata("accountId", "orgId", "projectId", List.of("service-id"));
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
+    doReturn(Optional.of(envEntity))
+        .when(environmentService)
+        .getMetadata("accountId", "orgId", "projectId", "env-id", false);
 
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))

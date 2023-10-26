@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: asg-launch-config-old
+cloudProvider: AWS
+resourceType: launch-config
+description: List ASG launch configuration older than 90 days
+rulesYamlPath: ../asg-launch-config-old.yml

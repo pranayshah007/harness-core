@@ -42,6 +42,7 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -76,6 +77,7 @@ public class AwsSamDownloadManifestsStepHelper {
   @Inject private DownloadManifestsCommonHelper downloadManifestsCommonHelper;
 
   @Inject private AwsSamStepHelper awsSamStepHelper;
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep) {
@@ -150,6 +152,8 @@ public class AwsSamDownloadManifestsStepHelper {
 
     if (valuesManifestOutcome != null) {
       AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder = AwsSamValuesYamlDataOutcome.builder();
+
+      containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
       for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
         ResponseData responseData = entry.getValue();

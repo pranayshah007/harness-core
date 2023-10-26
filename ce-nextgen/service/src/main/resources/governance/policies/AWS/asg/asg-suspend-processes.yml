@@ -1,0 +1,7 @@
+policies:
+  - name: asg-suspend-processes
+    resource: asg
+    filters:
+      - "tag:SuspendTag": present
+    actions:
+      - type: suspend

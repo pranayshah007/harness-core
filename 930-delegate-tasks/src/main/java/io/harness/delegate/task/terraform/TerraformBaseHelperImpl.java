@@ -421,7 +421,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
       }
 
-      if (!terraformExecuteStepRequest.isSkipTerraformRefresh()) {
+      if (!terraformExecuteStepRequest.isSkipTerraformRefresh() && !terraformExecuteStepRequest.isSkipStateStorage()) {
         // Plan step always performs a refresh
         TerraformRefreshCommandRequest terraformRefreshCommandRequest =
             TerraformRefreshCommandRequest.builder()
@@ -792,8 +792,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
-      String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
-      String scriptPath, String baseDir) {
+      String workspace, String currentStateFileId, LogCallback logCallback, String scriptPath, String baseDir,
+      boolean skipStateStorage) {
     fetchConfigFileAndCloneLocally(gitBaseRequestForConfigFile, logCallback);
 
     String workingDir = getWorkingDir(baseDir);
@@ -807,7 +807,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
     try {
       TerraformHelperUtils.ensureLocalCleanup(scriptDirectory);
-      downloadTfStateFile(workspace, accountId, currentStateFileId, scriptDirectory);
+      if (!skipStateStorage) {
+        downloadTfStateFile(workspace, accountId, currentStateFileId, scriptDirectory);
+      }
     } catch (IOException ioException) {
       log.warn("Exception Occurred when cleaning Terraform local directory",
           ExceptionMessageSanitizer.sanitizeException(ioException));
@@ -816,7 +818,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public String fetchConfigFileAndPrepareScriptDir(ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig,
-      String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir) {
+      String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir,
+      boolean skipStateStorage) {
     if (artifactoryStoreDelegateConfig.getArtifacts().size() < 1) {
       throw NestedExceptionUtils.hintWithExplanationException(HINT_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG,
           EXPLANATION_NO_ARTIFACT_DETAILS_FOR_ARTIFACTORY_CONFIG,
@@ -856,7 +859,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
     try {
       TerraformHelperUtils.ensureLocalCleanup(scriptDirectory);
-      downloadTfStateFile(workspace, accountId, currentStateFileId, scriptDirectory);
+      if (!skipStateStorage) {
+        downloadTfStateFile(workspace, accountId, currentStateFileId, scriptDirectory);
+      }
     } catch (IOException ioException) {
       log.warn("Exception Occurred when cleaning Terraform local directory",
           ExceptionMessageSanitizer.sanitizeException(ioException));
@@ -867,7 +872,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Override
   public String fetchS3ConfigFilesAndPrepareScriptDir(S3StoreTFDelegateConfig s3StoreTFDelegateConfig,
       TerraformTaskNGParameters terraformTaskNGParameters, String baseDir,
-      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback) {
+      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback, boolean skipStateStorage) {
     String scriptPath = FilenameUtils.normalize(s3StoreTFDelegateConfig.getPaths().get(0));
     logCallback.saveExecutionLog("Normalized Path: " + scriptPath, INFO, CommandExecutionStatus.RUNNING);
     String workingDir = getWorkingDir(baseDir);
@@ -886,8 +891,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     String scriptDirectory = resolveScriptDirectory(workingDir, scriptPath);
     try {
       TerraformHelperUtils.ensureLocalCleanup(scriptDirectory);
-      downloadTfStateFile(terraformTaskNGParameters.getWorkspace(), terraformTaskNGParameters.getAccountId(),
-          terraformTaskNGParameters.getCurrentStateFileId(), scriptDirectory);
+      if (!skipStateStorage) {
+        downloadTfStateFile(terraformTaskNGParameters.getWorkspace(), terraformTaskNGParameters.getAccountId(),
+            terraformTaskNGParameters.getCurrentStateFileId(), scriptDirectory);
+      }
     } catch (IOException ioException) {
       log.warn("Exception Occurred when cleaning Terraform local directory",
           ExceptionMessageSanitizer.sanitizeException(ioException));
@@ -966,7 +973,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     return awsAuthEnvVariables;
   }
 
-  private void downloadS3Objects(S3StoreTFDelegateConfig s3StoreTFDelegateConfig, String prefix,
+  @VisibleForTesting
+  protected void downloadS3Objects(S3StoreTFDelegateConfig s3StoreTFDelegateConfig, String prefix,
       Map<String, Map<String, String>> keyVersionMap, String destDir) {
     AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) s3StoreTFDelegateConfig.getConnectorDTO().getConnectorConfig();
     secretDecryptionService.decrypt(

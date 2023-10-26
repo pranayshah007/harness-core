@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: delete-unattached-disk
+cloudProvider: AZURE
+resourceType: azure.disk
+description: Delete all the disks that are unattached
+rulesYamlPath: ../delete-unattached-disk.yml

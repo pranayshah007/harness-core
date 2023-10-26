@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: redshift-old-snapshots
+cloudProvider: AWS
+resourceType: redshift-snapshot
+description: List all stale(older than 21 days) redshift snapshot
+rulesYamlPath: ../redshift-old-snapshots.yml

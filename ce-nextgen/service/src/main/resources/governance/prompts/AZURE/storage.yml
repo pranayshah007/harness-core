@@ -1,0 +1,3 @@
+filters: advisor-recommendation, blob-services, cost, event, firewall-bypass, firewall-rules, list-item, marked-for-op, metric, offhour, onhour, policy-compliant, reduce, resource-lock, storage-diagnostic-settings, value
+actions: auto-tag-date, auto-tag-user, delete, lock, logic-app, mark-for-op, notify, require-secure-transfer, set-firewall-rules, set-log-settings, tag, tag-trim, untag, webhook
+customPrompt:

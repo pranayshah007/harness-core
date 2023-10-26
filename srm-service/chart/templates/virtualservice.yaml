@@ -37,7 +37,7 @@ spec:
     - uri:
         prefix: /cv
     rewrite:
-      uri: /
+      uri: /cv/
     route:
     - destination:
         port:

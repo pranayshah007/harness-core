@@ -172,8 +172,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.26
-  liteEngineImage: harness/ci-lite-engine:1.16.26
+  addonImage: harness/ci-addon:1.16.28
+  liteEngineImage: harness/ci-lite-engine:1.16.28
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -356,16 +356,10 @@ ciExecutionServiceConfig:
       image: harness/ssca-plugin:0.11.0
     provenanceConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     provenanceGcrConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     slsaVerificationConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.4.1
@@ -380,8 +374,8 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.4.7
       cacheGCS: plugins/cache:1.6.2
       cacheS3: plugins/cache:1.6.2
-      sscaOrchestration: harness/ssca-plugin:0.3.0
-      sscaEnforcement: harness/ssca-plugin:0.3.0
+      sscaOrchestration: harness/ssca-plugin:0.11.0
+      sscaEnforcement: harness/ssca-plugin:0.11.0
     vmContainerlessStepConfig:
       s3UploadConfig:
         name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.7
@@ -525,3 +519,8 @@ featureFlagConfig:
 enableQueue: ${ENABLE_QUEUE:-false}
 
 streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+asyncResourceCleanupPool:
+  corePoolSize: ${ASYNC_RESOURCE_CLEANUP_THREAD_COUNT:-2}
+
+enableAsyncResourceCleanup: ${ENABLE_ASYNC_RESOURCE_CLEANUP:-false}

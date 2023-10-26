@@ -242,7 +242,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
         removeHostsFromMapAndCache(accountIdentifier, oldProxyHostDetailEntities, hostProxyMap);
 
         List<String> proxyHostDetailsIdsToBeDeleted =
-            oldProxyHostDetailEntities.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toList());
+            oldProxyHostDetailEntities.stream().map(PluginsProxyInfoEntity::getId).collect(Collectors.toList());
         pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndIdIn(
             accountIdentifier, proxyHostDetailsIdsToBeDeleted);
 

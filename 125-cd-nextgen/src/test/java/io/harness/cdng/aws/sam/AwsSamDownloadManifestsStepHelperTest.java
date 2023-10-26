@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,6 +48,7 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -88,6 +90,7 @@ public class AwsSamDownloadManifestsStepHelperTest extends CategoryTest {
 
   @Mock private DownloadManifestsCommonHelper downloadManifestsCommonHelper;
   @Mock private AwsSamStepHelper awsSamStepHelper;
+  @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @InjectMocks @Spy private AwsSamDownloadManifestsStepHelper awsSamDownloadManifestsStepHelper;
 
   @Before
@@ -179,6 +182,7 @@ public class AwsSamDownloadManifestsStepHelperTest extends CategoryTest {
     doReturn(valuesYamlPath).when(awsSamStepHelper).getValuesPathFromValuesManifestOutcome(any());
     String valuesYamlContent = "content";
     doReturn(valuesYamlContent).when(engineExpressionService).renderExpression(any(), any());
+    doNothing().when(containerStepExecutionResponseHelper).deserializeResponse(any());
 
     StepResponse stepResponse = awsSamDownloadManifestsStepHelper.handleAsyncResponse(ambiance, responseDataMap);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);

@@ -1,0 +1,16 @@
+policies:
+  - name: rds-delete-unused
+    resource: rds
+    description: Delete unused RDS database
+    filters:
+      - type: value
+        key: DBInstanceStatus
+        value: available
+      - type: metrics
+        name: DatabaseConnections
+        statistics: Sum
+        days: 7
+        value: 0
+        op: equal
+    actions:
+      - delete

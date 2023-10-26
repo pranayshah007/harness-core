@@ -12,16 +12,20 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
 
 @OwnedBy(HarnessTeam.SSCA)
 public enum ProvenanceSourceType {
-  @JsonProperty(ProvenanceSourceConstants.DOCKER) DOCKER(ProvenanceSourceConstants.DOCKER),
-  @JsonProperty(ProvenanceSourceConstants.GCR) GCR(ProvenanceSourceConstants.GCR);
+  @JsonProperty(ProvenanceSourceConstants.DOCKER)
+  DOCKER(ProvenanceSourceConstants.DOCKER, ProvenanceSourceConstants.DOCKER),
+  @JsonProperty(ProvenanceSourceConstants.GCR) GCR(ProvenanceSourceConstants.GCR, ProvenanceSourceConstants.GCR);
 
   private final String name;
+  @Getter private final String registryType;
 
-  ProvenanceSourceType(String name) {
+  ProvenanceSourceType(String name, String registryType) {
     this.name = name;
+    this.registryType = registryType;
   }
 
   @Override

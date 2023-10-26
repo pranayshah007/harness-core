@@ -21,7 +21,9 @@ import io.harness.yaml.core.intfc.OverridesApplier;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
@@ -34,4 +36,7 @@ public interface StoreConfig extends OverridesApplier<StoreConfig>, OverrideConn
     return new HashSet<>();
   }
   default void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {}
+  default List<String> retrieveFilePaths() {
+    return Collections.emptyList();
+  }
 }

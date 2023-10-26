@@ -213,6 +213,15 @@ replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
 
 replace_key_value deployMode "$DEPLOY_MODE"
 
+replace_key_value aiEngineConfig.genAIService.provider "$GENAI_SERVICE_PROVIDER"
+replace_key_value aiEngineConfig.genAIService.model "$GENAI_SERVICE_MODEL"
+replace_key_value aiEngineConfig.genAIService.temperature "$GENAI_SERVICE_TEMPERATURE"
+replace_key_value aiEngineConfig.genAIService.maxDecodeSteps "$GENAI_SERVICE_MAX_DECODE_STEPS"
+replace_key_value aiEngineConfig.genAIService.topP "$GENAI_SERVICE_TOP_P"
+replace_key_value aiEngineConfig.genAIService.topK "$GENAI_SERVICE_TOP_K"
+replace_key_value aiEngineConfig.genAIService.apiEndpoint "$GENAI_SERVICE_ENDPOINT"
+replace_key_value aiEngineConfig.genAIService.genAIServiceSecret "$GENAI_SERVICE_SECRET"
+
 replace_key_value proxy.enabled "$PROXY_ENABLED"
 replace_key_value proxy.host "$PROXY_HOST"
 replace_key_value proxy.port "$PROXY_PORT"

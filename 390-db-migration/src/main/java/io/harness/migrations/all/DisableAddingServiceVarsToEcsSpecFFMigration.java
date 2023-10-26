@@ -48,8 +48,8 @@ public class DisableAddingServiceVarsToEcsSpecFFMigration implements Migration {
       log.info(format("FF DISABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC is enabled for %d accounts",
           oldFeatureFlag.getAccountIds().size()));
       Set<String> accountIds = new HashSet<>();
-      try (HIterator<Account> accounts =
-               new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+      try (HIterator<Account> accounts = new HIterator<>(
+               wingsPersistence.createAnalyticsQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
         for (Account account : accounts) {
           if (!oldFeatureFlag.getAccountIds().contains(account.getUuid())) {
             accountIds.add(account.getUuid());

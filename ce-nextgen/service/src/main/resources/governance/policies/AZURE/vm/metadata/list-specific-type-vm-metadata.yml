@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: list-specific-type-vm
+cloudProvider: AZURE
+resourceType: azure.vm
+description: List virtual machines of specific type
+rulesYamlPath: ../list-specific-type-vm.yml

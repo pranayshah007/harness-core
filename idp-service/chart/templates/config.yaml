@@ -67,4 +67,5 @@ data:
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   CPU: {{ .Values.cpu | quote}}
   SCORE_COMPUTER_THREADS_PER_CORE: {{.Values.scoreComputerThreadsPerCore | quote}}
+  INTERNAL_ACCOUNTS: {{.Values.internalAccounts}}
 

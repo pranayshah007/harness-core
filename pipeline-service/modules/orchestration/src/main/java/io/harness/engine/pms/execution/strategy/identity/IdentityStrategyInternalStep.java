@@ -160,7 +160,7 @@ public class IdentityStrategyInternalStep
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
-      Node originalNode = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
+      Node originalNode = planService.fetchNode(planId, nodeExecution.getNodeId());
       /*
       We are creating  new identityPlanNode for each such execution and setting the originalNodeExecution to the
       corresponding nodeExecutionId from previous execution. So the correct data will be copied in all combinations in
@@ -181,7 +181,7 @@ public class IdentityStrategyInternalStep
 
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = planService.fetchNode(childNodeExecution.getPlanId(), childNodeExecution.getNodeId());
+    Node node = planService.fetchNode(planId, childNodeExecution.getNodeId());
     /*
     We are creating  new identityPlanNode for each such execution and setting the originalNodeExecution to the
     corresponding nodeExecutionId from previous execution. So the correct data will be copied in all combinations in

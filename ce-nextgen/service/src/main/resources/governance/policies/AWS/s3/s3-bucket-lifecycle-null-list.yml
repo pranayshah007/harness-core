@@ -1,0 +1,5 @@
+policies:
+  - name: s3-bucket-lifecycle-null-list
+    resource: s3
+    filters:
+      - 'Lifecycle': null

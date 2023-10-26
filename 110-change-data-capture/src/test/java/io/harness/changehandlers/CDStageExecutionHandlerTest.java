@@ -81,7 +81,7 @@ public class CDStageExecutionHandlerTest extends CategoryTest {
     final List<String> sqls = queryCaptor.getAllValues();
     assertThat(sqls.get(0))
         .isEqualTo(
-            "INSERT INTO cd_stage_execution (deployment_type,infra_id,env_id,env_name,infra_name,artifact_display_name,rollback_duration,service_name,service_id,id,failure_message,env_type) VALUES('Kubernetes','infraName','envRedesign','envRedesign','infraName','library/nginx:stable-perl','25728','serNewDesign','serNewDesign','WGorBC7tTFStlQshsrAgYA','Shell Script execution failed. Please check execution logs.','Production')");
+            "INSERT INTO cd_stage_execution (deployment_type,infra_id,env_id,env_name,infra_name,artifact_display_name,rollback_duration,service_name,service_id,id,failure_message,env_type) VALUES('Kubernetes','infraName','envRedesign','envRedesign','infraName','library/nginx:stable-perl','25728','serNewDesign','serNewDesign','WGorBC7tTFStlQshsrAgYA','Shell Script execution failed. Please check execution logs.','Production') ON CONFLICT (id) Do UPDATE  SET deployment_type='Kubernetes',infra_id='infraName',env_id='envRedesign',env_name='envRedesign',infra_name='infraName',artifact_display_name='library/nginx:stable-perl',rollback_duration='25728',service_name='serNewDesign',service_id='serNewDesign',id='WGorBC7tTFStlQshsrAgYA',failure_message='Shell Script execution failed. Please check execution logs.',env_type='Production'");
   }
 
   @Test
@@ -103,7 +103,7 @@ public class CDStageExecutionHandlerTest extends CategoryTest {
     final List<String> sqls = queryCaptor.getAllValues();
     assertThat(sqls.get(0))
         .isEqualTo(
-            "INSERT INTO cd_stage_execution (deployment_type,infra_id,env_id,env_name,infra_name,artifact_display_name,rollback_duration,service_name,service_id,id,failure_message,env_type) VALUES('Kubernetes','infraName','envRedesign','envRedesign','infraName','library/nginx:stable-perl','25728','serNewDesign','serNewDesign','WGorBC7tTFStlQshsrAgYA','Shell Script execution failed. Please check execution logs.','Production')");
+            "INSERT INTO cd_stage_execution (deployment_type,infra_id,env_id,env_name,infra_name,artifact_display_name,rollback_duration,service_name,service_id,id,failure_message,env_type) VALUES('Kubernetes','infraName','envRedesign','envRedesign','infraName','library/nginx:stable-perl','25728','serNewDesign','serNewDesign','WGorBC7tTFStlQshsrAgYA','Shell Script execution failed. Please check execution logs.','Production') ON CONFLICT (id) Do UPDATE  SET deployment_type='Kubernetes',infra_id='infraName',env_id='envRedesign',env_name='envRedesign',infra_name='infraName',artifact_display_name='library/nginx:stable-perl',rollback_duration='25728',service_name='serNewDesign',service_id='serNewDesign',id='WGorBC7tTFStlQshsrAgYA',failure_message='Shell Script execution failed. Please check execution logs.',env_type='Production'");
   }
 
   private ChangeEvent<PersistentEntity> generateInsertChangeEvent(String fileName) throws IOException {

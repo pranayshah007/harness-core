@@ -20,6 +20,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(SSCA)
 @AllArgsConstructor(access = AccessLevel.PROTECTED, onConstructor = @__({ @Inject }))
@@ -33,5 +35,11 @@ public class EnforcementSummaryRepoCustomImpl implements EnforcementSummaryRepoC
         .stream()
         .map(EnforcementSummaryDBO::getDocument)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EnforcementSummaryEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, EnforcementSummaryEntity.class);
   }
 }
