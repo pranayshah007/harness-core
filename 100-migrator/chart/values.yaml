@@ -99,18 +99,18 @@ global:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
                 name: ""
                 kind: ""
               remoteKeys:
-                EVENTS_FRAMEWORK_REDIS_USERNAME:
+                REDIS_USERNAME:
                   name: ""
                   property: ""
-                EVENTS_FRAMEWORK_REDIS_PASSWORD:
+                REDIS_PASSWORD:
                   name: ""
                   property: ""
   ingress:
@@ -235,18 +235,18 @@ redis:
     kubernetesSecrets:
       - secretName: ""
         keys:
-          EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-          EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD: ""
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
             name: ""
             kind: ""
           remoteKeys:
-            EVENTS_FRAMEWORK_REDIS_USERNAME:
+            REDIS_USERNAME:
               name: ""
               property: ""
-            EVENTS_FRAMEWORK_REDIS_PASSWORD:
+            REDIS_PASSWORD:
               name: ""
               property: ""
 
@@ -279,7 +279,7 @@ timescaledb:
               name: ""
               property: ""
 mongo:
-  protocol: "mongodb"
+  protocol: ""
   hosts: []
   extraArgs: ""
   secrets:
@@ -775,8 +775,6 @@ secrets:
     keys:
       LOG_STREAMING_SERVICE_TOKEN: ""
       VERIFICATION_SERVICE_SECRET: ""
-      MONGO_SSL_CA_TRUST_STORE_PATH: ""
-      MONGO_SSL_CA_TRUST_STORE_PASSWORD: ""
   secretManagement: 
     externalSecretsOperator:
     - secretStore:
@@ -787,11 +785,5 @@ secrets:
           name: ""
           property: ""
         VERIFICATION_SERVICE_SECRET:
-          name: ""
-          property: ""
-        MONGO_SSL_CA_TRUST_STORE_PATH:
-          name: ""
-          property: ""
-        MONGO_SSL_CA_TRUST_STORE_PASSWORD:
           name: ""
           property: ""

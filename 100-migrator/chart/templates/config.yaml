@@ -53,6 +53,8 @@ data:
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: '{{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER }}'
   MONGO_SSL_CONFIG: '{{ .Values.config.MONGO_SSL_CONFIG }}'
+  MONGO_SSL_CA_TRUST_STORE_PATH: '{{ .Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PATH }}'
+  MONGO_SSL_CA_TRUST_STORE_PASSWORD: '{{ .Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PASSWORD }}'
   ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'
   ITERATOR_CONFIG_PATH: '{{ .Values.config.ITERATOR_CONFIG_PATH }}'
   ENABLE_AUDIT: 'true'

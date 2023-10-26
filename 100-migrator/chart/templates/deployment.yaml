@@ -82,13 +82,11 @@ spec:
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CG_LICENSE" "overrideEnvName" "LICENSE_INFO" "providedSecretValues" (list "global.license.cg") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "VERIFICATION_SERVICE_SECRET") | indent 12 }}
-            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PATH" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "MONGO_SSL_CA_TRUST_STORE_PATH") | indent 12 }}
-            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PASSWORD" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "MONGO_SSL_CA_TRUST_STORE_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "migrator.mongoEnv" $ | nindent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $) | indent 12 }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
+              value: {{ include "migrator.mongoConnection" $ }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}            
             {{- if .Values.extraEnvVars }}
