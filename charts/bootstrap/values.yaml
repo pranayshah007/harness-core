@@ -24,18 +24,18 @@ global:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              MINIO_USER: ""
-              MINIO_PASSWORD: ""
+              S3_USER: ""
+              S3_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
                 name: ""
                 kind: ""
               remoteKeys:
-                MINIO_USER:
+                S3_USER:
                   name: ""
                   property: ""
-                MINIO_PASSWORD:
+                S3_PASSWORD:
                   name: ""
                   property: ""
     mongo:
@@ -147,8 +147,6 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
@@ -161,18 +159,12 @@ global:
                 REDIS_PASSWORD:
                   name: ""
                   property: ""
-                EVENTS_FRAMEWORK_REDIS_USERNAME:
-                  name: ""
-                  property: ""
-                EVENTS_FRAMEWORK_REDIS_PASSWORD:
-                  name: ""
-                  property: ""
     clickhouse:
       secrets:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              CLICKHOUSE_USER: ""
+              CLICKHOUSE_USERNAME: ""
               CLICKHOUSE_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
@@ -180,14 +172,15 @@ global:
                 name: ""
                 kind: ""
               remoteKeys:
-                CLICKHOUSE_USER:
+                CLICKHOUSE_USERNAME:
                   name: ""
                   property: ""
                 CLICKHOUSE_PASSWORD:
                   name: ""
                   property: ""
+  
   smtpCreateSecret:
-    enabled: true
+    enabled: false
     SMTP_PASSWORD: ""
     SMTP_HOST: ""
     SMTP_USERNAME: ""
@@ -198,10 +191,10 @@ global:
         - secretName: ""
           keys:
             SMTP_USERNAME: ""
-            SMTP_PASSWORD": ""
+            SMTP_PASSWORD: ""
             SMTP_HOST: ""
-            SMTP_PORT": ""
-            SMTP_USE_SSL": ""
+            SMTP_PORT: ""
+            SMTP_USE_SSL: ""
       secretManagement: 
         externalSecretsOperator:
           - secretStore:
@@ -211,7 +204,7 @@ global:
               SMTP_USERNAME:
                 name: ""
                 property: ""
-              SMTP_PASSWORD":
+              SMTP_PASSWORD:
                 name: ""
                 property: ""
               SMTP_HOST:
