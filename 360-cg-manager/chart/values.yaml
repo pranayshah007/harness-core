@@ -106,8 +106,6 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
@@ -118,12 +116,6 @@ global:
                   name: ""
                   property: ""
                 REDIS_PASSWORD:
-                  name: ""
-                  property: ""
-                EVENTS_FRAMEWORK_REDIS_USERNAME:
-                  name: ""
-                  property: ""
-                EVENTS_FRAMEWORK_REDIS_PASSWORD:
                   name: ""
                   property: ""
   mongoSSL: false
@@ -188,7 +180,7 @@ global:
             SMTP_USERNAME: ""
             SMTP_PASSWORD: ""
             SMTP_HOST: ""
-            SMTP_PORT": ""
+            SMTP_PORT: ""
             SMTP_USE_SSL: ""
       secretManagement: 
         externalSecretsOperator:
@@ -205,7 +197,7 @@ global:
               SMTP_HOST:
                 name: ""
                 property: ""
-              SMTP_PORT":
+              SMTP_PORT:
                 name: ""
                 property: ""
               SMTP_USE_SSL:
@@ -253,18 +245,13 @@ global:
 redis:
   protocol: ""
   hosts: []
-  secretName: ""
-  userKey: ""
-  passwordKey: ""
   extraArgs: ""
   secrets:
     kubernetesSecrets:
       - secretName: ""
         keys:
           REDIS_USERNAME: ""
-          REDIS_PASSWORD": ""
-          EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-          EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+          REDIS_PASSWORD: ""
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
@@ -274,13 +261,7 @@ redis:
             REDIS_USERNAME:
               name: ""
               property: ""
-            REDIS_PASSWORD":
-              name: ""
-              property: ""
-            EVENTS_FRAMEWORK_REDIS_USERNAME:
-              name: ""
-              property: ""
-            EVENTS_FRAMEWORK_REDIS_PASSWORD:
+            REDIS_PASSWORD:
               name: ""
               property: ""
 
@@ -315,9 +296,6 @@ timescaledb:
 mongo:
   protocol: "mongodb"
   hosts: []
-  secretName: ""
-  userKey: ""
-  passwordKey: ""
   extraArgs: ""
   secrets:
     kubernetesSecrets:
