@@ -7,6 +7,8 @@
 
 package io.harness.pms.sdk.core.plan.creation.beans;
 
+import static io.harness.pms.utils.PmsConstants.DEFAULT_TIMEOUT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncCreatorContext;
@@ -255,5 +257,14 @@ public class PlanCreationContext implements AsyncCreatorContext {
       return value.getExecutionContext().getExecutionMode();
     }
     return value.getMetadata().getExecutionMode();
+  }
+
+  /*
+  Method will get the Max timeout from SettingsValueMap if existed,
+  Otherwise will return Default timeout '8w'
+   */
+  public String getTimeoutDuration(String timeoutIdentifier) {
+    PlanCreationContextValue value = getMetadata();
+    return value.getExecutionContext().getSettingToValueMapOrDefault(timeoutIdentifier, DEFAULT_TIMEOUT);
   }
 }

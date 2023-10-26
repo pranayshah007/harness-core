@@ -928,6 +928,7 @@ public enum FeatureName {
   PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
   SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
   PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE),
+  CDS_DISABLE_MAX_TIMEOUT_CONFIG("Feature Flag to disable the max timeout Configuration", HarnessTeam.CDC),
   CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI),
   CDS_TF_TG_HARD_RESET_GIT_REF(
       "Do hard reset on repo after fetching terraform / terragrunt config files when commit ID or tag selected ",
