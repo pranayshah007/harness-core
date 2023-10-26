@@ -58,12 +58,13 @@ USAGE:
 */}}
 {{- define "harnesscommon.secrets.InstalledDBSecret" }}
   {{- $ := .ctx }}
-  {{- $dbKey := .dbKey -}}
-  {{- $defaultSecret := .defaultSecret -}}
-  {{- if eq $dbKey "clickhouse"  -}}
-    {{- $isInstalled := (dig $dbKey "enabled" false $.Values.global.database) }}
+  {{- $dbKey := .dbKey }}
+  {{- $defaultSecret := .defaultSecret }}
+  {{- $isInstalled := false }}
+  {{- if eq $dbKey "clickhouse"  }}
+    {{- $isInstalled = (dig $dbKey "enabled" false $.Values.global.database) }}
   {{- else }}
-    {{- $isInstalled := (dig $dbKey "installed" false $.Values.global.database) }}
+    {{- $isInstalled = (dig $dbKey "installed" false $.Values.global.database) }}
   {{- end }}
   {{- $dbSecretsCtx := (dig $dbKey "secrets" false $.Values.global.database) }}
   {{- if and $dbKey $isInstalled $dbSecretsCtx }}
