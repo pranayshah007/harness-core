@@ -6,11 +6,11 @@
 # To be used when building in CIE
 FROM ubuntu:latest as builder
 
-## Install curl
-#RUN apt-get update -y && apt-get install -y curl
-#
-## Download the Go distribution archive
-#RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
+# Install curl
+RUN apt-get update -y && apt-get install -y curl
+
+# Download the Go distribution archive
+RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
 
 RUN mkdir -p /app
 ARG GCP_KEY
@@ -25,6 +25,8 @@ ENV PLATFORM="jenkins"
 RUN chmod +x \
     /app/product/log-service/build/feature_build.sh \
     && /app/product/log-service/build/feature_build.sh $GCP_KEY \
+
+ENV CONTEXT_PATH $BAZEL_BIN
 
 FROM builder as base
 # Copy go binary
