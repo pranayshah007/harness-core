@@ -117,6 +117,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -627,14 +628,24 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String gitBranch) {
+    Optional<Environment> environment;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+      environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
+    }
+    return getEnvInputsFromEnvironmentEntityOrThrow(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, environment.orElse(null));
+  }
+
+  @Nullable
+  private String getEnvInputsFromEnvironmentEntityOrThrow(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, Environment environment) {
     Map<String, Object> yamlInputs;
-    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
-    if (environment.isPresent()) {
-      if (EmptyPredicate.isEmpty(environment.get().fetchNonEmptyYaml())) {
+    if (environment != null) {
+      if (EmptyPredicate.isEmpty(environment.fetchNonEmptyYaml())) {
         throw new InvalidRequestException("Environment yaml cannot be empty");
       }
-      yamlInputs = createEnvironmentInputsYamlInternal(environment.get().fetchNonEmptyYaml());
+      yamlInputs = createEnvironmentInputsYamlInternal(environment.fetchNonEmptyYaml());
     } else {
       String errorMessage =
           getScopedErrorMessageForInvalidEnvironments(accountId, orgIdentifier, projectIdentifier, envIdentifier);
@@ -848,7 +859,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
               ? createEnvironmentInputYamlFromOverride(accountId, orgIdentifier, projectIdentifier, envRef)
               : createEnvironmentInputsYaml(envIdentifierRef.getAccountIdentifier(),
                   envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(),
-                  envIdentifierRef.getIdentifier());
+                  envIdentifierRef.getIdentifier(), null);
 
           List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
           for (String serviceRef : serviceRefs) {
