@@ -442,6 +442,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
     // EQ operator
+    assertThatThrownBy(() -> evaluator.evaluateExpression("<+a>==abc"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Expression <+a>==abc might contain some unresolved expressions which could not be evaluated.");
     assertThat(
         evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
         .isEqualTo(true);

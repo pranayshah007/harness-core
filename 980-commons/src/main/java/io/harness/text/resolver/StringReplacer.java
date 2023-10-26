@@ -124,6 +124,8 @@ public class StringReplacer {
           }
           if (checkIfExpressionValueCanBeConcatenated) {
             expressionValue = (String) expressionResolver.getContextValue(expressionValue);
+          } else {
+            onlyRenderedExpressions = false;
           }
         } else {
           onlyRenderedExpressions = false;
