@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -138,6 +139,8 @@ import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.events.GitSyncProjectCleanup;
+import io.harness.gitsync.common.impl.GitSyncConnectorServiceImpl;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.core.webhook.createbranchevent.GitBranchHookEventStreamListener;
 import io.harness.gitsync.core.webhook.pushevent.GitPushEventStreamListener;
 import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookPushEventListener;
@@ -687,6 +690,7 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
+    bind(GitSyncConnectorService.class).to(GitSyncConnectorServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)

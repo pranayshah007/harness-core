@@ -9,13 +9,10 @@ package io.harness.gitsync.common.helper;
 
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
-import static io.harness.rule.OwnerRule.SHALINI;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,38 +33,39 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.GitSyncTestBase;
-import io.harness.gitsync.common.dtos.GithubSCMDTO;
-import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
+import io.harness.gitsync.common.impl.GitSyncConnectorServiceImpl;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.rule.Owner;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PL)
-public class GitSyncConnectorHelperTest extends GitSyncTestBase {
+public class GitSyncConnectorServiceTest extends GitSyncTestBase {
   @Mock YamlGitConfigService yamlGitConfigService;
   @Mock DecryptGitApiAccessHelper decryptGitApiAccessHelper;
   @Mock ConnectorService connectorService;
-  @Mock UserSourceCodeManagerHelper userSourceCodeManagerHelper;
-  @InjectMocks GitSyncConnectorHelper gitSyncConnectorHelper;
-
+  private GitSyncConnectorService gitSyncConnectorService;
   private static final String ACCOUNT_IDENTIFIER = "account";
   private static final String ORG_IDENTIFIER = "org";
   private static final String PROJECT_IDENTIFIER = "project";
   private static final String CONNECTOR_REF = "connectorRef";
   GithubApiAccessDTO githubApiAccessDTO;
   GithubConnectorDTO githubConnectorDTO;
+  private AutoCloseable mocks;
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
+    gitSyncConnectorService =
+        new GitSyncConnectorServiceImpl(connectorService, decryptGitApiAccessHelper, yamlGitConfigService);
     githubApiAccessDTO =
         GithubApiAccessDTO.builder()
             .type(GithubApiAccessType.OAUTH)
@@ -76,13 +74,13 @@ public class GitSyncConnectorHelperTest extends GitSyncTestBase {
                       .build())
             .build();
     githubConnectorDTO = GithubConnectorDTO.builder().build();
-    doReturn(Optional.of(
-                 GithubSCMDTO.builder().userName("userName").userEmail("email").apiAccess(githubApiAccessDTO).build()))
-        .when(userSourceCodeManagerHelper)
-        .fetchUserSourceCodeManagerDTO(ACCOUNT_IDENTIFIER, githubConnectorDTO);
-    doReturn(Optional.of(UserDetailsResponseDTO.builder().userName("userName").userEmail("email").build()))
-        .when(userSourceCodeManagerHelper)
-        .getUserDetails(ACCOUNT_IDENTIFIER, githubConnectorDTO);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test
@@ -99,7 +97,7 @@ public class GitSyncConnectorHelperTest extends GitSyncTestBase {
     when(yamlGitConfigService.getByProjectIdAndRepoOptional(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "Repo"))
         .thenReturn(Optional.empty());
-    ScmConnector scmConnector = gitSyncConnectorHelper.getDecryptedConnector(
+    ScmConnector scmConnector = gitSyncConnectorService.getDecryptedConnector(
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF, "Repo");
     assertThat(scmConnector.getConnectorType()).isEqualTo(ConnectorType.GITHUB);
   }
@@ -114,7 +112,7 @@ public class GitSyncConnectorHelperTest extends GitSyncTestBase {
                 .connector(ConnectorInfoDTO.builder().connectorConfig(GithubConnectorDTO.builder().build()).build())
                 .build()));
     ScmConnector scmConnector =
-        gitSyncConnectorHelper.getScmConnector(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF);
+        gitSyncConnectorService.getScmConnector(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF);
     assertThat(scmConnector.getConnectorType()).isEqualTo(ConnectorType.GITHUB);
   }
 
@@ -125,7 +123,7 @@ public class GitSyncConnectorHelperTest extends GitSyncTestBase {
     when(connectorService.getByRef(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF))
         .thenReturn(Optional.empty());
     assertThatThrownBy(()
-                           -> gitSyncConnectorHelper.getScmConnector(
+                           -> gitSyncConnectorService.getScmConnector(
                                ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF))
         .isInstanceOf(ConnectorNotFoundException.class);
   }
@@ -141,26 +139,8 @@ public class GitSyncConnectorHelperTest extends GitSyncTestBase {
                     ConnectorInfoDTO.builder().connectorConfig(AppDynamicsConnectorDTO.builder().build()).build())
                 .build()));
     assertThatThrownBy(()
-                           -> gitSyncConnectorHelper.getScmConnector(
+                           -> gitSyncConnectorService.getScmConnector(
                                ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, CONNECTOR_REF))
         .isInstanceOf(UnexpectedException.class);
-  }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testSetUserGitCredsInConnectorIfPresent() {
-    gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(ACCOUNT_IDENTIFIER, githubConnectorDTO);
-    assertEquals(githubConnectorDTO.getApiAccess(), githubApiAccessDTO);
-  }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testGetUserDetails() {
-    UserDetailsResponseDTO userDetailsResponseDTO =
-        (gitSyncConnectorHelper.getUserDetails(ACCOUNT_IDENTIFIER, githubConnectorDTO)).get();
-    assertEquals(userDetailsResponseDTO.getUserEmail(), "email");
-    assertEquals(userDetailsResponseDTO.getUserName(), "userName");
   }
 }
