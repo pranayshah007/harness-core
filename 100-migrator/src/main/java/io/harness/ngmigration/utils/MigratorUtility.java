@@ -241,6 +241,9 @@ public class MigratorUtility {
     if (timeoutInMillis == null) {
       return ParameterField.createValueField(Timeout.builder().timeoutString(DEFAULT_TIMEOUT).build());
     }
+    if (timeoutInMillis < 10000L) {
+      timeoutInMillis = 10000L;
+    }
     String timeOut = convertToHumanReadableTimeFormat(timeoutInMillis);
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeOut).build());
   }

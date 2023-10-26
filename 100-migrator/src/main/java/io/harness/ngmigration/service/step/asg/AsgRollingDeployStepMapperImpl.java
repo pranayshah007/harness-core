@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.step.asg;
+
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 
 import io.harness.annotations.dev.CodePulse;
@@ -38,7 +39,7 @@ public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
     if (state instanceof AwsAmiServiceSetup) {
       AwsAmiServiceSetup asgState = (AwsAmiServiceSetup) state;
       if (asgState.getAutoScalingSteadyStateTimeout() > 0) {
-        return MigratorUtility.getTimeout((long) asgState.getAutoScalingSteadyStateTimeout());
+        return MigratorUtility.getTimeout((long) asgState.getAutoScalingSteadyStateTimeout() * 1000 * 60);
       }
     }
     return MigratorUtility.getTimeout(null);
