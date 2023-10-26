@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.buildstate.providers;
 
+import static io.harness.beans.FeatureName.CI_EXTRA_ADDON_RESOURCE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DELEGATE_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DELEGATE_SERVICE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DELEGATE_SERVICE_ID_VARIABLE_VALUE;
@@ -29,6 +30,8 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CON
 import static io.harness.ci.commonconstants.CIExecutionConstants.SH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_SETUP_ADDON_ARGS;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_CONTAINER_CPU;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_CONTAINER_MEMORY;
 import static io.harness.ci.execution.utils.UsageUtils.getExecutionUser;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
@@ -104,7 +107,7 @@ public class InternalContainerParamsProvider {
         .args(args)
         .imagePullPolicy(imagePullPolicy)
         .securityContext(ctrSecurityContext)
-        .containerResourceParams(getAddonResourceParams())
+        .containerResourceParams(getAddonResourceParams(accountIdentifier))
         .build();
   }
 
@@ -207,9 +210,13 @@ public class InternalContainerParamsProvider {
         .build();
   }
 
-  private ContainerResourceParams getAddonResourceParams() {
+  private ContainerResourceParams getAddonResourceParams(String accountIdentifier) {
     Integer cpu = LITE_ENGINE_CONTAINER_CPU;
     Integer memory = LITE_ENGINE_CONTAINER_MEM;
+    if (featureFlagService.isEnabled(CI_EXTRA_ADDON_RESOURCE, accountIdentifier)) {
+      cpu = ADDON_CONTAINER_CPU;
+      memory = ADDON_CONTAINER_MEMORY;
+    }
     return ContainerResourceParams.builder()
         .resourceRequestMilliCpu(cpu)
         .resourceRequestMemoryMiB(memory)
