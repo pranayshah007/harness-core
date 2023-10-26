@@ -43,12 +43,13 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
   @Inject private MetricService metricService;
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
+    CompositeServiceLevelObjective compositeServiceLevelObjective = null;
+    String sloId = null;
     try {
       String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
       // here startTime will be the prv Data endTime and endTime will be the current time.
-      String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
-      CompositeServiceLevelObjective compositeServiceLevelObjective =
-          (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
+      sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
+      compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
       LocalDateTime currentLocalDate =
           LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
       Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
@@ -67,14 +68,21 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
       compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
       try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
         metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
-            Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
+            Duration.between(analysisState.getInputs().getStartTime(), clock.instant()));
       }
       analysisState.setStatus(AnalysisStatus.SUCCESS);
     } catch (Exception exception) {
-      log.warn(String.format("Composite SLO Execute for sloId: {} failed with:",
-                   analysisState.getInputs().getVerificationTaskId()),
-          exception);
-      analysisState.setStatus(AnalysisStatus.RETRY);
+      if (compositeServiceLevelObjective == null) {
+        analysisState.setStatus(AnalysisStatus.TERMINATED);
+        log.info(
+            "The composite slo with id {} has already been deleted, marking current analysisState to be cleaned up : {}",
+            sloId, analysisState.getWorkerTaskId());
+      } else {
+        log.warn(String.format("Composite SLO Execute for sloId: {} failed with:",
+                     analysisState.getInputs().getVerificationTaskId()),
+            exception);
+        analysisState.setStatus(AnalysisStatus.RETRY);
+      }
     }
     return analysisState;
   }
@@ -117,11 +125,13 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
-        AnalysisInput.builder()
-            .verificationTaskId(verificationTaskId)
-            .startTime(Instant.now())
-            .endTime(Instant.now())
-            .build());
+    if (compositeServiceLevelObjective != null) {
+      orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
+          AnalysisInput.builder()
+              .verificationTaskId(verificationTaskId)
+              .startTime(Instant.now())
+              .endTime(Instant.now())
+              .build());
+    }
   }
 }

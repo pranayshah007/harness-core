@@ -1,0 +1,8 @@
+policies:
+  - name: launch-template-with-Encrypted-as-true
+    resource: launch-template-version
+    filters:
+      - type: value
+        key: "LaunchTemplateData.BlockDeviceMappings[].Ebs.Encrypted"
+        value: true
+        op: contains

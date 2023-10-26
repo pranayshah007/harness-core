@@ -25,7 +25,7 @@ public interface DelegateMetricsService {
 
   void recordDelegateMetricsPerAccount(String accountId, String metricName);
 
-  void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String accountName, String companyName,
+  void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName,
       DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
       String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
       boolean isImmutable, long lastHB, String metricName);

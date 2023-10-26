@@ -117,14 +117,14 @@ public class AnomalyEntity {
     if (awsAccount != null) {
       return EntityType.AWS_ACCOUNT;
     }
-    if (azureSubscription != null) {
-      return EntityType.AZURE_SUBSCRIPTION;
+    if (azureMeterCategory != null) {
+      return EntityType.AZURE_METER_CATEGORY;
     }
     if (azureResourceGroup != null) {
       return EntityType.AZURE_RESOURCE_GROUP;
     }
-    if (azureMeterCategory != null) {
-      return EntityType.AZURE_METER_CATEGORY;
+    if (azureSubscription != null) {
+      return EntityType.AZURE_SUBSCRIPTION;
     }
 
     return null;

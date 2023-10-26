@@ -1,0 +1,21 @@
+{
+  "logGroupName": "LogGroupName",
+  "creationTime": 1565794314435,
+  "metricFilterCount": 0,
+  "arn": "arn:aws:logs:us-east-1:AccountId:log-group:LogGroupName:*",
+  "storedBytes": 133088293,
+  "Tags": [],
+  "streams": [
+    {
+      "logStreamName": "LogStreamName",
+      "creationTime": 1565794314469,
+      "firstEventTimestamp": 1565055307000,
+      "lastEventTimestamp": 1671520571427,
+      "lastIngestionTime": 1671520573908,
+      "uploadSequenceToken": "UploadSequenceToken",
+      "arn": "arn:aws:logs:us-east-1:AccountId:log-group:LogGroupName:log-stream:LogStreamName",
+      "storedBytes": 0
+    }
+  ],
+  "lastWrite": "2022-12-20T07:16:13.908000+00:00"
+}

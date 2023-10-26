@@ -105,7 +105,7 @@ public class StatsModel {
     return original > expected + AnomalyDetectionConstants.STATS_MODEL_ABSOLUTE_THRESHOLD;
   }
   private static boolean absoluteThresholdServices(Double original, Double expected) {
-    return original > expected;
+    return original > expected + AnomalyDetectionConstants.STATS_MODEL_ABSOLUTE_THRESHOLD_SERVICES;
   }
 
   private static boolean probabilityThreshold(Double original, Double mean, Double standardDeviation) {

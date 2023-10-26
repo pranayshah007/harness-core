@@ -1,0 +1,7 @@
+policies:
+  - name: rds-snapshot-orphan
+    resource: rds-snapshot
+    filters:
+      - type: instance
+        value: 0
+        value_type: resource_count

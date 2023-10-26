@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.mappers.DataPointMapper;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
-import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.mappers.DataSourceDataPointsMapMapper;
 import io.harness.idp.scorecard.datasources.mappers.DataSourceMapper;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;

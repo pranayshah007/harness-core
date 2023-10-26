@@ -112,9 +112,15 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   @Override
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
+  public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull PlanNode node,
       NodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String name = node.getName();
+    String identifier = node.getIdentifier();
+    if (metadata != null && metadata.getStrategyMetadata() != null) {
+      name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName(), ambiance);
+      identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier(), ambiance);
+    }
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
@@ -127,9 +133,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .previousId(previousId)
             .unitProgresses(new ArrayList<>())
             .module(node.getServiceName())
-            .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
+            .name(name)
             .skipGraphType(node.getSkipGraphType())
-            .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
+            .identifier(identifier)
             .stepType(node.getStepType())
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
@@ -246,7 +252,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         log.info("Not Proceeding with  Execution. Reason : {}", check.getReason());
         return;
       }
-      log.info("Proceeding with  Execution. Reason : {}", check.getReason());
+      log.debug("Proceeding with  Execution. Reason : {}", check.getReason());
 
       if (waitForExecutionInputHelper.waitForExecutionInput(ambiance, nodeExecutionId, planNode)) {
         return;
@@ -312,7 +318,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       if (nodeExecution.getStatus() != RUNNING) {
         Status previousNodeExecutionStatus = nodeExecution.getStatus();
-        log.info("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
+        log.debug("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
             previousNodeExecutionStatus);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));

@@ -476,7 +476,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     environmentService.create(createEnvironmentRequest);
 
     String environmentInputsYaml =
-        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", null);
     String resFile = "env-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
     assertThat(environmentInputsYaml).isEqualTo(resInputs);
@@ -492,7 +492,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
 
     environmentService.update(updateEnvironmentRequest);
     String environmentInputsYaml2 =
-        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", null);
     assertThat(environmentInputsYaml2).isNull();
   }
 
@@ -501,16 +501,17 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testCreateEnvironmentInputsErrorCases() {
     assertThatThrownBy(
-        () -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER"))
+        () -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", null))
         .isInstanceOf(NotFoundException.class)
         .hasMessage(
             "Environment with identifier [IDENTIFIER] in project [PROJECT_ID], org [ORG_ID], account [ACCOUNT_ID] scope not found");
 
-    assertThatThrownBy(() -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "", "IDENTIFIER"))
+    assertThatThrownBy(
+        () -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "", "IDENTIFIER", null))
         .isInstanceOf(NotFoundException.class)
         .hasMessage("Environment with identifier [IDENTIFIER] in org [ORG_ID], account [ACCOUNT_ID] scope not found");
 
-    assertThatThrownBy(() -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", null, "", "IDENTIFIER"))
+    assertThatThrownBy(() -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", null, "", "IDENTIFIER", null))
         .isInstanceOf(NotFoundException.class)
         .hasMessage("Environment with identifier [IDENTIFIER] in account [ACCOUNT_ID] scope not found");
   }

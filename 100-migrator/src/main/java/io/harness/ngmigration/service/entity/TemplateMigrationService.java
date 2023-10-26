@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
@@ -29,6 +31,7 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.TemplateSummary;
@@ -37,8 +40,11 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.template.NgTemplateService;
 import io.harness.ngmigration.template.TemplateFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -52,6 +58,12 @@ import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.GraphNode;
+import software.wings.beans.MultiServiceOrchestrationWorkflow;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateType;
 import software.wings.ngmigration.CgBasicInfo;
@@ -61,12 +73,14 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.template.TemplateService;
+import software.wings.sm.StateType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +99,7 @@ public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private SecretRefUtils secretRefUtils;
+  @Inject StepMapperFactory stepMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -158,6 +173,14 @@ public class TemplateMigrationService extends NgMigrationService {
                 RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
                 StoreType.INLINE)
             .execute();
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      resp =
+          templateClient
+              .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), getYamlStringV2(yamlFile)), StoreType.INLINE)
+              .execute();
+    }
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -207,10 +230,93 @@ public class TemplateMigrationService extends NgMigrationService {
               .cgBasicInfo(template.getCgBasicInfo())
               .build();
       files.add(ngYamlFile);
+
+      renderCustomExpressions(migrationContext, entities, ngYamlFile);
       migratedEntities.putIfAbsent(entityId, ngYamlFile);
       return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
     return null;
+  }
+
+  private void renderCustomExpressions(
+      MigrationContext migrationContext, Map<CgEntityId, CgEntityNode> entities, NGYamlFile ngYamlFile) {
+    Map<String, Object> custom = updateStepVariables(migrationContext, entities);
+    MigratorExpressionUtils.render(migrationContext, ngYamlFile, custom);
+  }
+
+  private Map<String, Object> updateStepVariables(
+      MigrationContext migrationContext, Map<CgEntityId, CgEntityNode> entities) {
+    Map<String, Object> custom = new HashMap<>();
+    entities.entrySet()
+        .stream()
+        .filter(entry -> NGMigrationEntityType.WORKFLOW.equals(entry.getValue().getType()))
+        .forEach(entry -> {
+          Workflow workflow = (Workflow) entry.getValue().getEntity();
+          WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+          updateExpressionsFromWorkflow(custom, migrationContext, wfContext, workflow);
+        });
+    return custom;
+  }
+
+  private void updateExpressionsFromWorkflow(Map<String, Object> custom, MigrationContext migrationContext,
+      WorkflowMigrationContext workflowMigrationContext, Workflow workflow) {
+    if ((workflow.getOrchestration() instanceof MultiServiceOrchestrationWorkflow)
+        || (workflow.getOrchestration() instanceof CanaryOrchestrationWorkflow)) {
+      handlePreDeploymentPhase(custom, workflowMigrationContext, workflow);
+    }
+
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (orchestrationWorkflow != null) {
+      List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+      for (WorkflowPhase phase : phases) {
+        List<StepExpressionFunctor> expressionFunctors = processPhase(workflowMigrationContext, phase);
+        if (isNotEmpty(expressionFunctors)) {
+          custom.putAll(MigratorUtility.getExpressions(phase, workflowMigrationContext.getStepExpressionFunctors(),
+              migrationContext.getInputDTO().getIdentifierCaseFormat()));
+        }
+      }
+    }
+  }
+
+  private void handlePreDeploymentPhase(
+      Map<String, Object> custom, WorkflowMigrationContext workflowMigrationContext, Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if ((orchestrationWorkflow == null) || isEmpty(orchestrationWorkflow.getPreDeploymentSteps().getSteps())) {
+      return;
+    }
+
+    PhaseStep preDeploymentSteps = orchestrationWorkflow.getPreDeploymentSteps();
+    List<GraphNode> steps = preDeploymentSteps.getSteps();
+    steps.stream().filter(step -> StateType.SHELL_SCRIPT.getType().equalsIgnoreCase(step.getType())).forEach(step -> {
+      List<StepExpressionFunctor> expressionFunctors =
+          stepMapperFactory.getStepMapper(StateType.SHELL_SCRIPT.getType())
+              .getExpressionFunctor(workflowMigrationContext, "dummy", preDeploymentSteps.getName(), step);
+      if (isNotEmpty(expressionFunctors)) {
+        workflowMigrationContext.getStepExpressionFunctors().addAll(expressionFunctors);
+        custom.putAll(MigratorUtility.getExpressions("dummy", workflowMigrationContext.getStepExpressionFunctors()));
+      }
+    });
+  }
+
+  private List<StepExpressionFunctor> processPhase(WorkflowMigrationContext wfContext, WorkflowPhase phase) {
+    List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+    List<StepExpressionFunctor> stepExpressionFunctors = new ArrayList<>();
+
+    phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
+      List<GraphNode> steps = phaseStep.getSteps();
+      steps.forEach(stepYaml -> {
+        StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
+        List<StepExpressionFunctor> expressionFunctors =
+            stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
+        if (isNotEmpty(expressionFunctors)) {
+          wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
+          stepExpressionFunctors.addAll(expressionFunctors);
+        }
+      });
+    });
+    return stepExpressionFunctors;
   }
 
   private JsonNode getSpec(JsonNode configSpec, Template template) {

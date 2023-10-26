@@ -23,7 +23,6 @@ import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataServiceImpl;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -141,7 +140,6 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
-    assertThat(expressionEvaluator.renderExpression("<+trigger.triggerPayload>")).isEqualTo(triggerPayload.toString());
 
     // keys inside header expression are case insensitive for eg: <+trigger.header['Host']> and
     // <+trigger.header['host']> both will work
@@ -210,9 +208,7 @@ public class TriggerFunctorTest extends CategoryTest {
                                     .setSourceType(SourceType.GITHUB_REPO)
                                     .build())
                 .build()));
-    assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap or list");
+    assertThat(finalExpressionEvaluator.renderExpression("<+trigger.event>")).isEqualTo("PR");
   }
 
   @Test

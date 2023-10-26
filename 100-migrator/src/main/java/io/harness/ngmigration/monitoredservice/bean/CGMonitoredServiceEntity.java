@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration.monitoredservice.bean;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
@@ -17,6 +20,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Data
 @Builder
 public class CGMonitoredServiceEntity implements NGMigrationEntity {

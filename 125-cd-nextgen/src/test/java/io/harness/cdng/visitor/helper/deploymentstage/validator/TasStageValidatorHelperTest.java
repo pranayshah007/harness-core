@@ -163,7 +163,8 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(new ArrayList<>()).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Only one App Setup or Rolling Deploy is supported");
+        .hasMessage(
+            "Atleast One Tanzu Command or Route Mapping step, or exactly one App Setup or Rolling Deploy is required to save TAS pipeline");
   }
 
   @Test
@@ -234,7 +235,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("At max one App Rollback step is valid, found: 2");
+        .hasMessage("Only one App Rollback step is valid, found: 2");
   }
 
   @Test
@@ -253,7 +254,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("At max one Rolling Rollback step is valid, found: 2");
+        .hasMessage("Only one Rolling Rollback step is valid, found: 2");
   }
 
   @Test
@@ -285,7 +286,7 @@ public class TasStageValidatorHelperTest extends CategoryTest {
             .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("At max one Swap Rollback step is valid, found: 2");
+        .hasMessage("Only one Swap Rollback step is valid, found: 2");
   }
 
   @Test
@@ -317,7 +318,8 @@ public class TasStageValidatorHelperTest extends CategoryTest {
                                             .execution(ExecutionElementConfig.builder().steps(steps).build())
                                             .build();
     assertThatThrownBy(() -> tasStageValidatorHelper.validate(stageConfig, accountId, orgId, projectId))
-        .hasMessage("Only one App Setup or Rolling Deploy is supported");
+        .hasMessage(
+            "Atleast One Tanzu Command or Route Mapping step, or exactly one App Setup or Rolling Deploy is required to save TAS pipeline");
   }
 
   @Test

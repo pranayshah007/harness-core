@@ -1,7 +1,7 @@
 .gitleaksignore pranay.shah@harness.io jyoti.raval@harness.io
-DockerFile* udham.singh@harness.io
-.bazel* udham.singh@harness.io
-bazel* udham.singh@harness.io
+DockerFile* @harness/build-engineering
+.bazel* @harness/build-engineering
+bazel* @harness/build-engineering
 /access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
 /batch-processing/ hitesh.aringa@harness.io nikunj.badjatya@harness.io shubhanshu.verma@harness.io trunapushpa.surkar@harness.io anmol.maheshwari@harness.io abhinav.singh3@harness.io sahildeep.singh@harness.io abhijeet.sharma@harness.io
 /clients/access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
@@ -106,5 +106,5 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io
 /953-yaml-commons/src/main/java/io/harness/yaml/utils/JsonPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /979-recaster/ prashant.pal@harness.io
 
-**/charts/** jonathan.charette@harness.io
-**/chart/** jonathan.charette@harness.io 
+**/charts/** jonathan.charette@harness.io arya.haldar@harness.io sai.teja@harness.io kapil.garg@harness.io
+**/chart/** jonathan.charette@harness.io arya.haldar@harness.io sai.teja@harness.io kapil.garg@harness.io

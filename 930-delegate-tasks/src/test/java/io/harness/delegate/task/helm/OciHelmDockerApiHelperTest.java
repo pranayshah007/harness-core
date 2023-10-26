@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -145,5 +146,47 @@ public class OciHelmDockerApiHelperTest extends CategoryTest {
 
     assertThatThrownBy(() -> ociHelmDockerApiHelper.getChartVersions(accountId, ociHelmDockerApiListTagsTaskParams, 3))
         .isInstanceOf(OciHelmDockerApiException.class);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetChartVersionsWhenPathIsProvidedInConnector() {
+    String lastTag = null;
+    int pageSize = 3;
+    OciHelmAuthenticationDTO ociHelmAuthenticationDTO = OciHelmAuthenticationDTO.builder()
+                                                            .authType(OciHelmAuthType.USER_PASSWORD)
+                                                            .credentials(getOciHelmAuthenticationDTO(false))
+                                                            .build();
+
+    OciHelmConnectorDTO ociHelmConnectorDTO = OciHelmConnectorDTO.builder()
+                                                  .helmRepoUrl(url + "/somepath")
+                                                  .auth(ociHelmAuthenticationDTO)
+                                                  .delegateSelectors(new HashSet<>())
+                                                  .build();
+
+    OciHelmDockerApiListTagsTaskParams ociHelmDockerApiListTagsTaskParams = OciHelmDockerApiListTagsTaskParams.builder()
+                                                                                .ociHelmConnector(ociHelmConnectorDTO)
+                                                                                .chartName(chartName)
+                                                                                .lastTag(lastTag)
+                                                                                .build();
+
+    doReturn(null).when(decryptionService).decrypt(any(), any());
+
+    wireMockRule.stubFor(get(urlEqualTo(String.format("/v2/%s/tags/list?n=%d", "somepath/" + chartName, pageSize)))
+                             .willReturn(aResponse()
+                                             .withStatus(200)
+                                             .withBody("{\n"
+                                                 + "    \"name\": \"" + chartName + "\",\n"
+                                                 + "    \"tags\": [\n"
+                                                 + "        \"0.1.0\",\n"
+                                                 + "        \"0.1.1\",\n"
+                                                 + "        \"0.1.2\"\n"
+                                                 + "    ]\n"
+                                                 + "}")
+                                             .withHeader("Content-Type", "application/json")));
+
+    List<String> versions = ociHelmDockerApiHelper.getChartVersions(accountId, ociHelmDockerApiListTagsTaskParams, 3);
+    assertThat(versions).contains("0.1.0", "0.1.1", "0.1.2");
   }
 }

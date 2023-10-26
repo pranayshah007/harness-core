@@ -18,6 +18,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -25,8 +26,10 @@ import io.harness.pms.execution.utils.StatusUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.CloseableIterator;
@@ -65,7 +68,14 @@ public abstract class InterruptPropagatorHandler {
         allExecutions.add(iterator.next());
       }
     }
+    Map<String, String> metadata =
+        updatedInterrupt.getMetadata() != null ? updatedInterrupt.getMetadata() : new HashMap<>();
 
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withGroupAndIdentifier);
+    metadata.put(NodeExecutionKeys.group, nodeExecution.getGroup());
+    metadata.put(NodeExecutionKeys.identifier, nodeExecution.getIdentifier());
+    updatedInterrupt = updatedInterrupt.toBuilder().metadata(metadata).build();
     List<NodeExecution> finalList = new ArrayList<>();
     // Extract all the running leaf nodes and queued nodeswith the parent id as nodeExecutionId passed in as param
     nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true);

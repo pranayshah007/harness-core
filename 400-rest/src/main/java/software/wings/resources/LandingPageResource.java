@@ -5,12 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 package software.wings.resources;
+import static software.wings.security.PermissionAttribute.Action.READ;
+import static software.wings.security.PermissionAttribute.PermissionType.WORKFLOW;
 
-import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.rest.RestResponse;
 
-import software.wings.security.annotations.AuthRule;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -22,6 +25,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Api("landingPage")
 @Path("landingPage")
 @Produces("application/json")
@@ -33,7 +37,7 @@ public class LandingPageResource {
   @Path("/deploymentCount")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = WORKFLOW, action = READ, skipAuth = true)
   public RestResponse<Integer> getDeploymentCount() {
     return new RestResponse<>(workflowExecutionService.getDeploymentCount());
   }

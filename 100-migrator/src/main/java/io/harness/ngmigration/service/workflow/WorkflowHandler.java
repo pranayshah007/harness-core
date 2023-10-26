@@ -43,6 +43,7 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -98,7 +99,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,6 +120,7 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
+  @Inject private MigrationHelperService migrationHelperService;
 
   public Set<String> getBarriers(Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
@@ -144,7 +145,13 @@ public abstract class WorkflowHandler {
           CgEntityId.builder().id(workflow.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
     }
 
-    List<String> serviceIds = workflow.getOrchestrationWorkflow().getServiceIds();
+    List<String> serviceIds =
+        workflow.checkServiceTemplatized() ? new ArrayList<>() : workflow.getOrchestrationWorkflow().getServiceIds();
+    Optional<String> envId = Optional.empty();
+    if (!workflow.checkEnvironmentTemplatized() && isNotEmpty(workflow.getEnvId())) {
+      envId = Optional.of(workflow.getEnvId());
+    }
+
     if (EmptyPredicate.isNotEmpty(serviceIds)) {
       referencedEntities.addAll(
           serviceIds.stream()
@@ -152,10 +159,11 @@ public abstract class WorkflowHandler {
               .collect(Collectors.toList()));
     }
 
-    if (StringUtils.isNotBlank(workflow.getEnvId())) {
-      referencedEntities.add(
-          CgEntityId.builder().id(workflow.getEnvId()).type(NGMigrationEntityType.ENVIRONMENT).build());
-    }
+    envId.ifPresent(
+        s -> referencedEntities.add(CgEntityId.builder().id(s).type(NGMigrationEntityType.ENVIRONMENT).build()));
+
+    migrationHelperService.addOverrideRefs(
+        workflow.getAppId(), workflow.getAccountId(), envId.orElse(null), serviceIds, referencedEntities);
 
     if (EmptyPredicate.isEmpty(steps)) {
       return referencedEntities;
@@ -252,8 +260,14 @@ public abstract class WorkflowHandler {
       variables.addAll(userVariables);
     }
 
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+    for (GraphNode step : steps) {
+      variables.addAll(stepMapperFactory.getStepMapper(step.getType()).getCustomVariables(step));
+    }
+
     MigratorExpressionUtils.render(
         context, workflow, MigExpressionOverrides.builder().customExpressions(new HashMap<>()).build());
+
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -263,6 +277,7 @@ public abstract class WorkflowHandler {
                    .required(variable.isMandatory())
                    .defaultValue(variable.getValue())
                    .value(getVariable(variable))
+                   .description(variable.getDescription())
                    .build())
         .collect(Collectors.toList());
   }
@@ -466,14 +481,14 @@ public abstract class WorkflowHandler {
                 .name(MigratorUtility.generateName(phaseStep.getName()))
                 .steps(allSteps)
                 .skipCondition(null)
-                .strategy(
-                    addLoopingStrategy ? ParameterField.createValueField(
-                        StrategyConfig.builder()
-                            .repeat(HarnessForConfig.builder()
-                                        .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
-                                        .build())
-                            .build())
-                                       : null)
+                .strategy(addLoopingStrategy ? ParameterField.createValueField(
+                              StrategyConfig.builder()
+                                  .repeat(HarnessForConfig.builder()
+                                              .items(ParameterField.createExpressionField(
+                                                  true, "<+stage.output.hosts>", null, false))
+                                              .build())
+                                  .build())
+                                             : null)
                 .when(ParameterField.createValueField(when))
                 .failureStrategies(null)
                 .build()))
@@ -513,6 +528,12 @@ public abstract class WorkflowHandler {
         }
       }
     }
+    MigratorExpressionUtils.render(migrationContext, stepWrappers,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     return stepWrappers;
   }
 
@@ -558,7 +579,7 @@ public abstract class WorkflowHandler {
       stepNode.setStrategy(ParameterField.createValueField(
           StrategyConfig.builder()
               .repeat(HarnessForConfig.builder()
-                          .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
+                          .items(ParameterField.createExpressionField(true, "<+stage.output.hosts>", null, false))
                           .build())
               .build()));
     }

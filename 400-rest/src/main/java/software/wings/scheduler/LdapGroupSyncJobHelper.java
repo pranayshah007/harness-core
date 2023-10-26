@@ -422,7 +422,8 @@ public class LdapGroupSyncJobHelper {
     }
   }
   @VisibleForTesting
-  void syncUserGroupsParallel(String accountId, LdapSettings ldapSettings, List<UserGroup> userGroups, String ssoId) {
+  public void syncUserGroupsParallel(
+      String accountId, LdapSettings ldapSettings, List<UserGroup> userGroups, String ssoId) {
     Map<UserGroup, Set<User>> removedGroupMembers = new ConcurrentHashMap<>();
     Map<LdapUserResponse, Set<UserGroup>> addedGroupMembers = new ConcurrentHashMap<>();
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);

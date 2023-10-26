@@ -16,6 +16,7 @@ paths = [
     '''vendor''',
 ]
 
+
 [[rules]]
 description = "Adafruit API Key"
 id = "adafruit-api-key"
@@ -486,7 +487,11 @@ keywords = [
 ]
 [rules.allowlist]
 paths = [
-    '''Database.refactorlog'''
+    '''Database.refactorlog''',
+]
+regexTarget = "line"
+regexes = [
+    '''2f6b0988b6fb3370073c3d0505baee59''' # delegate localdev token
 ]
 stopwords= [
     "client",
@@ -1964,6 +1969,7 @@ stopwords= [
     "combination",
     "combo",
 ]
+
 [[rules]]
 description = "GitHub App Token"
 id = "github-app-token"

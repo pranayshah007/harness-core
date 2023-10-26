@@ -6,14 +6,18 @@
  */
 
 package io.harness.repositories;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public interface PlanExecutionRepositoryCustom {
   PlanExecution getWithProjectionsWithoutUuid(String planExecutionId, List<String> fieldNames);
 
@@ -45,4 +49,10 @@ public interface PlanExecutionRepositoryCustom {
    * @return
    */
   CloseableIterator<PlanExecution> fetchPlanExecutionsFromAnalytics(Query query);
+
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount();
 }

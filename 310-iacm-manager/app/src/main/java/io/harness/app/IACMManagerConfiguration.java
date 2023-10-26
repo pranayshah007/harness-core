@@ -87,6 +87,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("distributedLockImplementation") DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private ScmConnectionConfig scmConnectionConfig;
 
@@ -116,6 +117,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("isLocal") boolean isLocal;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty("harnessCodeGitUrl") private String harnessCodeGitUrl;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();

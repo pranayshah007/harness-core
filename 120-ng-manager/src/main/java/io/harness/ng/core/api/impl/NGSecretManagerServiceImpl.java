@@ -132,18 +132,14 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
               if (APP_ROLE.equals(vaultConfig.getAccessType())) {
                 vaultConfig.setRenewAppRoleToken(false);
               }
-              if (!vaultConfig.isReadOnly()) {
-                VaultEncryptor vaultEncryptor = vaultEncryptorsRegistry.getVaultEncryptor(VAULT);
-                if (vaultEncryptor instanceof NgCgManagerVaultEncryptor) {
-                  validationResultWithTaskId =
-                      ((NgCgManagerVaultEncryptor) vaultEncryptor)
-                          .validateSecretManagerConfigurationWithTaskId(accountIdentifier, vaultConfig);
-                } else {
-                  validationResultWithTaskId = Pair.of(NO_TASK_ID,
-                      vaultEncryptor.validateSecretManagerConfiguration(accountIdentifier, encryptionConfig));
-                }
+              VaultEncryptor vaultEncryptor = vaultEncryptorsRegistry.getVaultEncryptor(VAULT);
+              if (vaultEncryptor instanceof NgCgManagerVaultEncryptor) {
+                validationResultWithTaskId =
+                    ((NgCgManagerVaultEncryptor) vaultEncryptor)
+                        .validateSecretManagerConfigurationWithTaskId(accountIdentifier, vaultConfig);
               } else {
-                validationResultWithTaskId = Pair.of("", true);
+                validationResultWithTaskId = Pair.of(
+                    NO_TASK_ID, vaultEncryptor.validateSecretManagerConfiguration(accountIdentifier, encryptionConfig));
               }
             }
             break;

@@ -29,8 +29,8 @@ import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
@@ -50,6 +50,7 @@ import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -158,8 +159,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     Map<String, GraphLayoutNode> layoutNodeMap = new HashMap<>(plan.getGraphLayoutInfo().getLayoutNodesMap());
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
 
-    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-      startingNodeId = ambiance.getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+    if (ExecutionModeUtils.isPostExecutionRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+      startingNodeId = getPostExecutionRollbackInfo(planExecutionMetadata, ambiance).getPostExecutionRollbackStageId();
       GraphLayoutNode layoutNode = layoutNodeMap.get(startingNodeId);
 
       Map<String, GraphLayoutNode> modifiedLayoutNodeMap = new HashMap<>();
@@ -203,6 +204,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .startingNodeId(startingNodeId)
             .planExecutionId(planExecutionId)
             .name(pipelineEntity.get().getName())
+            // TODO: Remove setting this `inputSetYaml` field by Nov 2023
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
             .pipelineTemplate(getPipelineTemplate(planExecutionMetadata))
             .internalStatus(planExecution.getStatus())
@@ -237,6 +239,15 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);
     notificationHelper.sendNotification(
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
+  }
+
+  private PostExecutionRollbackInfo getPostExecutionRollbackInfo(
+      PlanExecutionMetadata planExecutionMetadata, Ambiance ambiance) {
+    // TODO(archit): Remove get from execution_metadata from next release
+    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
+      return ambiance.getMetadata().getPostExecutionRollbackInfo(0);
+    }
+    return planExecutionMetadata.getPostExecutionRollbackInfos().get(0);
   }
 
   private String getPipelineTemplate(PlanExecutionMetadata planExecutionMetadata) {

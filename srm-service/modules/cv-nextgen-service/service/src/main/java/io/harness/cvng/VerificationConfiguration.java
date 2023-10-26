@@ -121,12 +121,17 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private String portalUrl;
 
   private ServiceHttpClientConfig opaClientConfig;
 
   private String policyManagerSecret;
+
+  private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
+
+  private String serviceDiscoveryServiceSecret;
 
   /**
    * Instantiates a new Main configuration.

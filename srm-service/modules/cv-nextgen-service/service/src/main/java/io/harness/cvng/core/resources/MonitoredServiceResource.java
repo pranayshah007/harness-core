@@ -58,6 +58,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -225,6 +226,7 @@ public class MonitoredServiceResource {
   @PUT
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/health-monitoring-flag")
   @ApiOperation(value = "updates monitored service data", nickname = "setHealthMonitoringFlag")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = TOGGLE_PERMISSION)
@@ -239,6 +241,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/overall-health-score")
   @ApiOperation(
       value = "get monitored service overall health score data ", nickname = "getMonitoredServiceOverAllHealthScore")
@@ -338,6 +341,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/all/time-series-health-sources")
   @ApiOperation(value = "get all of monitored service data with time series health sources",
       nickname = "getAllMonitoredServicesWithTimeSeriesHealthSources")
@@ -373,6 +377,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/scores")
   @ApiOperation(value = "get monitored service scores", nickname = "getMonitoredServiceScores")
@@ -392,6 +397,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/secondary-events")
   @ApiOperation(value = "get monitored service secondary events", nickname = "getMSSecondaryEvents")
@@ -406,6 +412,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/secondary-events-details")
   @ApiOperation(value = "get monitored service secondary events details", nickname = "getMSSecondaryEventsDetails")
@@ -442,16 +449,31 @@ public class MonitoredServiceResource {
   @Timed
   @ExceptionMetered
   @ResponseMetered
+  @Path("/services")
+  @ApiOperation(value = "get monitored service list services data", nickname = "getMonitoredServiceListServices")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<List<ServiceResponse>> getServices(
+      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
+      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getUniqueServices(accountId, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @ResponseMetered
   @Path("/environments")
   @ApiOperation(
-      value = "get monitored service list environments data ", nickname = "getMonitoredServiceListEnvironments")
+      value = "get monitored service list environments data", nickname = "getMonitoredServiceListEnvironments")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<List<EnvironmentResponse>>
   getEnvironments(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
       @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
-        monitoredServiceService.listEnvironments(accountId, orgIdentifier, projectIdentifier));
+        monitoredServiceService.getUniqueEnvironments(accountId, orgIdentifier, projectIdentifier));
   }
 
   @GET
@@ -491,6 +513,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/health-sources")
   @ApiOperation(value = "get all health sources for service and environment",
@@ -505,6 +528,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @Path("{identifier}/anomaliesCount")
   @ExceptionMetered
   @ApiOperation(value = "get anomalies summary details", nickname = "getAnomaliesSummary")
@@ -524,6 +548,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/count-of-services")
   @ApiOperation(value = "get count of types of services like Monitored Service, Services at Risk ",
@@ -552,6 +577,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",
@@ -568,6 +594,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",

@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.executions.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
@@ -17,7 +16,10 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -33,6 +35,7 @@ import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -70,6 +73,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
@@ -362,6 +366,18 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public long countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+      String accountId, String pipelineIdentifier) {
+    // Uses - accountId_status_idx
+    Criteria criteria = new Criteria()
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                            .is(accountId)
+                            .and(PlanExecutionKeys.status)
+                            .in(StatusUtils.getActiveStatusesExcludingWaiting());
+    return mongoTemplate.count(new Query(criteria), PlanExecution.class);
+  }
+
+  @Override
   public PlanExecution findNextExecutionToRunInAccount(String accountId) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
@@ -432,5 +448,10 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       planExecutionRepository.multiUpdatePlanExecution(query, ops);
       return true;
     });
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
+    return planExecutionRepository.aggregateRunningExecutionCountPerAccount();
   }
 }

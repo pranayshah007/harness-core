@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.buildsource;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -19,8 +18,11 @@ import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STABL
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.STOPPED;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.UNSTABLE;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -63,6 +65,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @Data
@@ -171,6 +174,9 @@ public class BuildSourceCallback implements OldNotifyCallback {
         if (isUnstable
             && (artifactStream.getFailedCronAttempts() == 0
                 || featureFlagService.isEnabled(FeatureName.TRIGGER_FOR_ALL_ARTIFACTS, accountId))) {
+          log.warn(
+              "ASYNC_ARTIFACT_COLLECTION: Unstable to trigger execution after collect artifacts [artifactStreamId={}]",
+              artifactStreamId);
           updatePermit(artifactStream, false);
           return;
         }

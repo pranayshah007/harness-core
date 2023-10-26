@@ -14,5 +14,6 @@ java_library(
         "//:lombok",
         "//idp-service/src/main/java/io/harness/idp/events/producers:module",
         "//idp-service/src/main/java/io/harness/idp/gitintegration/entities:module",
+        "//idp-service/src/main/java/io/harness/idp/gitintegration/events:module",
     ],
 )

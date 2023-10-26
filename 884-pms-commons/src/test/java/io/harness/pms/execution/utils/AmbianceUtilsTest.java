@@ -43,7 +43,6 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -503,58 +502,6 @@ public class AmbianceUtilsTest extends CategoryTest {
     assertThat(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList()))
         .isEqualTo("pipeline.stages.stage1_1.spec.execution.step1_0");
   }
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testObtainOriginalStageExecutionIdForRollbackMode() {
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder()
-            .addPostExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
-                                              .setPostExecutionRollbackStageId("stageSetupId")
-                                              .setOriginalStageExecutionId("stageRuntime1")
-                                              .build())
-            .addPostExecutionRollbackInfo(
-                PostExecutionRollbackInfo.newBuilder()
-                    .setPostExecutionRollbackStageId("strategySetupId")
-                    .setOriginalStageExecutionId("stageRuntime2")
-                    .setRollbackStageStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(2).build())
-                    .build())
-            .addPostExecutionRollbackInfo(
-                PostExecutionRollbackInfo.newBuilder()
-                    .setPostExecutionRollbackStageId("strategySetupId")
-                    .setOriginalStageExecutionId("stageRuntime3")
-                    .setRollbackStageStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(1).build())
-                    .build())
-            .build();
-    Level stageLevelNoStrategy = Level.newBuilder().setSetupId("stageSetupId").build();
-    Ambiance ambianceNoStrategy =
-        Ambiance.newBuilder()
-            .addLevels(Level.newBuilder()
-                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGES).build())
-                           .build())
-            .setMetadata(executionMetadata)
-            .build();
-    String runtimeId =
-        AmbianceUtils.obtainOriginalStageExecutionIdForRollbackMode(ambianceNoStrategy, stageLevelNoStrategy);
-    assertThat(runtimeId).isEqualTo("stageRuntime1");
-
-    Level stageLevelWithStrategy =
-        Level.newBuilder()
-            .setSetupId("stageSetupId2")
-            .setStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(2).build())
-            .build();
-    Ambiance ambianceWithStrategy =
-        Ambiance.newBuilder()
-            .addLevels(Level.newBuilder()
-                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
-                           .setSetupId("strategySetupId")
-                           .build())
-            .setMetadata(executionMetadata)
-            .build();
-    runtimeId =
-        AmbianceUtils.obtainOriginalStageExecutionIdForRollbackMode(ambianceWithStrategy, stageLevelWithStrategy);
-    assertThat(runtimeId).isEqualTo("stageRuntime2");
-  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -618,8 +565,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(1))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_true_hi_0");
   }
 
@@ -637,8 +583,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .setNodeName("a")
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_a_0");
   }
 
@@ -655,8 +600,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(1))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_world_a_0");
   }
 
@@ -673,8 +617,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(0))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, false);
     assertThat(identifier).isEqualTo("_0_0");
   }
 
@@ -692,8 +635,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .setNodeName("a")
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, false);
     assertThat(identifier).isEqualTo("_a_0");
   }
 

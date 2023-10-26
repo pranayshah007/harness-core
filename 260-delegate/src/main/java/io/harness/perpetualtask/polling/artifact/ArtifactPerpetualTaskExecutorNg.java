@@ -113,7 +113,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
       ArtifactTaskExecutionResponse response = artifactRepositoryService.collectBuilds(taskParams);
 
       if (response == null) {
-        log.error("Unsupported polling operation " + taskParams.getArtifactTaskType());
+        log.warn("Unsupported polling operation " + taskParams.getArtifactTaskType());
         return;
       }
 
@@ -124,7 +124,7 @@ public class ArtifactPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
       artifactsCollectionCache.populateCache(response.getArtifactDelegateResponses());
     } catch (Exception e) {
-      log.error("Error while collecting artifacts ", e);
+      log.warn("Error while collecting artifacts ", e);
       pollingResponsePublisher.publishToManger(taskId,
           PollingDelegateResponse.builder()
               .accountId(taskParams.getAccountId())

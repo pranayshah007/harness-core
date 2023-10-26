@@ -6,13 +6,16 @@
  */
 
 package io.harness.ngmigration.template;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.MigrationContext;
 
 import software.wings.beans.template.Template;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class UnSupportedTemplateService implements NgTemplateService {
   public boolean isMigrationSupported() {
     return false;

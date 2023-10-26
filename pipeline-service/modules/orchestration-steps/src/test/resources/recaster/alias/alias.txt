@@ -367,6 +367,7 @@ io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig
 io.harness.git.model.CommitResult
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
@@ -451,3 +452,17 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.slsa.beans.SlsaConfig
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.beans.steps.stepinfo.GARStepInfo
+io.harness.beans.yaml.extended.cache.CachePolicy
+io.harness.steps.servicenow.beans.ServiceNowCreateType
+io.harness.steps.shellscript.v1.OutputAliasV1
+io.harness.steps.shellscript.v1.ShellTypeV1
+io.harness.steps.shellscript.v1.ExecutionTargetV1
+io.harness.steps.shellscript.v1.ShellScriptStepParameters
+io.harness.steps.shellscript.v1.HarnessFileStoreSourceV1
+io.harness.steps.shellscript.v1.ShellScriptInlineSourceV1
+io.harness.steps.shellscript.v1.ShellScriptSourceWrapperV1
+io.harness.steps.shellscript.v1.ShellScriptOutcome
+io.harness.steps.shellscript.v1.ExportScopeV1
+io.harness.steps.http.v1.HttpStepParameters
+io.harness.steps.http.v1.HttpOutcome

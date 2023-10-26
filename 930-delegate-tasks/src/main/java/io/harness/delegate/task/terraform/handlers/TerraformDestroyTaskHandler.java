@@ -45,6 +45,7 @@ import io.harness.terraform.TerraformHelperUtils;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -103,7 +104,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
 
       scriptDirectory = terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(gitBaseRequestForConfigFile,
           taskParameters.getAccountId(), taskParameters.getWorkspace(), taskParameters.getCurrentStateFileId(),
-          conFileFileGitStore, logCallback, scriptPath, baseDir);
+          logCallback, scriptPath, baseDir, taskParameters.isSkipStateStorage());
 
       commitIdToFetchedFilesMap = terraformBaseHelper.buildCommitIdToFetchedFilesMap(
           taskParameters.getConfigFile().getIdentifier(), gitBaseRequestForConfigFile, commitIdToFetchedFilesMap);
@@ -118,7 +119,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
 
       scriptDirectory = terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(artifactoryStoreDelegateConfig,
           taskParameters.getAccountId(), taskParameters.getWorkspace(), taskParameters.getCurrentStateFileId(),
-          logCallback, baseDir);
+          logCallback, baseDir, taskParameters.isSkipStateStorage());
     } else if (taskParameters.getFileStoreConfigFiles() != null
         && taskParameters.getFileStoreConfigFiles().getType() == AMAZON_S3) {
       S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
@@ -131,8 +132,8 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
                 s3StoreTFDelegateConfig.getPaths().get(0)),
             INFO, CommandExecutionStatus.RUNNING);
       }
-      scriptDirectory = terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
-          s3StoreTFDelegateConfig, taskParameters, baseDir, keyVersionMap, logCallback);
+      scriptDirectory = terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(s3StoreTFDelegateConfig,
+          taskParameters, baseDir, keyVersionMap, logCallback, taskParameters.isSkipStateStorage());
     } else {
       throw NestedExceptionUtils.hintWithExplanationException(HINT_NO_CONFIG_SET, EXPLANATION_NO_CONFIG_SET,
           new TerraformCommandExecutionException("No Terraform config set", WingsException.USER));
@@ -164,6 +165,9 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
           scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory,
           commitIdToFetchedFilesMap, keyVersionMap);
     }
+
+    ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
@@ -176,7 +180,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .scriptDirectory(scriptDirectory)
               .encryptedTfPlan(taskParameters.getEncryptedTfPlan())
               .encryptionConfig(taskParameters.getEncryptionConfig())
-              .envVars(taskParameters.getEnvironmentVariables())
+              .envVars(environmentVars)
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .isSaveTerraformHumanReadablePlan(taskParameters.isSaveTerraformHumanReadablePlan())
@@ -193,6 +197,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .isNG(true)
               .skipColorLogs(taskParameters.isSkipColorLogs())
+              .skipStateStorage(taskParameters.isSkipStateStorage())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -203,9 +208,11 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
           INFO, CommandExecutionStatus.RUNNING);
 
       File tfStateFile = TerraformHelperUtils.getTerraformStateFile(scriptDirectory, taskParameters.getWorkspace());
-
-      String stateFileId = terraformBaseHelper.uploadTfStateFile(
-          taskParameters.getAccountId(), delegateId, taskId, taskParameters.getEntityId(), tfStateFile);
+      String stateFileId = null;
+      if (!taskParameters.isSkipStateStorage()) {
+        stateFileId = terraformBaseHelper.uploadTfStateFile(
+            taskParameters.getAccountId(), delegateId, taskId, taskParameters.getEntityId(), tfStateFile);
+      }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);
 

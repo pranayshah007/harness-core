@@ -9,6 +9,9 @@ package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.VITALIE;
+
+import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,6 +19,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
+import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
+import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
+import io.harness.delegate.task.ssh.NgInitCommandUnit;
+import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -118,5 +126,34 @@ public class WinRmUtilsTest {
                                                                                 .disableWinRmEnvVarEscaping(true)
                                                                                 .build());
     assertThat(isDisabledEnvVarEscaping).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetWorkingDir() {
+    final String workingDirectory = "C:\\workDir";
+    final String destinationPath = "C:\\destinationPath";
+
+    ScriptCommandUnit scriptCommandUnit = ScriptCommandUnit.builder().workingDirectory(workingDirectory).build();
+    String ret = WinRmUtils.getWorkingDir(scriptCommandUnit);
+    assertThat(ret).isEqualTo(workingDirectory);
+
+    CopyCommandUnit copyCommandUnit = CopyCommandUnit.builder().destinationPath(destinationPath).build();
+    ret = WinRmUtils.getWorkingDir(copyCommandUnit);
+    assertThat(ret).isEqualTo(destinationPath);
+
+    NgDownloadArtifactCommandUnit ngDownloadArtifactCommandUnit =
+        NgDownloadArtifactCommandUnit.builder().destinationPath(destinationPath).build();
+    ret = WinRmUtils.getWorkingDir(ngDownloadArtifactCommandUnit);
+    assertThat(ret).isEqualTo(destinationPath);
+
+    NgInitCommandUnit ngInitCommandUnit = NgInitCommandUnit.builder().build();
+    ret = WinRmUtils.getWorkingDir(ngInitCommandUnit);
+    assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
+
+    NgCleanupCommandUnit ngCleanupCommandUnit = NgCleanupCommandUnit.builder().build();
+    ret = WinRmUtils.getWorkingDir(ngCleanupCommandUnit);
+    assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
   }
 }

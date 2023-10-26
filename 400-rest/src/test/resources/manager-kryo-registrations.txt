@@ -1901,7 +1901,7 @@
 25002:io.harness.delegate.beans.ci.DockerInfraInfo
 25003:io.harness.delegate.beans.ci.VmInfraInfo
 25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
-25005:io.harness.delegate.InitializeExecutionInfraResponse
+25005:io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO
@@ -2896,6 +2896,21 @@
 573645:io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest
 573646:io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest
 573647:io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest
+573648:io.harness.delegate.task.ecs.request.EcsBasicPrepareRollbackRequest
+573649:io.harness.delegate.task.ecs.request.EcsServiceSetupRequest
+573650:io.harness.delegate.task.ecs.request.EcsUpgradeContainerRequest
+573651:io.harness.delegate.task.ecs.request.EcsBasicRollbackRequest
+573652:io.harness.delegate.task.ecs.response.EcsBasicPrepareRollbackResponse
+573653:io.harness.delegate.task.ecs.response.EcsServiceSetupResponse
+573654:io.harness.delegate.task.ecs.response.EcsUpgradeContainerResponse
+573655:io.harness.delegate.task.ecs.response.EcsBasicRollbackResponse
+573656:io.harness.delegate.beans.ecs.EcsBasicRollbackData
+573657:io.harness.delegate.beans.ecs.EcsBasicDeployData
+573658:io.harness.delegate.beans.ecs.EcsBasicPrepareRollbackData
+573659:io.harness.delegate.task.ecs.EcsResizeStrategy
+573660:io.harness.delegate.task.ecs.EcsInstanceUnitType
+573661:io.harness.delegate.task.ecs.EcsUpgradeContainerServiceData
+573662:io.harness.delegate.beans.ecs.EcsServiceData
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -3041,6 +3056,7 @@
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
 930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
 930013:io.harness.licensing.beans.modules.CETModuleLicenseDTO
+930014:io.harness.licensing.beans.modules.IDPModuleLicenseDTO
 954001:io.harness.pms.contracts.advisers.AdviserObtainment
 954002:io.harness.pms.contracts.plan.RetryExecutionInfo
 955000:io.harness.beans.CommitDetails
@@ -3166,6 +3182,8 @@
 9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
 9800016:io.harness.licensing.beans.modules.SEIModuleLicenseDTO
 9800017:io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig
+9800020:io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo
+9800021:io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -3308,3 +3326,5 @@
 20000618:io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse
 20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
+20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
+20001002:io.harness.delegate.task.k8s.ReleaseMetadata

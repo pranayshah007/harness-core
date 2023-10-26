@@ -117,12 +117,7 @@ def main(event, context):
 
         get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
-        if jsonData.get("isFreshSync"):
-            jsonData["interval"] = '180'
-        elif jsonData["ccmPreferredCurrency"]:
-            jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
-        else:
-            jsonData["interval"] = '3'
+        compute_sync_interval(jsonData)
 
         # currency specific methods
         insert_currencies_with_unit_conversion_factors_in_bq(jsonData)
@@ -233,6 +228,57 @@ def main(event, context):
     })
     print_("Completed")
     return
+
+
+def compute_sync_interval(jsonData):
+    if jsonData.get("isFreshSync"):
+        jsonData["interval"] = '180'
+        print_("Sync Interval: %s days" % jsonData["interval"])
+        return
+
+    # find last_synced_export_date in our side of gcp_cost_export table
+    # (not using gcp_billing_export table on our side since it will have currently synced data in case of cross-region)
+    last_synced_export_date = ''
+    intermediary_table_name = jsonData["tableName"].replace("gcp_billing_export", "gcp_cost_export", 1) if jsonData[
+        "tableName"].startswith("gcp_billing_export") else f"gcp_cost_export_{jsonData['tableName']}"
+    gcp_cost_export_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], intermediary_table_name)
+    query = """
+        SELECT DATE_SUB(DATE(MAX(export_time)), INTERVAL 1 DAY) as last_synced_export_date 
+        FROM `%s` 
+        where usage_start_time >= TIMESTAMP_SUB(current_timestamp(), INTERVAL 180 DAY);
+    """ % gcp_cost_export_table_name
+    results = run_bq_query_with_retries(client, query)
+    for row in results:
+        last_synced_export_date = str(row.last_synced_export_date)
+
+    # find syncInterval based on minimum usage_start_time at source for data after last_synced_export_date
+    # for querying source table, assuming that date(_PARTITIONTIME) is same as date(export_time) - using the former.
+    sync_interval = ""
+    query = """
+        SELECT DATE_DIFF(CURRENT_DATE(), DATE(MIN(usage_start_time)), DAY) as sync_interval
+        FROM `%s.%s.%s` 
+        WHERE DATE(_PARTITIONTIME) >= DATE('%s')
+    """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
+           last_synced_export_date)
+
+    if jsonData.get("dataSourceId") == "cross_region_copy":
+        imclient = client
+    elif jsonData["deployMode"] == "ONPREM":
+        # Uses Google ADC
+        imclient = bigquery.Client(project=PROJECTID)
+    else:
+        # for SAAS
+        imclient = bigquery.Client(credentials=jsonData["credentials"], project=PROJECTID)
+    results = run_bq_query_with_retries(imclient, query)
+    for row in results:
+        sync_interval = row.sync_interval
+
+    # setting the sync-interval in jsonData. Will not sync more than 180 days data in any case.
+    if jsonData["ccmPreferredCurrency"]:
+        jsonData["interval"] = str(min(max(datetime.datetime.utcnow().date().day - 1, sync_interval), 180))
+    else:
+        jsonData["interval"] = str(min(sync_interval, 180))
+    print_("Sync Interval: %s days" % jsonData["interval"])
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
@@ -800,12 +846,12 @@ def isFreshSync(jsonData):
     if jsonData.get("dataSourceId"):
         # Check in preaggregated table for non US regions
         query = """  SELECT count(*) as count from %s.%s.preAggregated
-                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY) AND cloudProvider = "GCP" AND gcpBillingAccountId IN (%s) ;
+                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 180 DAY) AND cloudProvider = "GCP" AND gcpBillingAccountId IN (%s) ;
                    """ % (PROJECTID, jsonData["datasetName"], jsonData["billingAccountIds"])
     else:
         # Only applicable for US regions
         query = """  SELECT count(*) as count from %s.%s.%s
-                   WHERE DATE(%s) >= DATE_SUB(CURRENT_DATE(), INTERVAL 10 DAY) AND usage_start_time >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY);
+                   WHERE DATE(%s) >= DATE_SUB(CURRENT_DATE(), INTERVAL 187 DAY) AND usage_start_time >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 180 DAY);
                    """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
                           jsonData["gcpBillingExportTablePartitionColumnName"])
     print_(query)
@@ -813,7 +859,7 @@ def isFreshSync(jsonData):
         query_job = client.query(query)
         results = query_job.result()  # wait for job to complete
         for row in results:
-            print_("  Number of records existing over past 3 days : %s" % (row["count"]))
+            print_("  Number of GCP records existing on our side : %s" % (row["count"]))
             if row["count"] > 0:
                 return False
             else:
@@ -832,10 +878,12 @@ def syncDataset(jsonData):
     print_("Loading into %s" % jsonData["tableName"])
     # for US region
     destination = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+    compute_sync_interval(jsonData)
     if jsonData["isFreshSync"]:
         # Fresh sync. Sync only for 180 days.
-        query = """  SELECT * FROM `%s.%s.%s` WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 187 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 187 DAY);
-        """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
+        query = """  SELECT * FROM `%s.%s.%s` WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY);
+        """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
+               str(int(jsonData["interval"]) + 7), str(int(jsonData["interval"]) + 7))
         # Configure the query job.
         print_(" Destination :%s" % destination)
         if jsonData["gcpBillingExportTablePartitionColumnName"] == "usage_start_time":
@@ -875,15 +923,18 @@ def syncDataset(jsonData):
         # check whether the raw billing table is standard_export or detailed_export
         jsonData["isBillingExportDetailed"] = check_if_billing_export_is_detailed(jsonData)
         query = """  DELETE FROM `%s` 
-                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
+                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY); 
             INSERT INTO `%s` (billing_account_id, %s service, %s sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info, cost_at_list)
                 SELECT billing_account_id, %s service,%s sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info, cost_at_list 
                 FROM `%s.%s.%s`
-                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
-        """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"], destination,
+                WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY);
+        """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"],
+               str(int(jsonData["interval"]) + 7), jsonData["interval"],
+               destination,
                "resource," if jsonData["isBillingExportDetailed"] else "", "price," if jsonData["isBillingExportDetailed"] else "",
                "resource," if jsonData["isBillingExportDetailed"] else "", "price," if jsonData["isBillingExportDetailed"] else "",
-               jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
+               jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
+               str(int(jsonData["interval"]) + 7), jsonData["interval"])
 
         # Configure the query job.
         job_config = bigquery.QueryJobConfig(
@@ -922,12 +973,6 @@ def syncDataset(jsonData):
         raise e
     print_("  Loaded in %s" % jsonData["tableName"])
 
-    if jsonData.get("isFreshSync"):
-        jsonData["interval"] = '180'
-    elif jsonData["ccmPreferredCurrency"]:
-        jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
-    else:
-        jsonData["interval"] = '3'
     get_unique_billingaccount_id(jsonData)
 
     # currency preferences specific methods
@@ -1121,17 +1166,16 @@ def ingest_into_unified(jsonData):
     insert_columns = """product, cost, gcpProduct,gcpSkuId,gcpSkuDescription, startTime, endTime, gcpProjectId,
                 gcpProjectName, gcpProjectNumber,
                 region,zone,gcpBillingAccountId,cloudProvider, discount, labels, fxRateSrcToDest, ccmPreferredCurrency,
-                gcpInvoiceMonth, gcpCostType, gcpCredits, gcpSystemLabels, gcpCostAtList"""
+                gcpInvoiceMonth, gcpCostType, gcpCredits, gcpUsage, gcpSystemLabels, gcpCostAtList"""
 
     select_columns = """service.description AS product, (cost %s) AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
                      sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, TIMESTAMP_TRUNC(usage_end_time, DAY) as endTime, project.id AS gcpProjectId, project.name AS gcpProjectName, project.number AS gcpProjectNumber,
                      location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount %s) FROM UNNEST(credits) c) as discount, labels AS labels,
                      %s as fxRateSrcToDest, %s as ccmPreferredCurrency, 
-                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType, credits as gcpCredits, system_labels as gcpSystemLabels, cost_at_list as gcpCostAtList""" % (
+                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType, credits as gcpCredits, usage as gcpUsage, system_labels as gcpSystemLabels, cost_at_list as gcpCostAtList""" % (
                     fx_rate_multiplier_query, fx_rate_multiplier_query,
                     ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
                     (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"))
-
 
     # supporting additional fields in unifiedTable for Elevance
     if jsonData.get("isBillingExportDetailed", False):
@@ -1353,7 +1397,7 @@ def alter_unified_table(jsonData):
         ADD COLUMN IF NOT EXISTS gcpProjectNumber STRING, \
         ADD COLUMN IF NOT EXISTS gcpProjectName STRING, \
         ADD COLUMN IF NOT EXISTS gcpPrice STRUCT<effective_price NUMERIC, tier_start_amount NUMERIC, unit STRING, pricing_unit_quantity NUMERIC>, \
-        ADD COLUMN IF NOT EXISTS gcpUsage STRUCT<amount FLOAT64, unit STRING, amount_in_pricing_unit FLOAT64, pricing_unit STRING>, \
+        ADD COLUMN IF NOT EXISTS gcpUsage STRUCT<amount FLOAT64, unit STRING, amount_in_pricing_units FLOAT64, pricing_unit STRING>, \
         ADD COLUMN IF NOT EXISTS gcpCredits ARRAY<STRUCT<name STRING, amount FLOAT64, full_name STRING, id STRING, type STRING>>;" % ds
 
     try:

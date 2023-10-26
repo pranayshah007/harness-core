@@ -1,0 +1,7 @@
+policies:
+  - name: elb-unused-list
+    resource: elb
+    description: |
+      List ELB with no instances attached.
+    filters:
+      - Instances: []

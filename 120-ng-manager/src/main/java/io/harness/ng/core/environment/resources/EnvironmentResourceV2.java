@@ -66,8 +66,12 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.beans.EntityWithGitInfo;
+import io.harness.ng.core.beans.EnvironmentAndServiceOverridesMetadataInput;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -99,6 +103,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
@@ -246,8 +251,8 @@ public class EnvironmentResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
           "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
-    Optional<Environment> environment =
-        environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deleted);
+    Optional<Environment> environment = environmentService.get(accountId, orgIdentifier, projectIdentifier,
+        environmentIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (environment.isPresent()) {
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
@@ -275,8 +280,10 @@ public class EnvironmentResourceV2 {
   public ResponseDTO<EnvironmentResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Environment to be created")
-      @Valid EnvironmentRequestDTO environmentRequestDTO) throws IOException {
+      @Parameter(
+          description = "Details of the Environment to be created") @Valid EnvironmentRequestDTO environmentRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) throws IOException {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO);
 
@@ -350,7 +357,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
           "false") boolean forceDelete) {
     Optional<Environment> environmentOptional =
-        environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
+        environmentService.getMetadata(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isEmpty()) {
       throw new NotFoundException(format("Environment with identifier [%s] in project [%s], org [%s] not found",
           environmentIdentifier, projectIdentifier, orgIdentifier));
@@ -377,8 +384,10 @@ public class EnvironmentResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Environment to be updated")
-      @Valid EnvironmentRequestDTO environmentRequestDTO) throws IOException {
+      @Parameter(
+          description = "Details of the Environment to be updated") @Valid EnvironmentRequestDTO environmentRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) throws IOException {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO);
     Map<String, String> environmentAttributes = new HashMap<>();
@@ -588,9 +597,11 @@ public class EnvironmentResourceV2 {
           description =
               "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
       @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
-          "false") boolean includeAllAccessibleAtScope) {
+          "false") boolean includeAllAccessibleAtScope,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, repoName);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
@@ -653,7 +664,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, StringUtils.EMPTY);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
@@ -868,6 +879,55 @@ public class EnvironmentResourceV2 {
     return ResponseDTO.newResponse(environmentInputsetYamlandServiceOverridesMetadataDTO);
   }
 
+  @POST
+  @Path("v2/env-service-override-metadata")
+  @ApiOperation(value = "This api returns environments runtime input YAML and serviceOverrides Yaml",
+      nickname = "getEnvironmentsInputYamlAndServiceOverridesV2")
+  @Hidden
+  public ResponseDTO<EnvironmentInputSetYamlAndServiceOverridesMetadataDTO>
+  getEnvironmentsInputYamlAndServiceOverridesV2(
+      @Parameter(description = ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+      @NotNull EnvironmentAndServiceOverridesMetadataInput environmentYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info for the Base entity")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache") @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    // get environment ref-> branch map
+    Map<String, String> environmentRefBranchMap = getEnvironmentBranchMap(
+        accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEntityWithGitInfoList());
+    List<String> envRefs = new ArrayList<>(environmentRefBranchMap.keySet());
+    addEnvRefsFromEnvGroup(environmentYamlMetadata, accountId, orgIdentifier, projectIdentifier, envRefs);
+
+    boolean isServiceOverrideV2Enabled =
+        featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0);
+    EnvironmentInputSetYamlAndServiceOverridesMetadataDTO responseDTO =
+        environmentService.getEnvironmentsInputYamlAndServiceOverridesMetadata(accountId, orgIdentifier,
+            projectIdentifier, envRefs, environmentRefBranchMap, environmentYamlMetadata.getServiceIdentifiers(),
+            isServiceOverrideV2Enabled, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache));
+
+    return ResponseDTO.newResponse(responseDTO);
+  }
+
+  private void addEnvRefsFromEnvGroup(EnvironmentAndServiceOverridesMetadataInput environmentYamlMetadata,
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs) {
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())
+        && !EngineExpressionEvaluator.hasExpressions(environmentYamlMetadata.getEnvGroupIdentifier())) {
+      Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
+          accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
+
+      if (environmentGroupEntity.isPresent()
+          && EmptyPredicate.isNotEmpty(environmentGroupEntity.get().getEnvIdentifiers())) {
+        envRefs.addAll(environmentGroupEntity.get().getEnvIdentifiers());
+      }
+    }
+  }
+
   private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {
     final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
     if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
@@ -1020,7 +1080,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
-        accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, null);
 
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(environmentInputsYaml).build());
@@ -1292,5 +1352,22 @@ public class EnvironmentResourceV2 {
       String accountId, String orgId, String projectId, String envIdentifier) {
     String envQualifiedRef = IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgId, projectId, envIdentifier);
     return envQualifiedRef.replace(".", "_");
+  }
+
+  private Map<String, String> getEnvironmentBranchMap(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<EntityWithGitInfo> entityWithGitInfo) {
+    Map<String, String> resultMap = new HashMap<>();
+
+    if (isEmpty(entityWithGitInfo)) {
+      return resultMap;
+    }
+
+    for (EntityWithGitInfo input : entityWithGitInfo) {
+      String scopedRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
+          accountIdentifier, orgIdentifier, projectIdentifier, input.getRef());
+      resultMap.put(scopedRef, input.getBranch());
+    }
+
+    return resultMap;
   }
 }

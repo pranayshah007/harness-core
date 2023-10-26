@@ -58,6 +58,7 @@ public class KubernetesDsl implements DslDataProvider {
         uri = new URI(cluster.getUrl());
       } catch (URI.MalformedURIException e) {
         log.warn("Url is malformed: {}", cluster.getUrl(), e);
+        returnData.put(ERROR_MESSAGE_KEY, e.getMessage());
         continue;
       }
       List<Object> items = new ArrayList<>();

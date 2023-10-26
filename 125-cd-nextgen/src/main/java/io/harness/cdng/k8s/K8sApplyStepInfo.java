@@ -18,10 +18,14 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestSourceWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
+import io.harness.exception.InvalidYamlException;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.WithConnectorRef;
+import io.harness.filters.WithExtraValidations;
 import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -55,7 +59,8 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sApplyStepInfoVisitorHelper.class)
 @TypeAlias("k8sApplyStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sApplyStepInfo")
-public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstractStepInfo, Visitable, WithFileRefs {
+public class K8sApplyStepInfo extends K8sApplyBaseStepInfo
+    implements CDAbstractStepInfo, Visitable, WithFileRefs, WithExtraValidations, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -63,13 +68,13 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstract
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
-      List<K8sStepCommandFlag> commandFlags) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags);
+      List<K8sStepCommandFlag> commandFlags, ManifestSourceWrapper manifestSource) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags,
+        manifestSource);
   }
 
   @Override
@@ -92,6 +97,7 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstract
         .overrides(overrides)
         .skipRendering(skipRendering)
         .commandFlags(commandFlags)
+        .manifestSource(this.getManifestSource())
         .build();
   }
 
@@ -123,5 +129,22 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstract
       }
     });
     return fileRefMap;
+  }
+
+  @Override
+  public void validateFields(String stepName) throws InvalidYamlException {
+    if (filePaths != null && this.getManifestSource() != null) {
+      throw new InvalidYamlException(String.format(
+          "Configured Apply Step: %s contains both filePath and manifestSource. Please configure only one option to proceed",
+          stepName));
+    }
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractConnectorRefs() {
+    Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
+    K8sApplyStepHelper.addOverrideConnectorRef(connectorRefMap, overrides);
+    K8sApplyStepHelper.addManifestSourceConnectorRef(connectorRefMap, manifestSource);
+    return connectorRefMap;
   }
 }

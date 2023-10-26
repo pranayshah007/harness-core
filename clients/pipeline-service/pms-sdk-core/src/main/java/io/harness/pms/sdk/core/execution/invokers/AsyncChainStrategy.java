@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.sdk.core.execution.invokers.StrategyHelper.buildResponseDataSupplier;
@@ -22,9 +23,12 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.AsyncSdkProgressCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkResumeCallback;
 import io.harness.pms.sdk.core.execution.ChainDetails;
+import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
-import io.harness.pms.sdk.core.execution.ProgressableStrategy;
+import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
+import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.executables.AsyncChainExecutable;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -32,6 +36,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.tasks.ProgressData;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -42,8 +47,10 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
-public class AsyncChainStrategy extends ProgressableStrategy {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class AsyncChainStrategy implements ExecuteStrategy {
   @Inject private StepRegistry stepRegistry;
+  @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private AsyncWaitEngine asyncWaitEngine;
   @Inject private StrategyHelper strategyHelper;
 
@@ -70,8 +77,8 @@ public class AsyncChainStrategy extends ProgressableStrategy {
       StepResponse stepResponse;
       try {
         log.info("Chain end true: Calling finalizeExecution, nodeExecutionId: {}", nodeExecutionId);
-        stepResponse = asyncChainExecutable.finalizeExecution(
-            ambiance, stepParameters, buildResponseDataSupplier(resumePackage.getResponseDataMap()));
+        stepResponse = asyncChainExecutable.finalizeExecution(ambiance, stepParameters,
+            chainDetails.getPassThroughData(), buildResponseDataSupplier(resumePackage.getResponseDataMap()));
       } catch (Exception e) {
         log.error("Exception occurred while calling finalizeExecution, nodeExecutionId: {}", nodeExecutionId, e);
         stepResponse = strategyHelper.handleException(e);
@@ -81,7 +88,7 @@ public class AsyncChainStrategy extends ProgressableStrategy {
       try {
         AsyncChainExecutableResponse asyncChainExecutableResponse =
             asyncChainExecutable.executeNextLink(ambiance, stepParameters, resumePackage.getStepInputPackage(),
-                buildResponseDataSupplier(resumePackage.getResponseDataMap()));
+                chainDetails.getPassThroughData(), buildResponseDataSupplier(resumePackage.getResponseDataMap()));
         handleResponse(ambiance, ExecutionMode.ASYNC_CHAIN, stepParameters, asyncChainExecutableResponse);
       } catch (Exception e) {
         log.error("Exception occurred while calling executeNextLink, nodeExecutionId: {}", nodeExecutionId, e);
@@ -96,15 +103,18 @@ public class AsyncChainStrategy extends ProgressableStrategy {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
 
-    sdkNodeExecutionService.addExecutableResponse(
-        ambiance, ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
-
     if (isEmpty(asyncChainExecutableResponse.getCallbackId())) {
       log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
-      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false,
+          ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
       return;
     }
+
+    // Send Executable response only if there are callbacks Ids, to avoid race condition
+    sdkNodeExecutionService.addExecutableResponse(
+        ambiance, ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
+
     log.info("Processing Async Chain Step for {} with CallbackId {}", nodeExecutionId,
         asyncChainExecutableResponse.getCallbackId());
     queueCallbacks(ambiance, mode, asyncChainExecutableResponse, stepParamString);
@@ -124,6 +134,38 @@ public class AsyncChainStrategy extends ProgressableStrategy {
                                                     .build();
     asyncWaitEngine.waitForAllOn(
         callback, progressCallback, ImmutableList.of(response.getCallbackId()), response.getTimeout());
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    AsyncChainExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleAbort(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getAsyncChain(), interruptPackage.isUserMarked());
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    AsyncChainExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleExpire(
+        interruptPackage.getAmbiance(), interruptPackage.getParameters(), interruptPackage.getAsyncChain());
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    AsyncChainExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleFailure(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getAsyncChain(), interruptPackage.getMetadata());
+  }
+
+  @Override
+  public void progress(ProgressPackage progressPackage) {
+    Ambiance ambiance = progressPackage.getAmbiance();
+    AsyncChainExecutable asyncExecutable = extractStep(ambiance);
+    ProgressData resp = asyncExecutable.handleProgressAsyncChain(
+        ambiance, progressPackage.getStepParameters(), progressPackage.getProgressData());
+    if (resp != null) {
+      sdkNodeExecutionService.handleProgressResponse(ambiance, resp);
+    }
   }
 
   @Override

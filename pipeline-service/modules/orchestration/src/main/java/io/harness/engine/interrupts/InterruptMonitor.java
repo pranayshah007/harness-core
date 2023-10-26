@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.interrupts;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
@@ -20,8 +19,11 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -66,6 +68,9 @@ import org.springframework.data.util.CloseableIterator;
  * 1. What if there are no leaves at all (leverage level count)
  *
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InterruptMonitor implements Handler<Interrupt> {
@@ -246,7 +251,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
         abortHelper.discontinueMarkedInstance(discontinuingParent, interrupt);
         return;
       case EXPIRE_ALL:
-        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt);
+        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt, true);
         return;
       default:
         // This cannot happen just returning

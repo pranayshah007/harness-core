@@ -1,0 +1,3 @@
+filters: check-secure-transport, config-compliance, consecutive-aws-backups, event, finding, has-statement, health-event, json-diff, kms-key, lifecycle-policy, list-item, marked-for-op, metrics, ops-item, reduce, tag-count, value
+actions: auto-tag-user, configure-lifecycle-policy, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, notify, post-finding, post-item, put-metric, remove-tag, rename-tag, tag, webhook
+customPrompt:

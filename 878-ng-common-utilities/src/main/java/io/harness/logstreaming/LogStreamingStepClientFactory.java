@@ -6,6 +6,7 @@
  */
 
 package io.harness.logstreaming;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,7 +27,7 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 
@@ -37,7 +38,7 @@ public class LogStreamingStepClientFactory {
   @Inject LogStreamingServiceConfiguration logStreamingServiceConfiguration;
   @Inject LogStreamingClient logStreamingClient;
   @Inject LogStreamingServiceRestClient logStreamingServiceRestClient;
-  @Inject @Named("logStreamingClientThreadPool") ThreadPoolExecutor logStreamingClientThreadPool;
+  @Inject @Named("logStreamingDelayExecutor") ScheduledExecutorService logStreamingDelayExecutor;
 
   public LoadingCache<String, String> accountIdToTokenCache =
       CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(5, TimeUnit.MINUTES).build(new CacheLoader<>() {
@@ -54,14 +55,18 @@ public class LogStreamingStepClientFactory {
   private ILogStreamingStepClient getLogStreamingStepClientInternal(Ambiance ambiance, Set<String> secrets) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     try {
+      String logBaseKey = getLogBaseKey(ambiance);
+
       return LogStreamingStepClientImpl.builder()
           .logStreamingClient(logStreamingClient)
           .logStreamingSanitizer(LogStreamingSanitizer.builder().secrets(secrets).build())
-          .baseLogKey(LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance)))
+          .baseLogKey(logBaseKey)
           .accountId(accountId)
           .token(accountIdToTokenCache.get(accountId))
-          .logStreamingClientExecutor(logStreamingClientThreadPool)
+          .logStreamingDelayExecutor(logStreamingDelayExecutor)
+          .delayToClosePrefixLogStream(logStreamingServiceConfiguration.getDelayToClosePrefixLogStreamInSeconds())
           .build();
+
     } catch (Exception exception) {
       throw new InvalidRequestException("Could not generate token for given account Id " + accountId);
     }
@@ -70,5 +75,17 @@ public class LogStreamingStepClientFactory {
   public String retrieveLogStreamingAccountToken(String accountId) throws IOException {
     return SafeHttpCall.executeWithExceptions(logStreamingServiceRestClient.retrieveAccountToken(
         logStreamingServiceConfiguration.getServiceToken(), accountId));
+  }
+
+  public static String getLogBaseKey(Ambiance ambiance, String lastGroup) {
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      return LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateLogAbstractions(ambiance, lastGroup));
+    } else {
+      return LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, lastGroup));
+    }
+  }
+
+  public static String getLogBaseKey(Ambiance ambiance) {
+    return getLogBaseKey(ambiance, null);
   }
 }

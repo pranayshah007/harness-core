@@ -91,11 +91,13 @@ import com.azure.resourcemanager.compute.models.GalleryImageVersionPublishingPro
 import com.azure.resourcemanager.compute.models.GalleryImageVersionStorageProfile;
 import com.azure.resourcemanager.compute.models.GalleryImageVersions;
 import com.azure.resourcemanager.compute.models.GalleryImages;
+import com.azure.resourcemanager.compute.models.HyperVGeneration;
 import com.azure.resourcemanager.compute.models.ImagePurchasePlan;
 import com.azure.resourcemanager.compute.models.OperatingSystemStateTypes;
 import com.azure.resourcemanager.compute.models.OperatingSystemTypes;
 import com.azure.resourcemanager.compute.models.RecommendedMachineConfiguration;
 import com.azure.resourcemanager.compute.models.ReplicationStatus;
+import com.azure.resourcemanager.compute.models.SecurityTypes;
 import com.azure.resourcemanager.compute.models.TargetRegion;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.compute.models.VirtualMachines;
@@ -1418,6 +1420,16 @@ public class AzureHelperServiceTest extends WingsBaseTest {
 
       @Override
       public String releaseNoteUri() {
+        return null;
+      }
+
+      @Override
+      public HyperVGeneration hyperVGeneration() {
+        return null;
+      }
+
+      @Override
+      public SecurityTypes securityType() {
         return null;
       }
 

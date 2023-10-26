@@ -47,7 +47,12 @@ public class ProjectCreateEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, project.getName());
-    return Resource.builder().identifier(project.getIdentifier()).type(PROJECT).labels(labels).build();
+    return Resource.builder()
+        .identifier(project.getIdentifier())
+        .type(PROJECT)
+        .uniqueId(project.getUniqueId())
+        .labels(labels)
+        .build();
   }
 
   @JsonIgnore

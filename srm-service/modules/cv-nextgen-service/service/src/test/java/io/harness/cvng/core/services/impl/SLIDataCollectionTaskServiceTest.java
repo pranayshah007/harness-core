@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.QUEUED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.RUNNING;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANJAN;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -166,9 +167,9 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
                    .filter(DataCollectionTaskKeys.verificationTaskId, sliVerificationTaskId)
                    .count())
         .isEqualTo(1);
-    Clock twoMinutesAheadClock =
+    Clock fiveHoursAheadClock =
         Clock.fixed(Instant.ofEpochMilli(prevTask.getCreatedAt()).plus(5, ChronoUnit.HOURS), clock.getZone());
-    FieldUtils.writeField(sliDataCollectionTaskService, "clock", twoMinutesAheadClock, true);
+    FieldUtils.writeField(sliDataCollectionTaskService, "clock", fiveHoursAheadClock, true);
     sliDataCollectionTaskService.handleCreateNextTask(serviceLevelIndicator);
     assertThat(hPersistence.createQuery(DataCollectionTask.class)
                    .filter(DataCollectionTaskKeys.verificationTaskId, sliVerificationTaskId)
@@ -179,6 +180,8 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
                                        .order(Sort.descending(DataCollectionTaskKeys.startTime))
                                        .get();
     assertThat(savedTask.getStatus()).isEqualTo(QUEUED);
+    assertThat(savedTask.getStartTime()).isEqualTo(prevTask.getEndTime());
+    assertThat(savedTask.getEndTime()).isEqualTo(roundUpTo5MinBoundary(fiveHoursAheadClock.instant()));
   }
 
   @Test
@@ -229,6 +232,7 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
         .isEqualTo(serviceLevelIndicator.getFirstTimeDataCollectionTimeRange().getEndTime());
     assertThat(savedTask.getStartTime())
         .isEqualTo(serviceLevelIndicator.getFirstTimeDataCollectionTimeRange().getStartTime());
+    assertThat(savedTask.getValidAfter()).isEqualTo(savedTask.getEndTime().plus(2, ChronoUnit.MINUTES));
   }
 
   @Test

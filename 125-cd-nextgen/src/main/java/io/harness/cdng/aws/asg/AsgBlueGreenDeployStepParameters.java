@@ -38,7 +38,7 @@ public class AsgBlueGreenDeployStepParameters extends AsgBlueGreenDeployBaseStep
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> useAlreadyRunningInstances, AsgInstances instances,
-      List<AwsAsgLoadBalancerConfigYaml> loadBalancers, ParameterField<String> asgName) {
+      ParameterField<List<AwsAsgLoadBalancerConfigYaml>> loadBalancers, ParameterField<String> asgName) {
     super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors,
         useAlreadyRunningInstances, instances, loadBalancers, asgName);
   }

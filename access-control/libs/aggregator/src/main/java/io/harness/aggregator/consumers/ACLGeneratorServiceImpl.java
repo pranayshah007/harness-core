@@ -13,7 +13,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.aggregator.ACLUtils.buildResourceSelector;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.acl.api.Principal;
@@ -36,7 +35,6 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -60,13 +58,13 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   private final Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope;
   private final ACLRepository aclRepository;
   private final InMemoryPermissionRepository inMemoryPermissionRepository;
+  private int batchSizeForACLCreation;
 
-  @Inject
   public ACLGeneratorServiceImpl(RoleService roleService, UserGroupService userGroupService,
       ResourceGroupService resourceGroupService, ScopeService scopeService,
-      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
-      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
-      InMemoryPermissionRepository inMemoryPermissionRepository) {
+      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope, ACLRepository aclRepository,
+      InMemoryPermissionRepository inMemoryPermissionRepository,
+      @Named("batchSizeForACLCreation") int batchSizeForACLCreation) {
     this.roleService = roleService;
     this.userGroupService = userGroupService;
     this.resourceGroupService = resourceGroupService;
@@ -74,6 +72,7 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
     this.implicitPermissionsByScope = implicitPermissionsByScope;
     this.aclRepository = aclRepository;
     this.inMemoryPermissionRepository = inMemoryPermissionRepository;
+    this.batchSizeForACLCreation = batchSizeForACLCreation;
   }
 
   @Override
@@ -86,6 +85,21 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   public long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals) {
     Set<String> permissions = getPermissionsFromRole(roleAssignmentDBO);
     Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignmentDBO);
+    return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+  }
+
+  @Override
+  public long createACLsFromPermissions(RoleAssignmentDBO roleAssignmentDBO, Set<String> permissions) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignmentDBO);
+    Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignmentDBO);
+    return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+  }
+
+  @Override
+  public long createACLsFromResourceSelectors(
+      RoleAssignmentDBO roleAssignmentDBO, Set<ResourceSelector> resourceSelectors) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignmentDBO);
+    Set<String> permissions = getPermissionsFromRole(roleAssignmentDBO);
     return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
   }
 
@@ -108,6 +122,13 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   }
 
   @Override
+  public long createImplicitACLsFromPermissions(RoleAssignmentDBO roleAssignment, Set<String> permissions) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
+    List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment, principals, permissions);
+    return aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
+  @Override
   public long createImplicitACLs(RoleAssignmentDBO roleAssignment, Set<String> addedUsers) {
     Set<String> permissions = getPermissionsFromRole(roleAssignment);
     List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment, addedUsers, permissions);
@@ -118,18 +139,7 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   public long createACLs(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals, Set<String> permissions,
       Set<ResourceSelector> resourceSelectors) {
     long numberOfACLsCreated = 0;
-    long maxACLsAllowed = 2000000;
     List<ACL> acls = new ArrayList<>();
-    long aclCount = isEmpty(principals) || isEmpty(permissions) || isEmpty(resourceSelectors)
-        ? 0
-        : principals.size() * permissions.size() * resourceSelectors.size();
-    if (aclCount > maxACLsAllowed) {
-      log.error(String.format(
-          "Skipping ACLs creation for roleAssignment id: %s defined at scope %s as it is attempting to create %d ACLs greater than maxAllowed %d",
-          roleAssignmentDBO.getId(), roleAssignmentDBO.getScopeIdentifier(), aclCount, maxACLsAllowed));
-      return 0L;
-    }
-
     for (String principalIdentifier : principals) {
       for (String permission : permissions) {
         for (ResourceSelector resourceSelector : resourceSelectors) {
@@ -144,7 +154,7 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
             acls.add(buildACL(permission, Principal.of(USER, principalIdentifier), roleAssignmentDBO, resourceSelector,
                 false, isEnabled(roleAssignmentDBO)));
           }
-          if (acls.size() >= 50000) {
+          if (acls.size() >= batchSizeForACLCreation) {
             numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(acls);
             acls.clear();
           }

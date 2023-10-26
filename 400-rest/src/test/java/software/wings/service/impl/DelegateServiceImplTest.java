@@ -1054,6 +1054,81 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
+  public void testAuditEntryForUpdateDelegateGroupTags() throws IOException {
+    K8sConfigDetails k8sConfigDetails =
+        K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.NAMESPACE_ADMIN).namespace("namespace").build();
+    final ImmutableSet<String> tags = ImmutableSet.of("sometag", "anothertag");
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(ACCOUNT_ID)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
+    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
+                                                    .name(TEST_DELEGATE_GROUP_NAME)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .tokenName(TOKEN_NAME)
+                                                    .projectIdentifier(PROJECT_ID)
+                                                    .k8sConfigDetails(k8sConfigDetails)
+                                                    .description("description")
+                                                    .size(DelegateSize.LAPTOP)
+                                                    .identifier(DELEGATE_GROUP_IDENTIFIER)
+                                                    .tags(tags)
+                                                    .delegateType(DelegateType.KUBERNETES)
+                                                    .build();
+    String delegateGroup = delegateService.createDelegateGroup(ACCOUNT_ID, delegateSetupDetails);
+    assertThat(delegateGroup).isNotNull();
+
+    // test update delegate group tag
+    final ImmutableSet<String> newTags = ImmutableSet.of("tag1", "tag2");
+    DelegateSetupDetails delegateSetupDetailWithUpdatedTags = DelegateSetupDetails.builder()
+                                                                  .name(TEST_DELEGATE_GROUP_NAME)
+                                                                  .orgIdentifier(ORG_ID)
+                                                                  .tokenName(TOKEN_NAME)
+                                                                  .projectIdentifier(PROJECT_ID)
+                                                                  .k8sConfigDetails(k8sConfigDetails)
+                                                                  .description("description")
+                                                                  .size(DelegateSize.LAPTOP)
+                                                                  .identifier(DELEGATE_GROUP_IDENTIFIER)
+                                                                  .tags(newTags)
+                                                                  .delegateType(DelegateType.KUBERNETES)
+                                                                  .build();
+
+    delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetailWithUpdatedTags);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(100).build());
+    assertThat(outboxEvents.size()).isEqualTo(2);
+    OutboxEvent outboxEvent = outboxEvents.get(1);
+    assertThat(outboxEvent.getResourceScope().equals(new ProjectScope(ACCOUNT_ID, ORG_ID, PROJECT_ID))).isTrue();
+    assertThat(outboxEvent.getResource())
+        .isEqualTo(Resource.builder()
+                       .type(ResourceTypeConstants.DELEGATE)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
+                       .labels(Collections.singletonMap("resourceName", "testDelegateGroupName"))
+                       .build());
+    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateUpsertEvent.builder().build().getEventType());
+    DelegateUpsertEvent delegateUpsertEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateUpsertEvent.class);
+    assertThat(delegateUpsertEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateUpsertEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(delegateUpsertEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(delegateUpsertEvent.getDelegateSetupDetails())
+        .isEqualTo(DelegateSetupDetails.builder()
+                       .name(TEST_DELEGATE_GROUP_NAME)
+                       .orgIdentifier(ORG_ID)
+                       .projectIdentifier(PROJECT_ID)
+                       .tokenName(TOKEN_NAME)
+                       .k8sConfigDetails(k8sConfigDetails)
+                       .description("description")
+                       .size(DelegateSize.LAPTOP)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
+                       .tags(newTags)
+                       .delegateType(DelegateType.KUBERNETES)
+                       .build());
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
   public void testAuditEntryForDelegateUnRegister() {
     String accountId = generateUuid();
     Delegate delegate = Delegate.builder()

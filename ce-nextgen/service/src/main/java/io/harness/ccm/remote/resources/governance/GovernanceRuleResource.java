@@ -335,7 +335,6 @@ public class GovernanceRuleResource {
     } else {
       rule.setForRecommendation(false);
     }
-    governanceRuleService.validateAWSSchema(rule);
     governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
     HashMap<String, Object> properties = new HashMap<>();
@@ -422,7 +421,6 @@ public class GovernanceRuleResource {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
-      governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
       rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
@@ -477,7 +475,6 @@ public class GovernanceRuleResource {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
-      governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
       rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
@@ -723,7 +720,6 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule validateRule = generateRule.getRule();
-    governanceRuleService.validateAWSSchema(validateRule);
     governanceRuleService.custodianValidate(validateRule);
   }
 }

@@ -6,11 +6,13 @@
  */
 
 package io.harness.ng.core.service.services;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -22,6 +24,7 @@ import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -108,8 +111,15 @@ public interface ServiceEntityService {
 
   // Avoid using this method,as it  allows clients to access unbounded amount of data
   @Deprecated
-  List<ServiceEntity> getServices(
+  List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
+
+  List<ServiceV2YamlMetadata> getServicesYamlMetadata(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
+      boolean loadFromCache);
+
+  ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
+      ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier);
 
   boolean isServiceField(String fieldName, JsonNode value);
 

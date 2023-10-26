@@ -9,6 +9,7 @@ package io.harness.encryptors.clients;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -437,7 +438,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -462,7 +464,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(AWS_IAM_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     EncryptedRecord encryptedRecord =
@@ -488,7 +490,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     EncryptedRecord encryptedRecord =
@@ -548,7 +550,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .build();
     performK8sAuthLoginResult();
     when(vaultRestClient.readSecret(K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> "");
     try {
       hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -567,7 +569,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenThrow(new IOException("dummy error"));
     try {
       hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -591,7 +594,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(vaultRestClient.deleteSecretPermanentely(
              vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
@@ -661,11 +665,42 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testFetchSecretV2() throws IOException {
-    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+    Map<String, Object> data = Map.of("key.with.dot", "value-for-key-with-dot");
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key.with.dot");
+    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-for-key-with-dot");
+
+    data = Map.of("key-having-value-with-curly-braces", "{01dkd7}op910");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-value-with-curly-braces");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{01dkd7}op910");
+
+    data = Map.of("key-having-special-characters-in-value-1", "[,\":]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[,\":]");
+
+    data = Map.of("key-having-special-characters-in-value-2", "[1,2,3]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-2");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[1,2,3]");
+
+    data = Map.of("key-having-special-characters-in-value-3", "[\"adfd\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-3");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd\"]");
+
+    data = Map.of("key-having-special-characters-in-value-4", "[\"adfd:asdf\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-4");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd:asdf\"]");
+
+    data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
         Map.of("key-31", Map.of("key-311", "value-311")));
 
-    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
-    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
     assertThat(valueOf(value)).isEqualTo("value-1");
 
     encryptedRecord = setupJsonResponseMockingV2(data, "key-2");
@@ -839,7 +874,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                  .encryptionKey(UUIDGenerator.generateUuid())
                                  .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + record.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + record.getEncryptionKey() + "#value"))
         .thenThrow(new IOException("dummy error"));
     try {
       hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), record, vaultConfig);
@@ -909,6 +944,36 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
       assertThat(e.getMessage())
           .isEqualTo("Decryption failed after 3 retries for secret " + record.getEncryptionKey() + " or path null");
     }
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    String plainText = "true";
+    String fullPath = vaultConfig.getBasePath() + "/" + name;
+    when(vaultRestClient.writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
+             vaultConfig.getSecretEngineName(), fullPath, plainText))
+        .thenAnswer(invocationOnMock -> true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(1))
+        .writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
+            fullPath, plainText);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret_forReadOnlyVault() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    vaultConfig.setReadOnly(true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(0)).writeSecret(anyString(), anyString(), anyString(), anyString(), anyString());
   }
 
   @NotNull

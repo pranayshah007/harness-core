@@ -6,11 +6,15 @@
  */
 
 package io.harness.terragrunt.v2;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public class TerragruntV2Contants {
   static final String INIT = "INIT";
@@ -18,6 +22,7 @@ public class TerragruntV2Contants {
   static final String PLAN = "PLAN";
   static final String APPLY = "APPLY";
   static final String DESTROY = "DESTROY";
+  static final String OUTPUT = "OUTPUT";
 
   public static final String TERRAGRUNT_PLAN_COMMAND_FORMAT = "terragrunt plan -out=tfplan -input=false %s %s %s";
   public static final String TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT =
@@ -32,4 +37,7 @@ public class TerragruntV2Contants {
       "terragrunt run-all destroy %s --terragrunt-non-interactive %s %s %s";
   public static final String TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT =
       "terragrunt run-all apply -input=false --terragrunt-non-interactive %s %s %s";
+  public static final String TERRAGRUNT_OUTPUT_COMMAND_FORMAT = "terragrunt output %s -json > %s";
+  public static final String TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT =
+      "terragrunt run-all output --terragrunt-non-interactive %s --json > %s";
 }

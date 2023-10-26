@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -249,7 +250,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), anyBoolean(), anyBoolean()))
+        .thenReturn(Optional.of(serviceEntity));
     when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
@@ -367,8 +369,10 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), anyBoolean(), anyBoolean()))
+        .thenReturn(Optional.of(serviceEntity));
+    when(environmentService.get(any(), any(), any(), any(), eq(false), eq(true), eq(false)))
+        .thenReturn(Optional.of(environmentEntity));
     HIterator iteratorMock = Mockito.mock(HIterator.class);
     when(infrastructureEntityService.listIterator(any(), any(), any(), any(), any())).thenReturn(iteratorMock);
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());
@@ -462,8 +466,10 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                                                     .build();
 
     // mocks
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), anyBoolean(), anyBoolean()))
+        .thenReturn(Optional.of(serviceEntity));
+    when(environmentService.get(any(), any(), any(), any(), eq(false), eq(true), eq(false)))
+        .thenReturn(Optional.of(environmentEntity));
     HIterator iteratorMock = Mockito.mock(HIterator.class);
     when(infrastructureEntityService.listIterator(any(), any(), any(), any(), any())).thenReturn(iteratorMock);
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());

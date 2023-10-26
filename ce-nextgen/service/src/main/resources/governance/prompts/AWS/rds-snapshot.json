@@ -1,0 +1,39 @@
+{
+  "DBSnapshotIdentifier": "DBSnapshotId",
+  "DBInstanceIdentifier": "DBInstanceId",
+  "SnapshotCreateTime": "2022-07-12T18:17:53.123000+00:00",
+  "Engine": "sqlserver-se",
+  "AllocatedStorage": 20,
+  "Status": "available",
+  "Port": 1433,
+  "AvailabilityZone": "us-east-1b",
+  "VpcId": "VpcId",
+  "InstanceCreateTime": "2021-10-06T18:54:21.768000+00:00",
+  "MasterUsername": "MasterUsername",
+  "EngineVersion": "15.00.4073.23.v1",
+  "LicenseModel": "license-included",
+  "SnapshotType": "manual",
+  "OptionGroupName": "OptionGroupName",
+  "PercentProgress": 100,
+  "StorageType": "gp2",
+  "Encrypted": true,
+  "KmsKeyId": "arn:aws:kms:us-east-1:AccountId:key/KmsKeyId",
+  "DBSnapshotArn": "arn:aws:rds:us-east-1:AccountId:snapshot:DBSnapshotId",
+  "Timezone": "GMT Standard Time",
+  "IAMDatabaseAuthenticationEnabled": false,
+  "ProcessorFeatures": [],
+  "DbiResourceId": "DbiResourceId",
+  "OriginalSnapshotCreateTime": "2022-07-12T18:17:53.123000+00:00",
+  "SnapshotTarget": "region",
+  "StorageThroughput": 0,
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ]
+}

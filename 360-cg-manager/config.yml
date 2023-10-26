@@ -262,6 +262,8 @@ logging:
       archivedLogFilenamePattern: portal.%d.%i.log
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
 
+licenseUsageTimescaleSocketTimeout: 60
+
 timescaledb:
   timescaledbUrl: ""
   timescaledbUsername: ""
@@ -396,6 +398,7 @@ portal:
   optionalDelegateTaskRejectAtLimit: 5000
   importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
+  parkedDelegateTaskRejectAtLimit: 10000
 
 totp:
   secOpsEmail: secops.fake.email@mailnator.com
@@ -756,7 +759,7 @@ debeziumConsumersConfigs:
 
 dataReconciliation:
   enabled: true
-  duration: 900
+  duration: ${DATA_RECONCILIATION_CRON_DURATION:-900}
 
 disableDelegateMgmtInManager: false
 
@@ -818,3 +821,5 @@ awsServiceEndpointUrls:
   stsEndPointUrl: https://sts.us-east-1.amazonaws.com
   ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
   cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
+
+maxAccountsToDeleteInParallel: 6

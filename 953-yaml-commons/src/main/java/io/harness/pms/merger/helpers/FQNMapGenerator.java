@@ -77,17 +77,24 @@ public class FQNMapGenerator {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey = fieldNames.iterator().next();
-
-    if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
-      topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();
-    }
-    FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
-    FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
-
+    String topKey = "";
     Map<FQN, Object> res = new LinkedHashMap<>();
+    // Generate fqn for each fieldName
+    for (String fieldName : fieldNames) {
+      topKey = fieldName;
+      if (keepUuidFields && topKey.equals(UUID_FIELD_NAME)) {
+        continue;
+      }
+      FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
+      FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
 
-    generateFQNMap(yamlMap.get(topKey), currentFQN, res, expressions, keepUuidFields);
+      JsonNode currentJsonNode = yamlMap.get(topKey);
+      if (!currentJsonNode.isObject() && !currentJsonNode.isArray()) {
+        FQNHelper.validateUniqueFqn(currentFQN, currentJsonNode, res, expressions);
+      } else {
+        generateFQNMap(currentJsonNode, currentFQN, res, expressions, keepUuidFields);
+      }
+    }
     return res;
   }
 
@@ -134,12 +141,10 @@ public class FQNMapGenerator {
   public void generateFQNMapFromListInternal(
       ArrayNode list, FQN baseFQN, Map<FQN, Object> res, HashSet<String> expressions, boolean keepUuidFields) {
     for (JsonNode element : list) {
-      int noOfKeys = element.size();
-      // UUID_FIELD_NAME is a generated Key. it should not be included in counting the number of keys in original field.
-      if (noOfKeys > 1 && element.get(UUID_FIELD_NAME) != null) {
-        noOfKeys -= 1;
-      }
-      if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(element))) {
+      String wrapperKey = FQNHelper.getWrapperKeyForArrayElement(element);
+      // If wrapperKey is present and element does not have any uuid field then the element will be treated as a wrapper
+      // object.
+      if (EmptyPredicate.isNotEmpty(wrapperKey) && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(element))) {
         String identifierKey = FQNHelper.getIdentifierKeyIfPresent(element);
         if (EmptyPredicate.isEmpty(identifierKey)) {
           FQNHelper.validateUniqueFqn(baseFQN, list, res, expressions);
@@ -164,12 +169,8 @@ public class FQNMapGenerator {
       ArrayNode listOfMaps = (ArrayNode) element.get(YAMLFieldNameConstants.PARALLEL);
       generateFQNMapFromList(listOfMaps, currFQN, res, expressions, keepUuidFields);
     } else {
-      Set<String> fieldNames = new LinkedHashSet<>();
-      element.fieldNames().forEachRemaining(fieldNames::add);
-      String topKey = fieldNames.iterator().next();
-      if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
-        topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();
-      }
+      // topKey will always be a wrapperKey because we have already checked before coming into this flow.
+      String topKey = FQNHelper.getWrapperKeyForArrayElement(element);
       if (!topKey.equals(UUID_FIELD_NAME)) {
         JsonNode innerMap = element.get(topKey);
         String identifierValue = innerMap.get(identifierKey).asText();

@@ -28,13 +28,10 @@ function import_der_file() {
   keytool -noprompt -importcert -trustcacerts -alias $ALIAS -file $DER_FILE_PATH -keystore $TRUST_STORE_FILE -storepass $PASSWORD
 }
 
-if [ -z "$CA_CERTS_DIR" ]; then
-  echo "CA_CERTS_DIR not set. Skip importing certificates."
-  return 0
-fi
+CA_CERTS_DIR="$HOME/ca-bundle"
 
 if [ ! -d "$CA_CERTS_DIR" ]; then
-  echo "CA_CERTS_DIR is not a directory. Skip importing certificates."
+  echo "Directory $CA_CERTS_DIR does not exist. Skip importing certificates."
   return 0
 fi
 
@@ -46,13 +43,13 @@ fi
 PASSWORD="changeit"
 ANCHOR_PATH="/etc/pki/ca-trust/source/anchors/"
 
-# Support certificates is PEM formats
-# Only support x509 certificate. PKCS#7 chain not supported, please convert to x509 PEM format file before running the
-# script.
-# Multiple certificates can put in one PEM file, thus this script support ca bundle pem file
+# Supports PEM formats
+# Only support x509 certificate. PKCS#7 chain not supported, please convert to x509 v3 PEM format file before running
+# the script.
+# Multiple certificates can put in one PEM file, thus this script support ca bundle file
 # DER format file can contain only one certificate in it.
-# PEM format files includes .crt .cer and .pem
-# DER format files includes .der .cer
+# PEM format files have suffix .crt .cer and .pem
+# DER format files have suffix .der .cer
 
 # copy certs to /etc/pki/ca-trust/source/anchors/ to update RHEL trust system
 # root user required
@@ -70,12 +67,24 @@ if [ -z "$SHARED_CA_CERTS_PATH" ]; then
      mkdir -p $SHARED_CA_CERTS_PATH
 fi
 
+# Add a variable to store the path of the concatenated .pem file
+CONCATENATED_PEM_PATH="$SHARED_CA_CERTS_PATH/single-cert-path/all-certs.pem"
+# Create the directory if it doesn't exist
+mkdir -p "$SHARED_CA_CERTS_PATH/single-cert-path"
+# Initialize the concatenated .pem file with an empty string
+cat /dev/null > "$CONCATENATED_PEM_PATH"
+
 for FILE in $CA_CERTS_DIR/*; do
   NUM_PEM_BLOCKS=$(grep 'END CERTIFICATE' $FILE | wc -l)
   # if NUM_PEM_BLOCKS greater than 0, we think it's a PEM file
   if [ $NUM_PEM_BLOCKS -gt 0 ]; then
     echo "Importing PEM $FILE to java truststore..."
     import_pem_file "$FILE" $NUM_PEM_BLOCKS
+
+    # Append the current certificate to the concatenated .pem file
+    cat "$FILE" >> "$CONCATENATED_PEM_PATH"
+    # Add a delimiter (e.g., a blank line) between certificates
+    echo -e "\n" >> "$CONCATENATED_PEM_PATH"
   else
     # if it's not pem file, best effort to import cert
     echo "Importing $FILE to java truststore..."

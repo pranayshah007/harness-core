@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: expensive-sql-servers
+cloudProvider: AZURE
+resourceType: azure.sql-server
+description: List SQL servers costing more than $2000 in last 30 days.
+rulesYamlPath: ../expensive-sql-servers.yml

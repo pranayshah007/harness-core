@@ -25,6 +25,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
@@ -69,7 +70,10 @@ public class ServiceFilterHelper {
     }
 
     if (type != null) {
-      criteria.and(ServiceEntityKeys.type).is(type.name());
+      // since type can be in YAML we are also returning all remote services
+      // these remote service can have type stored remotely
+      criteria.orOperator(Criteria.where(ServiceEntityKeys.type).is(type.name()),
+          Criteria.where(ServiceEntityKeys.storeType).is(StoreType.REMOTE.name()));
     }
 
     return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);

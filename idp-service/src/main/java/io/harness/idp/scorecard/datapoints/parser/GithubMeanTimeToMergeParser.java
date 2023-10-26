@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.NO_PULL_REQUESTS_FOUND;
 
@@ -31,17 +32,18 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     Map<String, Object> dataPointData = new HashMap<>();
     for (String inputValue : inputValues) {
-      if (!data.containsKey(inputValue)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
+        String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+        dataPointData.putAll(constructDataPointInfo(
+            inputValue, null, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
         continue;
       }
-
-      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
       List<Map<String, Object>> edges =
           (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "edges");
       if (isEmpty(edges)) {
         dataPointData.putAll(
-            constructDataPointInfo(inputValue, false, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
+            constructDataPointInfo(inputValue, null, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
         continue;
       }
       int numberOfPullRequests = edges.size();

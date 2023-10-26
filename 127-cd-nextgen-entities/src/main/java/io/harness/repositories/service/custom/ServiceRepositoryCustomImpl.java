@@ -6,14 +6,16 @@
  */
 
 package io.harness.repositories.service.custom;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 import static io.harness.springdata.PersistenceUtils.getRetryPolicyWithDuplicateKeyException;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExplanationException;
@@ -62,6 +64,8 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -286,23 +290,42 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
       return Optional.empty();
     }
 
-    if (getMetadataOnly) {
+    if (getMetadataOnly || !StoreType.REMOTE.equals(savedEntity.getStoreType())) {
       return Optional.of(savedEntity);
     }
 
-    if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
+    return Optional.of(getRemoteServiceWithYaml(savedEntity, loadFromCache, loadFromFallbackBranch));
+  }
+
+  /**
+   * @param savedEntity remote service for which YAML needs to be fetched
+   * @param loadFromCache whether to load the entity from cache
+   * @return entity populated with YAML fetched from scm
+   */
+  @Override
+  public ServiceEntity getRemoteServiceWithYaml(
+      @NonNull ServiceEntity savedEntity, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    try {
       String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
       if (loadFromFallbackBranch) {
-        savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+        savedEntity = fetchRemoteEntityWithFallBackBranch(savedEntity.getAccountId(), savedEntity.getOrgIdentifier(),
+            savedEntity.getProjectIdentifier(), savedEntity, branchName, loadFromCache);
       } else {
-        savedEntity = fetchRemoteEntity(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+        savedEntity = fetchRemoteEntity(savedEntity.getAccountId(), savedEntity.getOrgIdentifier(),
+            savedEntity.getProjectIdentifier(), savedEntity, branchName, loadFromCache);
       }
-    }
 
-    return Optional.of(savedEntity);
+      return savedEntity;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving service YAML: [%s]", savedEntity.getIdentifier()), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format("Unexpected error occurred while retrieving service YAML: [%s]", savedEntity.getIdentifier()),
+          e);
+      throw new InternalServerErrorException(
+          String.format("Unexpected error occurred while retrieving service YAML: [%s]", savedEntity.getIdentifier()));
+    }
   }
 
   private Criteria buildCriteriaForServiceIdentifier(@NonNull String accountIdentifier, String orgIdentifier,

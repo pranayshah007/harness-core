@@ -6,7 +6,10 @@
  */
 
 package io.harness.cdng.environment.helper;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor.SETUP_METADATA_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.VALUES;
@@ -21,6 +24,11 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.ScmException;
+import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
@@ -36,10 +44,13 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
+@Slf4j
 public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityReferenceExtractor {
   public static final String ENV_REF = "envRef";
 
@@ -56,7 +67,23 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
   @Override
   public Set<EntityDetailProtoDTO> addReference(Object object, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, Object> contextMap) {
-    EnvironmentYamlV2 environmentYamlV2 = (EnvironmentYamlV2) object;
+    SetupMetadata setupMetadata = getSetupMetadata(contextMap);
+    try (NgManagerSourcePrincipalGuard ignore = new NgManagerSourcePrincipalGuard(setupMetadata)) {
+      return addReferencesInternal(
+          (EnvironmentYamlV2) object, accountIdentifier, orgIdentifier, projectIdentifier, contextMap);
+    } catch (ExplanationException | HintException | ScmException ex) {
+      // Todo : @Tathagat iteratively improve on this exception handling
+      log.error("Exception while adding references in EnvironmentYamlV2VisitorHelper", ex);
+      throw ex;
+    } catch (Exception ex) {
+      log.error("Exception while adding references in EnvironmentYamlV2VisitorHelper", ex);
+      return new HashSet<>();
+    }
+  }
+
+  @NotNull
+  private static Set<EntityDetailProtoDTO> addReferencesInternal(EnvironmentYamlV2 environmentYamlV2,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Map<String, Object> contextMap) {
     Set<EntityDetailProtoDTO> result = new HashSet<>();
     String fullQualifiedDomainName = "";
     final Map<String, String> metadata = new HashMap<>();
@@ -107,5 +134,15 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
       result.add(entityDetail);
     }
     return result;
+  }
+
+  private SetupMetadata getSetupMetadata(Map<String, Object> contextMap) {
+    if (isNotEmpty(contextMap)) {
+      Object setupMetadata = contextMap.get(SETUP_METADATA_KEY);
+      if (setupMetadata != null) {
+        return (SetupMetadata) setupMetadata;
+      }
+    }
+    return null;
   }
 }

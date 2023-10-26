@@ -35,16 +35,17 @@ public enum ModuleType {
   @JsonProperty("SRM") SRM("Service Reliability Management", PUBLIC, ONBOARDED),
   @JsonProperty("IACM") IACM("Infrastructure as Code Manager", PUBLIC, ONBOARDED),
   @JsonProperty("CET") CET("Continuous Error Tracking", PUBLIC, ONBOARDED),
+  @JsonProperty("IDP") IDP("Internal Developer Portal", PUBLIC, ONBOARDED),
 
   // Internal modules which have been onboarded
   @JsonProperty("CODE") CODE("Code", INTERNAL, ONBOARDED), // TODO: Remove internal flag once licensing is added.
   @JsonProperty("CORE") CORE("Core", INTERNAL, ONBOARDED),
   @JsonProperty("PMS") PMS("Pipelines", INTERNAL, ONBOARDED),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
+  @JsonProperty("SSCA") SSCA("Ssca", INTERNAL, ONBOARDED),
 
   // Internal modules which have not been onboarded yet
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
-  @JsonProperty("IDP") IDP("Internal Developer Portal", INTERNAL, ONBOARDING_IN_PROGRESS),
   // moving SEI to Onboarded for qa
   @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDING_IN_PROGRESS);
 

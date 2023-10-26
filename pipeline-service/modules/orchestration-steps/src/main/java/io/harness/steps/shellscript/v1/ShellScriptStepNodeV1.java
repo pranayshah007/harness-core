@@ -22,47 +22,48 @@ import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElemen
 import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.StepUtils;
-import io.harness.steps.shellscript.ShellScriptStepInfo;
-import io.harness.steps.shellscript.ShellScriptStepParameters;
-import io.harness.yaml.utils.NGVariablesUtils;
+import io.harness.yaml.utils.v1.NGVariablesUtilsV1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Data;
+import lombok.Builder;
 
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
-@Data
-@JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT)
+@Builder
+@JsonTypeName(StepSpecTypeConstantsV1.SHELL_SCRIPT)
 @OwnedBy(PIPELINE)
 public class ShellScriptStepNodeV1 extends PmsAbstractStepNodeV1 {
-  String type = StepSpecTypeConstants.SHELL_SCRIPT;
+  String type = StepSpecTypeConstantsV1.SHELL_SCRIPT;
 
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) ShellScriptStepInfo spec;
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) ShellScriptStepInfoV1 spec;
 
   // TODO: set rollback parameters
   public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
     StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
     stepBuilder.spec(getSpecParameters());
-    stepBuilder.type(StepSpecTypeConstants.SHELL_SCRIPT);
+    stepBuilder.type(StepSpecTypeConstantsV1.SHELL_SCRIPT);
     StepUtils.appendDelegateSelectorsToSpecParameters(spec, ctx);
     return stepBuilder.build();
   }
 
   public SpecParameters getSpecParameters() {
     return ShellScriptStepParameters.infoBuilder()
-        .executionTarget(spec.getExecutionTarget())
-        .onDelegate(spec.getOnDelegate())
-        .outputVariables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(spec.getOutputVariables()))
-        .environmentVariables(NGVariablesUtils.getMapOfVariables(spec.getEnvironmentVariables(), 0L))
-        .secretOutputVariables(NGVariablesUtils.getSetOfSecretVars(spec.getOutputVariables()))
-        .shellType(spec.getShell())
+        .executionTarget(spec.getExecution_target())
+        .onDelegate(spec.getOn_delegate())
+        .output_vars(NGVariablesUtilsV1.getMapOfVariablesWithoutSecretExpression(
+            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null))
+        .env_vars(
+            NGVariablesUtilsV1.getMapOfVariables(spec.getEnv_vars() != null ? spec.getEnv_vars().getMap() : null, 0L))
+        .secret_output_vars(NGVariablesUtilsV1.getSetOfSecretVars(
+            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null))
+        .shell(spec.getShell())
         .source(spec.getSource())
-        .delegateSelectors(spec.getDelegateSelectors())
-        .includeInfraSelectors(spec.getIncludeInfraSelectors())
-        .outputAlias(spec.getOutputAlias())
+        .delegate(spec.getDelegate())
+        .include_infra_selectors(spec.getInclude_infra_selectors())
+        .outputAlias(spec.getOutput_alias())
         .build();
   }
 }

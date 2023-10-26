@@ -10,14 +10,14 @@ documentation: https://developer.harness.io/docs/internal-developer-portal/plugi
 config: |-
   proxy:
     '/grafana/api':
-      target: https://<grafana-url>/
+      target: https://<grafana-url>
       pathRewrite:
-        'api/proxy/grafana/?': '/'
+        'api/proxy/grafana/api/?': '/'
       headers:
         Authorization: Bearer ${GRAFANA_TOKEN}
   
   grafana:
-    domain: https://<grafana-monitoring-url>/
+    domain: https://<grafana-monitoring-url>
     unifiedAlerting: false
 environmentVariables:
   - GRAFANA_TOKEN
@@ -43,7 +43,7 @@ exports:
             md: 6
     - type: CARD
       name: EntityOverviewDashboardViewer
-      addByDefault: true
+      addByDefault: false
       layoutSchemaSpecs:
         component: EntityOverviewDashboardViewer
         specs:

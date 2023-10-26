@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -110,7 +111,7 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any()))
         .thenReturn(mock(GitBaseRequest.class));
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), any(), any(), any(), any(), eq(logCallback), any(), any()))
+             any(), any(), any(), any(), eq(logCallback), any(), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -130,6 +131,45 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getDetailedExitCode()).isEqualTo(2);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get(planFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testPlanSkipStateStorage() throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any()))
+        .thenReturn(mock(GitBaseRequest.class));
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+    File planFile = new File("sourceDir/tfplan");
+    FileUtils.touch(planFile);
+    when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
+    when(terraformBaseHelper.executeTerraformPlanStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(
+                    CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(2).build())
+                .build());
+    TerraformTaskNGResponse response = terraformPlanTaskHandler.executeTaskInternal(
+        getTerraformTaskParameters().skipStateStorage(true).build(), "delegateId", "taskId", logCallback);
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getDetailedExitCode()).isEqualTo(2);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(true));
+    verify(terraformBaseHelper, times(0)).uploadTfStateFile(any(), any(), any(), any(), any());
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
@@ -143,7 +183,7 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any()))
         .thenReturn(mock(GitBaseRequest.class));
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), any(), any(), any(), any(), eq(logCallback), any(), any()))
+             any(), any(), any(), any(), eq(logCallback), any(), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -177,7 +217,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanWithArtifactoryConfigAndVarFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -197,6 +238,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getDetailedExitCode()).isEqualTo(0);
+    verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
@@ -208,7 +251,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   public void testPlanWithArtifactoryConfigAndBackendFiles()
       throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -228,6 +272,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getDetailedExitCode()).isEqualTo(0);
+    verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
@@ -238,7 +284,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanWithS3ConfigFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback)))
+    when(terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -258,7 +305,8 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getDetailedExitCode()).isZero();
-    verify(terraformBaseHelper, times(1)).fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(1))
+        .fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));

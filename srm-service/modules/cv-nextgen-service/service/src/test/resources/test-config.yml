@@ -87,6 +87,7 @@ enforcementClientConfiguration:
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+serviceDiscoveryServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
@@ -157,6 +158,11 @@ policyManagerSecret: secret
 
 opaClientConfig:
   baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+serviceDiscoveryServiceClientConfig:
+  baseUrl: ${SERVICE_DISCOVERY_SERVICE_BASE_URL:-http://localhost:8888/}
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
   

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: azure-keyvault-update-access-policies
+cloudProvider: AZURE
+resourceType: azure.keyvault
+description: Adds Get and "List" permissions to all key vault access policies for a specific tenant and object ID
+rulesYamlPath: ../azure-keyvault-update-access-policies.yml

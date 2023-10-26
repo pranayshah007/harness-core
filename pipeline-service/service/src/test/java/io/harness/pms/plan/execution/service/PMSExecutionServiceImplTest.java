@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +43,7 @@ import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
@@ -57,6 +60,8 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -81,6 +86,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,6 +116,8 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Mock OrchestrationService orchestrationService;
   @Mock YamlExpressionResolveHelper yamlExpressionResolveHelper;
+  @Mock PMSPipelineService pmsPipelineService;
+  @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -125,6 +133,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
 
   PipelineExecutionSummaryEntity executionSummaryEntity;
   PipelineEntity pipelineEntity;
+  PlanExecutionMetadata planExecutionMetadata;
 
   @Before
   public void setUp() throws IOException {
@@ -153,6 +162,8 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
                                  .pipelineTemplate(template)
                                  .build();
 
+    planExecutionMetadata = PlanExecutionMetadata.builder().inputSetYaml(inputSetYaml).build();
+
     String pipelineYamlFileName = "failure-strategy.yaml";
     String pipelineYaml = Resources.toString(
         Objects.requireNonNull(classLoader.getResource(pipelineYamlFileName)), StandardCharsets.UTF_8);
@@ -172,6 +183,10 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFormCriteria() {
     when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
+
+    doReturn(Arrays.asList(PIPELINE_IDENTIFIER))
+        .when(pmsPipelineService)
+        .getPermittedPipelineIdentifier(any(), any(), any(), any());
     Criteria form = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
         null, null, null, null, null, false, !PIPELINE_DELETED, true);
 
@@ -179,7 +194,10 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
     assertThat(form.getCriteriaObject().get("projectIdentifier").toString().contentEquals(PROJ_IDENTIFIER))
         .isEqualTo(true);
-    assertThat(form.getCriteriaObject().get("pipelineIdentifier").toString().contentEquals(PIPELINE_IDENTIFIER))
+    assertThat(form.getCriteriaObject()
+                   .get("pipelineIdentifier")
+                   .toString()
+                   .contentEquals("Document{{$in=[" + PIPELINE_IDENTIFIER + "]}}"))
         .isEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("status")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
@@ -191,26 +209,33 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         PipelineExecutionFilterPropertiesDTO.builder()
             .triggerIdentifiers(Collections.singletonList("triggerIdentifier"))
             .build();
+    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
     Criteria form1 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, true);
+        null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form1.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
     PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO1 =
         PipelineExecutionFilterPropertiesDTO.builder()
             .triggerTypes(Collections.singletonList(TriggerType.WEBHOOK))
             .build();
     Criteria form2 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
+        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form2.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+    Criteria form3 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
+    assertThat(form3.getCriteriaObject().toString())
+        .isEqualTo(
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testFormCriteriaForParentInfoCriteria() {
+    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
     Criteria form = pmsExecutionService.formCriteria(
         null, null, null, "", null, null, null, null, null, false, !PIPELINE_DELETED, true);
     Criteria childCriteria = new Criteria();
@@ -228,6 +253,8 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testFormCriteriaOROperatorOnModules() {
+    when(pmsPipelineService.getPermittedPipelineIdentifier(any(), any(), any(), any()))
+        .thenReturn(PIPELINE_IDENTIFIER_LIST);
     Criteria form = pmsExecutionService.formCriteriaOROperatorOnModules(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null);
     BasicDBList orList = (BasicDBList) form.getCriteriaObject().get("$or");
@@ -269,6 +296,9 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testGetInputSetYaml() {
+    doReturn(planExecutionMetadata)
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(PLAN_EXECUTION_ID, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
     doReturn(Optional.of(executionSummaryEntity))
         .when(pmsExecutionSummaryRepository)
         .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
@@ -295,10 +325,6 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         StandardCharsets.UTF_8);
 
     String inputSetWithResolvedTriggerExpressionFilename = "inputsetWithResolvedTriggerExpressions.yaml";
-    String inputSetYamlWithResolvedTriggerExpression = Resources.toString(
-        Objects.requireNonNull(
-            classLoaderWithTriggerExpression.getResource(inputSetWithResolvedTriggerExpressionFilename)),
-        StandardCharsets.UTF_8);
 
     PipelineExecutionSummaryEntity executionSummaryEntity1 = PipelineExecutionSummaryEntity.builder()
                                                                  .accountId(ACCOUNT_ID)
@@ -311,6 +337,13 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
                                                                  .inputSetYaml(inputSetYamlWithTriggerExpression)
                                                                  .pipelineTemplate(template)
                                                                  .build();
+
+    PlanExecutionMetadata planExecutionMetadata1 =
+        PlanExecutionMetadata.builder().inputSetYaml(inputSetYamlWithTriggerExpression).build();
+
+    doReturn(planExecutionMetadata1)
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(PLAN_EXECUTION_ID, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
     doReturn(Optional.of(executionSummaryEntity1))
         .when(pmsExecutionSummaryRepository)
         .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
@@ -327,6 +360,51 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
                           .getInputSetYaml();
 
     assertThat(inputSet).isEqualTo(inputSetWithResolvedTriggerExpressionFilename);
+    verify(yamlExpressionResolveHelper, times(1))
+        .resolveExpressionsInYaml(
+            inputSetYamlWithTriggerExpression, PLAN_EXECUTION_ID, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetInputSetYamlWithResolvedExpressionsUsingResolvedFieldFromSummary() throws IOException {
+    ClassLoader classLoaderWithTriggerExpression = this.getClass().getClassLoader();
+    String inputSetWithTriggerExpressionFilename = "inputsetWithTriggerExpression.yaml";
+    String inputSetYamlWithTriggerExpression = Resources.toString(
+        Objects.requireNonNull(classLoaderWithTriggerExpression.getResource(inputSetWithTriggerExpressionFilename)),
+        StandardCharsets.UTF_8);
+
+    String inputSetWithResolvedTriggerExpressionFilename = "inputsetWithResolvedTriggerExpressions.yaml";
+
+    PipelineExecutionSummaryEntity executionSummaryEntity1 =
+        PipelineExecutionSummaryEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .pipelineIdentifier(PIPELINE_IDENTIFIER)
+            .planExecutionId(PLAN_EXECUTION_ID)
+            .name(PLAN_EXECUTION_ID)
+            .runSequence(0)
+            .inputSetYaml(inputSetYamlWithTriggerExpression)
+            .resolvedUserInputSetYaml(inputSetWithResolvedTriggerExpressionFilename)
+            .pipelineTemplate(template)
+            .build();
+    doReturn(Optional.of(executionSummaryEntity1))
+        .when(pmsExecutionSummaryRepository)
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, !PIPELINE_DELETED);
+    doReturn(null).when(pmsGitSyncHelper).getEntityGitDetailsFromBytes(any());
+    doReturn(template).when(validateAndMergeHelper).getPipelineTemplate(any(), any(), any(), any(), any());
+    String inputSet = pmsExecutionService
+                          .getInputSetYamlWithTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID,
+                              PIPELINE_DELETED, false, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)
+                          .getInputSetYaml();
+
+    assertThat(inputSet).isEqualTo(inputSetWithResolvedTriggerExpressionFilename);
+    verify(yamlExpressionResolveHelper, times(0))
+        .resolveExpressionsInYaml(
+            inputSetYamlWithTriggerExpression, PLAN_EXECUTION_ID, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
   }
 
   @Test

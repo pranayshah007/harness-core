@@ -89,10 +89,10 @@ public class CIDelegateTaskExecutor {
         abstractions, task, Collections.emptyList(), Collections.emptyList(), true, ambiance.getStageExecutionId());
   }
 
-  public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
+  public String queueTask(Ambiance ambiance, TaskData taskData, String accountId, List<TaskSelector> taskSelectors) {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
+    return queueTask(abstractions, task, taskSelectors, new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<TaskSelector> taskSelectors,
@@ -105,6 +105,7 @@ public class CIDelegateTaskExecutor {
             .accountId(accountId)
             .serializationFormat(taskData.getSerializationFormat())
             .selectors(taskSelectors)
+            .selectionLogsTrackingEnabled(!taskData.isParked())
             .stageId(stageId)
             .taskType(taskData.getTaskType())
             .taskParameters(extractTaskParameters(taskData))
@@ -137,6 +138,7 @@ public class CIDelegateTaskExecutor {
             .accountId(accountId)
             .serializationFormat(taskData.getSerializationFormat())
             .taskSelectors(taskSelectors)
+            .selectionLogsTrackingEnabled(!taskData.isParked())
             .taskType(taskData.getTaskType())
             .logStreamingAbstractions(logStreamingAbstractions)
             .taskParameters(extractTaskParameters(taskData))

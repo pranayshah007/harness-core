@@ -73,6 +73,7 @@ global:
     stsEndPointUrl: https://sts.us-east-2.amazonaws.com
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
+  deployMode: KUBERNETES_ONPREM
 
 replicaCount: 1
 
@@ -86,7 +87,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80801-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -96,7 +97,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80801-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []

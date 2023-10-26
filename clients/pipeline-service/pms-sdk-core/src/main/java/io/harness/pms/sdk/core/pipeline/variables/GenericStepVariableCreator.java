@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.sdk.core.pipeline.variables;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -39,6 +41,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class GenericStepVariableCreator<T extends AbstractStepNode> extends ChildrenVariableCreator<T> {
   public abstract Set<String> getSupportedStepTypes();

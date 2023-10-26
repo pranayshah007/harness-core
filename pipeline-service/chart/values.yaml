@@ -11,6 +11,7 @@ global:
   commonLabels: {}
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
+  disableFreezeNotifyTemplate: true
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -86,6 +87,8 @@ global:
       gateways:
       hosts:
   opa:
+    enabled: false
+  ssca: 
     enabled: false
 replicaCount: 1
 maxSurge: 1

@@ -6,7 +6,6 @@
  */
 
 package io.harness.terragrunt.v2;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.INFO;
@@ -17,6 +16,7 @@ import static io.harness.provision.TerragruntConstants.VAR_FILE_FORMAT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.APPLY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.DESTROY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.INIT;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.OUTPUT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.PLAN;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.WORKSPACE;
 
@@ -25,7 +25,10 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
@@ -66,6 +69,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Builder
 @AllArgsConstructor(onConstructor = @__({ @Nonnull }))
 @Slf4j
@@ -164,9 +169,10 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse output(@NotNull TerragruntOutputCliRequest request, @NotNull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), OUTPUT);
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile())
-        : TerragruntCommandUtils.output(request.getTerraformOutputsFile());
+        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile(), additionalCliOptions)
+        : TerragruntCommandUtils.output(request.getTerraformOutputsFile(), additionalCliOptions);
     log.info("Execute terragrunt output: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }

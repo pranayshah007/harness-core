@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: empty-resource-groups
+cloudProvider: AZURE
+resourceType: azure.resourcegroup
+description: List all Resource Groups that have no resources in the subscription
+rulesYamlPath: ../empty-resource-groups.yml

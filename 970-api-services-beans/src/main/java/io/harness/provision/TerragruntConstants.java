@@ -6,11 +6,15 @@
  */
 
 package io.harness.provision;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public final class TerragruntConstants {
   public static final String TERRAGRUNT_INIT_COMMAND_FORMAT = "terragrunt init%s %s";
@@ -72,8 +76,6 @@ public final class TerragruntConstants {
   public static final String TF_DEFAULT_BINARY_PATH = "terraform";
 
   public static final String TERRAGRUNT_INFO_TF_BINARY_JSON_PATH = "TerraformBinary";
-  public static final String TERRAGRUNT_OUTPUT_COMMAND_FORMAT = "terragrunt output -json > %s";
-  public static final String TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT = "terragrunt run-all output --json > %s";
 
   private TerragruntConstants() {
     throw new UnsupportedOperationException();

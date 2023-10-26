@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.security.AnchoreStepInfo;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo;
@@ -37,6 +38,7 @@ import io.harness.beans.steps.stepinfo.security.VeracodeStepInfo;
 import io.harness.beans.steps.stepinfo.security.ZapStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAnchoreToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlArgs;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
@@ -345,6 +347,23 @@ public final class STOSettingsUtils {
     if (ingestion != null) {
       map.put(getSTOKey("ingestion_file"),
           resolveStringParameter("ingestion.file", stepType, identifier, ingestion.getFile(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAnchoreFields(
+      AnchoreStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlAnchoreToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_IMAGE_NAME),
+          resolveStringParameter(TOOL_IMAGE_NAME, stepType, identifier, toolData.getImageName(), false));
     }
 
     return map;
@@ -710,6 +729,9 @@ public final class STOSettingsUtils {
     map.putAll(processSTOIngestionFields(stepInfo.getIngestion(), stepType, identifier));
 
     switch (stepInfo.getSTOStepType()) {
+      case ANCHORE:
+        map.putAll(processSTOAnchoreFields((AnchoreStepInfo) stepInfo, stepType, identifier));
+        break;
       case AWS_ECR:
         map.putAll(processSTOAwsEcrFields((AwsEcrStepInfo) stepInfo, stepType, identifier));
         break;

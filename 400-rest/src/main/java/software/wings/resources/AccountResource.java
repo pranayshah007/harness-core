@@ -711,6 +711,7 @@ public class AccountResource {
   @Path("{accountId}/ng/credit")
   public RestResponse<CreditDTO> createNgCredit(@PathParam("accountId") String accountId,
       @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
+    validateAccountExistence(clientAccountId);
     User existingUser = UserThreadLocal.get();
     if (existingUser == null) {
       throw new InvalidRequestException("Invalid User");
@@ -730,6 +731,7 @@ public class AccountResource {
   @Path("{accountId}/ng/credit")
   public RestResponse<List<CreditDTO>> getNgAccountCredit(
       @PathParam("accountId") String accountId, @QueryParam("clientAccountId") @NotNull String clientAccountId) {
+    validateAccountExistence(clientAccountId);
     User existingUser = UserThreadLocal.get();
     if (existingUser == null) {
       throw new InvalidRequestException("Invalid User");
@@ -762,6 +764,26 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to generate smp license").build()))
+          .build();
+    }
+  }
+
+  @PUT
+  @Path("{accountId}/ng/credit")
+  public RestResponse<CreditDTO> updateNgCredit(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
+    validateAccountExistence(clientAccountId);
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.updateAccountCredit(clientAccountId, creditDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to update credit").build()))
           .build();
     }
   }
@@ -847,6 +869,15 @@ public class AccountResource {
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to schedule jobs").build()))
           .build();
+    }
+  }
+
+  private void validateAccountExistence(String accountIdentifier) {
+    try {
+      accountService.get(accountIdentifier);
+    } catch (Exception ex) {
+      log.error(ex.getMessage(), ex);
+      throw ex;
     }
   }
 }

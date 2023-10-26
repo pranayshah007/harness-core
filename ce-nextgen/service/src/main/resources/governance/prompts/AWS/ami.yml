@@ -1,0 +1,3 @@
+filters: cross-account, event, finding, image-age, image-attribute, list-item, marked-for-op, ops-item, reduce, tag-count, unused, value
+actions: auto-tag-user, cancel-launch-permission, copy, copy-related-tag, deregister, invoke-lambda, invoke-sfn, mark-for-op, normalize-tag, notify, post-finding, post-item, put-metric, remove-launch-permissions, remove-tag, rename-tag, set-deprecation, set-permissions, tag, tag-trim, webhook
+customPrompt:

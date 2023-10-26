@@ -183,7 +183,17 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Sort'
+        - in: query
+          name: sort
+          description: Parameter on the basis of which sorting is done.
+          schema:
+            enum:
+              - name
+              - identifier
+              - created
+              - updated
+              - license
+              - supplier
         - schema:
             type: string
           in: query
@@ -277,7 +287,13 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Sort'
+        - in: query
+          description: Parameter on the basis of which sorting is done.
+          name: sort
+          schema:
+            enum:
+              - name
+              - lastUpdateAt
       security:
         - x-api-key: []
       requestBody:
@@ -304,7 +320,13 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Sort'
+        - in: query
+          description: Parameter on the basis of which sorting is done.
+          name: sort
+          schema:
+            enum:
+              - name
+              - lastUpdatedAt
       security:
         - x-api-key: []
   '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/components':
@@ -331,7 +353,13 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Sort'
+        - in: query
+          description: Parameter on the basis of which sorting is done.
+          name: sort
+          schema:
+            enum:
+              - packageName
+              - packageOriginatorName
       security:
         - x-api-key: []
       requestBody:
@@ -365,7 +393,13 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Sort'
+        - in: query
+          description: Parameter on the basis of which sorting is done.
+          name: sort
+          schema:
+            enum:
+              - envName
+              - envType
       security:
         - x-api-key: []
       requestBody:
@@ -374,6 +408,29 @@ paths:
             schema:
               $ref: '#/components/schemas/ArtifactDeploymentViewRequestBody'
         description: ''
+  '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/details':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/Artifact'
+      - $ref: '#/components/parameters/Tag'
+    get:
+      summary: Artifact Details
+      operationId: getArtifactDetails
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactDetailResponseBody'
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+      description: Get artifact details
+      security:
+        - x-api-key: []
+      tags:
+        - artifact
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     Artifact:
@@ -549,6 +606,8 @@ components:
         artifact:
           $ref: '#/components/schemas/Artifact'
         policy_file_id:
+          type: string
+        pipeline_execution_id:
           type: string
       required:
         - enforcement_id
@@ -940,6 +999,37 @@ components:
           type: integer
         non_prod_env_count:
           type: integer
+        enforcement_id:
+          type: string
+      required:
+        - artifact_id
+        - artifact_name
+        - tag
+    ArtifactDetailResponse:
+      title: ArtifactDetailResponse
+      type: object
+      x-examples: {}
+      x-stoplight:
+        id: 763c316659901
+      properties:
+        artifact_id:
+          type: string
+        artifact_name:
+          type: string
+        tag:
+          type: string
+        components_count:
+          type: integer
+        updated:
+          type: string
+        prod_env_count:
+          type: integer
+        non_prod_env_count:
+          type: integer
+        build_pipeline_id:
+          type: string
+        build_pipeline_execution_id:
+          type: string
       required:
         - artifact_id
         - artifact_name
@@ -1027,13 +1117,21 @@ components:
         pipeline_execution_id:
           type: string
         allow_list_policy_violation:
-          type: integer
+          type: string
+        deny_list_policy_violation:
+          type: string
         attested_status:
           type: string
           enum:
             - PASS
             - FAIL
         triggered_by:
+          type: string
+        triggered_by_id:
+          type: string
+        triggered_at:
+          type: string
+        enforcement_id:
           type: string
   parameters:
     OrgParam:
@@ -1086,21 +1184,6 @@ components:
         default: 0
         minimum: 0
       description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
-    Sort:
-      name: sort
-      in: query
-      required: false
-      schema:
-        type: string
-        enum:
-          - name
-          - identifier
-          - created
-          - updated
-          - license
-          - supplier
-        default: name
-      description: Parameter on the basis of which sorting is done.
     Artifact:
       name: artifact
       in: path
@@ -1285,5 +1368,11 @@ components:
           schema:
             type: string
           description: Maximum page size in Paginated response.
+    ArtifactDetailResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ArtifactDetailResponse'
 tags:
   - name: sbomProcessor

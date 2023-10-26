@@ -8,6 +8,7 @@
 package io.harness.aws;
 
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEProxyConfig;
 
@@ -16,6 +17,7 @@ import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.services.codecommit.model.Commit;
 import com.amazonaws.services.codecommit.model.RepositoryMetadata;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
+import com.amazonaws.services.ecr.model.AuthorizationData;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -39,6 +41,8 @@ public interface AwsClient {
   void confirmSnsSubscription(String confirmationMessage, String topicArnString);
 
   String getAmazonEcrAuthToken(AwsConfig awsConfig, String account, String region);
+
+  AuthorizationData getAmazonEcrAuthData(AwsConfig awsConfig, String account, String region);
 
   AWSCredentialsProvider getAssumedCredentialsProvider(AWSCredentialsProvider credentialsProvider,
       String crossAccountRoleArn, @Nullable String externalId, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
@@ -74,4 +78,7 @@ public interface AwsClient {
   Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
 
   String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName);
+
+  EcrImageDetailConfig listEcrImageTags(
+      AwsInternalConfig awsConfig, String registryId, String region, String imageName, int pageSize, String lastTag);
 }

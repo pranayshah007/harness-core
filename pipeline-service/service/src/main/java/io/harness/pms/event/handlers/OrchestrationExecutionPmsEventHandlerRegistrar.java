@@ -34,7 +34,8 @@ public class OrchestrationExecutionPmsEventHandlerRegistrar {
     handlerMap.put(
         ORCHESTRATION_END, Sets.newHashSet(ExpressionUsagesEventHandler.class, PipelineExecutionEndEventHandler.class));
     handlerMap.put(NODE_EXECUTION_STATUS_UPDATE,
-        Sets.newHashSet(PipelineStageExecutionUpdateEventHandler.class, PipelineStepExecutionUpdateEventHandler.class));
+        Sets.newHashSet(PipelineStageExecutionUpdateEventHandler.class, PipelineStepExecutionUpdateEventHandler.class,
+            ResolvedInputSetYamlUpdateEventHandler.class));
     handlerMap.put(NODE_EXECUTION_START, Sets.newHashSet(PipelineStepExecutionUpdateEventHandler.class));
 
     return handlerMap;

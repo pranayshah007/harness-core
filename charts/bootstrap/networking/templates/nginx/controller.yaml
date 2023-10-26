@@ -21,13 +21,20 @@ metadata:
 spec:
   selector:
     app: harness-ingress-controller
-  {{- if .Values.nginx.loadBalancerEnabled }}
+  {{- if or .Values.global.ggIngress.enabled .Values.nginx.clusterIPEnabled }}
+  type: 'ClusterIP'
+  {{- if not (empty .Values.nginx.clusterIP) }}
+  clusterIP: {{ .Values.nginx.clusterIP }}
+  {{- end }}
+  {{- else if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
+  {{- if not (empty .Values.nginx.loadBalancerIP) }}
   loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
+  {{- end }}
   {{- else }}
   type: 'NodePort'
   {{- end }}
-  externalTrafficPolicy: 'Cluster'
+  # externalTrafficPolicy: 'Cluster'
   ports:
   - name: health
     protocol: TCP
@@ -94,6 +101,7 @@ rules:
   - secrets
   - endpoints
   verbs:
+  - update
   - get
   - list
   - watch
@@ -271,4 +279,5 @@ spec:
         - --https-port=8443
         - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
         - --publish-service=$(POD_NAMESPACE)/harness-ingress-controller
+        - --watch-ingress-without-class=true
 {{- end }}

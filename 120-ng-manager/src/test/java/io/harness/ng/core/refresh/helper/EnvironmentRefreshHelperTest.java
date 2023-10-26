@@ -8,9 +8,11 @@
 package io.harness.ng.core.refresh.helper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.account.AccountClient;
@@ -179,6 +181,86 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void validateEnvironmentInputs_whenExpression() throws IOException {
+    String envId = "<+pipeline.variables.environmentRef>";
+    String serviceId = "<+pipeline.variables.serviceRef>";
+
+    doThrow(new RuntimeException("invalid identifier"))
+        .when(environmentService)
+        .get(anyString(), anyString(), anyString(), eq(envId), eq(false));
+
+    doThrow(new RuntimeException("invalid identifier"))
+        .when(serviceOverrideService)
+        .createServiceOverrideInputsYaml(anyString(), anyString(), anyString(), eq(envId), eq(serviceId));
+
+    refreshContext.setResolvedTemplatesYamlNode(buildStageTemplateNodeEnvRuntime(serviceId));
+
+    YamlNode entityNode = buildEnvYamlNode(envId);
+    InputsValidationResponse validationResponse = InputsValidationResponse.builder().isValid(true).build();
+    refreshHelper.validateEnvironmentInputs(entityNode, refreshContext, validationResponse);
+
+    assertThat(validationResponse.isValid()).isTrue();
+
+    JsonNode jsonNode = refreshHelper.refreshEnvironmentInputs(entityNode, refreshContext);
+    assertThat(jsonNode.toPrettyString())
+        .isEqualTo("{\n"
+            + "  \"environmentRef\" : \"<+pipeline.variables.environmentRef>\",\n"
+            + "  \"deployToAll\" : false,\n"
+            + "  \"infrastructureDefinitions\" : \"<+input>\"\n"
+            + "}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SOURABH)
+  @Category(UnitTests.class)
+  public void validateEnvironmentInputs_whenOnlySvcExpression() throws IOException {
+    String envId = "org.env";
+    String serviceId = "<+pipeline.variables.serviceRef>";
+
+    doReturn("serviceOverrideInputs:\n"
+        + "              variables:\n"
+        + "                - name: aa\n"
+        + "                  type: String\n"
+        + "                  value: <+input>")
+        .when(serviceOverrideService)
+        .createServiceOverrideInputsYaml(anyString(), anyString(), anyString(), eq(envId), eq(serviceId));
+
+    refreshContext.setResolvedTemplatesYamlNode(buildStageTemplateNodeEnvRuntime(serviceId));
+
+    YamlNode entityNode = buildEnvYamlNode(envId);
+    InputsValidationResponse validationResponse = InputsValidationResponse.builder().isValid(true).build();
+    refreshHelper.validateEnvironmentInputs(entityNode, refreshContext, validationResponse);
+
+    assertThat(validationResponse.isValid()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SOURABH)
+  @Category(UnitTests.class)
+  public void validateEnvironmentInputs_whenOnlyEnvExpression() throws IOException {
+    String envId = "<+pipeline.variables.environmentRef>";
+    String serviceId = "org.svc";
+
+    doReturn("serviceOverrideInputs:\n"
+        + "              variables:\n"
+        + "                - name: aa\n"
+        + "                  type: String\n"
+        + "                  value: <+input>")
+        .when(serviceOverrideService)
+        .createServiceOverrideInputsYaml(anyString(), anyString(), anyString(), eq(envId), eq(serviceId));
+
+    refreshContext.setResolvedTemplatesYamlNode(buildStageTemplateNodeEnvRuntime(serviceId));
+
+    YamlNode entityNode = buildEnvYamlNode(envId);
+    InputsValidationResponse validationResponse = InputsValidationResponse.builder().isValid(true).build();
+    refreshHelper.validateEnvironmentInputs(entityNode, refreshContext, validationResponse);
+
+    assertThat(validationResponse.isValid()).isTrue();
+  }
+
+  @Test
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void validateInfraDefinitionsIdentifierAsExpression() throws IOException {
@@ -232,7 +314,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         .get(anyString(), anyString(), anyString(), eq(identifier), eq(false));
     doReturn(null)
         .when(environmentService)
-        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier));
+        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), null);
   }
 
   private void mockEnvWithRuntimeInputs(String identifier) {
@@ -257,7 +339,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         + "        type: Number\n"
         + "        value: <+input>")
         .when(environmentService)
-        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier));
+        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), any());
   }
 
   private void mockEnvWithServiceOverrideInputs(String serviceId, String envId) {

@@ -53,7 +53,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(DEL)
 @BreakDependencyOn("software.wings.service.impl.instance.InstanceHelper")
 public class DelegateAgentResourceV2 {
-  private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  private final DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject
   public DelegateAgentResourceV2(DelegateTaskServiceClassic delegateTaskServiceClassic) {

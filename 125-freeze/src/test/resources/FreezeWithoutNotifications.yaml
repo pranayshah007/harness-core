@@ -57,6 +57,16 @@ freeze:
           userGroups: [ ]
           webhookUrl: https://hooks.slack.com/services/TL81600E8/B02JZFVQR0X/fGLkwawLKS2KsSJ5M6
       enabled: false
+    - name: Rule 4
+      identifier: Rule_4
+      events:
+        - type: OnEnableFreezeWindow
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: [ ]
+          webhookUrl: https://hooks.slack.com/services/TL81600E8/B02JZFVQR0X/fGLkwawLKS2KsSJ5M6
+      enabled: false
     - name: Rule 2
       identifier: Rule_2
       events:
@@ -86,6 +96,7 @@ freeze:
       events:
         - type: FreezeWindowEnabled
         - type: DeploymentRejectedDueToFreeze
+        - type: OnEnableFreezeWindow
       notificationMethod:
         type: MsTeams
         spec:

@@ -1,2 +1,3 @@
 DOCKER_FILE_PATH: /harness/harness-core/315-sto-manager/build/container/Dockerfile-sto-manager-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/315-sto-manager/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml

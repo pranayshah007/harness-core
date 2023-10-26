@@ -10,6 +10,7 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.cdng.K8sHelmCommonStepHelper.MANIFEST_SOURCE_IDENTIFIER;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.cdng.k8s.K8sStepHelper.RELEASE_NAME;
 import static io.harness.cdng.k8s.yaml.YamlUtility.REDACTED_BY_HARNESS;
@@ -33,6 +34,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -93,6 +95,7 @@ import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.ManifestSourceWrapper;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
 import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
@@ -100,6 +103,7 @@ import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
@@ -112,6 +116,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
@@ -195,6 +200,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -284,11 +290,17 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Spy @InjectMocks private K8sStepHelper k8sStepHelper;
 
   @Mock private LogCallback mockLogCallback;
+
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
   private final String ENCODED_REPO_NAME = "c26979e4-1d8c-344e-8181-45f484c57fe5";
@@ -318,7 +330,13 @@ public class K8sStepHelperTest extends CDNGTestBase {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .build())
+        .build();
   }
 
   @Test
@@ -1209,7 +1227,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -3966,7 +3984,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4150,7 +4168,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName());
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4431,7 +4449,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4806,11 +4824,25 @@ public class K8sStepHelperTest extends CDNGTestBase {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testTaskTypeOciEcrConfig() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    ManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
+            .build();
+    TaskType expectedTaskType = TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testK8sTaskTypeRancher() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER, null);
   }
 
   @Test
@@ -4819,7 +4851,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
   public void testK8sTaskTypeHooks() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2, null);
   }
 
   @Test
@@ -4827,16 +4859,19 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testK8sTaskType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG, null);
   }
 
-  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType,
+      ManifestDelegateConfig manifestDelegateConfig) {
     try (MockedStatic<K8sTaskCapabilityHelper> mockK8s = mockStatic(K8sTaskCapabilityHelper.class);
-         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class)) {
+         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class);
+         MockedStatic<AwsCapabilityHelper> mockAws = mockStatic(AwsCapabilityHelper.class)) {
       mockK8s.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
           .thenReturn(emptyList());
       mockRancher.when(() -> RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any()))
           .thenReturn(emptyList());
+      mockAws.when(() -> AwsCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any())).thenReturn(emptyList());
       StepElementParameters stepElementParameters = mock(StepElementParameters.class);
       K8sSpecParameters specParameters = mock(K8sSpecParameters.class);
       doReturn(specParameters).when(stepElementParameters).getSpec();
@@ -4845,6 +4880,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
       K8sDeployRequest k8sDeployRequest = K8sRollingDeployRequest.builder()
                                               .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                               .serviceHooks(List.of(hook))
+                                              .manifestDelegateConfig(manifestDelegateConfig)
                                               .build();
       ArgumentCaptor<TaskType> taskTypeArgumentCaptor = ArgumentCaptor.forClass(TaskType.class);
 
@@ -4986,6 +5022,104 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .renderExpression(any(Ambiance.class), any(), eq(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
     verify(engineExpressionService, times(1))
         .renderExpression(any(Ambiance.class), eq(yaml), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testManifestSourceStepParameters() throws Exception {
+    GitStore gitStoreStepLevel =
+        GitStore.builder()
+            .branch(ParameterField.createValueField("master"))
+            .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/step-values.yaml")))
+            .connectorRef(ParameterField.createValueField("git-connector"))
+            .build();
+    GitStore gitStoreStepLevelSource =
+        GitStore.builder()
+            .branch(ParameterField.createValueField("master"))
+            .paths(ParameterField.createValueField(asList("path/to/k8s/manifest/templates/deployment.yaml")))
+            .connectorRef(ParameterField.createValueField("git-connector"))
+            .build();
+    StoreConfigWrapper storeConfigWrapper = StoreConfigWrapper.builder().spec(gitStoreStepLevelSource).build();
+    K8sApplyStepParameters applyStepParams = new K8sApplyStepParameters();
+    applyStepParams.setSkipDryRun(ParameterField.ofNull());
+    applyStepParams.setSkipSteadyStateCheck(ParameterField.ofNull());
+    applyStepParams.setOverrides(
+        Arrays.asList(ManifestConfigWrapper.builder()
+                          .manifest(ManifestConfig.builder()
+                                        .spec(ValuesManifest.builder()
+                                                  .store(ParameterField.createValueField(
+                                                      StoreConfigWrapper.builder().spec(gitStoreStepLevel).build()))
+                                                  .build())
+                                        .build())
+                          .build()));
+    applyStepParams.setManifestSource(
+        ManifestSourceWrapper.builder()
+            .spec(K8sManifest.builder()
+                      .store(ParameterField.createValueField(storeConfigWrapper))
+                      .valuesPaths(ParameterField.createValueField(asList("path/to/helm/chart/valuesOverride.yaml")))
+                      .build())
+            .build());
+
+    StepElementParameters stepElementParametersApplyStep =
+        StepElementParameters.builder().spec(applyStepParams).build();
+
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).build();
+
+    K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().identifier("k8s").build();
+
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("k8s", k8sManifestOutcome);
+
+    RefObject manifests = RefObject.newBuilder()
+                              .setName(OutcomeExpressionConstants.MANIFESTS)
+                              .setKey(OutcomeExpressionConstants.MANIFESTS)
+                              .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                              .build();
+
+    RefObject infra = RefObject.newBuilder()
+                          .setName(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setKey(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                          .build();
+
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    ManifestFiles manifestFiles = ManifestFiles.builder()
+                                      .fileName("template.yaml")
+                                      .filePath("path/to/k8s/manifest/template.yaml")
+                                      .fileContent("Test")
+                                      .build();
+    doReturn(Optional.of(getFileStoreNode(manifestFiles.getFilePath(), manifestFiles.getFileName())))
+        .when(fileStoreService)
+        .getWithChildrenByPath(any(), any(), any(), any(), eq(true));
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url(SOME_URL).build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+    doReturn(k8sDirectInfrastructureOutcome).when(outcomeService).resolve(eq(ambiance), eq(infra));
+    TaskChainResponse taskChainResponse =
+        k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, stepElementParametersApplyStep);
+    K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(k8sStepPassThroughData.getManifestOutcome().getStore().retrieveFilePaths().get(0))
+        .isEqualTo("path/to/k8s/manifest/templates/deployment.yaml");
+    assertThat(k8sStepPassThroughData.getManifestOutcome().getIdentifier()).isEqualTo(MANIFEST_SOURCE_IDENTIFIER);
+    assertThat(k8sStepPassThroughData.getManifestOutcomeList().size()).isEqualTo(2);
+    assertThat(k8sStepPassThroughData.getManifestOutcomeList().get(1).getType()).isEqualTo("Values");
+    assertThat(k8sStepPassThroughData.getManifestOutcomeList().get(1).getStore().getKind()).isEqualTo("Git");
+    assertThat(
+        ((GitStore) k8sStepPassThroughData.getManifestOutcomeList().get(1).getStore()).getPaths().getValue().get(0))
+        .isEqualTo("path/to/k8s/manifest/step-values.yaml");
   }
 
   @Test

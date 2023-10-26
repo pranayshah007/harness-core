@@ -50,9 +50,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsConfig;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.chartmuseum.ChartMuseumServer;
 import io.harness.chartmuseum.ChartmuseumClient;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
@@ -68,6 +73,7 @@ import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig.HelmChartManifestDelegateConfigBuilder;
 import io.harness.encryption.SecretRefData;
@@ -84,12 +90,15 @@ import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
+import com.amazonaws.services.ecr.model.AuthorizationData;
+import com.amazonaws.util.Base64;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import lombok.AccessLevel;
@@ -127,6 +136,8 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   @Mock ProcessExecutor processExecutor;
   @Mock LogCallback logCallback;
   @Mock StartedProcess chartmuseumStartedProcess;
+  @Mock AwsClient awsClient;
+  @Mock AwsNgConfigMapper awsNgConfigMapper;
 
   ChartMuseumServer chartMuseumServer;
   final HelmCommandFlag emptyHelmCommandFlag = HelmCommandFlag.builder().build();
@@ -432,7 +443,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                     .repoName(REPO_NAME)
                     .basePath("helm/")
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder()
@@ -474,6 +485,82 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
+  public void testDownloadChartFilesFromOciEcrRepo() throws Exception {
+    String repoUrl = "test.awsecr.io";
+    String username = "AWS";
+    char[] password = "password".toCharArray();
+    String pass = username + ":password";
+    String encodedString = Base64.encodeAsString(pass.getBytes());
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+    String region = "region";
+    String registryId = "registryId";
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+            .useCache(true)
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoUrl(repoUrl)
+                    .repoName(REPO_NAME)
+                    .basePath("helm/")
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .awsConnectorDTO(AwsConnectorDTO.builder().credential(AwsCredentialDTO.builder().build()).build())
+                    .registryId(registryId)
+                    .region(region)
+                    .build())
+            .build();
+    AuthorizationData authorizationData = new AuthorizationData();
+    authorizationData.setAuthorizationToken(encodedString);
+    authorizationData.setExpiresAt(new Date(System.currentTimeMillis() + 600000));
+
+    String updatedRepoName = "oci://test.awsecr.io/helm";
+    doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(repoUrl).when(awsClient).getEcrImageUrl(any(), eq(registryId), eq(region), eq(CHART_NAME));
+    doReturn(AwsConfig.builder().build()).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any(), any());
+    doReturn(authorizationData).when(awsClient).getAmazonEcrAuthData(any(), anyString(), eq(region));
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+    verify(awsNgConfigMapper, times(1)).mapAwsConfigWithDecryption(any(), any(), any());
+    verify(awsClient, times(1)).getAmazonEcrAuthData(any(), anyString(), eq(region));
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+
+    // Test Caching
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+    verify(awsClient, times(1)).getAmazonEcrAuthData(any(), anyString(), eq(region));
+    verify(awsNgConfigMapper, times(2)).mapAwsConfigWithDecryption(any(), any(), any());
+    verify(helmTaskHelperBase, times(2))
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    verify(helmTaskHelperBase, times(2))
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
   public void testDownloadChartFilesFromOciRepoAnonymousAuth() throws Exception {
     String repoUrl = "oci://test.azurecr.io";
     String chartOutput = "/directory";
@@ -491,7 +578,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                     .repoName(REPO_NAME)
                     .basePath("helm/")
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder().authType(OciHelmAuthType.ANONYMOUS).build())
@@ -537,7 +624,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                 OciHelmStoreDelegateConfig.builder()
                     .repoName(REPO_NAME)
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder()
@@ -555,6 +642,68 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     String updatedRepoName = "oci://test.azurecr.io";
 
     doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testDownloadChartFilesFromOciEcrRepoWithEmptyBasePath() throws Exception {
+    String repoUrl = "test.awsecr.io";
+    String username = "AWS";
+    char[] password = "password".toCharArray();
+    String pass = username + ":password";
+    String encodedString = Base64.encodeAsString(pass.getBytes());
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+    String region = "region";
+    String registryId = "registryId";
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+            .useCache(true)
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoUrl(repoUrl)
+                    .repoName(REPO_NAME)
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .awsConnectorDTO(AwsConnectorDTO.builder().credential(AwsCredentialDTO.builder().build()).build())
+                    .registryId(registryId)
+                    .region(region)
+                    .build())
+            .build();
+    AuthorizationData authorizationData = new AuthorizationData();
+    authorizationData.setAuthorizationToken(encodedString);
+    authorizationData.setExpiresAt(new Date(System.currentTimeMillis()));
+
+    String updatedRepoName = "oci://test.awsecr.io";
+    doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
+    doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
+    doReturn(repoUrl).when(awsClient).getEcrImageUrl(any(), eq(registryId), eq(region), eq(CHART_NAME));
+    doReturn(AwsConfig.builder().build()).when(awsNgConfigMapper).mapAwsConfigWithDecryption(any(), any(), any());
+    doReturn(authorizationData).when(awsClient).getAmazonEcrAuthData(any(), anyString(), eq(region));
     doNothing()
         .when(helmTaskHelperBase)
         .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),

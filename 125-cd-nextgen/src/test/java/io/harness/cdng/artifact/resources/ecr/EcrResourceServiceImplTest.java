@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -35,6 +36,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -146,7 +149,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactTaskExecutionResponse(
@@ -250,7 +254,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                         .projectIdentifier(PROJECT_IDENTIFIER)
                         .build());
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactTaskExecutionResponse(
@@ -291,7 +296,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
                         .projectIdentifier(PROJECT_IDENTIFIER)
                         .build());
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactTaskExecutionResponse(
@@ -336,7 +342,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     ls.add("first");
     ls.add("second");
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -376,7 +383,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactTaskExecutionResponse(
@@ -418,7 +426,8 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null, null);
 
-    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), any(EcrArtifactDelegateRequest.class), any(TaskParameters.class), anyString()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

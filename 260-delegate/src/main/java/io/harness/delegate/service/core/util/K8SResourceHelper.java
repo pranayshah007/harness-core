@@ -14,7 +14,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class K8SResourceHelper {
-  private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
+  private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_|/");
 
   @NonNull
   public static String getPodName(final String taskGroupId) {

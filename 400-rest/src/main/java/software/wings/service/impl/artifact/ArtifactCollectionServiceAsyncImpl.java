@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.artifact;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -16,8 +15,11 @@ import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -62,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 /***
  * Service responsible to glue all artifact
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -180,9 +184,9 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
 
     waitNotifyEngine.waitForAllOn(GENERAL,
         new BuildSourceCallback(accountId, artifactStream.getUuid(), permitId, artifactStream.getSettingId()), waitId);
-    log.info("Queuing delegate task for artifactStream with waitId {}", waitId);
+    log.debug("Queuing delegate task for artifactStream with waitId {}", waitId);
     final String taskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
-    log.info("Queued delegate taskId {} for artifactStream type: {} and source: {}", taskId,
+    log.debug("Queued delegate taskId {} for artifactStream type: {} and source: {}", taskId,
         artifactStream.getArtifactStreamType(), artifactStream.getSourceName());
   }
 

@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
 import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
@@ -131,8 +130,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
       if (stepParametersSpec.getConfiguration().getEncryptOutputSecretManager() != null
           && stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
           && !ParameterField.isBlank(
-              stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
-          && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+              stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())) {
         String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
             stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
 
@@ -300,7 +298,11 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .useOptimizedTfPlan(true)
         .isTerraformCloudCli(isTerraformCloudCli)
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-        .skipTerraformRefresh(skipRefreshCommand);
+        .skipStateStorage(
+            ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getConfiguration().getSkipStateStorage()))
+        .skipTerraformRefresh(skipRefreshCommand)
+        .providerCredentialDelegateInfo(
+            helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
     return builder;
   }
 
@@ -320,6 +322,13 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(provisionerIdentifier, APPLY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential terraformProviderCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(terraformProviderCredential, ambiance));
+    }
 
     return builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
@@ -346,6 +355,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .encryptDecryptPlanForHarnessSMOnManager(
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+        .skipStateStorage(inheritOutput.isSkipStateStorage())
         .useOptimizedTfPlan(true);
   }
 
@@ -358,13 +368,16 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     StepResponseBuilder stepResponseBuilder =
         createStepResponseBuilder(terraformTaskNGResponse, terraformPassThroughData);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
+      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
       helper.saveRollbackDestroyConfigInline(
           stepParameters, terraformTaskNGResponse, ambiance, terraformPassThroughData);
-      addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      if (!ParameterFieldHelper.getBooleanParameterFieldValue(
+              stepParameters.getConfiguration().getSkipStateStorage())) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
@@ -382,12 +395,17 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     StepResponseBuilder stepResponseBuilder =
         createStepResponseBuilder(terraformTaskNGResponse, terraformPassThroughData);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
-      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
       addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
+      TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(
+          ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(),
+          ambiance);
+      if (!inheritOutput.isSkipStateStorage()) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys = new HashMap<>();
@@ -449,8 +467,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     if (stepParameters.getConfiguration().getEncryptOutputSecretManager() != null
         && stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef() != null
         && !ParameterField.isBlank(
-            stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
-        && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+            stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())) {
       String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
           stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
       String provisionerId = ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());

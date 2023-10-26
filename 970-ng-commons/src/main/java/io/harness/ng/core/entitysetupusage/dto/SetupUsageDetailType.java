@@ -30,7 +30,8 @@ public enum SetupUsageDetailType {
 
   TEMPLATE_REFERRED_BY_CONNECTOR,
   PIPELINE_REFERED_BY_PIPELINES,
-  SECRET_REFERRED_BY_SECRET;
+  SECRET_REFERRED_BY_SECRET,
+  ENTITY_REFERRED_BY_OVERRIDES;
 
   public static boolean isReferredByPipeline(String setupUsageDetailType) {
     SetupUsageDetailType type = SetupUsageDetailType.valueOf(setupUsageDetailType);

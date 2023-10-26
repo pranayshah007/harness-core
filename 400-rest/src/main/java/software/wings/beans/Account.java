@@ -6,7 +6,6 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
@@ -18,8 +17,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.ACCOUNT;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.license.CeLicenseInfo;
@@ -69,6 +71,7 @@ import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(DX)
 @TargetModule(HarnessModule._955_ACCOUNT_MGMT)
 @FieldNameConstants(innerTypeName = "AccountKeys")
@@ -97,6 +100,15 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                 .field(AccountKeys.accountStatusKey)
                 .field(AccountKeys.accountType)
                 .field(AccountKeys.workflowDataCollectionIteration)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("appId_uuid_accountName_companyName_licenseInfo_encryptedLicenseInfo")
+                .field(AccountKeys.appId)
+                .field(AccountKeys.uuid)
+                .field(AccountKeys.accountName)
+                .field(AccountKeys.companyName)
+                .field(AccountKeys.licenseInfo)
+                .field(AccountKeys.encryptedLicenseInfo)
                 .build())
         .build();
   }
@@ -934,5 +946,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
     public static final String accountStatusKey = "licenseInfo.accountStatus";
     public static final String accountType = "licenseInfo.accountType";
+    public static final String appId = "appId";
   }
 }

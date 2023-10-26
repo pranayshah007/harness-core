@@ -6,9 +6,11 @@
  */
 
 package io.harness.service.instance;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.models.ActiveServiceInstanceInfo;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceService {
   InstanceDTO save(InstanceDTO instanceDTO);
@@ -63,6 +66,9 @@ public interface InstanceService {
 
   List<InstanceDTO> getActiveInstancesByInstanceInfo(
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName);
+
+  List<InstanceDTO> getActiveInstancesByInstanceInfoAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName);
 
   AggregationResults<EnvBuildInstanceCount> getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);

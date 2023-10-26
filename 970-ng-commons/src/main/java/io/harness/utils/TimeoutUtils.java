@@ -25,6 +25,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class TimeoutUtils {
   public final String DEFAULT_TIMEOUT = "10h";
+  public final String DEFAULT_STAGE_TIMEOUT = "15w";
 
   public long getTimeoutInSeconds(Timeout timeout, long defaultTimeoutInSeconds) {
     if (timeout == null) {
@@ -64,6 +65,17 @@ public class TimeoutUtils {
     return timeout;
   }
 
+  public ParameterField<Timeout> getStageTimeout(ParameterField<Timeout> timeout) {
+    if (ParameterField.isNull(timeout)) {
+      return ParameterField.createValueField(Timeout.fromString(DEFAULT_STAGE_TIMEOUT));
+    }
+    // If the timeout field is runtime input then use default value
+    if (timeout.isExpression() && NGExpressionUtils.matchesInputSetPattern(timeout.getExpressionValue())) {
+      return ParameterField.createValueField(Timeout.fromString(DEFAULT_STAGE_TIMEOUT));
+    }
+    return timeout;
+  }
+
   public ParameterField<Timeout> getTimeoutWithDefaultValue(ParameterField<Timeout> timeout, String defaultValue) {
     if (ParameterField.isNull(timeout)) {
       return ParameterField.createValueField(Timeout.fromString(defaultValue));
@@ -85,6 +97,15 @@ public class TimeoutUtils {
     }
   }
 
+  public ParameterField<String> getTimeoutParameterFieldStringForStage(ParameterField<Timeout> timeoutParameterField) {
+    ParameterField<Timeout> timeout = getStageTimeout(timeoutParameterField);
+    if (timeout.isExpression()) {
+      return ParameterField.createExpressionField(
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+    } else {
+      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
+    }
+  }
   public ParameterField<String> getTimeoutParameterFieldStringWithDefaultValue(
       ParameterField<Timeout> timeoutParameterField, String defaultValue) {
     ParameterField<Timeout> timeout = getTimeoutWithDefaultValue(timeoutParameterField, defaultValue);

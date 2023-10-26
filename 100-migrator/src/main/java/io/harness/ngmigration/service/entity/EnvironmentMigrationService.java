@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
@@ -17,8 +16,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -84,6 +86,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentMigrationService extends NgMigrationService {
@@ -193,6 +196,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
           .build();
     }
     NGEnvironmentInfoConfig environmentConfig = ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
+
     EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
                                                       .identifier(environmentConfig.getIdentifier())
                                                       .type(environmentConfig.getType())
@@ -208,6 +212,23 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .createEnvironment(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(environmentRequestDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      environmentRequestDTO = EnvironmentRequestDTO.builder()
+                                  .identifier(environmentConfig.getIdentifier())
+                                  .type(environmentConfig.getType())
+                                  .orgIdentifier(environmentConfig.getOrgIdentifier())
+                                  .projectIdentifier(environmentConfig.getProjectIdentifier())
+                                  .name(environmentConfig.getName())
+                                  .tags(environmentConfig.getTags())
+                                  .description(environmentConfig.getDescription())
+                                  .yaml(getYamlStringV2(yamlFile))
+                                  .build();
+      resp = ngClient
+                 .createEnvironment(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(environmentRequestDTO))
+                 .execute();
+    }
     log.info("Environment creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

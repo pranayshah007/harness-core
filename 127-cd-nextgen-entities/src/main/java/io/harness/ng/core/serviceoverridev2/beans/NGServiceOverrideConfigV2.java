@@ -9,8 +9,12 @@ package io.harness.ng.core.serviceoverridev2.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,11 +34,19 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("serviceOverrideConfig")
-public class NGServiceOverrideConfigV2 {
-  @NonNull String identifier;
+@SimpleVisitorHelper(helperClass = NGServiceOverrideConfigV2VisitorHelper.class)
+public class NGServiceOverrideConfigV2 implements Visitable {
+  @JsonProperty("serviceOverride") @NonNull String identifier;
   @NonNull ServiceOverridesType type;
   @NonNull ServiceOverridesSpec spec;
   @NonNull String environmentRef;
   String serviceRef;
   String infraId;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add("spec", spec);
+    return children;
+  }
 }

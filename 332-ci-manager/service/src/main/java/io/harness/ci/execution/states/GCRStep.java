@@ -153,6 +153,12 @@ public class GCRStep extends AbstractStepExecutable {
     Map<String, String> labels =
         resolveMapParameter("labels", "BuildAndPushGCR", identifier, gcrStepInfo.getLabels(), false);
 
-    return new BuildMetadata(repo, buildArgs, context, dockerFile, labels);
+    return BuildMetadata.builder()
+        .image(repo)
+        .dockerFile(dockerFile)
+        .buildArgs(buildArgs)
+        .context(context)
+        .labels(labels)
+        .build();
   }
 }

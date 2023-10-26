@@ -19,6 +19,8 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.CacheResponse;
@@ -31,9 +33,13 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
+import io.harness.utils.YamlPipelineUtils;
 
+import java.io.IOException;
+import java.util.Map;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -41,18 +47,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ServiceElementMapper {
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
+    NGServiceConfig ngServiceConfig = getNgServiceConfig(serviceRequestDTO);
+
     ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .identifier(serviceRequestDTO.getIdentifier())
+                                      .identifier(ngServiceConfig.getNgServiceV2InfoConfig().getIdentifier())
                                       .accountId(accountId)
                                       .orgIdentifier(serviceRequestDTO.getOrgIdentifier())
                                       .projectIdentifier(serviceRequestDTO.getProjectIdentifier())
-                                      .name(serviceRequestDTO.getName())
-                                      .description(serviceRequestDTO.getDescription())
-                                      .tags(convertToList(serviceRequestDTO.getTags()))
+                                      .name(ngServiceConfig.getNgServiceV2InfoConfig().getName())
+                                      .description(ngServiceConfig.getNgServiceV2InfoConfig().getDescription())
+                                      .tags(convertToList(ngServiceConfig.getNgServiceV2InfoConfig().getTags()))
                                       .yaml(serviceRequestDTO.getYaml())
                                       .build();
-    // This also validates the service yaml
-    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
@@ -61,7 +68,69 @@ public class ServiceElementMapper {
     if (ngServiceV2InfoConfig.getServiceDefinition() != null) {
       serviceEntity.setType(ngServiceV2InfoConfig.getServiceDefinition().getType());
     }
+
     return serviceEntity;
+  }
+
+  private NGServiceConfig getNgServiceConfig(ServiceRequestDTO serviceRequestDTO) {
+    NGServiceConfig ngServiceConfig;
+    if (isNotEmpty(serviceRequestDTO.getYaml())) {
+      try {
+        ngServiceConfig = YamlPipelineUtils.read(serviceRequestDTO.getYaml(), NGServiceConfig.class);
+        validateFieldsOrThrow(ngServiceConfig.getNgServiceV2InfoConfig(), serviceRequestDTO);
+
+      } catch (IOException e) {
+        throw new InvalidRequestException(
+            String.format("Cannot create service ng with Identifier : %s service config due to " + e.getMessage(),
+                serviceRequestDTO.getIdentifier()));
+      }
+    } else {
+      ngServiceConfig = NGServiceConfig.builder()
+                            .ngServiceV2InfoConfig(NGServiceV2InfoConfig.builder()
+                                                       .name(serviceRequestDTO.getName())
+                                                       .identifier(serviceRequestDTO.getIdentifier())
+                                                       .description(serviceRequestDTO.getDescription())
+                                                       .tags(serviceRequestDTO.getTags())
+                                                       .build())
+                            .build();
+    }
+    String name = isEmpty(serviceRequestDTO.getName()) ? ngServiceConfig.getNgServiceV2InfoConfig().getName()
+                                                       : serviceRequestDTO.getName();
+
+    String description = isEmpty(serviceRequestDTO.getDescription())
+        ? ngServiceConfig.getNgServiceV2InfoConfig().getDescription()
+        : serviceRequestDTO.getDescription();
+
+    Map<String, String> tags = isEmpty(serviceRequestDTO.getTags())
+        ? ngServiceConfig.getNgServiceV2InfoConfig().getTags()
+        : serviceRequestDTO.getTags();
+
+    ngServiceConfig.getNgServiceV2InfoConfig().setName(name);
+    ngServiceConfig.getNgServiceV2InfoConfig().setDescription(description);
+    ngServiceConfig.getNgServiceV2InfoConfig().setTags(tags);
+
+    return ngServiceConfig;
+  }
+
+  private void validateFieldsOrThrow(NGServiceV2InfoConfig fromYaml, ServiceRequestDTO serviceRequestDTO) {
+    if (StringUtils.compare(serviceRequestDTO.getIdentifier(), fromYaml.getIdentifier()) != 0) {
+      throw new InvalidRequestException(
+          String.format("Service Identifier : %s in service request doesn't match with identifier : %s given in yaml",
+              serviceRequestDTO.getIdentifier(), fromYaml.getIdentifier()));
+    }
+
+    // not using StringUtils.compare() here as we replace service name with identifier when name field is empty
+    if (isNotEmpty(serviceRequestDTO.getName()) && isNotEmpty(fromYaml.getName())
+        && !serviceRequestDTO.getName().equals(fromYaml.getName())) {
+      throw new InvalidRequestException(
+          String.format("Service Name : %s in service request doesn't match with name : %s given in yaml",
+              serviceRequestDTO.getName(), fromYaml.getName()));
+    }
+
+    ServiceDefinition serviceDefinition = fromYaml.getServiceDefinition();
+    if (serviceDefinition != null) {
+      NGServiceEntityMapper.validateManifests(serviceDefinition);
+    }
   }
 
   public ServiceResponseDTO writeDTO(ServiceEntity serviceEntity) {
@@ -120,6 +189,7 @@ public class ServiceElementMapper {
         .cacheState(cacheResponse.getCacheState())
         .ttlLeft(cacheResponse.getTtlLeft())
         .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 
@@ -144,6 +214,10 @@ public class ServiceElementMapper {
         .deleted(serviceEntity.getDeleted())
         .tags(convertToMap(serviceEntity.getTags()))
         .version(serviceEntity.getVersion())
+        .storeType(serviceEntity.getStoreType())
+        .fallbackBranch(serviceEntity.getFallBackBranch())
+        .connectorRef(serviceEntity.getConnectorRef())
+        .entityGitDetails(getEntityGitDetails(serviceEntity))
         .build();
   }
 

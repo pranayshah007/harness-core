@@ -8,38 +8,46 @@
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
     "isConditional": true,
-    "conditionalInputValueDescription": "Branch name"
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Calculates average time taken to merge pull requests.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 pull requests.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the branch name in the conditional input field."
   },
   {
     "id": "64d5c505c94f589f936c04d7",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "pagerdutyAnnotationExists",
-    "name": "Pagerduty is set (boolean)",
+    "name": "Pagerduty is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.metadata.annotations.\"pagerduty.com/service-id\"!=null",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Checks if the catalog YAML file has the annotation pagerduty.com/service-id configured or not.",
+    "detailedDescription": "**How it's calculated:** The catalog YAML is inspected to check if the pagerduty.com/service-id is present under the metadata field.\n\n**Prerequisites:** The PagerDuty plugin needs to be configured and enabled in the admin section. Refer: [Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/)"
   },
   {
     "id": "64d5f2bc387ee61486eed6f6",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Branch protection is set (boolean)",
+    "name": "Branch protection is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_branch_protection_set",
     "isConditional": true,
-    "conditionalInputValueDescription" : "Branch name"
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Checks the branch protection rule if it is not allowed to force push and delete.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** GitHub Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "techDocsAnnotationExists",
-    "name": "Documentation exists (boolean)",
+    "name": "Documentation exists",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.metadata.annotations.\"backstage.io/techdocs-ref\"!=null",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Checks if the catalog YAML file has the annotation backstage.io/techdocs-ref configured or not.",
+    "detailedDescription": "**How it's calculated:** The catalog YAML is inspected to check if the backstage.io/techdocs-ref is present under the metadata field.\n\n**Prerequisites:** The directory configured should have the mkdocs.yml file and a docs directory having all the documentation in markdown format."
   },
   {
     "id": "64e44efc95107f65e31c51f7",
@@ -49,7 +57,9 @@
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.spec.owner!=null && catalog.spec.owner!=\"Unknown\"",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Checks if the catalog YAML file has the owner configured or not",
+    "detailedDescription": "**How it's calculated:** The catalog YAML is inspected to check if the owner is under the spec field and the owner should not be Unknown."
   },
   {
     "id": "64ecede6b5fd454d919d01f0",
@@ -60,7 +70,9 @@
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_file_exists",
     "isConditional": true,
-    "conditionalInputValueDescription": "File path (e.g. src/index.js)"
+    "conditionalInputValueDescription": "File path (e.g. src/index.js)",
+    "description": "Checks if the given filename exist or not.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and find if the file is present or not. Make sure to mention the filename with extension or relative path from the root folder (Eg: README.md or docs/README.md) in the conditional input field.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
   },
   {
     "id": "64ef7973f616c89330020df5",
@@ -69,7 +81,9 @@
     "name": "STO stage added in pipeline",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_sto_scan_dsl"
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
+    "description": "Checks if STO stage is added in pipelines.",
+    "detailedDescription": "**How it's calculated:** Calculation is done for both CI and CD pipelines.The first pipeline mentioned in catalog info YAML for CI is considered for calculation and for CD, pipeline which did the latest deployment using the first mentioned service is considered.Pipelines are evaluated if they have STO stage added in them or not.\n\n**Prerequisites:** New annotation for Harness NextGen CI/CD plugin should be configured in catalog info YAML (harness.io/pipelines and harness.io/services).Refer: [Link](https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd)"
   },
   {
     "id": "64ef79bbf616c89330020df6",
@@ -78,7 +92,9 @@
     "name": "Policy evaluation successful",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl"
+    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl",
+    "description": "Checks if policy evaluation is successful for pipelines.",
+    "detailedDescription": "**How it's calculated:** Calculation is done for both CI and CD pipelines.The first pipeline mentioned in catalog info YAML for CI is considered for calculation and for CD, pipeline which did the latest deployment using the first mentioned service is considered.Pipelines are evaluated if the policy evaluation is successful or not for the latest executions.\n\n**Prerequisites:** New annotation for Harness NextGen CI/CD plugin should be configured in catalog info YAML (harness.io/pipelines and harness.io/services).Refer: [Link](https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd)"
   },
   {
     "id": "64ef7a5ff616c89330020df7",
@@ -87,34 +103,42 @@
     "name": "CI Pipeline success rate (last 7 days)",
     "type": "NUMBER",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days"
+    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days",
+    "description": "Checks the pipeline success percent rate in last 7 days.",
+    "detailedDescription": "**How it's calculated:** Calculation is done for CI pipeline.The first pipeline mentioned in catalog info YAML for CI is considered for calculation. Pipeline is evaluted if the success rate of pipeline is more than the provided threshold value.\n\n**Prerequisites:** New annotation for Harness NextGen CI/CD plugin should be configured in catalog info YAML (harness.io/pipelines and harness.io/services).Refer: [Link](https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd)"
   },
   {
     "id": "64ef7ac1f616c89330020df8",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "noTestsFailingInCiPipeline",
-    "name": "Tests passing on CI (boolean)",
+    "name": "Tests passing on CI",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero"
+    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero",
+    "description": "Checks all the test cases passing on CI pipeline",
+    "detailedDescription": "**How it's calculated:** Calculation is done for CI pipeline.The first pipeline mentioned in catalog info YAML for CI is considered for calculation. Pipeline is evaluted if number of test failing on CI pipeline is zero for latest execution.\n\n**Prerequisites:** New annotation for Harness NextGen CI/CD plugin should be configured in catalog info YAML (harness.io/pipelines and harness.io/services).Refer: [Link](https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd)"
   },
   {
     "id": "65006db0c28a1a3f5607e851",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isOnCallSet",
-    "name": "Is on-call set (boolean)",
+    "name": "Is on-call set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+    "dataSourceLocationIdentifier": "pagerduty_service_directory",
+    "description": "Checks if on call is set for given service.",
+    "detailedDescription": "**How it's calculated:** For the given service on PagerDuty it checks if on call is set or not.\n\n**Prerequisites:** The PagerDuty plugin needs to be configured and enabled in the admin section. Refer: [Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/)"
   },
   {
     "id": "65009b5dc28a1a3f5607f808",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isEscalationPolicySet",
-    "name": "Is Escalation Policy call set (boolean)",
+    "name": "Is Escalation Policy set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+    "dataSourceLocationIdentifier": "pagerduty_service_directory",
+    "description": "Checks if escalation policy is set for given service.",
+    "detailedDescription": "**How it's calculated:** For the given service on PagerDuty it checks if any escalation policy is set or not.\n\n**Prerequisites:** The PagerDuty plugin needs to be configured and enabled in the admin section. Refer: [Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/)"
   },
   {
     "id": "6500ab758ea5a4798502f511",
@@ -123,7 +147,9 @@
     "name": "Number of incidents in the last 30 days",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_incidents",
+    "description": "Checks the number for incidents created for given service in last 30 days.",
+    "detailedDescription": "**How it's calculated:** For the given service on PagerDuty it checks if the number of incidents created in last 30 days is less then given threshold input value.\n\n**Prerequisites:** The PagerDuty plugin needs to be configured and enabled in the admin section. Refer: [Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/)"
   },
   {
     "id": "6500c08d8ea5a4798502f513",
@@ -132,7 +158,9 @@
     "name": "Average resolved time of the last 10 resolved incidents (in Minutes)",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents",
+    "description": "Calculates the average resolved time for last 10 incidents.",
+    "detailedDescription": "**How it's calculated:** For the given service on PagerDuty it calculates the average resolved time for last 10 incidents that are created within 30 days.\n\n**Prerequisites:** The PagerDuty plugin needs to be configured and enabled in the admin section. Refer: [Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/)"
   },
   {
     "id": "64fec3d52d2a3d15f97b75a6",
@@ -143,7 +171,9 @@
     "dataSourceIdentifier": "kubernetes",
     "dataSourceLocationIdentifier": "kubernetes",
     "outcomeExpression":  "kubernetes.workload.spec.replicas",
-    "isConditional": false
+    "isConditional": false,
+    "description": "Fetches the number of replicas configured for the given service.",
+    "detailedDescription": "**How it's calculated:** The label selector configured in the catalog YAML is used to identify the Kubernetes workload and the configured replica count is used. The cluster details configured in the Kubernetes plugin are used. If more than one cluster is configured, the workload search is done in each cluster and a minimum of all the replica counts is taken into consideration.\n\n**Prerequisites:** The Kubernetes plugin needs to be configured and enabled in the admin section. Refer:[Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/kubernetes/)"
   },
   {
     "id": "65082c922e570ea8a97f4fec",
@@ -154,7 +184,9 @@
     "dataSourceIdentifier": "kubernetes",
     "dataSourceLocationIdentifier": "kubernetes",
     "outcomeExpression":  "kubernetes.workload.status.conditions",
-    "isConditional": false
+    "isConditional": false,
+    "description": "Fetches the number of days since the most recent deployment was done.",
+    "detailedDescription": "**How it's calculated:** The label selector configured in the catalog YAML is used to identify the Kubernetes workload and the lastUpdateTime is used from the conditions section. The cluster details configured in the Kubernetes plugin are used. If more than one cluster is configured, the workload search is done in each cluster and the oldest deployment time of all is taken into consideration.\n\n**Prerequisites:** The Kubernetes plugin needs to be configured and enabled in the admin section. Refer:[Link](https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/kubernetes/)"
   },
   {
     "id": "650afb9076990ecb89d7d502",
@@ -165,17 +197,200 @@
     "dataSourceIdentifier": "bitbucket",
     "dataSourceLocationIdentifier": "bitbucket_mean_time_to_merge_pr",
     "isConditional": true,
-    "conditionalInputValueDescription": "Branch name"
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Calculates average time taken to merge pull requests.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 pull requests.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the branch name in the conditional input field."
   },
   {
     "id": "650afc30838d877cd2c8f881",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Branch protection is set (boolean)",
+    "name": "Branch protection is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "bitbucket",
     "dataSourceLocationIdentifier": "bitbucket_is_branch_protection_set",
     "isConditional": true,
-    "conditionalInputValueDescription" : "Branch name"
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Checks the branch protection rule if it is not allowed to merge pull requests without approvals.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** Bitbucket Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Bitbucket repository."
+  },
+  {
+    "id": "65143c3d60a49366a99ff670",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToResolve",
+    "name": "Mean time to resolve (in hours)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_mean_time_to_resolve",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)",
+    "description": "Calculates the average time taken to resolve issues for the given JQL query",
+    "detailedDescription": "**How it's calculated:** Fetches annotations from catalog YAML file to find project details and calculates average time. Make sure to provide JQL expression in the conditional input field.  \nMean time to resolve bugs:  issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d  \nMake sure to wrap words within single quotes. Eg: 'New Feature''\n\n**Prerequisites:** Provide annotations like jira/project-key(required) and jira/component(optional) in the catalog YAML file."
+  },
+  {
+    "id": "65143c458e971e8c2943a216",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "issuesCount",
+    "name": "Issues count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_issues_count",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)",
+    "description": "Calculates the total number of issues for the given JQL query",
+    "detailedDescription": "**How it's calculated:** Fetches annotations from the catalog YAML file to find project details and calculates the number of issues. Make sure to provide a JQL expression in the conditional input field.\n\n1. Open P0/P1 bugs: issuetype = Bug AND priority in (P0, P1) AND statusCategory != Done  \n2. Features delivered (last 90 days): issuetype in (Epic, 'New Feature') AND resolved >= -90d  \nMake sure to wrap words within single quotes. Eg: 'New Feature'\n\n**Prerequisites:** Provide annotations like jira/project-key (required) and jira/component (optional) in the catalog YAML file."
+  },
+  {
+    "id": "65155fa9d1b0fbf98d3a190e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "issuesOpenCloseRatio",
+    "name": "Issues Open/Close ratio",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_issues_open_close_ratio",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)",
+    "description": "Calculates the ratio between Open & Closed issues for the given JQL query",
+    "detailedDescription": "**How it's calculated:** How it’s calculated: Fetches annotations from catalog YAML file to find project details and calculates the ratio. Make sure to provide JQL expression in the conditional input field.  \nP0 bugs Open/Close Ratio: issuetype = Bug AND priority = P0 AND created >= -90d  \nMake sure to wrap words within single quotes. Eg: 'New Feature'\n\n**Prerequisites:** Provide annotations like jira/project-key(required) and jira/component(optional) in the catalog YAML file."
+  },
+  {
+    "id": "651bf820d6134a3b8a9c5fcc",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToMerge",
+    "name": "Mean time to merge Pull Request (in hours)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_mean_time_to_merge_pr",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Calculates average time taken to merge pull requests.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the average time for the last 100 pull requests.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project. Make sure to mention the branch name in the conditional input field."
+  },
+  {
+    "id": "651bf825fadf434321ebcc70",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isBranchProtected",
+    "name": "Branch protection is set",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_is_branch_protection_set",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Checks the branch protection rule if it is not allowed to force push.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the branch protection rules.\n\n**Prerequisites:** GitLab Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project."
+  },
+  {
+    "id": "651bf82aae1e3423b5b14add",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isFileExists",
+    "name": "Does file exist",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_is_file_exists",
+    "isConditional": true,
+    "conditionalInputValueDescription": "File path (e.g. src/index.js)",
+    "description": "Checks if the given filename exist or not.",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and find if the file is present or not. Make sure to mention the filename with extension or relative path from the root folder (Eg: README.md or docs/README.md) in the conditional input field.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project."
+  },
+  {
+    "id": "6523d49c56e3f9544c9cfbc7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "workflowsCount",
+    "name": "Workflows count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_workflows_count",
+    "description": "Calculates total number of workflows",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of workflows.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
+  },
+  {
+    "id": "6523d7dc378157e1d0db38e0",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "workflowSuccessRate",
+    "name": "Workflow success rate",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_workflow_success_rate",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates success rate for the given workflow",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the success rate for the workflow.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "6524005c0872d29391a44f83",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToCompleteWorkflowRuns",
+    "name": "Average time to complete workflow runs (in minutes)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_mean_time_to_complete_workflow_runs",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates average time taken to complete workflow runs",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 workflow runs to complete.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "652651a5a9cd2b428a58f20b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToCompleteSuccessWorkflowRuns",
+    "name": "Average time to complete successful workflow runs (in minutes)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_mean_time_to_complete_success_workflow_runs",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates average time taken to complete successful workflow runs",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 successful workflow runs to complete.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "652d12fb8da0cf2139e25da6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openDependabotAlerts",
+    "name": "Open Dependabot alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_dependabot_alerts",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Severity type (critical or high)",
+    "description": "Calculates the total number of open alerts reported by Dependabot for the given severity",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported by Dependabot.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the severity type in the conditional input field."
+  },
+  {
+    "id": "652d130036b16547e9de4673",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openCodeScanningAlerts",
+    "name": "Open code scanning alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_code_scanning_alerts",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Severity type (critical or high)",
+    "description": "Calculates the total number of open alerts reported in code scanning for the given severity",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported in code scanning.\n\n**Prerequisites:** GitHub Connector with read access for code scanning alerts. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the severity type in the conditional input field."
+  },
+  {
+    "id": "652d1303fdd854b29ed62c06",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openSecretScanningAlerts",
+    "name": "Open secret scanning alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_secret_scanning_alerts",
+    "isConditional": false,
+    "description": "Calculates the total number of open alerts reported in secret scanning",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported in secret scanning.\n\n**Prerequisites:** GitHub Connector with read access for secret scanning alerts. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
+  },
+  {
+    "id": "652d149b55368da81ac6804e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openPullRequestsByAccount",
+    "name": "Open pull requests by account",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_pull_requests_by_account",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Account name (e.g: app/dependabot)",
+    "description": "Calculates the total number of open pull requests raised by the given account",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by account.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
   }
 ]

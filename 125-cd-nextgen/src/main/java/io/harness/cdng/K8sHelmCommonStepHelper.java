@@ -10,6 +10,7 @@ package io.harness.cdng;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -66,6 +67,8 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -160,6 +163,7 @@ public class K8sHelmCommonStepHelper {
       "Incompatible manifest store type. Cannot convert manifest outcome to HelmChartManifestOutcome.";
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
+  public static final String MANIFEST_SOURCE_IDENTIFIER = "APPLY_STEP_MANIFEST_SOURCE_ID";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
 
@@ -424,14 +428,15 @@ public class K8sHelmCommonStepHelper {
             .closeLogStream(k8sStepPassThroughData.isShouldCloseFetchFilesStream())
             .build();
 
+    TaskType taskType = getHelmValuesFetchTaskType(helmManifest.getStoreDelegateConfig());
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                  .taskType(TaskType.HELM_VALUES_FETCH_NG.name())
+                                  .taskType(taskType.name())
                                   .parameters(new Object[] {helmValuesFetchRequest})
                                   .build();
 
-    String taskName = TaskType.HELM_VALUES_FETCH_NG.getDisplayName();
+    String taskName = taskType.getDisplayName();
 
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
     List<String> commandUnits = null;
@@ -823,6 +828,22 @@ public class K8sHelmCommonStepHelper {
     }
   }
 
+  public Optional<ManifestOutcome> getStepLevelSourceOutcome(StepBaseParameters stepElementParameters) {
+    if (!(stepElementParameters.getSpec() instanceof K8sApplyStepParameters)) {
+      return Optional.empty();
+    }
+    if (((K8sApplyStepParameters) stepElementParameters.getSpec()).getManifestSource() == null) {
+      return Optional.empty();
+    }
+    ManifestAttributes manifestAttributes =
+        ((K8sApplyStepParameters) stepElementParameters.getSpec()).getManifestSource().getSpec();
+    if (manifestAttributes == null) {
+      return Optional.empty();
+    }
+    manifestAttributes.setIdentifier(MANIFEST_SOURCE_IDENTIFIER);
+    return Optional.of(ManifestOutcomeMapper.toManifestOutcome(manifestAttributes, 0));
+  }
+
   public List<ManifestOutcome> getStepLevelManifestOutcomes(StepBaseParameters stepElementParameters) {
     if (!(stepElementParameters.getSpec() instanceof K8sApplyStepParameters)) {
       return Collections.emptyList();
@@ -1082,5 +1103,13 @@ public class K8sHelmCommonStepHelper {
                                     .build();
     }
     return releaseHelmChartOutcome;
+  }
+
+  private TaskType getHelmValuesFetchTaskType(StoreDelegateConfig storeDelegateConfig) {
+    if (OCI_HELM.equals(storeDelegateConfig.getType())
+        && ((OciHelmStoreDelegateConfig) storeDelegateConfig).getAwsConnectorDTO() != null) {
+      return TaskType.HELM_VALUES_FETCH_NG_OCI_ECR_CONFIG_V2;
+    }
+    return TaskType.HELM_VALUES_FETCH_NG;
   }
 }

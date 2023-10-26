@@ -6,11 +6,14 @@
  */
 
 package io.harness.gitsync.gitxwebhooks.runnable;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.GitSyncModule;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateHelperRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateRunnableRequestDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -18,6 +21,7 @@ import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class GitXWebhookCacheUpdateHelper {
@@ -31,16 +35,28 @@ public class GitXWebhookCacheUpdateHelper {
     this.injector = injector;
   }
 
-  public void submitTask(
-      String eventIdentifier, ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
+  public void submitTask(String eventIdentifier, GitXCacheUpdateHelperRequestDTO gitXCacheUpdateHelperRequestDTO) {
     try {
-      GitXWebhookCacheUpdateRunnable gitXWebhookCacheUpdateRunnable =
-          new GitXWebhookCacheUpdateRunnable(eventIdentifier, scmGetBatchFilesByBranchRequestDTO);
+      GitXWebhookCacheUpdateRunnable gitXWebhookCacheUpdateRunnable = new GitXWebhookCacheUpdateRunnable(
+          eventIdentifier, buildGitXCacheUpdateRunnableDTO(gitXCacheUpdateHelperRequestDTO));
       injector.injectMembers(gitXWebhookCacheUpdateRunnable);
       executor.execute(gitXWebhookCacheUpdateRunnable);
     } catch (Exception exception) {
       log.error("Faced exception while submitting background task for updating the git cache for event: {} ",
           eventIdentifier, exception);
     }
+  }
+
+  private GitXCacheUpdateRunnableRequestDTO buildGitXCacheUpdateRunnableDTO(
+      GitXCacheUpdateHelperRequestDTO gitXCacheUpdateHelperRequestDTO) {
+    return GitXCacheUpdateRunnableRequestDTO.builder()
+        .accountIdentifier(gitXCacheUpdateHelperRequestDTO.getAccountIdentifier())
+        .branch(gitXCacheUpdateHelperRequestDTO.getBranch())
+        .repoName(gitXCacheUpdateHelperRequestDTO.getRepoName())
+        .connectorRef(gitXCacheUpdateHelperRequestDTO.getConnectorRef())
+        .eventIdentifier(gitXCacheUpdateHelperRequestDTO.getEventIdentifier())
+        .modifiedFilePaths(gitXCacheUpdateHelperRequestDTO.getModifiedFilePaths())
+        .scmConnector(gitXCacheUpdateHelperRequestDTO.getScmConnector())
+        .build();
   }
 }

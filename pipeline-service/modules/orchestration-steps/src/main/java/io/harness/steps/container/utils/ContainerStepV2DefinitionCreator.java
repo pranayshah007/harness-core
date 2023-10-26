@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.container.utils;
+
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -20,6 +21,7 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.grpc.utils.StringValueUtils;
@@ -68,6 +70,7 @@ public class ContainerStepV2DefinitionCreator {
                                                            .stream()
                                                            .map(SecretNgVariableUtils::getSecretNgVariable)
                                                            .collect(Collectors.toList());
+          String connectorIdentifier = pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef();
           containerDefinitionInfos.add(
               ContainerDefinitionInfo.builder()
                   .name(containerName)
@@ -80,7 +83,7 @@ public class ContainerStepV2DefinitionCreator {
                       ContainerImageDetails.builder()
                           .imageDetails(
                               ImageDetailsUtils.getImageDetails(pluginDetails.getImageDetails().getImageInformation()))
-                          .connectorIdentifier(pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef())
+                          .connectorIdentifier(EmptyPredicate.isEmpty(connectorIdentifier) ? null : connectorIdentifier)
                           .build())
                   .isHarnessManagedImage(
                       !pluginDetails.hasIsHarnessManaged() || pluginDetails.getIsHarnessManaged().getValue())

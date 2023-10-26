@@ -3,15 +3,15 @@ kind: ConfigMap
 metadata:
   name: batch-processing
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
   labels:
-    {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  DEPLOY_MODE: {{ .Values.global.deployMode | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
   REPLICA: {{ .Values.replicaCount | quote }}
   ISOLATED_REPLICA: {{ .Values.isolatedReplica | quote }}

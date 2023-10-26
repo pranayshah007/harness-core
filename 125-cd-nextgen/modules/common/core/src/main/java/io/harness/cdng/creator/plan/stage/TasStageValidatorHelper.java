@@ -97,16 +97,17 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
     if (((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) > 1)
         || ((basicAppSetupStepCount + bgAppSetupStepCount + canaryAppSetupStepCount + rollingDeployStepCount) == 0
             && commandStepCount == 0 && routeMappingStepCount == 0)) {
-      throw new InvalidYamlException("Only one App Setup or Rolling Deploy is supported");
+      throw new InvalidYamlException(
+          "Atleast One Tanzu Command or Route Mapping step, or exactly one App Setup or Rolling Deploy is required to save TAS pipeline");
     }
     int swapRouteStepCount = stepTypeToCount.getOrDefault(TAS_SWAP_ROUTES, 0);
     validateStepCount(swapRouteStepCount, "At max one Swap Route step is valid, found: %d");
     int appRollbackStepCount = stepTypeToCount.getOrDefault(TAS_ROLLBACK, 0);
     int swapRollbackStepCount = stepTypeToCount.getOrDefault(SWAP_ROLLBACK, 0);
     int rollingRollbackStepCount = stepTypeToCount.getOrDefault(TAS_ROLLING_ROLLBACK, 0);
-    validateStepCount(rollingRollbackStepCount, "At max one Rolling Rollback step is valid, found: %d");
-    validateStepCount(appRollbackStepCount, "At max one App Rollback step is valid, found: %d");
-    validateStepCount(swapRollbackStepCount, "At max one Swap Rollback step is valid, found: %d");
+    validateStepCount(rollingRollbackStepCount, "Only one Rolling Rollback step is valid, found: %d");
+    validateStepCount(appRollbackStepCount, "Only one App Rollback step is valid, found: %d");
+    validateStepCount(swapRollbackStepCount, "Only one Swap Rollback step is valid, found: %d");
     if ((appRollbackStepCount + swapRollbackStepCount + rollingRollbackStepCount) > 1) {
       throw new InvalidYamlException(format(
           "Only one Rollback step out of %s is supported", List.of(TAS_ROLLBACK, SWAP_ROLLBACK, TAS_ROLLING_ROLLBACK)));

@@ -110,7 +110,6 @@ public class HelmChartServiceImpl implements HelmChartService {
   @Inject private ExceptionManager exceptionManager;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   private static final int PAGE_SIZE = 100000;
-  private static final int OCI_HELM_ECR_PAGE_SIZE = 1000;
 
   private HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
       HelmChartManifestOutcome helmChartManifestOutcome, String connectorId, String chartName, String region,
@@ -149,7 +148,7 @@ public class HelmChartServiceImpl implements HelmChartService {
             helmConnector, ngAccess, updatedChartName, lastTag, connectorConfigDTO, abstractions);
       } else if (connectorConfigDTO instanceof AwsConnectorDTO) {
         delegateTaskRequest = getOciHelmEcrConfigDelegateTaskRequest(
-            helmConnector, ngAccess, updatedChartName, lastTag, connectorConfigDTO, region, registryId, abstractions);
+            helmConnector, ngAccess, chartName, lastTag, connectorConfigDTO, region, registryId, abstractions);
       }
     } else {
       HelmVersion helmVersion = getHelmVersionBasedOnFF(helmChartManifestOutcome.getHelmVersion(), accountId);
@@ -514,19 +513,19 @@ public class HelmChartServiceImpl implements HelmChartService {
   }
 
   private DelegateTaskRequest getOciHelmEcrConfigDelegateTaskRequest(ConnectorInfoDTO helmConnector, NGAccess ngAccess,
-      String updatedChartName, String lastTag, ConnectorConfigDTO connectorConfigDTO, String region, String registryId,
+      String chartName, String lastTag, ConnectorConfigDTO connectorConfigDTO, String region, String registryId,
       Map<String, String> abstractions) {
     EcrHelmApiListTagsTaskParams taskParameters =
         EcrHelmApiListTagsTaskParams.builder()
             .encryptionDetails(k8sEntityHelper.getEncryptionDataDetails(helmConnector, ngAccess))
-            .chartName(updatedChartName)
-            .pageSize(OCI_HELM_ECR_PAGE_SIZE)
-            .lastTag(lastTag)
+            .chartName(chartName)
             .awsConnectorDTO((AwsConnectorDTO) connectorConfigDTO)
             .region(region)
             .registryId(registryId)
+            .pageSize(PAGE_SIZE)
+            .lastTag(lastTag)
             .build();
-    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK.name();
+    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK_V2.name();
     return DelegateTaskRequest.builder()
         .accountId(ngAccess.getAccountIdentifier())
         .taskType(taskTypeName)

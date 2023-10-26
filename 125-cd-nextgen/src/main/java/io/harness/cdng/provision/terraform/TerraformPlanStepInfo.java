@@ -98,7 +98,6 @@ public class TerraformPlanStepInfo extends TerraformPlanBaseStepInfo implements 
   void validateSpecParams() {
     if (terraformPlanExecutionData != null) {
       Validator.notNullCheck("Terraform Plan configuration is NULL", terraformPlanExecutionData);
-
       terraformPlanExecutionData.validateParams();
     } else if (terraformCloudCliPlanExecutionData != null) {
       Validator.notNullCheck("Terraform Plan configuration is NULL", terraformCloudCliPlanExecutionData);

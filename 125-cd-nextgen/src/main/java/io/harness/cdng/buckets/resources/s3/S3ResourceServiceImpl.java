@@ -32,7 +32,6 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +39,7 @@ import java.util.Map;
 @OwnedBy(CDP)
 public class S3ResourceServiceImpl implements S3ResourceService {
   private final AwsResourceServiceHelper serviceHelper;
+  private static final String ALL_REGEX = "*";
 
   @Inject
   public S3ResourceServiceImpl(AwsResourceServiceHelper serviceHelper) {
@@ -73,7 +73,7 @@ public class S3ResourceServiceImpl implements S3ResourceService {
   public List<BuildDetails> getFilePaths(IdentifierRef awsConnectorRef, String region, String bucketName,
       String filePathRegex, String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isEmpty(filePathRegex)) {
-      return new ArrayList<>();
+      filePathRegex = ALL_REGEX;
     }
 
     if (EmptyPredicate.isEmpty(region)) {

@@ -1,0 +1,39 @@
+{
+  "FunctionName": "FunctionName",
+  "FunctionArn": "arn:aws:lambda:us-east-1:AccountId:function:FunctionName",
+  "Runtime": "nodejs12.x",
+  "Role": "arn:aws:iam::AccountId:role/RoleId",
+  "Handler": "__entrypoint__.handler",
+  "CodeSize": 13880,
+  "Description": "",
+  "Timeout": 900,
+  "MemorySize": 128,
+  "LastModified": "2022-05-20T20:39:51.000+0000",
+  "CodeSha256": "CodeSha256",
+  "Version": "$LATEST",
+  "TracingConfig": {
+    "Mode": "PassThrough"
+  },
+  "RevisionId": "RevisionId",
+  "PackageType": "Zip",
+  "Architectures": [
+    "x86_64"
+  ],
+  "EphemeralStorage": {
+    "Size": 512
+  },
+  "SnapStart": {
+    "ApplyOn": "None",
+    "OptimizationStatus": "Off"
+  },
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ]
+}

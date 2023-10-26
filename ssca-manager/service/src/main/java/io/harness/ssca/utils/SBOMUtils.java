@@ -14,11 +14,15 @@ import io.harness.ssca.beans.SpdxDTO;
 import io.harness.ssca.normalize.SbomFormat;
 
 import com.google.gson.Gson;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
-
+@Slf4j
 public class SBOMUtils {
   public static String EXTERNAL_REF_CATEGORY_PURL = "PACKAGE-MANAGER";
   public static char EXTERNAL_REF_LOCATOR_DELIM_PRIMARY = ':';
@@ -26,12 +30,16 @@ public class SBOMUtils {
   public static char PACKAGE_VERSION_DELIM = '.';
   public static String PACKAGE_VERSION_EPOCH_DELIM = ":";
   public static String LICENSE_REF_DELIM = "LicenseRef-";
+  public static List<String> NO_ASSERTION_LIST = List.of("NO_ASSERTION", "NOASSERTION");
 
   public static List<Integer> getVersionInfo(String packageVersion) {
-    String[] splitVersion = Strings.split(packageVersion, PACKAGE_VERSION_DELIM);
     int major = -1;
     int minor = -1;
     int patch = -1;
+    if (packageVersion == null) {
+      return Arrays.asList(major, minor, patch);
+    }
+    String[] splitVersion = Strings.split(packageVersion, PACKAGE_VERSION_DELIM);
     if (splitVersion.length < 3) {
       return Arrays.asList(major, minor, patch);
     }
@@ -106,5 +114,30 @@ public class SBOMUtils {
       }
     }
     return licenses;
+  }
+
+  public static ZonedDateTime parseDateTime(String input) {
+    DateTimeFormatter[] formatters = {
+        DateTimeFormatter.ISO_DATE_TIME, // ISO 8601 / RFC3339 format
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME, // ISO 8601 date and time without time zone
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // Custom format
+    };
+
+    ZonedDateTime zonedDateTime = null;
+    for (DateTimeFormatter formatter : formatters) {
+      try {
+        zonedDateTime = ZonedDateTime.parse(input, formatter);
+        break;
+      } catch (DateTimeParseException e) {
+        log.info(String.format("Skipping format %s", formatter.toString()));
+      }
+    }
+
+    if (zonedDateTime != null) {
+      return zonedDateTime;
+    } else {
+      log.error(String.format("Unable to parse the input date and time string %s", input));
+      return null;
+    }
   }
 }

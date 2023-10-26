@@ -12,7 +12,6 @@ import static io.harness.ngtriggers.Constants.PAYLOAD;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.expression.LateBindingValue;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -20,6 +19,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -40,7 +40,11 @@ public class TriggerPayloadFunctor implements LateBindingValue {
     try {
       jsonObject.put(PAYLOAD, JsonPipelineUtils.read(payload, HashMap.class));
     } catch (IOException e) {
-      throw new InvalidRequestException("Event payload could not be converted to a hashmap");
+      try {
+        jsonObject.put(PAYLOAD, JsonPipelineUtils.read(payload, List.class));
+      } catch (IOException ex) {
+        jsonObject.put(PAYLOAD, payload);
+      }
     }
     return jsonObject;
   }

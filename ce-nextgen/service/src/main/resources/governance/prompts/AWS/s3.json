@@ -1,0 +1,57 @@
+{
+  "Name": "Name",
+  "CreationDate": "2023-04-06T11:17:39+00:00",
+  "Location": {
+    "LocationConstraint": "eu-west-2"
+  },
+  "Tags": [
+    {
+      "Key": "aws:cloudformation:stack-id",
+      "Value": "arn:aws:cloudformation:eu-west-2:AccountId:stack/StackName/StackId"
+    },
+    {
+      "Key": "aws:cloudformation:stack-name",
+      "Value": "StackName"
+    },
+    {
+      "Key": "aws:cloudformation:logical-id",
+      "Value": "LogicalId"
+    }
+  ],
+  "Policy": "{\"Version\":\"2012-10-17\",\"Id\":\"AccessControl\",\"Statement\":[{\"Sid\":\"AllowSSLRequestsOnly\",\"Effect\":\"Deny\",\"Principal\":\"*\",\"Action\":\"s3:*\",\"Resource\":[\"arn:aws:s3:::id1-AccountId-eu-west-2\",\"arn:aws:s3:::id2-AccountId-eu-west-2/*\"],\"Condition\":{\"Bool\":{\"aws:SecureTransport\":\"false\"}}}]}",
+  "Acl": {
+    "Owner": {
+      "ID": "ID"
+    },
+    "Grants": [
+      {
+        "Grantee": {
+          "ID": "ID",
+          "Type": "CanonicalUser"
+        },
+        "Permission": "FULL_CONTROL"
+      }
+    ]
+  },
+  "Replication": null,
+  "Versioning": {
+    "Status": "Enabled"
+  },
+  "Website": null,
+  "Logging": {},
+  "Notification": {},
+  "Lifecycle": {
+    "Rules": [
+      {
+        "ID": "CleanupOldVersions",
+        "Filter": {
+          "Prefix": ""
+        },
+        "Status": "Enabled",
+        "NoncurrentVersionExpiration": {
+          "NoncurrentDays": 365
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "LaunchTemplateId": "LaunchTemplateId",
+  "LaunchTemplateName": "LaunchTemplateName",
+  "VersionNumber": 1,
+  "CreateTime": "2020-12-21T12:55:45+00:00",
+  "CreatedBy": "arn:aws:sts::AccountId:assumed-role/AssumedRoleName/UserName",
+  "DefaultVersion": true,
+  "LaunchTemplateData": {
+    "IamInstanceProfile": {
+      "Arn": "arn:aws:iam::AccountId:instance-profile/InstanceProfile"
+    },
+    "BlockDeviceMappings": [
+      {
+        "DeviceName": "/dev/sda1",
+        "Ebs": {
+          "Encrypted": true,
+          "DeleteOnTermination": false,
+          "VolumeSize": 30,
+          "VolumeType": "gp2"
+        }
+      }
+    ],
+    "ImageId": "ImageId",
+    "InstanceType": "a1.large",
+    "KeyName": "KeyName",
+    "UserData": "UserData",
+    "TagSpecifications": [
+      {
+        "ResourceType": "instance",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Value"
+          }
+        ]
+      }
+    ],
+    "SecurityGroupIds": [
+      "SecurityGroupId"
+    ]
+  }
+}

@@ -13,5 +13,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: ng-manager
+    matchLabels:
+      {{- include "ng-manager.selectorLabels" . | nindent 6 }}

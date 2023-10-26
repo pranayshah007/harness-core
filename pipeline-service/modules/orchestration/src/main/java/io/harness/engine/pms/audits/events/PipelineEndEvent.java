@@ -6,16 +6,19 @@
  */
 
 package io.harness.engine.pms.audits.events;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
@@ -28,8 +31,8 @@ public class PipelineEndEvent extends NodeExecutionEvent {
   @Builder
   public PipelineEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, String status, Long startTs,
-      Long endTs) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      Long endTs, Integer runSequence) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.triggeredInfo = triggeredInfo;
     this.status = status;
     this.startTs = startTs;

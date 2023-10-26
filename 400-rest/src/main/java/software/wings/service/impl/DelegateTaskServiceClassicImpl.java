@@ -6,9 +6,11 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.DelegateTask.Status.ABORTED;
 import static io.harness.beans.DelegateTask.Status.ERROR;
+import static io.harness.beans.DelegateTask.Status.PARKED;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
@@ -61,7 +63,6 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
-import io.harness.cache.HarnessCacheManager;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
@@ -104,9 +105,7 @@ import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
-import io.harness.environment.SystemEnvironment;
 import io.harness.eraro.ErrorCode;
-import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
@@ -117,7 +116,6 @@ import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.FailDelegateTaskIteratorHelper;
-import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.DelayLogContext;
@@ -125,7 +123,6 @@ import io.harness.logging.DelegateDriverLogContext;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.network.SafeHttpCall;
-import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ExpressionReflectionUtils;
@@ -137,7 +134,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;
-import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.service.intfc.DelegateTaskResultsProvider;
 import io.harness.service.intfc.DelegateTaskSelectorMapService;
@@ -155,9 +151,6 @@ import software.wings.beans.HostValidationTaskParameters;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.common.AuditHelper;
-import software.wings.core.managerConfiguration.ConfigurationController;
-import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.expression.EncryptedDataDetails;
@@ -167,18 +160,13 @@ import software.wings.expression.NgSecretManagerFunctor;
 import software.wings.expression.SecretManagerFunctor;
 import software.wings.expression.SecretManagerMode;
 import software.wings.expression.SweepingOutputSecretFunctor;
-import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
-import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
-import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
-import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.ServiceTemplateService;
-import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.utils.Utils;
@@ -187,13 +175,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
@@ -250,44 +234,28 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject ObjectMapper objectMapper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private MainConfiguration mainConfiguration;
-  @Inject private EventEmitter eventEmitter;
-
   @Inject private AccountService accountService;
   @Inject private BroadcasterFactory broadcasterFactory;
   @Inject private AssignDelegateService assignDelegateService;
-  @Inject private AlertService alertService;
   @Inject private Clock clock;
   @Inject private VersionInfoManager versionInfoManager;
-  @Inject private Injector injector;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private InfraDownloadService infraDownloadService;
   @Inject private ManagerDecryptionService managerDecryptionService;
   @Inject private SecretManager secretManager;
-  @Inject private ExpressionEvaluator evaluator;
-  @Inject private FileService fileService;
-  @Inject private EventPublishHelper eventPublishHelper;
   @Inject private ConfigService configService;
   @Inject private ServiceTemplateService serviceTemplateService;
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
-  @Inject private PersistentLocker persistentLocker;
   @Inject private DelegateTaskBroadcastHelper broadcastHelper;
-  @Inject private AuditServiceHelper auditServiceHelper;
-  @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
-  @Inject private ConfigurationController configurationController;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateDao delegateDao;
-  @Inject private SystemEnvironment sysenv;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
-  @Inject private SettingsService settingsService;
   @Inject private LogStreamingServiceRestClient logStreamingServiceRestClient;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateSetupService delegateSetupService;
-  @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
@@ -295,47 +263,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Inject private FailDelegateTaskIteratorHelper failDelegateTaskIteratorHelper;
-
   private static final SecureRandom random = new SecureRandom();
-  private HarnessCacheManager harnessCacheManager;
 
-  @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
-
-  private LoadingCache<String, String> logStreamingAccountTokenCache =
-      CacheBuilder.newBuilder()
-          .maximumSize(1000)
-          .expireAfterWrite(24, TimeUnit.HOURS)
-          .build(new CacheLoader<String, String>() {
-            @Override
-            public String load(String accountId) throws IOException {
-              return retrieveLogStreamingAccountToken(accountId);
-            }
-          });
+  @Inject private LoggingTokenCache loggingTokenCache;
 
   private final Cache<String, EncryptedDataDetails> secretsCache =
       Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(5, TimeUnit.MINUTES).build();
-
-  public static void embedCapabilitiesInDelegateTask(
-      DelegateTask task, Collection<EncryptionConfig> encryptionConfigs, ExpressionEvaluator maskingEvaluator) {
-    if (isEmpty(task.getData().getParameters()) || isNotEmpty(task.getExecutionCapabilities())) {
-      return;
-    }
-
-    task.setExecutionCapabilities(new ArrayList<>());
-    task.getExecutionCapabilities().addAll(
-        Arrays.stream(task.getData().getParameters())
-            .filter(param -> param instanceof ExecutionCapabilityDemander)
-            .flatMap(param
-                -> ((ExecutionCapabilityDemander) param).fetchRequiredExecutionCapabilities(maskingEvaluator).stream())
-            .collect(toList()));
-
-    if (isNotEmpty(encryptionConfigs)) {
-      task.getExecutionCapabilities().addAll(
-          EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForSecretManagers(
-              encryptionConfigs, maskingEvaluator));
-    }
-  }
 
   public static void embedCapabilitiesInDelegateTaskV2(
       DelegateTask task, Collection<EncryptionConfig> encryptionConfigs, ExpressionEvaluator maskingEvaluator) {
@@ -372,18 +306,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.OPTIONAL);
 
         if (currentTaskCount >= maxTaskCount) {
-          throw new RateLimitExceededException(
-              format("Rate limit reached for tasks with rank OPTIONAL. Current task count %s and max limit %s ",
-                  currentTaskCount, maxTaskCount));
+          log.error("Rate limit reached for tasks with rank OPTIONAL. Current task count {} and max limit {} ",
+              currentTaskCount, maxTaskCount);
         }
         break;
       case IMPORTANT:
         currentTaskCount = delegateCache.getTasksCount(accountId, DelegateTaskRank.IMPORTANT);
         maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.IMPORTANT);
         if (currentTaskCount >= maxTaskCount) {
-          throw new RateLimitExceededException(
-              format("Rate limit reached for tasks with rank IMPORTANT. Current task count %s and max limit %s ",
-                  currentTaskCount, maxTaskCount));
+          log.error("Rate limit reached for tasks with rank IMPORTANT. Current task count {} and max limit {} ",
+              currentTaskCount, maxTaskCount);
         }
         break;
       default:
@@ -401,6 +333,17 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return account.getImportantDelegateTaskLimit() != null
         ? account.getImportantDelegateTaskLimit()
         : mainConfiguration.getPortal().getImportantDelegateTaskRejectAtLimit();
+  }
+
+  @VisibleForTesting
+  public void checkParkedTaskRateLimit(DelegateTask task) {
+    String accountId = task.isExecuteOnHarnessHostedDelegates() ? task.getSecondaryAccountId() : task.getAccountId();
+    long currentParkedTaskCount = delegateCache.getParkedTasksCount(accountId);
+    long maxTaskCount = mainConfiguration.getPortal().getParkedDelegateTaskRejectAtLimit();
+    if (currentParkedTaskCount >= maxTaskCount) {
+      log.error("Rate limit reached for parked task tasks per account. Current task count {} and max limit {} ",
+          currentParkedTaskCount, maxTaskCount);
+    }
   }
 
   @VisibleForTesting
@@ -615,7 +558,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException();
           }
         }
-        checkTaskRankRateLimit(task);
+        if (PARKED.equals(taskStatus)) {
+          checkParkedTaskRateLimit(task);
+        } else {
+          checkTaskRankRateLimit(task);
+        }
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -690,7 +637,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException(errorMessage);
           }
         }
-        checkTaskRankRateLimit(task);
+        if (PARKED.equals(taskStatus)) {
+          checkParkedTaskRateLimit(task);
+        } else {
+          checkTaskRankRateLimit(task);
+        }
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -1179,7 +1130,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       if (isTaskNg) {
         try {
-          String logStreamingAccountToken = logStreamingAccountTokenCache.get(delegateTask.getAccountId());
+          final var logStreamingAccountToken = loggingTokenCache.getToken(delegateTask.getAccountId()).getTokenValue();
 
           if (isNotBlank(logStreamingAccountToken)) {
             delegateTaskPackageBuilder.logStreamingToken(logStreamingAccountToken);
@@ -1293,7 +1244,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       if (isTaskNg) {
         try {
-          String logStreamingAccountToken = logStreamingAccountTokenCache.get(delegateTask.getAccountId());
+          final var logStreamingAccountToken = loggingTokenCache.getToken(delegateTask.getAccountId()).getTokenValue();
 
           if (isNotBlank(logStreamingAccountToken)) {
             delegateTaskPackageBuilder.logStreamingToken(logStreamingAccountToken);

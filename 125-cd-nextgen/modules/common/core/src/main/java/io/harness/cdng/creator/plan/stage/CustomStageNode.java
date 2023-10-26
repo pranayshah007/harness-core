@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.creator.plan.stage;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
@@ -14,7 +13,10 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,6 +29,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)

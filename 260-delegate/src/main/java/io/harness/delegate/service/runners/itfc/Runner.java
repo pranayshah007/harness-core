@@ -10,6 +10,8 @@ package io.harness.delegate.service.runners.itfc;
 import io.harness.delegate.core.beans.InputData;
 import io.harness.delegate.service.handlermapping.context.Context;
 
+import java.util.Map;
+
 public interface Runner {
   /**
    * Set up execution infrastructure
@@ -17,14 +19,14 @@ public interface Runner {
    * @param infra  Input data for infra config
    * @param context  Context of this task, including delegate information, task id, or decrypted secrets
    */
-  void init(String infraId, InputData infra, Context context);
+  void init(String infraId, InputData infra, Map<String, char[]> decrypted, Context context);
   /**
    * Execute a task
    * @param infraId  The execution infra to execute the task on
    * @param tasks  Input data for the task
    * @param context  Context of this task, including delegate information, task id, or decrypted secrets
    */
-  void execute(String infraId, InputData tasks, Context context);
+  void execute(String infraId, InputData tasks, Map<String, char[]> decrypted, Context context);
   /**
    * Clean up an execution infra
    * @param infraId  The execution infra to clean up

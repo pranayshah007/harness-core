@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 58
+version: 62
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -590,6 +590,13 @@ permissions:
   - identifier: ff_featureflag_toggle
     name: Toggle a Feature Flag On or Off
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ff_featureflag_editStaleState
+    name: Edit a Feature Flags Stale State
+    status: STAGING
     allowedScopeLevels:
       - account
       - organization
@@ -1617,6 +1624,12 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sei_seiconfigurationsettings_create
+    name: SEI create configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: sei_seiconfigurationsettings_view
     name: SEI view configuration settings
     status: ACTIVE
@@ -1699,3 +1712,15 @@ permissions:
       - account
       - organization
       - project
+  - identifier: ccm_anomalies_view
+    name: View CCM Anomalies
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_recommendations_view
+    name: View CCM Recommendations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

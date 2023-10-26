@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gcp;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
@@ -56,6 +58,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -122,7 +125,7 @@ public class GcpHelperService {
                                                         .accountId(ngAccess.getAccountIdentifier())
                                                         .taskType(NGTaskType.GCP_TASK.name())
                                                         .taskParameters(gcpTaskParameters)
-                                                        .executionTimeout(java.time.Duration.ofSeconds(30))
+                                                        .executionTimeout(gcpRequest.getExecutionTimeout())
                                                         .taskSetupAbstractions(abstractions)
                                                         .taskSelectors(gcpRequest.getDelegateSelectors())
                                                         .build();

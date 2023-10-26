@@ -6,11 +6,14 @@
  */
 
 package io.harness.steps.barriers.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.barrier.Barrier.State;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -19,8 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface BarrierService {
+  String BARRIER_UPDATE_LOCK = "BARRIER_UPDATE_LOCK_";
   BarrierExecutionInstance save(BarrierExecutionInstance barrierExecutionInstance);
   List<BarrierExecutionInstance> saveAll(List<BarrierExecutionInstance> barrierExecutionInstances);
   BarrierExecutionInstance get(String barrierUuid);
@@ -43,8 +48,11 @@ public interface BarrierService {
    */
   void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
   void upsert(BarrierExecutionInstance barrierExecutionInstance);
-  void updateBarrierPositionInfoList(
-      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions);
+  void updateBarrierPositionInfoListAndStrategyConcurrency(String barrierIdentifier, String planExecutionId,
+      List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyId, int concurrency);
+  boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId);
   List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
       String planExecutionId, String strategySetupId);
+  void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId, String parentInfoStrategyNodeType,
+      String stageId, String stepGroupId, String strategyId, List<String> allStrategyIds);
 }

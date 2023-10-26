@@ -398,4 +398,18 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       throw new InvalidRequestException("Token revocation time can not be less than current time.");
     }
   }
+
+  @Override
+  public boolean doesDelegateTokenExist(String accountId, String delegateTokenName) {
+    if (null == delegateTokenName) {
+      return true;
+    }
+    DelegateToken delegateToken = persistence.createQuery(DelegateToken.class)
+                                      .field(DelegateTokenKeys.accountId)
+                                      .equal(accountId)
+                                      .field(DelegateTokenKeys.name)
+                                      .equal(delegateTokenName)
+                                      .get();
+    return delegateToken != null;
+  }
 }

@@ -18,9 +18,9 @@ global:
 minio:
   fullnameOverride: "minio"
   mode: standalone
-  defaultBuckets: "logs"
+  defaultBuckets: "logs, sbom-store, policy-store"
   image:
-    tag: 2023.5.18-debian-11-r2
+    tag: 2023.7.18-debian-11-r2
   persistence:
     size: 200Gi
   auth:
@@ -64,6 +64,10 @@ postgresql:
     # primary.initdb.scriptsConfigMap
     database: overops
     existingSecret: "postgres"
+  serviceAccount:
+    create: true
+    name: "postgres"
+
   commonLabels:
     app: postgres
   primary:

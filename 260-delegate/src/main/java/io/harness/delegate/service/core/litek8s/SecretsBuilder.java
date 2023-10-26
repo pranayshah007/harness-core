@@ -7,16 +7,20 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
+import io.harness.delegate.service.secret.RunnerDecryptionService;
 
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Secret;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,22 +45,18 @@ public class SecretsBuilder {
    *     io.harness.pms.expressions.utils.ImagePullSecretUtils#getImagePullSecret(io.harness.cdng.artifact.outcome.ArtifactOutcome,
    *     io.harness.pms.contracts.ambiance.Ambiance)
    */
-  public V1Secret createImagePullSecrets(final String taskGroupId, final Secret infraSecret, final long index) {
+  public V1Secret createImagePullSecrets(final String taskGroupId, final Secret infraSecret, final long index)
+      throws InvalidProtocolBufferException {
     final var secretName = K8SResourceHelper.getImagePullSecretName(taskGroupId, index);
-    final var decryptedSecrets = decryptionService.decrypt(infraSecret);
-    if (decryptedSecrets.values().size() != 1) {
-      log.warn("Multiple [{}] image pull secret configs available for {}/{}, picking only one",
-          decryptedSecrets.values().size(), taskGroupId, index);
-    }
-    final var optionalSecret = decryptedSecrets.values().stream().findFirst();
-    if (optionalSecret.isEmpty()) {
+    final var decryptedSecret = decryptionService.decryptProtoBytes(infraSecret);
+    if (Objects.isNull(decryptedSecret)) {
       throw new IllegalStateException(
           "Trying to create registry secret, but no secret data present for " + taskGroupId + index);
     }
 
     try {
       return K8SSecret.imagePullSecret(secretName, config.getNamespace(), taskGroupId)
-          .putDataItem(DOCKER_CONFIG_KEY, String.valueOf(optionalSecret.get()).getBytes(Charsets.UTF_8))
+          .putDataItem(DOCKER_CONFIG_KEY, String.valueOf(decryptedSecret).getBytes(Charsets.UTF_8))
           .create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));
@@ -64,12 +64,13 @@ public class SecretsBuilder {
     }
   }
 
-  public V1Secret createSecret(final String taskGroupId, final String taskId, final Secret infraSecret) {
+  public V1Secret createSecret(
+      final String infraId, final String taskId, String fullyQualifiedSecretId, final char[] value) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
-    final var decryptedSecrets = decryptionService.decrypt(infraSecret);
     try {
-      return K8SSecret.secret(secretName, config.getNamespace(), taskGroupId)
-          .putAllCharDataItems(decryptedSecrets)
+      // TODO: create secret file
+      return K8SSecret.secret(secretName, config.getNamespace(), infraId)
+          .putCharDataItem(K8SResourceHelper.normalizeResourceName(fullyQualifiedSecretId), value)
           .create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));

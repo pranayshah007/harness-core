@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.stages.stage;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
@@ -16,7 +15,10 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -31,6 +33,7 @@ import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -49,6 +52,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
@@ -111,12 +115,16 @@ public class StageElementConfig {
   @VariableExpression
   StageInfoConfig stageType;
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> timeout;
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
       ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
       StageInfoConfig stageType, ParameterField<String> skipCondition, ParameterField<StageWhenCondition> when,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Timeout> timeout) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -128,5 +136,6 @@ public class StageElementConfig {
     this.skipCondition = skipCondition;
     this.when = when;
     this.delegateSelectors = delegateSelectors;
+    this.timeout = timeout;
   }
 }

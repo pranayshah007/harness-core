@@ -18,8 +18,8 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.resources.DelegateStackDriverLog;
-import io.harness.logging.AccessTokenBean;
 import io.harness.logging.StackdriverLoggerFactory;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
 import io.harness.service.impl.stackdriver.DelegateStackdriverLogServiceImpl;
@@ -62,7 +62,7 @@ public class DelegateStackdriverLogServiceTest {
   @Category(UnitTests.class)
   public void testFetchDelegateLogs() {
     InfraDownloadService downloadService = mock(InfraDownloadService.class);
-    AccessTokenBean tokenBean = AccessTokenBean.builder().build();
+    AccessTokenBean tokenBean = new AccessTokenBean("projectId", "token", 0);
     when(downloadService.getStackdriverLoggingToken()).thenReturn(tokenBean);
     DelegateStackdriverLogService delegateStackdriverLogService =
         new DelegateStackdriverLogServiceImpl(downloadService);

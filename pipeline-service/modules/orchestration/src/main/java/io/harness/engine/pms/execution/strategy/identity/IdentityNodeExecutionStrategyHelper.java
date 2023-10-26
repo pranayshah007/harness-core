@@ -29,7 +29,6 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -71,9 +70,9 @@ public class IdentityNodeExecutionStrategyHelper {
                                   .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
                                   .originalNodeExecutionId(originalExecution.getUuid())
                                   .module(node.getServiceName())
-                                  .name(node.getName())
+                                  .name(originalExecution.getName())
                                   .skipGraphType(node.getSkipGraphType())
-                                  .identifier(node.getIdentifier())
+                                  .identifier(originalExecution.getIdentifier())
                                   .stepType(node.getStepType())
                                   .nodeId(node.getUuid())
                                   .stageFqn(node.getStageFqn())
@@ -104,25 +103,19 @@ public class IdentityNodeExecutionStrategyHelper {
     return nodeExecution;
   }
 
-  // if a list of node execution IDs is provided, the strategy metadata at all levels currently should match the
-  // strategy metadata in the selected node execution
+  // if a list of node execution IDs is provided, the fqn should match the fqn for the selected node execution
   NodeExecution getCorrectNodeExecution(CloseableIterator<NodeExecution> nodeExecutions, List<Level> currLevels) {
-    List<StrategyMetadata> strategyMetadata =
-        currLevels.stream().map(Level::getStrategyMetadata).collect(Collectors.toList());
+    String levelCombinedIteration = AmbianceUtils.getCombinedIndexes(currLevels);
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
-      List<StrategyMetadata> currNodeStrategyMetadata = nodeExecution.getAmbiance()
-                                                            .getLevelsList()
-                                                            .stream()
-                                                            .map(Level::getStrategyMetadata)
-                                                            .collect(Collectors.toList());
-      if (currNodeStrategyMetadata.equals(strategyMetadata)) {
+      String currentCombinedIteration = AmbianceUtils.getCombinedIndexes(nodeExecution.getAmbiance().getLevelsList());
+      if (levelCombinedIteration.equals(currentCombinedIteration)) {
         return nodeExecution;
       }
     }
     throw new UnexpectedException(
         "None of the fetched node executions matched the required levels. Current strategy levels: "
-        + strategyMetadata);
+        + levelCombinedIteration);
   }
 
   // Cloning the nodeExecution. Also copying the original retryIds. We will update the retryIds later in the caller

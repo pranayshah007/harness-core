@@ -297,7 +297,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
 
     HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetailsV2(
         accountId, orgId, projId, serviceRef, manifestPath, connectorId, chartName, region, "", "", null, null);
-    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK.name();
+    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK_V2.name();
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(accountId)
@@ -384,8 +384,8 @@ public class HelmChartServiceImplTest extends CategoryTest {
       String chartName, List<EncryptedDataDetail> encryptedDataDetailList, String region) {
     return EcrHelmApiListTagsTaskParams.builder()
         .encryptionDetails(encryptedDataDetailList)
-        .chartName("/" + chartName)
-        .pageSize(1000)
+        .chartName(chartName)
+        .pageSize(100000)
         .awsConnectorDTO((AwsConnectorDTO) connectorConfigDTO)
         .region(region)
         .registryId(null)

@@ -71,6 +71,8 @@ public interface UserGroupService {
 
   List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
 
+  Page<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO, Pageable pageable);
+
   Page<UserGroup> list(List<ScopeSelector> scopeFilter, String userIdentifier, String searchTerm, Pageable pageable);
 
   PageResponse<UserMetadataDTO> listUsersInUserGroup(

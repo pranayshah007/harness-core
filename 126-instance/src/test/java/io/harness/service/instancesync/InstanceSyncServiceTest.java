@@ -172,7 +172,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
                                       .orgIdentifier(TEST_ORG_ID)
                                       .projectIdentifier(TEST_PROJECT_ID)
                                       .build();
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(serviceEntityService.getMetadata(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(serviceEntity));
     Environment environment = Environment.builder()
                                   .identifier(TEST_ENV_ID)
@@ -182,7 +182,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
                                   .orgIdentifier(TEST_ORG_ID)
                                   .projectIdentifier(TEST_PROJECT_ID)
                                   .build();
-    when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(environmentService.getMetadata(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(environment));
     doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), eq(true), anyBoolean(), anyLong());
     Call<RestResponse<Boolean>> request = mock(Call.class);

@@ -7,11 +7,11 @@ freeze:
   status: "Enabled"
   windows:
     - timeZone: "America/Los_Angeles"
-      startTime: "2022-11-03 10:48 PM"
-      endTime: "2022-12-29 08:00 PM"
+      startTime: "2024-11-03 10:48 PM"
+      endTime: "2024-12-29 08:00 PM"
       recurrence:
         spec:
-          until: "2023-09-29 06:00 PM"
+          until: "2026-09-29 06:00 PM"
         type: "Daily"
   entityConfigs:
     - name: "rule1"
@@ -55,7 +55,17 @@ freeze:
         type: Slack
         spec:
           userGroups: [ ]
-          webhookUrl: https://hooks.slack.com/services/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
+          webhookUrl: dummyWebhook
+      enabled: true
+    - name: Rule 4
+      identifier: Rule_4
+      events:
+        - type: OnEnableFreezeWindow
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: [ ]
+          webhookUrl: dummyWebhook
       enabled: true
     - name: Rule 2
       identifier: Rule_2
@@ -86,6 +96,7 @@ freeze:
       events:
         - type: FreezeWindowEnabled
         - type: DeploymentRejectedDueToFreeze
+        - type: OnEnableFreezeWindow
       notificationMethod:
         type: MsTeams
         spec:

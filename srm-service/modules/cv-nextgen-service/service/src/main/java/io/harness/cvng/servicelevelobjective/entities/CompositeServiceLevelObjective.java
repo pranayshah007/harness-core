@@ -33,7 +33,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(min = 2, max = 20, message = "A minimum of 2 simple SLO's and a maximum of 20 simple SLO's can be referenced.")
+  @Size(min = 2, max = 30, message = "A minimum of 2 simple SLOs and a maximum of 30 simple SLOs can be referenced.")
   List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   private CompositeSLOFormulaType compositeSLOFormulaType;

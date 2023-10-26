@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.pipeline.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -31,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PMSPipelineService {
   /**
@@ -70,6 +73,8 @@ public interface PMSPipelineService {
   PipelineGetResult getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache, boolean validateAsync);
+  String validatePipeline(String accountId, String orgIdentifier, String projectIdentifier, String identifier,
+      boolean loadFromFallbackBranch, boolean loadFromCache, boolean validateAsync, PipelineEntity pipelineEntity);
 
   //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
   Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
@@ -88,6 +93,8 @@ public interface PMSPipelineService {
    */
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly);
+
+  Optional<PipelineEntity> getPipelineByUUID(String uuid);
 
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
@@ -150,6 +157,17 @@ public interface PMSPipelineService {
 
   String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
+
+  /**
+  The getPermittedPipelineIdentifier performs view permission check on the pipelineIdentifiers list. It returns pipeline
+  identifiers of which the user is having view permission.
+   */
+  List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
+
+  List<String> listAllIdentifiers(Criteria criteria);
+
+  boolean validateViewPermission(String accountId, String orgId, String projectId);
 
   List<YamlInputDetails> getInputSchemaDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);

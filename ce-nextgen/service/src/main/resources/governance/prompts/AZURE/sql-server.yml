@@ -1,0 +1,3 @@
+filters: advisor-recommendation, auditing, azure-ad-administrators, cost, diagnostic-settings, event, firewall-bypass, firewall-rules, list-item, marked-for-op, metric, offhour, onhour, policy-compliant, reduce, resource-lock, transparent-data-encryption, value, vulnerability-assessment
+actions: auto-tag-date, auto-tag-user, delete, lock, logic-app, mark-for-op, notify, set-firewall-rules, tag, tag-trim, untag, webhook
+customPrompt:

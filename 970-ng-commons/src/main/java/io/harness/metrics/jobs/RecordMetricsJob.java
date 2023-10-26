@@ -6,7 +6,9 @@
  */
 
 package io.harness.metrics.jobs;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.reflection.HarnessReflections;
 
@@ -19,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class RecordMetricsJob {
   public static final int METRICS_RECORD_PERIOD_SECONDS = 60;
@@ -36,6 +39,25 @@ public class RecordMetricsJob {
           MetricsPublisher publisher = injector.getInstance(subClass);
           executorService.scheduleAtFixedRate(
               () -> publisher.recordMetrics(), initialDelay, METRICS_RECORD_PERIOD_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+          log.error("Exception while creating a scheduled metrics recorder", e);
+        }
+      });
+    } catch (Exception ex) {
+      log.error("Exception while instantiating an instance of MetricsPublisher", ex);
+    }
+  }
+
+  public void scheduleMetricsTasks(int recordPeriodIntervalInSeconds) {
+    long initialDelay = new SecureRandom().nextInt(60);
+    Set<Class<? extends MetricsPublisher>> classes = HarnessReflections.get().getSubTypesOf(MetricsPublisher.class);
+
+    try {
+      classes.forEach(subClass -> {
+        try {
+          MetricsPublisher publisher = injector.getInstance(subClass);
+          executorService.scheduleAtFixedRate(
+              () -> publisher.recordMetrics(), initialDelay, recordPeriodIntervalInSeconds, TimeUnit.SECONDS);
         } catch (Exception e) {
           log.error("Exception while creating a scheduled metrics recorder", e);
         }

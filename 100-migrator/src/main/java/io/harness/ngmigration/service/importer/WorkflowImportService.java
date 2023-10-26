@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.importer;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.NgMigrationService.getYamlStringV2;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRASTRUCTURE_DEFINITIONS;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRA_DEFINITION_ID;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
@@ -26,6 +27,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.InputDefaults;
@@ -38,10 +40,15 @@ import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
+import io.harness.ngmigration.service.workflow.WorkflowHandler;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.PipelineMigrationUtils;
 import io.harness.persistence.HPersistence;
+import io.harness.plancreator.flowcontrol.FlowControlConfig;
+import io.harness.plancreator.flowcontrol.barriers.BarrierInfoConfig;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
@@ -95,8 +102,9 @@ import retrofit2.Response;
 public class WorkflowImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
-  @Inject private MigrationTemplateUtils migrationTemplateUtils;
+  @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+  @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     WorkflowFilter filter = (WorkflowFilter) importConnectorDTO.getFilter();
@@ -168,22 +176,33 @@ public class WorkflowImportService implements ImportService {
 
   private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
-    String yaml = YamlUtils.writeYamlString(pipelineConfig);
+
     try {
+      String yaml = YamlUtils.writeYamlString(pipelineConfig);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
               .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(pipelineConfig);
+        resp = pmsClient
+                   .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
+
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
-        log.info("Workflows as pipeline template is \n - {}", yaml);
+        log.info("Workflows as pipeline template is \n - {}", NGYamlUtils.getYamlString(pipelineConfig));
       }
       if (resp.code() >= 200 && resp.code() < 300) {
         return;
       }
-      log.info("The Yaml of the generated data was - {}", yaml);
+      log.info("The Yaml of the generated data was - \n{}", NGYamlUtils.getYamlString(pipelineConfig));
       Map<String, Object> error = null;
       error = JsonUtils.asObject(
           resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
@@ -235,13 +254,16 @@ public class WorkflowImportService implements ImportService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = String.format("Pipeline generated from a First Gen Workflow - %s", workflow.getName());
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    Set<String> workflowBarriers = workflowHandler.getBarriers(workflow);
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
     JsonNode templateInputs =
-        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
+        migrationHelperService.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
+      PipelineMigrationUtils.fixBarrierInputs(templateInputs);
       fixServiceDetails(templateInputs, workflow, inputDTO, summaryDTO);
       fixEnvAndInfraDetails(templateInputs, workflow, inputDTO, summaryDTO);
     }
@@ -257,15 +279,27 @@ public class WorkflowImportService implements ImportService {
         StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
 
     return PipelineConfig.builder()
-        .pipelineInfoConfig(PipelineInfoConfig.builder()
-                                .identifier(identifier)
-                                .name(name)
-                                .description(ParameterField.createValueField(description))
-                                .projectIdentifier(projectIdentifier)
-                                .orgIdentifier(orgIdentifier)
-                                .stages(Collections.singletonList(stage))
-                                .allowStageExecutions(true)
-                                .build())
+        .pipelineInfoConfig(
+            PipelineInfoConfig.builder()
+                .flowControl(FlowControlConfig.builder()
+                                 .barriers(workflowBarriers.stream()
+                                               .distinct()
+                                               .map(barrierName
+                                                   -> BarrierInfoConfig.builder()
+                                                          .name(barrierName)
+                                                          .identifier(MigratorUtility.generateIdentifier(
+                                                              barrierName, inputDTO.getIdentifierCaseFormat()))
+                                                          .build())
+                                               .collect(Collectors.toList()))
+                                 .build())
+                .identifier(identifier)
+                .name(name)
+                .description(ParameterField.createValueField(description))
+                .projectIdentifier(projectIdentifier)
+                .orgIdentifier(orgIdentifier)
+                .stages(Collections.singletonList(stage))
+                .allowStageExecutions(true)
+                .build())
         .build();
   }
 
@@ -413,7 +447,7 @@ public class WorkflowImportService implements ImportService {
       NgEntityDetail serviceDetails = serviceEntityNG.get(0);
       stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
       serviceInputs =
-          migrationTemplateUtils.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
+          migrationHelperService.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
       if (serviceInputs != null) {
         serviceInputs = serviceInputs.get(SERVICE_INPUTS);
       }
@@ -450,7 +484,7 @@ public class WorkflowImportService implements ImportService {
     if (isNotEmpty(infraEntityNG)) {
       NgEntityDetail infraDetails = infraEntityNG.get(0);
       stageInfraRef = MigratorUtility.getIdentifierWithScope(infraDetails);
-      infraInputs = migrationTemplateUtils.getInfraInput(
+      infraInputs = migrationHelperService.getInfraInput(
           inputDTO, inputDTO.getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
       if (infraInputs != null) {
         infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);

@@ -15,7 +15,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
-import io.harness.helpers.GlobalSecretManagerUtils;
 import io.harness.network.Http;
 
 import software.wings.beans.VaultConfig;
@@ -54,10 +53,10 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(PL)
 public class VaultRestClientFactory {
   private static final String PATH_SEPARATOR = "/";
-  private static final String KEY_NAME_SEPARATOR = "#";
+  public static final String KEY_NAME_SEPARATOR = "#";
 
   private static final String DEFAULT_BASE_PATH = "harness";
-  private static final String DEFAULT_KEY_NAME = "value";
+  public static final String DEFAULT_KEY_NAME = "value";
 
   // This Jackson object mapper always ignore unknown properties while deserialize JSON documents.
   private static ObjectMapper objectMapper = new ObjectMapper();
@@ -195,7 +194,7 @@ public class VaultRestClientFactory {
       }
       return response == null || response.getData() == null
           ? null
-          : getValueByJsonPath(GlobalSecretManagerUtils.parse(response.getData()), pathAndKey.keyName);
+          : getValueByJsonPath(response.getData(), pathAndKey.keyName);
     }
 
     @Override
@@ -257,7 +256,7 @@ public class VaultRestClientFactory {
         VaultReadResponseV2 response = result.body();
         return response == null || response.getData() == null
             ? null
-            : getValueByJsonPath(GlobalSecretManagerUtils.parse(response.getData().getData()), pathAndKey.keyName);
+            : getValueByJsonPath(response.getData().getData(), pathAndKey.keyName);
       }
       logAndThrowErrorIfRequestFailed(result, "V2Impl-readSecret");
       return null;

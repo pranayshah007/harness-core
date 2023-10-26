@@ -1,0 +1,13 @@
+{
+  "kind": "docker/v1",
+  "data": {
+    "registryType": "GAR",
+    "registryUrl": "us.docker.pkg.dev/project-id",
+    "images": [
+      {
+        "image": "us.docker.pkg.dev/project-id/test:1.0",
+        "digest": "sha256:digest"
+      }
+    ]
+  }
+}

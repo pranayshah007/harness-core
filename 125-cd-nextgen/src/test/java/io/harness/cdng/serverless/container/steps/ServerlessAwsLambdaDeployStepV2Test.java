@@ -192,7 +192,7 @@ public class ServerlessAwsLambdaDeployStepV2Test extends CategoryTest {
     StepOutcome stepOutcome = mock(StepOutcome.class);
     when(instanceInfoService.saveServerInstancesIntoSweepingOutput(any(), any())).thenReturn(stepOutcome);
     assertThat(serverlessAwsLambdaDeployV2Step.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap))
-        .isNull();
+        .isEqualTo(stepOutcome);
   }
 
   @SneakyThrows

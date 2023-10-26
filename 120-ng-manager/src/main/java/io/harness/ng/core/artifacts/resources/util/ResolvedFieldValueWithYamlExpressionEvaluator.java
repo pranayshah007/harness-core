@@ -6,18 +6,24 @@
  */
 
 package io.harness.ng.core.artifacts.resources.util;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDC)
 public class ResolvedFieldValueWithYamlExpressionEvaluator {
   CDYamlExpressionEvaluator yamlExpressionEvaluator;
+  CDExpressionEvaluator cdExpressionEvaluator;
   String value;
 }

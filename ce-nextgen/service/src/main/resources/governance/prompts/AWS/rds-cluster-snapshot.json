@@ -1,0 +1,39 @@
+{
+  "AvailabilityZones": [
+    "us-east-2a",
+    "us-east-2a",
+    "us-east-2b",
+    "us-east-2b",
+    "us-east-2c",
+    "us-east-2c"
+  ],
+  "DBClusterSnapshotIdentifier": "DBClusterSnapshotIdentifier",
+  "DBClusterIdentifier": "DBClusterIdentifier",
+  "SnapshotCreateTime": "2022-11-12T20:03:44.656000+00:00",
+  "Engine": "aurora-mysql",
+  "EngineMode": "provisioned",
+  "AllocatedStorage": 1265,
+  "Status": "available",
+  "Port": 0,
+  "VpcId": "VpcId",
+  "ClusterCreateTime": "2021-04-28T14:58:52.958000+00:00",
+  "MasterUsername": "MasterUsername",
+  "EngineVersion": "5.7.mysql_aurora.2.07.2",
+  "LicenseModel": "aurora-mysql",
+  "SnapshotType": "manual",
+  "PercentProgress": 100,
+  "StorageEncrypted": true,
+  "KmsKeyId": "arn:aws:kms:us-east-2:AccountId:key/KmsKeyId",
+  "DBClusterSnapshotArn": "arn:aws:rds:us-east-2:AccountId:cluster-snapshot:DBClusterSnapshotIdentifier",
+  "IAMDatabaseAuthenticationEnabled": false,
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ]
+}

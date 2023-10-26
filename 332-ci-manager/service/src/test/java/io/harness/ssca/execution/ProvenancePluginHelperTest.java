@@ -65,7 +65,6 @@ import org.mockito.Mock;
 public class ProvenancePluginHelperTest extends CIExecutionTestBase {
   @InjectMocks private ProvenancePluginHelper provenancePluginHelper;
   @Mock private OutcomeService outcomeService;
-  ;
 
   private Ambiance ambiance;
 
@@ -114,7 +113,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     Map<String, String> envMap =
         provenancePluginHelper.getProvenanceStepEnvVariables(provenanceStepInfo, STEP_IDENTIFIER, ambiance);
     assertThat(envMap).isNotNull().isNotEmpty();
-    assertThat(envMap).hasSize(6);
+    assertThat(envMap).hasSize(7);
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TAGS, TAG_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REPO, DOCKER_REPO);
@@ -122,6 +121,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     expectedEnvMap.put(ProvenancePluginHelper.PROVENANCE_PREDICATE, "");
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_DIGESTS, "");
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TYPE, "attest");
+    expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REGISTRY_TYPE, "docker");
     assertThat(envMap).isEqualTo(expectedEnvMap);
   }
 
@@ -133,7 +133,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     Map<String, String> envMap =
         provenancePluginHelper.getProvenanceStepEnvVariables(provenanceStepInfo, STEP_IDENTIFIER, ambiance);
     assertThat(envMap).isNotNull().isNotEmpty();
-    assertThat(envMap).hasSize(7);
+    assertThat(envMap).hasSize(8);
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TAGS, TAG_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REPO, DOCKER_REPO);
@@ -142,6 +142,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     expectedEnvMap.put(ProvenancePluginHelper.PROVENANCE_PREDICATE, "");
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_DIGESTS, "");
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TYPE, "attest");
+    expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REGISTRY_TYPE, "gcr");
     assertThat(envMap).isEqualTo(expectedEnvMap);
   }
 
@@ -190,7 +191,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     Map<String, String> envMap =
         provenancePluginHelper.getProvenanceStepEnvVariablesAtRuntime(provenanceStepInfo, STEP_IDENTIFIER, ambiance);
     assertThat(envMap).isNotNull().isNotEmpty();
-    assertThat(envMap).hasSize(6);
+    assertThat(envMap).hasSize(7);
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TAGS, TAG_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REPO, DOCKER_REPO);
@@ -198,6 +199,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     expectedEnvMap.put(ProvenancePluginHelper.PROVENANCE_PREDICATE, JsonUtils.asJson(predicate));
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_DIGESTS, DIGEST_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TYPE, "attest");
+    expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REGISTRY_TYPE, "docker");
     assertThat(envMap).isEqualTo(expectedEnvMap);
   }
 
@@ -212,7 +214,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     Map<String, String> envMap =
         provenancePluginHelper.getProvenanceStepEnvVariablesAtRuntime(provenanceStepInfo, STEP_IDENTIFIER, ambiance);
     assertThat(envMap).isNotNull().isNotEmpty();
-    assertThat(envMap).hasSize(7);
+    assertThat(envMap).hasSize(8);
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TAGS, TAG_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REPO, DOCKER_REPO);
@@ -221,6 +223,7 @@ public class ProvenancePluginHelperTest extends CIExecutionTestBase {
     expectedEnvMap.put(ProvenancePluginHelper.PROVENANCE_PREDICATE, JsonUtils.asJson(predicate));
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_DIGESTS, DIGEST_1);
     expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_TYPE, "attest");
+    expectedEnvMap.put(ProvenancePluginHelper.PLUGIN_REGISTRY_TYPE, "gcr");
     assertThat(envMap).isEqualTo(expectedEnvMap);
   }
 

@@ -6,12 +6,15 @@
  */
 
 package io.harness.engine.executions.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
@@ -24,6 +27,7 @@ import lombok.NonNull;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
   PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops,
@@ -87,6 +91,9 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
+  long countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+      String accountId, String pipelineIdentifier);
+
   PlanExecution findNextExecutionToRunInAccount(String accountId);
 
   /**
@@ -101,4 +108,10 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * @param planExecutionId Ids of to be updated TTL planExecutions
    */
   void updateTTL(String planExecutionId, Date ttlDate);
+
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount();
 }

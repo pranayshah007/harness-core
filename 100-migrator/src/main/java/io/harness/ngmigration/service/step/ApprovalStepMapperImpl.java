@@ -69,6 +69,8 @@ import software.wings.sm.states.ApprovalState;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.google.common.collect.Lists;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -198,6 +200,11 @@ public class ApprovalStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
+    BasicDBList variables = (BasicDBList) graphNode.getProperties().get("variables");
+
+    List<String> variableNames =
+        variables.stream().map(var -> ((BasicDBObject) var).get("name").toString()).collect(Collectors.toList());
+
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
@@ -210,7 +217,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                        MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
-        .map(ApprovalFunctor::new)
+        .map(so -> variableNames.isEmpty() ? new ApprovalFunctor(so) : new ApprovalFunctor(so, variableNames))
         .collect(Collectors.toList());
   }
 
@@ -322,7 +329,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
             .connectorRef(getConnectorRef(context, approvalParams.getSnowConnectorId()))
             .delegateSelectors(null)
             .ticketNumber(ParameterField.createValueField(approvalParams.getIssueNumber()))
-            .ticketType(ParameterField.createValueField(approvalParams.getTicketType().getDisplayName()))
+            .ticketType(ParameterField.createValueField(approvalParams.getTicketType().name().toLowerCase()))
             .changeWindow(changeWindow)
             .approvalCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getApproval()))
             .rejectionCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getRejection()))

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-bucket-encryption-off-list
+cloudProvider: AWS
+resourceType: s3
+description: List S3 buckets where encryption is not set
+rulesYamlPath: ../s3-bucket-encryption-off-list.yml

@@ -89,7 +89,8 @@ public class GithubGetFileScmApiErrorHandlerTest extends GitSyncTestBase {
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
       assertThat(exception).isNotNull();
-      assertThat(exception.getMessage()).isEqualTo(errorMessage);
+      assertThat(exception.getMessage())
+          .isEqualTo("Error while getting requested file from repo and branch from Github : errorMessage");
     }
   }
 }

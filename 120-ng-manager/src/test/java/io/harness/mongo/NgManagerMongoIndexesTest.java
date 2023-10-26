@@ -71,7 +71,7 @@ public class NgManagerMongoIndexesTest extends NgManagerTestBase {
 
   void addCIModuleLicenseIndex(List<String> indexes) {
     String ciModuleLicenseIndex =
-        "moduleLicenses {\"name\": \"moduleType_status_nextIterations\", \"background\": true} {\"moduleType\": 1, \"status\": 1, \"nextIterations\": 1}";
+        "moduleLicenses {\"name\": \"moduleType_status_provisionMonthlyCICreditsIteration\", \"background\": true} {\"moduleType\": 1, \"status\": 1, \"provisionMonthlyCICreditsIteration\": 1}";
     indexes.add(ciModuleLicenseIndex);
     Collections.sort(indexes);
   }

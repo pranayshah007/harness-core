@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.sdk.core.execution.invokers.StrategyHelper.buildResponseDataSupplier;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -19,8 +21,10 @@ import io.harness.pms.contracts.execution.events.QueueTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.ChainDetails;
+import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
-import io.harness.pms.sdk.core.execution.ProgressableStrategy;
+import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.StepRegistry;
@@ -30,6 +34,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.tasks.ProgressData;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -37,10 +42,11 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
 @Slf4j
-public class TaskChainStrategy extends ProgressableStrategy {
+public class TaskChainStrategy implements ExecuteStrategy {
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private StepRegistry stepRegistry;
   @Inject private StrategyHelper strategyHelper;
@@ -139,5 +145,36 @@ public class TaskChainStrategy extends ProgressableStrategy {
   @Override
   public TaskChainExecutable extractStep(Ambiance ambiance) {
     return (TaskChainExecutable) stepRegistry.obtain(AmbianceUtils.getCurrentStepType(ambiance));
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    TaskChainExecutable executable = extractStep(interruptPackage.getAmbiance());
+    executable.handleAbort(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getTaskChain(), interruptPackage.isUserMarked());
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    TaskChainExecutable executable = extractStep(interruptPackage.getAmbiance());
+    executable.handleFailure(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getTaskChain(), interruptPackage.getMetadata());
+  }
+
+  @Override
+  public void progress(ProgressPackage progressPackage) {
+    Ambiance ambiance = progressPackage.getAmbiance();
+    TaskChainExecutable taskChainExecutable = extractStep(ambiance);
+    ProgressData resp = taskChainExecutable.handleProgressTaskChain(
+        ambiance, progressPackage.getStepParameters(), progressPackage.getProgressData());
+    if (resp != null) {
+      sdkNodeExecutionService.handleProgressResponse(ambiance, resp);
+    }
+  }
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    TaskChainExecutable executable = extractStep(interruptPackage.getAmbiance());
+    executable.handleExpire(
+        interruptPackage.getAmbiance(), interruptPackage.getParameters(), interruptPackage.getTaskChain());
   }
 }

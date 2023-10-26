@@ -14,6 +14,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -63,6 +64,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -71,6 +73,7 @@ import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -148,7 +151,6 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
-
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
@@ -178,13 +180,23 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskType getK8sTaskType(K8sDeployRequest k8sDeployRequest, Ambiance ambiance) {
+    ManifestDelegateConfig manifestDelegateConfig = k8sDeployRequest.getManifestDelegateConfig();
+    if (manifestDelegateConfig != null && manifestDelegateConfig.getStoreDelegateConfig() != null
+        && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
+        && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
+            != null) {
+      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
+    }
+
     if (k8sDeployRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
       return TaskType.K8S_COMMAND_TASK_NG_RANCHER;
     }
+
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
         && isNotEmpty(k8sDeployRequest.getServiceHooks())) {
       return TaskType.K8S_COMMAND_TASK_NG_V2;
     }
+
     return TaskType.K8S_COMMAND_TASK_NG;
   }
 
@@ -458,13 +470,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    ManifestOutcome k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());
+    Optional<ManifestOutcome> manifestSourceOutcome = getStepLevelSourceOutcome(stepElementParameters);
+    ManifestOutcome k8sManifestOutcome =
+        manifestSourceOutcome.orElseGet(() -> getK8sSupportedManifestOutcome(manifestsOutcome.values()));
     K8sStepPassThroughData k8sStepPassThroughData = K8sStepPassThroughData.builder()
                                                         .manifestOutcome(k8sManifestOutcome)
                                                         .infrastructure(infrastructureOutcome)
                                                         .build();
 
-    List<ManifestOutcome> orderedManifestOutcomes = getOrderedManifestOutcome(manifestsOutcome.values());
+    List<ManifestOutcome> orderedManifestOutcomes = new ArrayList<>();
+    if (!k8sManifestOutcome.getIdentifier().equals(MANIFEST_SOURCE_IDENTIFIER)) {
+      orderedManifestOutcomes = getOrderedManifestOutcome(manifestsOutcome.values());
+    }
     orderedManifestOutcomes.addAll(getStepLevelManifestOutcomes(stepElementParameters));
 
     if (ManifestType.Kustomize.equals(k8sManifestOutcome.getType())) {

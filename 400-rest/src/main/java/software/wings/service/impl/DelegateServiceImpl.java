@@ -344,6 +344,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String deployVersion = System.getenv(DEPLOY_VERSION);
   private static final String DELEGATES_UPDATED_RESPONSE = "Following delegates have been updated";
   private static final String NO_DELEGATES_UPDATED_RESPONSE = "No delegate is waiting for approval/rejection";
+  // TODO: remove after resolving PL-40073
+  private static final String ACCOUNTID_FOR_DEBUG = "pitvBmtSMKNZU3gANq01Q";
 
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
@@ -709,14 +711,15 @@ public class DelegateServiceImpl implements DelegateService {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
     if (delegateSetupDetails.getSize() == null) {
-      throw new InvalidRequestException("Delegate Size must be provided.", USER);
+      delegateSetupDetails.setSize(DelegateSize.LAPTOP);
     }
 
     K8sConfigDetails k8sConfigDetails = delegateSetupDetails.getK8sConfigDetails();
     if (k8sConfigDetails == null || k8sConfigDetails.getK8sPermissionType() == null) {
-      throw new InvalidRequestException("K8s permission type must be provided.", USER);
+      delegateSetupDetails.setK8sConfigDetails(
+          K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN).build());
     } else if (k8sConfigDetails.getK8sPermissionType() == NAMESPACE_ADMIN && isBlank(k8sConfigDetails.getNamespace())) {
-      throw new InvalidRequestException("K8s namespace must be provided for this type of permission.", USER);
+      delegateSetupDetails.setK8sConfigDetails(K8sConfigDetails.builder().namespace("harness-delegate-ng").build());
     }
 
     if (!(KUBERNETES.equals(delegateSetupDetails.getDelegateType())
@@ -2649,6 +2652,10 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
+      // TODO: remove after resolving PL-40073
+      if (ACCOUNTID_FOR_DEBUG.equals(delegateParams.getAccountId())) {
+        log.info("Following tags registering for delegate group {} : {} ", delegateGroupId, delegateParams.getTags());
+      }
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
               .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
@@ -3246,12 +3253,29 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     setUnset(updateOperations, DelegateGroupKeys.description, description);
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(tags) && isNotEmpty(name)) {
+      log.info("upsertDelegateGroup: Following tags registering for delegate group {} : {} ", name, tags);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 
     if (sizeDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.sizeDetails, sizeDetails);
     }
-    return persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
+    DelegateGroup updatedDelegateGroup =
+        persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
+    DelegateSetupDetails delegateSetupDetailsOld = null;
+    if (existingEntity != null) {
+      delegateSetupDetailsOld = DelegateSetupDetails.builder()
+                                    .k8sConfigDetails(existingEntity.getK8sConfigDetails())
+                                    .tags(existingEntity.getTags())
+                                    .name(existingEntity.getName())
+                                    .identifier(existingEntity.getIdentifier())
+                                    .build();
+    }
+    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateSetupDetailsOld, updatedDelegateGroup, accountId);
+    return updatedDelegateGroup;
   }
 
   @Override
@@ -4122,7 +4146,6 @@ public class DelegateServiceImpl implements DelegateService {
       validateKubernetesSetupDetails(accountId, delegateSetupDetails);
     }
     DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
     return delegateGroup.getUuid();
   }
 
@@ -4461,8 +4484,8 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  private void sendNewDelegateGroupAuditEvent(
-      DelegateSetupDetails delegateSetupDetails, DelegateGroup delegateGroup, String accountId) {
+  private void sendNewDelegateGroupAuditEvent(DelegateSetupDetails delegateSetupDetails,
+      DelegateSetupDetails delegateSetupDetailsOld, DelegateGroup delegateGroup, String accountId) {
     if (delegateGroup.isNg()) {
       outboxService.save(
           DelegateUpsertEvent.builder()
@@ -4471,6 +4494,7 @@ public class DelegateServiceImpl implements DelegateService {
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
               .delegateGroupIdentifier(delegateGroup.getIdentifier())
               .delegateSetupDetails(delegateSetupDetails)
+              .delegateSetupDetailsOld(delegateSetupDetailsOld)
               .build());
     } else {
       if (delegateGroup != null) {

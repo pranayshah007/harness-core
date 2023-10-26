@@ -9,6 +9,7 @@ package io.harness.cdng.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -60,8 +61,9 @@ public class AsgBlueGreenDeployBaseStepInfo {
 
   @ApiModelProperty(dataType = SwaggerConstants.ASG_INSTANCES_CLASSPATH) AsgInstances instances;
 
+  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.ASG_LOAD_BALANCER_CONFIGURATION_CLASSPATH)
-  List<AwsAsgLoadBalancerConfigYaml> loadBalancers;
+  ParameterField<List<AwsAsgLoadBalancerConfigYaml>> loadBalancers;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> asgName;
 }

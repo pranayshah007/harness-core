@@ -1,0 +1,42 @@
+{
+  "OPENID_CONFIGURATION" : {
+    "issuer": "https://token.oidc.harness.io/account/{account_id}",
+    "jwks_uri": "https://token.oidc.harness.io/account/{account_id}/.well-known/jwks",
+    "subject_types_supported":["public","pairwise"],
+    "response_types_supported":["id_token"],
+    "claims_supported":
+    [
+      "sub","aud","exp","iat","iss","account_id"
+    ],
+    "id_token_signing_alg_values_supported":["RS256"],
+    "scopes_supported":["openid"]
+  },
+  "GCP": {
+    "header": {
+      "typ": "JWT",
+      "alg": "RS256",
+      "kid": "GENERATE_AT_RUNTIME"
+    },
+    "payload": {
+      "sub": "Provider:Harness:Account:{account_id}",
+      "aud": "https://iam.googleapis.com/projects/{gcp_project_id}/locations/global/workloadIdentityPools/{workload_pool_id}/providers/{provider_id}",
+      "iss": "https://token.oidc.harness.io/account/{account_id}",
+      "exp": 3600,
+      "iat": 0,
+      "account_id": "{account_id}"
+    },
+    "access_token_sts_endpoint": "https://sts.googleapis.com/v1/token",
+    "access_token_iam_sa_credentials_endpoint": "",
+    "workload_access_token_config": {
+      "audience": "https://iam.googleapis.com/projects/{gcp_project_id}/locations/global/workloadIdentityPools/{workload_pool_id}/providers/{provider_id}",
+      "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
+      "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
+      "scope": "https://www.googleapis.com/auth/cloud-platform",
+      "subject_token_type": "urn:ietf:params:oauth:token-type:id_token",
+      "subject_token": "{SUBJECT_TOKEN_TYPE}",
+      "options": {
+        "userProject": "{gcp_project_id}"
+      }
+    }
+  }
+}

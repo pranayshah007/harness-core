@@ -110,10 +110,8 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 			st := time.Now()
 			err = collectTestReports(ctx, r.reports, r.id, r.log, st)
 			if err != nil {
-				// If there's an error in collecting reports, we won't retry but
-				// the step will be marked as an error
+				// If there's an error in collecting reports, we will log and ignore the error
 				r.log.Errorw("unable to collect test reports", zap.Error(err))
-				return nil, r.numRetries, err
 			}
 			return o, i, nil
 		}
@@ -215,7 +213,7 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 	if r.detach {
 		command = fmt.Sprintf("%s%s", earlyExitCmd, resolvedCmd)
 	} else {
-		command = fmt.Sprintf("%s%s %s", earlyExitCmd, resolvedCmd, outputVarCmd)
+		command = fmt.Sprintf("%s%s%s", earlyExitCmd, resolvedCmd, outputVarCmd)
 	}
 	return command, nil
 }

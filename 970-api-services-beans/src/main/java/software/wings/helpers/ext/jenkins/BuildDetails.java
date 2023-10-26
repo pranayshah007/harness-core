@@ -69,6 +69,12 @@ public class BuildDetails {
   public void setUpdateTime(Long updateTime) {
     this.updateTime = updateTime;
   }
+  public void setArtifactDownloadMetadata(List<ArtifactFileMetadata> artifactFileMetadata) {
+    this.artifactFileMetadataList = artifactFileMetadata;
+  }
+  public List<ArtifactFileMetadata> getArtifactDownloadMetadata() {
+    return artifactFileMetadataList;
+  }
 
   public String getBuildDisplayName() {
     return buildDisplayName;
@@ -424,6 +430,7 @@ public class BuildDetails {
       buildDetails.setUpdateTime(updateTime);
       buildDetails.setUiDisplayName(uiDisplayName);
       buildDetails.setArtifactFileMetadataList(artifactFileMetadata);
+      buildDetails.setArtifactDownloadMetadata(artifactFileMetadata);
       return buildDetails;
     }
   }

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.elastigroup;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -23,6 +25,7 @@ import software.wings.sm.states.spotinst.SpotInstListenerUpdateState;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {

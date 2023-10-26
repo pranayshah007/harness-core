@@ -40,11 +40,10 @@ public class YamlSdkModule extends AbstractModule {
 
   private YamlSdkModule() {}
 
-  private void testSchemas(
-      Provider<List<YamlSchemaRootClass>> yamlSchemaRootClasses, Provider<ObjectMapper> providerMapper) {
+  private void testSchemas() {
     final AbstractSchemaChecker abstractSchemaChecker = new AbstractSchemaChecker();
     try {
-      abstractSchemaChecker.schemaTests(yamlSchemaRootClasses.get(), providerMapper.get());
+      abstractSchemaChecker.schemaTests();
     } catch (Exception e) {
       throw new GeneralException(e.getLocalizedMessage());
     }
@@ -74,8 +73,7 @@ public class YamlSdkModule extends AbstractModule {
       //      testExecutionMapBinder.addBinding("YamlSchema test registration")
       //              .toInstance(() -> testAutomaticSearch(providerClasses));
 
-      testExecutionMapBinder.addBinding("Yaml Schema test registrars")
-          .toInstance(() -> testSchemas(providerClasses, providerMapper));
+      testExecutionMapBinder.addBinding("Yaml Schema test registrars").toInstance(() -> testSchemas());
       testExecutionMapBinder.addBinding("Yaml Snippet test registrars")
           .toInstance(() -> testSnippets(providerClasses, providerMapper));
     }

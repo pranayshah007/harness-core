@@ -7,6 +7,11 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.jira.JiraAction.CREATE_TICKET;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
@@ -43,6 +48,7 @@ import java.util.stream.Collectors;
 import net.rcarz.jiraclient.Field;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class JiraCreateUpdateStepMapperImpl extends StepMapper {
   @Override
   public List<CgEntityId> getReferencedEntities(
@@ -127,7 +133,9 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     addJiraField(jiraFields, Field.DESCRIPTION, state.getDescription());
     addJiraField(jiraFields, Field.PRIORITY, state.getPriority());
     addJiraField(jiraFields, "Comment", state.getComment());
-    addJiraField(jiraFields, Field.STATUS, state.getStatus());
+    if (CREATE_TICKET == state.getJiraAction()) {
+      addJiraField(jiraFields, Field.STATUS, state.getStatus());
+    }
     if (EmptyPredicate.isNotEmpty(state.getLabels())) {
       addJiraField(jiraFields, Field.LABELS, String.join(",", state.getLabels()));
     }

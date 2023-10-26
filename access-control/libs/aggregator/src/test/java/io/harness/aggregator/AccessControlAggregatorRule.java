@@ -16,11 +16,16 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static org.mockito.Mockito.mock;
 
 import io.harness.accesscontrol.AccessControlCoreModule;
+import io.harness.accesscontrol.acl.persistence.ACL;
+import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
+import io.harness.accesscontrol.principals.usergroups.UserGroupService;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
+import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
-import io.harness.aggregator.consumers.ACLGeneratorService;
-import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -28,7 +33,12 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -51,12 +61,16 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import io.serializer.HObjectMapper;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -92,8 +106,8 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
     modules.add(VersionModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
+    modules.add(AccessControlCoreModule.getInstance(null, false));
     modules.add(new AggregatorPersistenceTestModule());
-    modules.add(AccessControlCoreModule.getInstance());
 
     modules.add(new AbstractModule() {
       @Override
@@ -114,7 +128,7 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
             .toInstance(Sets.newHashSet("test_permission_1", "test_permission_2"));
         implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
             .toInstance(Collections.singleton("test_permission_1"));
-        bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class);
+        bind(Integer.class).annotatedWith(Names.named("batchSizeForACLCreation")).toInstance(50000);
       }
     });
 
@@ -151,7 +165,28 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
             .build();
       }
     });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(OutboxDao.class).to(OutboxDaoImpl.class);
+        bind(OutboxService.class).to(OutboxServiceImpl.class);
+        bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
+      }
+    });
     return modules;
+  }
+
+  @Provides
+  @Singleton
+  private ACLGeneratorServiceFactory primaryACLGenearatorFactory(RoleService roleService,
+      UserGroupService userGroupService, ResourceGroupService resourceGroupService, ScopeService scopeService,
+      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
+      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
+      InMemoryPermissionRepository inMemoryPermissionRepository,
+      @Named("batchSizeForACLCreation") int batchSizeForACLCreation) {
+    return new ACLGeneratorServiceFactory(roleService, userGroupService, resourceGroupService, scopeService,
+        implicitPermissionsByScope, aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
   }
 
   @Override
@@ -168,5 +203,11 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     return applyInjector(log, statement, frameworkMethod, target);
+  }
+
+  @Provides
+  @Singleton
+  OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
+    return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), HObjectMapper.NG_DEFAULT_OBJECT_MAPPER);
   }
 }

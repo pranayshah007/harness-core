@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.executions.plan;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.RetryStagesMetadata;
 
@@ -16,6 +18,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataService {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
@@ -40,4 +43,13 @@ public interface PlanExecutionMetadataService {
   RetryStagesMetadata getRetryStagesMetadata(String planExecutionId);
 
   String updateNotesForExecution(String planExecutionId, String notes);
+
+  /**
+   * Fetches PlanExecutionMetadata and uses id Index
+   *
+   * @param planExecutionId
+   * @param fieldsToInclude
+   * @return
+   */
+  PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude);
 }

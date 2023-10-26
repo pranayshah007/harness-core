@@ -8,6 +8,7 @@
 package io.harness.cdng.bamboo;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +31,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -65,7 +67,14 @@ public class BambooBuildStepHelperServiceImplTest extends CDNGTestBase {
   private static final List<TaskSelector> TASK_SELECTORS = TaskSelectorYaml.toTaskSelector(DELEGATE_SELECTORS);
   private static final Map<String, String> ACCOUNT_ORG_PROJECT = Map.of(SetupAbstractionKeys.accountId, ACCOUNT,
       SetupAbstractionKeys.orgIdentifier, ORG, SetupAbstractionKeys.projectIdentifier, PROJECT);
-  private static final Ambiance AMBIANCE = Ambiance.newBuilder().putAllSetupAbstractions(ACCOUNT_ORG_PROJECT).build();
+
+  private static final Ambiance AMBIANCE =
+      Ambiance.newBuilder()
+          .putAllSetupAbstractions(ACCOUNT_ORG_PROJECT)
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+          .build();
+
   private static final ConnectorDTO BAMBOO_CONNECTOR =
       ConnectorDTO.builder()
           .connectorInfo(ConnectorInfoDTO.builder()

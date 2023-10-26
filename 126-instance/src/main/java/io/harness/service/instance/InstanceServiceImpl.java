@@ -6,14 +6,16 @@
  */
 
 package io.harness.service.instance;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
@@ -45,6 +47,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(HarnessTeam.DX)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -197,6 +200,13 @@ public class InstanceServiceImpl implements InstanceService {
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName) {
     return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInstanceInfo(
         accountIdentifier, instanceInfoNamespace, instanceInfoPodName));
+  }
+
+  @Override
+  public List<InstanceDTO> getActiveInstancesByInstanceInfoAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInstanceNamespaceAndReleaseName(
+        accountIdentifier, instanceInfoNamespace, releaseName));
   }
 
   /*

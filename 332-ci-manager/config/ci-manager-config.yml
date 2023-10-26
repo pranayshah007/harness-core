@@ -172,8 +172,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.25
-  liteEngineImage: harness/ci-lite-engine:1.16.25
+  addonImage: harness/ci-addon:1.16.28
+  liteEngineImage: harness/ci-lite-engine:1.16.28
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -212,6 +212,8 @@ ciExecutionServiceConfig:
       - "--run-strategy"
       - single-container
     images:
+      - product: anchore_default
+        image: harness/anchore-job-runner
       - product: awsecr_default
         image: harness/aws-ecr-job-runner
       - product: awssecurityhub_default
@@ -304,6 +306,10 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-gcr:1.8.0
       entrypoint:
         - /kaniko/kaniko-gcr
+    buildAndPushGARConfig:
+      image: plugins/kaniko-gcr:1.8.0
+      entrypoint:
+        - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
       image: plugins/kaniko-acr:1.8.0
       entrypoint:
@@ -327,74 +333,67 @@ ciExecutionServiceConfig:
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.4.6
+      image: plugins/artifactory:1.4.7
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.6.0
+      image: plugins/cache:1.6.1
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.6.0
+      image: plugins/cache:1.6.1
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     sscaOrchestrationConfig:
-      image: harness/ssca-plugin:0.3.0
-      entrypoint:
-        - /bin/ssca-plugin
+      image: harness/ssca-plugin:0.11.0
     sscaEnforcementConfig:
-      image: harness/ssca-plugin:0.3.0
-      entrypoint:
-        - /bin/ssca-plugin
+      image: harness/ssca-plugin:0.11.0
     provenanceConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     provenanceGcrConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     slsaVerificationConfig:
       image: harness/slsa-plugin:latest
-      entrypoint:
-        - /bin/slsa-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.3.3
+      gitClone: harness/drone-git:1.4.1
       buildAndPushDockerRegistry: plugins/docker:20.14.5
       buildAndPushACR: plugins/acr:20.14.5
       buildAndPushECR: plugins/ecr:20.14.5
       buildAndPushGCR: plugins/gcr:20.14.5
+      buildAndPushGAR: plugins/gcr:20.15.0
       gcsUpload: plugins/gcs:1.5.0
-      s3Upload: plugins/s3:1.2.7
+      s3Upload: plugins/s3:1.2.8
       security: harness/sto-plugin:dev
-      artifactoryUpload: plugins/artifactory:1.4.6
-      cacheGCS: plugins/cache:1.6.0
-      cacheS3: plugins/cache:1.6.0
-      sscaOrchestration: harness/ssca-plugin:0.3.0
-      sscaEnforcement: harness/ssca-plugin:0.3.0
+      artifactoryUpload: plugins/artifactory:1.4.7
+      cacheGCS: plugins/cache:1.6.2
+      cacheS3: plugins/cache:1.6.2
+      sscaOrchestration: harness/ssca-plugin:0.11.0
+      sscaEnforcement: harness/ssca-plugin:0.11.0
     vmContainerlessStepConfig:
       s3UploadConfig:
         name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.7
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.5.0
       cacheS3Config:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.0
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
       cacheGCSConfig:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.0
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.9
+        name: github.com/wings-software/drone-git@refs/tags/v1.4.0
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.2
       dockerBuildxGcrConfig:
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
+      dockerBuildxGarConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
@@ -402,6 +401,8 @@ ciExecutionServiceConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
     httpClientConfig:
       baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
+
+harnessCodeGitUrl: ${HARNESS_CODE_GIT_URL:- http://localhost:3000/git}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -516,3 +517,10 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 enableQueue: ${ENABLE_QUEUE:-false}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+asyncResourceCleanupPool:
+  corePoolSize: ${ASYNC_RESOURCE_CLEANUP_THREAD_COUNT:-2}
+
+enableAsyncResourceCleanup: ${ENABLE_ASYNC_RESOURCE_CLEANUP:-false}

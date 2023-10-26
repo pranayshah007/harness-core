@@ -21,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -38,6 +40,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -71,6 +74,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateTokenNgResource {
   private final DelegateNgManagerCgManagerClient delegateTokenClient;
   private final AccessControlClient accessControlClient;
+  private static final String TOKEN_DOES_NOT_EXIST = "No such delegate token exists.";
 
   @Inject
   public DelegateTokenNgResource(
@@ -185,7 +189,16 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Delegate Token name") @QueryParam("delegateTokenName") String delegateTokenName) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
-    return new RestResponse<>(CGRestUtils.getResponse(delegateTokenClient.getDelegateGroupsUsingToken(
-        accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName)));
+    try {
+      DelegateGroupListing result = CGRestUtils.getResponse(delegateTokenClient.getDelegateGroupsUsingToken(
+          accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName));
+      return new RestResponse<>(result);
+    } catch (InvalidRequestException ex) {
+      if (Objects.equals(ex.getMessage(), TOKEN_DOES_NOT_EXIST)) {
+        throw new EntityNotFoundException(TOKEN_DOES_NOT_EXIST);
+      } else {
+        throw ex;
+      }
+    }
   }
 }

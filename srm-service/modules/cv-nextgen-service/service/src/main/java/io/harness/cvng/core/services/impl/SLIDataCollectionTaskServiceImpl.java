@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SLI;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
@@ -31,7 +32,6 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,6 +100,7 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     cvConfigList.forEach(cvConfig -> dataCollectionTaskService.populateMetricPack(cvConfig));
     Instant nextTaskStartTime = prevSLITask.getEndTime();
     Instant currentTime = clock.instant();
+    Instant nextTaskEndTime = roundUpTo5MinBoundary(currentTime);
     if (nextTaskStartTime.isBefore(prevSLITask.getDataCollectionPastTimeCutoff(currentTime))) {
       nextTaskStartTime = prevSLITask.getDataCollectionPastTimeCutoff(currentTime);
       serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
@@ -107,11 +108,11 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
       log.info("Restarting Data collection startTime for task {} : {}", prevSLITask.getVerificationTaskId(),
           nextTaskStartTime);
     }
-    DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
-        cvConfigList, serviceLevelIndicator, false, nextTaskStartTime, nextTaskStartTime.plus(5, ChronoUnit.MINUTES));
+    DataCollectionTask dataCollectionTask =
+        getDataCollectionTaskForSLI(cvConfigList, serviceLevelIndicator, false, nextTaskStartTime, nextTaskEndTime);
     if (dataCollectionTask != null) {
       if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
-        dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
+        dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(nextTaskEndTime));
       }
       dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
       dataCollectionTaskService.save(dataCollectionTask);

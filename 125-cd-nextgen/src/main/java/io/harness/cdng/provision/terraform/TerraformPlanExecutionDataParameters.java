@@ -36,4 +36,6 @@ public class TerraformPlanExecutionDataParameters {
   ParameterField<Boolean> isTerraformCloudCli;
   ParameterField<Boolean> skipTerraformRefresh;
   List<TerraformCliOptionFlag> cliOptionFlags;
+  TerraformProviderCredential providerCredential;
+  ParameterField<Boolean> skipStateStorage;
 }

@@ -1,0 +1,43 @@
+{
+  "SnapshotIdentifier": "SnapshotIdentifier",
+  "ClusterIdentifier": "ClusterIdentifier",
+  "SnapshotCreateTime": "2023-06-06T15:06:10.519000+00:00",
+  "Status": "available",
+  "Port": 5439,
+  "AvailabilityZone": "us-west-1a",
+  "ClusterCreateTime": "2023-06-06T14:38:37.144000+00:00",
+  "MasterUsername": "MasterUsername",
+  "ClusterVersion": "1.0",
+  "EngineFullVersion": "1.0.51304",
+  "SnapshotType": "manual",
+  "NodeType": "dc2.large",
+  "NumberOfNodes": 2,
+  "DBName": "dev",
+  "VpcId": "VpcId",
+  "Encrypted": false,
+  "EncryptedWithHSM": false,
+  "OwnerAccount": "AccountId",
+  "TotalBackupSizeInMegaBytes": 60.0,
+  "ActualIncrementalBackupSizeInMegaBytes": 18.0,
+  "BackupProgressInMegaBytes": 18.0,
+  "CurrentBackupRateInMegaBytesPerSecond": 15.3061,
+  "EstimatedSecondsToCompletion": 0,
+  "ElapsedTimeInSeconds": 1,
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ],
+  "RestorableNodeTypes": [
+    "dc2.large"
+  ],
+  "EnhancedVpcRouting": false,
+  "MaintenanceTrackName": "current",
+  "ManualSnapshotRetentionPeriod": -1,
+  "SnapshotRetentionStartTime": "2023-06-06T15:06:11.695000+00:00"
+}

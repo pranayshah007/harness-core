@@ -22,6 +22,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
@@ -30,6 +34,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.validation.JavaxValidator;
@@ -58,6 +63,15 @@ public class EnvironmentMapper {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validateOrThrow(environmentRequestDTO, ngEnvironmentConfig);
+
+      String description = isEmpty(environmentRequestDTO.getDescription())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getDescription()
+          : environmentRequestDTO.getDescription();
+
+      Map<String, String> tags = isEmpty(environmentRequestDTO.getTags())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getTags()
+          : environmentRequestDTO.getTags();
+
       environment = Environment.builder()
                         .identifier(environmentRequestDTO.getIdentifier())
                         .accountId(accountId)
@@ -65,9 +79,9 @@ public class EnvironmentMapper {
                         .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
                         .name(environmentRequestDTO.getName())
                         .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
-                        .description(environmentRequestDTO.getDescription())
+                        .description(description)
                         .type(environmentRequestDTO.getType())
-                        .tags(convertToList(environmentRequestDTO.getTags()))
+                        .tags(convertToList(tags))
                         .build();
 
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -135,6 +149,42 @@ public class EnvironmentMapper {
         .tags(convertToMap(environment.getTags()))
         .version(environment.getVersion())
         .yaml(environment.getYaml())
+        .entityGitDetails(getEntityGitDetails(environment))
+        .storeType(environment.getStoreType())
+        .connectorRef(environment.getConnectorRef())
+        .cacheResponseMetadataDTO(getCacheResponse(environment))
+        .fallbackBranch(environment.getFallBackBranch())
+        .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(Environment environment) {
+    if (environment.getStoreType() == StoreType.REMOTE) {
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
+    }
+    return null; // Default if storeType is not remote
+  }
+
+  private CacheResponseMetadataDTO getCacheResponse(Environment environment) {
+    if (environment.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+
+      if (cacheResponse != null) {
+        return createCacheResponseMetadataDTO(cacheResponse);
+      }
+    }
+
+    return null;
+  }
+
+  private CacheResponseMetadataDTO createCacheResponseMetadataDTO(CacheResponse cacheResponse) {
+    return CacheResponseMetadataDTO.builder()
+        .cacheState(cacheResponse.getCacheState())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 

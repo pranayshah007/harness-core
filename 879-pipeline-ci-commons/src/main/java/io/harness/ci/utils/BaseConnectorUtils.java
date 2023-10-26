@@ -25,6 +25,7 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
 import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
@@ -103,7 +104,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -204,21 +204,6 @@ public class BaseConnectorUtils {
                                                           .encryptedDataDetails(encryptedDataDetails);
 
     return connectorDetailsBuilder.build();
-  }
-
-  public static String getSCMBaseUrl(String baseUrl) {
-    try {
-      URL url = new URL(baseUrl);
-      String host = url.getHost();
-      String protocol = url.getProtocol();
-      if (host.equals("localhost")) {
-        return "";
-      }
-      return protocol + "://" + host + "/code/git";
-    } catch (Exception e) {
-      log.error("There was error while generating scm base URL", e);
-    }
-    return "";
   }
 
   public ConnectorDetails getConnectorDetailsInternalWithRetries(NGAccess ngAccess, IdentifierRef connectorRef) {
@@ -500,6 +485,11 @@ public class BaseConnectorUtils {
 
   private ConnectorDetails getGitConnectorDetails(
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof DelegateSelectable) {
+      DelegateSelectable delegateSelectable = (DelegateSelectable) connectorDTO.getConnectorInfo().getConnectorConfig();
+      connectorDetailsBuilder = connectorDetailsBuilder.delegateSelectors(delegateSelectable.getDelegateSelectors());
+    }
+
     if (connectorDTO.getConnectorInfo().getConnectorType() == GITHUB) {
       return buildGithubConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == AZURE_REPO) {

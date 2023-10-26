@@ -6,22 +6,27 @@
  */
 
 package io.harness.evaluators;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.pms.expression.ParameterFieldResolverFunctor;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Getter
 public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
@@ -48,6 +53,7 @@ public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
    * @param contextMap context
    * @return evaluated map of properties
    */
+
   public Map<String, Object> evaluateProperties(Map<String, String> properties, Map<String, Object> contextMap) {
     Map<String, Object> propertyNameEvaluatedMap = new HashMap<>();
     for (Map.Entry<String, String> property : properties.entrySet()) {
@@ -65,6 +71,20 @@ public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
     }
     return propertyNameEvaluatedMap;
   }
+
+  public <T> T evaluateExpression(ParameterField<T> parameterField, ExpressionMode expressionMode) {
+    if (parameterField == null || parameterField.getValue() == null) {
+      return null;
+    }
+
+    Object finalValue = parameterField.fetchFinalValue();
+    if (finalValue instanceof String) {
+      return (T) evaluateExpression((String) finalValue, expressionMode);
+    }
+
+    return parameterField.getValue();
+  }
+
   @Override
   public Object resolve(Object o, ExpressionMode expressionMode) {
     return ExpressionEvaluatorUtils.updateExpressions(o,

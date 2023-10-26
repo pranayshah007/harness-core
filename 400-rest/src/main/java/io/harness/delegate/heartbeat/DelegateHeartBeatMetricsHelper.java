@@ -96,9 +96,9 @@ public class DelegateHeartBeatMetricsHelper {
     try {
       List<String> accountInfo = getAccountDetails(accountId);
       DelegateRing delegateRing = (accountInfo.get(2) != null) ? getDelegateRing(accountInfo.get(2)) : null;
-      delegateMetricsService.recordDelegateHeartBeatMetricsPerAccount(time, accountId, accountInfo.get(0),
-          accountInfo.get(1), delegateRing, orgId, projectId, delegateName, delegateId, delegateVersion,
-          delegateConnectionStatus, delegateEventType, isNg, isImmutable, lastHB, metricName);
+      delegateMetricsService.recordDelegateHeartBeatMetricsPerAccount(accountId, accountInfo.get(0), accountInfo.get(1),
+          delegateRing, orgId, projectId, delegateName, delegateId, delegateVersion, delegateConnectionStatus,
+          delegateEventType, isNg, isImmutable, lastHB, metricName);
       if (Objects.equals(delegateEventType, HEARTBEAT_DELETE_EVENT)
           || Objects.equals(delegateEventType, HEARTBEAT_UNREGISTER_EVENT)
           || Objects.equals(delegateEventType, HEARTBEAT_RESTART_EVENT)) {

@@ -12,9 +12,13 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
@@ -57,6 +61,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -66,6 +71,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @GitSyncableHarnessRepo
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -90,6 +96,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     }
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
         criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
+
     return PageableExecutionUtils.getPage(pipelineEntities, pageable,
         ()
             -> gitAwarePersistence.count(
@@ -224,6 +231,17 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return Optional.of(savedEntity);
   }
 
+  @Override
+  public Optional<PipelineEntity> find(String uuid) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(uuid);
+    Query query = new Query(criteria);
+    PipelineEntity pipelineEntity = mongoTemplate.findOne(query, PipelineEntity.class);
+    if (pipelineEntity == null) {
+      return Optional.empty();
+    }
+    return Optional.of(pipelineEntity);
+  }
+
   private PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, boolean notDeleted, boolean metadataOnly) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
@@ -330,19 +348,55 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return updatedPipelineEntity;
   }
 
+  @Override
+  public PipelineEntity updatePipelineFilters(PipelineEntity pipelineToUpdate, String uuid, Integer yamlHash) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(uuid, yamlHash);
+    Query query = new Query(criteria);
+    Update updateOperations = PMSPipelineFilterHelper.getPipelineFilterUpdateOperations(pipelineToUpdate);
+
+    Pair<PipelineEntity, PipelineEntity> updatePipelineInDb =
+        transactionHelper.performTransaction(()
+                                                 -> updatePipelineEntityWithoutOutboxEvent(query, updateOperations,
+                                                     pipelineToUpdate, pipelineToUpdate.getLastUpdatedAt()));
+    PipelineEntity updatedPipelineEntity = updatePipelineInDb.getRight();
+    if (updatedPipelineEntity == null) {
+      return null;
+    }
+    return updatedPipelineEntity;
+  }
+
   PipelineEntity updatePipelineEntityInDB(
       Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
-    PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
-        query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
+    Pair<PipelineEntity, PipelineEntity> updatePipelineInDb =
+        updatePipelineEntityWithoutOutboxEvent(query, updateOperations, pipelineToUpdate, timeOfUpdate);
+    PipelineEntity oldEntityFromDB = updatePipelineInDb.getLeft();
     if (oldEntityFromDB == null) {
       return null;
     }
-    PipelineEntity pipelineEntityAfterUpdate =
-        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    PipelineEntity pipelineEntityAfterUpdate = updatePipelineInDb.getRight();
     outboxService.save(
         new PipelineUpdateEvent(pipelineToUpdate.getAccountIdentifier(), pipelineToUpdate.getOrgIdentifier(),
             pipelineToUpdate.getProjectIdentifier(), pipelineEntityAfterUpdate, oldEntityFromDB));
     return pipelineEntityAfterUpdate;
+  }
+
+  Pair<PipelineEntity, PipelineEntity> updatePipelineEntityWithoutOutboxEvent(
+      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+    /*
+     Return Pair of oldEntityFromDB and pipelineEntityAfterUpdate
+     First value is Old, second value is New
+    */
+    PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
+        query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
+    if (oldEntityFromDB == null) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with identifier %s does not exist in account: %s org: %s, project: %s",
+              pipelineToUpdate.getIdentifier(), pipelineToUpdate.getAccountIdentifier(),
+              pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier()));
+    }
+    PipelineEntity pipelineEntityAfterUpdate =
+        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    return Pair.of(oldEntityFromDB, pipelineEntityAfterUpdate);
   }
 
   PipelineEntity onboardToInlineIfNullStoreType(PipelineEntity updatedPipelineEntity, Query query) {
@@ -474,6 +528,11 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PipelineEntity.class));
+  }
+
+  @Override
+  public List<String> findAllPipelineIdentifiers(Criteria criteria) {
+    return pipelineEntityReadHelper.findAllIdentifiers(criteria);
   }
 
   @VisibleForTesting

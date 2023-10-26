@@ -14,9 +14,7 @@ import static io.harness.delegate.service.core.util.LabelHelper.normalizeLabel;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-import io.harness.delegate.core.beans.ContainerSpec;
 import io.harness.delegate.core.beans.K8SInfra;
-import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
@@ -94,7 +92,7 @@ public class PodBuilder extends V1PodBuilder {
 
   public V1Pod buildPod(
       final K8SInfra k8SInfra, final List<V1Volume> volumes, final V1Secret loggingSecret, final PortMap portMap) {
-    return this.withAddon(k8SInfra).withLiteEngine(k8SInfra, loggingSecret, portMap).withVolumes(volumes).build();
+    return this.withAddon().withLiteEngine(k8SInfra, loggingSecret, portMap).withVolumes(volumes).build();
   }
 
   @NonNull
@@ -107,7 +105,7 @@ public class PodBuilder extends V1PodBuilder {
     final var portEnvMap =
         portMap.getPortMap().entrySet().stream().collect(toMap(e -> e.getKey() + SERVICE_PORT_SUFFIX, String::valueOf));
 
-    final var leContainer = containerFactory.createLEContainer(k8SInfra.getResource())
+    final var leContainer = containerFactory.createLEContainer(k8SInfra.getCompute())
                                 .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
                                 .addAllToEnv(K8SEnvVar.fromMap(portEnvMap))
                                 .build();
@@ -116,9 +114,8 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   // We want to download ci-addon in the init container
-  private PodBuilder withAddon(K8SInfra k8SInfra) {
-    final var addonContainer =
-        containerFactory.createAddonInitContainer(k8SInfra).withVolumeMounts(ADDON_VOLUME_MNT).build();
+  private PodBuilder withAddon() {
+    final var addonContainer = containerFactory.createAddonInitContainer().withVolumeMounts(ADDON_VOLUME_MNT).build();
     this.editOrNewSpec().addToInitContainers(addonContainer).addToVolumes(ADDON_VOLUME).endSpec();
     return this;
   }

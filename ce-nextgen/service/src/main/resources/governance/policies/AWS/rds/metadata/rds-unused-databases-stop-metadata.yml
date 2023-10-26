@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: rds-unused-databases-stop
+cloudProvider: AWS
+resourceType: rds
+description: Stop rds instances that have been marked with the tag harness_rds_unused and the operation is set to stop
+rulesYamlPath: ../rds-unused-databases-stop.yml

@@ -6,15 +6,17 @@
  */
 
 package io.harness.pms.sdk;
-
 import static io.harness.pms.sdk.SdkStepHelper.SDK_STEP_SET_NAME;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.core.query.Update.update;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.datastructures.EphemeralCacheService;
 import io.harness.exception.InvalidRequestException;
@@ -54,6 +56,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
@@ -96,7 +99,6 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
         throw new InitializeSdkException("Could not acquire lock");
       }
       saveSdkInstance(request);
-      schemaFetcher.invalidateAllCache();
       ephemeralCacheService.getDistributedSet(SDK_STEP_SET_NAME).clear();
     } catch (Exception ex) {
       log.error(String.format("Exception occurred while registering sdk with name: [%s]", request.getName()), ex);

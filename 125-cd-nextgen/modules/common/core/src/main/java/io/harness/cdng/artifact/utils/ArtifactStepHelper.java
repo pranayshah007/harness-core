@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.utils;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -15,7 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
@@ -131,7 +131,7 @@ public class ArtifactStepHelper {
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
     if (artifactsOutcome != null) {
-      stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+      stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
           StageExecutionInfoUpdateDTO.builder()
               .artifactsSummary(mapArtifactsOutcomeToSummary(artifactsOutcome))
               .build());

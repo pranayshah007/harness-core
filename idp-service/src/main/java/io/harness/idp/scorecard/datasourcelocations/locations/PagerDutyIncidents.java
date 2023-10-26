@@ -20,6 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
+import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
@@ -52,44 +54,38 @@ public class PagerDutyIncidents implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
+      throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
 
     String apiUrl = apiRequestDetails.getUrl();
-    log.info("PagerDutyIncidents DSL -  URL before replacements - {}", apiUrl);
 
     Map<String, Object> inputValueData = new HashMap<>();
 
     if (replaceableHeaders.get(AUTHORIZATION_HEADER) == null) {
-      log.info("PagerDutyIncidents DSL - Pager duty plugin is not enabled");
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_NOT_ENABLED_ERROR_MESSAGE);
       return inputValueData;
     }
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
+    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
+    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
 
     String serviceId = possibleReplaceableUrlPairs.get(PAGERDUTY_SERVICE_ID);
     if (serviceId == null) {
-      log.info("PagerDutyIncidents DSL - pager duty annotation is missing");
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_ANNOTATION_MISSING_ERROR);
       return inputValueData;
     }
 
-    apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
-
-    log.info("PagerDutyIncidents DSL - Replaced API URL - {} ", apiUrl);
+    apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
 
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, getDynamicReplaceableURLPlaceHolders());
-    log.info("PagerDutyIncidents DSL - Replaced Dynamic API URL - {} ", apiUrl);
 
     apiRequestDetails.setUrl(apiUrl);
 
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-
-    log.info("PagerDutyIncidents DSL - Response Status - {}", response.getStatus());
-    log.info("PagerDutyIncidents DSL - Response Entity - {}", response.getEntity().toString());
 
     if (response.getStatus() == 200) {
       inputValueData.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
@@ -101,8 +97,6 @@ public class PagerDutyIncidents implements DataSourceLocation {
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE);
     }
 
-    log.info("PagerDutyIncidents DSL - Response status code - {} and returned response -{}", response.getStatus(),
-        inputValueData);
     return inputValueData;
   }
 

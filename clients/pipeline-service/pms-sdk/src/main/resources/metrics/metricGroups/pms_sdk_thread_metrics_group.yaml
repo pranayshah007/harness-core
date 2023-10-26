@@ -1,0 +1,6 @@
+name: Pipeline SDK Thread Metrics Group
+identifier: PipelineSDKThreadMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

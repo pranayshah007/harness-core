@@ -6,7 +6,10 @@
  */
 
 package io.harness.ng.core.service.services.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -18,6 +21,7 @@ import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLI
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -25,25 +29,40 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -57,6 +76,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ManifestFilterHelper;
+import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
@@ -68,6 +88,7 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -82,6 +103,7 @@ import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -90,6 +112,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -99,12 +122,16 @@ import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -147,18 +174,23 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Inject @Named("service-gitx-executor") private ExecutorService executorService;
+  private final NGFeatureFlagHelperService featureFlagService;
+  @Named(DEFAULT_CONNECTOR_SERVICE) private final ConnectorService connectorService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Service [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Service [%s] in Account [%s] already exists";
+  private static final int REMOTE_SERVICE_BATCH_SIZE = 20;
 
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
-      ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
+      ServiceEntitySetupUsageHelper entitySetupUsageHelper, NGFeatureFlagHelperService featureFlagService,
+      @Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -167,6 +199,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     this.serviceOverrideService = serviceOverrideService;
     this.serviceOverridesServiceV2 = serviceOverridesServiceV2;
     this.entitySetupUsageHelper = entitySetupUsageHelper;
+    this.featureFlagService = featureFlagService;
+    this.connectorService = connectorService;
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {
@@ -198,8 +232,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
+    } catch (ExplanationException | HintException | ScmException ex) {
+      log.error(String.format("Error error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
+      throw ex;
     } catch (Exception ex) {
-      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      log.error(String.format("Unexpected error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
       throw new InvalidRequestException(
           String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
     }
@@ -392,6 +429,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                    .accountIdentifier(requestService.getAccountId())
                                    .orgIdentifier(requestService.getOrgIdentifier())
                                    .projectIdentifier(requestService.getProjectIdentifier())
+                                   .oldService(serviceEntityOptional.orElse(null))
                                    .service(requestService)
                                    .build());
           }
@@ -619,12 +657,290 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public List<ServiceEntity> getServices(
+  public List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceRefs) {
     if (isEmpty(serviceRefs)) {
       return emptyList();
     }
     return getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+  }
+
+  @Override
+  public List<ServiceV2YamlMetadata> getServicesYamlMetadata(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
+      boolean loadFromCache) {
+    if (isEmpty(serviceRefs)) {
+      return emptyList();
+    }
+
+    List<ServiceV2YamlMetadata> servicesYamlMetadata = null;
+
+    try {
+      servicesYamlMetadata = getServicesYamlMetadataInternal(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, servicesMetadataWithGitInfo, loadFromCache);
+    } catch (CompletionException ex) {
+      // internal method always wraps the CompletionException, so we will have a cause
+      log.error(String.format("Error while getting services: %s", serviceRefs), ex);
+      Throwables.throwIfUnchecked(ex.getCause());
+    } catch (Exception ex) {
+      log.error(String.format("Unexpected error occurred while getting services: %s", serviceRefs), ex);
+      throw new InternalServerErrorException(
+          String.format("Unexpected error occurred while getting services: %s: [%s]", serviceRefs, ex.getMessage()),
+          ex);
+    }
+
+    return servicesYamlMetadata;
+  }
+
+  private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
+    if (featureFlagService.isEnabled(
+            serviceEntity.getAccountId(), FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
+      serviceEntity = updateArtifactoryRegistryUrlIfEmpty(serviceEntity, serviceEntity.getAccountId(),
+          serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier());
+    }
+
+    if (isBlank(serviceEntity.getYaml())) {
+      log.info("Service with identifier {} is not configured with a Service definition. Service Yaml is empty",
+          serviceEntity.getIdentifier());
+      return ServiceV2YamlMetadata.builder()
+          .serviceIdentifier(serviceEntity.getIdentifier())
+          .serviceYaml("")
+          .inputSetTemplateYaml("")
+          .projectIdentifier(serviceEntity.getProjectIdentifier())
+          .orgIdentifier(serviceEntity.getOrgIdentifier())
+          .build();
+    }
+
+    final String serviceInputSetYaml = createServiceInputsYaml(serviceEntity.getYaml(), serviceEntity.getIdentifier());
+    return ServiceV2YamlMetadata.builder()
+        .serviceIdentifier(serviceEntity.getIdentifier())
+        .serviceYaml(serviceEntity.getYaml())
+        .inputSetTemplateYaml(serviceInputSetYaml)
+        .orgIdentifier(serviceEntity.getOrgIdentifier())
+        .projectIdentifier(serviceEntity.getProjectIdentifier())
+        .connectorRef(serviceEntity.getConnectorRef())
+        .storeType(serviceEntity.getStoreType())
+        .fallbackBranch(serviceEntity.getFallBackBranch())
+        .entityGitDetails(ServiceElementMapper.getEntityGitDetails(serviceEntity))
+        .build();
+  }
+
+  private YamlNode validateAndGetYamlNode(String yaml) {
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Service YAML is empty.");
+    }
+    YamlNode yamlNode = null;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
+    }
+    return yamlNode;
+  }
+
+  @Override
+  public ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
+      ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (serviceEntity == null) {
+      return null;
+    }
+
+    String repositoryUrlField = "repositoryUrl";
+
+    String serviceYaml = serviceEntity.getYaml();
+
+    YamlNode node = validateAndGetYamlNode(serviceYaml);
+
+    JsonNode artifactSpecNode = null;
+    if (node != null) {
+      JsonNode serviceNode = node.getCurrJsonNode().get("service");
+
+      if (serviceNode != null) {
+        JsonNode serviceDefinitionNode = serviceNode.get("serviceDefinition");
+
+        if (serviceDefinitionNode != null) {
+          JsonNode specNode = serviceDefinitionNode.get("spec");
+
+          if (specNode != null) {
+            JsonNode artifactsNode = specNode.get("artifacts");
+
+            if (artifactsNode != null) {
+              JsonNode primaryNode = artifactsNode.get("primary");
+
+              if (primaryNode != null) {
+                artifactSpecNode = primaryNode.get("sources");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (artifactSpecNode == null) {
+      return serviceEntity;
+    }
+
+    Map<String, Object> yamlResMap = getResMap(node, null);
+    LinkedHashMap<String, Object> serviceResMap = (LinkedHashMap<String, Object>) yamlResMap.get("service");
+    LinkedHashMap<String, Object> serviceDefinitionResMap =
+        (LinkedHashMap<String, Object>) serviceResMap.get("serviceDefinition");
+    LinkedHashMap<String, Object> specResMap = (LinkedHashMap<String, Object>) serviceDefinitionResMap.get("spec");
+    LinkedHashMap<String, Object> artifactsResMap = (LinkedHashMap<String, Object>) specResMap.get("artifacts");
+    LinkedHashMap<String, Object> primaryResMap = (LinkedHashMap<String, Object>) artifactsResMap.get("primary");
+    ArrayList<LinkedHashMap<String, Object>> sourcesResMap =
+        (ArrayList<LinkedHashMap<String, Object>>) primaryResMap.get("sources");
+
+    for (int i = 0; i < sourcesResMap.size(); i++) {
+      LinkedHashMap<String, Object> source = sourcesResMap.get(i);
+
+      String type = String.valueOf(source.get("type"));
+      type = type.substring(1, type.length() - 1);
+      LinkedHashMap<String, Object> spec = (LinkedHashMap<String, Object>) source.get("spec");
+
+      if (type.equals(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME)) {
+        if (!spec.containsKey(repositoryUrlField)) {
+          String finalUrl = null;
+          String connectorRef = String.valueOf(spec.get("connectorRef"));
+          connectorRef = connectorRef.substring(1, connectorRef.length() - 1);
+          String repository = String.valueOf(spec.get("repository"));
+          repository = repository.substring(1, repository.length() - 1);
+          String repositoryFormat = String.valueOf(spec.get("repositoryFormat"));
+          repositoryFormat = repositoryFormat.substring(1, repositoryFormat.length() - 1);
+
+          if (repositoryFormat.equals("docker")) {
+            IdentifierRef connectorIdentifier =
+                IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
+            ArtifactoryConnectorDTO connector = getConnector(connectorIdentifier);
+            finalUrl = getArtifactoryRegistryUrl(connector.getArtifactoryServerUrl(), null, repository);
+
+            spec.put(repositoryUrlField, finalUrl);
+          }
+        }
+        source.replace("spec", spec);
+      }
+      sourcesResMap.set(i, source);
+    }
+
+    primaryResMap.replace("sources", sourcesResMap);
+    artifactsResMap.replace("primary", primaryResMap);
+    specResMap.replace("artifacts", artifactsResMap);
+    serviceDefinitionResMap.replace("spec", specResMap);
+    serviceResMap.replace("serviceDefinition", serviceDefinitionResMap);
+    yamlResMap.replace("service", serviceResMap);
+
+    serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(yamlResMap));
+    return serviceEntity;
+  }
+
+  private ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
+    Optional<ConnectorResponseDTO> connectorDTO =
+        connectorService.get(artifactoryConnectorRef.getAccountIdentifier(), artifactoryConnectorRef.getOrgIdentifier(),
+            artifactoryConnectorRef.getProjectIdentifier(), artifactoryConnectorRef.getIdentifier());
+
+    if (connectorDTO.isEmpty() || !isAArtifactoryConnector(connectorDTO.get())) {
+      throw new ArtifactoryRegistryException(String.format("Connector not found for identifier : [%s] with scope: [%s]",
+          artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getScope()));
+    }
+    ConnectorInfoDTO connectors = connectorDTO.get().getConnector();
+    return (ArtifactoryConnectorDTO) connectors.getConnectorConfig();
+  }
+
+  private static boolean isAArtifactoryConnector(@NotNull ConnectorResponseDTO connectorResponseDTO) {
+    return ConnectorType.ARTIFACTORY == (connectorResponseDTO.getConnector().getConnectorType());
+  }
+
+  private Map<String, Object> getResMap(YamlNode yamlNode, String url) {
+    Map<String, Object> resMap = new LinkedHashMap<>();
+    List<YamlField> childFields = yamlNode.fields();
+    boolean connectorRefFlag = false;
+    // Iterating over the YAML
+    for (YamlField childYamlField : childFields) {
+      String fieldName = childYamlField.getName();
+      if (fieldName.equals("connectorRef")) {
+        connectorRefFlag = true;
+      }
+      JsonNode value = childYamlField.getNode().getCurrJsonNode();
+      if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> ValueNode
+        resMap.put(fieldName, value);
+      } else if (value.isArray()) {
+        // Value -> ArrayNode
+        resMap.put(fieldName, getResMapInArray(childYamlField.getNode(), url));
+      } else {
+        // Value -> ObjectNode
+        resMap.put(fieldName, getResMap(childYamlField.getNode(), url));
+      }
+    }
+    if (connectorRefFlag && EmptyPredicate.isNotEmpty(url)) {
+      resMap.put("repositoryUrl", url);
+    }
+    return resMap;
+  }
+
+  // Gets the ResMap if the yamlNode is of the type Array
+  private List<Object> getResMapInArray(YamlNode yamlNode, String url) {
+    List<Object> arrayList = new ArrayList<>();
+    // Iterate over the array
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (yamlNode.getCurrJsonNode().isValueNode()) {
+        // Value -> LeafNode
+        arrayList.add(arrayElement);
+      } else if (arrayElement.isArray()) {
+        // Value -> Array
+        arrayList.add(getResMapInArray(arrayElement, url));
+      } else {
+        // Value -> Object
+        arrayList.add(getResMap(arrayElement, url));
+      }
+    }
+    return arrayList;
+  }
+
+  private List<ServiceV2YamlMetadata> getServicesYamlMetadataInternal(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
+      boolean loadFromCache) {
+    List<ServiceV2YamlMetadata> yamlMetadata = new ArrayList<>();
+
+    // Get all service entities
+    List<ServiceEntity> serviceEntities =
+        getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+
+    for (int i = 0; i < serviceEntities.size(); i += REMOTE_SERVICE_BATCH_SIZE) {
+      List<ServiceEntity> batch = getBatch(serviceEntities, i);
+
+      List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
+
+      for (ServiceEntity serviceEntity : batch) {
+        if (StoreType.REMOTE.equals(serviceEntity.getStoreType())) {
+          String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+              serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+          String branchInfo = servicesMetadataWithGitInfo.get(serviceRef);
+
+          CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branchInfo)) {
+              ServiceEntity temp = serviceRepository.getRemoteServiceWithYaml(serviceEntity, loadFromCache, false);
+              yamlMetadata.add(createServiceV2YamlMetadata(temp));
+            }
+          }, executorService);
+
+          batchFutures.add(future);
+        } else {
+          // For inline services, process YAML immediately
+          yamlMetadata.add(createServiceV2YamlMetadata(serviceEntity));
+        }
+      }
+
+      // Wait for the batch to complete
+      CompletableFuture<Void> allOf = CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
+      allOf.join();
+    }
+
+    return yamlMetadata;
+  }
+
+  private static List<ServiceEntity> getBatch(List<ServiceEntity> remoteServiceEntities, int i) {
+    int endIndex = Math.min(i + REMOTE_SERVICE_BATCH_SIZE, remoteServiceEntities.size());
+    return remoteServiceEntities.subList(i, endIndex);
   }
 
   private List<ServiceEntity> getScopedServiceEntities(
@@ -1120,7 +1436,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
 
-    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false,
+        GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), false);
 
     if (optionalService.isPresent()) {
       String yaml = optionalService.get().fetchNonEmptyYaml();

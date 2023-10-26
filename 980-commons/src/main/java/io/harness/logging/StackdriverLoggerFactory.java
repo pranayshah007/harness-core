@@ -7,6 +7,8 @@
 
 package io.harness.logging;
 
+import io.harness.logging.common.AccessTokenBean;
+
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.logging.Logging;

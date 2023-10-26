@@ -6,12 +6,14 @@
  */
 
 package io.harness.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
@@ -51,6 +53,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PIPELINE)
 @Value
 @Builder
@@ -108,11 +111,13 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   public static class ExecutionMetadataKeys {
     public static final String tagExecutionKey =
         PlanExecutionKeys.metadata + ".triggerInfo.triggeredBy.extraInfo." + EXEC_TAG_SET_BY_TRIGGER;
+    public static final String pipelineIdentifier = PlanExecutionKeys.metadata + ".pipelineIdentifier";
   }
 
   @UtilityClass
   public static class PlanExecutionKeys {
     public static final String accountId = PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId;
+    public static final String planId = PlanExecutionKeys.ambiance + ".planId";
   }
 
   public static List<MongoIndex> mongoIndexes() {

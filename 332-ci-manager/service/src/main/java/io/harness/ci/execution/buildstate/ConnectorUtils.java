@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.buildstate;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.ALL_TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -40,6 +41,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.JWTTokenServiceUtils;
 
@@ -63,9 +65,8 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private final SecretUtils secretUtils;
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
-  @Inject @Named("ngBaseUrl") private String ngBaseUrl;
+  @Inject @Named("harnessCodeGitBaseUrl") private String harnessCodeGitBaseUrl;
   private final long TEN_HOURS_IN_MS = TimeUnit.MILLISECONDS.convert(10, TimeUnit.HOURS);
-  private final String DOT_GIT = ".git";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -144,6 +145,37 @@ public class ConnectorUtils extends BaseConnectorUtils {
     return taskSelectors;
   }
 
+  public List<TaskSelector> fetchCodebaseDelegateSelector(Ambiance ambiance, ConnectorDetails connectorDetails,
+      ExecutionSweepingOutputService executionSweepingOutputResolver) {
+    List<TaskSelector> taskSelectors = new ArrayList<>();
+
+    // Delegate Selector Precedence: 1)Pipeline -> 2)Connector. If not specified use any delegate
+    OptionalSweepingOutput optionalTaskSelectorSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ALL_TASK_SELECTORS));
+
+    if (optionalTaskSelectorSweepingOutput.isFound()) {
+      TaskSelectorSweepingOutput taskSelectorSweepingOutput =
+          (TaskSelectorSweepingOutput) optionalTaskSelectorSweepingOutput.getOutput();
+
+      // only select pipeline delegate selectors for codebase since it's defined on pipeline level
+      taskSelectors = taskSelectorSweepingOutput.getTaskSelectors()
+                          .stream()
+                          .filter(taskSelector -> YAMLFieldNameConstants.PIPELINE.equals(taskSelector.getOrigin()))
+                          .toList();
+      if (isNotEmpty(taskSelectors)) {
+        return taskSelectors;
+      }
+    }
+
+    // fetch from git connector
+    if (connectorDetails != null && isNotEmpty(connectorDetails.getDelegateSelectors())) {
+      taskSelectors = TaskSelectorYaml.toTaskSelector(
+          connectorDetails.getDelegateSelectors().stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
+    }
+
+    return taskSelectors;
+  }
+
   public ConnectorDetails getDefaultInternalConnector(NGAccess ngAccess) {
     ConnectorDetails connectorDetails = null;
     if (isNotEmpty(cIExecutionServiceConfig.getDefaultInternalImageConnector())) {
@@ -161,7 +193,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isGitConnector && isEmpty(connectorIdentifier)
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
       log.info("fetching harness scm connector");
-      String gitBaseUrl = getSCMBaseUrl(ngBaseUrl);
+      String gitBaseUrl = harnessCodeGitBaseUrl;
       String authToken = "";
       // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas and
       // scm on prem or vice versa
@@ -181,7 +213,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isEmpty(connectorIdentifier)) {
       if (isGitConnector && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
         log.info("fetching harness scm connector");
-        String baseUrl = getSCMBaseUrl(ngBaseUrl);
+        String baseUrl = harnessCodeGitBaseUrl;
         String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
         // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas
         // and scm on prem or vice versa
@@ -200,9 +232,8 @@ public class ConnectorUtils extends BaseConnectorUtils {
     String principal = executionPrincipalInfo.getPrincipal();
     io.harness.pms.contracts.plan.PrincipalType principalType = executionPrincipalInfo.getPrincipalType();
 
-    String completeRepoName = GitClientHelper.convertToHarnessRepoName(ngAccess.getAccountIdentifier(),
-                                  ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName)
-        + DOT_GIT;
+    String completeRepoName = GitClientHelper.convertToHarnessRepoName(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName);
 
     String[] allowedResources = {completeRepoName};
 

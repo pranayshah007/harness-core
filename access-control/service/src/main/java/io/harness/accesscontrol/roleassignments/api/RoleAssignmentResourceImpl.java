@@ -58,11 +58,11 @@ import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -231,8 +231,8 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     List<String> userGroupsScopeIdentifiers = new ArrayList<>();
     if (principalFilter != null) {
       if (USER.equals(principalFilter.getType())) {
-        userGroups.addAll(
-            userGroupService.list(fromParams(harnessScopeParams).toString(), principalFilter.getIdentifier()));
+        userGroups.addAll(userGroupService.listUserGroupForUserInAccessibleScopes(
+            fromParams(harnessScopeParams).toString(), principalFilter.getIdentifier(), scopeFilter));
         userGroupsScopeIdentifiers.addAll(
             userGroups.stream()
                 .map(userGroup

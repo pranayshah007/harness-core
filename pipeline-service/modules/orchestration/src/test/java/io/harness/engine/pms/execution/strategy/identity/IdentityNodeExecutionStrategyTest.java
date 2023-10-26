@@ -139,7 +139,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                             .build();
     doReturn(NodeExecution.builder().build())
         .when(executionStrategy)
-        .createNodeExecution(ambiance, identityPlanNode, null, null, null, null);
+        .createNodeExecutionInternal(ambiance, identityPlanNode, null, null, null, null);
     executionStrategy.runNode(ambiance, identityPlanNode, null);
     verify(executorService).submit(any(Runnable.class));
   }
@@ -428,19 +428,24 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
                                       .skipGraphType(SkipType.NOOP)
                                       .build();
-    when(nodeExecutionService.get(anyString()))
-        .thenReturn(NodeExecution.builder().uuid(originalNodeExecutionId).build());
+    NodeExecution originalNodeExecution =
+        NodeExecution.builder().uuid(originalNodeExecutionId).name("node_name").identifier("identifier").build();
+    when(nodeExecutionService.get(anyString())).thenReturn(originalNodeExecution);
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
     doNothing().when(pmsGraphStepDetailsService).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     on(identityNodeExecutionStrategyHelper).set("nodeExecutionService", nodeExecutionService);
     on(identityNodeExecutionStrategyHelper).set("pmsGraphStepDetailsService", pmsGraphStepDetailsService);
     doCallRealMethod().when(identityNodeExecutionStrategyHelper).createNodeExecution(any(), any(), any(), any(), any());
-    NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
+    NodeExecution nodeExecution1 =
+        executionStrategy.createNodeExecutionInternal(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     verify(pmsGraphStepDetailsService, times(1)).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     ArgumentCaptor<NodeExecution> mCaptor = ArgumentCaptor.forClass(NodeExecution.class);
     verify(nodeExecutionService).save(mCaptor.capture());
     NodeExecution saveNodeExecution = mCaptor.getValue();
+    assertThat(saveNodeExecution.getName()).isEqualTo(originalNodeExecution.getName());
+    assertThat(saveNodeExecution.getIdentifier()).isEqualTo(originalNodeExecution.getIdentifier());
+
     assertThat(saveNodeExecution.getOriginalNodeExecutionId()).isEqualTo(nodeExecution.getOriginalNodeExecutionId());
     assertThat(saveNodeExecution.getParentId()).isEqualTo(nodeExecution.getParentId());
     assertThat(saveNodeExecution.getAmbiance()).isEqualTo(nodeExecution.getAmbiance());
@@ -448,7 +453,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     assertThat(saveNodeExecution.getNodeId()).isEqualTo(nodeExecution.getNodeId());
     assertThat(saveNodeExecution.getNodeType()).isEqualTo(nodeExecution.getNodeType());
     assertThat(saveNodeExecution.getPreviousId()).isEqualTo(nodeExecution.getPreviousId());
-    assertThat(saveNodeExecution.getIdentifier()).isEqualTo(nodeExecution.getIdentifier());
     assertThat(saveNodeExecution.getStepType()).isEqualTo(nodeExecution.getStepType());
     assertThat(saveNodeExecution.getResolvedParams()).isEqualTo(nodeExecution.getResolvedParams());
     assertThat(saveNodeExecution.getStatus()).isEqualTo(nodeExecution.getStatus());

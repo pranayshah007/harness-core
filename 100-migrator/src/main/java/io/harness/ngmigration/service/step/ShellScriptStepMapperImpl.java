@@ -50,8 +50,10 @@ import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -170,6 +172,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     shellScriptStepNode.setShellScriptStepInfo(
         ShellScriptStepInfo.infoBuilder()
             .onDelegate(ParameterField.createValueField(state.isExecuteOnDelegate()))
+            .includeInfraSelectors(ParameterField.createValueField(state.getIncludeInfraSelectors()))
             .shell(ScriptType.BASH.equals(state.getScriptType()) ? ShellType.Bash : ShellType.PowerShell)
             .source(ShellScriptSourceWrapper.builder()
                         .type("Inline")
@@ -210,20 +213,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
-    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
-        .stream()
-        .map(exp
-            -> StepOutput.builder()
-                   .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
-                   .stepIdentifier(
-                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
-                   .stepGroupIdentifier(
-                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
-                   .expression(exp)
-                   .build())
-        .map(ShellScriptStepFunctor::new)
-        .collect(Collectors.toList());
+    return getExpressionFunctor(context, phase.getName(), phaseStep.getName(), graphNode);
   }
 
   @Override
@@ -233,12 +223,21 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
+    return getExpressionFunctor(context, phase.getName(), stepGroupName, graphNode);
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, String stageName, String stepGroupName, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stageIdentifier(MigratorUtility.generateIdentifier(stageName, context.getIdentifierCaseFormat()))
                    .stepIdentifier(
                        MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
                    .stepGroupIdentifier(
@@ -257,7 +256,10 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+
     JsonNode envVars = templateInputs.at("/spec/environmentVariables");
+    JsonNode executionTarget = templateInputs.at("/spec/onDelegate");
     CgEntityNode entityNode = context.getEntities().get(
         CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(templateFile.getCgBasicInfo().getId()).build());
     Template template = (Template) entityNode.getEntity();
@@ -303,9 +305,22 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         }
       }
     }
+    if (executionTarget instanceof TextNode) {
+      ObjectNode spec = (ObjectNode) templateInputs.get("spec");
+      spec.put("onDelegate", state.isExecuteOnDelegate());
+      if (!state.isExecuteOnDelegate()) {
+        ParameterField<String> connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
+            migrationContext.getMigratedEntities(), state.getSshKeyRef(), NGMigrationEntityType.CONNECTOR);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode hostNode = mapper.createObjectNode();
+        hostNode.put("host", state.getHost());
+        hostNode.put("connectorRef", connectorRef.getValue());
+        hostNode.put("workingDirectory", state.getCommandPath());
+        spec.put("executionTarget", hostNode);
+      }
+    }
 
     // Fix delegate selectors in the workflow
-    ShellScriptState state = (ShellScriptState) getState(graphNode);
     overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }

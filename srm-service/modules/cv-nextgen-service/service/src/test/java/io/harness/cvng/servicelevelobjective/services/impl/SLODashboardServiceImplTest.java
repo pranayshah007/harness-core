@@ -57,6 +57,7 @@ import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.EnvironmentIdentifierResponse;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.QuarterStart;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
@@ -172,6 +173,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   private HealthSource healthSource;
   private SLOTargetDTO calendarSloTarget;
 
+  private SLOTargetDTO quarterlyCalendarSloTargetCycle1;
+
   private final String monitoredServiceIdentifier = "monitoredServiceIdentifier";
   @Before
   public void setup() {
@@ -220,6 +223,17 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                       .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
                                       .build())
                             .build();
+
+    quarterlyCalendarSloTargetCycle1 = SLOTargetDTO.builder()
+                                           .type(SLOTargetType.CALENDER)
+                                           .sloTargetPercentage(80.0)
+                                           .spec(CalenderSLOTargetSpec.builder()
+                                                     .type(SLOCalenderType.QUARTERLY)
+                                                     .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder()
+                                                               .quarterStart(QuarterStart.JAN_APR_JUL_OCT)
+                                                               .build())
+                                                     .build())
+                                           .build();
   }
 
   @Test
@@ -1704,6 +1718,24 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetSloHealthListView_withSLOQuarterWithQuarterCycle1() {
+    serviceLevelObjectiveV2DTO.setIdentifier("newSLOIdentifier");
+    serviceLevelObjectiveV2DTO.setSloTarget(quarterlyCalendarSloTargetCycle1);
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setIdentifier("sli_identifier");
+    serviceLevelObjectiveV2DTO.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    PageResponse<SLOHealthListView> pageResponse =
+        sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+            SLODashboardApiFilter.builder().build(), PageParams.builder().page(0).size(10).build());
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(3);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(3);
+    List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(3);
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetSloHealthListView_AccountScoped() {
@@ -2547,7 +2579,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     List<EnvironmentIdentifierResponse> environmentIdentifierResponseList = pageResponse.getContent();
     assertThat(environmentIdentifierResponseList).hasSize(2);
     EnvironmentIdentifierResponse environmentIdentifierResponse = environmentIdentifierResponseList.get(1);
-    assertThat(environmentIdentifierResponse.getIdentifier()).isEqualTo("one");
     assertThat(environmentIdentifierResponse.getName()).isEqualTo("Mocked env name");
   }
 

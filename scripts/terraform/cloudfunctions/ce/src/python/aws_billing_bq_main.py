@@ -762,9 +762,10 @@ def ingest_data_to_awscur(jsonData):
                          "billingperiodstartdate", "billingperiodenddate"]
 
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
+        print_("Flag is enabled for account. Looking for available additional-fields in billing-table for ingestion.")
         desirable_columns += ["payeraccountid", "lineitemdescription", "billtype", "usagetype_1", "description", "pricingunit",
                               "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]
+                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "unit"]
 
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
@@ -781,8 +782,7 @@ def ingest_data_to_awscur(jsonData):
     # billingperiodstartdate and billingperiodenddate are newly added in unified table. Adding these in delete query is important to take care of future dated cost entries.
     # At the same time, adding these here might cause problems in doing replays for other accounts where the data in this column might be null.
     # Handling this case explicitely for Elevance atm. We might remove this IF condition down the line when we have these columns populated for enough number of months.
-    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
-        delete_query = delete_query + " AND DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+    delete_query = delete_query + " AND DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
 
     query = """
     %s;
@@ -1018,7 +1018,7 @@ def ingest_data_to_unified(jsonData):
                                  "instancefamily", "marketoption", "servicecode", "usageamount",
                                  "billtype", "usagetype_1", "description", "pricingunit",
                                  "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]:
+                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "unit"]:
 
             if additionalColumn.lower() in jsonData["available_columns"]:
                 insert_columns = insert_columns + ", aws%s%s" % (additionalColumn,
@@ -1033,8 +1033,7 @@ def ingest_data_to_unified(jsonData):
     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
            jsonData["usageaccountid"])
 
-    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
-        delete_query = delete_query + " AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+    delete_query = delete_query + " AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
 
     query = """%s;
                INSERT INTO `%s` (%s)
@@ -1069,11 +1068,9 @@ def ingest_data_to_unified(jsonData):
 
 
 def fetch_ingestion_filters(jsonData):
-    billing_period_filters = ""
-    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
-        billing_period_filters = " AND DATE(awsbillingperiodstartdate) = '%s'" \
-                                 " AND DATE(awsbillingperiodenddate) = '%s'" \
-                                 % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+    billing_period_filters = " AND DATE(awsbillingperiodstartdate) = '%s'" \
+                             " AND DATE(awsbillingperiodenddate) = '%s'" \
+                             % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
     return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
     AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) %s""" % (jsonData["min_usagestartdate"],
                                                                    jsonData["max_usagestartdate"],

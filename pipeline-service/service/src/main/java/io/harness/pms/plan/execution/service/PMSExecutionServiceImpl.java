@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
@@ -19,6 +20,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,9 +30,12 @@ import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptPackage;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -61,6 +66,7 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
@@ -70,6 +76,7 @@ import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.security.PrincipalHelper;
 import io.harness.security.SecurityContextBuilder;
@@ -119,6 +126,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
+  @Inject private PMSPipelineService pmsPipelineService;
+  @Inject private PMSPipelineServiceHelper pmsPipelineServiceHelper;
+  @Inject private AccessControlClient accessControlClient;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -130,7 +140,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      boolean isLatest) {
+      boolean showAllExecutions) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -142,7 +152,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      addCriteriaForPermittedPipeline(
+          accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier), criteria);
+    } else {
+      // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
@@ -152,7 +167,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }
 
-    criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+    if (!showAllExecutions) {
+      criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
+    }
     criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
@@ -311,7 +328,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     Criteria pipelineCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+      addCriteriaForPermittedPipeline(accountId, orgId, projectId, pipelineIdentifier, pipelineCriteria);
+    } else {
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
 
     Criteria filterCriteria = new Criteria();
@@ -343,6 +363,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     return criteria.orOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+  }
+
+  private void addCriteriaForPermittedPipeline(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifier, Criteria pipelineCriteria) {
+    List<String> permittedPipelineIdentifier =
+        pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
+    if (permittedPipelineIdentifier.size() != 0) {
+      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+    } else {
+      throw new AccessDeniedException(
+          String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+          ErrorCode.NG_ACCESS_DENIED, USER);
+    }
   }
 
   private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
@@ -473,8 +506,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
 
       // InputSet yaml used during execution
-      String yaml = executionSummaryEntity.getInputSetYaml();
-      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+      String yaml =
+          resolveExpressionsInYaml(executionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
 
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
@@ -719,8 +752,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
     String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
-    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
-    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    String inputSetYaml = resolveExpressionsInYaml(
+        pipelineExecutionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
     if (EmptyPredicate.isEmpty(pipelineTemplate)) {
       return "";
     }
@@ -728,8 +761,18 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
   }
 
-  private String resolveExpressionsInYaml(
-      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+  private String resolveExpressionsInYaml(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity,
+      boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    String yaml = pipelineExecutionSummaryEntity.getResolvedUserInputSetYaml();
+    if (yaml != null && !ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS.equals(resolveExpressionsType)) {
+      /* since `resolvedUserInputSetYaml` contains the resolved input set using
+        `ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS`, we can return it immediately. */
+      return yaml;
+    }
+    // Otherwise we need to fetch the raw inputSetYaml from PlanExecutionMetadata
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
+    yaml = planExecutionMetadata.getInputSetYaml();
     if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
       yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
           yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);

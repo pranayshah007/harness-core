@@ -378,7 +378,7 @@ public class K8sRollingRollbackBaseHandler {
 
     logCallback.saveExecutionLog(String.format("Previous eligible Release is %s with status %s.",
         lastSuccessfulRelease.getReleaseNumber(), lastSuccessfulRelease.getReleaseStatus().name()));
-
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(lastSuccessfulRelease);
     List<KubernetesResource> resourcesInPrevRelease = lastSuccessfulRelease.getResourcesWithSpecs();
     setNamespaceInResources(resourcesInPrevRelease, rollbackHandlerConfig.getKubernetesConfig().getNamespace());
     rollbackHandlerConfig.setPreviousResources(resourcesInPrevRelease);

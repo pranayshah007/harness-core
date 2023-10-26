@@ -8,10 +8,12 @@
 package io.harness.serializer.morphia;
 
 import io.harness.app.beans.dto.CITaskDetails;
+import io.harness.app.beans.entities.CIResourceCleanup;
 import io.harness.app.beans.entities.ExecutionQueueLimit;
 import io.harness.app.beans.entities.PluginMetadataConfig;
 import io.harness.app.beans.entities.PluginMetadataStatus;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.steps.CILogKeyMetadata;
 import io.harness.beans.steps.StepStatusMetadata;
 import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.sweepingoutputs.ContextElement;
@@ -60,6 +62,8 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CIStageOutput.class);
     set.add(StepStatusMetadata.class);
     set.add(CIAccountDataStatus.class);
+    set.add(CILogKeyMetadata.class);
+    set.add(CIResourceCleanup.class);
   }
 
   @Override

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageResponse;
+import io.harness.common.AccountAuthenticationSettings;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
@@ -261,6 +262,13 @@ public class AccountResourceNG {
   }
 
   @PUT
+  @Path("/{accountId}/harness-support-access")
+  public RestResponse<Boolean> updateHarnessSupportAccess(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body boolean isHarnessSupportAccessAllowed) {
+    return new RestResponse(accountService.updateHarnessSupportAccess(accountId, isHarnessSupportAccessAllowed));
+  }
+
+  @PUT
   @Hidden
   @Path("/{accountId}/cross-generation-access")
   @InternalApi
@@ -295,5 +303,20 @@ public class AccountResourceNG {
       @QueryParam("accountId") @NotEmpty String accountId, @Valid @NotNull Boolean publicAccessEnabled) {
     accountService.setPublicAccessEnabled(accountId, Boolean.TRUE.equals(publicAccessEnabled));
     return new RestResponse(Boolean.TRUE);
+  }
+
+  @GET
+  @Path("account-authentication-settings")
+  public RestResponse<AccountAuthenticationSettings> getAuthenticationSettings(
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    Account account = accountService.get(accountId);
+    AccountAuthenticationSettings accountAuthenticationSettings =
+        AccountAuthenticationSettings.builder()
+            .publicAccessEnabled(account.isPublicAccessEnabled())
+            .sessionTimeoutInMinutes(account.getSessionTimeOutInMinutes())
+            .twoFactorEnabled(account.isTwoFactorAdminEnforced())
+            .oauthEnabled(account.isOauthEnabled())
+            .build();
+    return new RestResponse(accountAuthenticationSettings);
   }
 }
