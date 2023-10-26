@@ -135,6 +135,12 @@ public class SyncRunnable implements Runnable {
       List<Application> applicationsEligibleForSync =
           getApplicationsToBeSyncedAndPolled(applicationsToBeSynced, applicationsFailedToSync);
 
+      // sometimes sync operation is performed quickly and due to rounding there is no difference between
+      // syncStartTime and getLastSyncStartedAt used in checking if sync is done
+      // Temporary solution until we fix sync endpoint in gitops to return sync history with porper timings
+      // then we can use that history and last sync for comparing with current sync.
+      thread.Sleep(1000);
+
       // sync applications
       GitOpsStepUtils.logExecutionInfo("Syncing application(s)...", logger);
       syncApplications(applicationsEligibleForSync, applicationsFailedToSync, accountId, orgId, projectId,
