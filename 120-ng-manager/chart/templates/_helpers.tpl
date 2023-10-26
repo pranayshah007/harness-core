@@ -87,22 +87,6 @@ OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
     {{- $hasAtleastOneSecret = true }}
 GITOPS_SERVICE_SECRET: {{ .ctx.Values.secrets.default.GITOPS_SERVICE_SECRET | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_ACCESS_KEY")) "true" }}
-    {{- $hasAtleastOneSecret = true }}
-CE_AWS_ACCESS_KEY: {{ default $.Values.ceSecret.access_key.name .ctx.Values.secrets.default.CE_AWS_ACCESS_KEY | b64enc }}
-    {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_SECRET_KEY")) "true" }}
-    {{- $hasAtleastOneSecret = true }}
-CE_AWS_SECRET_KEY: {{ default $.Values.ceSecret.secret_key.name .ctx.Values.secrets.default.CE_AWS_SECRET_KEY | b64enc }}
-    {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_DESTINATION_BUCKET")) "true" }}
-    {{- $hasAtleastOneSecret = true }}
-CE_AWS_DESTINATION_BUCKET: {{ default $.Values.ceSecret.destination_bucket.name .ctx.Values.secrets.default.CE_AWS_DESTINATION_BUCKET | b64enc }}
-    {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL")) "true" }}
-    {{- $hasAtleastOneSecret = true }}
-CE_AWS_TEMPLATE_URL: {{ default $.Values.ceSecret.template_url.name .ctx.Values.secrets.default.CE_AWS_TEMPLATE_URL | b64enc }}
-    {{- end }}
     {{- if not $hasAtleastOneSecret }}
 {}
     {{- end }}

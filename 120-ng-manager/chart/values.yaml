@@ -58,7 +58,7 @@ global:
           - secretName: ""
             keys:
               MONGO_USER: ""
-              MONGO_PASSWORD": ""
+              MONGO_PASSWORD: ""
         secretManagement:
           externalSecretsOperator:
             - secretStore:
@@ -68,7 +68,7 @@ global:
                 MONGO_USER:
                   name: ""
                   property: ""
-                MONGO_PASSWORD":
+                MONGO_PASSWORD:
                   name: ""
                   property: ""
     timescaledb:
@@ -122,26 +122,18 @@ global:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
-              EVENTS_FRAMEWORK_REDIS_PASSWORD": ""
-              LOCK_CONFIG_REDIS_USERNAME: ""
-              LOCK_CONFIG_REDIS_PASSWORD: ""
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD: ""
         secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
                 kind: ""
               remoteKeys:
-                EVENTS_FRAMEWORK_REDIS_USERNAME:
+                REDIS_USERNAME:
                   name: ""
                   property: ""
-                EVENTS_FRAMEWORK_REDIS_PASSWORD":
-                  name: ""
-                  property: ""
-                LOCK_CONFIG_REDIS_USERNAME":
-                  name: ""
-                  property: ""
-                LOCK_CONFIG_REDIS_PASSWORD":
+                REDIS_PASSWORD:
                   name: ""
                   property: ""
   license:
@@ -182,7 +174,7 @@ global:
             SMTP_USERNAME: ""
             SMTP_PASSWORD: ""
             SMTP_HOST: ""
-            SMTP_PORT": ""
+            SMTP_PORT: ""
             SMTP_USE_SSL: ""
       secretManagement: 
         externalSecretsOperator:
@@ -199,7 +191,7 @@ global:
               SMTP_HOST:
                 name: ""
                 property: ""
-              SMTP_PORT":
+              SMTP_PORT:
                 name: ""
                 property: ""
               SMTP_USE_SSL:
@@ -255,7 +247,7 @@ redis:
       - secretName: ""
         keys:
           REDIS_USERNAME: ""
-          REDIS_PASSWORD": ""
+          REDIS_PASSWORD: ""
     secretManagement:
       externalSecretsOperator:
         - secretStore:
@@ -265,7 +257,7 @@ redis:
             REDIS_USERNAME:
               name: ""
               property: ""
-            REDIS_PASSWORD":
+            REDIS_PASSWORD:
               name: ""
               property: ""
 
@@ -299,18 +291,15 @@ timescaledb:
               property: ""
 
 mongo:
-  protocol: "redis"
+  protocol: ""
   hosts: []
-  secretName: ""
-  userKey: ""
-  passwordKey: ""
   extraArgs: ""
   secrets:
     kubernetesSecrets:
       - secretName: ""
         keys:
           MONGO_USER: ""
-          MONGO_PASSWORD": ""
+          MONGO_PASSWORD: ""
     secretManagement:
       externalSecretsOperator:
         - secretStore:
@@ -320,7 +309,7 @@ mongo:
             MONGO_USER:
               name: ""
               property: ""
-            MONGO_PASSWORD":
+            MONGO_PASSWORD:
               name: ""
               property: ""
 
@@ -524,11 +513,6 @@ secrets:
         CE_AWS_SECRET_KEY: ""
         CE_AWS_DESTINATION_BUCKET: ""
         CE_AWS_TEMPLATE_URL: ""
-        SMTP_HOST: ""
-        SMTP_USERNAME: ""
-        SMTP_PASSWORD: ""
-        SMTP_USE_SSL: ""
-        SMTP_PORT: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:
@@ -556,18 +540,3 @@ secrets:
           CE_AWS_TEMPLATE_URL:
             name: ""
             property: ""             
-          SMTP_HOST:
-            name: ""
-            property: ""
-          SMTP_USERNAME:
-            name: ""
-            property: ""
-          SMTP_PASSWORD:
-            name: ""
-            property: ""
-          SMTP_USE_SSL:
-            name: ""
-            property: ""
-          SMTP_PORT:
-            name: ""
-            property: ""
