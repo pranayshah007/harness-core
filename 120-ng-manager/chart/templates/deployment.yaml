@@ -82,7 +82,6 @@ spec:
         env:
             {{- include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 12 }}
             {{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
-            {{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
             {{- $ngLicenseENV := include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "NG_LICENSE" "overrideEnvName" "SMP_LICENSE" "providedSecretValues" (list "global.license.ng") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator)))}}
             {{- if $ngLicenseENV }}
             - name: ENABLE_SMP_LICENSING
