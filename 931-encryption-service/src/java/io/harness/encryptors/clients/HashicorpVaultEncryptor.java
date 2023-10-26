@@ -248,7 +248,12 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
     try {
-      createSecret(accountId, VaultConfig.VAULT_VAILDATION_URL, Boolean.TRUE.toString(), encryptionConfig);
+      VaultConfig vaultConfig = (VaultConfig) encryptionConfig;
+      if (vaultConfig.isReadOnly()) {
+        getToken(vaultConfig);
+      } else {
+        createSecret(accountId, VaultConfig.VAULT_VAILDATION_URL, Boolean.TRUE.toString(), encryptionConfig);
+      }
     } catch (Exception exception) {
       log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName());
       throw exception;
