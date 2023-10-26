@@ -932,7 +932,9 @@ public enum FeatureName {
   CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI),
   CDS_TF_TG_HARD_RESET_GIT_REF(
       "Do hard reset on repo after fetching terraform / terragrunt config files when commit ID or tag selected ",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_K8S_TRAFFIC_ROUTING_NG(
+      "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP);
 
   // keep-sorted end
 
