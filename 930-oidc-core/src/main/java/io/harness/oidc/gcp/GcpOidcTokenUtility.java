@@ -125,15 +125,9 @@ public class GcpOidcTokenUtility {
     String baseIss = baseOidcIdTokenPayloadStructure.getIss();
     String finalIss = updateBaseClaims(baseIss, gcpOidcTokenRequestDTO);
 
-    Long base = currentTimeMillis();
-    String iat = baseOidcIdTokenPayloadStructure.getIat();
-    // Check if iat should be generated at runtime
-    if (iat.contains(OidcConfigurationUtility.GENERATE_AT_RUNTIME)) {
-      iat = Long.toString(base);
-    }
-
+    Long iat = currentTimeMillis() / 1000;
     Long exp = baseOidcIdTokenPayloadStructure.getExp();
-    exp = base + exp;
+    exp = iat + exp;
 
     // Now parse the optional claims.
     String accountId = null;
