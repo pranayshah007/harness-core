@@ -36,6 +36,7 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.pms.event.overviewLandingPage.DebeziumConsumersConfig;
 import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
+import io.harness.pms.template.TemplateClientConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;

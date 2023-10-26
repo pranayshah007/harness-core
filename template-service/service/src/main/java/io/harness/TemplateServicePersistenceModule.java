@@ -12,20 +12,30 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.persistance.GitSyncablePersistenceConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.pms.template.TemplatePersistenceConfig;
+import io.harness.springdata.HMongoTemplate;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceConfig;
 import io.harness.springdata.SpringPersistenceModule;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import com.mongodb.ReadPreference;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(CDC)
 public class TemplateServicePersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    return new Class<?>[] {SpringPersistenceConfig.class, GitSyncablePersistenceConfig.class};
+    return new Class<?>[] {
+        SpringPersistenceConfig.class, GitSyncablePersistenceConfig.class, TemplatePersistenceConfig.class};
   }
 
   @Provides

@@ -48,6 +48,7 @@ import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -73,7 +74,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitAwarePersistence gitAwarePersistence;
   private final GitSyncSdkService gitSyncSdkService;
   private final GitAwareEntityHelper gitAwareEntityHelper;
-  private final MongoTemplate mongoTemplate;
+  @Inject @Named("template-mongodb") public MongoTemplate mongoTemplate;
   private final TemplateGitXService templateGitXService;
   OutboxService outboxService;
 
