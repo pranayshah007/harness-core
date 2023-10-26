@@ -62,11 +62,23 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Randomly Creates Secret for access-control unless overwritten.
+Manage Access-Control Secrets
+USAGE:
+{{- "access-control.generateSecrets" (dict "ctx" $)}}
 */}}
+
 {{- define "access-control.generateSecrets" }}
-    IDENTITY_SERVICE_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "access-control" "key" "IDENTITY_SERVICE_SECRET" "providedValues" (list "secrets.IDENTITY_SERVICE_SECRET") "length" 10 "context" $) }}
-{{- end }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "IDENTITY_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+IDENTITY_SERVICE_SECRET: '{{ .ctx.Values.secrets.default.IDENTITY_SERVICE_SECRET | b64enc }}'
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}    
 {{/*
 Helper function for pullSecrets at chart level or global level.
 */}}
@@ -78,7 +90,7 @@ Helper function for pullSecrets at chart level or global level.
 */}}
 {{- define "access-control.mongohosts" }}
 {{- $type := "mongo" }}
-{{- $hosts := .Values.mongoHosts }}
+{{- $hosts := default (default .Values.global.database.mongo.hosts .Values.mongo.hosts) .Values.mongoHosts }}
 {{- $installed := (pluck $type .Values.global.database | first ).installed }}
 {{- if $installed }}
   {{- $namespace := .Release.Namespace }}
@@ -92,33 +104,41 @@ Helper function for pullSecrets at chart level or global level.
 {{- end }}
 {{- end }}
 
-
 {{/* Generates Mongo Connection string
 {{ include "access-control.mongoConnectionUrl" (dict "database" "foo" "context" $) }}
 */}}
 {{- define "access-control.mongoConnectionUrl" }}
-{{- $type := "mongo" }}
-{{- $hosts := (pluck $type .context.Values.global.database | first ).hosts }}
-{{- $dbType := $type | upper}}
-{{- $installed := (pluck $type .context.Values.global.database | first ).installed }}
-{{- $protocol := (pluck $type .context.Values.global.database | first ).protocol }}
-{{- $extraArgs:= (pluck $type .context.Values.global.database | first ).extraArgs }}
-{{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName -}}
-{{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName -}}
-{{- if $installed }}
-  {{- $namespace := .context.Release.Namespace }}
-  {{- if .context.Values.global.ha -}}
-{{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database -}}
-  {{- else }}
-{{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database -}}
+  {{- $ := .context }}
+  {{- $type := "mongo" }}
+  {{- $dbType := $type | upper}}
+  {{- $installed := true }}
+  {{- if eq $.Values.global.database.mongo.installed false }}
+      {{- $installed = false }}
   {{- end }}
-{{- else }}
-{{- $args := (printf "/%s?%s" .database $extraArgs )}}
-{{- $finalhost := (index $hosts  0) -}}
-{{- range $host := (rest $hosts ) -}}
-    {{- $finalhost = printf "%s,%s" $finalhost $host -}}
-{{- end -}}
-{{- $connectionString := (printf "%s%s" $finalhost $args) -}}
-{{- printf "%s" $connectionString }}
-{{- end }}
+  {{- $hosts := list }}
+  {{- if gt (len $.Values.mongo.hosts) 0 }}
+      {{- $hosts = $.Values.mongo.hosts }}
+  {{- else }}
+      {{- $hosts = $.Values.global.database.mongo.hosts }}
+  {{- end }}
+  {{- $protocol := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.mongo.protocol" ".Values.mongo.protocol"))) }}
+  {{- $extraArgs := (include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "valueType" "string" "keys" (list ".Values.global.database.mongo.extraArgs" ".Values.mongo.extraArgs"))) }}
+  {{- $userVariableName := default (printf "%s_USER" $dbType) .userVariableName }}
+  {{- $passwordVariableName := default (printf "%s_PASSWORD" $dbType) .passwordVariableName }}
+  {{- if $installed }}
+      {{- $namespace := $.Release.Namespace }}
+      {{- if $.Values.global.ha }}
+      {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-1.mongodb-replicaset-chart.%s.svc,mongodb-replicaset-chart-2.mongodb-replicaset-chart.%s.svc:27017/%s?replicaSet=rs0&authSource=admin'" $namespace $namespace $namespace .database }}
+      {{- else }}
+          {{- printf "'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc/%s?authSource=admin'" $namespace .database }}
+      {{- end }}
+  {{- else }}
+      {{- $args := (printf "/%s?%s" .database $extraArgs )}}
+      {{- $finalhost := (index $hosts  0) }}
+      {{- range $host := (rest $hosts ) }}
+          {{- $finalhost = printf "%s,%s" $finalhost $host }}
+      {{- end }}
+      {{- $connectionString := (printf "%s%s" $finalhost $args) }}
+      {{- printf "%s" $connectionString }}
+  {{- end }}
 {{- end }}
