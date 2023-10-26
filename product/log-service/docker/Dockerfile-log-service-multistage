@@ -4,13 +4,13 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 # To be used when building in CIE
-FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as builder
+FROM ubuntu:latest as builder
 
 # Install curl
 RUN apt-get update -y && apt-get install -y curl
 
 # Download the Go distribution archive
-#RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
+RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
 
 RUN mkdir -p /app
 ARG GCP_KEY
@@ -28,7 +28,7 @@ RUN chmod +x \
 
 ENV CONTEXT_PATH $BAZEL_BIN
 
-FROM builder as base
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as base
 # Copy go binary
 
 COPY --from=builder $BAZEL_BIN /usr/local/bin/log-service
