@@ -21,8 +21,8 @@ import lombok.Value;
     module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Value
-@RecasterAlias("io.harness.steps.shellscript.v1.OutputAlias")
-public class OutputAlias {
+@RecasterAlias("io.harness.steps.shellscript.v1.OutputAliasV1")
+public class OutputAliasV1 {
   ParameterField<String> key;
-  ExportScope scope;
+  ExportScopeV1 scope;
 }

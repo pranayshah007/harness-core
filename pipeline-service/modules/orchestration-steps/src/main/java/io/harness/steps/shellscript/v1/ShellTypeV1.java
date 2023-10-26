@@ -16,14 +16,14 @@ import io.harness.shell.ScriptType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @OwnedBy(PIPELINE)
-@RecasterAlias("io.harness.steps.shellscript.v1.ShellType")
-public enum ShellType {
+@RecasterAlias("io.harness.steps.shellscript.v1.ShellTypeV1")
+public enum ShellTypeV1 {
   @JsonProperty(ShellTypeConstants.BASH) Bash(ScriptType.BASH),
   @JsonProperty(ShellTypeConstants.POWERSHELL) PowerShell(ScriptType.POWERSHELL);
 
   private final ScriptType scriptType;
 
-  ShellType(ScriptType scriptType) {
+  ShellTypeV1(ScriptType scriptType) {
     this.scriptType = scriptType;
   }
 

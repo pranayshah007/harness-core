@@ -16,6 +16,6 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public abstract class CustomAbstractStageNode extends AbstractStageNodeV1 {
+public abstract class CustomAbstractStageNodeV1 extends AbstractStageNodeV1 {
   @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<FailureConfigV1>> failure;
 }

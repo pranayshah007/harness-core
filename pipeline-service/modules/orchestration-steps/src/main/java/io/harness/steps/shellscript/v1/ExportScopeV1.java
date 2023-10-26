@@ -21,15 +21,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
-@RecasterAlias("io.harness.steps.shellscript.v1.ExportScope")
-public enum ExportScope {
+@RecasterAlias("io.harness.steps.shellscript.v1.ExportScopeV1")
+public enum ExportScopeV1 {
   @JsonProperty(ExportScopeConstants.PIPELINE) PIPELINE(ExportScopeConstants.PIPELINE),
   @JsonProperty(ExportScopeConstants.STAGE) STAGE(ExportScopeConstants.STAGE),
   @JsonProperty(ExportScopeConstants.STEP_GROUP) STEP_GROUP(ExportScopeConstants.STEP_GROUP);
 
   private final String displayName;
 
-  ExportScope(String displayName) {
+  ExportScopeV1(String displayName) {
     this.displayName = displayName;
   }
 

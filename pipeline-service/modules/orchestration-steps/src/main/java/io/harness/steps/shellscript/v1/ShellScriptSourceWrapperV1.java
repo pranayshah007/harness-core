@@ -24,8 +24,9 @@ import lombok.Value;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Value
 @OwnedBy(CDC)
-@RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptSourceWrapper")
-public class ShellScriptSourceWrapper {
+@RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptSourceWrapperV1")
+public class ShellScriptSourceWrapperV1 {
   String type;
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) ShellScriptBaseSource spec;
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  ShellScriptBaseSourceV1 spec;
 }

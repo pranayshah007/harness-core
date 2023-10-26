@@ -26,7 +26,7 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = true)
 @RecasterAlias("io.harness.steps.http.v1.HttpStepParameters")
-public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
+public class HttpStepParameters extends HttpBaseStepInfoV1 implements SpecParameters {
   ParameterField<Map<String, Object>> output_vars;
   ParameterField<Map<String, Object>> input_vars;
   Map<String, String> headers;

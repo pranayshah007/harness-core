@@ -7,7 +7,7 @@
 
 package io.harness.steps.shellscript.v1;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,14 +17,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Value;
 
 @Value
-@JsonTypeName(ShellScriptBaseSource.HARNESS)
-@OwnedBy(CDP)
-@RecasterAlias("io.harness.steps.shellscript.v1.HarnessFileStoreSource")
-public class HarnessFileStoreSource implements ShellScriptBaseSource {
-  ParameterField<String> file;
+@JsonTypeName(ShellScriptBaseSourceV1.INLINE)
+@OwnedBy(CDC)
+@RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptInlineSourceV1")
+public class ShellScriptInlineSourceV1 implements ShellScriptBaseSourceV1 {
+  ParameterField<String> script;
 
   @Override
   public String getType() {
-    return ShellScriptBaseSource.HARNESS;
+    return ShellScriptBaseSourceV1.INLINE;
   }
 }

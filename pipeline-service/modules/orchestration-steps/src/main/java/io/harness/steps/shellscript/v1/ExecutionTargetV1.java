@@ -13,18 +13,13 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Value;
 
 @Value
-@JsonTypeName(ShellScriptBaseSource.INLINE)
 @OwnedBy(CDC)
-@RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptInlineSource")
-public class ShellScriptInlineSource implements ShellScriptBaseSource {
-  ParameterField<String> script;
-
-  @Override
-  public String getType() {
-    return ShellScriptBaseSource.INLINE;
-  }
+@RecasterAlias("io.harness.steps.shellscript.v1.ExecutionTargetV1")
+public class ExecutionTargetV1 {
+  ParameterField<String> host;
+  ParameterField<String> connector;
+  ParameterField<String> dir;
 }

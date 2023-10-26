@@ -5,65 +5,68 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.shellscript.v1;
+package io.harness.steps.http.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.http.HttpHeaderConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElementParametersV1Builder;
 import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.StepUtils;
 import io.harness.yaml.utils.v1.NGVariablesUtilsV1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import lombok.Builder;
 
-@CodePulse(
-    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
-@Builder
-@JsonTypeName(StepSpecTypeConstantsV1.SHELL_SCRIPT)
 @OwnedBy(PIPELINE)
-public class ShellScriptStepNode extends PmsAbstractStepNodeV1 {
-  String type = StepSpecTypeConstantsV1.SHELL_SCRIPT;
+@JsonTypeName(StepSpecTypeConstantsV1.HTTP)
+@Builder
+public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
+  String type = StepSpecTypeConstantsV1.HTTP;
 
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) ShellScriptStepInfo spec;
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) HttpStepInfoV1 spec;
 
   // TODO: set rollback parameters
   public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
     StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
     stepBuilder.spec(getSpecParameters());
-    stepBuilder.type(StepSpecTypeConstantsV1.SHELL_SCRIPT);
+    stepBuilder.type(StepSpecTypeConstantsV1.HTTP);
     StepUtils.appendDelegateSelectorsToSpecParameters(spec, ctx);
     return stepBuilder.build();
   }
 
   public SpecParameters getSpecParameters() {
-    return ShellScriptStepParameters.infoBuilder()
-        .executionTarget(spec.getExecution_target())
-        .onDelegate(spec.getOn_delegate())
-        .output_vars(NGVariablesUtilsV1.getMapOfVariablesWithoutSecretExpression(
-            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null))
-        .env_vars(
-            NGVariablesUtilsV1.getMapOfVariables(spec.getEnv_vars() != null ? spec.getEnv_vars().getMap() : null, 0L))
-        .secret_output_vars(NGVariablesUtilsV1.getSetOfSecretVars(
-            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null))
-        .shell(spec.getShell())
-        .source(spec.getSource())
-        .delegate(spec.getDelegate())
-        .include_infra_selectors(spec.getInclude_infra_selectors())
-        .outputAlias(spec.getOutput_alias())
+    return HttpStepParameters.infoBuilder()
+        .assertion(spec.getAssertion())
+        .headers(EmptyPredicate.isEmpty(spec.getHeaders()) ? Collections.emptyMap()
+                                                           : spec.getHeaders().stream().collect(Collectors.toMap(
+                                                               HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
+        .cert(spec.getCert())
+        .cert_key(spec.getCert_key())
+        .method(spec.getMethod())
+        .output_vars(NGVariablesUtilsV1.getMapOfVariables(
+            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null, 0L))
+        .input_vars(NGVariablesUtilsV1.getMapOfVariables(
+            spec.getInput_vars() != null ? spec.getInput_vars().getMap() : null, 0L))
+        .body(spec.getBody())
+        .delegate(ParameterField.createValueField(
+            CollectionUtils.emptyIfNull(spec.getDelegate() != null ? spec.getDelegate().getValue() : null)))
+        .url(spec.getUrl())
         .build();
   }
 }

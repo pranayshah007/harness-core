@@ -20,7 +20,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class StepParametersUtils {
-  public StageElementParametersV1Builder getStageParameters(CustomAbstractStageNode stageNode) {
+  public StageElementParametersV1Builder getStageParameters(CustomAbstractStageNodeV1 stageNode) {
     TagUtils.removeUuidFromTags(stageNode.getLabels());
     StageElementParametersV1Builder stageBuilder = StageElementParametersV1.builder();
     stageBuilder.name(stageNode.getName());

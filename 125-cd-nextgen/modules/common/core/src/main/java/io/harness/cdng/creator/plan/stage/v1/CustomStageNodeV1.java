@@ -19,10 +19,10 @@ import lombok.Value;
 @Value
 @JsonTypeName(YAMLFieldNameConstants.CUSTOM_V1)
 @OwnedBy(PIPELINE)
-@RecasterAlias("io.harness.cdng.creator.plan.stage.v1.CustomStageNode")
-public class CustomStageNode extends CustomAbstractStageNode {
+@RecasterAlias("io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1")
+public class CustomStageNodeV1 extends CustomAbstractStageNodeV1 {
   String type = YAMLFieldNameConstants.CUSTOM_V1;
-  CustomStageConfig spec;
+  CustomStageConfigV1 spec;
 
   @Override
   public String getType() {

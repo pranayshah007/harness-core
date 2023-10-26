@@ -21,7 +21,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @Builder
-public class CustomStageConfig {
+public class CustomStageConfigV1 {
   String uuid;
   @NotNull @Size(min = 1) List<JsonNode> steps;
   @JsonProperty("rollback_steps") List<JsonNode> rollbackSteps;

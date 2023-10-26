@@ -5,13 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.shellscript.v1;
+package io.harness.steps.http.v1;
 
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.ProductModule;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.http.HttpHeaderConfig;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -20,39 +19,28 @@ import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.v1.NGVariableV1Wrapper;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Value;
 
-@CodePulse(
-    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
-@JsonTypeName(StepSpecTypeConstantsV1.SHELL_SCRIPT)
-public class ShellScriptStepInfo
-    extends ShellScriptBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+@JsonTypeName(StepSpecTypeConstantsV1.HTTP)
+@OwnedBy(HarnessTeam.PIPELINE)
+public class HttpStepInfoV1 extends HttpBaseStepInfoV1 implements Visitable, PMSStepInfo {
   NGVariableV1Wrapper output_vars;
-  NGVariableV1Wrapper env_vars;
+  NGVariableV1Wrapper input_vars;
+  List<HttpHeaderConfig> headers;
+  ParameterField<String> cert;
+  ParameterField<String> cert_key;
+  ParameterField<List<TaskSelectorYaml>> delegate;
 
   @Override
-  @JsonIgnore
   public StepType getStepType() {
-    return StepSpecTypeConstantsV1.SHELL_SCRIPT_STEP_TYPE;
+    return StepSpecTypeConstantsV1.HTTP_STEP_TYPE;
   }
 
   @Override
-  @JsonIgnore
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.TASK;
-  }
-
-  @Override
-  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
-    return getDelegate();
-  }
-
-  @Override
-  public void setDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    setDelegate(delegateSelectors);
   }
 }

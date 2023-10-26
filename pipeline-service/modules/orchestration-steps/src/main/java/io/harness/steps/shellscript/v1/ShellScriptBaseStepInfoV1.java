@@ -26,15 +26,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShellScriptBaseStepInfo {
-  ShellType shell;
-  ShellScriptSourceWrapper source;
-  ExecutionTarget execution_target;
+public class ShellScriptBaseStepInfoV1 {
+  ShellTypeV1 shell;
+  ShellScriptSourceWrapperV1 source;
+  ExecutionTargetV1 execution_target;
 
   ParameterField<Boolean> on_delegate;
 
   ParameterField<List<TaskSelectorYaml>> delegate;
 
   ParameterField<Boolean> include_infra_selectors;
-  OutputAlias output_alias;
+  OutputAliasV1 output_alias;
 }

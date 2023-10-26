@@ -140,9 +140,9 @@ public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    CustomStageNode customStageNode;
+    CustomStageNodeV1 customStageNode;
     try {
-      customStageNode = YamlUtils.read(config.getNode().toString(), CustomStageNode.class);
+      customStageNode = YamlUtils.read(config.getNode().toString(), CustomStageNodeV1.class);
     } catch (Exception e) {
       throw new InvalidYamlException(
           "Unable to parse custom stage yaml. Please ensure that it is in correct format", e);

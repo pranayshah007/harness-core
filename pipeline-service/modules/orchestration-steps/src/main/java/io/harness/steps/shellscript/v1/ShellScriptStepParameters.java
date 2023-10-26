@@ -17,6 +17,14 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.shellscript.ExecutionTarget;
+import io.harness.steps.shellscript.ExportScope;
+import io.harness.steps.shellscript.HarnessFileStoreSource;
+import io.harness.steps.shellscript.OutputAlias;
+import io.harness.steps.shellscript.ShellScriptBaseSource;
+import io.harness.steps.shellscript.ShellScriptInlineSource;
+import io.harness.steps.shellscript.ShellScriptSourceWrapper;
+import io.harness.steps.shellscript.ShellType;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -35,16 +43,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 @RecasterAlias("io.harness.steps.shellscript.v1.ShellScriptStepParameters")
-public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implements SpecParameters {
+public class ShellScriptStepParameters extends ShellScriptBaseStepInfoV1 implements SpecParameters {
   Map<String, Object> output_vars;
   Map<String, Object> env_vars;
   Set<String> secret_output_vars;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ShellScriptStepParameters(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
-      ParameterField<Boolean> onDelegate, Map<String, Object> output_vars, Map<String, Object> env_vars,
-      ParameterField<List<TaskSelectorYaml>> delegate, Set<String> secret_output_vars,
-      ParameterField<Boolean> include_infra_selectors, OutputAlias outputAlias) {
+  public ShellScriptStepParameters(ShellTypeV1 shell, ShellScriptSourceWrapperV1 source,
+      ExecutionTargetV1 executionTarget, ParameterField<Boolean> onDelegate, Map<String, Object> output_vars,
+      Map<String, Object> env_vars, ParameterField<List<TaskSelectorYaml>> delegate, Set<String> secret_output_vars,
+      ParameterField<Boolean> include_infra_selectors, OutputAliasV1 outputAlias) {
     super(shell, source, executionTarget, onDelegate, delegate, include_infra_selectors, outputAlias);
     this.output_vars = output_vars;
     this.env_vars = env_vars;
@@ -74,83 +82,78 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
         .build();
   }
 
-  private io.harness.steps.shellscript.ExecutionTarget toExecutionTarget(ExecutionTarget executionTargetV1) {
+  private ExecutionTarget toExecutionTarget(ExecutionTargetV1 executionTargetV1) {
     if (executionTargetV1 == null) {
       return null;
     }
-    return io.harness.steps.shellscript.ExecutionTarget.builder()
+    return ExecutionTarget.builder()
         .host(executionTargetV1.getHost())
         .connectorRef(executionTargetV1.getConnector())
         .workingDirectory(executionTargetV1.getDir())
         .build();
   }
 
-  private io.harness.steps.shellscript.ShellType toShellType(ShellType shellTypeV1) {
+  private ShellType toShellType(ShellTypeV1 shellTypeV1) {
     switch (shellTypeV1) {
       case Bash:
-        return io.harness.steps.shellscript.ShellType.Bash;
+        return ShellType.Bash;
       case PowerShell:
-        return io.harness.steps.shellscript.ShellType.PowerShell;
+        return ShellType.PowerShell;
       default:
         log.error("Shell type {} not supported", shellTypeV1);
         return null;
     }
   }
 
-  private io.harness.steps.shellscript.OutputAlias toOutputAlias(OutputAlias outputAliasV1) {
+  private OutputAlias toOutputAlias(OutputAliasV1 outputAliasV1) {
     if (outputAliasV1 == null) {
       return null;
     }
-    return io.harness.steps.shellscript.OutputAlias.builder()
-        .key(outputAliasV1.getKey())
-        .scope(toExportScope(outputAliasV1.getScope()))
-        .build();
+    return OutputAlias.builder().key(outputAliasV1.getKey()).scope(toExportScope(outputAliasV1.getScope())).build();
   }
 
-  private io.harness.steps.shellscript.ExportScope toExportScope(ExportScope exportScopeV1) {
+  private ExportScope toExportScope(ExportScopeV1 exportScopeV1) {
     if (exportScopeV1 == null) {
       return null;
     }
     switch (exportScopeV1) {
       case PIPELINE:
-        return io.harness.steps.shellscript.ExportScope.PIPELINE;
+        return ExportScope.PIPELINE;
       case STAGE:
-        return io.harness.steps.shellscript.ExportScope.STAGE;
+        return ExportScope.STAGE;
       case STEP_GROUP:
-        return io.harness.steps.shellscript.ExportScope.STEP_GROUP;
+        return ExportScope.STEP_GROUP;
       default:
         log.error("Export scope type {} not supported", exportScopeV1);
         return null;
     }
   }
 
-  private io.harness.steps.shellscript.ShellScriptSourceWrapper toShellScriptSourceWrapper(
-      ShellScriptSourceWrapper shellScriptSourceWrapperV1) {
+  private ShellScriptSourceWrapper toShellScriptSourceWrapper(ShellScriptSourceWrapperV1 shellScriptSourceWrapperV1) {
     if (shellScriptSourceWrapperV1 == null) {
       return null;
     }
-    return io.harness.steps.shellscript.ShellScriptSourceWrapper.builder()
+    return ShellScriptSourceWrapper.builder()
         .spec(toShellScriptBaseSource(shellScriptSourceWrapperV1.getSpec()))
         .type(toShellScriptSourceWrapperType(shellScriptSourceWrapperV1.getType()))
         .build();
   }
 
   private String toShellScriptSourceWrapperType(String type) {
-    if (type.equals(ShellScriptBaseSource.HARNESS)) {
-      return io.harness.steps.shellscript.ShellScriptBaseSource.HARNESS;
+    if (type.equals(ShellScriptBaseSourceV1.HARNESS)) {
+      return ShellScriptBaseSource.HARNESS;
     }
-    return io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
+    return ShellScriptBaseSource.INLINE;
   }
 
-  private io.harness.steps.shellscript.ShellScriptBaseSource toShellScriptBaseSource(
-      ShellScriptBaseSource shellScriptBaseSourceV1) {
-    if (shellScriptBaseSourceV1 instanceof HarnessFileStoreSource) {
-      return io.harness.steps.shellscript.HarnessFileStoreSource.builder()
-          .file(((HarnessFileStoreSource) shellScriptBaseSourceV1).getFile())
+  private ShellScriptBaseSource toShellScriptBaseSource(ShellScriptBaseSourceV1 shellScriptBaseSourceV1) {
+    if (shellScriptBaseSourceV1 instanceof HarnessFileStoreSourceV1) {
+      return HarnessFileStoreSource.builder()
+          .file(((HarnessFileStoreSourceV1) shellScriptBaseSourceV1).getFile())
           .build();
     }
-    return io.harness.steps.shellscript.ShellScriptInlineSource.builder()
-        .script(((ShellScriptInlineSource) shellScriptBaseSourceV1).getScript())
+    return ShellScriptInlineSource.builder()
+        .script(((ShellScriptInlineSourceV1) shellScriptBaseSourceV1).getScript())
         .build();
   }
 
