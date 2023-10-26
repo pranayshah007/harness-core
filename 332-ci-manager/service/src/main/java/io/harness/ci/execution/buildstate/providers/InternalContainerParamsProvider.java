@@ -29,6 +29,8 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CON
 import static io.harness.ci.commonconstants.CIExecutionConstants.SH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_SETUP_ADDON_ARGS;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_CONTAINER_CPU;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_CONTAINER_MEMORY;
 import static io.harness.ci.execution.utils.UsageUtils.getExecutionUser;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
@@ -208,8 +210,8 @@ public class InternalContainerParamsProvider {
   }
 
   private ContainerResourceParams getAddonResourceParams() {
-    Integer cpu = LITE_ENGINE_CONTAINER_CPU;
-    Integer memory = LITE_ENGINE_CONTAINER_MEM;
+    Integer cpu = ADDON_CONTAINER_CPU;
+    Integer memory = ADDON_CONTAINER_MEMORY;
     return ContainerResourceParams.builder()
         .resourceRequestMilliCpu(cpu)
         .resourceRequestMemoryMiB(memory)
