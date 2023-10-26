@@ -92,8 +92,6 @@ spec:
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "GITOPS_SERVICE_SECRET") | indent 12 }}
-            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_ACCESS_KEY" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "CE_AWS_ACCESS_KEY") | indent 12 }}
-            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_SECRET_KEY" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "CE_AWS_SECRET_KEY") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
