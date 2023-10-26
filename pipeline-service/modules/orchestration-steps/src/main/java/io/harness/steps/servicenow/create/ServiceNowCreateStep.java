@@ -22,6 +22,7 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -36,11 +37,13 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
+import io.harness.steps.servicenow.beans.ServiceNowCreateType;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -56,6 +59,7 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceNowStepHelperService serviceNowStepHelperService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  private static final String CHANGE_REQUEST = "CHANGE_REQUEST";
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
@@ -78,7 +82,8 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
-
+    validateStandardTemplateAndTicketType(specParameters);
+    checkOneoffCreateTypeOrUseServiceNowTemplate(specParameters);
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
             .action(getAction(specParameters))
@@ -117,5 +122,25 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
   private void closeLogStream(Ambiance ambiance) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.closeStream(COMMAND_UNIT);
+  }
+
+  public void validateStandardTemplateAndTicketType(ServiceNowCreateSpecParameters specParameters) {
+    if (ParameterField.isNotNull(specParameters.getTicketType())
+        && !specParameters.getTicketType().getValue().equalsIgnoreCase(CHANGE_REQUEST)
+        && specParameters.getCreateType() == ServiceNowCreateType.STANDARD) {
+      throw new InvalidRequestException(
+          "ServiceNow create using standard template is supported only for ticket type change Request for ServiceNowCreate step");
+    }
+  }
+  public void checkOneoffCreateTypeOrUseServiceNowTemplate(ServiceNowCreateSpecParameters specParameters) {
+    if (ParameterField.isBlank(specParameters.getUseServiceNowTemplate()) && specParameters.getCreateType() == null) {
+      throw new InvalidRequestException(
+          "One of createType or useServiceNowTemplate is required when creating ticket from ServiceNow in ServiceNowCreate step");
+    }
+
+    if (!ParameterField.isBlank(specParameters.getUseServiceNowTemplate()) && specParameters.getCreateType() != null) {
+      throw new InvalidRequestException(
+          "Only one of createType or useServiceNowTemplate should be present when creating ticket from ServiceNow in ServiceNowCreate step");
+    }
   }
 }
