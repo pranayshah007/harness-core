@@ -59,8 +59,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$TARGETARCH/terraform-config-inspect \
   && mkdir -m 777 -p client-tools/oc/v4.13.4 \
   && curl -s -L -o client-tools/oc/v4.13.4/oc https://app.harness.io/public/shared/tools/oc/release/v4.13.4/bin/linux/$TARGETARCH/oc \
-  && mkdir -m 777 -p client-tools/scm/93b3c9f1 \
-  && curl -s -L -o client-tools/scm/93b3c9f1/scm https://app.harness.io/public/shared/tools/scm/release/93b3c9f1/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/scm/9f1eaa9f \
+  && curl -s -L -o client-tools/scm/9f1eaa9f/scm https://app.harness.io/public/shared/tools/scm/release/9f1eaa9f/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate

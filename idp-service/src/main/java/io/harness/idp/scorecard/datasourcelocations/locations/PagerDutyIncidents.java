@@ -20,6 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
+import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
@@ -52,7 +54,8 @@ public class PagerDutyIncidents implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
+      throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
 
@@ -66,6 +69,8 @@ public class PagerDutyIncidents implements DataSourceLocation {
     }
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
+    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
+    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
 
     String serviceId = possibleReplaceableUrlPairs.get(PAGERDUTY_SERVICE_ID);
     if (serviceId == null) {
@@ -73,7 +78,7 @@ public class PagerDutyIncidents implements DataSourceLocation {
       return inputValueData;
     }
 
-    apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
+    apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
 
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, getDynamicReplaceableURLPlaceHolders());
 

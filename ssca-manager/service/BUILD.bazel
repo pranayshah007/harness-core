@@ -17,6 +17,7 @@ shared_dependencies = [
     "//940-primary-version-manager:module",
     "//950-ng-core:module",
     "//958-debezium-utils:module",
+    "//958-migration-sdk:module",
     "//960-persistence:module",
     "//965-api-key-filter:module",
     "//980-commons:module",

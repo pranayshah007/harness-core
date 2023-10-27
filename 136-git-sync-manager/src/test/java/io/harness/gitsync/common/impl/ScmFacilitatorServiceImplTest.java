@@ -630,7 +630,8 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
           ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build());
     } catch (Exception exception) {
       assertThat(exception).isInstanceOf(ScmUnexpectedException.class);
-      assertThat(exception.getMessage()).isEqualTo(error);
+      assertThat(exception.getMessage())
+          .isEqualTo("Error while getting requested file from repo and branch [branch] from Github : error");
     }
   }
 

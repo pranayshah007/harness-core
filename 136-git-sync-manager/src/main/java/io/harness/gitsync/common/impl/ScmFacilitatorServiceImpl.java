@@ -1069,8 +1069,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private Optional<ScmGetFileResponseDTO> getFileCacheResponseIfApplicable(
       ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String workingBranch) {
-    boolean isSyncEnabled = isBiDirectionalSyncEnabled(scmGetFileByBranchRequestDTO);
-    if (isSyncEnabled || scmGetFileByBranchRequestDTO.isUseCache()) {
+    boolean isBiDirectionalSyncApplicable = isBiDirectionalSyncApplicable(scmGetFileByBranchRequestDTO);
+    if (isBiDirectionalSyncApplicable || scmGetFileByBranchRequestDTO.isUseCache()) {
       GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector, workingBranch);
       GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
@@ -1079,23 +1079,27 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             gitFileCacheResponse.getGitFileCacheResponseMetadata().getRef(),
             gitFileCacheResponse.getGitFileCacheObject().getCommitId(),
             gitFileCacheResponse.getGitFileCacheObject().getObjectId(), gitFileCacheResponse.getCacheDetails(),
-            isSyncEnabled));
+            isBiDirectionalSyncApplicable));
       }
     }
     return Optional.empty();
   }
 
   //  TODO: Move this to GitXWebhookService to make it centralised when more use cases arises
-  private boolean isBiDirectionalSyncEnabled(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
+  private boolean isBiDirectionalSyncApplicable(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
     List<String> matchingFolderPaths = new ArrayList<>();
     if (ngFeatureFlagHelperService.isEnabled(
             scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier(), FeatureName.PIE_GIT_BI_DIRECTIONAL_SYNC)) {
       Optional<GitXWebhook> optionalGitXWebhook =
           gitXWebhookService.getGitXWebhook(scmGetFileByBranchRequestDTO.getScope().getAccountIdentifier(), null,
               scmGetFileByBranchRequestDTO.getRepoName());
-      if (optionalGitXWebhook.isPresent()) {
-        matchingFolderPaths = GitXWebhookUtils.compareFolderPaths(optionalGitXWebhook.get().getFolderPaths(),
-            Collections.singletonList(scmGetFileByBranchRequestDTO.getFilePath()));
+      if (optionalGitXWebhook.isPresent() && optionalGitXWebhook.get().getIsEnabled()) {
+        if (isEmpty(optionalGitXWebhook.get().getFolderPaths())) {
+          return true;
+        } else {
+          matchingFolderPaths = GitXWebhookUtils.compareFolderPaths(optionalGitXWebhook.get().getFolderPaths(),
+              Collections.singletonList(scmGetFileByBranchRequestDTO.getFilePath()));
+        }
       }
     }
     return isNotEmpty(matchingFolderPaths);

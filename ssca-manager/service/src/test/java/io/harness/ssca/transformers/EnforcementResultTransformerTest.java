@@ -11,70 +11,33 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.BuilderFactory;
 import io.harness.SSCAManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.entities.EnforcementResultEntity;
 
-import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
 public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
-  private EnforcementResultDTO dto;
-  private EnforcementResultEntity entity;
+  private BuilderFactory builderFactory;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    entity = EnforcementResultEntity.builder()
-                 .accountId("accountId")
-                 .purl("purl")
-                 .enforcementID("enforcementId")
-                 .artifactId("artifactId")
-                 .imageName("imageName")
-                 .license(Arrays.asList("license1", "license2"))
-                 .name("name")
-                 .orchestrationID("orchestrationId")
-                 .orgIdentifier("orgIdentifier")
-                 .packageManager("packageManager")
-                 .projectIdentifier("projectIdentifier")
-                 .supplier("supplier")
-                 .supplierType("supplierType")
-                 .tag("tag")
-                 .version("version")
-                 .violationDetails("violationDetails")
-                 .violationType("violationType")
-                 .build();
-
-    dto = new EnforcementResultDTO()
-              .accountId("accountId")
-              .purl("purl")
-              .enforcementId("enforcementId")
-              .artifactId("artifactId")
-              .imageName("imageName")
-              .license(Arrays.asList("license1", "license2"))
-              .name("name")
-              .orchestrationId("orchestrationId")
-              .orgIdentifier("orgIdentifier")
-              .packageManager("packageManager")
-              .projectIdentifier("projectIdentifier")
-              .supplier("supplier")
-              .supplierType("supplierType")
-              .tag("tag")
-              .version("version")
-              .violationDetails("violationDetails")
-              .violationType("violationType");
+    builderFactory = BuilderFactory.getDefault();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    EnforcementResultEntity enforcementResultEntity = EnforcementResultTransformer.toEntity(dto);
-    assertThat(enforcementResultEntity.equals(entity)).isEqualTo(true);
+    EnforcementResultEntity enforcementResultEntity =
+        EnforcementResultTransformer.toEntity(builderFactory.getEnforcementResultDTO());
+    assertThat(enforcementResultEntity.equals(builderFactory.getEnforcementResultEntityBuilder().build()))
+        .isEqualTo(true);
   }
 }

@@ -225,7 +225,15 @@ public class JsonPipelineUtils {
       if (jsonNode == null) {
         break;
       }
-      jsonNode = jsonNode.get(pathComponents[i]);
+      if (jsonNode.isArray()) {
+        try {
+          jsonNode = jsonNode.get(Integer.parseInt(pathComponents[i]));
+        } catch (NumberFormatException ex) {
+          return null;
+        }
+      } else {
+        jsonNode = jsonNode.get(pathComponents[i]);
+      }
     }
     return jsonNode;
   }

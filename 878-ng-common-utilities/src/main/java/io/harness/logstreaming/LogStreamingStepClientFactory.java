@@ -27,7 +27,7 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 
@@ -38,7 +38,7 @@ public class LogStreamingStepClientFactory {
   @Inject LogStreamingServiceConfiguration logStreamingServiceConfiguration;
   @Inject LogStreamingClient logStreamingClient;
   @Inject LogStreamingServiceRestClient logStreamingServiceRestClient;
-  @Inject @Named("logStreamingClientThreadPool") ThreadPoolExecutor logStreamingClientThreadPool;
+  @Inject @Named("logStreamingDelayExecutor") ScheduledExecutorService logStreamingDelayExecutor;
 
   public LoadingCache<String, String> accountIdToTokenCache =
       CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(5, TimeUnit.MINUTES).build(new CacheLoader<>() {
@@ -63,7 +63,8 @@ public class LogStreamingStepClientFactory {
           .baseLogKey(logBaseKey)
           .accountId(accountId)
           .token(accountIdToTokenCache.get(accountId))
-          .logStreamingClientExecutor(logStreamingClientThreadPool)
+          .logStreamingDelayExecutor(logStreamingDelayExecutor)
+          .delayToClosePrefixLogStream(logStreamingServiceConfiguration.getDelayToClosePrefixLogStreamInSeconds())
           .build();
 
     } catch (Exception exception) {

@@ -1,0 +1,180 @@
+[
+  {
+    "id": "65130e1c457bae2f07823c0a",
+    "agentID": "65130e119d0cdfa09eaa02fc",
+    "type": "Kubernetes",
+    "version": "v1",
+    "spec": {
+      "ip": null,
+      "fqdn": null,
+      "port": null,
+      "harnessServiceIdentity": {
+        "identifier": "service1",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject"
+      },
+      "harnessEnvironmentIdentity": {
+        "identifier": "envIdentifier",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject",
+        "infraIdentifier": "hce_test_new"
+      },
+      "kubernetes": {
+        "kind": "Deployment",
+        "name": "nginx-deployment",
+        "namespace": "nginx",
+        "uid": "66e89fe6-60d1-4d69-b547-25937f2b5423",
+        "service": null,
+        "workloads": [
+          {
+            "identity": {
+              "kind": "Deployment",
+              "namespace": "nginx",
+              "name": "nginx-deployment",
+              "uid": "66e89fe6-60d1-4d69-b547-25937f2b5423",
+              "apiVersion": "apps/v1"
+            },
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {
+              "deployment.kubernetes.io/revision": "1"
+            },
+            "podLabels": {
+              "app": "nginx",
+              "harness.io/release-name": "release-42f7bb"
+            },
+            "replicas": [
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-cfmvh",
+                  "uid": "e852796f-3f7f-4c28-94db-12a56d7f422f",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              },
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-l66hm",
+                  "uid": "123f2ae8-529a-49e7-8073-ee170dc8e211",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              },
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-vdnkr",
+                  "uid": "2ad423b5-2c9f-439d-b147-8cada5a5f9aa",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "createdAt": "2023-10-11T06:15:56.173Z",
+    "updatedAt": "2023-10-11T06:30:30.839Z",
+    "createdBy": "",
+    "updatedBy": "",
+    "removed": false
+  },
+  {
+    "id": "65130e1c457bae2f07823c10",
+    "agentID": "65130e119d0cdfa09eaa02fc",
+    "type": "Kubernetes",
+    "version": "v1",
+    "spec": {
+      "ip": null,
+      "fqdn": null,
+      "port": null,
+      "harnessServiceIdentity": {
+        "identifier": "service2",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject"
+      },
+      "harnessEnvironmentIdentity": {
+        "identifier": "envIdentifier",
+        "accountIdentifier": "px7xd_BFRCi-pfWPYXVjvw",
+        "organizationIdentifier": "chaosorganisation",
+        "projectIdentifier": "chaosproject",
+        "infraIdentifier": "hce_test_new"
+      },
+      "kubernetes": {
+        "kind": "Deployment",
+        "name": "nginx-deployment",
+        "namespace": "nginx",
+        "uid": "66e89fe6-60d1-4d69-b547-25937f2b5423",
+        "service": null,
+        "workloads": [
+          {
+            "identity": {
+              "kind": "Deployment",
+              "namespace": "nginx",
+              "name": "nginx-deployment",
+              "uid": "66e89fe6-60d1-4d69-b547-25937f2b5423",
+              "apiVersion": "apps/v1"
+            },
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {
+              "deployment.kubernetes.io/revision": "1"
+            },
+            "podLabels": {
+              "app": "nginx",
+              "harness.io/release-name": "release-42f7bb"
+            },
+            "replicas": [
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-cfmvh",
+                  "uid": "e852796f-3f7f-4c28-94db-12a56d7f422f",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              },
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-l66hm",
+                  "uid": "123f2ae8-529a-49e7-8073-ee170dc8e211",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              },
+              {
+                "identity": {
+                  "kind": "Pod",
+                  "namespace": "nginx",
+                  "name": "nginx-deployment-859d4f6669-vdnkr",
+                  "uid": "2ad423b5-2c9f-439d-b147-8cada5a5f9aa",
+                  "apiVersion": "v1"
+                },
+                "phase": "Running"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "createdAt": "2023-10-11T06:15:56.173Z",
+    "updatedAt": "2023-10-11T06:30:30.839Z",
+    "createdBy": "",
+    "updatedBy": "",
+    "removed": false
+  }
+]

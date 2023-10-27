@@ -89,6 +89,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestOnStart() {
+    String inputSetYaml = "some-yaml";
     String planId = generateUuid();
     String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
@@ -101,7 +102,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder()
             .planExecutionId(ambiance.getPlanExecutionId())
-            .inputSetYaml("some-yaml")
+            .inputSetYaml(inputSetYaml)
             .yaml("pipeline :\n  identifier: pipelineId")
             .pipelineYaml("pipeline :\n  identifier: pipelineId")
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
@@ -187,6 +188,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getConnectorRef()).isNull();
     assertThat(capturedEntity.getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
     assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
+    assertThat(capturedEntity.getInputSetYaml()).isEqualTo(inputSetYaml);
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
     verify(pmsPipelineService, times(1))

@@ -795,7 +795,7 @@ public class ServiceResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     // get service ref-> branch map
     Map<String, String> serviceRefBranchMap = getServiceBranchMap(
-        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getEntityWithGitInfoList());
+        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceWithGitInfoList());
 
     // scoped service refs
     List<String> serviceRefs = new ArrayList<>(serviceRefBranchMap.keySet());

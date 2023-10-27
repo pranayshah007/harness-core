@@ -15,6 +15,7 @@ import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelUtils;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -39,6 +40,8 @@ import dev.morphia.query.UpdateOperations;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -161,31 +164,52 @@ public abstract class NotificationRule
     String webhookUrl;
     String authorizationToken;
     Map<String, String> headers;
+    long expressionFunctorToken;
 
     public CVNGWebhookChannel(List<String> userGroups, String webhookUrl, String authorizationToken) {
       this.userGroups = userGroups;
       this.webhookUrl = webhookUrl;
       this.authorizationToken = authorizationToken;
+      if (authorizationToken.startsWith("<+secrets.getValue(")) {
+        this.expressionFunctorToken = HashGenerator.generateIntegerHash();
+        this.authorizationToken = getSecretAuthorizationToken(authorizationToken);
+      }
     }
 
     @Override
     public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
         String templateId, Map<String, String> templateData) {
-      return WebhookChannel.builder()
-          .accountId(accountId)
-          .team(Team.CV)
-          .templateData(templateData)
-          .templateId(templateId)
-          .userGroups(
-              getUserGroupList(userGroups)
-                  .stream()
-                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
-                  .collect(Collectors.toList()))
-          .webhookUrls(Lists.newArrayList(webhookUrl))
-          .orgIdentifier(orgIdentifier)
-          .projectIdentifier(projectIdentifier)
-          .headers(Map.of("Authorization", authorizationToken))
-          .build();
+      WebhookChannel webhookChannel =
+          WebhookChannel.builder()
+              .accountId(accountId)
+              .team(Team.CV)
+              .templateData(templateData)
+              .templateId(templateId)
+              .userGroups(
+                  getUserGroupList(userGroups)
+                      .stream()
+                      .map(e
+                          -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                      .collect(Collectors.toList()))
+              .webhookUrls(Lists.newArrayList(webhookUrl))
+              .orgIdentifier(orgIdentifier)
+              .projectIdentifier(projectIdentifier)
+              .headers(Map.of("Authorization", authorizationToken))
+              .build();
+
+      if (authorizationToken.startsWith("${ngSecretManager.obtain(")) {
+        webhookChannel.setExpressionFunctorToken(expressionFunctorToken);
+      }
+      return webhookChannel;
+    }
+
+    private String getSecretAuthorizationToken(String authorizationToken) {
+      Pattern pattern = Pattern.compile("(\\\"|\\')(\\w*[\\.]?\\w*)(\\\"|\\')");
+      Matcher matcher = pattern.matcher(authorizationToken);
+      if (matcher.find()) {
+        authorizationToken = matcher.group(2);
+      }
+      return "${ngSecretManager.obtain(\"" + authorizationToken + "\", " + expressionFunctorToken + ")}";
     }
   }
 

@@ -154,7 +154,11 @@ public class EmailStep extends PipelineSyncExecutable {
                                                             .setEndTime(System.currentTimeMillis())
                                                             .build()))
             .build();
+      } else {
+        logCallback.saveExecutionLog(
+            String.format("Successfully sent an email with subject- [" + emailDTO.getSubject() + "]."));
       }
+
       if (response.body().getStatus() == io.harness.ng.core.Status.SUCCESS
           && StringUtils.isNotBlank(response.body().getData().getErrorMessage())) {
         logCallback.saveExecutionLog(String.format(response.body().getData().getErrorMessage()));

@@ -6,6 +6,9 @@
  */
 
 package io.harness.steps.barriers.event;
+
+import static io.harness.steps.barriers.service.BarrierService.BARRIER_UPDATE_LOCK;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,6 +18,8 @@ import io.harness.beans.FeatureName;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -26,6 +31,7 @@ import io.harness.steps.barriers.service.BarrierService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class BarrierPositionHelperEventHandler implements AsyncInformObserver, NodeStatusUpdateObserver {
   @Inject @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService;
   @Inject BarrierService barrierService;
+  @Inject private PersistentLocker persistentLocker;
 
   @Override
   public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
@@ -84,8 +91,11 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
     String stageRuntimeId = AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
     String stepGroupRuntimeId =
         AmbianceUtils.getStepGroupLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
-    return barrierService.updatePosition(
-        planExecutionId, type, level.getSetupId(), nodeExecution.getUuid(), stageRuntimeId, stepGroupRuntimeId, true);
+    try (AcquiredLock<?> ignore = persistentLocker.waitToAcquireLock(
+             BARRIER_UPDATE_LOCK + planExecutionId, Duration.ofSeconds(20), Duration.ofSeconds(60))) {
+      return barrierService.updatePosition(
+          planExecutionId, type, level.getSetupId(), nodeExecution.getUuid(), stageRuntimeId, stepGroupRuntimeId, true);
+    }
   }
 
   @Override

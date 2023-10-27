@@ -213,20 +213,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
-    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
-        .stream()
-        .map(exp
-            -> StepOutput.builder()
-                   .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
-                   .stepIdentifier(
-                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
-                   .stepGroupIdentifier(
-                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
-                   .expression(exp)
-                   .build())
-        .map(ShellScriptStepFunctor::new)
-        .collect(Collectors.toList());
+    return getExpressionFunctor(context, phase.getName(), phaseStep.getName(), graphNode);
   }
 
   @Override
@@ -236,12 +223,21 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
+    return getExpressionFunctor(context, phase.getName(), stepGroupName, graphNode);
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, String stageName, String stepGroupName, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stageIdentifier(MigratorUtility.generateIdentifier(stageName, context.getIdentifierCaseFormat()))
                    .stepIdentifier(
                        MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
                    .stepGroupIdentifier(

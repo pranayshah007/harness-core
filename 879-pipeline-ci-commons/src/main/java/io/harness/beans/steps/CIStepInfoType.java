@@ -93,7 +93,8 @@ public enum CIStepInfoType {
   SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement"),
   PROVENANCE(CI_LITE_ENGINE, "provenance"),
   SLSA_VERIFICATION(CI_LITE_ENGINE, "SlsaVerification"),
-  PROVENANCE_GCR(CI_LITE_ENGINE, "provenanceGcr");
+  PROVENANCE_GCR(CI_LITE_ENGINE, "provenanceGcr"),
+  SLSA_VERIFICATION_GCR(CI_LITE_ENGINE, "SlsaVerificationGcr");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

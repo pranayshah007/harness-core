@@ -67,6 +67,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.apache.commons.io.IOUtils;
@@ -558,12 +559,32 @@ public class BambooServiceImpl implements BambooService {
     return null;
   }
 
+  public List<ArtifactFileMetadata> getArtifactFileMetadataList(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, String planKey, String buildNumber,
+      @NotNull List<String> artifactPathRegex) {
+    Map<String, Artifact> artifactPathMap =
+        getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber);
+    List<ArtifactFileMetadata> artifactFileMetadataList = new ArrayList<>();
+    for (String artifact : artifactPathRegex) {
+      artifactFileMetadataList.addAll(
+          getArtifactFileMetadata(bambooConfig, encryptionDetails, planKey, buildNumber, artifact, artifactPathMap));
+    }
+    return artifactFileMetadataList;
+  }
+
   private List<ArtifactFileMetadata> getArtifactFileMetadata(BambooConfig bambooConfig,
       List<EncryptedDataDetail> encryptionDetails, String planKey, String buildNumber, String artifactPathRegex) {
+    Map<String, Artifact> artifactPathMap =
+        getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber);
+    return getArtifactFileMetadata(
+        bambooConfig, encryptionDetails, planKey, buildNumber, artifactPathRegex, artifactPathMap);
+  }
+
+  private List<ArtifactFileMetadata> getArtifactFileMetadata(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, String planKey, String buildNumber, String artifactPathRegex,
+      Map<String, Artifact> artifactPathMap) {
     List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
     if (isNotEmpty(artifactPathRegex.trim())) {
-      Map<String, Artifact> artifactPathMap =
-          getBuildArtifactsUrlMap(bambooConfig, encryptionDetails, planKey, buildNumber);
       Set<Entry<String, Artifact>> artifactPathSet = artifactPathMap.entrySet();
 
       String artifactSourcePath = artifactPathRegex;

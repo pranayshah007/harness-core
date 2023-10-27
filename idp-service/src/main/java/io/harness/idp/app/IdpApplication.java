@@ -230,7 +230,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
-    controller.register(injector.getInstance(IdpModuleLicenseUsageCaptureEventConsumer.class), 1);
+    controller.register(injector.getInstance(IdpModuleLicenseUsageCaptureEventConsumer.class), 2);
   }
 
   private void registerIterators(Injector injector, IteratorConfig iteratorConfig) {

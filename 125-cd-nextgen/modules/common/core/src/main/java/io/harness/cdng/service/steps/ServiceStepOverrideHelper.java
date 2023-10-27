@@ -18,10 +18,17 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.CLUSTER_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.CLUSTER_SERVICE_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -85,6 +92,11 @@ import org.jetbrains.annotations.Nullable;
 @Slf4j
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  private static Map<String, String> overrideMapper = Map.of(SERVICE.toString(), "service",
+      ENV_GLOBAL_OVERRIDE.toString(), "Environment override", ENV_SERVICE_OVERRIDE.toString(),
+      "Environment Service override", INFRA_GLOBAL_OVERRIDE.toString(), "Infrastructure override",
+      INFRA_SERVICE_OVERRIDE.toString(), "Infrastructure Service override", CLUSTER_GLOBAL_OVERRIDE.toString(),
+      "Cluster override", CLUSTER_SERVICE_OVERRIDE.toString(), "Cluster Service override");
 
   // This is for overrides V1 design (& ServiceStepV3 where service config is present)
   public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
@@ -211,7 +223,8 @@ public class ServiceStepOverrideHelper {
                                             .collect(Collectors.toList());
     if (isNotEmpty(duplicateIdentifiers)) {
       throw new InvalidRequestException(
-          String.format("found duplicate identifiers %s in %s", duplicateIdentifiers.toString(), location));
+          String.format("found duplicate identifiers %s for Manifest in %s", duplicateIdentifiers.toString(),
+              isNull(overrideMapper.get(location)) ? location : overrideMapper.get(location)));
     }
 
     Set<String> newIdentifiers = svcManifests.stream()
@@ -276,7 +289,7 @@ public class ServiceStepOverrideHelper {
     if (isNotEmpty(unsupportedManifestTypesUsed)) {
       throw new InvalidRequestException(format("Unsupported Manifest Types: [%s] found for %s",
           unsupportedManifestTypesUsed.stream().map(Object::toString).collect(Collectors.joining(",")),
-          overrideLocation));
+          isNull(overrideMapper.get(overrideLocation)) ? overrideLocation : overrideMapper.get(overrideLocation)));
     }
   }
 
@@ -297,7 +310,8 @@ public class ServiceStepOverrideHelper {
     if (isNotEmpty(duplicateManifestIds)) {
       throw new InvalidRequestException(
           format("Found duplicate manifest identifiers [%s] in %s for service [%s] and environment [%s]",
-              duplicateManifestIds.stream().map(Object::toString).collect(Collectors.joining(",")), overrideLocation,
+              duplicateManifestIds.stream().map(Object::toString).collect(Collectors.joining(",")),
+              isNull(overrideMapper.get(overrideLocation)) ? overrideLocation : overrideMapper.get(overrideLocation),
               svcIdentifier, envIdentifier));
     }
   }

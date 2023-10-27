@@ -108,6 +108,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -227,7 +228,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.applyManifests(
         client, resources, k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
-
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     k8sTaskHelperBase.saveRelease(
         useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory, releaseName);
 
@@ -253,6 +254,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .kubernetesConfig(kubernetesConfig)
+                                              .startTime(manifestApplyTime)
                                               .build();
 
     K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sBGDeployRequest.isUseK8sApiForSteadyStateCheck());

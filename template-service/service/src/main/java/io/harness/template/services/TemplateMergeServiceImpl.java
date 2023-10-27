@@ -29,8 +29,12 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
+import io.harness.pms.yaml.preprocess.YamlV1PreProcessor;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -61,6 +65,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Inject private NGTemplateServiceHelper templateServiceHelper;
   @Inject private TemplateInputsValidator templateInputsValidator;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
+  @Inject private YamlPreProcessorFactory yamlPreProcessorFactory;
 
   @Inject private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   @Override
@@ -144,13 +149,26 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     }
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     String processedYamlVersion;
+    Set<String> idsValuesSet = new HashSet<>();
+    Map<String, Integer> idsSuffixMap = new HashMap<>();
+    if (HarnessYamlVersion.isV1(yamlVersion)) {
+      // Collect ids set and Ids Suffix map from pipeline yaml
+      YamlV1PreProcessor yamlV1PreProcessor =
+          (YamlV1PreProcessor) yamlPreProcessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
+      YamlPreprocessorResponseDTO yamlPreprocessorResponseDTO =
+          yamlV1PreProcessor.preProcess(entityYamlNode.getCurrJsonNode());
+      idsValuesSet = yamlPreprocessorResponseDTO.getIdsValuesSet();
+      idsSuffixMap = yamlPreprocessorResponseDTO.getIdsSuffixMap();
+    }
     if (!getMergedYamlWithTemplateField) {
-      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectWithVersion(accountId, orgId,
-          projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
+      mergeTemplateInputsInObject =
+          templateMergeServiceHelper.mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId, entityYamlNode,
+              templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion, idsValuesSet, idsSuffixMap);
 
     } else {
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId,
-          orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
+          orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion,
+          idsValuesSet, idsSuffixMap);
     }
     resMap = mergeTemplateInputsInObject.getResMap();
     processedYamlVersion = mergeTemplateInputsInObject.getProcessedYamlVersion();

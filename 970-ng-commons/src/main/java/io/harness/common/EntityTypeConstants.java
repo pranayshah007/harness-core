@@ -273,4 +273,6 @@ public interface EntityTypeConstants {
   String AWS_CDK_DESTROY = "AwsCdkDestroy";
   String AWS_CDK_ROLLBACK = "AwsCdkRollback";
   String SLSA_VERIFICATION = "SlsaVerification";
+
+  String OVERRIDES = "Overrides";
 }

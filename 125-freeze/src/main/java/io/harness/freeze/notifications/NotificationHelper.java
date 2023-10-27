@@ -40,6 +40,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +57,8 @@ public class NotificationHelper {
   @Inject private HtmlInputSanitizer userNameSanitizer;
 
   public void sendNotification(String yaml, boolean pipelineRejectedNotification, boolean freezeWindowNotification,
-      Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze)
-      throws IOException {
+      boolean freezeEnableNotification, Ambiance ambiance, String accountId, String executionUrl, String baseUrl,
+      boolean globalFreeze) throws IOException {
     FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
     if (freezeInfoConfig == null || freezeInfoConfig.getNotifications() == null) {
@@ -73,6 +74,9 @@ public class NotificationHelper {
         for (FreezeEvent freezeEvent : freezeNotifications.getEvents()) {
           String templateId = getNotificationTemplate(wrapper.getType(), freezeEvent);
           if (freezeEvent.getType().equals(FreezeEventType.FREEZE_WINDOW_ENABLED) && !freezeWindowNotification) {
+            continue;
+          }
+          if (freezeEvent.getType().equals(FreezeEventType.ON_ENABLE_FREEZE_WINDOW) && !freezeEnableNotification) {
             continue;
           }
           if (freezeEvent.getType().equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE)
@@ -154,6 +158,7 @@ public class NotificationHelper {
       data.put("START_TIME", windowTimes.getLeft().toString());
       data.put("END_TIME", windowTimes.getRight().toString());
       data.put("ACCOUNT_ID", accountId);
+      data.put("CURRENT_TIME", LocalDateTime.now(timeZone.toZoneId()).format(FreezeTimeUtils.dtf));
     }
     if (freezeEventType.equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE) && ambiance != null) {
       data.put("USER_NAME",
@@ -162,6 +167,7 @@ public class NotificationHelper {
       data.put("WORKFLOW_URL", executionUrl);
     }
     data.put("CUSTOMIZED_MESSAGE", getCustomizeMessage(freezeNotifications));
+    data.put("CURRENT_TIME_IN_UTC", LocalDateTime.now(ZoneOffset.UTC).format(FreezeTimeUtils.dtf));
     return data;
   }
 
@@ -172,10 +178,14 @@ public class NotificationHelper {
     return "";
   }
   private String getNotificationTemplate(String channelType, FreezeEvent freezeEvent) {
-    if (freezeEvent.getType().equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE)) {
-      return String.format("pipeline_rejected_%s_alert", channelType.toLowerCase());
+    switch (freezeEvent.getType()) {
+      case ON_ENABLE_FREEZE_WINDOW:
+        return String.format("freeze_enabled_%s_alert", channelType.toLowerCase());
+      case DEPLOYMENT_REJECTED_DUE_TO_FREEZE:
+        return String.format("pipeline_rejected_%s_alert", channelType.toLowerCase());
+      default:
+        return String.format("freeze_%s_alert", channelType.toLowerCase());
     }
-    return String.format("freeze_%s_alert", channelType.toLowerCase());
   }
 
   public void sendNotificationForFreezeConfigs(List<FreezeSummaryResponseDTO> manualFreezeConfigs,
@@ -183,7 +193,7 @@ public class NotificationHelper {
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : globalFreezeConfigs) {
       if (freezeSummaryResponseDTO.getYaml() != null) {
         try {
-          sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, ambiance,
+          sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, false, ambiance,
               freezeSummaryResponseDTO.getAccountId(), executionUrl, baseUrl, true);
         } catch (Exception e) {
           log.info("Unable to send pipeline rejected notifications for global freeze", e);
@@ -193,7 +203,7 @@ public class NotificationHelper {
     for (FreezeSummaryResponseDTO freezeSummaryResponseDTO : manualFreezeConfigs) {
       if (freezeSummaryResponseDTO.getYaml() != null) {
         try {
-          sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, ambiance,
+          sendNotification(freezeSummaryResponseDTO.getYaml(), true, false, false, ambiance,
               freezeSummaryResponseDTO.getAccountId(), executionUrl, baseUrl, false);
         } catch (Exception e) {
           log.info("Unable to send pipeline rejected notifications for manual freeze", e);
@@ -218,15 +228,15 @@ public class NotificationHelper {
     if (accountId != null) {
       if (orgId != null) {
         if (projectId != null) {
-          freezeUrl = String.format("%s/account/%s/cd/orgs/%s/projects/%s/setup/freeze-window-studio/window/%s",
+          freezeUrl = String.format("%s/account/%s/cd/orgs/%s/projects/%s/setup/freeze-windows/studio/window/%s",
               baseUrl, accountId, orgId, projectId, identifier);
         } else {
-          freezeUrl = String.format("%s/account/%s/settings/organizations/%s/setup/freeze-window-studio/window/%s",
+          freezeUrl = String.format("%s/account/%s/settings/organizations/%s/setup/freeze-windows/studio/window/%s",
               baseUrl, accountId, orgId, identifier);
         }
       } else {
         freezeUrl =
-            String.format("%s/account/%s/settings/freeze-window-studio/window/%s", baseUrl, accountId, identifier);
+            String.format("%s/account/%s/settings/freeze-windows/studio/window/%s", baseUrl, accountId, identifier);
       }
     }
     return freezeUrl;

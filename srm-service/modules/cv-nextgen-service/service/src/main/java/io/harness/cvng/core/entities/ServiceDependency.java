@@ -95,6 +95,7 @@ public class ServiceDependency implements PersistentEntity, UuidAware, AccountAc
   ServiceDependencyMetadata serviceDependencyMetadata;
   private long lastUpdatedAt;
   private long createdAt;
+  private String agentIdentifier;
 
   @Data
   @Builder

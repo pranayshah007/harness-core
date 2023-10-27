@@ -12,6 +12,7 @@ import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.ssca.services.ArtifactService;
@@ -49,11 +50,17 @@ public class ArtifactApiImpl implements ArtifactApi {
   }
 
   @Override
+  public Response getArtifactDetails(String org, String project, String artifact, String tag, String harnessAccount) {
+    ArtifactDetailResponse response = artifactService.getArtifactDetails(harnessAccount, org, project, artifact, tag);
+    return Response.ok().entity(response).build();
+  }
+
+  @Override
   public Response listArtifacts(String org, String project, @Valid ArtifactListingRequestBody body,
       String harnessAccount, @Min(1L) @Max(1000L) Integer limit, String order, @Min(0L) Integer page, String sort) {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
-        artifactService.listArtifacts(harnessAccount, org, project, null, pageable);
+        artifactService.listArtifacts(harnessAccount, org, project, body, pageable);
     return PageResponseUtils.getPagedResponse(artifactEntities);
   }
 

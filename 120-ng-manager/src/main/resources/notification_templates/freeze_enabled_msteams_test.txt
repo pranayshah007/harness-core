@@ -1,0 +1,10 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Deployment Freeze Window ${BLACKOUT_WINDOW_NAME} Enabled",
+  "sections": [
+    {
+      "activityTitle": "A deployment freeze ${BLACKOUT_WINDOW_NAME} has been enabled on ${CURRENT_TIME}(${CURRENT_TIME_IN_UTC} UTC). ${CUSTOMIZED_MESSAGE}"
+    }
+  ]
+}
