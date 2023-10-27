@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sApplyBaseStepInfo.K8sApplyBaseStepInfoKeys;
@@ -41,7 +42,6 @@ import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -69,7 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac implements K8sStepExecutor {
+public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_APPLY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -101,7 +101,11 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     }
 
     publishSecretRuntimeUsage(ambiance, k8sApplyStepParameters);
-    validateFilePaths(k8sApplyStepParameters);
+    if (k8sApplyStepParameters.getManifestSource() != null) {
+      validateManifestSource(k8sApplyStepParameters);
+    } else {
+      validateFilePaths(k8sApplyStepParameters);
+    }
     validateManifestType(ambiance);
     return k8sStepHelper.startChainLink(this, ambiance, stepElementParameters);
   }
@@ -131,8 +135,15 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     }
   }
 
+  private void validateManifestSource(K8sApplyStepParameters k8sApplyStepParameters) {
+    if (!ManifestType.K8Manifest.equals(k8sApplyStepParameters.getManifestSource().getType().getDisplayName())) {
+      throw new UnsupportedOperationException(
+          format("K8s Apply step manifest source only supports manifests of type: [%s], and [%s] is provided",
+              ManifestType.K8Manifest, k8sApplyStepParameters.getManifestSource().getType()));
+    }
+  }
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return k8sStepHelper.executeNextLink(this, ambiance, stepElementParameters, passThroughData, responseSupplier);
@@ -169,7 +180,6 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
                     k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .accountId(accountId)
             .deprecateFabric8Enabled(true)
-            .filePaths(k8sApplyStepParameters.getFilePaths().getValue())
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
@@ -180,6 +190,13 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       applyRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+
+    if (k8sApplyStepParameters.getFilePaths() != null && k8sApplyStepParameters.getFilePaths().getValue() != null) {
+      applyRequestBuilder.filePaths(k8sApplyStepParameters.getFilePaths().getValue());
+    } else {
+      applyRequestBuilder.filePaths(
+          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().retrieveFilePaths());
     }
 
     Map<String, String> k8sCommandFlag =
@@ -193,8 +210,9 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepElementParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
     }

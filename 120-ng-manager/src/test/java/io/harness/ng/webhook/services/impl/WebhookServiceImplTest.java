@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -50,6 +51,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.gitsync.common.service.ScmClientFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
@@ -89,6 +91,8 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Mock NextGenConfiguration nextGenConfiguration;
   @Mock WebhookHelper webhookHelper;
   @Mock HsqsClientService hsqsClientService;
+
+  @Mock GitSyncSdkService gitSyncSdkService;
 
   @InjectMocks WebhookServiceImpl webhookServiceImpl;
   private String accountId = "accountId";
@@ -239,6 +243,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGenerateWebhookDTOAndEnqueue() {
+    when(gitSyncSdkService.isGitSimplificationEnabled(anyString(), anyString(), anyString())).thenReturn(false);
     doReturn(QueueServiceClientConfig.builder().topic("topic1").build())
         .when(nextGenConfiguration)
         .getQueueServiceClientConfig();

@@ -335,7 +335,8 @@ public class StatusUtilsTest extends CategoryTest {
     assertThat(StatusUtils.nodeAllowedStartSet(Status.EXPIRED)).isEqualTo(StatusUtils.finalizableStatuses());
     assertThat(StatusUtils.nodeAllowedStartSet(APPROVAL_REJECTED)).isEqualTo(StatusUtils.finalizableStatuses());
     assertThat(StatusUtils.nodeAllowedStartSet(Status.SUCCEEDED))
-        .containsExactlyInAnyOrder(INTERVENTION_WAITING, RUNNING, QUEUED);
+        .containsExactlyInAnyOrder(INTERVENTION_WAITING, RUNNING, QUEUED, WAIT_STEP_RUNNING, ASYNC_WAITING,
+            APPROVAL_WAITING, RESOURCE_WAITING, INPUT_WAITING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.IGNORE_FAILED))
         .containsExactlyInAnyOrder(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
     assertThatThrownBy(() -> StatusUtils.nodeAllowedStartSet(Status.UNRECOGNIZED))

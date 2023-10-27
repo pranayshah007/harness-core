@@ -231,7 +231,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists(MigrationContext migrationContext) {
     NGMigrationEntityType rootType = migrationContext.getRoot();
-    return NGMigrationEntityType.APPLICATION == rootType;
+    return NGMigrationEntityType.APPLICATION == rootType || NGMigrationEntityType.SERVICE == rootType;
   }
 
   public List<ConfigFileWrapper> getConfigFiles(MigrationContext migrationContext, Set<CgEntityId> configFileIds) {
@@ -271,7 +271,11 @@ public class ConfigFileMigrationService extends NgMigrationService {
       SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, configFile.getEncryptedFileId());
       secretFiles = Collections.singletonList(secretRefData.toSecretRefStringValue());
     } else {
-      files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+      if (file == null) {
+        return null;
+      } else {
+        files = MigratorUtility.getFileStorePaths(Collections.singletonList(file));
+      }
     }
     return ConfigFileWrapper.builder()
         .configFile(io.harness.cdng.configfile.ConfigFile.builder()

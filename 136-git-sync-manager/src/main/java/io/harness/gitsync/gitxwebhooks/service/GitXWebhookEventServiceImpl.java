@@ -229,7 +229,10 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
                                              .accountIdentifier(gitXWebhook.getAccountIdentifier())
                                              .webhookIdentifier(gitXWebhook.getIdentifier())
                                              .build(),
-        UpdateGitXWebhookRequestDTO.builder().lastEventTriggerTime(triggerEventTime).build());
+        UpdateGitXWebhookRequestDTO.builder()
+            .lastEventTriggerTime(triggerEventTime)
+            .folderPaths(gitXWebhook.getFolderPaths())
+            .build());
   }
 
   private void enqueueWebhookEvents(WebhookDTO webhookDTO) {

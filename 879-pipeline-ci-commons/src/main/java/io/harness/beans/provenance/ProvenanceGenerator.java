@@ -75,6 +75,9 @@ public class ProvenanceGenerator {
   private CodeMetadata getCodeMetadata(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CODEBASE));
+    if (!optionalSweepingOutput.isFound()) {
+      return null;
+    }
     CodebaseSweepingOutput codebaseSweeping = (CodebaseSweepingOutput) optionalSweepingOutput.getOutput();
 
     return new CodeMetadata(codebaseSweeping.getRepoUrl(), codebaseSweeping.getBranch(), codebaseSweeping.getPrNumber(),
@@ -84,6 +87,9 @@ public class ProvenanceGenerator {
   private TriggerMetadata getTriggerMetadata(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      return null;
+    }
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
     ExecutionSource executionSource = stageDetails.getExecutionSource();
 

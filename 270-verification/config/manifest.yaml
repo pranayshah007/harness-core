@@ -1,2 +1,3 @@
 DOCKER_FILE_PATH: /harness/harness-core/dockerization/verification/Dockerfile-verification-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/270-verification/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml

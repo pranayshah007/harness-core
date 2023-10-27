@@ -102,7 +102,11 @@ public class IDPModuleLicenseUsageImpl implements IDPModuleLicenseUsage {
   @Override
   public void licenseUsageDailyCountAggregationPerAccount() {
     Pair<Long, Long> previousDay24HourTimeFrame = getPreviousDay24HourTimeFrame();
+    log.info("Fetching data between {} {} for license usage daily count aggregation per account",
+        previousDay24HourTimeFrame.getLeft(), previousDay24HourTimeFrame.getRight());
     List<ActiveDevelopersEntity> activeDevelopersEntities = activeDevelopersRepository.findByLastAccessedAtBetween(
+        previousDay24HourTimeFrame.getLeft(), previousDay24HourTimeFrame.getRight());
+    log.info("Found {} active developers for all accounts between {} {}", activeDevelopersEntities.size(),
         previousDay24HourTimeFrame.getLeft(), previousDay24HourTimeFrame.getRight());
     Map<String, Long> accountsPreviousDayDevelopersCount = activeDevelopersEntities.stream().collect(
         Collectors.groupingBy(ActiveDevelopersEntity::getAccountIdentifier, Collectors.counting()));

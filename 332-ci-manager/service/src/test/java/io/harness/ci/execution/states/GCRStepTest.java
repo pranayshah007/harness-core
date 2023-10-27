@@ -305,7 +305,7 @@ public class GCRStepTest extends CIExecutionTestBase {
             .pipelineExecutionId("")
             .startTime(ambiance.getStartTs())
             .pluginInfo("plugins/kaniko-gcr:0.0.0")
-            .buildMetadata(new BuildMetadata("ci-unittest", null, null, "./dockerfile", null))
+            .buildMetadata(BuildMetadata.builder().image("ci-unittest").dockerFile("./dockerfile").build())
             .build();
 
     Map<String, String> versionMap = new HashMap<>();

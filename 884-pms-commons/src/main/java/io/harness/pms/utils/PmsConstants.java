@@ -19,4 +19,5 @@ public class PmsConstants {
   public final int QUEUING_RC_PERMITS = 1;
   public final String RELEASE_ENTITY_TYPE_PLAN = "PLAN";
   public static final String PIPELINE = "PIPELINE";
+  public static final String DEFAULT_TIMEOUT = "8w";
 }

@@ -6,13 +6,6 @@
  */
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
-import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
-import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
-import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
-import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
-import static io.harness.idp.common.Constants.PAGERDUTY_INCIDENTS;
-import static io.harness.idp.common.Constants.PAGERDUTY_RESOLVED_INCIDENTS;
-import static io.harness.idp.common.Constants.PAGERDUTY_SERVICE_DIRECTORY;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
@@ -30,10 +23,17 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_POLICY_EVALUATION_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_STO_SCAN_SETUP_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_COUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_OPEN_CLOSE_RATIO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_MEAN_TIME_TO_RESOLVE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_INCIDENTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_RESOLVED_INCIDENTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_SERVICE_DIRECTORY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

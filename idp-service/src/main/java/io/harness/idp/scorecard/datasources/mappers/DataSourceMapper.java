@@ -9,7 +9,7 @@ package io.harness.idp.scorecard.datasources.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 import io.harness.spec.server.idp.v1.model.DataSource;
 
 import lombok.experimental.UtilityClass;

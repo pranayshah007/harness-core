@@ -21,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
+import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
@@ -46,9 +48,12 @@ public class GithubOpenSecretScanningAlertsDsl implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
+      throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
+    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
+    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
     Map<String, Object> data = new HashMap<>();
 
     if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
@@ -61,7 +66,7 @@ public class GithubOpenSecretScanningAlertsDsl implements DataSourceLocation {
     Map<String, String> replaceablePairs = new HashMap<>();
     replaceablePairs.putAll(possibleReplaceableUrlPairs);
     replaceablePairs.putAll(possibleReplaceableRequestBodyPairs);
-    String url = replaceUrlsPlaceholdersIfAny(apiRequestDetails.getUrl(), replaceablePairs);
+    String url = constructUrl(httpConfig.getTarget(), apiRequestDetails.getUrl(), replaceablePairs);
     apiRequestDetails.setUrl(url);
     DslClient dslClient =
         dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
