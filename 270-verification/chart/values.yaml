@@ -38,7 +38,7 @@ global:
           - secretName: ""
             keys:
               MONGO_USER: ""
-              MONGO_PASSWORD": ""
+              MONGO_PASSWORD: ""
         secretManagement:
           externalSecretsOperator:
             - secretStore:
@@ -48,7 +48,7 @@ global:
                 MONGO_USER:
                   name: ""
                   property: ""
-                MONGO_PASSWORD":
+                MONGO_PASSWORD:
                   name: ""
                   property: ""
     timescaledb:
@@ -143,16 +143,13 @@ serviceAccount:
 mongo:
   protocol: "mongodb"
   hosts: []
-  secretName: ""
-  userKey: ""
-  passwordKey: ""
   extraArgs: ""
   secrets:
     kubernetesSecrets:
       - secretName: ""
         keys:
           MONGO_USER: ""
-          MONGO_PASSWORD": ""
+          MONGO_PASSWORD: ""
     secretManagement:
       externalSecretsOperator:
         - secretStore:
@@ -162,7 +159,7 @@ mongo:
             MONGO_USER:
               name: ""
               property: ""
-            MONGO_PASSWORD":
+            MONGO_PASSWORD:
               name: ""
               property: ""  
 
