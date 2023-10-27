@@ -126,6 +126,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
 
   @Test
   @Owner(developers = ABHINAV3)
+  @Category(UnitTests.class)
   public void testGetPipelineJobStatus_CurBillingEnabled_DataSetIdNotNull_InTimeRange_DataPresent() {
     Instant startTime = Instant.now().minus(2, ChronoUnit.DAYS);
     Instant endTime = Instant.now();
