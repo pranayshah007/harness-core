@@ -7,6 +7,8 @@
 
 package io.harness.idp.migration;
 
+import static io.harness.persistence.HQuery.excludeAuthority;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
@@ -35,13 +38,12 @@ public class MultipleInputValuesMigration implements NGMigration {
   @Override
   public void migrate() {
     log.info("Starting the migration for adding input values field in checks collection.");
-    Query<CheckEntity> checkEntityQuery = persistence.createQuery(CheckEntity.class)
+    Query<CheckEntity> checkEntityQuery = persistence.createQuery(CheckEntity.class, excludeAuthority)
                                               .filter(CheckEntity.CheckKeys.isCustom, true)
                                               .filter(CheckEntity.CheckKeys.isDeleted, false);
-
     try (HIterator<CheckEntity> checks = new HIterator<>(checkEntityQuery.fetch())) {
-      for (CheckEntity check : checks) {
-        migrateCheck(check);
+      while (checks.hasNext()) {
+        migrateCheck(checks.next());
       }
     }
 
@@ -78,15 +80,22 @@ public class MultipleInputValuesMigration implements NGMigration {
 
       UpdateOperations<CheckEntity> updateOperations = persistence.createUpdateOperations(CheckEntity.class);
       updateOperations.set(CheckEntity.CheckKeys.rules, rules);
-      UpdateResults updateOperationResult = persistence.update(check, updateOperations);
-      if (updateOperationResult.getUpdatedCount() > 0) {
-        log.info("Added input values field successfully for {} records", updateOperationResult.getUpdatedCount());
+
+      Query<CheckEntity> query = persistence.createQuery(CheckEntity.class)
+                                     .filter(CheckEntity.CheckKeys.accountIdentifier, check.getAccountIdentifier())
+                                     .filter(CheckEntity.CheckKeys.identifier, check.getIdentifier());
+
+      UpdateResults updateOperationResult = persistence.update(query, updateOperations);
+      if (updateOperationResult.getUpdatedCount() == 1) {
+        log.info(String.format(
+            "Added input values field for check %s, account %s", check.getIdentifier(), check.getAccountIdentifier()));
       } else {
-        log.warn("Could not add input values field in checks collection to any record");
+        log.warn(String.format("Could not add input values field for check %s, account %s", check.getIdentifier(),
+            check.getAccountIdentifier()));
       }
     } catch (Exception ex) {
-      log.error(
-          "DeletedEnvironmentInstancesCleanupMigration: Unexpected error occurred while migrating Instances for deleted environment",
+      log.error(String.format("Unexpected error occurred while migrating check %s, account %s", check.getIdentifier(),
+                    check.getAccountIdentifier()),
           ex);
     }
   }
