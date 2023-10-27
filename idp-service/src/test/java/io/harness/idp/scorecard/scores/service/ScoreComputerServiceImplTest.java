@@ -44,6 +44,7 @@ import io.harness.idp.scorecard.scores.entities.ScoreEntity;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
@@ -270,12 +271,16 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
                              .ruleStrategy(CheckDetails.RuleStrategyEnum.ALL_OF)
                              .rules(Collections.singletonList(rule1))
                              .build();
+    InputValue inputValue = new InputValue();
+    inputValue.setKey("key");
+    inputValue.value(INPUT_VALUE);
     Rule rule2 = new Rule();
     rule2.setDataSourceIdentifier(DATA_SOURCE_IDENTIFIER);
     rule2.setDataPointIdentifier(DATA_POINT_IDENTIFIER2);
     rule2.setOperator(OPERATOR2);
     rule2.setValue(VALUE);
     rule2.setConditionalInputValue(INPUT_VALUE);
+    rule2.setInputValues(List.of(inputValue));
     CheckEntity check2 = CheckEntity.builder()
                              .accountIdentifier(ACCOUNT_ID)
                              .identifier(CHECK_IDENTIFIER2)
