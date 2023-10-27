@@ -66,7 +66,7 @@ public class OrganizationResourceImpl implements Resource {
     Set<String> validResourceIds =
         organizations.getContent().stream().map(e -> e.getOrganization().getIdentifier()).collect(Collectors.toSet());
     return resourceIds.stream()
-        .map(resourceId -> validResourceIds.contains(resourceId) && scope.getOrgIdentifier().equals(resourceId))
+        .map(validResourceIds::contains)
         .collect(toList());
   }
 

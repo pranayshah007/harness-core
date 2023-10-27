@@ -67,7 +67,7 @@ public class ProjectResourceImpl implements Resource {
     Set<String> validResourceIds =
         projects.getContent().stream().map(e -> e.getProject().getIdentifier()).collect(Collectors.toSet());
     return resourceIds.stream()
-        .map(resourceId -> validResourceIds.contains(resourceId) && scope.getProjectIdentifier().equals(resourceId))
+        .map(validResourceIds::contains)
         .collect(toList());
   }
 
