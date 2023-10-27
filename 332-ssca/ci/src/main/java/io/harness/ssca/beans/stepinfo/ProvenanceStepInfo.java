@@ -18,6 +18,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.attestation.v1.AttestationV1;
 import io.harness.ssca.beans.provenance.DockerSourceSpec;
+import io.harness.ssca.beans.provenance.GcrSourceSpec;
 import io.harness.ssca.beans.provenance.ProvenanceSource;
 import io.harness.ssca.beans.provenance.ProvenanceSourceType;
 import io.harness.yaml.extended.ci.container.ContainerResource;
@@ -63,10 +64,8 @@ public class ProvenanceStepInfo implements PluginCompatibleStep, WithConnectorRe
   @Override
   @ApiModelProperty(hidden = true)
   public ParameterField<String> getConnectorRef() {
-    if (source != null) {
-      if (source.getType() == ProvenanceSourceType.DOCKER) {
-        return ((DockerSourceSpec) source.getSpec()).getConnector();
-      }
+    if (source != null && source.getSpec() != null) {
+      return source.getSpec().getConnector();
     }
     return null;
   }
