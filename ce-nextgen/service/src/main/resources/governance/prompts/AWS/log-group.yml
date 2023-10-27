@@ -1,0 +1,3 @@
+filters: config-compliance, cross-account, event, finding, kms-key, last-write, list-item, marked-for-op, metrics, ops-item, reduce, subscription-filter, tag-count, value
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, notify, post-finding, post-item, put-metric, put-subscription-filter, remove-tag, rename-tag, retention, set-encryption, tag, webhook
+customPrompt:

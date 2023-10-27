@@ -1,0 +1,11 @@
+policies:
+  - name: rds-unused-databases-stop
+    resource: rds
+    description: |
+      Stop the RDS instances which were markes for stop 7 days ago.
+    filters:
+      - type: marked-for-op
+        tag: harness_rds_unused
+        op: stop
+    actions:
+      - stop

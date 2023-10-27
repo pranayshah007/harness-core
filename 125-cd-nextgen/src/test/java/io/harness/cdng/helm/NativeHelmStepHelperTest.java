@@ -1656,7 +1656,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     OciHelmStoreDelegateConfig ociHelmStoreConfig =
         (OciHelmStoreDelegateConfig) helmValuesFetchRequest.getHelmChartManifestDelegateConfig()
             .getStoreDelegateConfig();
-    assertThat(ociHelmStoreConfig.getRepoName()).isEqualTo("chart");
+    assertThat(ociHelmStoreConfig.getRepoName()).isEqualTo("abfc0557-6fb8-3794-891b-cc38d0890ba7");
     assertThat(ociHelmStoreConfig.getRepoDisplayName()).isEqualTo("ECR-OCI-HELM-REPO-display");
     List<HelmFetchFileConfig> helmFetchFileConfigs = helmValuesFetchRequest.getHelmFetchFileConfigList();
     assertThat(helmFetchFileConfigs.size()).isEqualTo(2);
@@ -2911,7 +2911,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
             .storeDelegateConfig(
                 OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
             .build();
-    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
     checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
   }
 

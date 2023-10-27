@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: elasticache-delete-stale-clusters
+cloudProvider: AWS
+resourceType: cache-cluster
+description: Delete cache cluster and their snapshot which are older than 90 days
+rulesYamlPath: ../elasticache-delete-stale-clusters.yml

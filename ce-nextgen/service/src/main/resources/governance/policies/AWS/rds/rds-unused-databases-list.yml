@@ -1,0 +1,21 @@
+vars:
+  metrics-filters: &metrics-filter
+    type: metrics
+    name: DatabaseConnections
+    days: 14
+    value: 0
+    op: equal
+
+policies:
+  - name: rds-unused-databases-list
+    resource: rds
+    description: |
+      Take the average number of connections over 14 days for databases that are greater than 14
+      days old and list them.
+    filters:
+      - type: value
+        value_type: age
+        key: InstanceCreateTime
+        value: 14
+        op: greater-than
+      - <<: *metrics-filter

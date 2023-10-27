@@ -31,13 +31,13 @@ public class AsgBlueGreenRollbackRequest implements AsgCommandRequest, NestedAnn
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
-  @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   String prodAsgName;
   String stageAsgName;
-  Map<String, List<String>> stageAsgManifestsDataForRollback;
-  Map<String, List<String>> prodAsgManifestsDataForRollback;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> stageAsgManifestsDataForRollback;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> prodAsgManifestsDataForRollback;
   boolean servicesSwapped;
-  List<AsgLoadBalancerConfig> loadBalancers;
+  @NonFinal @Expression(ALLOW_SECRETS) List<AsgLoadBalancerConfig> loadBalancers;
 
   @Override
   public String getAsgName() {

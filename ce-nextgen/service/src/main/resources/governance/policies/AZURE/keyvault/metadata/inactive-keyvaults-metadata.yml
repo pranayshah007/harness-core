@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: inactive-keyvaults
+cloudProvider: AZURE
+resourceType: azure.keyvault
+description: List all KeyVaults with 10 or less API Hits over the last 72 hours(inactive keyvault)
+rulesYamlPath: ../inactive-keyvaults.yml

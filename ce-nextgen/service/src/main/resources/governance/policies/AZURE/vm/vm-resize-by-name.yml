@@ -1,0 +1,12 @@
+policies:
+  - name: vm-resize-by-name
+    resource: azure.vm
+    filters:
+      - type: value
+        key: name
+        op: eq
+        value_type: normalize
+        value: vm-name
+    actions:
+      - type: resize
+        vmSize: Standard_A2_v2

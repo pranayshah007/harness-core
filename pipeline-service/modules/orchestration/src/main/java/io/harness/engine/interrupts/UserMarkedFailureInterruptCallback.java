@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -15,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.helpers.UserMarkedFailAllHelper;
+import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -24,6 +27,7 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,8 +75,9 @@ public class UserMarkedFailureInterruptCallback implements OldNotifyCallback {
   }
 
   void failNode(Map<String, ResponseData> response) {
-    userMarkedFailAllHelper.failDiscontinuingNode(
-        ambiance, nodeExecutionId, interruptType, interruptId, interruptConfig);
+    NodeExecution nodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        nodeExecutionId, Set.of(NodeExecutionKeys.uuid, NodeExecutionKeys.unitProgresses));
+    userMarkedFailAllHelper.failDiscontinuingNode(ambiance, nodeExecution, interruptType, interruptId, interruptConfig);
     ResponseData responseData = isEmpty(response) ? null : response.values().iterator().next();
     waitNotifyEngine.doneWith(nodeExecutionId + "|" + interruptId, responseData);
   }

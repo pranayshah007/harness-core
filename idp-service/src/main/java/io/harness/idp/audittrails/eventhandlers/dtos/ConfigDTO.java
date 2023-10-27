@@ -6,6 +6,8 @@
  */
 package io.harness.idp.audittrails.eventhandlers.dtos;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 
@@ -20,6 +22,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@OwnedBy(HarnessTeam.IDP)
 public class ConfigDTO implements YamlDTO {
   @Valid AppConfig appConfig;
 }

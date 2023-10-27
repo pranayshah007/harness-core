@@ -73,6 +73,10 @@ data:
   DISABLE_FREEZE_NOTIFY_TEMPLATE: '{{ .Values.global.disableFreezeNotifyTemplate }}'
   LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
+  {{- if .Values.global.ssca.enabled }}
+  SSCA_MANAGER_ENABLED: "true"
+  SSCA_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ssca-manager/'
+  {{- end }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

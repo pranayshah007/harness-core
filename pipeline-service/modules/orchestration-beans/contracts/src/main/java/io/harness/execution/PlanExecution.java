@@ -111,6 +111,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   public static class ExecutionMetadataKeys {
     public static final String tagExecutionKey =
         PlanExecutionKeys.metadata + ".triggerInfo.triggeredBy.extraInfo." + EXEC_TAG_SET_BY_TRIGGER;
+    public static final String pipelineIdentifier = PlanExecutionKeys.metadata + ".pipelineIdentifier";
   }
 
   @UtilityClass

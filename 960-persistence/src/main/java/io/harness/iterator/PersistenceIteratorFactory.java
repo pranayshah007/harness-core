@@ -189,12 +189,11 @@ public final class PersistenceIteratorFactory {
       log.info(getWorkerDisabledLog(cls.getName()));
       return null;
     }
-
     String iteratorName = "Iterator-" + options.name;
-
     // Create the worker thread pool that will process the docs.
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
         options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+
     log.info(getWorkerEnabledLog(cls.getName()));
 
     // Create the main executor thread that carries out the Redis

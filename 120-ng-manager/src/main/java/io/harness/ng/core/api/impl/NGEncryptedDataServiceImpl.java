@@ -119,6 +119,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(
@@ -267,7 +268,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     if (envVariables != null) {
       for (NameValuePairWithDefault variable : envVariables) {
         String name = variable.getName();
-        if (!givenInputs.contains(name)) {
+        if (!givenInputs.contains(name) && BooleanUtils.isNotTrue(variable.getUseAsDefault())) {
           missingEnvVariables.add(name);
         }
       }

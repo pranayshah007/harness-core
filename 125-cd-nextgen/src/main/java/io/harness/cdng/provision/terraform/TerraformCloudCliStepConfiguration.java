@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
@@ -14,7 +16,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.terraform.TerraformCloudCliStepConfigurationParameters.TerraformCloudCliStepConfigurationParametersBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,12 +41,13 @@ public class TerraformCloudCliStepConfiguration {
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
   TerraformEncryptOutput encryptOutput;
 
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipStateStorage;
+
   public TerraformCloudCliStepConfigurationParameters toStepParameters() {
     TerraformCloudCliStepConfigurationParametersBuilder builder =
         TerraformCloudCliStepConfigurationParameters.builder();
     validateParams();
-    builder.commandFlags(commandFlags);
-    builder.encryptOutput(encryptOutput);
+    builder.commandFlags(commandFlags).encryptOutput(encryptOutput).skipStateStorage(skipStateStorage);
 
     if (terraformCloudCliExecutionData != null) {
       builder.spec(terraformCloudCliExecutionData.toStepParameters());

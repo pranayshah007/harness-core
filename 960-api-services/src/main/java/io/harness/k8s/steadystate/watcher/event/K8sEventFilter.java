@@ -16,13 +16,18 @@ import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.KubernetesResourceId;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
@@ -36,17 +41,20 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class K8sEventFilter implements Predicate<CoreV1Event> {
   private static final String POD_KIND = "Pod";
+  private static final String REPLICASET_KIND = "ReplicaSet";
 
   Set<String> workloadsNames = new HashSet<>();
   Set<KubernetesResourceReference> includedResourceRefs = new HashSet<>();
   Set<KubernetesResourceReference> excludedResourceRefs = new HashSet<>();
-  CoreV1Api apiClient;
+  CoreV1Api coreV1Api;
+  AppsV1Api appsV1Api;
   String namespace;
   String releaseName;
 
-  public K8sEventFilter(
-      List<KubernetesResourceId> resourceIds, CoreV1Api apiClient, String namespace, String releaseName) {
-    this.apiClient = apiClient;
+  public K8sEventFilter(List<KubernetesResourceId> resourceIds, CoreV1Api coreV1Api, AppsV1Api appsV1Api,
+      String namespace, String releaseName) {
+    this.coreV1Api = coreV1Api;
+    this.appsV1Api = appsV1Api;
     this.namespace = namespace;
     this.releaseName = releaseName;
     resourceIds.stream().map(resourceId -> reference(resourceId.getKind(), resourceId.getName())).forEach(ref -> {
@@ -76,12 +84,60 @@ public class K8sEventFilter implements Predicate<CoreV1Event> {
       return false;
     }
 
+    if (ref.getKind().equalsIgnoreCase(REPLICASET_KIND)) {
+      processReplicaSetRef(ref);
+      return includedResourceRefs.contains(ref);
+    }
+
     if (ref.getKind().equalsIgnoreCase(POD_KIND)) {
       processPodEvent(ref);
       return includedResourceRefs.contains(ref);
     }
 
     return false;
+  }
+
+  private void processReplicaSetRef(KubernetesResourceReference ref) {
+    String replicaSetName = ref.getName();
+    if (workloadsNames.stream().noneMatch(replicaSetName::startsWith)) {
+      return;
+    }
+    V1ReplicaSet replicaSet = readNamespacedReplicaSet(replicaSetName);
+    KubernetesResourceReference replicaSetRef = reference(REPLICASET_KIND, replicaSetName);
+    if (isAnyWorkloadOwnerOfReplicaSet(replicaSet)) {
+      includedResourceRefs.add(replicaSetRef);
+      return;
+    }
+
+    excludedResourceRefs.add(replicaSetRef);
+  }
+
+  private boolean isAnyWorkloadOwnerOfReplicaSet(V1ReplicaSet replicaSet) {
+    if (replicaSet == null) {
+      return false;
+    }
+    V1ObjectMeta replicaSetMetadata = replicaSet.getMetadata();
+    if (replicaSetMetadata == null) {
+      return false;
+    }
+    List<V1OwnerReference> ownerReferences = replicaSetMetadata.getOwnerReferences();
+    if (isEmpty(ownerReferences)) {
+      return false;
+    }
+
+    return ownerReferences.stream()
+        .filter(Objects::nonNull)
+        .map(ownerRef -> reference(ownerRef.getKind(), ownerRef.getName()))
+        .anyMatch(includedResourceRefs::contains);
+  }
+
+  private V1ReplicaSet readNamespacedReplicaSet(String replicaSetName) {
+    try {
+      return appsV1Api.readNamespacedReplicaSet(replicaSetName, namespace, null);
+    } catch (ApiException e) {
+      log.warn("Failed to read namespaced ReplicaSet {}/{}", namespace, replicaSetName);
+      return null;
+    }
   }
 
   private void processPodEvent(KubernetesResourceReference ref) {
@@ -100,7 +156,7 @@ public class K8sEventFilter implements Predicate<CoreV1Event> {
     }
 
     if (workloadsNames.stream().anyMatch(podName::contains)) {
-      V1Pod v1Pod = tryReadNamespacedPod(podName, namespace, apiClient);
+      V1Pod v1Pod = tryReadNamespacedPod(podName, namespace, coreV1Api);
       if (isPodOfCurrentDeployment(v1Pod)) {
         includedResourceRefs.add(ref);
       }

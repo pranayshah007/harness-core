@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.approval.custom;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER_SRE;
 
@@ -34,8 +35,8 @@ import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.custom.evaluation.CustomApprovalCriteriaEvaluator;
+import io.harness.steps.shellscript.ShellScriptBaseOutcome;
 import io.harness.steps.shellscript.ShellScriptHelperService;
-import io.harness.steps.shellscript.ShellScriptOutcome;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.PushThroughNotifyCallback;
@@ -127,7 +128,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     try {
       ShellExecutionData shellExecutionData =
           (ShellExecutionData) scriptTaskResponse.getExecuteCommandResponse().getCommandExecutionData();
-      ShellScriptOutcome shellScriptOutcome =
+      ShellScriptBaseOutcome shellScriptOutcome =
           ShellScriptHelperService.prepareShellScriptOutcome(shellExecutionData.getSweepingOutputEnvVariables(),
               instance.getOutputVariables(), instance.getSecretOutputVariables());
       CustomApprovalTicketNG ticketNG =

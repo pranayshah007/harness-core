@@ -1,0 +1,610 @@
+openapi: 3.0.3
+x-stoplight:
+  id: p5m03797r8u7f
+info:
+  title: Harness NextGen Software Delivery Platform API Reference
+  version: '1.0'
+  contact:
+    email: contact.harness.io
+  description: This is the Open Api Spec 3 for the Notification Management Service
+servers:
+  - url: 'https://app.harness.io'
+paths:
+  '/v1/orgs/{org}/projects/{project}/notification-channels':
+    get:
+      summary: Get List of Notification channels API
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationChannelListResponse'
+      operationId: get-notification-channel
+      x-stoplight:
+        id: xo9n5254plvn4
+      description: Returns a list of notification channels for the scope.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+    post:
+      summary: Create Notification channel API
+      operationId: post-notification-channel
+      responses:
+        '201':
+          $ref: '#/components/responses/NotificationChannelResponse'
+      x-stoplight:
+        id: 02cdejdq99eq9
+      description: Create Notification Channel
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/NotificationChannelRequest'
+      security:
+        - x-api-key: []
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Identifier field of the organization the resource is scoped to
+      - name: project
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Identifier field of the project the resource is scoped to
+  '/v1/orgs/{org}/projects/{project}/notification-rules':
+    get:
+      summary: Get List of Notification rules API
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationRuleListResponse'
+        '':
+          $ref: '#/components/responses/NotificationRuleListResponse'
+      operationId: get-notification-rule-list
+      x-stoplight:
+        id: 5b40i5kg1orlo
+      description: Get list of notification rules
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+    post:
+      summary: Create Notification Rule API
+      operationId: post-notification-rule
+      responses:
+        '201':
+          $ref: '#/components/responses/NotificationRuleResponse'
+      x-stoplight:
+        id: ohi2gjkvn246k
+      description: Create Notification Rule
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/NotificationRuleRequest'
+      security:
+        - x-api-key: []
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+  '/v1/orgs/{org}/projects/{project}/notification-channels/{notification-channel}':
+    parameters:
+      - schema:
+          type: string
+        name: notification-channel
+        in: path
+        required: true
+        description: identifier
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+    get:
+      summary: Get Notification channel API
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationChannelResponse'
+      operationId: get-notification-channels-notification-channel
+      x-stoplight:
+        id: usu1lyus0fyhf
+      description: Get Notification Channel
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      security:
+        - x-api-key: []
+    delete:
+      summary: Delete Notification Channel
+      operationId: deletev1-orgs-org-projects-project-notification-channels-notification-channel
+      responses:
+        '204':
+          description: No Content
+      x-stoplight:
+        id: bwluz2k4qy35x
+      description: Delete notificatation channel
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    put:
+      summary: Update Notification Channel
+      operationId: putv1-orgs-org-projects-project-notification-channels-notification-channel
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationChannelResponse'
+      x-stoplight:
+        id: h1so22cd430p8
+      description: Update Notification Channel
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/NotificationChannelRequest'
+      security:
+        - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/notification-rule/{notification-rule}':
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - schema:
+          type: string
+        name: notification-rule
+        in: path
+        required: true
+        description: identifier
+    get:
+      summary: Get Notification Rule API
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationRuleResponse'
+      operationId: get-v1-orgs-org-projects-project-notification-rule-notification-rule
+      x-stoplight:
+        id: ehaor9ba4fr9k
+      description: Get notification rule
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    delete:
+      summary: Delete Notification Rule
+      operationId: delete-v1-orgs-org-projects-project-notification-rule-notification-rule
+      responses:
+        '204':
+          description: No Content
+      x-stoplight:
+        id: xlryt7yypbaqr
+      description: Delete notification rule
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+    put:
+      summary: Update Notification Rule
+      operationId: put-v1-orgs-org-projects-project-notification-rule-notification-rule
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationRuleResponse'
+      x-stoplight:
+        id: lzrljlz33cy8k
+      description: Update Notification Rule
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/NotificationRuleRequest'
+      security:
+        - x-api-key: []
+components:
+  schemas:
+    NotificationChannelDTO:
+      type: object
+      x-examples:
+        Example 1:
+          name: nc1
+          org: org1
+          project: proj1
+          notification_channel_type: EMAIL
+          status: DISABLED
+          channel:
+            email_ids: []
+            user_groups:
+              - {}
+          created_by: {}
+          created: 0
+        Example 2:
+          name: string
+          org: string
+          project: string
+          notification_channel_type: string
+          status: string
+          channel:
+            slack_web_hook_urls: []
+            user_groups:
+              - {}
+          created_by: {}
+          created: 0
+        Example 3:
+          name: string
+          org: string
+          project: string
+          notification_channel_type: string
+          status: string
+          channel:
+            pager_duty_integration_keys: []
+            user_groups:
+              - {}
+          created_by: {}
+          created: 0
+        Example 4:
+          name: string
+          org: string
+          project: string
+          notification_channel_type: string
+          status: string
+          channel:
+            userGroups:
+              - {}
+            headers: {}
+          created_by: {}
+          created: 0
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: s8lhbewdd9f8u
+        org:
+          type: string
+          x-stoplight:
+            id: ghwqraodbm1zj
+        project:
+          type: string
+          x-stoplight:
+            id: nnpl22m2wx70e
+        notification_channel_type:
+          type: string
+          x-stoplight:
+            id: z9zfolm283o28
+        status:
+          type: string
+        channel:
+          type: object
+          properties:
+            email_ids:
+              type: array
+              items:
+                type: object
+                x-stoplight:
+                  id: wlqr0dozwu30r
+            user_groups:
+              type: array
+              items:
+                type: object
+                x-stoplight:
+                  id: q5pzcrexm858s
+        created_by:
+          type: object
+          x-stoplight:
+            id: v2p9t12zj4wgk
+        created:
+          type: integer
+          x-stoplight:
+            id: s6rt2x2fuai93
+      description: Notification Channel DTO
+      title: ''
+    NotificationRuleDTO:
+      type: object
+      x-examples:
+        Example 1:
+          identifier: NR1
+          account: accountid
+          org: org1
+          project: myproj
+          notification_entity: DELEGATE
+          notification_conditions:
+            - name: del-condition
+              notification_event_configs:
+                - notification_event: DELEGATE_DOWN
+                  notification_channels:
+                    - name: nc1
+                      org: org1
+                      project: proj1
+                      notification_channel_type: PAGERDUTY
+                      status: DISABLED
+                      channel:
+                        pager_duty_integration_keys: []
+                        user_groups:
+                          - {}
+                      created_by: {}
+                      created: 0
+                      nextIteration: 0
+                - notificationEvent: DELEGATE_EXPIRED
+                  notificationChannels:
+                    - name: nc1
+                      org: org1
+                      project: proj1
+                      notificationChannelType: PAGERDUTY
+                      status: DISABLED
+                      channel:
+                        pagerDutyIntegrationKeys: []
+                        userGroups:
+                          - {}
+                      created_by: {}
+                      created: 0
+                      nextIteration: 0
+          status: ENABLED
+          created_by: {}
+          created: 0
+      description: Notification Rule DTO
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: 3s55ikqk60ned
+        account:
+          type: string
+          x-stoplight:
+            id: szhx3eumcr3u2
+        org:
+          type: string
+          x-stoplight:
+            id: mct69p1xphrx5
+        project:
+          type: string
+          x-stoplight:
+            id: bb1t0u7ypjn0x
+        notification_entity:
+          type: string
+          x-stoplight:
+            id: grebcko35mvhy
+        notification_conditions:
+          type: array
+          items:
+            type: object
+            x-stoplight:
+              id: ipq9wrcla4295
+            properties:
+              condition_name:
+                type: string
+                x-stoplight:
+                  id: axypnee46ytwd
+              notification_event_configs:
+                type: array
+                items:
+                  type: object
+                  x-stoplight:
+                    id: flgan3tzc4oj4
+                  properties:
+                    notification_event:
+                      type: string
+                      x-stoplight:
+                        id: nagfe5lcippgj
+                    notification_channels:
+                      type: array
+                      items:
+                        type: object
+                        x-stoplight:
+                          id: lxn2ls2u5yxt5
+                        properties:
+                          name:
+                            type: string
+                          org:
+                            type: string
+                          project:
+                            type: string
+                          notification_channel_type:
+                            type: string
+                            x-stoplight:
+                              id: xcripb2zbyndx
+                          status:
+                            type: string
+                          channel:
+                            type: object
+                            properties:
+                              pager_duty_integration_keys:
+                                type: array
+                                items:
+                                  type: object
+                                  x-stoplight:
+                                    id: p613h5qaaozln
+                              user_groups:
+                                type: array
+                                items:
+                                  type: object
+                                  x-stoplight:
+                                    id: yhowsvz7q75h6
+                          created_by:
+                            type: object
+                          created:
+                            type: integer
+        status:
+          type: string
+        created_by:
+          type: object
+          x-stoplight:
+            id: cvs7hw3o07iix
+        created:
+          type: integer
+          x-stoplight:
+            id: prksg4pvb473j
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+      description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 30
+        maximum: 1000
+      description: Number of items to return per page.
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching with search term.
+    AccountHeader:
+      name: Harness-Account
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    OrgPathParam:
+      name: org
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the organization the resource is scoped to
+    ProjectPathParam:
+      name: project
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the project the resource is scoped to
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - name
+          - identifier
+          - created
+          - updated
+      description: Parameter on the basis of which sorting is done.
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+      description: Order on the basis of which sorting is done.
+  responses:
+    NotificationChannelListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/NotificationChannelDTO'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+        text/html:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+        text/plain:
+          schema:
+            type: object
+            properties: {}
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    NotificationChannelResponse:
+      description: Notification channel response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+    NotificationRuleResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+    NotificationRuleListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/NotificationRuleDTO'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+  requestBodies:
+    NotificationChannelRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotificationChannelDTO'
+      description: Notification channel request
+    NotificationRuleRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotificationRuleDTO'
+      description: Notification rule request
+tags:
+  - name: notifications
+    description: This contains APIs for Notifications

@@ -1,0 +1,9 @@
+policies:
+  - name: release-unattached-eips
+    resource: aws.elastic-ip
+    filters:
+      - or:
+          - AssociationId: absent
+          - InstanceId : absent
+    actions:
+      - release

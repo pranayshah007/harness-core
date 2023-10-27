@@ -16,4 +16,9 @@ public class CreateHarnessTimeBucketListFunction extends AbstractTimeScaleDBMigr
   public String getFileName() {
     return "timescaledb/create_harness_time_bucket_list_function.sql";
   }
+
+  @Override
+  public boolean executeFullScript() {
+    return true;
+  }
 }

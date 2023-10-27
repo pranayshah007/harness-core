@@ -26,6 +26,7 @@ cp ../../ssca-manager/config/ssca-manager-config.yml .
 cp ../../ssca-manager/build/container/Dockerfile-ssca-manager-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+cp ../../ssca-manager/service/src/main/resources/redisson-jcache.yaml .
 cp ../../ssca-manager/service/src/main/resources/jfr/default.jfc .
 cp ../../ssca-manager/service/src/main/resources/jfr/profile.jfc .
 

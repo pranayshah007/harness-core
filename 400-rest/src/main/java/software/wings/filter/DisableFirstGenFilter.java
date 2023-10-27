@@ -68,7 +68,7 @@ public class DisableFirstGenFilter implements ContainerRequestFilter {
 
     if (ffService.isEnabled(FeatureName.CDS_DISABLE_FIRST_GEN_CD, accountId)) {
       Exception cause = new AccountMigratedException(accountId);
-      throw new WebApplicationException(cause, Response.Status.MOVED_PERMANENTLY);
+      throw new WebApplicationException(cause, Response.Status.FORBIDDEN);
     }
   }
 

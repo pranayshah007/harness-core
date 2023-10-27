@@ -48,7 +48,9 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -212,10 +214,12 @@ public class ExpiryHelperTest extends OrchestrationTestBase {
             .build();
     String interruptId = "interruptId";
     when(nodeExecutionService.updateStatusWithOps(any(), any(), any(), any())).thenReturn(nodeExecution);
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("group", "STAGE");
+    metadata.put("identifier", "Stage");
 
-    InterruptConfig interruptConfig = InterruptConfig.newBuilder().build();
     expiryHelper.expireDiscontinuedInstanceAndEndAllNodesExecution(
-        nodeExecution, interruptConfig, interruptId, MARK_EXPIRED);
+        nodeExecution, InterruptConfig.newBuilder().build(), interruptId, MARK_EXPIRED, metadata);
     verify(engine, times(1)).endNodeExecution(any());
   }
 

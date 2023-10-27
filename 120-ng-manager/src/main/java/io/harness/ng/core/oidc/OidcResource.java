@@ -8,15 +8,19 @@
 package io.harness.ng.core.oidc;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.oidc.idtoken.OidcIdTokenConstants.ACCOUNT_ID;
+import static io.harness.oidc.idtoken.OidcIdTokenUtility.capturePlaceholderContents;
 
 import static org.apache.commons.net.util.Base64.encodeBase64URLSafeString;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.helpers.NgExpressionHelper;
-import io.harness.exception.InternalServerErrorException;
 import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.oidc.config.OidcConfigStructure.OidcConfiguration;
+import io.harness.oidc.config.OidcConfigurationUtility;
 import io.harness.oidc.dto.JwksPublicKeyDTO;
 import io.harness.oidc.entities.OidcJwks;
 import io.harness.oidc.jwks.OidcJwksUtility;
@@ -33,11 +37,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
-import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -45,7 +46,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 
 @OwnedBy(PL)
 @Api("/oidc/account")
@@ -78,6 +78,7 @@ public class OidcResource {
   NgExpressionHelper ngExpressionHelper;
   NextGenConfiguration nextGenConfiguration;
   final String ACCOUNT_KEY = "accountId";
+  OidcConfigurationUtility oidcConfigurationUtility;
 
   @GET
   @Path("{accountId}/.wellknown/openid-configuration")
@@ -89,29 +90,25 @@ public class OidcResource {
         ApiResponse(responseCode = "default", description = "This gets the openid configuration for Harness")
       })
   @PublicApi
-  public Map<String, Object>
+  public ResponseDTO<OidcConfiguration>
   getOpenIdConnectConfig(@Parameter(
       description = "This is the accountIdentifier for the account for which the JWKS public key needs to be exposed.")
       @PathParam(ACCOUNT_KEY) String accountId) {
-    String baseUrl = null;
-    try {
-      baseUrl =
-          new URL("https", nextGenConfiguration.getHostname(), nextGenConfiguration.getBasePathPrefix()).toString();
-    } catch (MalformedURLException e) {
-      log.error("Failed to generate baseURL for openid-configuration endpoint", e);
-      throw new InternalServerErrorException("Failed due to internal server error. Please try again after some time.");
-    }
-    String issuer = String.format("%s/account/%s", baseUrl, accountId);
-    JSONObject openIdConfig = new JSONObject(); // TODO- This will be replaced by a DTO once all PRs are merged.
-    openIdConfig.put("issuer", issuer);
-    openIdConfig.put("jwks_uri", String.format("%s/.well-known/jwks", issuer));
-    openIdConfig.put("subject_types_supported", List.of("public", "pairwise"));
-    openIdConfig.put("response_types_supported", List.of("id_token"));
-    openIdConfig.put("claims_supported", List.of("sub", "aud", "exp", "iat", "iss", "account_id"));
-    openIdConfig.put("id_token_signing_alg_values_supported", List.of("RS256"));
-    openIdConfig.put("scopes_supported", List.of("openid"));
+    OidcConfiguration baseOidcConfig = oidcConfigurationUtility.getOidcConfiguration();
+    String issuer = updateBaseClaims(baseOidcConfig.getIssuer(), accountId);
+    String jwksUri = updateBaseClaims(baseOidcConfig.getJwksUri(), accountId);
 
-    return openIdConfig.toMap();
+    OidcConfiguration finalOidcConfig = OidcConfiguration.builder()
+                                            .issuer(issuer)
+                                            .jwksUri(jwksUri)
+                                            .subTypesSupported(baseOidcConfig.getSubTypesSupported())
+                                            .responseTypesSupported(baseOidcConfig.getResponseTypesSupported())
+                                            .claimsSupported(baseOidcConfig.getClaimsSupported())
+                                            .signingAlgsSupported(baseOidcConfig.getSigningAlgsSupported())
+                                            .scopesSupported(baseOidcConfig.getScopesSupported())
+                                            .build();
+
+    return ResponseDTO.newResponse(finalOidcConfig);
   }
 
   @GET
@@ -124,19 +121,38 @@ public class OidcResource {
         ApiResponse(responseCode = "default", description = "This gets the openid configuration for Harness")
       })
   @PublicApi
-  public JwksPublicKeyDTO
+  public ResponseDTO<JwksPublicKeyDTO>
   getJwksPublicKey(@Parameter(
       description = "This is the accountIdentifier for the account for which the JWKS public key needs to be exposed.")
       @PathParam(ACCOUNT_KEY) String accountId) {
+    String finalStr = updateBaseClaims("{accountId}", accountId);
     OidcJwks oidcJwks = oidcJwksUtility.getJwksKeys(accountId);
     RSAPublicKey publicKey = (RSAPublicKey) rsaKeysUtils.readPemFile(oidcJwks.getRsaKeyPair().getPublicKey());
-    return JwksPublicKeyDTO.builder()
-        .algorithm("RSA256")
-        .exponent(encodeBase64URLSafeString(publicKey.getPublicExponent().toByteArray()))
-        .kid(oidcJwks.getKeyId())
-        .keyType("RSA")
-        .modulus(encodeBase64URLSafeString(publicKey.getModulus().toByteArray()))
-        .use("sig")
-        .build();
+    JwksPublicKeyDTO jwksPublicKeyDTO =
+        JwksPublicKeyDTO.builder()
+            .algorithm("RSA256")
+            .exponent(encodeBase64URLSafeString(publicKey.getPublicExponent().toByteArray()))
+            .kid(oidcJwks.getKeyId())
+            .keyType("RSA")
+            .modulus(encodeBase64URLSafeString(publicKey.getModulus().toByteArray()))
+            .use("sig")
+            .build();
+
+    return ResponseDTO.newResponse(jwksPublicKeyDTO);
+  }
+
+  private String updateBaseClaims(String claim, String accountId) {
+    List<String> placeHolders = capturePlaceholderContents(claim);
+    for (String placeholder : placeHolders) {
+      switch (placeholder) {
+        case ACCOUNT_ID:
+          // Include {} in the captured placeholder while replacing values.
+          claim = claim.replace("{" + placeholder + "}", accountId);
+          break;
+        default:
+          break;
+      }
+    }
+    return claim;
   }
 }

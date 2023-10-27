@@ -1,0 +1,88 @@
+{
+  "_id" : "650ac1aa24af0d59bc54b2d1",
+  "templateModules" : [
+
+  ],
+  "accountId" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "dummyPipelines",
+  "identifier" : "dummyK8s",
+  "isDraft" : false,
+  "yaml" : "pipeline:\n  name: dummyK8s\n  identifier: dummyK8s\n  projectIdentifier: dummyPipelines\n  orgIdentifier: default\n  tags:\n    secret: <+secrets.getValue(\"account.pcf_pass\")>\n    <+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\": <+pipeline.name>>\n    hello\\\"\\\": a\n    hello\"\": ahello\"\\\"{}\n    secretas: <+secrets.getValue(\"account.pcf_pass\")>\n  stages:\n    - stage:\n        name: dummy\n        identifier: dummy\n        description: \"\"\n        type: Deployment\n        spec:\n          deploymentType: Kubernetes\n          service:\n            serviceRef: dummy\n            serviceInputs:\n              serviceDefinition:\n                type: Kubernetes\n                spec:\n                  artifacts:\n                    primary:\n                      primaryArtifactRef: <+input>\n                      sources: <+input>\n          execution:\n            steps:\n              - step:\n                  type: HarnessApproval\n                  name: HarnessApproval_1\n                  identifier: HarnessApproval_1\n                  spec:\n                    approvalMessage: Please review the following information and approve the pipeline progression\n                    includePipelineExecutionHistory: true\n                    isAutoRejectEnabled: false\n                    approvers:\n                      userGroups:\n                        - account._account_all_users\n                      minimumCount: 1\n                      disallowPipelineExecutor: false\n                    approverInputs: []\n                  timeout: 1d\n                  when:\n                    stageStatus: Failure\n              - step:\n                  type: ShellScript\n                  name: ShellScript_1\n                  identifier: ShellScript_1\n                  spec:\n                    shell: Bash\n                    onDelegate: true\n                    source:\n                      type: Inline\n                      spec:\n                        script: |-\n                          echo hello\n                          exit 1\n                    environmentVariables: []\n                    outputVariables: []\n                  timeout: 10m\n            rollbackSteps: []\n          environmentGroup:\n            envGroupRef: env\n            metadata:\n              parallel: true\n            deployToAll: true\n            environments: <+input>\n        tags:\n          secret: <+secrets.getValue(\"account.pcf_pass\")>\n          <+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\": <+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>>\n          hello\\\"\\\": a\n          hello\"\": ahello\"\\\"{}\n        failureStrategies:\n          - onFailure:\n              errors:\n                - AllErrors\n              action:\n                type: StageRollback\n    - stage:\n        name: hello\n        identifier: hello\n        description: \"\"\n        type: Custom\n        spec:\n          execution:\n            steps:\n              - step:\n                  type: ShellScript\n                  name: ShellScript_1\n                  identifier: ShellScript_1\n                  spec:\n                    shell: Bash\n                    onDelegate: true\n                    source:\n                      type: Inline\n                      spec:\n                        script: echo hello\n                    environmentVariables: []\n                    outputVariables: []\n                  timeout: 10m\n        tags:\n          secret: <+secrets.getValue(\"account.pcf_pass\")>\n          <+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\": <+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>>\n          hello\\\"\\\": a\n          hello\"\": ahello\"\\\"{}\n",
+  "createdAt" : 1695203754476,
+  "lastUpdatedAt" : 1697610744465,
+  "deleted" : false,
+  "name" : "dummyK8s",
+  "tags" : [
+    {
+      "key" : "secret",
+      "value" : "<+secrets.getValue(\"account.pcf_pass\")>"
+    },
+    {
+      "key" : "<+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\"",
+      "value" : "<+pipeline.name>>"
+    },
+    {
+      "key" : "hello\\\"\\\"",
+      "value" : "a"
+    },
+    {
+      "key" : "hello\"\"",
+      "value" : "ahello\"\\\"{}"
+    },
+    {
+      "key" : "secretas",
+      "value" : "<+secrets.getValue(\"account.pcf_pass\")>"
+    }
+  ],
+  "version" : 80,
+  "filters" : {
+    "cd" : {
+      "deploymentTypes" : [
+        "Kubernetes"
+      ],
+      "environmentNames" : [
+
+      ],
+      "serviceNames" : [
+        "dummy"
+      ],
+      "infrastructureTypes" : [
+
+      ]
+    },
+    "pms" : {
+      "stageTypes" : [
+
+      ],
+      "featureFlagStepCount" : 0
+    }
+  },
+  "runSequence" : 0,
+  "stageCount" : 2,
+  "stageNames" : [
+    "dummy",
+    "hello"
+  ],
+  "allowStageExecutions" : false,
+  "storeType" : "INLINE",
+  "harnessVersion" : "0",
+  "_class" : "pipelinesPMS",
+  "executionSummaryInfo" : {
+    "lastExecutionTs" : 1697610749871,
+    "lastExecutionStatus" : "FAILED",
+    "numOfErrors" : {
+      "16/10/2023" : 6,
+      "17/10/2023" : 3,
+      "18/10/2023" : 5
+    },
+    "deployments" : {
+      "20/09/2023" : 9,
+      "16/10/2023" : 11,
+      "17/10/2023" : 3,
+      "18/10/2023" : 9
+    },
+    "lastExecutionId" : "Mq_THafEQ-6iwzobrhkKzw"
+  },
+  "description" : null,
+}

@@ -31,5 +31,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class Resource {
   @NotNull @NotEmpty String type;
   @NotNull @NotEmpty String identifier;
+  String uniqueId;
   @Size(max = 10) List<KeyValuePair> labels;
 }

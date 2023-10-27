@@ -735,6 +735,7 @@ public class K8sTaskHelperBase {
     return Collections.emptyList();
   }
 
+  @NotNull
   public Kubectl getOverriddenClient(
       Kubectl client, List<KubernetesResource> resources, K8sDelegateTaskParams k8sDelegateTaskParams) {
     List<KubernetesResource> openshiftResourcesList =
@@ -752,6 +753,12 @@ public class K8sTaskHelperBase {
   public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
       AbstractExecutable executable) throws Exception {
     return executeCommand(executable, k8sDelegateTaskParams, executionLogCallback, ERROR);
+  }
+
+  public ProcessResponse runK8sExecutableSilentlyWithErrorCapture(AbstractExecutable command,
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, LogLevel errorLogLevel)
+      throws Exception {
+    return executeCommandSilentlyWithErrorCapture(command, k8sDelegateTaskParams, executionLogCallback, errorLogLevel);
   }
 
   public ProcessResponse runK8sExecutable(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,

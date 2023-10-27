@@ -238,6 +238,7 @@ import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.schema.client.YamlSchemaClientModule;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
@@ -279,17 +280,19 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 public class PipelineServiceModule extends AbstractModule {
   private final PipelineServiceConfiguration configuration;
-
+  private final MetricRegistry threadPoolMetricRegistry;
   private static PipelineServiceModule instance;
   // TODO: Take this from application.
 
-  private PipelineServiceModule(PipelineServiceConfiguration configuration) {
+  private PipelineServiceModule(PipelineServiceConfiguration configuration, MetricRegistry threadPoolMetricRegistry) {
     this.configuration = configuration;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
-  public static PipelineServiceModule getInstance(PipelineServiceConfiguration appConfig) {
+  public static PipelineServiceModule getInstance(
+      PipelineServiceConfiguration appConfig, MetricRegistry threadPoolMetricRegistry) {
     if (instance == null) {
-      instance = new PipelineServiceModule(appConfig);
+      instance = new PipelineServiceModule(appConfig, threadPoolMetricRegistry);
     }
     return instance;
   }
@@ -337,13 +340,14 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .expandedJsonLockConfig(configuration.getExpandedJsonLockConfig())
-            .build()));
+            .build(),
+        threadPoolMetricRegistry));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
-        configuration.getOrchestrationVisualizationThreadPoolConfig(),
-        configuration.getGraphConsumerSleepIntervalMs()));
-    install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
+        configuration.getOrchestrationVisualizationThreadPoolConfig(), configuration.getGraphConsumerSleepIntervalMs(),
+        threadPoolMetricRegistry));
+    install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig(), threadPoolMetricRegistry));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
         configuration.getManagerTarget(), configuration.getManagerAuthority(), true));
@@ -587,15 +591,14 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("logStreamingClientThreadPool")
-  public ThreadPoolExecutor logStreamingClientThreadPool() {
+  @Named("logStreamingDelayExecutor")
+  public ScheduledExecutorService logStreamingDelayExecutor() {
     ThreadPoolConfig threadPoolConfig = configuration != null && configuration.getLogStreamingServiceConfig() != null
             && configuration.getLogStreamingServiceConfig().getThreadPoolConfig() != null
         ? configuration.getLogStreamingServiceConfig().getThreadPoolConfig()
-        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
-    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
-        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
+        : ThreadPoolConfig.builder().corePoolSize(10).build();
+    return new ScheduledThreadPoolExecutor(threadPoolConfig.getCorePoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides
@@ -753,11 +756,8 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PipelineExecutorService")
   public ExecutorService pipelineExecutorService() {
-    return ThreadPool.create(configuration.getPipelineExecutionPoolConfig().getCorePoolSize(),
-        configuration.getPipelineExecutionPoolConfig().getMaxPoolSize(),
-        configuration.getPipelineExecutionPoolConfig().getIdleTime(),
-        configuration.getPipelineExecutionPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(
+        configuration.getPipelineExecutionPoolConfig(), "PipelineExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides
@@ -775,11 +775,8 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PlanCreatorMergeExecutorService")
   public Executor planCreatorMergeExecutorService() {
-    return ThreadPool.create(configuration.getPlanCreatorMergeServicePoolConfig().getCorePoolSize(),
-        configuration.getPlanCreatorMergeServicePoolConfig().getMaxPoolSize(),
-        configuration.getPlanCreatorMergeServicePoolConfig().getIdleTime(),
-        configuration.getPlanCreatorMergeServicePoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineMergeCreatorExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(configuration.getPlanCreatorMergeServicePoolConfig(),
+        "PipelineMergeCreatorExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides

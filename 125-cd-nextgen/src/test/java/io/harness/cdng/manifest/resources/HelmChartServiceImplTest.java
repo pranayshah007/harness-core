@@ -297,7 +297,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
 
     HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetailsV2(
         accountId, orgId, projId, serviceRef, manifestPath, connectorId, chartName, region, "", "", null, null);
-    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK.name();
+    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK_V2.name();
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(accountId)

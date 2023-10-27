@@ -127,7 +127,8 @@ public class CIK8CleanupTaskHandler implements CICleanupTaskHandler {
         isSuccess = false;
         log.info("CreateOrReplace Pod: Pod delete failed with err: %s", ex);
       } catch (PodNotFoundException ex) {
-        isSuccess = false;
+        // if pod is not found then it's already deleted
+        isSuccess = true;
         log.warn("Failed to delete pod as pod doesn’t exist", podName);
       }
     }

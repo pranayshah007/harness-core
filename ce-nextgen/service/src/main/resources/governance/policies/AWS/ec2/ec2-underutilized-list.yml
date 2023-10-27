@@ -1,0 +1,11 @@
+policies:
+  - name: ec2-underutilized-list
+    description: List EC2 underutilized
+    resource: ec2
+    filters:
+      - type: metrics
+        name: CPUUtilization
+        days: 4
+        period: 86400
+        value: 30
+        op: less-than

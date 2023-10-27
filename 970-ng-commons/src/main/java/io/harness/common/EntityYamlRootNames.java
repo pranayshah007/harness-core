@@ -272,4 +272,6 @@ public class EntityYamlRootNames {
   public static final String AWS_CDK_DEPLOY = "AwsCdkDeploy";
   public static final String AWS_CDK_DESTROY = "AwsCdkDestroy";
   public static final String AWS_CDK_ROLLBACK = "AwsCdkRollback";
+
+  public static final String OVERRIDES = "Overrides";
 }

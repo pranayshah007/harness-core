@@ -1,0 +1,12 @@
+policies:
+  - name: elasticache-delete-stale-clusters
+    resource: cache-cluster
+    filters:
+      - type: value
+        value_type: age
+        key: CacheClusterCreateTime
+        op: ge
+        value: 90
+    actions:
+      - type: delete
+        skip-snapshot: false

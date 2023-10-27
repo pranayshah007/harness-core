@@ -140,7 +140,6 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
-    assertThat(expressionEvaluator.renderExpression("<+trigger.triggerPayload>")).isEqualTo(triggerPayload.toString());
 
     // keys inside header expression are case insensitive for eg: <+trigger.header['Host']> and
     // <+trigger.header['host']> both will work

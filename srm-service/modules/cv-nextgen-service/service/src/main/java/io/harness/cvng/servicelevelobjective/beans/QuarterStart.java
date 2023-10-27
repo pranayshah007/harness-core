@@ -62,6 +62,8 @@ public enum QuarterStart {
     }
     if (startMonth == Integer.MIN_VALUE) {
       startMonth = list.get(list.size() - 1);
+      return LocalDate.of(currentDateTime.getYear() - 1, Month.of(startMonth), currentDateTime.getDayOfMonth())
+          .with(TemporalAdjusters.firstDayOfMonth());
     }
     return LocalDate.of(currentDateTime.getYear(), Month.of(startMonth), currentDateTime.getDayOfMonth())
         .with(TemporalAdjusters.firstDayOfMonth());

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.elastigroup;
-
 import static io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME;
 import static io.harness.cdng.elastigroup.ElastigroupSetupStep.ELASTIGROUP_SETUP_COMMAND_NAME;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -115,6 +114,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -292,6 +292,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     if (isNotEmpty(startupScript)) {
       passThroughData.setBase64EncodedStartupScript(getBase64EncodedStartupScript(ambiance, startupScript));
+      passThroughData.setBase64DecodedStartupScript(getBase64DecodedStartupScript(ambiance, startupScript));
     }
     passThroughData.setInfrastructure(infrastructureOutcome);
     return fetchElastigroupConfiguration(ambiance, stepElementParameters, unitProgressData, passThroughData);
@@ -550,11 +551,14 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   }
 
   public String getBase64EncodedStartupScript(Ambiance ambiance, String startupScript) {
-    if (startupScript != null) {
-      String startupScriptAfterEvaluation = renderExpression(ambiance, startupScript);
-      return java.util.Base64.getEncoder().encodeToString(startupScriptAfterEvaluation.getBytes(Charsets.UTF_8));
-    }
-    return null;
+    String base64DecodedStartupScript = getBase64DecodedStartupScript(ambiance, startupScript);
+    return base64DecodedStartupScript != null
+        ? Base64.getEncoder().encodeToString(base64DecodedStartupScript.getBytes(Charsets.UTF_8))
+        : null;
+  }
+
+  public String getBase64DecodedStartupScript(Ambiance ambiance, String startupScript) {
+    return isNotEmpty(startupScript) ? renderExpression(ambiance, startupScript) : null;
   }
 
   public TaskChainResponse queueElastigroupTask(StepBaseParameters stepElementParameters,

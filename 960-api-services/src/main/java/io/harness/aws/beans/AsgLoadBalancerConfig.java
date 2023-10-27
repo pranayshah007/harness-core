@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils;
 
 import java.util.List;
 import lombok.Builder;
@@ -25,7 +26,7 @@ import lombok.experimental.NonFinal;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.aws.beans.AsgLoadBalancerConfig")
-public class AsgLoadBalancerConfig {
+public class AsgLoadBalancerConfig implements ExpressionReflectionUtils.NestedAnnotationResolver {
   @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
   @NonFinal @Expression(ALLOW_SECRETS) String stageListenerArn;
   @NonFinal @Expression(ALLOW_SECRETS) String stageListenerRuleArn;

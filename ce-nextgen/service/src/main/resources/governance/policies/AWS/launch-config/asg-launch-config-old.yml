@@ -1,0 +1,7 @@
+policies:
+  - name: asg-launch-config-old
+    resource: launch-config
+    filters:
+      - type: age
+        days: 90
+        op: ge

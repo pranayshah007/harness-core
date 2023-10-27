@@ -494,7 +494,7 @@ public class ArtifactoryClientImpl {
     BuildDetails buildDetails = aBuildDetails()
                                     .withNumber(path)
                                     .withArtifactPath(path)
-                                    .withBuildUrl(getBaseUrl(artifactoryConfig) + path)
+                                    .withBuildUrl(getBaseUrl(artifactoryConfig) + repositoryName + path)
                                     .withArtifactFileSize(Long.toString(item.getSize()))
                                     .withUiDisplayName("Build# " + path)
                                     .build();

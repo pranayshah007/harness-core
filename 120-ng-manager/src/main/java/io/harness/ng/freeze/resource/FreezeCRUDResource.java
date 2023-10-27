@@ -328,7 +328,10 @@ public class FreezeCRUDResource {
     if (freezeConfigEntityOptional.isPresent()) {
       freezeConfigEntity = freezeConfigEntityOptional.get();
     }
-    notificationHelper.sendNotification(freezeConfigEntity.getYaml(), true, true, null, accountId, "", "", false);
+    if (freezeConfigEntity != null) {
+      notificationHelper.sendNotification(
+          freezeConfigEntity.getYaml(), true, true, true, null, accountId, "", "", false);
+    }
     return true;
   }
 

@@ -224,6 +224,21 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
     assertThat(releaseMetadata1).isEqualTo(releaseMetadata2);
   }
 
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testReleaseMetadataDiffWhenSomeMetadataAttributesAreNull() {
+    ReleaseMetadata sampleMetadata1 = ReleaseMetadata.builder().serviceId("svcId1").build();
+    ReleaseMetadata sampleMetadata2 = ReleaseMetadata.builder().serviceId("svcId2").build();
+    String expectedMessage = String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, "svcId1", "svcId2")
+        + String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata1.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId())
+        + String.format(CURRENT_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata2.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata2.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata2.getInfraId());
+    assertThat(K8sReleaseDiffCalculator.calculateDiffForLogging(sampleMetadata2, sampleMetadata1))
+        .isEqualTo(expectedMessage);
+  }
+
   private V1Secret createSecret(String releaseNumber, String status) {
     return new V1SecretBuilder()
         .withMetadata(new V1ObjectMetaBuilder()

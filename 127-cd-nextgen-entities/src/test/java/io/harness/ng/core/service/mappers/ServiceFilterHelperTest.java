@@ -119,7 +119,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"KUBERNETES\", \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"$or\": [{\"type\": \"KUBERNETES\"}, {\"storeType\": \"REMOTE\"}], \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -131,7 +131,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"$or\": [{\"type\": \"NATIVE_HELM\"}, {\"storeType\": \"REMOTE\"}]}");
   }
 
   @Test
@@ -143,7 +143,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\"}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
+            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\"}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"$or\": [{\"type\": \"NATIVE_HELM\"}, {\"storeType\": \"REMOTE\"}]}");
   }
 
   @Test

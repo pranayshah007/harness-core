@@ -1,0 +1,133 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/virtualMachines/VirtualMachineId",
+  "name": "VirtualMachineId",
+  "type": "Microsoft.Compute/virtualMachines",
+  "location": "westeurope",
+  "tags": {
+    "ClusterId": "ClusterId",
+    "ClusterName": "ClusterName",
+    "Creator": "CreatorId",
+    "DiagnosticsEnabled": "True",
+    "Environment": "Development",
+    "User Name": "UserEmailId",
+    "Vendor": "VendorName",
+    "databricks-instance-name": "VirtualMachineId"
+  },
+  "identity": {
+    "type": "UserAssigned",
+    "userAssignedIdentities": {
+      "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.ManagedIdentity/userAssignedIdentities/dbmanagedidentity": {
+        "principalId": "PrincipalId",
+        "clientId": "ClientId"
+      }
+    }
+  },
+  "properties": {
+    "hardwareProfile": {
+      "vmSize": "Standard_DS3_v2"
+    },
+    "storageProfile": {
+      "imageReference": {
+        "publisher": "Publisher",
+        "offer": "Offer",
+        "sku": "SKU",
+        "version": "4.8.1",
+        "exactVersion": "4.8.1"
+      },
+      "osDisk": {
+        "osType": "Linux",
+        "name": "VirtualMachineId-osDisk",
+        "caching": "ReadOnly",
+        "diffDiskSettings": {
+          "option": "Local",
+          "placement": "CacheDisk"
+        },
+        "createOption": "FromImage",
+        "diskSizeGB": 30,
+        "managedDisk": {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/disks/VirtualMachineId-osDisk",
+          "storageAccountType": "Standard_LRS"
+        }
+      },
+      "dataDisks": [
+        {
+          "lun": 0,
+          "name": "VirtualMachineId-containerRootVolume",
+          "caching": "ReadWrite",
+          "createOption": "Attach",
+          "diskSizeGB": 256,
+          "managedDisk": {
+            "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/disks/VirtualMachineId-containerRootVolume",
+            "storageAccountType": "Premium_LRS"
+          },
+          "toBeDetached": false
+        },
+        {
+          "lun": 1,
+          "name": "VirtualMachineId-scratchVolume",
+          "caching": "ReadWrite",
+          "createOption": "Attach",
+          "diskSizeGB": 128,
+          "managedDisk": {
+            "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/disks/VirtualMachineId-scratchVolume",
+            "storageAccountType": "Premium_LRS"
+          },
+          "toBeDetached": false
+        },
+        {
+          "lun": 2,
+          "name": "VirtualMachineId-scratchVolume",
+          "caching": "ReadWrite",
+          "createOption": "Attach",
+          "diskSizeGB": 128,
+          "managedDisk": {
+            "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/disks/VirtualMachineId-scratchVolume",
+            "storageAccountType": "Premium_LRS"
+          },
+          "toBeDetached": false
+        }
+      ]
+    },
+    "osProfile": {
+      "computerName": "VirtualMachineId",
+      "adminUsername": "ubuntu",
+      "linuxConfiguration": {
+        "disablePasswordAuthentication": true,
+        "ssh": {
+          "publicKeys": [
+            {
+              "path": "/home/ubuntu/.ssh/authorized_keys",
+              "keyData": "ssh-rsa KeyData"
+            }
+          ]
+        },
+        "provisionVMAgent": true,
+        "patchSettings": {
+          "patchMode": "ImageDefault"
+        }
+      },
+      "secrets": [],
+      "allowExtensionOperations": true,
+      "requireGuestProvisionSignal": true
+    },
+    "networkProfile": {
+      "networkInterfaces": [
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/networkInterfaces/VirtualMachineId-publicNIC",
+          "properties": {
+            "primary": true
+          }
+        },
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/networkInterfaces/VirtualMachineId-privateNIC",
+          "properties": {
+            "primary": false
+          }
+        }
+      ]
+    },
+    "provisioningState": "Succeeded",
+    "vmId": "VmId"
+  },
+  "resourceGroup": "ResourceGroupId"
+}

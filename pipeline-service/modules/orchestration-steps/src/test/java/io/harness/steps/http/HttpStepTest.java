@@ -42,6 +42,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -241,6 +242,8 @@ public class HttpStepTest extends CategoryTest {
                                 .spec(httpStepParameters)
                                 .timeout(ParameterField.createValueField("20m"))
                                 .build();
+    when(httpStepUtils.getHttpStepParameters(stepElementParameters))
+        .thenReturn((HttpStepParameters) stepElementParameters.getSpec());
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
 
     // adding headers
@@ -287,6 +290,19 @@ public class HttpStepTest extends CategoryTest {
                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                             .errorMessage("No error message")
                                             .build();
+    when(httpStepUtils.getHttpStepParameters(stepElementParameters))
+        .thenReturn((HttpStepParameters) stepElementParameters.getSpec());
+    when(httpStepUtils.getHttpOutcome(HarnessYamlVersion.V0, (HttpStepParameters) stepElementParameters.getSpec(),
+             httpStepResponse, new HashMap<>()))
+        .thenReturn(HttpOutcome.builder()
+                        .httpUrl("https://www.google.com")
+                        .httpMethod("GET")
+                        .httpResponseCode(httpStepResponse.getHttpResponseCode())
+                        .httpResponseBody(httpStepResponse.getHttpResponseBody())
+                        .status(httpStepResponse.getCommandExecutionStatus())
+                        .errorMsg(httpStepResponse.getErrorMessage())
+                        .outputVariables(new HashMap<>())
+                        .build());
     StepResponse stepResponse = httpStep.handleTaskResult(ambiance, stepElementParameters, () -> httpStepResponse);
     HttpOutcome outcome = (HttpOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
 
@@ -347,7 +363,8 @@ public class HttpStepTest extends CategoryTest {
                                 .spec(httpStepParameters)
                                 .timeout(ParameterField.createValueField("20m"))
                                 .build();
-
+    when(httpStepUtils.getHttpStepParameters(stepElementParameters))
+        .thenReturn((HttpStepParameters) stepElementParameters.getSpec());
     // non null task request
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
   }
@@ -389,7 +406,8 @@ public class HttpStepTest extends CategoryTest {
                                 .spec(httpStepParameters)
                                 .timeout(ParameterField.createValueField("20m"))
                                 .build();
-
+    when(httpStepUtils.getHttpStepParameters(stepElementParameters))
+        .thenReturn((HttpStepParameters) stepElementParameters.getSpec());
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
   }
 }

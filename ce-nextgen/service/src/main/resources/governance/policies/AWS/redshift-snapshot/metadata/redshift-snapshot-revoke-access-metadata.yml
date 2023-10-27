@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: redshift-snapshot-revoke-access
+cloudProvider: AWS
+resourceType: redshift-snapshot
+description: Revokes access to Redshift snapshots for accounts other than 012345678910
+rulesYamlPath: ../redshift-snapshot-revoke-access.yml

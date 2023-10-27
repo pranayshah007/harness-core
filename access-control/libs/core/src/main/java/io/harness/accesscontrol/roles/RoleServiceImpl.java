@@ -121,15 +121,15 @@ public class RoleServiceImpl implements RoleService {
   public PageResponse<RoleWithPrincipalCount> listWithPrincipalCount(
       PageRequest pageRequest, RoleFilter roleFilter, boolean hideInternal) {
     PageResponse<Role> rolePages = list(pageRequest, roleFilter, hideInternal);
-    RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder()
-                                                    .scopeFilter(roleFilter.getScopeIdentifier())
-                                                    .roleFilter(roleFilter.getIdentifierFilter())
-                                                    .build();
-    PageResponse<RoleAssignment> roleAssignmentServicePageResponse =
-        roleAssignmentService.list(pageRequest, roleAssignmentFilter, true);
+    Set<String> roleIdentifiers = rolePages.getContent().stream().map(Role::getIdentifier).collect(Collectors.toSet());
+    RoleAssignmentFilter roleAssignmentFilter =
+        RoleAssignmentFilter.builder().scopeFilter(roleFilter.getScopeIdentifier()).roleFilter(roleIdentifiers).build();
+    PageRequest roleAssignmentsPageRequest = PageRequest.builder().pageSize(50000).build();
+    PageResponse<RoleAssignment> roleAssignments =
+        roleAssignmentService.list(roleAssignmentsPageRequest, roleAssignmentFilter, true);
     Map<String, Map<PrincipalType, Integer>> countMap = new HashMap<>();
 
-    for (RoleAssignment roleAssignment : roleAssignmentServicePageResponse.getContent()) {
+    for (RoleAssignment roleAssignment : roleAssignments.getContent()) {
       PrincipalType principalType = roleAssignment.getPrincipalType();
       if (principalType == PrincipalType.USER || principalType == PrincipalType.SERVICE_ACCOUNT
           || principalType == PrincipalType.USER_GROUP) {

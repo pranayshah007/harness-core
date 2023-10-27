@@ -21,12 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class TemplateSchemaParserFactory {
   @Inject TemplateSchemaParserV0 templateSchemaParserV0;
+  @Inject TemplateSchemaParserV1 templateSchemaParserV1;
   private final String TEMPLATE_VERSION_V0 = "v0";
+  private final String TEMPLATE_VERSION_V1 = "v1";
 
   public AbstractStaticSchemaParser getTemplateSchemaParser(String version) {
     switch (version) {
       case TEMPLATE_VERSION_V0:
         return templateSchemaParserV0;
+      case TEMPLATE_VERSION_V1:
+        return templateSchemaParserV1;
       default:
         throw new InternalServerErrorException("Template schema parser not available for version: " + version);
     }

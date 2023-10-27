@@ -30,4 +30,6 @@ public class DeploymentStatusInfoList {
   private List<GitInfo> gitInfoList;
   private List<String> triggerType;
   private List<AuthorInfo> author;
+  private List<String> orgIdentifierList;
+  private List<String> projectIdentifierList;
 }

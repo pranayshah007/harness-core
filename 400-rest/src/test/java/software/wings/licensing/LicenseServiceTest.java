@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.RAMA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.VOJIN;
 
 import static software.wings.beans.Account.Builder.anAccount;
@@ -77,10 +78,9 @@ public class LicenseServiceTest extends WingsBaseTest {
   private static final long oneDayTimeDiff = 86400000L;
   private static final String ACCOUNT_KEY = "ACCOUNT_KEY";
   private static final String TRIAL_EXPIRATION_DAY_0_TEMPLATE = "trial_expiration_day0";
-  private static final String TRIAL_EXPIRATION_DAY_29_TEMPLATE = "trial_expiration_day29";
   private static final String TRIAL_EXPIRATION_DAY_30_TEMPLATE = "trial_expiration_day30";
-  private static final String TRIAL_EXPIRATION_DAY_60_TEMPLATE = "trial_expiration_day60";
-  private static final String TRIAL_EXPIRATION_DAY_89_TEMPLATE = "trial_expiration_day89";
+  private static final String TRIAL_EXPIRATION_DAY_45_TEMPLATE = "trial_expiration_day45";
+  private static final String TRIAL_EXPIRATION_DAY_59_TEMPLATE = "trial_expiration_day59";
   private static final String TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE = "trial_expiration_before_deletion";
 
   @Before
@@ -460,7 +460,7 @@ public class LicenseServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = VOJIN)
+  @Owner(developers = {VOJIN, SAHIBA})
   @Category(UnitTests.class)
   public void getEmailTemplateNameForTrialAccountExpiration() {
     long currentTime = System.currentTimeMillis();
@@ -468,10 +468,10 @@ public class LicenseServiceTest extends WingsBaseTest {
     long oneDayAfterExpiry = expiryTime + oneDayTimeDiff;
     long twoDaysAfterExpiry = expiryTime + (2 * oneDayTimeDiff);
     long thirtyDaysAfterExpiry = expiryTime + (30 * oneDayTimeDiff);
+    long fortyFiveDaysAfterExpiry = expiryTime + (45 * oneDayTimeDiff);
+    long fiftyNineDaysAfterExpiry = expiryTime + (59 * oneDayTimeDiff);
     long sixtyDaysAfterExpiry = expiryTime + (60 * oneDayTimeDiff);
-    long eightyNineDaysAfterExpiry = expiryTime + (89 * oneDayTimeDiff);
-    long ninetyDaysAfterExpiry = expiryTime + (90 * oneDayTimeDiff);
-    long ninetyTwoDaysAfterExpiry = expiryTime + (92 * oneDayTimeDiff);
+    long sixtyTwoDaysAfterExpiry = expiryTime + (62 * oneDayTimeDiff);
 
     LicenseInfo licenseInfo = new LicenseInfo();
     licenseInfo.setAccountType(AccountType.TRIAL);
@@ -499,27 +499,27 @@ public class LicenseServiceTest extends WingsBaseTest {
     account = accountService.get(account.getUuid());
     assertThat(licenseService.getEmailTemplateName(account, thirtyDaysAfterExpiry + 10000, expiryTime)).isNull();
 
+    assertThat(licenseService.getEmailTemplateName(account, fortyFiveDaysAfterExpiry, expiryTime))
+        .isEqualTo(TRIAL_EXPIRATION_DAY_45_TEMPLATE);
+    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), fortyFiveDaysAfterExpiry);
+    account = accountService.get(account.getUuid());
+    assertThat(licenseService.getEmailTemplateName(account, fortyFiveDaysAfterExpiry + 10000, expiryTime)).isNull();
+    assertThat(licenseService.getEmailTemplateName(account, fiftyNineDaysAfterExpiry, expiryTime))
+        .isEqualTo(TRIAL_EXPIRATION_DAY_59_TEMPLATE);
+    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), fiftyNineDaysAfterExpiry);
+    account = accountService.get(account.getUuid());
+
     assertThat(licenseService.getEmailTemplateName(account, sixtyDaysAfterExpiry, expiryTime))
-        .isEqualTo(TRIAL_EXPIRATION_DAY_60_TEMPLATE);
+        .isEqualTo(TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE);
     licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), sixtyDaysAfterExpiry);
     account = accountService.get(account.getUuid());
     assertThat(licenseService.getEmailTemplateName(account, sixtyDaysAfterExpiry + 10000, expiryTime)).isNull();
-    assertThat(licenseService.getEmailTemplateName(account, eightyNineDaysAfterExpiry, expiryTime))
-        .isEqualTo(TRIAL_EXPIRATION_DAY_89_TEMPLATE);
-    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), eightyNineDaysAfterExpiry);
-    account = accountService.get(account.getUuid());
 
-    assertThat(licenseService.getEmailTemplateName(account, ninetyDaysAfterExpiry, expiryTime))
+    assertThat(licenseService.getEmailTemplateName(account, sixtyTwoDaysAfterExpiry, expiryTime))
         .isEqualTo(TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE);
-    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), ninetyDaysAfterExpiry);
+    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), sixtyTwoDaysAfterExpiry);
     account = accountService.get(account.getUuid());
-    assertThat(licenseService.getEmailTemplateName(account, ninetyDaysAfterExpiry + 10000, expiryTime)).isNull();
-
-    assertThat(licenseService.getEmailTemplateName(account, ninetyTwoDaysAfterExpiry, expiryTime))
-        .isEqualTo(TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE);
-    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), ninetyTwoDaysAfterExpiry);
-    account = accountService.get(account.getUuid());
-    assertThat(licenseService.getEmailTemplateName(account, ninetyTwoDaysAfterExpiry + 10000, expiryTime)).isNull();
+    assertThat(licenseService.getEmailTemplateName(account, sixtyTwoDaysAfterExpiry + 10000, expiryTime)).isNull();
   }
 
   @Test
@@ -558,7 +558,7 @@ public class LicenseServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = VOJIN)
+  @Owner(developers = {VOJIN, SAHIBA})
   @Category(UnitTests.class)
   public void shouldUpdateAccountStatusAfterNinetyDaysOfExpiry() {
     LicenseInfo licenseInfo = new LicenseInfo();
@@ -568,7 +568,7 @@ public class LicenseServiceTest extends WingsBaseTest {
     long currentTime = System.currentTimeMillis();
     List<Long> licenseExpiryRemindersSentAt = new ArrayList<>();
     licenseExpiryRemindersSentAt.add(currentTime - 30 * oneDayTimeDiff);
-    licenseExpiryRemindersSentAt.add(currentTime - 60 * oneDayTimeDiff);
+    licenseExpiryRemindersSentAt.add(currentTime - 45 * oneDayTimeDiff);
     licenseExpiryRemindersSentAt.add(currentTime - oneDayTimeDiff);
 
     Account account = accountService.save(anAccount()
@@ -581,7 +581,7 @@ public class LicenseServiceTest extends WingsBaseTest {
         false);
     LicenseServiceImpl licenseServiceSpy = spy(licenseService);
     doReturn(true).when(licenseServiceSpy).sendEmailToAccountAdmin(any(), anyString());
-    licenseServiceSpy.handleTrialAccountExpiration(account, currentTime - 90 * oneDayTimeDiff);
+    licenseServiceSpy.handleTrialAccountExpiration(account, currentTime - 60 * oneDayTimeDiff);
     Account accountFromDB = accountService.get(account.getUuid());
     assertThat(accountFromDB.getLicenseInfo().getAccountStatus()).isEqualTo(AccountStatus.MARKED_FOR_DELETION);
   }
@@ -596,7 +596,7 @@ public class LicenseServiceTest extends WingsBaseTest {
 
     long currentTime = System.currentTimeMillis();
     List<Long> licenseExpiryRemindersSentAt = new ArrayList<>();
-    licenseExpiryRemindersSentAt.add(currentTime - 60 * oneDayTimeDiff);
+    licenseExpiryRemindersSentAt.add(currentTime - 45 * oneDayTimeDiff);
     licenseExpiryRemindersSentAt.add(currentTime - oneDayTimeDiff);
 
     Account account = accountService.save(anAccount()
@@ -610,7 +610,7 @@ public class LicenseServiceTest extends WingsBaseTest {
     LicenseServiceImpl licenseServiceSpy = spy(licenseService);
     when(mainConfiguration.getNumberOfRemindersBeforeAccountDeletion()).thenReturn(3);
     doReturn(true).when(licenseServiceSpy).sendEmailToAccountAdmin(any(), anyString());
-    licenseServiceSpy.handleTrialAccountExpiration(account, currentTime - 90 * oneDayTimeDiff);
+    licenseServiceSpy.handleTrialAccountExpiration(account, currentTime - 60 * oneDayTimeDiff);
     Account accountFromDB = accountService.get(account.getUuid());
     assertThat(accountFromDB.getLicenseInfo().getAccountStatus()).isNotEqualTo(AccountStatus.MARKED_FOR_DELETION);
     assertThat(accountFromDB.getLastLicenseExpiryReminderSentAt())

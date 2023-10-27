@@ -48,8 +48,8 @@ public class DisableWinrmVariablesFFMigration implements Migration {
       log.info(
           format("FF DISABLE_WINRM_ENV_VARIABLES is enabled for %d accounts", oldFeatureFlag.getAccountIds().size()));
       Set<String> accountIds = new HashSet<>();
-      try (HIterator<Account> accounts =
-               new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+      try (HIterator<Account> accounts = new HIterator<>(
+               wingsPersistence.createAnalyticsQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
         for (Account account : accounts) {
           if (!oldFeatureFlag.getAccountIds().contains(account.getUuid())) {
             accountIds.add(account.getUuid());

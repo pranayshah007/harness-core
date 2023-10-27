@@ -23,25 +23,40 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class LogStreamingStepClientFactoryTest extends CategoryTest {
-  private static final String SERVICE_TOKEN = "token";
   private static final String ACCOUNT_ID = "accountId";
   private static final String TOKEN = "Token";
+  @Mock ScheduledExecutorService executorService;
+  @Mock LogStreamingServiceConfiguration configuration;
+  @Mock LogStreamingClient logStreamingClient;
+  @InjectMocks LogStreamingStepClientFactory logStreamingStepClientFactory = spy(new LogStreamingStepClientFactory());
+  private AutoCloseable mocks;
+  @Before
+  public void setUp() throws Exception {
+    mocks = MockitoAnnotations.openMocks(this);
+  }
 
-  LogStreamingStepClientFactory logStreamingStepClientFactory = spy(new LogStreamingStepClientFactory());
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
 
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void getLogStreamingStepClient() throws Exception {
-    logStreamingStepClientFactory.logStreamingClientThreadPool = Mockito.mock(ThreadPoolExecutor.class);
-
     Ambiance ambiance =
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", ACCOUNT_ID)
@@ -63,8 +78,7 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
-  public void getLogStreamingStepClientWithSimplifiedLogKey() throws Exception {
-    logStreamingStepClientFactory.logStreamingClientThreadPool = Mockito.mock(ThreadPoolExecutor.class);
+  public void getLogStreamingStepClientWithSimplifiedLogKey() {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", ACCOUNT_ID)

@@ -38,6 +38,9 @@ import software.wings.beans.command.AWS4SignerForAuthorizationHeader;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSSessionCredentials;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.net.MalformedURLException;
@@ -119,6 +122,15 @@ public class AwsS3ArtifactDownloadHandler implements ArtifactDownloadHandler {
       awsAccessKey = credentials.getAccessKeyId();
       awsSecretKey = credentials.getSecretKey();
       awsToken = credentials.getToken();
+    } else if (awsConfigDecrypted.isUseIRSA()) {
+      AWSCredentialsProvider aWSCredentialsProvider =
+          awsHelperService.getCredentialsForIRSAonDelegate(awsConfigDecrypted);
+      AWSCredentials awsCredentials = aWSCredentialsProvider.getCredentials();
+      awsAccessKey = awsCredentials.getAWSAccessKeyId();
+      awsSecretKey = awsCredentials.getAWSSecretKey();
+      if (aWSCredentialsProvider.getCredentials() instanceof AWSSessionCredentials) {
+        awsToken = ((AWSSessionCredentials) awsCredentials).getSessionToken();
+      }
     } else {
       awsAccessKey = String.valueOf(awsConfigDecrypted.getAccessKey());
       awsSecretKey = String.valueOf(awsConfigDecrypted.getSecretKey());

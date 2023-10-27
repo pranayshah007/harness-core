@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: cloudwatch-stale-groups
+cloudProvider: AWS
+resourceType: log-group
+description: List cloud watch log groups that have not been written to or updated in the last 60 days
+rulesYamlPath: ../cloudwatch-stale-groups.yml

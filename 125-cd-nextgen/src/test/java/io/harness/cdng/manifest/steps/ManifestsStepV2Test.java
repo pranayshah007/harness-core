@@ -1101,7 +1101,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     assertThatThrownBy(executeMethod::get)
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
-            "Unsupported Manifest Types: [AwsLambdaFunctionDefinition] found for ENV_SERVICE_OVERRIDE");
+            "Unsupported Manifest Types: [AwsLambdaFunctionDefinition] found for Environment Service override");
   }
 
   @Test
@@ -1195,7 +1195,7 @@ public class ManifestsStepV2Test extends CategoryTest {
 
     assertThatThrownBy(executeMethod::get)
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("found duplicate identifiers [id1] in INFRA_GLOBAL_OVERRIDE");
+        .hasMessageContaining("found duplicate identifiers [id1] for Manifest in Infrastructure override");
   }
 
   @Test

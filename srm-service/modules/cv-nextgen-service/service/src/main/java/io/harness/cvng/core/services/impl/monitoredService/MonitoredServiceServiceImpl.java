@@ -137,6 +137,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
@@ -1394,7 +1395,25 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
-  public List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier) {
+  public List<ServiceResponse> getUniqueServices(String accountId, String orgIdentifier, String projectIdentifier) {
+    List<String> serviceIdentifiers = hPersistence.createQuery(MonitoredService.class)
+                                          .filter(MonitoredServiceKeys.accountId, accountId)
+                                          .filter(MonitoredServiceKeys.orgIdentifier, orgIdentifier)
+                                          .filter(MonitoredServiceKeys.projectIdentifier, projectIdentifier)
+                                          .asList()
+                                          .stream()
+                                          .map(MonitoredService::getServiceIdentifier)
+                                          .collect(Collectors.toList());
+
+    return nextGenService.listService(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers)
+        .stream()
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EnvironmentResponse> getUniqueEnvironments(
+      String accountId, String orgIdentifier, String projectIdentifier) {
     List<String> environmentIdentifiers = hPersistence.createQuery(MonitoredService.class)
                                               .filter(MonitoredServiceKeys.accountId, accountId)
                                               .filter(MonitoredServiceKeys.orgIdentifier, orgIdentifier)

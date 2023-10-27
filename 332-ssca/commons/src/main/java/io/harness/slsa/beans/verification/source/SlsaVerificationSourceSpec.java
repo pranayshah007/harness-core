@@ -9,9 +9,15 @@ package io.harness.slsa.beans.verification.source;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 
 @OwnedBy(HarnessTeam.SSCA)
-@JsonSubTypes({ @JsonSubTypes.Type(value = SlsaDockerSourceSpec.class, name = SlsaVerificationSourceConstants.DOCKER) })
-public interface SlsaVerificationSourceSpec {}
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = SlsaDockerSourceSpec.class, name = SlsaVerificationSourceConstants.DOCKER)
+  , @JsonSubTypes.Type(value = SlsaGcrSourceSpec.class, name = SlsaVerificationSourceConstants.GCR)
+})
+public interface SlsaVerificationSourceSpec {
+  ParameterField<String> getConnector();
+}

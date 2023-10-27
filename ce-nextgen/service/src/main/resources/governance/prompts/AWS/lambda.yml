@@ -1,0 +1,3 @@
+filters: check-permissions, config-compliance, cross-account, event, event-source, finding, has-specific-managed-policy, iam-analyzer, json-diff, kms-key, lambda-edge, list-item, marked-for-op, metrics, network-location, ops-item, reduce, reserved-concurrency, security-group, subnet, value, vpc
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, modify-security-groups, notify, post-finding, post-item, put-metric, remove-statements, remove-tag, rename-tag, set-concurrency, set-xray-tracing, tag, trim-versions, webhook
+customPrompt:

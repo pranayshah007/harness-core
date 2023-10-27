@@ -22,4 +22,10 @@ public class NotificationServiceConstants {
   public static final String PAGERDUTYSERVICE = "pagerdutyservice";
   public static final String MSTEAMSSERVICE = "msteamsservice";
   public static final String WEBHOOKSERVICE = "webhookservice";
+
+  public static final String NOTIFICATION = "NOTIFICATION";
+
+  // permissions
+  public static final String VIEW_NOTIFICATION_SETTINGS_PERMISSION = "core_notification_settings_create";
+  public static final String MANAGE_NOTIFICATION_SETTINGS_PERMISSION = "core_notification_settings_create";
 }

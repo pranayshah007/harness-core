@@ -151,7 +151,6 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
-
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
@@ -186,7 +185,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
         && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
             != null) {
-      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
     }
 
     if (k8sDeployRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
@@ -471,13 +470,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    ManifestOutcome k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());
+    Optional<ManifestOutcome> manifestSourceOutcome = getStepLevelSourceOutcome(stepElementParameters);
+    ManifestOutcome k8sManifestOutcome =
+        manifestSourceOutcome.orElseGet(() -> getK8sSupportedManifestOutcome(manifestsOutcome.values()));
     K8sStepPassThroughData k8sStepPassThroughData = K8sStepPassThroughData.builder()
                                                         .manifestOutcome(k8sManifestOutcome)
                                                         .infrastructure(infrastructureOutcome)
                                                         .build();
 
-    List<ManifestOutcome> orderedManifestOutcomes = getOrderedManifestOutcome(manifestsOutcome.values());
+    List<ManifestOutcome> orderedManifestOutcomes = new ArrayList<>();
+    if (!k8sManifestOutcome.getIdentifier().equals(MANIFEST_SOURCE_IDENTIFIER)) {
+      orderedManifestOutcomes = getOrderedManifestOutcome(manifestsOutcome.values());
+    }
     orderedManifestOutcomes.addAll(getStepLevelManifestOutcomes(stepElementParameters));
 
     if (ManifestType.Kustomize.equals(k8sManifestOutcome.getType())) {

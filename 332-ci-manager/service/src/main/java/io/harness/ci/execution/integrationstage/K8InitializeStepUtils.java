@@ -882,9 +882,11 @@ public class K8InitializeStepUtils {
       }
     } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
-      for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-        Integer wrapperMemoryRequest = getExecutionWrapperMemoryRequest(wrapper, accountId);
-        executionWrapperMemoryRequest = Math.max(executionWrapperMemoryRequest, wrapperMemoryRequest);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          Integer wrapperMemoryRequest = getExecutionWrapperMemoryRequest(wrapper, accountId);
+          executionWrapperMemoryRequest = Math.max(executionWrapperMemoryRequest, wrapperMemoryRequest);
+        }
       }
     } else {
       throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
@@ -995,9 +997,11 @@ public class K8InitializeStepUtils {
       }
     } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
-      for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-        Integer stepCpuRequest = getExecutionWrapperCpuRequest(wrapper, accountId);
-        executionWrapperCpuRequest = Math.max(executionWrapperCpuRequest, stepCpuRequest);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          Integer stepCpuRequest = getExecutionWrapperCpuRequest(wrapper, accountId);
+          executionWrapperCpuRequest = Math.max(executionWrapperCpuRequest, stepCpuRequest);
+        }
       }
     } else {
       throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
@@ -1128,8 +1132,10 @@ public class K8InitializeStepUtils {
       if (!isEmpty(stepGroupIdOfParent)) {
         stepGroupIdentifier = stepGroupIdOfParent + UNDERSCORE_SEPARATOR + stepGroupIdentifier;
       }
-      for (ExecutionWrapperConfig executionWrapper : stepGroupElementConfig.getSteps()) {
-        populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupIdentifier);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig executionWrapper : stepGroupElementConfig.getSteps()) {
+          populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupIdentifier);
+        }
       }
     }
   }
@@ -1264,9 +1270,11 @@ public class K8InitializeStepUtils {
     } else if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig =
           IntegrationStageUtils.getStepGroupElementConfig(executionWrapperConfig);
-      for (ExecutionWrapperConfig stepGroupElementWrapperConfig : stepGroupElementConfig.getSteps()) {
-        if (isStepEligibleForExtraResource(stepGroupElementWrapperConfig)) {
-          return true;
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig stepGroupElementWrapperConfig : stepGroupElementConfig.getSteps()) {
+          if (isStepEligibleForExtraResource(stepGroupElementWrapperConfig)) {
+            return true;
+          }
         }
       }
     }

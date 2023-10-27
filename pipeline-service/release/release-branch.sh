@@ -160,7 +160,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
     sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
-    # Updating static-schema for pipeline.json
+    # Updating static-schema for v0 pipeline.json
     PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/v0/pipeline.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/pipeline.json" ${PIPELINE_JSON}
     pipeline_curl_result=$?
@@ -169,9 +169,9 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     # Check the return values in if-else conditions
     if [ $pipeline_curl_result -eq 0 ]; then
         git add ${PIPELINE_JSON}
-        echo "Pipeline file was updated"
+        echo "Pipeline V0 file was updated"
     else
-        echo "Pipeline file was not updated"
+        echo "Pipeline V0 file was not updated"
     fi
 
     # Updating static-schema for trigger.json
@@ -185,6 +185,20 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
         echo "Trigger file was updated"
     else
         echo "Trigger file was not updated"
+    fi
+
+    # Updating static-schema for v1 pipeline.json
+    PIPELINE_JSON_V1="pipeline-service/service/src/main/resources/static-schema/v1/pipeline.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v1/pipeline.json" ${PIPELINE_JSON_V1}
+    pipeline_v1_curl_result=$?
+
+
+    # Check the return values in if-else conditions
+    if [ $pipeline_v1_curl_result -eq 0 ]; then
+        git add ${PIPELINE_JSON_V1}
+        echo "Pipeline V1 file was updated"
+    else
+        echo "Pipeline V1 file was not updated"
     fi
 
     # Continue with the rest of the script
@@ -201,31 +215,28 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout ${SHA}
     git checkout -b release/${PURPOSE}/${newBranch}
 
-    # Updating static-schema for pipeline in branch cut branch
-    PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/v0/pipeline.json"
-    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/pipeline.json" ${PIPELINE_JSON}
-    pipeline_curl_result=$?
-
-
-    # Check the return values in if-else conditions
+    # Updating static-schema for V0 pipeline in branch cut branch
     if [ $pipeline_curl_result -eq 0 ]; then
         git add ${PIPELINE_JSON}
-        echo "Pipeline file was updated"
+        echo "Pipeline V0 file was updated"
     else
-        echo "Pipeline file was not updated"
+        echo "Pipeline V0 file was not updated"
     fi
 
     # Updating static-schema for trigger.json in branch cut branch
-    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/v0/trigger.json"
-    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/trigger.json" ${TRIGGER_JSON}
-    trigger_curl_result=$?
-
-    # Check the return values in if-else conditions
     if [ $trigger_curl_result -eq 0 ]; then
         git add ${TRIGGER_JSON}
         echo "Trigger file was updated"
     else
         echo "Trigger file was not updated"
+    fi
+
+    # Updating static-schema for V1 pipeline in branch cut branch
+    if [ $pipeline_v1_curl_result -eq 0 ]; then
+        git add ${PIPELINE_JSON_V1}
+        echo "Pipeline V1 file was updated"
+    else
+        echo "Pipeline V1 file was not updated"
     fi
 
     # Continue with the rest of the script

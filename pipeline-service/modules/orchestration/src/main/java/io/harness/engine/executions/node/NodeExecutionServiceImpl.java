@@ -9,6 +9,7 @@ package io.harness.engine.executions.node;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
@@ -712,16 +713,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         nodeExecutionsIdsToDelete.add(next.getUuid());
         batchNodeExecutionList.add(next);
         if (batchNodeExecutionList.size() >= MAX_BATCH_SIZE) {
+          // delete node Executions in batches of 1000
           deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+          deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
           batchNodeExecutionList.clear();
+          nodeExecutionsIdsToDelete.clear();
         }
       }
     }
+    // delete the remaining node Executions
     if (EmptyPredicate.isNotEmpty(batchNodeExecutionList)) {
       deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
     }
-    // At end delete all nodeExecutions
-    deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
+    if (isNotEmpty(nodeExecutionsIdsToDelete)) {
+      deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
+    }
   }
 
   /**

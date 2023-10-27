@@ -26,7 +26,7 @@ import java.util.List;
 
 public interface ChangeEventService {
   Boolean register(ChangeEventDTO changeEventDTO);
-  Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl);
+  Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl, String authorizationToken);
   ChangeEventDTO get(String activityId);
 
   ChangeSummaryDTO getChangeSummary(MonitoredServiceParams monitoredServiceParams, List<String> changeSourceIdentifiers,

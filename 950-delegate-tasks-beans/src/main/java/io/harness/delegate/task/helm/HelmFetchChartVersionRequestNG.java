@@ -79,7 +79,7 @@ public class HelmFetchChartVersionRequestNG implements TaskParameters, Execution
                 (OciHelmStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
             String criteria = null;
             if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
-              criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+              criteria = helmChartManifestDelegateConfig.getChartName() + ":" + ociHelmStoreConfig.getRegion();
               capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
                   ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
             } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {

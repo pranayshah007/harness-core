@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: delete-tagged-resource-groups
+cloudProvider: AZURE
+resourceType: azure.resourcegroup
+description: Delete all Resource Groups in the subscription tagged with ‘ShouldBeDeleted
+rulesYamlPath: ../delete-tagged-resource-groups.yml

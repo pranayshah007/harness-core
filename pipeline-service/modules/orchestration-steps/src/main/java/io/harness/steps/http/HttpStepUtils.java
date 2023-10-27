@@ -30,6 +30,8 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -174,5 +176,51 @@ public class HttpStepUtils {
 
     return Optional.of(
         HttpCertificateNG.builder().certificate(cert.getValue()).certificateKey(cert_key.getValue()).build());
+  }
+
+  // We have separate POJO for step outcome for v1 because we also need to support expressions of outcomes following v1
+  // rfc
+  HttpStepParameters getHttpStepParameters(StepBaseParameters stepParameters) {
+    String version = stepParameters.getSpec().getVersion();
+    switch (version) {
+      case HarnessYamlVersion.V0:
+        return (HttpStepParameters) stepParameters.getSpec();
+      case HarnessYamlVersion.V1:
+        return ((io.harness.steps.http.v1.HttpStepParameters) stepParameters.getSpec()).toHttpStepParametersV0();
+      default:
+        log.error("Version {} not supported", version);
+        throw new InvalidRequestException(String.format("Version %s not supported", version));
+    }
+  }
+
+  // Convert v1 step parameters to v0, we could not do this during plan creation because we also need to support
+  // expressions following v1 rfc
+  HttpBaseOutcome getHttpOutcome(String version, HttpStepParameters httpStepParameters,
+      HttpStepResponse httpStepResponse, Map<String, String> outputVariablesEvaluated) {
+    switch (version) {
+      case HarnessYamlVersion.V1:
+        return io.harness.steps.http.v1.HttpOutcome.builder()
+            .url(fetchFinalValue(httpStepParameters.getUrl()))
+            .method(fetchFinalValue(httpStepParameters.getMethod()))
+            .response_code(httpStepResponse.getHttpResponseCode())
+            .response_body(httpStepResponse.getHttpResponseBody())
+            .status(httpStepResponse.getCommandExecutionStatus())
+            .error_msg(httpStepResponse.getErrorMessage())
+            .output_vars(outputVariablesEvaluated)
+            .build();
+      case HarnessYamlVersion.V0:
+        return HttpOutcome.builder()
+            .httpUrl(fetchFinalValue(httpStepParameters.getUrl()))
+            .httpMethod(fetchFinalValue(httpStepParameters.getMethod()))
+            .httpResponseCode(httpStepResponse.getHttpResponseCode())
+            .httpResponseBody(httpStepResponse.getHttpResponseBody())
+            .status(httpStepResponse.getCommandExecutionStatus())
+            .errorMsg(httpStepResponse.getErrorMessage())
+            .outputVariables(outputVariablesEvaluated)
+            .build();
+      default:
+        log.error("Version {} not supported", version);
+        throw new InvalidRequestException(String.format("Version %s not supported", version));
+    }
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -27,7 +28,8 @@ import io.harness.rule.Owner;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,10 +47,10 @@ public class LogStreamingStepClientImplTest extends CategoryTest {
   private static final String LOG_KEY = "BaseLogKey-commandUnit:logKeySuffix";
 
   private LogStreamingClient logStreamingClient = Mockito.mock(LogStreamingClient.class);
-  private ThreadPoolExecutor logStreamingClientExecutor = Mockito.mock(ThreadPoolExecutor.class);
+  private ScheduledExecutorService logStreamingDelayExecutor = Mockito.mock(ScheduledExecutorService.class);
   private LogStreamingSanitizer logStreamingSanitizer = Mockito.mock(LogStreamingSanitizer.class);
   private LogStreamingStepClientImpl logStreamingStepClient = spy(new LogStreamingStepClientImpl(
-      logStreamingClient, logStreamingSanitizer, TOKEN, ACCOUNT_ID, BASE_LOG_KEY, logStreamingClientExecutor));
+      logStreamingClient, logStreamingSanitizer, TOKEN, ACCOUNT_ID, BASE_LOG_KEY, 5L, logStreamingDelayExecutor));
   private static final LogLine LOG_LINE =
       new LogLine(LogLevel.INFO, "Message", Instant.ofEpochMilli(1L), 1, new HashMap<>(), false);
   @Before
@@ -80,7 +82,7 @@ public class LogStreamingStepClientImplTest extends CategoryTest {
   public void testCloseStream() throws Exception {
     logStreamingStepClient.closeStream(LOG_KEY_SUFFIX);
 
-    verify(logStreamingClientExecutor).submit(any(Runnable.class));
+    verify(logStreamingDelayExecutor).submit(any(Runnable.class));
 
     // Simulate execution of the submitted task
     Runnable submittedTask = getSubmittedTask();
@@ -125,11 +127,11 @@ public class LogStreamingStepClientImplTest extends CategoryTest {
   public void testCloseAllOpenStreamsWithPrefix() throws Exception {
     logStreamingStepClient.closeAllOpenStreamsWithPrefix(PREFIX);
 
-    verify(logStreamingClientExecutor).submit(any(Runnable.class));
+    verify(logStreamingDelayExecutor).schedule(any(Runnable.class), eq(5L), eq(TimeUnit.SECONDS));
 
     // Simulate execution of the submitted task
-    Runnable submittedTask = getSubmittedTask();
-    submittedTask.run();
+    Runnable scheduledTask = getScheduledTask();
+    scheduledTask.run();
 
     verify(logStreamingClient).closeLogStreamWithPrefix(TOKEN, ACCOUNT_ID, PREFIX, true, true);
     verifyNoMoreInteractions(logStreamingClient);
@@ -137,8 +139,15 @@ public class LogStreamingStepClientImplTest extends CategoryTest {
 
   private Runnable getSubmittedTask() {
     ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-    verify(logStreamingClientExecutor).submit(captor.capture());
-    verifyNoMoreInteractions(logStreamingClientExecutor);
+    verify(logStreamingDelayExecutor).submit(captor.capture());
+    verifyNoMoreInteractions(logStreamingDelayExecutor);
+    return captor.getValue();
+  }
+
+  private Runnable getScheduledTask() {
+    ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    verify(logStreamingDelayExecutor).schedule(captor.capture(), eq(5L), eq(TimeUnit.SECONDS));
+    verifyNoMoreInteractions(logStreamingDelayExecutor);
     return captor.getValue();
   }
 }

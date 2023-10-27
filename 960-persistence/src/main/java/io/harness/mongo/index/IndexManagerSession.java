@@ -608,6 +608,7 @@ public class IndexManagerSession {
         "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
         // telemetry
         "ciTelemetrySentStatus", "ciAccountExecutionMetadata", "pluginMetadataConfig", "pluginMetadataStatus",
+        "ciResourceCleanup",
         // cd-telemetry
         "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
 

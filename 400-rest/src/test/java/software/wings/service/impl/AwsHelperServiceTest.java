@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -57,6 +58,7 @@ import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.security.EncryptionService;
@@ -64,6 +66,7 @@ import software.wings.sm.states.ManagerExecutionLogCallback;
 
 import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
@@ -308,6 +311,44 @@ public class AwsHelperServiceTest extends WingsBaseTest {
 
     AWSTemporaryCredentials cred = service.getCredentialsForIAMROleOnDelegate(url, awsConfig);
     assertThat(cred).isEqualTo(credentials);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetCredentialsForIRSAonDelegateWithCrossArn() {
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .useEc2IamCredentials(false)
+                              .useIRSA(true)
+                              .assumeCrossAccountRole(true)
+                              .crossAccountAttributes(AwsCrossAccountAttributes.builder()
+                                                          .crossAccountRoleArn("crossAccountRoleArn")
+                                                          .externalId("externalId")
+                                                          .build())
+                              .accessKey("accessKey".toCharArray())
+                              .secretKey("secret".toCharArray())
+                              .build();
+
+    AwsHelperService service = new AwsHelperService();
+    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForIRSAonDelegate(awsConfig);
+    assertThat(awsCredentialsProvider).isNotNull().isInstanceOf(STSAssumeRoleSessionCredentialsProvider.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetCredentialsForIRSAonDelegate() {
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .useEc2IamCredentials(false)
+                              .useIRSA(true)
+                              .assumeCrossAccountRole(false)
+                              .accessKey("accessKey".toCharArray())
+                              .secretKey("secret".toCharArray())
+                              .build();
+
+    AwsHelperService service = new AwsHelperService();
+    AWSCredentialsProvider awsCredentialsProvider = service.getCredentialsForIRSAonDelegate(awsConfig);
+    assertThat(awsCredentialsProvider).isNotNull().isInstanceOf(WebIdentityTokenCredentialsProvider.class);
   }
 
   @Test

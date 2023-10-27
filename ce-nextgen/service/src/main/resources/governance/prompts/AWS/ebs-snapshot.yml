@@ -1,0 +1,3 @@
+filters: age, cross-account, event, finding, list-item, marked-for-op, ops-item, reduce, skip-ami-snapshots, tag-count, unused, value, volume
+actions: auto-tag-user, copy, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, normalize-tag, notify, post-finding, post-item, put-metric, remove-tag, rename-tag, set-permissions, tag, tag-trim, webhook
+customPrompt:

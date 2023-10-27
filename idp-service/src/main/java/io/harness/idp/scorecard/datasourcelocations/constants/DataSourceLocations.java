@@ -26,6 +26,17 @@ public class DataSourceLocations {
   public static final String GITHUB_MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "github_mean_time_to_complete_workflow_runs";
   public static final String GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS =
       "github_mean_time_to_complete_success_workflow_runs";
+  public static final String GITHUB_OPEN_DEPENDABOT_ALERTS = "github_open_dependabot_alerts";
+  public static final String GITHUB_OPEN_CODE_SCANNING_ALERTS = "github_open_code_scanning_alerts";
+  public static final String GITHUB_OPEN_SECRET_SCANNING_ALERTS = "github_open_secret_scanning_alerts";
+  public static final String GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT = "github_open_pull_requests_by_account";
+  public static final String HARNESS_STO_SCAN_SETUP_DSL = "harness_sto_scan_dsl";
+  public static final String HARNESS_POLICY_EVALUATION_DSL = "harness_policy_evaluation_dsl";
+  public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
+  public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
+  public static final String PAGERDUTY_INCIDENTS = "pagerduty_incidents";
+  public static final String PAGERDUTY_RESOLVED_INCIDENTS = "pagerduty_resolved_incidents";
+  public static final String PAGERDUTY_SERVICE_DIRECTORY = "pagerduty_service_directory";
 
   // Bitbucket
   public static final String BITBUCKET_MEAN_TIME_TO_MERGE_PR = "bitbucket_mean_time_to_merge_pr";

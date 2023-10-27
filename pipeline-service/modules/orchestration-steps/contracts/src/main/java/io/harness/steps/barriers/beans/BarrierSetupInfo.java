@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
+import java.util.Map;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,4 +31,8 @@ public class BarrierSetupInfo {
   String identifier;
   Set<StageDetail> stages;
   Set<String> strategySetupIds;
+  /* strategyConcurrencyMap is a map of strategySetupId -> number of iterations to be considered when generating
+     barrierPositions for BarrierSteps under the strategy. See BarrierWithinStrategyExpander class for details on
+     its usage. */
+  Map<String, Integer> strategyConcurrencyMap;
 }

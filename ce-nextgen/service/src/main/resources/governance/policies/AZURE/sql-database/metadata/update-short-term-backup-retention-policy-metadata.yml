@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: update-short-term-backup-retention-policy
+cloudProvider: AZURE
+resourceType: azure.sql-database
+description: Update any SQL Database short term retentions to at least 7 days
+rulesYamlPath: ../update-short-term-backup-retention-policy.yml

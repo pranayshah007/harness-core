@@ -11,7 +11,9 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/stackdriver"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
+	"io"
 	"net/http"
+	"time"
 )
 
 // HandleStackDriverWrite returns a http.HandlerFunc that writes log lines from payload to stackdriver.
@@ -33,7 +35,7 @@ func HandleStackDriverWrite(s *stackdriver.Stackdriver) http.HandlerFunc {
 			Type: "global",
 		}
 		for _, v := range in {
-			entry := logging.Entry{Payload: v.Payload, Resource: &globalResource, Severity: logging.Severity(v.Severity), Labels: v.Labels}
+			entry := logging.Entry{Payload: v.Payload, Resource: &globalResource, Severity: logging.Severity(v.Severity), Labels: v.Labels, Timestamp: time.UnixMilli(v.Timestamp)}
 			s.Write(logKey, entry)
 		}
 	}
@@ -51,5 +53,6 @@ func HandleStackdriverPing(stackdriver *stackdriver.Stackdriver) http.HandlerFun
 				Errorln("Failed to ping stackdriver")
 			return
 		}
+		io.WriteString(w, "true")
 	}
 }

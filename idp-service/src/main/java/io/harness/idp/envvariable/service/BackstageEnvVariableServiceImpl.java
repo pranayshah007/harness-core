@@ -22,6 +22,7 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.encryption.EncryptionUtils;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity;
@@ -57,6 +58,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
@@ -64,6 +67,12 @@ import org.apache.commons.math3.util.Pair;
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableService {
+  private static final String UNSUPPORTED_SECRET_MANAGER_MESSAGE =
+      "Invalid request: Decryption is supported only for secrets encrypted via harness managed secret managers";
+  private static final String SECRET_NOT_FOUND_PATTERN =
+      "Invalid request: Secret with identifier .* does not exist in this scope";
+  public static final Pattern ERROR_PATTERN =
+      Pattern.compile(UNSUPPORTED_SECRET_MANAGER_MESSAGE + "|" + SECRET_NOT_FOUND_PATTERN);
   private final BackstageEnvVariableRepository backstageEnvVariableRepository;
   private final K8sClient k8sClient;
   private final SecretManagerClientService ngSecretService;
@@ -112,6 +121,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return Optional.of(envVariableMapper.toDto(envVariableEntityOpt.get()));
   }
 
+  @Deprecated(forRemoval = true)
   @Override
   public BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
@@ -144,6 +154,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return responseEnvVariables;
   }
 
+  @Deprecated(forRemoval = true)
   @Override
   public BackstageEnvVariable update(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
@@ -216,6 +227,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return secretDTOs;
   }
 
+  @Deprecated(forRemoval = true)
   @Override
   public void delete(String identifier, String accountIdentifier) {
     Optional<BackstageEnvVariableEntity> envVariableEntityOpt =
@@ -323,44 +335,50 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
             .collect(Collectors.toMap(BackstageEnvVariableEntity::getEnvName, Function.identity()));
 
     for (BackstageEnvVariable envVariable : envVariables) {
-      String envName = envVariable.getEnvName();
       BackstageEnvVariableEntity entity = entitiesMap.get(envVariable.getEnvName());
-
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
-        BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
-        BackstageEnvSecretVariableEntity secretEntity = (BackstageEnvSecretVariableEntity) entity;
-        Pair<String, Long> decryptedValueAndLastModifiedAt = getDecryptedValueAndLastModifiedTime(
-            secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier);
-        String decryptedValue = decryptedValueAndLastModifiedAt.getFirst();
-        Long lastModifiedAt = decryptedValueAndLastModifiedAt.getSecond();
-
-        if (secretEntity == null // create scenario
-            || !secretEntity.getHarnessSecretIdentifier().equals(
-                secretEnvVariable.getHarnessSecretIdentifier()) // different secret scenario
-            || lastModifiedAt == 0 // old ng-manager scenario
-            || secretEntity.getSecretLastModifiedAt() < lastModifiedAt) { // secret update scenario
-          if (loadSecretsDynamically) {
-            log.info("Updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES for env {} for account {}",
-                envVariable.getEnvName(), accountIdentifier);
-            secretData.put(
-                LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
-          } else {
-            log.info("Adding/Updating secret env {} for account {}", envVariable.getEnvName(), accountIdentifier);
-            secretData.put(envName, decryptedValue.getBytes());
-          }
-        }
+        handleSecretEnv(accountIdentifier, entity, envVariable, secretData, loadSecretsDynamically);
       } else {
-        BackstageEnvConfigVariable configEnvVariable = (BackstageEnvConfigVariable) envVariable;
-        if (entity == null
-            || !((BackstageEnvConfigVariableEntity) entity).getValue().equals(configEnvVariable.getValue())) {
-          log.info("Adding/Updating config env {} for account {}", envVariable.getEnvName(), accountIdentifier);
-          secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
-        }
+        handleConfigEnv(accountIdentifier, entity, envVariable, secretData);
       }
     }
     String namespace = getNamespaceForAccount(accountIdentifier);
     k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData);
     log.info("Successfully updated secret {} in the namespace {}", BACKSTAGE_SECRET, namespace);
+  }
+
+  private void handleSecretEnv(String accountIdentifier, BackstageEnvVariableEntity entity,
+      BackstageEnvVariable envVariable, Map<String, byte[]> secretData, boolean loadSecretsDynamically) {
+    BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
+    Pair<String, Long> decryptedValueAndLastModifiedAt = getDecryptedValueAndLastModifiedTime(
+        secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier);
+    String decryptedValue = decryptedValueAndLastModifiedAt.getFirst();
+    Long lastModifiedAt = decryptedValueAndLastModifiedAt.getSecond();
+    BackstageEnvSecretVariableEntity secretEntity = (BackstageEnvSecretVariableEntity) entity;
+    if (secretEntity == null // create scenario
+        || !secretEntity.getHarnessSecretIdentifier().equals(
+            secretEnvVariable.getHarnessSecretIdentifier()) // different secret scenario
+        || lastModifiedAt == 0 // old ng-manager scenario
+        || secretEntity.getSecretLastModifiedAt() < lastModifiedAt) { // secret update scenario
+      if (loadSecretsDynamically) {
+        log.info("Updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES for env {} for account {}",
+            envVariable.getEnvName(), accountIdentifier);
+        secretData.put(LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
+      } else {
+        log.info("Adding/Updating secret env {} for account {}", envVariable.getEnvName(), accountIdentifier);
+        secretData.put(envVariable.getEnvName(), decryptedValue.getBytes());
+      }
+    }
+  }
+
+  private void handleConfigEnv(String accountIdentifier, BackstageEnvVariableEntity entity,
+      BackstageEnvVariable envVariable, Map<String, byte[]> secretData) {
+    BackstageEnvConfigVariable configEnvVariable = (BackstageEnvConfigVariable) envVariable;
+    if (entity == null
+        || !((BackstageEnvConfigVariableEntity) entity).getValue().equals(configEnvVariable.getValue())) {
+      log.info("Adding/Updating config env {} for account {}", envVariable.getEnvName(), accountIdentifier);
+      secretData.put(envVariable.getEnvName(), ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
+    }
   }
 
   @Override
@@ -410,9 +428,15 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       BackstageEnvSecretVariableEntity secretVariableEntity = ((BackstageEnvSecretVariableEntity) entity);
       ResolvedEnvVariable resolvedEnv = new ResolvedEnvVariable();
       resolvedEnv.setEnvName(secretVariableEntity.getEnvName());
-      resolvedEnv.setDecryptedValue(getDecryptedValueAndLastModifiedTime(
-          secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier)
-                                        .getFirst());
+      String decryptedValue = "";
+      try {
+        decryptedValue = getDecryptedValueAndLastModifiedTime(
+            secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier)
+                             .getFirst();
+      } catch (UnexpectedException ex) {
+        log.error("Skipping secret resolution as resolution failed with error", ex);
+      }
+      resolvedEnv.setDecryptedValue(decryptedValue);
       resolvedEnvVariables.add(resolvedEnv);
     }
     String json = gson.toJson(resolvedEnvVariables);
@@ -470,6 +494,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     int maxRetries = 3;
     int baseDelayMillis = 1000;
     int retryAttempts = 0;
+    String exceptionMessage = "";
 
     while (retryAttempts < maxRetries) {
       try {
@@ -490,7 +515,13 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         }
         return new Pair<>(decryptedValue.getDecryptedValue(), decryptedValue.getLastModifiedAt());
       } catch (Exception e) {
-        log.warn("Error while decrypting secret {} for account {}", secretIdentifier, accountIdentifier, e);
+        exceptionMessage = e.getMessage();
+        Matcher matcher = ERROR_PATTERN.matcher(exceptionMessage);
+        if (matcher.find()) {
+          break;
+        }
+        log.warn("Error while decrypting secret {} for account {}. Retry: {}, Error: {}", secretIdentifier,
+            accountIdentifier, retryAttempts + 1, e.getMessage());
 
         int delayMillis = (int) (baseDelayMillis * Math.pow(2, retryAttempts));
 
@@ -504,9 +535,8 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       }
     }
 
-    log.error("Failed to retrieve decrypted value after multiple retries for env {}, secret {}, account {}", envName,
-        secretIdentifier, accountIdentifier);
-    return new Pair<>("", 0L);
+    throw new UnexpectedException(String.format(
+        "%s. Env %s, Secret %s, Account %s", exceptionMessage, envName, secretIdentifier, accountIdentifier));
   }
 
   @Override

@@ -33,10 +33,10 @@ import software.wings.beans.yaml.GitFilesBetweenCommitsRequest;
 @TargetModule(HarnessModule._970_API_SERVICES_BEANS)
 @BreakDependencyOn("software.wings.beans.GitConfig")
 public interface GitClient {
-  void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext);
+  void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext, boolean hardResetForGitRef);
 
-  void cloneRepoAndCopyToDestDir(
-      GitOperationContext gitOperationContext, String destinationDir, LogCallback logCallback);
+  void cloneRepoAndCopyToDestDir(GitOperationContext gitOperationContext, String destinationDir,
+      LogCallback logCallback, boolean hardResetForGitRef);
 
   GitDiffResult diff(GitOperationContext gitOperationContext, boolean excludeFilesOutsideSetupFolder);
 

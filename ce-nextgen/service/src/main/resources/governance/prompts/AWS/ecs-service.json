@@ -1,0 +1,91 @@
+[
+  {
+    "serviceArn": "arn:aws:ecs:eu-central-1:AccountId:service/ClusterId/ServiceId",
+    "serviceName": "ServiceId",
+    "clusterArn": "arn:aws:ecs:eu-central-1:AccountId:cluster/ClusterId",
+    "loadBalancers": [],
+    "serviceRegistries": [],
+    "status": "ACTIVE",
+    "desiredCount": 0,
+    "runningCount": 0,
+    "pendingCount": 0,
+    "launchType": "FARGATE",
+    "platformVersion": "LATEST",
+    "platformFamily": "Linux",
+    "taskDefinition": "arn:aws:ecs:eu-central-1:AccountId:task-definition/TaskDefinitionId:1",
+    "deploymentConfiguration": {
+      "deploymentCircuitBreaker": {
+        "enable": false,
+        "rollback": false
+      },
+      "maximumPercent": 200,
+      "minimumHealthyPercent": 100
+    },
+    "deployments": [
+      {
+        "id": "Id",
+        "status": "PRIMARY",
+        "taskDefinition": "arn:aws:ecs:eu-central-1:AccountId:task-definition/TaskDefinitionId:1",
+        "desiredCount": 0,
+        "pendingCount": 0,
+        "runningCount": 0,
+        "failedTasks": 0,
+        "createdAt": "2022-08-10T20:42:30.931000+00:00",
+        "updatedAt": "2023-06-22T23:47:08.492000+00:00",
+        "launchType": "FARGATE",
+        "platformVersion": "1.4.0",
+        "platformFamily": "Linux",
+        "networkConfiguration": {
+          "awsvpcConfiguration": {
+            "subnets": [
+              "SubnetId1",
+              "SubnetId2"
+            ],
+            "securityGroups": [
+              "SecurityGroupId1"
+            ],
+            "assignPublicIp": "ENABLED"
+          }
+        },
+        "rolloutState": "COMPLETED",
+        "rolloutStateReason": "ECS deployment Id completed."
+      }
+    ],
+    "roleArn": "arn:aws:iam::AccountId:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+    "events": [
+      {
+        "id": "EventId1",
+        "createdAt": "2023-06-22T23:46:58.960000+00:00",
+        "message": "(service ServiceId) has stopped 1 running tasks: (task TaskId)."
+      },
+      {
+        "id": "EventId2",
+        "createdAt": "2023-06-13T14:19:18.040000+00:00",
+        "message": "(service ServiceId) has reached a steady state."
+      }
+    ],
+    "createdAt": "2022-08-10T20:42:30.931000+00:00",
+    "placementConstraints": [],
+    "placementStrategy": [],
+    "networkConfiguration": {
+      "awsvpcConfiguration": {
+        "subnets": [
+          "SubnetId1",
+          "SubnetId2"
+        ],
+        "securityGroups": [
+          "SecurityGroupId1"
+        ],
+        "assignPublicIp": "ENABLED"
+      }
+    },
+    "schedulingStrategy": "REPLICA",
+    "deploymentController": {
+      "type": "ECS"
+    },
+    "createdBy": "arn:aws:iam::AccountId:role/OktaRole_Admin",
+    "enableECSManagedTags": false,
+    "propagateTags": "NONE",
+    "enableExecuteCommand": false
+  }
+]

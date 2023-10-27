@@ -299,8 +299,11 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     parentInfo.putData(PlanCreatorConstants.STEP_GROUP_ID,
         HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, config)).build());
     if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      String strategyId = config.getUuid();
       parentInfo.putData(
-          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(config.getUuid()).build());
+          PlanCreatorConstants.NEAREST_STRATEGY_ID, HarnessValue.newBuilder().setStringValue(strategyId).build());
+      parentInfo.putData(PlanCreatorConstants.ALL_STRATEGY_IDS,
+          PlanCreatorUtilsCommon.appendToParentInfoList(PlanCreatorConstants.ALL_STRATEGY_IDS, strategyId, ctx));
       parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
           HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STEP_GROUP).build());
     }
