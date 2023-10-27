@@ -12,6 +12,7 @@ import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.mappers.DataPointMapper;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -97,5 +99,19 @@ public class DataPointServiceImpl implements DataPointService {
       dslDataPointsInfo.get(dataPoint.getDataSourceLocationIdentifier()).add(new Pair<>(dataPoint, inputValues));
     }
     return dslDataPointsInfo;
+  }
+
+  @Override
+  public DataPointEntity getDataPoint(
+      String accountIdentifier, String dataSourceIdentifier, String dataPointIdentifier) {
+    Optional<DataPointEntity> datapointOpt =
+        dataPointsRepository.findByAccountIdentifierInAndDataSourceIdentifierAndIdentifier(
+            addGlobalAccountIdentifierAlong(accountIdentifier), dataSourceIdentifier, dataPointIdentifier);
+    if (datapointOpt.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Data point configured is not found for identifier %s and datasource identifier %s",
+              dataSourceIdentifier, dataPointIdentifier));
+    }
+    return datapointOpt.get();
   }
 }
