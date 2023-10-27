@@ -360,6 +360,8 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
     slsaVerificationConfig:
       image: harness/slsa-plugin:latest
+    slsaVerificationGcrConfig:
+      image: harness/slsa-plugin:latest
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.4.2

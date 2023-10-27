@@ -244,6 +244,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
             .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
             .slsaVerificationConfig(StepImageConfig.builder().image("slsaVerification:0.0.1").build())
+            .slsaVerificationGcrConfig(StepImageConfig.builder().image("slsaVerificationGcr:0.0.1").build())
             .provenanceConfig(StepImageConfig.builder().image("provenance:0.0.1").build())
             .provenanceGcrConfig(StepImageConfig.builder().image("provenanceGcr:0.0.1").build())
             .vmImageConfig(vmImageConfig)

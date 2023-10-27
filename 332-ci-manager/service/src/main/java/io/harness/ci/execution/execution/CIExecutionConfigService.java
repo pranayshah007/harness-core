@@ -151,6 +151,9 @@ public class CIExecutionConfigService {
       case SLSA_VERIFICATION:
         executionConfig.setSlsaVerificationTag(value);
         break;
+      case SLSA_VERIFICATION_GCR:
+        executionConfig.setSlsaVerificationGcrTag(value);
+        break;
       case PROVENANCE_GCR:
         executionConfig.setProvenanceGcrTag(value);
         break;
@@ -399,6 +402,7 @@ public class CIExecutionConfigService {
         .provenanceTag(config.getProvenanceConfig().getImage())
         .provenanceGcrTag(config.getProvenanceGcrConfig().getImage())
         .slsaVerificationTag(config.getSlsaVerificationConfig().getImage())
+        .slsaVerificationGcrTag(config.getSlsaVerificationGcrConfig().getImage())
         .build();
   }
 
@@ -423,6 +427,7 @@ public class CIExecutionConfigService {
         .provenanceTag(config.getProvenanceTag())
         .provenanceGcrTag(config.getProvenanceGcrTag())
         .slsaVerificationTag(config.getSlsaVerificationTag())
+        .slsaVerificationGcrTag(config.getSlsaVerificationGcrTag())
         .build();
   }
 
@@ -491,6 +496,7 @@ public class CIExecutionConfigService {
       case PROVENANCE:
       case PROVENANCE_GCR:
       case SLSA_VERIFICATION:
+      case SLSA_VERIFICATION_GCR:
         return true;
       default:
         return false;
@@ -564,6 +570,9 @@ public class CIExecutionConfigService {
       case SLSA_VERIFICATION:
         return getApplicableImage(stepInfoType, accountLevelExecutionConfig.getSlsaVerificationTag(),
             globalExecutionConfig.getSlsaVerificationTag());
+      case SLSA_VERIFICATION_GCR:
+        return getApplicableImage(stepInfoType, accountLevelExecutionConfig.getSlsaVerificationGcrTag(),
+            globalExecutionConfig.getSlsaVerificationGcrTag());
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -621,6 +630,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getProvenanceGcrConfig();
       case SLSA_VERIFICATION:
         return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationConfig();
+      case SLSA_VERIFICATION_GCR:
+        return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationGcrConfig();
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
         return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();

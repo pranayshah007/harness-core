@@ -247,6 +247,10 @@ if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SLSA_VERIFICATION_GCR_IMAGE" ]]; then
+  export SLSA_VERIFICATION_GCR_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.slsaVerificationGcrConfig.image=env(SLSA_VERIFICATION_GCR_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_INTERNAL_ACCOUNTS" ]]; then
   IFS=',' read -ra INTERNAL_ACCOUNTS <<< "$HOSTED_VM_INTERNAL_ACCOUNTS"
   INDEX=0
