@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
+import io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfoThreadPoolConfiguration;
 import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -303,6 +304,8 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("serviceGitXThreadConfig") private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
   @JsonProperty("environmentGitXThreadConfig") private EnvironmentGitXThreadConfiguration environmentGitXThreadConfig;
   @JsonProperty("oidcConfigPath") private String oidcConfigPath;
+  @JsonProperty("deploymentStagePlanCreationInfoThreadConfig")
+  private DeploymentStagePlanCreationInfoThreadPoolConfiguration deploymentStagePlanCreationInfoThreadPoolConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

@@ -173,7 +173,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
   @Inject private DeploymentStagePlanCreationInfoService deploymentStagePlanCreationInfoService;
-  @Inject private ExecutorService executorService;
+  @Inject @Named("deployment-stage-plan-creation-info-executor") private ExecutorService executorService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
