@@ -20,8 +20,6 @@ data:
   {{- end }}
   LOG_SERVICE_S3_PATH_STYLE: "true"
   LOG_SERVICE_DISABLE_AUTH: "true"
-  # Disable redis integration with log-service CI-9000
-  {{- if false -}}
   # Protocol needs to be set to empty because ti-service uses go-redis library which doesn't accept protocol based strings
 {{/*  {{- $dbContext := deepCopy .Values.global.database.redis }}*/}}
 {{/*  {{- $_ := set $dbContext "protocol" "" }}*/}}
@@ -29,7 +27,6 @@ data:
   LOG_SERVICE_REDIS_SENTINEL_ADDRS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOG_SERVICE_REDIS_USE_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
   LOG_SERVICE_REDIS_ENDPOINT: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  {{- end -}}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}
