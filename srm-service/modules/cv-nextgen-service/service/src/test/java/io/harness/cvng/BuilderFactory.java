@@ -31,6 +31,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
+import io.harness.cvng.autodiscovery.beans.AutoDiscoveryRequestDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DeviationType;
@@ -1834,6 +1835,13 @@ public class BuilderFactory {
         .sensitivity(RuntimeParameter.builder().value("Medium").build())
         .baselineVerificationJobInstanceId(generateUuid())
         .duration(RuntimeParameter.builder().value("15m").build());
+  }
+
+  public AutoDiscoveryRequestDTO getAutoDiscoveryRequestDTO() {
+    return AutoDiscoveryRequestDTO.builder()
+        .agentIdentifier("agentIdentifier")
+        .autoCreateMonitoredService(true)
+        .build();
   }
 
   public static class BuilderFactoryBuilder {

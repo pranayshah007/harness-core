@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.refresh.helper;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 
@@ -153,9 +154,11 @@ public class CDInputsValidationHelper {
     }
 
     if (NGExpressionUtils.isRuntimeField(serviceRef)) {
-      if (serviceInputs.isObject()
-          || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
-        errorNodeSummary.setValid(false);
+      if (serviceInputs != null) {
+        if (serviceInputs.isObject()
+            || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {
+          errorNodeSummary.setValid(false);
+        }
       }
       return;
     }

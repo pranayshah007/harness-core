@@ -49,6 +49,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +70,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
   @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public static final int GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT = 10;
+  private static final String NOT_DIR_ERROR_MSG = "Not a directory";
 
   public GitFetchTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -112,7 +114,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
           String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
           // Values.yaml in service spec is optional.
-          if (ex.getCause() instanceof NoSuchFileException && gitFetchFilesConfig.isSucceedIfFileNotFound()) {
+          if (isFileNotFound(ex) && gitFetchFilesConfig.isSucceedIfFileNotFound()) {
             log.info("file not found. " + exceptionMsg, ex);
             executionLogCallback.saveExecutionLog(color(
                 format("No values.yaml found for manifest with identifier: %s.", gitFetchFilesConfig.getIdentifier()),
@@ -152,6 +154,19 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
       log.error("Exception in Git Fetch Files Task", exception);
       throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), exception);
     }
+  }
+
+  private boolean isFileNotFound(Exception ex) {
+    return isANoSuchFileException(ex) || isANotDirectoryException(ex);
+  }
+
+  private boolean isANoSuchFileException(Exception ex) {
+    return ex.getCause() instanceof NoSuchFileException;
+  }
+
+  private boolean isANotDirectoryException(Exception ex) {
+    return ex.getCause() instanceof FileSystemException && EmptyPredicate.isNotEmpty(ex.getCause().getMessage())
+        && ex.getCause().getMessage().contains(NOT_DIR_ERROR_MSG);
   }
 
   private FetchFilesResult fetchFilesFromRepo(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback,

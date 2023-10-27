@@ -10,6 +10,7 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
+import static io.harness.beans.FeatureName.CDS_TF_TG_HARD_RESET_GIT_REF;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.beans.SweepingOutputInstance.Scope;
@@ -2314,6 +2315,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
             .build();
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+    doReturn(true).when(featureFlagService).isEnabled(eq(CDS_TF_TG_HARD_RESET_GIT_REF), any());
     doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
     ExecutionResponse response = state.execute(executionContext);
 
@@ -2331,6 +2333,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(parameters.getVariables().size()).isEqualTo(3);
     assertThat(parameters.getEncryptedVariables().size()).isEqualTo(1);
     assertThat(parameters.isSkipRefreshBeforeApplyingPlan()).isTrue();
+    assertThat(parameters.isHardResetForGitRef()).isTrue();
   }
 
   @Test
@@ -2355,6 +2358,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
 
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
     doReturn("taskId").when(delegateService).queueTaskV2(any(DelegateTask.class));
+    doReturn(false).when(featureFlagService).isEnabled(eq(CDS_TF_TG_HARD_RESET_GIT_REF), any());
     ExecutionResponse response = state.execute(executionContext);
 
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -2371,6 +2375,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(parameters.getEncryptedBackendConfigs().size()).isEqualTo(1);
     assertThat(parameters.getEncryptedVariables()).isEmpty();
     assertThat(parameters.isSkipRefreshBeforeApplyingPlan()).isTrue();
+    assertThat(parameters.isHardResetForGitRef()).isFalse();
   }
 
   @Test

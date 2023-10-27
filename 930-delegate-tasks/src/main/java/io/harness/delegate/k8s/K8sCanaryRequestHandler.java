@@ -75,6 +75,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -161,6 +162,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
 
     // At this point we're sure that manifest has been applied successfully and canary workload is deployed
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     this.canaryWorkloadDeployed = true;
     this.saveReleaseHistory = true;
     k8sTaskHelperBase.saveRelease(k8sCanaryDeployRequest.isUseDeclarativeRollback(), false,
@@ -182,6 +184,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .kubernetesConfig(k8sCanaryHandlerConfig.getKubernetesConfig())
+                                              .startTime(manifestApplyTime)
                                               .build();
 
     K8sClient k8sClient =

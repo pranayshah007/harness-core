@@ -90,6 +90,10 @@ if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
   export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SERVICE_DISCOVERY_SERVICE_SECRET" ]]; then
+  export SERVICE_DISCOVERY_SERVICE_SECRET; yq -i '.serviceDiscoveryServiceSecret=env(SERVICE_DISCOVERY_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MANAGER_JWT_AUTH_SECRET" ]]; then
   export MANAGER_JWT_AUTH_SECRET; yq -i '.managerAuthConfig.jwtAuthSecret=env(MANAGER_JWT_AUTH_SECRET)' $CONFIG_FILE
 fi
@@ -336,6 +340,7 @@ replace_key_value errorTrackingClientConfig.errorTrackingServiceSecret "$ET_SERV
 replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
 replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 
+replace_key_value serviceDiscoveryServiceClientConfig.baseUrl "$SERVICE_DISCOVERY_SERVICE_BASE_URL"
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

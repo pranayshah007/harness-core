@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 @Schema(name = "GcpOidcTokenRequest", description = "This contains GCP OIDC Token request details")
 public class GcpOidcTokenRequestDTO {
+  @NotNull @NotEmpty @Schema(description = "This specifies the Harness Account Id") private String accountId;
   @NotNull @NotEmpty @Schema(description = "This specifies the Workload Pool Id") private String workloadPoolId;
   @NotNull @NotEmpty @Schema(description = "This specifies the OIDC ID Provider") private String providerId;
   @NotNull @NotEmpty @Schema(description = "This specifies the GCP Project Id") private String gcpProjectId;

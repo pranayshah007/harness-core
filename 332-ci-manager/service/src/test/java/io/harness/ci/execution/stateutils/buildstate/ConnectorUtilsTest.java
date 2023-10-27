@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.stateutils.buildstate;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.ALL_TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
@@ -444,6 +445,62 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     assertThat(taskSelectors)
         .isEqualTo(
             Arrays.asList(TaskSelector.newBuilder().setSelector("PipelineDelegate").setOrigin("Pipeline").build()));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testFetchCodebaseDelegateSelectorFromPipeline() {
+    List<TaskSelector> selectors = List.of(TaskSelector.newBuilder().setSelector("del1").setOrigin("pipeline").build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ALL_TASK_SELECTORS)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(TaskSelectorSweepingOutput.builder().taskSelectors(selectors).build())
+                        .build());
+
+    List<TaskSelector> taskSelectors =
+        connectorUtils.fetchCodebaseDelegateSelector(ambiance, null, executionSweepingOutputResolver);
+    assertThat(taskSelectors)
+        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("del1").setOrigin("pipeline").build()));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testFetchCodebaseDelegateSelectorFromConnector() throws IOException {
+    Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
+    ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(gitHubConnectorDto));
+
+    when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
+    when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ALL_TASK_SELECTORS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorId01);
+    connectorDetails.setDelegateSelectors(Set.of("del1"));
+    List<TaskSelector> taskSelectors =
+        connectorUtils.fetchCodebaseDelegateSelector(ambiance, connectorDetails, executionSweepingOutputResolver);
+    assertThat(taskSelectors)
+        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("del1").setOrigin("default").build()));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testFetchCodebaseDelegateSelectorNotFound() throws IOException {
+    Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
+    ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(gitHubConnectorDto));
+
+    when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
+    when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ALL_TASK_SELECTORS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorId01);
+    List<TaskSelector> taskSelectors =
+        connectorUtils.fetchCodebaseDelegateSelector(ambiance, connectorDetails, executionSweepingOutputResolver);
+    assertThat(taskSelectors).isEmpty();
   }
 
   @Test

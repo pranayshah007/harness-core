@@ -65,6 +65,13 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
 
   @Override
   public boolean removeInstance(Instance instance) {
+    if (Objects.isNull(instance.getPrimaryArtifact())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity().getImage())) {
+      log.info(
+          String.format("Instance skipped because of missing artifact identity, {InstanceId: %s}", instance.getId()));
+      return true;
+    }
     CdInstanceSummary cdInstanceSummary = getCdInstanceSummary(instance.getAccountIdentifier(),
         instance.getOrgIdentifier(), instance.getProjectIdentifier(),
         instance.getPrimaryArtifact().getArtifactIdentity().getImage(), instance.getEnvIdentifier());

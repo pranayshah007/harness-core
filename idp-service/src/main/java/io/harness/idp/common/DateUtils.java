@@ -32,6 +32,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class DateUtils {
+  public static final String ZONE_ID_IST = "Asia/Kolkata";
+
   public long parseTimestamp(String timestamp, String format) {
     try {
       SimpleDateFormat dateFormat = new SimpleDateFormat(format);
@@ -48,8 +50,8 @@ public class DateUtils {
     LocalDate today = LocalDate.now();
     LocalDateTime todayMidnight = LocalDateTime.of(today, midnight);
     LocalDateTime previousDayMidnight = todayMidnight.minusDays(1);
-    return Pair.of(previousDayMidnight.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-        todayMidnight.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    return Pair.of(previousDayMidnight.atZone(ZoneId.of(ZONE_ID_IST)).toInstant().toEpochMilli(),
+        todayMidnight.atZone(ZoneId.of(ZONE_ID_IST)).toInstant().toEpochMilli());
   }
 
   public static Pair<String, Date> yesterdayDateInStringAndDateFormat() {

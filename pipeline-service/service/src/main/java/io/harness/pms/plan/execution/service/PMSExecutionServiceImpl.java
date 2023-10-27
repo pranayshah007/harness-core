@@ -43,7 +43,6 @@ import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
@@ -55,7 +54,6 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
-import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
@@ -538,32 +536,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     throw new InvalidRequestException(
         "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
-  }
-
-  private String getLatestTemplate(
-      String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
-    EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();
-    // latestTemplate is templateYaml for the pipeline in the current branch with the latest changes
-    String latestTemplate;
-    if (entityGitDetails != null) {
-      // will come here if the pipeline was remote
-      GitSyncBranchContext gitSyncBranchContext = GitSyncBranchContext.builder()
-                                                      .gitBranchInfo(GitEntityInfo.builder()
-                                                                         .branch(entityGitDetails.getBranch())
-                                                                         .repoName(entityGitDetails.getRepoName())
-                                                                         .build())
-                                                      .build();
-      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-        latestTemplate = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId,
-            executionSummaryEntity.getPipelineIdentifier(), entityGitDetails.getBranch(),
-            entityGitDetails.getRepoIdentifier(), null);
-      }
-    } else {
-      // will come here if the pipeline was INLINE
-      latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
-    }
-    return latestTemplate;
   }
 
   @Override

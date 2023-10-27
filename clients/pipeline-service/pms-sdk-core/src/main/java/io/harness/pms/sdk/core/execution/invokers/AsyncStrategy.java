@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -93,28 +94,28 @@ public class AsyncStrategy implements ExecuteStrategy {
       Ambiance ambiance, ExecutionMode mode, StepParameters stepParameters, AsyncExecutableResponse response) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
-
+    ExecutableResponse executableResponse = ExecutableResponse.newBuilder().setAsync(response).build();
     if (isEmpty(response.getCallbackIdsList())) {
       log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
-      sdkNodeExecutionService.resumeNodeExecution(
-          ambiance, Collections.emptyMap(), false, ExecutableResponse.newBuilder().setAsync(response).build());
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false, executableResponse);
       return;
     }
 
     // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
     // this
     // Send Executable response only if there are callbacks Ids, to avoid race condition
-    sdkNodeExecutionService.addExecutableResponse(ambiance, ExecutableResponse.newBuilder().setAsync(response).build());
+    sdkNodeExecutionService.addExecutableResponse(ambiance, executableResponse);
 
-    queueCallbacks(ambiance, mode, response, stepParamString);
+    queueCallbacks(ambiance, mode, response, stepParamString, executableResponse);
   }
 
-  private void queueCallbacks(
-      Ambiance ambiance, ExecutionMode mode, AsyncExecutableResponse response, String stepParamString) {
+  private void queueCallbacks(Ambiance ambiance, ExecutionMode mode, AsyncExecutableResponse response,
+      String stepParamString, ExecutableResponse executableResponse) {
     byte[] parameterBytes =
         stepParamString == null ? new byte[] {} : ByteString.copyFromUtf8(stepParamString).toByteArray();
     byte[] ambianceBytes = ambiance.toByteArray();
+    byte[] executableResponseBytes = executableResponse.toByteArray();
     if (response.getCallbackIdsList().size() > 1) {
       for (String callbackId : response.getCallbackIdsList()) {
         // This is per callback Id callback
@@ -128,7 +129,11 @@ public class AsyncStrategy implements ExecuteStrategy {
       }
     }
     // This is overall callback will be called once all the responses are received
-    AsyncSdkResumeCallback callback = AsyncSdkResumeCallback.builder().ambianceBytes(ambianceBytes).build();
+    AsyncSdkResumeCallback callback = AsyncSdkResumeCallback.builder()
+                                          .ambianceBytes(ambianceBytes)
+                                          .executableResponseBytes(executableResponseBytes)
+                                          .resolvedStepParameters(parameterBytes)
+                                          .build();
     AsyncSdkProgressCallback progressCallback = AsyncSdkProgressCallback.builder()
                                                     .ambianceBytes(ambianceBytes)
                                                     .stepParameters(parameterBytes)

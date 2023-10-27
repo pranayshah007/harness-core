@@ -181,9 +181,9 @@ public class BuilderFactory {
         .sbom(ArtifactEntity.Sbom.builder().sbomVersion("3.0").toolVersion("2.0").tool("syft").build())
         .invalid(false)
         .lastUpdatedAt(Instant.now().toEpochMilli())
-        .componentsCount(35)
-        .nonProdEnvCount(1)
-        .prodEnvCount(2);
+        .componentsCount(35l)
+        .nonProdEnvCount(1l)
+        .prodEnvCount(2l);
   }
 
   public EnforcementSummaryEntityBuilder getEnforcementSummaryBuilder() {

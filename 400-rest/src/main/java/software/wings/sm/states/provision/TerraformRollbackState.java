@@ -10,6 +10,7 @@ package software.wings.sm.states.provision;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.beans.FeatureName.CDS_TF_TG_HARD_RESET_GIT_REF;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
@@ -289,7 +290,8 @@ public class TerraformRollbackState extends TerraformProvisionState {
             .useActivityIdBasedTfBaseDir(
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
             .syncGitCloneAndCopyToDestDir(
-                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()));
+                featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
+            .hardResetForGitRef(featureFlagService.isEnabled(CDS_TF_TG_HARD_RESET_GIT_REF, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       SettingAttribute settingAttribute = getAwsConfigSettingAttribute(configParameter.getAwsConfigId());

@@ -22,6 +22,7 @@ public class PlanCreatorConstants {
   public final String STEP_GROUP_FAILURE_STRATEGIES = "stepGroupFailureStrategies";
   public final String STAGE_ID = "stageId";
   public final String STEP_GROUP_ID = "stepGroupId";
-  public final String STRATEGY_ID = "strategyId";
+  public final String NEAREST_STRATEGY_ID = "nearestStrategyId";
+  public final String ALL_STRATEGY_IDS = "allStrategyIds";
   public final String STRATEGY_NODE_TYPE = "strategyNodeType";
 }

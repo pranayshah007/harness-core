@@ -129,6 +129,10 @@ public class VerificationConfiguration extends Configuration {
 
   private String policyManagerSecret;
 
+  private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
+
+  private String serviceDiscoveryServiceSecret;
+
   /**
    * Instantiates a new Main configuration.
    */

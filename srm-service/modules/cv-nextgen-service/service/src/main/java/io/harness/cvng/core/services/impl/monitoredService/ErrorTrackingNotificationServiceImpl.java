@@ -7,17 +7,26 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl.buildMonitoredServiceParams;
+import static io.harness.cvng.core.utils.FeatureFlagNames.CET_SAVED_SEARCH_NOTIFICATION;
+import static io.harness.cvng.core.utils.FeatureFlagNames.CET_SINGLE_NOTIFICATION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.NotificationRuleConditionType.CODE_ERRORS;
+import static io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EVENT_STATUS;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_EVENT_TRIGGER_LIST;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorHitSummaryTemplateData;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorTemplateData;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getConditionTemplateVariables;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 
+import io.harness.cvng.beans.errortracking.CriticalEventType;
+import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -26,11 +35,13 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ErrorTrackingNotificationService;
+import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
@@ -43,7 +54,9 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,6 +81,11 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
   public void handleNotification(MonitoredService monitoredService) {
     boolean errorTrackingNotificationsEnabled =
         featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), SRM_CODE_ERROR_NOTIFICATIONS);
+    boolean errorTrackingSavedSearchNotificationsEnabled =
+        featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), CET_SAVED_SEARCH_NOTIFICATION);
+    boolean errorTrackingSingleNotificationsEnabled =
+        featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), CET_SINGLE_NOTIFICATION);
+
     if (errorTrackingNotificationsEnabled) {
       ProjectParams projectParams = ProjectParams.builder()
                                         .accountIdentifier(monitoredService.getAccountId())
@@ -75,65 +93,94 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
                                         .projectIdentifier(monitoredService.getProjectIdentifier())
                                         .build();
 
-      List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
-                                              .stream()
-                                              .filter(NotificationRuleRef::isEnabled)
-                                              .map(NotificationRuleRef::getNotificationRuleRef)
-                                              .collect(Collectors.toList());
-
-      List<NotificationRule> notificationRules =
-          notificationRuleService.getEntities(projectParams, notificationRuleRefs);
       final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
           notificationRuleConditionTypeTemplateDataGeneratorMap.get(CODE_ERRORS);
 
       Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
-      for (NotificationRule notificationRule : notificationRules) {
-        List<MonitoredServiceNotificationRuleCondition> conditions =
-            ((MonitoredServiceNotificationRule) notificationRule).getConditions();
-        for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-          NotificationRuleTemplateDataGenerator.NotificationData notificationData;
-          if (CODE_ERRORS == condition.getType()) {
-            notificationData = getCodeErrorsNotificationData(monitoredService,
-                (MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition) condition, notificationRule);
-            if (notificationData.shouldSendNotification()) {
-              Map<String, Object> entityDetails = Map.of(ENTITY_NAME, monitoredService.getName(), ENTITY_IDENTIFIER,
-                  monitoredService.getIdentifier(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
-              NotificationRule.CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
+      for (NotificationRuleRef notificationRuleRef : monitoredService.getNotificationRuleRefs()) {
+        if (notificationRuleRef.isEnabled()) {
+          MonitoredServiceNotificationRule notificationRule =
+              (MonitoredServiceNotificationRule) notificationRuleService.getEntity(
+                  projectParams, notificationRuleRef.getNotificationRuleRef());
+          for (MonitoredServiceNotificationRuleCondition condition : notificationRule.getConditions()) {
+            if (CODE_ERRORS == condition.getType()) {
+              MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+              // if aggregated is null is for backwards compatibility when aggregated wasn't set
+              if (codeErrorCondition.getAggregated() == null || codeErrorCondition.getAggregated()) {
+                final Integer thresholdMinutes = codeErrorCondition.getVolumeThresholdMinutes();
+                // check and send the message if there are no threshold minutes
+                // OR check the eligibility against a defined threshold minutes
+                if (thresholdMinutes == null
+                    || notificationRuleRef.isEligible(clock.instant(), Duration.ofMinutes(thresholdMinutes))) {
+                  NotificationData notification = getAggregatedNotificationData(monitoredService, codeErrorCondition,
+                      notificationRule, errorTrackingSavedSearchNotificationsEnabled);
+                  sendNotification(notification, monitoredService, notificationRule,
+                      notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
+                      notificationRuleRefsWithChange);
 
-              Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(
-                  projectParams, entityDetails, condition, notificationData.getTemplateDataMap());
-              String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
-                  notificationRule.getType(), notificationChannel.getType());
-              try {
-                NotificationResult notificationResult =
-                    notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
-                        monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
-                        monitoredService.getProjectIdentifier(), templateId, templateData));
-                log.info(
-                    "Notification with Notification ID {}, Notification Rule {}, Condition {} for Monitored Service {} sent",
-                    notificationResult.getNotificationId(), notificationRule.getName(),
-                    condition.getType().getDisplayName(), monitoredService.getName());
-              } catch (Exception ex) {
-                log.error("Unable to send notification because of following exception", ex);
+                  // when we don't send notification, and we had an eligible threshold minutes
+                  if (!notification.shouldSendNotification() && thresholdMinutes != null) {
+                    // add it to the refs with change list which will update the lastSuccessfullNotificationTime, even
+                    // though we don't send the notification, we want to update this time to delay the next check to not
+                    // check again until the threshold duration has been met against the last time we checked.
+                    notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
+                  }
+                }
+              } else if (errorTrackingSingleNotificationsEnabled) {
+                List<NotificationData> notifications;
+                notifications = getStackTraceNotificationsData(monitoredService, notificationRule);
+                for (NotificationData notification : notifications) {
+                  sendNotification(notification, monitoredService, notificationRule,
+                      notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
+                      notificationRuleRefsWithChange);
+                }
               }
-              notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
             }
           }
+          updateNotificationRuleRefInMonitoredService(
+              projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
         }
-        updateNotificationRuleRefInMonitoredService(
-            projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
       }
     }
   }
 
-  private NotificationRuleTemplateDataGenerator.NotificationData getCodeErrorsNotificationData(
-      MonitoredService monitoredService,
-      MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition codeErrorCondition,
-      NotificationRule notificationRule) {
-    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
-    Map<String, String> templateDataMap = new HashMap<>();
+  private void sendNotification(NotificationData notification, MonitoredService monitoredService,
+      NotificationRule notificationRule, NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator,
+      ProjectParams projectParams, MonitoredServiceCodeErrorCondition codeErrorCondition,
+      Set<String> notificationRuleRefsWithChange) {
+    if (notification.shouldSendNotification()) {
+      Map<String, Object> entityDetails = Map.of(ENTITY_NAME, monitoredService.getName(), ENTITY_IDENTIFIER,
+          monitoredService.getIdentifier(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
 
+      NotificationRule.CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
+
+      Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(
+          projectParams, entityDetails, codeErrorCondition, notification.getTemplateDataMap());
+
+      String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
+          notificationRule.getType(), notificationChannel.getType());
+
+      try {
+        NotificationResult notificationResult =
+            notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
+                monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
+                monitoredService.getProjectIdentifier(), templateId, templateData));
+        log.info(
+            "Notification with Notification ID {}, Notification Rule {}, Condition {} for Monitored Service {} sent",
+            notificationResult.getNotificationId(), notificationRule.getName(), CODE_ERRORS.getDisplayName(),
+            monitoredService.getName());
+      } catch (Exception ex) {
+        log.error("Unable to send notification because of following exception", ex);
+      }
+      notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
+    }
+  }
+
+  private NotificationData getAggregatedNotificationData(MonitoredService monitoredService,
+      MonitoredServiceCodeErrorCondition codeErrorCondition, NotificationRule notificationRule,
+      boolean errorTrackingSavedSearchNotificationsEnabled) {
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
     final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
     boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
 
@@ -141,31 +188,89 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       String environmentId = environmentIdentifierList.get(0);
       ErrorTrackingNotificationData notificationData = null;
       try {
-        notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
-            monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
-            monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventStatus(),
-            codeErrorCondition.getErrorTrackingEventTypes(), notificationRule.getUuid());
+        if (codeErrorCondition.getSavedFilterId() == null) {
+          notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
+              monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+              monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventStatus(),
+              codeErrorCondition.getErrorTrackingEventTypes(), notificationRule.getUuid(),
+              codeErrorCondition.getVolumeThresholdCount());
+        } else if (errorTrackingSavedSearchNotificationsEnabled) {
+          notificationData = errorTrackingService.getNotificationSavedFilterData(monitoredService.getOrgIdentifier(),
+              monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+              monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getSavedFilterId(),
+              codeErrorCondition.getVolumeThresholdCount(), notificationRule.getUuid());
+        }
       } catch (Exception e) {
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
-      if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+      try {
+        if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+          final String baseLinkUrl =
+              ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
+                   CODE_ERRORS))
+                  .getBaseLinkUrl(monitoredService.getAccountId());
+          Map<String, String> templateDataMap = new HashMap<>();
+          templateDataMap.putAll(getCodeErrorTemplateData(codeErrorCondition, notificationData, baseLinkUrl));
+          templateDataMap.putAll(getConditionTemplateVariables(codeErrorCondition, notificationData));
+          templateDataMap.put(
+              NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+          templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
+          templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+
+          return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+        }
+      } catch (Exception e) {
+        log.error("Error building the template data map", e);
+      }
+    }
+    return NotificationData.builder().shouldSendNotification(false).build();
+  }
+
+  private List<NotificationData> getStackTraceNotificationsData(
+      MonitoredService monitoredService, NotificationRule notificationRule) {
+    List<NotificationData> notifications = new ArrayList<>();
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
+
+    final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
+    boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
+    if (oneEnvironmentId) {
+      String environmentId = environmentIdentifierList.get(0);
+      List<ErrorTrackingHitSummary> hitSummaries = null;
+      try {
+        hitSummaries = errorTrackingService.getNotificationNewData(monitoredService.getOrgIdentifier(),
+            monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+            monitoredService.getServiceIdentifier(), environmentId);
+
+      } catch (Exception e) {
+        log.error("Error connecting to the ErrorTracking Event Summary API.", e);
+      }
+      if (hitSummaries != null) {
         final String baseLinkUrl =
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  CODE_ERRORS))
                 .getBaseLinkUrl(monitoredService.getAccountId());
-        templateDataMap.putAll(
-            getCodeErrorTemplateData(codeErrorCondition.getErrorTrackingEventStatus(), notificationData, baseLinkUrl));
-        templateDataMap.put(
-            NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
-        templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
-        templateDataMap.put(ENVIRONMENT_NAME, environmentId);
-        return NotificationRuleTemplateDataGenerator.NotificationData.builder()
-            .shouldSendNotification(true)
-            .templateDataMap(templateDataMap)
-            .build();
+        for (ErrorTrackingHitSummary hitSummary : hitSummaries) {
+          Map<String, String> templateDataMap = new HashMap<>();
+          templateDataMap.putAll(
+              getCodeErrorHitSummaryTemplateData(hitSummary, monitoredService, environmentId, baseLinkUrl));
+          templateDataMap.put(
+              NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+          final String allEventTypes = Arrays.stream(CriticalEventType.values())
+                                           .filter(type -> type != CriticalEventType.ANY)
+                                           .map(CriticalEventType::getDisplayName)
+                                           .collect(Collectors.joining(", "));
+
+          templateDataMap.put(NOTIFICATION_EVENT_TRIGGER_LIST, allEventTypes);
+          templateDataMap.put(EVENT_STATUS, ErrorTrackingEventStatus.NEW_EVENTS.getDisplayName());
+          templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
+          templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+
+          notifications.add(
+              NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build());
+        }
       }
     }
-    return NotificationRuleTemplateDataGenerator.NotificationData.builder().shouldSendNotification(false).build();
+    return notifications;
   }
 
   private void updateNotificationRuleRefInMonitoredService(

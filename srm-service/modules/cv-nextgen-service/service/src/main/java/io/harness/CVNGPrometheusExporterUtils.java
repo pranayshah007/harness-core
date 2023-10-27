@@ -22,12 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class CVNGPrometheusExporterUtils {
-  private static final String NAMESPACE_VALUE = System.getenv("NAMESPACE");
-  private static final String CONTAINER_NAME_VALUE = System.getenv("CONTAINER_NAME");
   private static final String SERVICE_NAME_VALUE = "cv-nextgen";
 
-  private static final String NAMESPACE_LABEL = "namespace";
-  private static final String CONTAINER_NAME_LABEL = "containerName";
   private static final String SERVICE_NAME_LABEL = "serviceName";
 
   public final Map<String, String> contextLabels = new HashMap<>();
@@ -40,12 +36,6 @@ public class CVNGPrometheusExporterUtils {
   public static final String METRIC_PREFIX_IO_HARNESS_CVNG = "io.harness.cvng.";
 
   static {
-    if (StringUtils.isNotEmpty(NAMESPACE_VALUE)) {
-      contextLabels.put(NAMESPACE_LABEL, NAMESPACE_VALUE);
-    }
-    if (StringUtils.isNotEmpty(CONTAINER_NAME_VALUE)) {
-      contextLabels.put(CONTAINER_NAME_LABEL, CONTAINER_NAME_VALUE);
-    }
     if (StringUtils.isNotEmpty(SERVICE_NAME_VALUE)) {
       contextLabels.put(SERVICE_NAME_LABEL, SERVICE_NAME_VALUE);
     }
@@ -97,7 +87,7 @@ public class CVNGPrometheusExporterUtils {
       MapperConfig requestConfig = new MapperConfig();
       requestConfig.setMatch(MUTABLE_SERVLET_CONTEXT_HANDLER + "." + code + "-responses");
       // The new Sample's template name.
-      requestConfig.setName(METRIC_PREFIX_IO_HARNESS_CVNG + MUTABLE_SERVLET_CONTEXT_HANDLER + ".responses.total");
+      requestConfig.setName(METRIC_PREFIX_IO_HARNESS_CVNG + MUTABLE_SERVLET_CONTEXT_HANDLER + ".responses");
       Map<String, String> labels = new HashMap<>();
       addCommonLabels(labels);
       labels.put(STATUS_CODE_LABEL, code);

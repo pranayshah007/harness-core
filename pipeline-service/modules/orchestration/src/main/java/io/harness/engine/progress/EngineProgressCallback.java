@@ -56,8 +56,11 @@ public class EngineProgressCallback implements ProgressCallback {
               ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
               : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (data instanceof UnitProgressData) {
-        nodeExecutionService.updateV2(getNodeExecutionId(),
-            ops -> ops.set(NodeExecutionKeys.unitProgresses, ((UnitProgressData) data).getUnitProgresses()));
+        nodeExecutionService.updateV2(getNodeExecutionId(), ops -> {
+          ops.set(NodeExecutionKeys.unitProgresses, ((UnitProgressData) data).getUnitProgresses());
+          ops.set(NodeExecutionKeys.progressData + "." + NodeExecutionKeys.unitProgresses,
+              ((UnitProgressData) data).getUnitProgresses());
+        });
       }
       log.info("Node Execution updated for progress data");
     } catch (Exception ex) {

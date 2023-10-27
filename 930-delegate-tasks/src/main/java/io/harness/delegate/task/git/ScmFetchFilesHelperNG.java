@@ -216,7 +216,7 @@ public class ScmFetchFilesHelperNG {
         fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
 
     if (fileBatchContentResponse.getFileBatchContentResponse() == null) {
-      throwFailedToFetchFileException(useBranch, branch, commitId);
+      throwFailedToFetchNoConnectivityException(useBranch, branch, commitId);
     }
     List<GitFile> gitFiles = new ArrayList<>();
     List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList();
@@ -225,7 +225,10 @@ public class ScmFetchFilesHelperNG {
       if (fileContent.getStatus() == 0) {
         // when there is no response from the git provider
         // when this happens fileContent will be empty and error will be empty (all fields will have their zero values)
-        throwFailedToFetchFileException(useBranch, branch, commitId);
+        throwFailedToFetchNoConnectivityException(useBranch, branch, commitId);
+      }
+      if (fileContent.getStatus() >= 500) {
+        throwFailedToFetchFileException(useBranch, branch, commitId, fileContent.getStatus(), fileContent.getError());
       }
       if (fileContent.getStatus() == 200) {
         GitFile gitFile =
@@ -240,7 +243,7 @@ public class ScmFetchFilesHelperNG {
     return gitFiles;
   }
 
-  private void throwFailedToFetchFileException(boolean useBranch, String branch, String commitId) {
+  private void throwFailedToFetchNoConnectivityException(boolean useBranch, String branch, String commitId) {
     String failedToFetchErrorMessage = "Unable to fetch files" + (useBranch ? " for Branch: " : " for CommitId: ")
         + (useBranch ? branch : commitId) + " due to connectivity issue. Please try again after some time";
     log.info(failedToFetchErrorMessage);
@@ -313,6 +316,13 @@ public class ScmFetchFilesHelperNG {
                                      .append(useBranch ? branch : commitId)
                                      .toString(),
         USER, new NoSuchFileException(fileContent.getPath()));
+  }
+
+  private void throwFailedToFetchFileException(
+      boolean useBranch, String branch, String commitId, int status, String error) {
+    throw new GitClientException("Fetch files " + (useBranch ? " for Branch: " : " for CommitId: ")
+            + (useBranch ? branch : commitId) + " failed with error " + error + " and status code " + status,
+        USER);
   }
 
   private FileContentBatchResponse getFileContentBatchResponseByFolder(

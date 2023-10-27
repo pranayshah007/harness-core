@@ -9,6 +9,7 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLAD;
 
@@ -17,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -67,6 +70,8 @@ import software.wings.beans.AwsConfig;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
+import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import java.util.Collections;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -380,6 +385,49 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
             + "} else {\n"
             + " Invoke-WebRequest -Uri \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" -Headers $Headers -OutFile (New-Item -Path \"testdestination\\name\" -Force)\n"
             + "}");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_POWERSHELL_IRSA_Case() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder()
+                        .useEc2IamCredentials(false)
+                        .useIRSA(true)
+                        .assumeCrossAccountRole(true)
+                        .accessKey("accessKey".toCharArray())
+                        .secretKey("secret".toCharArray())
+                        .build());
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    BasicSessionCredentials awsSessionCredentials = new BasicSessionCredentials("accessKeyId", "secretKey", "token");
+
+    STSAssumeRoleSessionCredentialsProvider stsAssumeRoleSessionCredentialsProvider =
+        mock(STSAssumeRoleSessionCredentialsProvider.class);
+
+    doReturn(stsAssumeRoleSessionCredentialsProvider).when(awsHelperService).getCredentialsForIRSAonDelegate(any());
+    when(awsHelperService.getCredentialsForIRSAonDelegate(any())).thenReturn(stsAssumeRoleSessionCredentialsProvider);
+    doReturn(awsSessionCredentials).when(stsAssumeRoleSessionCredentialsProvider).getCredentials();
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO_IRSA_BASED();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.POWERSHELL);
+
+    assertThat(commandString).contains("     \"x-amz-security-token\" = \"token\"\n");
+  }
+
+  private AwsConnectorDTO getS3ConnectorInfoDTO_IRSA_BASED() {
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.IRSA).build();
+    return AwsConnectorDTO.builder().credential(awsCredentialDTO).executeOnDelegate(false).build();
   }
 
   @Test
