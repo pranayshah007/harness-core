@@ -934,6 +934,8 @@ public enum FeatureName {
   CDS_TF_TG_HARD_RESET_GIT_REF(
       "Do hard reset on repo after fetching terraform / terragrunt config files when commit ID or tag selected ",
       HarnessTeam.CDP),
+  CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE(
+      "Remove sdk resume event for async and async chain modes to avoid race condition", PIPELINE),
   CDS_K8S_TRAFFIC_ROUTING_NG(
       "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP);
 

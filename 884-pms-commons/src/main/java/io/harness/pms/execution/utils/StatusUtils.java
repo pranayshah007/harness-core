@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.execution.utils;
+
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_REJECTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
@@ -219,7 +220,8 @@ public class StatusUtils {
       case FREEZE_FAILED:
         return FINALIZABLE_STATUSES;
       case SUCCEEDED:
-        return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
+        return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED, WAIT_STEP_RUNNING, ASYNC_WAITING, APPROVAL_WAITING,
+            RESOURCE_WAITING, INPUT_WAITING);
       case IGNORE_FAILED:
         return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
       case QUEUED_LICENSE_LIMIT_REACHED: // Final Status and Running is not added to prevent any race condition
