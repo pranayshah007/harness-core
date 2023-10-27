@@ -18,7 +18,6 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwi
 
 import io.harness.network.Http;
 import io.harness.repositories.ArtifactRepository;
-import io.harness.repositories.CdInstanceSummaryRepo;
 import io.harness.repositories.EnforcementSummaryRepo;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
@@ -75,8 +74,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArtifactServiceImpl implements ArtifactService {
   @Inject ArtifactRepository artifactRepository;
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
+
+  @Inject EnforcementSummaryService enforcementSummaryService;
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
-  @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
   @Inject CdInstanceSummaryService cdInstanceSummaryService;
 
   private final String GCP_REGISTRY_HOST = "grc.io";
@@ -288,17 +288,28 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     return cdInstanceSummaryService
         .getCdInstanceSummaries(accountId, orgIdentifier, projectIdentifier, artifact, filterBody, pageable)
-        .map(entity
-            -> new ArtifactDeploymentViewResponse()
-                   .id(entity.getEnvIdentifier())
-                   .name(entity.getEnvName())
-                   .type(entity.getEnvType() == EnvType.Production ? TypeEnum.PROD : TypeEnum.NONPROD)
-                   .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
-                   .pipelineId(entity.getLastPipelineExecutionName())
-                   .pipelineExecutionId(entity.getLastPipelineExecutionId())
-                   .triggeredById(entity.getLastDeployedById())
-                   .triggeredBy(entity.getLastDeployedByName())
-                   .triggeredAt(entity.getLastDeployedAt().toString()));
+        .map(entity -> {
+          EnforcementSummaryEntity enforcementSummary =
+              enforcementSummaryService.getEnforcementSummaryByPipelineExecution(
+                  accountId, orgIdentifier, projectIdentifier, entity.getLastPipelineExecutionId());
+
+          ArtifactDeploymentViewResponse response = new ArtifactDeploymentViewResponse();
+          if (Objects.nonNull(enforcementSummary)) {
+            response.enforcementId(enforcementSummary.getEnforcementId())
+                .allowListPolicyViolation(Integer.toString(enforcementSummary.getAllowListViolationCount()))
+                .denyListPolicyViolation(Integer.toString(enforcementSummary.getDenyListViolationCount()));
+          }
+
+          return response.id(entity.getEnvIdentifier())
+              .name(entity.getEnvName())
+              .type(entity.getEnvType() == EnvType.Production ? TypeEnum.PROD : TypeEnum.NONPROD)
+              .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
+              .pipelineId(entity.getLastPipelineExecutionName())
+              .pipelineExecutionId(entity.getLastPipelineExecutionId())
+              .triggeredById(entity.getLastDeployedById())
+              .triggeredBy(entity.getLastDeployedByName())
+              .triggeredAt(entity.getLastDeployedAt().toString());
+        });
   }
 
   @Override

@@ -14,12 +14,14 @@ import io.harness.ssca.enforcement.constants.EnforcementStatus;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 import io.harness.ssca.transformers.EnforcementSummaryTransformer;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public class EnforcementSummaryServiceImpl implements EnforcementSummaryService {
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
@@ -58,6 +60,18 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
   public Optional<EnforcementSummaryEntity> getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId) {
     return enforcementSummaryRepo.findByEnforcementId(enforcementId);
+  }
+
+  @Override
+  public EnforcementSummaryEntity getEnforcementSummaryByPipelineExecution(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineExecutionId) {
+    Criteria criteria = Criteria.where(EnforcementSummaryEntityKeys.pipelineExecutionId)
+                            .is(pipelineExecutionId)
+                            .and(EnforcementSummaryEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(EnforcementSummaryEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
+    return enforcementSummaryRepo.findOne(accountId, criteria);
   }
 
   @Override

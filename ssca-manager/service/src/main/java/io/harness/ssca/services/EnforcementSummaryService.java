@@ -22,5 +22,8 @@ public interface EnforcementSummaryService {
   Optional<EnforcementSummaryEntity> getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
 
+  EnforcementSummaryEntity getEnforcementSummaryByPipelineExecution(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineExecutionId);
+
   void create(EnforcementSummaryDTO enforcementSummaryDTO);
 }
