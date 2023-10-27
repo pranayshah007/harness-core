@@ -105,6 +105,7 @@ test_sources:
 import_run_configurations:
   project/run-configurations/AccessControlMicroservice.xml
   project/run-configurations/AuditEventStreamingApp.xml
+  project/run-configurations/CVNGApp.xml
   project/run-configurations/DataGenApp.xml
   project/run-configurations/DelegateApp.xml
   project/run-configurations/DelegateAgentApp.xml
