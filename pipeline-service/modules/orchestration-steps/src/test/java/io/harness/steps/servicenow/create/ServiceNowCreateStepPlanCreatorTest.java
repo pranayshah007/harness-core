@@ -19,6 +19,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -28,6 +29,7 @@ import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -49,7 +51,23 @@ public class ServiceNowCreateStepPlanCreatorTest extends OrchestrationStepsTestB
   public void testGetFieldClass() {
     assertEquals(serviceNowCreateStepPlanCreator.getFieldClass(), ServiceNowCreateStepNode.class);
   }
+  @Test
+  @Owner(developers = OwnerRule.VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testCreatePlanForField() {
+    PlanCreationContext ctx = Mockito.mock(PlanCreationContext.class);
+    ServiceNowCreateStepNode stepElement = Mockito.mock(ServiceNowCreateStepNode.class);
+    Mockito.when(stepElement.getServiceNowCreateStepInfo())
+        .thenReturn(getServiceNowCreateStepInfo(
+            ParameterField.createValueField(true), ParameterField.createValueField("templateName")));
+    Mockito.doThrow(new InvalidRequestException("Invalid request message"))
+        .when(serviceNowCreateStepPlanCreator)
+        .validateServiceNowTemplate(Mockito.any());
 
+    assertThatThrownBy(() -> serviceNowCreateStepPlanCreator.createPlanForField(ctx, stepElement))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid request message"); // Replace with the actual expected message
+  }
   @Test
   @Owner(developers = OwnerRule.NAMANG)
   @Category(UnitTests.class)

@@ -13,12 +13,15 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.VINIT_KUMAR;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -106,6 +109,7 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private PlanExecutionService planExecutionService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private HarnessApprovalInstance harnessApprovalInstance;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   private static final String planExecutionId = "planExecutionId";
   private static final ApprovalStatus approvalStatus = ApprovalStatus.WAITING;
@@ -1087,5 +1091,24 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, APPROVAL_KEY, ambiance1, CREATED_AT);
     assertThat(approvalIds).isNotNull();
     assertThat(approvalIds.size()).isEqualTo(0);
+  }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testFetchLastApprovalActivityWithEmptyList() {
+    harnessApprovalInstance = mock(HarnessApprovalInstance.class);
+    when(harnessApprovalInstance.fetchLastApprovalActivity()).thenReturn(Optional.empty());
+    Optional<HarnessApprovalActivity> result = harnessApprovalInstance.fetchLastApprovalActivity();
+    assertEquals(Optional.empty(), result);
+  }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testFetchLastApprovalActivityWithNonEmptyList() {
+    HarnessApprovalActivity mockApprovalActivity = mock(HarnessApprovalActivity.class);
+    when(harnessApprovalInstance.fetchLastApprovalActivity()).thenReturn(Optional.of(mockApprovalActivity));
+    Optional<HarnessApprovalActivity> result = harnessApprovalInstance.fetchLastApprovalActivity();
+    assertTrue(result.isPresent());
+    assertEquals(mockApprovalActivity, result.get());
   }
 }
