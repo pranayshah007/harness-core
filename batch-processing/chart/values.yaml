@@ -142,9 +142,10 @@ nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  create: false
-  annotations: {}
-  name: "harness-default"
+  create: true
+  annotations:
+    iam.gke.io/gcp-service-account: secops-9521@ccm-play.iam.gserviceaccount.com
+  name: "ccm-default"
 
 podAnnotations: {}
 
