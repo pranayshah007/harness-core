@@ -25,6 +25,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
@@ -67,13 +68,14 @@ public class K8sApiEventWatcher {
       String namespace, K8sEventWatchDTO k8sNamespaceEventWatchDTO, LogCallback executionLogCallback) {
     ApiClient apiClient = k8sNamespaceEventWatchDTO.getApiClient();
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+    AppsV1Api appsV1Api = new AppsV1Api(apiClient);
     String eventInfoFormat = k8sNamespaceEventWatchDTO.getEventInfoFormat();
     String eventErrorFormat = k8sNamespaceEventWatchDTO.getEventErrorFormat();
 
     try {
       String resourceVersion = null;
-      K8sEventFilter k8sEventFilter = new K8sEventFilter(
-          k8sNamespaceEventWatchDTO.getResourceIds(), coreV1Api, namespace, k8sNamespaceEventWatchDTO.getReleaseName());
+      K8sEventFilter k8sEventFilter = new K8sEventFilter(k8sNamespaceEventWatchDTO.getResourceIds(), coreV1Api,
+          appsV1Api, namespace, k8sNamespaceEventWatchDTO.getReleaseName());
       while (!Thread.currentThread().isInterrupted()) {
         if (resourceVersion == null) {
           CoreV1EventList coreV1EventList =
