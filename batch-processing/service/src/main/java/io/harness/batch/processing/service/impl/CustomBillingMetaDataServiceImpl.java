@@ -107,7 +107,7 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
     return pipelineJobStatusCache.get(cacheKey);
   }
 
-  private Boolean getPipelineJobStatus(String accountId, Instant startTime, Instant endTime) {
+  Boolean getPipelineJobStatus(String accountId, Instant startTime, Instant endTime) {
     String awsDataSetId = getAwsDataSetId(accountId);
     // For 4 days before date always return true; If CUR data is not present it will use public api
     Instant bufferTime = Instant.now().minus(4, ChronoUnit.DAYS);

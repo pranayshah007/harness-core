@@ -7,9 +7,13 @@
 
 package io.harness.batch.processing.service.impl;
 
+import static io.harness.rule.OwnerRule.ABHINAV3;
 import static io.harness.rule.OwnerRule.HITESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -40,6 +44,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -117,5 +122,26 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
     settingAttribute.setValue(settingValue);
     settingAttribute.setCategory(SettingAttribute.SettingCategory.CE_CONNECTOR);
     return settingAttribute;
+  }
+
+  @Test
+  @Owner(developers = ABHINAV3)
+  public void testGetPipelineJobStatus_CurBillingEnabled_DataSetIdNotNull_InTimeRange_DataPresent() {
+    Instant startTime = Instant.now().minus(2, ChronoUnit.DAYS);
+    Instant endTime = Instant.now();
+
+    Mockito.when(mainConfig.isAwsCurBilling()).thenReturn(true);
+    Mockito.when(billingDataService.isAWSClusterDataPresent(anyString(), any())).thenReturn(true);
+    Mockito.when(bigQueryHelperService.getAwsBillingData(any(), any(), anyString(), anyString()))
+        .thenReturn(someNotEmptyMap());
+    Boolean result = customBillingMetaDataService.getPipelineJobStatus("RandomAccount", startTime, endTime);
+
+    assertTrue(result);
+  }
+
+  private Map<String, VMInstanceBillingData> someNotEmptyMap() {
+    // Create some non-empty Map
+    Map<String, VMInstanceBillingData> map = new HashMap<>();
+    return map;
   }
 }
