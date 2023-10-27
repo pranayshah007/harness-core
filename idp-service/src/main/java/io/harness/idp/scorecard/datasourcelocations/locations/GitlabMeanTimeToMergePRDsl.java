@@ -13,7 +13,7 @@ import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERRORS;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.Inputs.BRANCH_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PROJECT_PATH;
@@ -104,7 +104,7 @@ public class GitlabMeanTimeToMergePRDsl implements DataSourceLocation {
   @Override
   public String replaceInputValuePlaceholdersIfAny(
       String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
-    if (dataPoint.getIdentifier().equals(IS_FILE_EXISTS)) {
+    if (dataPoint.getIdentifier().equals(PULL_REQUEST_MEAN_TIME_TO_MERGE)) {
       Optional<InputValue> inputValueOpt =
           inputValues.stream().filter(inputValue -> inputValue.getKey().equals(BRANCH_NAME)).findFirst();
       if (inputValueOpt.isPresent()) {
