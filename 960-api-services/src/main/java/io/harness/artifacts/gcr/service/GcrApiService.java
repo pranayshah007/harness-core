@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.gcr.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -25,14 +26,14 @@ import java.util.List;
 @OwnedBy(CDC)
 public interface GcrApiService {
   int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
+
   /**
    * Gets builds.
    *
-   * @param gcpConfig         the gcp cloud provider config
-   * @param maxNumberOfBuilds the max number of builds
+   * @param gcpConfig the gcp cloud provider config
    * @return the builds
    */
-  List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName);
 
   /**
    * Validates the Image

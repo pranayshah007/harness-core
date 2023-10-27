@@ -68,7 +68,7 @@ public class GcrBuildServiceImpl implements GcrBuildService {
               .getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(artifactStreamAttributes.getRegistryHostName(),
                              gcpHelperService.getBasicAuthHeader(
                                  gcpConfig.getServiceAccountKeyFileContent(), gcpConfig.isUseDelegateSelectors())),
-                  artifactStreamAttributes.getImageName(), 50)
+                  artifactStreamAttributes.getImageName())
               .stream()
               .map(ArtifactConfigMapper::toBuildDetails)
               .collect(Collectors.toList()),

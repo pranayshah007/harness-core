@@ -155,28 +155,28 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldGetBuilds() {
-    List<BuildDetailsInternal> actual = gcrService.getBuilds(gcpInternalConfig, SOME_IMAGE, 100);
+    List<BuildDetailsInternal> actual = gcrService.getBuilds(gcpInternalConfig, SOME_IMAGE);
     assertThat(actual).hasSize(3);
     assertThat(actual.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
         .isEqualTo(Lists.newArrayList(LATEST, "v1", "v2"));
 
-    gcrService.getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader), SOME_IMAGE, 100);
+    gcrService.getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader), SOME_IMAGE);
   }
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void shouldGetBuildFailure() {
-    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "noImage", 100))
+    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "noImage"))
         .isInstanceOf(HintException.class)
         .hasMessage("Invalid request: Image name [noImage] does not exist in Google Container Registry.");
 
-    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "invalidProject", 100))
+    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "invalidProject"))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
         .isEqualTo(
             "Failed to retrieve [invalidProject] from Google Container Registry. [UNKNOWN][Project 'project:project-name' not found or deleted.]");
 
-    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "teapot", 100))
+    assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "teapot"))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
         .isEqualTo("Failed to retrieve [teapot] from Google Container Registry. I'm a teapot");
   }

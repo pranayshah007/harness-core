@@ -6,18 +6,15 @@
  */
 
 package io.harness.delegate.task.artifacts.gcr;
+
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiService;
-import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
@@ -43,7 +40,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
-@OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -62,11 +58,9 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
       log.error("Could not get basic auth header", e);
       throw new InvalidRequestException("Could not get basic auth header - " + e.getMessage(), USER);
     }
-    builds = gcrService.getBuilds(
-        gcrInternalConfig, attributesRequest.getImagePath(), GcrApiService.MAX_NO_OF_TAGS_PER_IMAGE);
+    builds = gcrService.getBuilds(gcrInternalConfig, attributesRequest.getImagePath());
     List<GcrArtifactDelegateResponse> gcrArtifactDelegateResponseList =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
             .map(build -> GcrRequestResponseMapper.toGcrResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(gcrArtifactDelegateResponseList);
@@ -76,7 +70,6 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     GcrInternalConfig gcrInternalConfig;
-    ArtifactMetaInfo artifactMetaInfo;
     try {
       gcrInternalConfig = getGcrInternalConfig(attributesRequest);
     } catch (IOException e) {
@@ -157,8 +150,5 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
       secretDecryptionService.decrypt(
           gcrRequest.getGcpConnectorDTO().getCredential().getConfig(), gcrRequest.getEncryptedDataDetails());
     }
-  }
-  boolean isRegex(GcrArtifactDelegateRequest artifactDelegateRequest) {
-    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getTagRegex());
   }
 }

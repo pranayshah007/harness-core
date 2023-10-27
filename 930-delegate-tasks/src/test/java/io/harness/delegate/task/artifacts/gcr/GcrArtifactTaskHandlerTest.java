@@ -173,7 +173,7 @@ public class GcrArtifactTaskHandlerTest extends CategoryTest {
 
     garInternalConfig =
         GcrInternalConfig.builder().basicAuthHeader("Bearer Auth").registryHostname("registryHostname").build();
-    doReturn(ls).when(gcrApiService).getBuilds(garInternalConfig, IMAGE_PATH, 10000);
+    doReturn(ls).when(gcrApiService).getBuilds(garInternalConfig, IMAGE_PATH);
 
     doReturn(googleCredential).when(gcpHelperService).getGoogleCredential(serviceAccountKeyFileContent, false);
 

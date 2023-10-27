@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.gcr.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -22,7 +23,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
@@ -114,7 +114,7 @@ public class GcrApiServiceImpl implements GcrApiService {
   }
 
   @Override
-  public List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds) {
+  public List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName) {
     try {
       Response<GcrImageTagResponse> response = listImageTag(gcpConfig, imageName);
       checkValidImage(imageName, response);
@@ -174,13 +174,24 @@ public class GcrApiServiceImpl implements GcrApiService {
 
   private List<BuildDetailsInternal> processBuildResponse(
       String gcrUrl, String imageName, GcrImageTagResponse dockerImageTagResponse) {
+    if (dockerImageTagResponse != null && EmptyPredicate.isNotEmpty(dockerImageTagResponse.getManifest())) {
+      // https://harness.atlassian.net/browse/CDS-82100
+      return dockerImageTagResponse.getManifest()
+          .values()
+          .stream()
+          .sorted((manifest1, manifest2)
+                      -> Long.compare(Long.parseLong(String.valueOf(manifest2.getTimeUploadedMs())),
+                          Long.parseLong(String.valueOf(manifest1.getTimeUploadedMs()))))
+          .flatMap(manifest -> manifest.getTag().stream())
+          .map(tag -> getBuildDetailsInternal(gcrUrl, imageName, tag))
+          .collect(toList());
+    }
     if (dockerImageTagResponse != null && dockerImageTagResponse.getTags() != null) {
-      List<BuildDetailsInternal> buildDetails = dockerImageTagResponse.getTags()
-                                                    .stream()
-                                                    .map(tag -> getBuildDetailsInternal(gcrUrl, imageName, tag))
-                                                    .collect(toList());
-      // Sorting at build tag for docker artifacts.
-      return buildDetails.stream().sorted(new BuildDetailsInternalComparatorAscending()).collect(toList());
+      return dockerImageTagResponse.getTags()
+          .stream()
+          .map(tag -> getBuildDetailsInternal(gcrUrl, imageName, tag))
+          .sorted(new BuildDetailsInternalComparatorAscending())
+          .collect(toList());
     }
     return emptyList();
   }
@@ -239,11 +250,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       GcrInternalConfig gcrInternalConfig, String imageName, String tagRegex) {
-    List<BuildDetailsInternal> builds = getBuilds(gcrInternalConfig, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-    builds = builds.stream()
-                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
-                 .sorted(new BuildDetailsInternalComparatorDescending())
-                 .collect(toList());
+    List<BuildDetailsInternal> builds = getBuilds(gcrInternalConfig, imageName);
+    builds = builds.stream().filter(build -> new RegexFunctor().match(tagRegex, build.getNumber())).collect(toList());
     if (builds.isEmpty()) {
       throw new InvalidArtifactServerException(
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);

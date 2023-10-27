@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.gcr;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -23,13 +24,13 @@ public class GcrImageTagResponse {
   private List<String> child;
   private String name;
   private List<String> tags;
-  private Map manifest;
+  private Map<String, GoogleManifest> manifest;
 
-  public Map getManifest() {
+  public Map<String, GoogleManifest> getManifest() {
     return manifest;
   }
 
-  public void setManifest(Map manifest) {
+  public void setManifest(Map<String, GoogleManifest> manifest) {
     this.manifest = manifest;
   }
 
