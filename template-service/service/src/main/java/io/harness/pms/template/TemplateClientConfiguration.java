@@ -22,6 +22,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TemplateClientConfiguration {
-  @JsonProperty("messageBroker") TemplateClientBackendConfiguration templateClientBackendConfiguration;
-  @JsonProperty("httpClient") private ServiceHttpClientConfig serviceHttpClientConfig;
+  @JsonProperty("mongo") TemplateClientBackendConfiguration templateClientBackendConfiguration;
 }

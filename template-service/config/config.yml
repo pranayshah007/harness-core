@@ -42,9 +42,9 @@ mongo:
   traceMode: DISABLED
 
 templateClient:
-  messageBroker:
+  mongo:
     type: MONGODB
-    uri: mongodb://localhost:27017/pms-harness
+    uri: mongodb://localhost:27017/template-harness
     connectTimeout: 30000
     serverSelectionTimeout: 90000
     socketTimeout: 360000
@@ -54,11 +54,6 @@ templateClient:
     transactionsEnabled: false
     aliasDBName: pms-harness
     traceMode: DISABLED
-  httpClient:
-    baseUrl: http://localhost:15001/api/
-    connectTimeOutSeconds: 15
-    readTimeOutSeconds: 15
-
 
 gitSdkConfiguration:
   gitSdkGrpcServerConfig:

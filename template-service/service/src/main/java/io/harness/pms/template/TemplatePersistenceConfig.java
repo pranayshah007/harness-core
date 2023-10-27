@@ -41,8 +41,6 @@ import org.springframework.guice.annotation.GuiceModule;
 
 @Configuration
 @GuiceModule
-@EnableMongoRepositories(basePackages = {"io.harness.repositories"},
-    includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "template-mongodb")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration {
   private final MongoBackendConfiguration mongoBackendConfiguration;
