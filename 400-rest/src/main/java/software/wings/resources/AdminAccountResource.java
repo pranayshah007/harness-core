@@ -8,11 +8,9 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static java.util.stream.Collectors.toList;
-
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,19 +34,16 @@ import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.rest.RestResponse;
 import io.harness.persistence.UuidAware;
-
 import software.wings.beans.Account;
 import software.wings.beans.CeLicenseUpdateInfo;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.LicenseUpdateInfo;
 import software.wings.security.annotations.AdminPortalAuth;
 import software.wings.service.intfc.DelegateService;
-
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -200,7 +195,6 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.getLimitsConfiguredForAccount(accountId));
   }
 
-
   @GET
   @Path("get-recent-updates-account")
   public RestResponse<List<AccountSummary>> getRecentAccountUpdates() {
@@ -211,7 +205,6 @@ public class AdminAccountResource {
             .collect(toList());
     return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountsIds));
   }
-
 
   @PUT
   @Path("{accountId}/limits/static-limit")
