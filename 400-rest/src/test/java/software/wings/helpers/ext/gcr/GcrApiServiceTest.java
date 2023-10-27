@@ -39,6 +39,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.service.mappers.artifact.GcrConfigToInternalMapper;
+import software.wings.utils.JsonUtils;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -64,8 +65,10 @@ public class GcrApiServiceTest extends WingsBaseTest {
   GcrApiServiceImpl gcrService;
   private static final String SHA = "sha256:1123234243";
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule(
-      WireMockConfiguration.wireMockConfig().usingFilesUnderDirectory("400-rest/src/test/resources").port(0));
+  public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
+                                                          .usingFilesUnderDirectory("400-rest/src/test/resources")
+                                                          .disableRequestJournal()
+                                                          .port(0));
   private String url;
   String basicAuthHeader = "auth";
   GcrInternalConfig gcpInternalConfig;
@@ -74,6 +77,7 @@ public class GcrApiServiceTest extends WingsBaseTest {
   private static final Map<String, String> label = Map.of("a", "b", "c", "d");
   private static final String LATEST = "latest";
   private static final String SOME_IMAGE = "someImage";
+  private static final String IMAGE_MANIFEST_FIELD = "image-with-manifest";
 
   @Before
   public void setUp() {
@@ -84,7 +88,10 @@ public class GcrApiServiceTest extends WingsBaseTest {
                              .withHeader("Authorization", equalTo("auth"))
                              .willReturn(aResponse().withStatus(200).withBody(
                                  "{\"name\":\"someImage\",\"tags\":[\"v1\",\"v2\",\"latest\"]}")));
-
+    wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/image-with-manifest/tags/list"))
+                             .withHeader("Authorization", equalTo("auth"))
+                             .willReturn(aResponse().withStatus(200).withBody(
+                                 JsonUtils.readResourceFile("__files/gcr/body-docker-tags-api.json"))));
     wireMockRule.stubFor(
         WireMock.get(WireMock.urlEqualTo("/v2/someImage/manifests/latest"))
             .withHeader("Authorization", equalTo("auth"))
@@ -161,6 +168,17 @@ public class GcrApiServiceTest extends WingsBaseTest {
         .isEqualTo(Lists.newArrayList(LATEST, "v1", "v2"));
 
     gcrService.getBuilds(GcrConfigToInternalMapper.toGcpInternalConfig(url, basicAuthHeader), SOME_IMAGE);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void shouldGetBuildsWithManifestField() {
+    List<BuildDetailsInternal> actual = gcrService.getBuilds(gcpInternalConfig, IMAGE_MANIFEST_FIELD);
+    assertThat(actual).hasSize(223);
+    List<String> tags = actual.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList());
+    assertThat(tags.get(0)).isEqualTo("VZWYzNIbdXx");
+    assertThat(tags.get(222)).isEqualTo("V1");
   }
 
   @Test

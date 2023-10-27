@@ -6,6 +6,7 @@
  */
 
 package software.wings.utils;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -27,6 +28,14 @@ public class JsonUtils {
     objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
     objectMapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  }
+
+  public static String readResourceFile(String filPath) {
+    try (InputStream stream = JsonUtils.class.getClassLoader().getResourceAsStream(filPath)) {
+      return new String(stream.readAllBytes());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   public static <T> T readResourceFile(String filPath, Class<T> tClass) {
