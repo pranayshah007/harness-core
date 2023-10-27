@@ -22,18 +22,23 @@ import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.*;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 public class AuthInfoServiceImplTest {
@@ -41,6 +46,10 @@ public class AuthInfoServiceImplTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
   @Mock private ConfigManagerService configManagerService;
   @Mock private NamespaceService namespaceService;
+
+  @Mock private TransactionTemplate transactionTemplate;
+
+  @Mock private OutboxService outboxService;
   AutoCloseable openMocks;
   private static final String ACCOUNT_ID = "123";
   private static final String GOOGLE_AUTH = "google-auth";
@@ -87,15 +96,30 @@ public class AuthInfoServiceImplTest {
     when(backstageEnvVariableService.createOrUpdate(buildGoogleAuthEnvVariables(), ACCOUNT_ID))
         .thenReturn(buildGoogleAuthEnvVariables());
     MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(ConfigManagerUtils.getAuthConfig(any())).thenReturn("");
     when(ConfigManagerUtils.asJsonNode(any())).thenReturn(rootNode);
     when(ConfigManagerUtils.getAuthConfigSchema(any())).thenReturn("");
     when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(true);
     when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    // case for create event - when no previous env variable was present.
+    when(backstageEnvVariableService.findByEnvNamesAndAccountIdentifier(any(), any()))
+        .thenReturn(Collections.emptyList());
     List<BackstageEnvVariable> backstageEnvVariables =
         authInfoServiceImpl.saveAuthEnvVariables(GOOGLE_AUTH, buildGoogleAuthEnvVariables(), ACCOUNT_ID);
     assertEquals(backstageEnvVariables.size(), 2);
     verify(configManagerService, times(1)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
+
+    // case for update event - when env variables are present
+    when(backstageEnvVariableService.findByEnvNamesAndAccountIdentifier(any(), any()))
+        .thenReturn(Collections.singletonList(new BackstageEnvVariable()));
+    backstageEnvVariables =
+        authInfoServiceImpl.saveAuthEnvVariables(GOOGLE_AUTH, buildGoogleAuthEnvVariables(), ACCOUNT_ID);
+    assertEquals(backstageEnvVariables.size(), 2);
+    verify(configManagerService, times(2)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
     mockStatic.close();
   }
 
@@ -111,6 +135,10 @@ public class AuthInfoServiceImplTest {
     doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
     when(backstageEnvVariableService.createOrUpdate(buildGithubAuthEnvVariables(), ACCOUNT_ID))
         .thenReturn(buildGithubAuthEnvVariables());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     MockedStatic<ConfigManagerUtils> mockStatic = Mockito.mockStatic(ConfigManagerUtils.class);
     when(ConfigManagerUtils.getAuthConfig(any())).thenReturn("");
     when(ConfigManagerUtils.asJsonNode(any())).thenReturn(rootNode);
@@ -119,10 +147,21 @@ public class AuthInfoServiceImplTest {
     when(ConfigManagerUtils.getNodeByName(any(), any())).thenReturn(developmentNode);
     when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
     when(configManagerService.mergeAndSaveAppConfig(any())).thenReturn(MergedAppConfigEntity.builder().build());
+    // case for create event - when no previous env variable was present.
+    when(backstageEnvVariableService.findByEnvNamesAndAccountIdentifier(any(), any()))
+        .thenReturn(Collections.emptyList());
     List<BackstageEnvVariable> backstageEnvVariables =
         authInfoServiceImpl.saveAuthEnvVariables(GITHUB_AUTH, buildGithubAuthEnvVariables(), ACCOUNT_ID);
     assertEquals(backstageEnvVariables.size(), 3);
     verify(configManagerService, times(1)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
+
+    // case for update event - when env variables are present
+    when(backstageEnvVariableService.findByEnvNamesAndAccountIdentifier(any(), any()))
+        .thenReturn(Collections.singletonList(new BackstageEnvVariable()));
+    backstageEnvVariables =
+        authInfoServiceImpl.saveAuthEnvVariables(GITHUB_AUTH, buildGithubAuthEnvVariables(), ACCOUNT_ID);
+    assertEquals(backstageEnvVariables.size(), 3);
+    verify(configManagerService, times(2)).saveUpdateAndMergeConfigForAccount(any(), any(), any());
     mockStatic.close();
   }
 
