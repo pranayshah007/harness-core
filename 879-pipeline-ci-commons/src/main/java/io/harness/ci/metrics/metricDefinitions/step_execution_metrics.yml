@@ -1,0 +1,6 @@
+name: CI Manager Step status Metrics
+identifier: CIManagerStepMetrics
+metricGroup: CIManagerStepMetricsGroup
+metrics:
+  - metricName: step_execution_active_count
+    metricDefinition: CIManagerStepMetrics step completed
