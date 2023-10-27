@@ -127,7 +127,7 @@ public class ErrorTrackingNotificationRuleUtils {
       }
 
       String slackVersionList =
-          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\\\n"));
+          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
 
       final String emailVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toEmailString).collect(Collectors.joining());
@@ -164,6 +164,7 @@ public class ErrorTrackingNotificationRuleUtils {
           if (savedFilter != null) {
             eventStatus = savedFilter.getStatuses()
                               .stream()
+                              .filter(status -> status != EventStatus.ANY_EVENTS)
                               .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
                               .collect(Collectors.toList());
           }
@@ -352,8 +353,8 @@ public class ErrorTrackingNotificationRuleUtils {
     private String arcScreenUrl;
 
     public String toSlackString() {
-      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\\\n");
-      slack.append("```").append(stackTrace.replace(",", "\\\n")).append("```");
+      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
+      slack.append("```").append(stackTrace.replace(",", "\n")).append("```");
       return slack.toString();
     }
 
@@ -362,7 +363,7 @@ public class ErrorTrackingNotificationRuleUtils {
       email.append("<span>" + EVENT_VERSION_LABEL + "<span style=\"font-weight: bold;\">" + version + "</span></span>");
       email.append("<div style =\"margin-top: 4px; background-color: #383946; border-radius: 3px;\">");
       email.append("<p style=\"color:white; padding: 15px; padding-top: 18px; padding-bottom:18px;\">");
-      email.append(stackTrace.replace(",", "</br>"));
+      email.append(stackTrace.replace(",", "<br/>"));
       email.append("</p>").append("</div>").append("</div>");
       return email.toString();
     }
@@ -393,8 +394,7 @@ public class ErrorTrackingNotificationRuleUtils {
         changeEventStatusString = errorTrackingNotificationData.getFilter()
                                       .getStatuses()
                                       .stream()
-                                      .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
-                                      .map(ErrorTrackingEventStatus::getDisplayName)
+                                      .map(EventStatus::getDisplayName)
                                       .collect(Collectors.joining(", "));
 
         changeEventTypeString = errorTrackingNotificationData.getFilter()
