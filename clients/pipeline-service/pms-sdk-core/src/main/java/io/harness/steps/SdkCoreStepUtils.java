@@ -66,7 +66,14 @@ public class SdkCoreStepUtils {
             return -1;
           }
           // Sorting in the descending order of endTs.
-          return Math.toIntExact(b.getNodeExecutionEndTs() - a.getNodeExecutionEndTs());
+          long nodeExecutionTimeDiff = b.getNodeExecutionEndTs() - a.getNodeExecutionEndTs();
+          if (nodeExecutionTimeDiff > 0) {
+            return 1;
+          } else if (nodeExecutionTimeDiff < 0) {
+            return -1;
+          } else {
+            return 0;
+          }
         })
         .collect(Collectors.toList());
   }
