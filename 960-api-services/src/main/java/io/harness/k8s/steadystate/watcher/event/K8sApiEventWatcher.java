@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.steadystate.K8sSteadyStateConstants.RESOURCE_VERSION_PATTERN;
 import static io.harness.k8s.steadystate.K8sSteadyStateConstants.WATCH_CALL_TIMEOUT_SECONDS;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -30,10 +28,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +45,7 @@ import okhttp3.Call;
 @OwnedBy(CDP)
 public class K8sApiEventWatcher {
   @Inject @Named("k8sSteadyStateExecutor") private ExecutorService k8sSteadyStateExecutor;
+  @Inject private K8sApiEventMatcher k8sApiEventMatcher;
 
   public Future<?> watchForEvents(
       String namespace, K8sEventWatchDTO k8sEventWatchDTO, LogCallback executionLogCallback) {
@@ -81,21 +80,16 @@ public class K8sApiEventWatcher {
               coreV1Api.listNamespacedEvent(namespace, null, null, null, null, null, null, null, null, null, false);
           resourceVersion = coreV1EventList.getMetadata() != null ? coreV1EventList.getMetadata().getResourceVersion()
                                                                   : resourceVersion;
+          logInitialEvents(k8sEventFilter, k8sNamespaceEventWatchDTO.getStartTime(), executionLogCallback,
+              eventInfoFormat, eventErrorFormat, coreV1EventList);
         }
         try (Watch<CoreV1Event> watch = createWatchCall(apiClient, coreV1Api, namespace, resourceVersion)) {
           for (Watch.Response<CoreV1Event> eventListResponse : watch) {
             CoreV1Event event = eventListResponse.object;
-            V1ObjectReference ref = event.getInvolvedObject();
-
             if (!k8sEventFilter.test(event)) {
               continue;
             }
-            if ("WARNING".equalsIgnoreCase(event.getType())) {
-              executionLogCallback.saveExecutionLog(format(eventErrorFormat, "Event", event.getMessage()));
-            } else {
-              executionLogCallback.saveExecutionLog(
-                  format(eventInfoFormat, "Event", ref.getName(), event.getMessage()));
-            }
+            k8sApiEventMatcher.logEvents(event, executionLogCallback, eventInfoFormat, eventErrorFormat);
           }
         } catch (ApiException ex) {
           if (ex.getCode() == 504 || ex.getCode() == 410) {
@@ -122,6 +116,16 @@ public class K8sApiEventWatcher {
         executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
       }
     }
+  }
+
+  private void logInitialEvents(K8sEventFilter k8sEventFilter, OffsetDateTime startTime,
+      LogCallback executionLogCallback, String eventInfoFormat, String eventErrorFormat,
+      CoreV1EventList coreV1EventList) {
+    coreV1EventList.getItems()
+        .stream()
+        .filter(k8sEventFilter)
+        .filter(event -> k8sApiEventMatcher.isEventEmittedPostDeployment(event, startTime))
+        .forEach(event -> k8sApiEventMatcher.logEvents(event, executionLogCallback, eventInfoFormat, eventErrorFormat));
   }
 
   private Watch<CoreV1Event> createWatchCall(
