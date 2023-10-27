@@ -33,7 +33,6 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.CreatedDate;
@@ -45,7 +44,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder
-@ToString
 @FieldNameConstants(innerTypeName = "DeploymentStagePlanCreationInfoKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NG_MANAGER)
