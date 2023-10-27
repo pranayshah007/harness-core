@@ -1410,13 +1410,28 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(kryoSerializer.asObject((byte[]) any())).thenReturn(PollingDocument.newBuilder().build());
     Call<ResponseDTO<PollingResponseDTO>> call1 = mock(Call.class);
     when(pollingResourceClient.subscribe(any())).thenReturn(call1);
-    when(call1.execute()).thenReturn(Response.success(ResponseDTO.newResponse(PollingResponseDTO.builder().build())));
+    when(call1.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(PollingResponseDTO.builder().isExistingPollingDoc(false).build())));
     ngTriggerServiceImpl.subscribePolling(ngTriggerEntity, true);
     verify(ngTriggerRepository, times(3)).updateValidationStatusAndMetadata(any(), any());
 
     doThrow(new InvalidRequestException("message")).when(call).execute();
     assertThatThrownBy(() -> ngTriggerServiceImpl.subscribePolling(ngTriggerEntity, true))
         .isInstanceOf(InvalidRequestException.class);
+
+    ngTriggerEntity.setType(NGTriggerType.ARTIFACT);
+    when(kryoSerializer.asObject((byte[]) any())).thenReturn(PollingDocument.newBuilder().build());
+    Call<ResponseDTO<PollingResponseDTO>> call2 = mock(Call.class);
+    when(pollingResourceClient.subscribe(any())).thenReturn(call2);
+    when(call2.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(PollingResponseDTO.builder()
+                                                                 .isExistingPollingDoc(true)
+                                                                 .lastPolled(Collections.singletonList("1"))
+                                                                 .build())));
+    when(ngTriggerRepository.updateValidationStatus(any(), any())).thenReturn(ngTriggerEntity);
+    ngTriggerServiceImpl.subscribePolling(ngTriggerEntity, false);
+    verify(ngTriggerRepository, times(5)).updateValidationStatusAndMetadata(any(), any());
   }
 
   @Test
