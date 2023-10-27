@@ -17,6 +17,7 @@ import io.harness.annotations.dev.ProductModule;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
-public interface DeploymentStageTypeConstants {
-  String SINGLE_SERVICE_ENVIRONMENT = "SingleServiceEnvironment";
+public class DeploymentStageTypeConstants {
+  private DeploymentStageTypeConstants() {}
+  public static final String SINGLE_SERVICE_ENVIRONMENT = "SingleServiceEnvironment";
 }

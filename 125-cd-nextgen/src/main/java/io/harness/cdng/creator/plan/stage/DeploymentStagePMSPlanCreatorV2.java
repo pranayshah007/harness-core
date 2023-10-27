@@ -173,7 +173,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
   @Inject private DeploymentStagePlanCreationInfoService deploymentStagePlanCreationInfoService;
-  @Inject ExecutorService executorService;
+  @Inject private ExecutorService executorService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -869,11 +869,12 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return StrategyUtils.getSwappedPlanNodeId(ctx, uuid);
   }
 
-  protected void saveSingleServiceEnvDeploymentStagePlanCreationSummary(PlanCreationResponse planCreationResponse,
-      @NotNull PlanCreationContext ctx, @NotNull DeploymentStageNode stageNode) {
+  protected void saveSingleServiceEnvDeploymentStagePlanCreationSummary(
+      PlanCreationResponse servicePlanCreationResponse, @NotNull PlanCreationContext ctx,
+      @NotNull DeploymentStageNode stageNode) {
     // TODO: get names of ser/env/infra if possible
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (isNull(planCreationResponse) || isNull(planCreationResponse.getPlanNode()) || isNull(stageConfig)) {
+    if (isNull(servicePlanCreationResponse) || isNull(servicePlanCreationResponse.getPlanNode())) {
       log.warn(
           "Plan node or stage config corresponding to service not found while saving deployment info at plan creation, returning");
       return;
@@ -884,7 +885,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       return;
     }
 
-    StepParameters stepParameters = planCreationResponse.getPlanNode().getStepParameters();
+    StepParameters stepParameters = servicePlanCreationResponse.getPlanNode().getStepParameters();
     if (isNull(stepParameters) || !(stepParameters instanceof ServiceStepV3Parameters)) {
       log.warn(
           "Step params for service node not of type ServiceStepV3Parameters while saving deployment info at plan creation, returning");
