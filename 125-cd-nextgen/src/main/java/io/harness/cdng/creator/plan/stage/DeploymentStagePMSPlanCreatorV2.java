@@ -878,10 +878,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           "Plan node or stage config corresponding to service not found while saving deployment info at plan creation, returning");
       return;
     }
-    // TODO: to confirm whether we need to check for multi service and (or) env propagation that seems to be not allowed
-    // in io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.validateMultiServiceInfra
-    if (stageConfig.getServices() != null || stageConfig.getEnvironments() != null
-        || stageConfig.getEnvironmentGroup() != null) {
+    if (MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageConfig)) {
       // since multi-service / env configured, info will be saved while adding multi dependency
       log.debug("Multi service and(or) environment deployment stage encountered, skipping saving info");
       return;
