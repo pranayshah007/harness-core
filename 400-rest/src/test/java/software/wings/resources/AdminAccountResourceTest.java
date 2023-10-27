@@ -104,7 +104,7 @@ public class AdminAccountResourceTest extends CategoryTest {
     AccountSummary accountSummary = mock(AccountSummary.class);
     List<AccountSummary> updatedAccountSummaries = Arrays.asList(accountSummary);
     when(adminAccountService.getUpdatedAccounts(anyLong())).thenReturn(updatedAccounts);
-    when(adminAccountService.getAccountSummariesByAccounts(any())).thenReturn(updatedAccountSummaries);
+    when(adminAccountService.getAccountSummariesByAccountIds(any())).thenReturn(updatedAccountSummaries);
     when(adminLicenseHttpClient.createAccountLicense(any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
     when(adminLicenseHttpClient.updateModuleLicense(any(), any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
     when(adminLicenseHttpClient.deleteModuleLicense(any(), any())).thenReturn(adminLicenseDeleteCall);
@@ -201,6 +201,6 @@ public class AdminAccountResourceTest extends CategoryTest {
             .request()
             .get(new GenericType<RestResponse<List<AccountSummary>>>() {});
     verify(adminAccountService).getUpdatedAccounts(anyLong());
-    verify(adminAccountService).getAccountSummariesByAccounts(any());
+    verify(adminAccountService).getAccountSummariesByAccountIds(any());
   }
 }

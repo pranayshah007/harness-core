@@ -240,7 +240,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
-  public List<AccountSummary> getAccountSummariesByAccounts(List<String> accountIds) {
+  public List<AccountSummary> getAccountSummariesByAccountIds(List<String> accountIds) {
     List<AccountSummary> accountSummaries = new ArrayList<>();
     for (String accountId : accountIds) {
       accountSummaries.add(getAccountSummaryByAccountId(accountId));

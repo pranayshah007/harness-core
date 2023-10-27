@@ -104,6 +104,7 @@ public class AdminAccountResource {
   public RestResponse<AccountSummary> getAccountSummaryByAccountId(@PathParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(adminAccountService.getAccountSummaryByAccountId(accountId));
   }
+
   @GET
   @Path("{accountId}/license")
   public RestResponse<LicenseInfo> getLicenseInfoForAccount(@PathParam("accountId") @NotEmpty String accountId) {
@@ -203,7 +204,7 @@ public class AdminAccountResource {
     List<String> updatedAccountsIds = adminAccountService.getUpdatedAccounts(thirtySecondsAgo).stream()
             .map(UuidAware::getUuid)
             .collect(toList());
-    return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountsIds));
+    return new RestResponse<>(adminAccountService.getAccountSummariesByAccountIds(updatedAccountsIds));
   }
 
   @PUT

@@ -82,5 +82,5 @@ public interface AdminAccountService {
 
   List<Account> getUpdatedAccounts(long timestamp);
 
-  List<AccountSummary> getAccountSummariesByAccounts(List<String> accountIds);
+  List<AccountSummary> getAccountSummariesByAccountIds(List<String> accountIds);
 }
