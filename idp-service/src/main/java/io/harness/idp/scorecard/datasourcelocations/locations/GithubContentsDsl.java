@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
@@ -51,8 +52,8 @@ public class GithubContentsDsl implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity,
       List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
-      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs)
-      throws NoSuchAlgorithmException, KeyManagementException {
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
+      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     apiRequestDetails.setUrl(replaceUrlsPlaceholdersIfAny(apiRequestDetails.getUrl(), possibleReplaceableUrlPairs));
