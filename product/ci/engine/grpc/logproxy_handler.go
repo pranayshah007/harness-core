@@ -145,13 +145,15 @@ func (h *logProxyHandler) Upload(stream pb.LogProxy_UploadServer) error {
 		}
 	}
 
+	h.log.Infow("Start to upload to the log service", key, zap.Error(err))
+
 	if key == "" {
 		return errors.New("no key received from client for UploadRPC")
 	}
 
 	err = lc.Upload(stream.Context(), key, data)
 	if err != nil {
-		h.log.Errorw("could not upload logs using uploadRPC", zap.Error(err))
+		h.log.Errorw("could not upload logs using uploadRPC", key, zap.Error(err))
 		return err
 	}
 	err = stream.SendAndClose(&pb.UploadResponse{})
@@ -159,6 +161,7 @@ func (h *logProxyHandler) Upload(stream pb.LogProxy_UploadServer) error {
 		h.log.Errorw("could not close upload protobuf stream", zap.Error(err))
 		return err
 	}
+	h.log.Infow("Finished uploading to the log service", key, zap.Error(err))
 	return nil
 }
 
