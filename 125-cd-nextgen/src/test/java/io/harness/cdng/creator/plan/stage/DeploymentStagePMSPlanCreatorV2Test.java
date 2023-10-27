@@ -60,9 +60,10 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
+import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -248,10 +249,10 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
-                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
                                               ExecutionPrincipalInfo.newBuilder()
                                                   .setPrincipal("prinicipal")
-                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .setPrincipalType(PrincipalType.USER)
                                                   .build()))
                                           .build()))
                                   .build();
@@ -278,7 +279,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
-                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
                                               ExecutionPrincipalInfo.newBuilder()
                                                   .setPrincipal("prinicipal")
                                                   .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)

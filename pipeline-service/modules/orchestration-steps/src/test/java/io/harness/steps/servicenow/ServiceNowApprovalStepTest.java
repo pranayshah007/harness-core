@@ -219,7 +219,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   public void testAbort() {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
-    serviceNowApprovalStep.handleAbort(ambiance, parameters, null);
+    serviceNowApprovalStep.handleAbort(ambiance, parameters, null, false);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }

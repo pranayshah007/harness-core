@@ -22,6 +22,13 @@ java_binary(
         "@maven//:ch_qos_logback_logback_access",
         "@maven//:ch_qos_logback_logback_classic",
         "@maven//:ch_qos_logback_logback_core",
+        "@maven//:io_opencensus_opencensus_api",
+        "@maven//:io_opencensus_opencensus_contrib_http_util",
+        "@maven//:io_opencensus_opencensus_exporter_stats_prometheus",
+        "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
+        "@maven//:io_opencensus_opencensus_impl",
+        "@maven//:io_opentelemetry_opentelemetry_api",
+        "@maven//:io_prometheus_simpleclient_httpserver",
     ],
 )
 

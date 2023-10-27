@@ -8,6 +8,7 @@
 package io.harness.repositories.executions;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -33,9 +34,15 @@ import io.harness.rule.Owner;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -45,7 +52,6 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVisualizationTestBase {
   @Inject MongoTemplate mongoTemplate;
-
   @Inject @InjectMocks PmsExecutionSummaryRepositoryCustom pmsExecutionSummaryRepositoryCustom;
 
   @Test
@@ -175,5 +181,190 @@ public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVi
       }
       assertEquals(count, 1);
     }
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFindAll() {
+    List<String> planExecutionIds = List.of("planExecutionId1", "planExecutionId2");
+    Criteria criteria =
+        new Criteria().orOperator(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(0)),
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(1)));
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder().planExecutionId("planExecutionId1").build());
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder().planExecutionId("planExecutionId2").build());
+
+    Page<PipelineExecutionSummaryEntity> response =
+        pmsExecutionSummaryRepositoryCustom.findAll(criteria, PageRequest.of(0, 10));
+
+    assertThat(response.stream().count()).isEqualTo(planExecutionIds.size());
+    assertThat(planExecutionIds.contains(response.getContent().get(0).getPlanExecutionId())).isTrue();
+    assertThat(planExecutionIds.contains(response.getContent().get(1).getPlanExecutionId())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFindAllWithProjections() {
+    List<String> planExecutionIds = List.of("planExecutionId1", "planExecutionId2");
+    Criteria criteria =
+        new Criteria().orOperator(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(0)),
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(1)));
+
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId("planExecutionId1")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .build());
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId("planExecutionId2")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .build());
+
+    List<PipelineExecutionSummaryEntity> response =
+        pmsExecutionSummaryRepositoryCustom
+            .findAllWithProjection(criteria, PageRequest.of(0, 10),
+                List.of(PlanExecutionSummaryKeys.planExecutionId, PlanExecutionSummaryKeys.accountId,
+                    PlanExecutionSummaryKeys.projectIdentifier))
+            .stream()
+            .collect(Collectors.toList());
+
+    assertThat((long) response.size()).isEqualTo(planExecutionIds.size());
+    assertThat(planExecutionIds.contains(response.get(0).getPlanExecutionId())).isTrue();
+    assertThat(planExecutionIds.contains(response.get(1).getPlanExecutionId())).isTrue();
+
+    assertThat(response.get(0).getPlanExecutionId()).isNotNull();
+    assertThat(response.get(0).getAccountId()).isNotNull();
+    assertThat(response.get(0).getProjectIdentifier()).isNotNull();
+    // orgId is null because it was not in the projections.
+    assertThat(response.get(0).getOrgIdentifier()).isNull();
+  }
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFindAllWithRequiredProjectionUsingAnalyticsNode() {
+    List<String> planExecutionIds = List.of("planExecutionId1", "planExecutionId2");
+    Criteria criteria =
+        new Criteria().orOperator(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(0)),
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(1)));
+
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .uuid(generateUuid())
+                           .planExecutionId("planExecutionId1")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .pipelineIdentifier("pipelineId")
+                           .createdAt(System.currentTimeMillis())
+                           .lastUpdatedAt(System.currentTimeMillis())
+                           .name("name")
+                           .build());
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .uuid(generateUuid())
+                           .planExecutionId("planExecutionId2")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .pipelineIdentifier("pipelineId")
+                           .createdAt(System.currentTimeMillis())
+                           .lastUpdatedAt(System.currentTimeMillis())
+                           .name("name")
+                           .build());
+
+    List<PipelineExecutionSummaryEntity> response =
+        pmsExecutionSummaryRepositoryCustom
+            .findAllWithRequiredProjectionUsingAnalyticsNode(
+                criteria, PageRequest.of(0, 10), Collections.singletonList(PlanExecutionSummaryKeys.planExecutionId))
+            .stream()
+            .collect(Collectors.toList());
+
+    assertThat(response.size()).isEqualTo(planExecutionIds.size());
+    assertThat(planExecutionIds.contains(response.get(0).getPlanExecutionId())).isTrue();
+    assertThat(planExecutionIds.contains(response.get(1).getPlanExecutionId())).isTrue();
+
+    assertThat(response.get(0).getPlanExecutionId()).isNotNull();
+    assertThat(response.get(0).getAccountId()).isNotNull();
+    assertThat(response.get(0).getProjectIdentifier()).isNotNull();
+    assertThat(response.get(0).getOrgIdentifier()).isNotNull();
+    assertThat(response.get(0).getRunSequence()).isNotNull();
+    assertThat(response.get(0).getPipelineIdentifier()).isNotNull();
+    assertThat(response.get(0).getName()).isNotNull();
+    assertThat(response.get(0).getUuid()).isNotNull();
+    assertThat(response.get(0).getCreatedAt()).isNotNull();
+    assertThat(response.get(0).getLastUpdatedAt()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetCountOfExecutionSummary() {
+    Criteria criteria =
+        new Criteria().orOperator(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is("planExecutionId1"),
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is("planExecutionId2"));
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId("planExecutionId1")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .build());
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId("planExecutionId2")
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .build());
+
+    assertThat(pmsExecutionSummaryRepositoryCustom.getCountOfExecutionSummary(criteria)).isEqualTo(2L);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFindListOfRepositories() {
+    List<String> planExecutionIds = List.of("planExecutionId1", "planExecutionId2");
+    Criteria criteria =
+        new Criteria().orOperator(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(0)),
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionIds.get(1)));
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId(planExecutionIds.get(0))
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .orgIdentifier("orgId")
+                           .entityGitDetails(EntityGitDetails.builder().repoName("repo1").build())
+                           .build());
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId(planExecutionIds.get(1))
+                           .accountId("accId")
+                           .projectIdentifier("projId")
+                           .entityGitDetails(EntityGitDetails.builder().repoName("repo1").build())
+                           .orgIdentifier("orgId")
+                           .build());
+
+    List<PipelineExecutionSummaryEntity> response =
+        pmsExecutionSummaryRepositoryCustom.findListOfRepositories(criteria).stream().collect(Collectors.toList());
+    assertThat(response.size()).isEqualTo(planExecutionIds.size());
+    assertThat(response.get(0).getPlanExecutionId()).isNull();
+
+    assertThat(response.get(0).getEntityGitDetails()).isNotNull();
+    assertThat(response.get(0).getEntityGitDetails().getRepoName()).isEqualTo("repo1");
+  }
+  public static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

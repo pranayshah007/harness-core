@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestSourceWrapper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -54,4 +55,5 @@ public class K8sApplyBaseStepInfo {
   @JsonProperty("overrides") List<ManifestConfigWrapper> overrides;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRendering;
   @YamlSchemaTypes({runtime}) List<K8sStepCommandFlag> commandFlags;
+  @JsonProperty("manifestSource") ManifestSourceWrapper manifestSource;
 }

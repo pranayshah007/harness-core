@@ -1268,6 +1268,17 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmailForScim(String email, String accountId) {
+    User user = getUserByEmail(email, accountId);
+    Account account = accountService.get(accountId);
+    if (user != null && isNotEmpty(user.getPendingAccounts()) && user.getPendingAccounts().contains(account)) {
+      removeRelatedUserInvite(accountId, email);
+      user.getPendingAccounts().remove(account);
+      wingsPersistence.save(user);
+    }
+    return getUserByEmail(email, accountId);
+  }
+  @Override
   public List<User> getUsersEmails(String accountId) {
     Query<User> query = wingsPersistence.createQuery(User.class);
     query.project(UserKeys.email, true).limit(NO_LIMIT).criteria(UserKeys.accounts).hasThisOne(accountId);
@@ -1602,6 +1613,7 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+
     if (isUserAssignedToAccountInGeneration(user, accountId, CG)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;

@@ -1,0 +1,8 @@
+policies:
+  - name: release-network-addr
+    resource: network-addr
+    filters:
+      - AllocationId: ...
+    actions:
+      - type: release
+        force: True

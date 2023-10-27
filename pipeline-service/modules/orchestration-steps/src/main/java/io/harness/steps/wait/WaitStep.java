@@ -87,12 +87,6 @@ public class WaitStep extends PipelineAsyncExecutable {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // implement and log.
-  }
-
-  @Override
   public Class<StepBaseParameters> getStepParametersClass() {
     return StepBaseParameters.class;
   }

@@ -9,6 +9,7 @@ package io.harness.ng.authenticationsettings.remote;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.AccountAuthenticationSettings;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
@@ -200,4 +201,8 @@ public interface AuthSettingsManagerClient {
 
   @GET(API_PREFIX + "accounts/public-access")
   Call<RestResponse<Boolean>> getPublicAccess(@Query("accountId") @NotEmpty String accountId);
+
+  @GET(API_PREFIX + "accounts/account-authentication-settings")
+  Call<RestResponse<AccountAuthenticationSettings>> getAuthenticationSettings(
+      @Query("accountId") @NotEmpty String accountId);
 }

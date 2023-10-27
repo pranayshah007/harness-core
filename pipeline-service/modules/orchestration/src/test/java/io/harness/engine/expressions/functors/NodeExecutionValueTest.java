@@ -29,6 +29,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.MatrixMetadata;
@@ -66,6 +67,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSweepingOutputService pmsSweepingOutputService;
+
+  @Mock NodeExecutionInfoService nodeExecutionInfoService;
 
   @Mock PlanService planService;
 
@@ -384,11 +387,14 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
         NodeExecutionAncestorFunctor.builder()
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
+            .nodeExecutionInfoService(nodeExecutionInfoService)
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(newAmbiance)
             .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
+    when(nodeExecutionInfoService.fetchStrategyObjectMap(nodeExecution4.getUuid(), false))
+        .thenReturn(Map.of("matrix", Map.of("os", "test"), "iteration", 2));
     assertThat(engine.getProperty(functor, "stage.matrix.os")).isEqualTo("test");
     assertThat(engine.getProperty(functor, "stage.iteration")).isEqualTo(2);
   }

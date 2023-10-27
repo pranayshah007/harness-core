@@ -39,6 +39,8 @@ import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.mappers.SMPLicenseMapper;
 import io.harness.licensing.mappers.modules.CDLicenseObjectMapper;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.redis.RedisAcquiredLock;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
@@ -78,6 +80,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
   @Mock SMPLicenseMapper smpLicenseMapper;
   @Mock SMPLicenseValidationJob smpLicenseValidationJob;
   @Mock Producer eventProducer;
+  @Mock PersistentLocker persistentLocker;
   @InjectMocks SMPLicenseServiceImpl licenseService;
 
   @Before
@@ -121,12 +124,14 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
         .thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.findByAccountIdentifier(Mockito.any())).thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));
+    when(persistentLocker.tryToAcquireLock(Mockito.anyString(), Mockito.any()))
+        .thenReturn(RedisAcquiredLock.builder().lock(null).isSentinelMode(false).build());
 
     licenseService.applySMPLicense(licenseDTO);
     verify(moduleLicenseRepository, times(1)).save(Mockito.any());
     verify(accountService, times(1)).createAccount(Mockito.any(AccountDTO.class));
     verify(smpLicenseValidationJob, times(1))
-        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(60), Mockito.any());
+        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(1440), Mockito.any());
     verify(eventProducer, times(1)).send(any());
   }
 
@@ -151,12 +156,14 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
         .thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.findByAccountIdentifier("accountId")).thenReturn(new ArrayList<>());
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));
+    when(persistentLocker.tryToAcquireLock(Mockito.anyString(), Mockito.any()))
+        .thenReturn(RedisAcquiredLock.builder().lock(null).isSentinelMode(false).build());
 
     licenseService.applySMPLicense(licenseDTO);
     verify(moduleLicenseRepository, times(1)).save(Mockito.any());
     verify(accountService, times(0)).createAccount(Mockito.any(AccountDTO.class));
     verify(smpLicenseValidationJob, times(1))
-        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(60), Mockito.any());
+        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(1440), Mockito.any());
     verify(eventProducer, times(1)).send(any());
   }
 
@@ -183,12 +190,14 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     when(moduleLicenseRepository.findById(Mockito.eq(getModuleLicenses().get(0).getId())))
         .thenReturn(Optional.of(getModuleLicenses().get(0)));
     when(moduleLicenseRepository.save(Mockito.any())).thenReturn(getModuleLicenses().get(0));
+    when(persistentLocker.tryToAcquireLock(Mockito.anyString(), Mockito.any()))
+        .thenReturn(RedisAcquiredLock.builder().lock(null).isSentinelMode(false).build());
 
     licenseService.applySMPLicense(licenseDTO);
     verify(moduleLicenseRepository, times(1)).save(Mockito.any());
     verify(accountService, times(0)).createAccount(Mockito.any(AccountDTO.class));
     verify(smpLicenseValidationJob, times(1))
-        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(60), Mockito.any());
+        .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(1440), Mockito.any());
   }
 
   @Test(expected = InvalidRequestException.class)

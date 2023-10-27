@@ -9,6 +9,7 @@ package io.harness.cvng.core.beans;
 
 import io.harness.beans.WithIdentifier;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.core.validators.AnalysisDTOCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
@@ -27,7 +28,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
   String identifier;
   @NotNull private String metricName;
   RiskProfile riskProfile;
-  AnalysisDTO analysis;
+  @AnalysisDTOCheck AnalysisDTO analysis;
   SLIDTO sli;
 
   public String getIdentifier() {

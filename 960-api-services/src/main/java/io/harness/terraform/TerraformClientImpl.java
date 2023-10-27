@@ -336,7 +336,7 @@ public class TerraformClientImpl implements TerraformClient {
             .directory(scriptDirectory)
             .logCallback(executionLogCallback)
             .loggingCommand(command)
-            .logOutputStream(new LogCallbackOutputStream(executionLogCallback))
+            .logOutputStream(planJsonLogOutputStream)
             .errorLogOutputStream(new TerraformCliErrorLogOutputStream(executionLogCallback, skipColorLogs))
             .build();
 
@@ -370,7 +370,7 @@ public class TerraformClientImpl implements TerraformClient {
             .directory(scriptDirectory)
             .logCallback(executionLogCallback)
             .loggingCommand(command)
-            .logOutputStream(new LogCallbackOutputStream(executionLogCallback))
+            .logOutputStream(planLogOutputStream)
             .errorLogOutputStream(new TerraformCliErrorLogOutputStream(executionLogCallback, skipColorLogs))
             .build();
 
@@ -398,7 +398,7 @@ public class TerraformClientImpl implements TerraformClient {
             .directory(scriptDirectory)
             .logCallback(executionLogCallback)
             .loggingCommand(command)
-            .logOutputStream(new LogCallbackOutputStream(executionLogCallback))
+            .logOutputStream(planHumanReadableOutputStream)
             .errorLogOutputStream(new TerraformCliErrorLogOutputStream(executionLogCallback, skipColorLogs))
             .build();
 

@@ -1,0 +1,11 @@
+policies:
+  - name: no-public-ips-services
+    resource: ecs-service
+    filters:
+      - 'networkConfiguration.awsvpcConfiguration.assignPublicIp': 'ENABLED'
+    actions:
+      - type: modify
+        update:
+          networkConfiguration:
+            awsvpcConfiguration:
+              assignPublicIp: DISABLED

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.connector;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class APMVerificationConnectorImpl implements BaseConnector {
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {

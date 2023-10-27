@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.Kind;
@@ -81,6 +82,13 @@ public class K8sReleaseHandlerImpl implements K8sReleaseHandler {
             .build();
 
     return K8sRelease.builder().releaseSecret(releaseSecret).build();
+  }
+
+  @Override
+  public IK8sRelease createRelease(String name, int number, ReleaseMetadata releaseMetadata) {
+    K8sRelease release = (K8sRelease) createRelease(name, number);
+    release.setReleaseMetadata(releaseMetadata);
+    return release;
   }
 
   @Override

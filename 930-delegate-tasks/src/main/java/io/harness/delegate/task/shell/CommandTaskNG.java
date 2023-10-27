@@ -33,7 +33,6 @@ import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.common.base.Joiner;
@@ -87,7 +86,6 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
       throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, true);
     } finally {
       if (!parameters.executeOnDelegate && isNotEmpty(parameters.getHost())) {
-        SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
         SshClientManager.evictCacheAndDisconnect(parameters.getExecutionId(), parameters.getHost());
       }
     }

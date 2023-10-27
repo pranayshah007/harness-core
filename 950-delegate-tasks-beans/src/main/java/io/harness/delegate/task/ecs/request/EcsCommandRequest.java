@@ -32,7 +32,9 @@ public interface EcsCommandRequest extends TaskParameters, ExecutionCapabilityDe
   String getCommandName();
   CommandUnitsProgress getCommandUnitsProgress();
   EcsInfraConfig getEcsInfraConfig();
-  Integer getTimeoutIntervalInMin();
+  default Integer getTimeoutIntervalInMin() {
+    return null;
+  }
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

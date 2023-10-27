@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.execution.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -187,6 +188,7 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     stageElementParameters.getTags().forEach((key, value) -> tags.add(key + ":" + value));
     if (stageLevel != null) {
       stageExecutionInfoBuilder.startts(stageLevel.getStartTs());
+      stageExecutionInfoBuilder.stageType(stageLevel.getStepType().getType());
     }
     if (EmptyPredicate.isNotEmpty(tags)) {
       stageExecutionInfoBuilder.tags(tags.toArray(new String[0]));
@@ -195,7 +197,7 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
   }
 
   @Override
-  public StageExecutionInfo updateStageExecutionInfo(
+  public StageExecutionInfo upsertStageExecutionInfo(
       Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -258,6 +260,15 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     }
     if (stageExecutionInfoUpdateDTO.getEndTs() != null) {
       updates.put(StageExecutionInfoKeys.endts, stageExecutionInfoUpdateDTO.getEndTs());
+    }
+    if (stageExecutionInfoUpdateDTO.getTags() != null) {
+      updates.put(StageExecutionInfoKeys.tags, toTagsList(stageExecutionInfoUpdateDTO.getTags()));
+    }
+    if (stageExecutionInfoUpdateDTO.getStageName() != null) {
+      updates.put(StageExecutionInfoKeys.stageName, stageExecutionInfoUpdateDTO.getStageName());
+    }
+    if (stageExecutionInfoUpdateDTO.getStageIdentifier() != null) {
+      updates.put(StageExecutionInfoKeys.stageIdentifier, stageExecutionInfoUpdateDTO.getStageIdentifier());
     }
   }
 
@@ -349,6 +360,8 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
 
   private StageExecutionInfo createStageExecutionInfoFromStageExecutionInfoUpdateDTO(
       Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO) {
+    StageExecutionInfoBuilder stageExecutionInfoBuilder = StageExecutionInfo.builder();
+
     ServiceExecutionSummaryDetails serviceExecutionSummaryDetails = stageExecutionInfoUpdateDTO.getServiceInfo();
     if (serviceExecutionSummaryDetails == null) {
       ServiceExecutionSummaryDetailsBuilder serviceExecutionSummaryDetailsBuilder =
@@ -368,6 +381,21 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
         serviceExecutionSummaryDetails.setManifests(stageExecutionInfoUpdateDTO.getManifestsSummary());
       }
     }
+    if (stageExecutionInfoUpdateDTO.getTags() != null) {
+      stageExecutionInfoBuilder.tags(toTagsList(stageExecutionInfoUpdateDTO.getTags()));
+    }
+    if (stageExecutionInfoUpdateDTO.getStageName() != null) {
+      stageExecutionInfoBuilder.stageName(stageExecutionInfoUpdateDTO.getStageName());
+    }
+    if (stageExecutionInfoUpdateDTO.getStageIdentifier() != null) {
+      stageExecutionInfoBuilder.stageIdentifier(stageExecutionInfoUpdateDTO.getStageIdentifier());
+    }
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    if (currentLevel != null) {
+      stageExecutionInfoBuilder.stageType(currentLevel.getStepType().getType());
+      stageExecutionInfoBuilder.startts(currentLevel.getStartTs());
+    }
+
     ExecutionSummaryDetails executionSummaryDetails =
         ExecutionSummaryDetails.builder()
             .serviceInfo(serviceExecutionSummaryDetails)
@@ -378,15 +406,24 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             .gitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary())
             .build();
 
-    return StageExecutionInfo.builder()
-        .stageExecutionId(ambiance.getStageExecutionId())
+    return stageExecutionInfoBuilder.stageExecutionId(ambiance.getStageExecutionId())
         .executionSummaryDetails(executionSummaryDetails)
         .planExecutionId(ambiance.getPlanExecutionId())
         .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
         .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+        .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
         .status(Status.RUNNING)
         .stageStatus(StageStatus.IN_PROGRESS)
         .build();
+  }
+
+  private String[] toTagsList(Map<String, String> tags) {
+    final List<String> tagsList = new LinkedList<>();
+    tags.forEach((key, value) -> tagsList.add(key + ":" + value));
+    if (EmptyPredicate.isNotEmpty(tagsList)) {
+      return tagsList.toArray(new String[0]);
+    }
+    return new String[0];
   }
 }

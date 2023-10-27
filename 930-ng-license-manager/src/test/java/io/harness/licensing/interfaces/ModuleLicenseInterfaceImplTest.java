@@ -29,6 +29,7 @@ import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
+import io.harness.licensing.beans.modules.IDPModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
@@ -39,6 +40,7 @@ import io.harness.licensing.interfaces.clients.local.CETLocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
 import io.harness.licensing.interfaces.clients.local.IACMLocalClient;
+import io.harness.licensing.interfaces.clients.local.IDPLocalClient;
 import io.harness.licensing.interfaces.clients.local.SRMLocalClient;
 import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.rule.Owner;
@@ -659,6 +661,54 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
       CETModuleLicenseDTO dto = (CETModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
           Edition.FREE, ACCOUNT_IDENTIFIER, ModuleType.CET);
     });
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SATHISH)
+  @Category(UnitTests.class)
+  public void testStartEnterpriseTrialOnIDP() {
+    when(clientMap.get(ModuleType.IDP)).thenReturn(new IDPLocalClient());
+    ModuleLicenseDTO expectedDTO = IDPModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(300)
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.IDP)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.ENTERPRISE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    IDPModuleLicenseDTO dto = (IDPModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.IDP);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SATHISH)
+  @Category(UnitTests.class)
+  public void testStartTeamTrialOnIDP() {
+    when(clientMap.get(ModuleType.IDP)).thenReturn(new IDPLocalClient());
+    Throwable thrown = catchThrowable(
+        () -> moduleLicenseInterface.generateTrialLicense(Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.IDP));
+
+    assertThat(thrown)
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("Requested edition is not supported");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SATHISH)
+  @Category(UnitTests.class)
+  public void testStartFreeLicenseOnIDP() {
+    when(clientMap.get(ModuleType.IDP)).thenReturn(new IDPLocalClient());
+    Throwable thrown = catchThrowable(
+        () -> moduleLicenseInterface.generateTrialLicense(Edition.FREE, ACCOUNT_IDENTIFIER, ModuleType.IDP));
 
     assertThat(thrown)
         .isInstanceOf(UnsupportedOperationException.class)

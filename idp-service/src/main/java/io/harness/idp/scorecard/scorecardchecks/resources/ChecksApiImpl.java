@@ -102,7 +102,7 @@ public class ChecksApiImpl implements ChecksApi {
           "Check [%s] already created for accountId [%s]", body.getCheckDetails().getIdentifier(), harnessAccount);
       log.info(errorMessage);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .entity(ResponseMessage.builder().message(errorMessage).build())
           .build();
     } catch (Exception e) {
       log.error("Could not create check", e);

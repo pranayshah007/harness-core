@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.beans;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor.SETUP_METADATA_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.VALUES;
@@ -21,9 +22,15 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.ScmException;
+import io.harness.gitx.GitXTransientBranchGuard;
+import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
@@ -46,9 +53,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@Slf4j
 public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityReferenceExtractor {
   @Inject SimpleVisitorFactory simpleVisitorFactory;
   @Inject ServiceEntityServiceImpl serviceEntityService;
@@ -68,6 +77,21 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
 
   @Override
   public Set<EntityDetailProtoDTO> addReference(Object object, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Map<String, Object> contextMap) {
+    SetupMetadata setupMetadata = getSetupMetadata(contextMap);
+    try (NgManagerSourcePrincipalGuard ignore = new NgManagerSourcePrincipalGuard(setupMetadata)) {
+      return addReferenceInternal(object, accountIdentifier, orgIdentifier, projectIdentifier, contextMap);
+    } catch (ExplanationException | HintException | ScmException ex) {
+      // Todo : @Tathagat iteratively improve on this exception handling
+      log.error("Exception while adding references in ServiceEntityVisitorHelperV2", ex);
+      throw ex;
+    } catch (Exception ex) {
+      log.error("Exception while adding references in ServiceEntityVisitorHelperV2", ex);
+      return new HashSet<>();
+    }
+  }
+
+  private Set<EntityDetailProtoDTO> addReferenceInternal(Object object, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<String, Object> contextMap) {
     ServiceYamlV2 serviceYamlV2 = (ServiceYamlV2) object;
     String fullQualifiedDomainName = "";
@@ -119,9 +143,15 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
               .build();
       result.add(entityDetail);
 
-      Optional<ServiceEntity> serviceEntity =
-          serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefString, false);
-      if (!serviceEntity.isPresent()) {
+      String gitBranch = serviceYamlV2.getGitBranch();
+
+      Optional<ServiceEntity> serviceEntity;
+      try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+        serviceEntity = serviceEntityService.get(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceRefString, false, true, false);
+      }
+
+      if (serviceEntity.isEmpty()) {
         return result;
       }
 
@@ -163,6 +193,16 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
       result.add(entityDetail);
     }
     return result;
+  }
+
+  private SetupMetadata getSetupMetadata(Map<String, Object> contextMap) {
+    if (isNotEmpty(contextMap)) {
+      Object setupMetadata = contextMap.get(SETUP_METADATA_KEY);
+      if (setupMetadata != null) {
+        return (SetupMetadata) setupMetadata;
+      }
+    }
+    return null;
   }
 
   private boolean isReferredEntityForRuntimeInput(IdentifierRefProtoDTO identifierRefOfReferredEntity) {

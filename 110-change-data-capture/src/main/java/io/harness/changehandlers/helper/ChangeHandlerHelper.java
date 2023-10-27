@@ -6,6 +6,7 @@
  */
 
 package io.harness.changehandlers.helper;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Objects.isNull;
@@ -25,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChangeHandlerHelper {
   public void addKeyValuePairToMapFromDBObject(
       DBObject dbObject, Map<String, String> columnValueMapping, String dbObjectKey, String timescaleObjectKey) {
-    if (dbObject.get(dbObjectKey) != null) {
+    if ((dbObject != null) && dbObject.get(dbObjectKey) != null) {
       columnValueMapping.put(timescaleObjectKey, dbObject.get(dbObjectKey).toString());
     }
   }

@@ -80,7 +80,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     log.info("SCIM: Creating user call for accountId {} with query {}", accountId, userQuery);
     String primaryEmail = getPrimaryEmail(userQuery);
 
-    User user = userService.getUserByEmail(primaryEmail, accountId);
+    User user = userService.getUserByEmailForScim(primaryEmail, accountId);
 
     if (user != null) {
       userQuery.setId(user.getUuid());

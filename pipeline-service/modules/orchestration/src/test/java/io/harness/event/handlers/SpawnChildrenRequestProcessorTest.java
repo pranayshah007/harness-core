@@ -250,7 +250,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
             .addLevels(
                 Level.newBuilder()
                     .setIdentifier("IDENTIFIER")
-                    .setStepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.FORK).build())
+                    .setStepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STRATEGY).build())
                     .setRuntimeId(nodeExecutionId)
                     .setSetupId(planNodeId)
                     .build())
@@ -321,6 +321,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setPlanExecutionId(generateUuid())
+            .addLevels(Level.newBuilder().setGroup("STAGES").build())
             .addLevels(Level.newBuilder().setSetupId("parallelId").build())
             .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK).build())
             .build();
@@ -344,21 +345,28 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setPlanExecutionId(generateUuid())
-            .addLevels(Level.newBuilder().setSetupId("stageId").build())
+            .addLevels(Level.newBuilder().setGroup("STAGES").build())
+            .addLevels(Level.newBuilder()
+                           .setSetupId("stageId")
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                           .build())
             .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK).build())
             .build();
     List<Child> children = List.of(
         Child.newBuilder()
+            .setChildNodeId("childId")
             .setStrategyMetadata(StrategyMetadata.newBuilder()
                                      .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
                                      .build())
             .build(),
         Child.newBuilder()
+            .setChildNodeId("childId")
             .setStrategyMetadata(StrategyMetadata.newBuilder()
                                      .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).build())
                                      .build())
             .build(),
         Child.newBuilder()
+            .setChildNodeId("childId")
             .setStrategyMetadata(StrategyMetadata.newBuilder()
                                      .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(2).build())
                                      .build())
@@ -377,7 +385,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
         .getWithFieldsIncludedFromSecondary(
             ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
-    assertThat(filteredChildren.size()).isEqualTo(3);
+    assertThat(filteredChildren.size()).isEqualTo(1);
     assertThat(filteredChildren.get(0)).isEqualTo(children.get(0));
   }
 }

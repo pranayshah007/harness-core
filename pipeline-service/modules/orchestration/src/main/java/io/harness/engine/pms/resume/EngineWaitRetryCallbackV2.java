@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.pms.resume;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.tasks.ResponseData;
@@ -24,6 +26,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Slf4j
 public class EngineWaitRetryCallbackV2 implements OldNotifyCallback {

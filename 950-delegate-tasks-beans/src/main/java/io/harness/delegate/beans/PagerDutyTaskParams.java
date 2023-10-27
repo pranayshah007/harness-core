@@ -31,6 +31,7 @@ public class PagerDutyTaskParams implements TaskParameters, ExecutionCapabilityD
   Payload payload;
   List<LinkContext> links;
   String notificationId;
+  List<String> pagerDutyKeysAllowlist;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

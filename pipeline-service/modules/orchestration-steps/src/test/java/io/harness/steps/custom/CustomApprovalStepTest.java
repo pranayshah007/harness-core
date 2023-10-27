@@ -182,7 +182,7 @@ public class CustomApprovalStepTest extends CategoryTest {
                 ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
 
-    customApprovalStep.handleAbort(ambiance, null, null);
+    customApprovalStep.handleAbort(ambiance, null, null, false);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
     verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
   }

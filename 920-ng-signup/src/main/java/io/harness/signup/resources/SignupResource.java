@@ -8,6 +8,7 @@
 package io.harness.signup.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.Boolean.TRUE;
 
@@ -136,9 +137,15 @@ public class SignupResource {
   @POST
   @Path("/oauth")
   @PublicApi
-  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
+  public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto, @Nullable @QueryParam("accountId") String accountId) {
     try {
-      return new RestResponse<>(signupService.oAuthSignup(dto));
+      UserInfo userInfo;
+      if (isEmpty(accountId)) {
+        userInfo = signupService.oAuthSignup(dto);
+      } else {
+        userInfo = signupService.oAuthSignupForDS(dto, accountId);
+      }
+      return new RestResponse<>(userInfo);
     } catch (Exception e) {
       log.error("OAuth signup failed. {} at {}", e.getMessage(), e.getStackTrace());
       throw e;

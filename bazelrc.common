@@ -6,14 +6,14 @@
 # Add properties that are shared between developers and ci build system
 
 # Setup java toolchain for compilation
-build --java_language_version=11
+build --java_language_version=17
 
 # Setup java toolchain for execution
 build --java_runtime_version=local_jdk
 
-build --tool_java_language_version=11
+build --tool_java_language_version=17
 build --tool_java_runtime_version=local_jdk
-build --javacopt='--release 11'
+build --javacopt='--release 17'
 build --jvmopt="--illegal-access=debug"
 build --jvmopt="--add-exports java.base/sun.nio.ch=ALL-UNNAMED"
 build --jvmopt="--add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED"

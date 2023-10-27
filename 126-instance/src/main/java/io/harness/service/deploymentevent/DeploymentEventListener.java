@@ -6,6 +6,7 @@
  */
 
 package io.harness.service.deploymentevent;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
@@ -297,6 +298,7 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .tag(artifactsOutcome.getPrimary().getTag())
             .artifactId(artifactsOutcome.getPrimary().getIdentifier())
             .displayName(artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName())
+            .artifactIdentity(artifactsOutcome.getPrimary().getArtifactSummary().getArtifactIdentity())
             .build());
   }
 

@@ -344,6 +344,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String deployVersion = System.getenv(DEPLOY_VERSION);
   private static final String DELEGATES_UPDATED_RESPONSE = "Following delegates have been updated";
   private static final String NO_DELEGATES_UPDATED_RESPONSE = "No delegate is waiting for approval/rejection";
+  // TODO: remove after resolving PL-40073
+  private static final String ACCOUNTID_FOR_DEBUG = "pitvBmtSMKNZU3gANq01Q";
 
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
@@ -2650,6 +2652,10 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
+      // TODO: remove after resolving PL-40073
+      if (ACCOUNTID_FOR_DEBUG.equals(delegateParams.getAccountId())) {
+        log.info("Following tags registering for delegate group {} : {} ", delegateGroupId, delegateParams.getTags());
+      }
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
               .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
@@ -3247,12 +3253,29 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     setUnset(updateOperations, DelegateGroupKeys.description, description);
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(tags) && isNotEmpty(name)) {
+      log.info("upsertDelegateGroup: Following tags registering for delegate group {} : {} ", name, tags);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 
     if (sizeDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.sizeDetails, sizeDetails);
     }
-    return persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
+    DelegateGroup updatedDelegateGroup =
+        persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
+    DelegateSetupDetails delegateSetupDetailsOld = null;
+    if (existingEntity != null) {
+      delegateSetupDetailsOld = DelegateSetupDetails.builder()
+                                    .k8sConfigDetails(existingEntity.getK8sConfigDetails())
+                                    .tags(existingEntity.getTags())
+                                    .name(existingEntity.getName())
+                                    .identifier(existingEntity.getIdentifier())
+                                    .build();
+    }
+    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateSetupDetailsOld, updatedDelegateGroup, accountId);
+    return updatedDelegateGroup;
   }
 
   @Override
@@ -4123,7 +4146,6 @@ public class DelegateServiceImpl implements DelegateService {
       validateKubernetesSetupDetails(accountId, delegateSetupDetails);
     }
     DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
     return delegateGroup.getUuid();
   }
 
@@ -4462,8 +4484,8 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  private void sendNewDelegateGroupAuditEvent(
-      DelegateSetupDetails delegateSetupDetails, DelegateGroup delegateGroup, String accountId) {
+  private void sendNewDelegateGroupAuditEvent(DelegateSetupDetails delegateSetupDetails,
+      DelegateSetupDetails delegateSetupDetailsOld, DelegateGroup delegateGroup, String accountId) {
     if (delegateGroup.isNg()) {
       outboxService.save(
           DelegateUpsertEvent.builder()
@@ -4472,6 +4494,7 @@ public class DelegateServiceImpl implements DelegateService {
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
               .delegateGroupIdentifier(delegateGroup.getIdentifier())
               .delegateSetupDetails(delegateSetupDetails)
+              .delegateSetupDetailsOld(delegateSetupDetailsOld)
               .build());
     } else {
       if (delegateGroup != null) {

@@ -26,7 +26,6 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -103,13 +102,13 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .build();
   }
 
-  public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
-    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(executionMetadata.getAccountIdentifier(),
-        executionMetadata.getMetadata().getPrincipalInfo(),
-        executionMetadata.getMetadata().getTriggerInfo().getTriggeredBy());
+  public void setSourcePrincipal(PlanCreationContext ctx) {
+    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(
+        ctx.getAccountIdentifier(), ctx.getPrincipalInfo(), ctx.getTriggerInfo().getTriggeredBy());
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     SecurityContextBuilder.setContext(principal);
   }
+
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField stageNode) {
     PipelineStageConfig configNode = null;
@@ -124,7 +123,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
     }
     // Principal is added to fetch Git Entity
-    setSourcePrincipal(ctx.getMetadata());
+    setSourcePrincipal(ctx);
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
         configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false, false, true);
 

@@ -56,16 +56,13 @@ public class K8sApiClient implements K8sClient {
   private final Retry retry = buildRetryAndRegisterListeners();
 
   @Override
-  public V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace) {
+  public V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data) {
     KubernetesConfig kubernetesConfig = getKubernetesConfig();
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     V1Secret secret = getSecret(coreV1Api, namespace, secretName);
     Map<String, byte[]> secretData = secret.getData();
     secretData = secretData == null ? new HashMap<>() : secretData;
-    if (replace) {
-      secretData.clear();
-    }
     secretData.putAll(data);
     secret.setData(secretData);
     return replaceSecret(coreV1Api, secret);

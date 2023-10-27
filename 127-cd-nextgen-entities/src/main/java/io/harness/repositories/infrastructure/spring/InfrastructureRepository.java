@@ -19,5 +19,5 @@ public interface InfrastructureRepository
     extends PagingAndSortingRepository<InfrastructureEntity, String>, InfrastructureRepositoryCustom {
   Optional<InfrastructureEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String infraIdentifier);
+      String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch);
 }

@@ -10,15 +10,12 @@ package io.harness.pms.sdk.core.supporter.children;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.steps.executables.Abortable;
 import io.harness.pms.sdk.core.steps.executables.ChildChainExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
 
@@ -26,8 +23,7 @@ import com.google.protobuf.ByteString;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class TestChildChainStep
-    implements ChildChainExecutable<TestChildrenStepParameters>, Abortable<StepParameters, AsyncExecutableResponse> {
+public class TestChildChainStep implements ChildChainExecutable<TestChildrenStepParameters> {
   public static boolean isHandleAbortAndUserMarkedFailureCalled = false;
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("TEST_CHILDREN").setStepCategory(StepCategory.STEP).build();
@@ -53,17 +49,5 @@ public class TestChildChainStep
   public StepResponse finalizeExecution(Ambiance ambiance, TestChildrenStepParameters stepParameters,
       ByteString passThroughData, Map<String, ResponseData> responseDataMap) {
     return StepResponse.builder().status(Status.SUCCEEDED).build();
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do nothing.
-  }
-
-  @Override
-  public void handleAbortAndUserMarkedFailure(Ambiance ambiance, StepParameters stepParameters,
-      AsyncExecutableResponse executableResponse, boolean isUserMarkedFailureInterrupt) {
-    isHandleAbortAndUserMarkedFailureCalled = true;
   }
 }

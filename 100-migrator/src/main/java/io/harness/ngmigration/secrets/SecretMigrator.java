@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.secrets;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -29,6 +31,7 @@ import software.wings.settings.SettingVariableTypes;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public interface SecretMigrator {
   SecretDTOV2Builder getSecretDTOBuilder(

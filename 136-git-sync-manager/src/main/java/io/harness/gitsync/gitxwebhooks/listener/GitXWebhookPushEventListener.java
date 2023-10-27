@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.gitxwebhooks.listener;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
@@ -25,6 +27,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @Singleton
 @OwnedBy(PIPELINE)

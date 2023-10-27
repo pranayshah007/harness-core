@@ -8,6 +8,8 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES;
+import static io.harness.beans.FeatureName.CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
 import static io.harness.beans.FeatureName.PIE_SIMPLIFY_LOG_BASE_KEY;
@@ -94,8 +96,6 @@ import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessor;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -104,15 +104,16 @@ import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessor;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
-import io.harness.serializer.JsonUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -167,10 +168,11 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
-  PipelinePreprocessorFactory pipelinePreprocessorFactory;
+  YamlPreProcessorFactory yamlPreProcessorFactory;
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
-      List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT, PIE_SIMPLIFY_LOG_BASE_KEY);
+      List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT, PIE_SIMPLIFY_LOG_BASE_KEY,
+          CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES, CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE);
   public static final String PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER = "pms_execution_settings";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
@@ -283,8 +285,9 @@ public class ExecutionHelper {
             pipelineYamlWithTemplateRef, retryExecutionInfo);
       }
 
-      ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, notificationRules, isDebug);
+      ExecutionMetadata executionMetadata =
+          buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType, triggerInfo, pipelineEntity, executionId,
+              notificationRules, isDebug, pipelineMetadataInternalDTO.getProcessedYamlVersion());
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } catch (WingsException e) {
       throw e;
@@ -311,13 +314,16 @@ public class ExecutionHelper {
       case HarnessYamlVersion.V1:
         pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
-        PipelinePreprocessor preprocessor = pipelinePreprocessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
-        if (preprocessor != null) {
-          pipelineYaml = preprocessor.preProcess(pipelineYaml);
+        // Adds ids in all the stages and steps where it doesn't already exists
+        // For templates, the ids will be added by template service during template resolution
+        YamlPreProcessor preProcessor = yamlPreProcessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
+        if (preProcessor != null) {
+          YamlPreprocessorResponseDTO yamlPreprocessorResponseDTO = preProcessor.preProcess(pipelineYaml);
+          pipelineYaml = YamlUtils.writeYamlString(yamlPreprocessorResponseDTO.getPreprocessedJsonNode());
         }
         pipelineYamlWithTemplateRef = pipelineYaml;
         templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(
-            getStagesNodeWrapperFromPipelineYaml(pipelineYaml), pipelineEntity, System.currentTimeMillis());
+            YamlUtils.readAsJsonNode(pipelineYaml), pipelineEntity, System.currentTimeMillis());
         pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         break;
       case HarnessYamlVersion.V0:
@@ -334,13 +340,8 @@ public class ExecutionHelper {
         .pipelineYaml(pipelineYaml)
         .basicPipeline(basicPipeline)
         .pipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .processedYamlVersion(templateMergeResponseDTO.getProcessedYamlVersion())
         .build();
-  }
-
-  private JsonNode getStagesNodeWrapperFromPipelineYaml(String pipelineYaml) {
-    JsonNode jsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
-    return ((ObjectNode) JsonUtils.readTree("{}"))
-        .set(YAMLFieldNameConstants.SPEC, jsonNode.get(YAMLFieldNameConstants.SPEC));
   }
 
   private PlanExecutionMetadata buildPlanExecutionMetadata(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml,
@@ -391,7 +392,7 @@ public class ExecutionHelper {
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
-      List<NotificationRules> notificationRules, boolean isDebug) {
+      List<NotificationRules> notificationRules, boolean isDebug, String processedYamlVersion) {
     ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
                                             .setExecutionUuid(executionId)
                                             .setTriggerInfo(triggerInfo)
@@ -401,6 +402,7 @@ public class ExecutionHelper {
                                             .setIsNotificationConfigured(isNotEmpty(notificationRules))
                                             .setHarnessVersion(pipelineEntity.getHarnessVersion())
                                             .setIsDebug(isDebug)
+                                            .setProcessedYamlVersion(processedYamlVersion)
                                             .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
@@ -432,8 +434,9 @@ public class ExecutionHelper {
       in pipelineJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
       give an error in schema validation. That's why we need a value that doesn't have this validator appended.
        */
-      pipelineJsonNodeForSchemaValidations = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
-          YamlUtils.readAsJsonNode(pipelineEntity.getYaml()), mergedRuntimeInputJsonNode, false);
+      pipelineJsonNodeForSchemaValidations =
+          MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(YamlUtils.readAsJsonNode(pipelineEntity.getYaml()),
+              Collections.singletonList(mergedRuntimeInputJsonNode), false);
     }
     pipelineJsonNodeForSchemaValidations = InputSetSanitizer.trimValues(pipelineJsonNodeForSchemaValidations);
     return pipelineJsonNodeForSchemaValidations;
@@ -463,17 +466,19 @@ public class ExecutionHelper {
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
     String pipelineYamlWithTemplateRef = pipelineYaml;
+    String processedYamlVersion = pipelineEntity.getHarnessVersion();
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
-              BOOLEAN_FALSE_VALUE);
+              BOOLEAN_FALSE_VALUE, pipelineEntity.getHarnessVersion());
       pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
       pipelineYamlWithTemplateRef =
           EmptyPredicate.isEmpty(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef())
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+      processedYamlVersion = templateMergeResponseDTO.getProcessedYamlVersion();
     }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
@@ -486,6 +491,7 @@ public class ExecutionHelper {
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
         .mergedPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .processedYamlVersion(processedYamlVersion)
         .build();
   }
 
@@ -570,7 +576,7 @@ public class ExecutionHelper {
       PlanCreationBlobResponse resp;
       Plan plan;
       try {
-        String version = executionMetadata.getHarnessVersion();
+        String version = executionMetadata.getProcessedYamlVersion();
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);

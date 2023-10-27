@@ -17,6 +17,8 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STR
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.LDAP_GROUP_SYNC;
+import static io.harness.eventsframework.EventsFrameworkConstants.MODULE_LICENSE;
+import static io.harness.eventsframework.EventsFrameworkConstants.MODULE_LICENSE_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE_MAX_PROCESSING_TIME;
@@ -27,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.impl.FullSyncMessageConsumer;
 import io.harness.ldap.scheduler.LdapGroupSyncStreamConsumer;
 import io.harness.ng.authenticationsettings.SamlAuthorizationStreamConsumer;
+import io.harness.ng.core.event.modulelicense.ModuleLicenseStreamConsumer;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
@@ -42,6 +45,7 @@ public class NGEventConsumerService implements Managed {
   @Inject private NGAccountSetupConsumer ngAccountSetupConsumer;
   @Inject private EntityCRUDStreamConsumer entityCRUDStreamConsumer;
   @Inject private UserMembershipStreamConsumer userMembershipStreamConsumer;
+  @Inject private ModuleLicenseStreamConsumer moduleLicenseStreamConsumer;
   @Inject private SetupUsageStreamConsumer setupUsageStreamConsumer;
   @Inject private EntityActivityStreamConsumer entityActivityStreamConsumer;
   @Inject private SamlAuthorizationStreamConsumer samlAuthorizationStreamConsumer;
@@ -54,6 +58,7 @@ public class NGEventConsumerService implements Managed {
   private ExecutorService setupUsageConsumerService;
   private ExecutorService entityActivityConsumerService;
   private ExecutorService userMembershipConsumerService;
+  private ExecutorService moduleLicenseConsumerService;
   private ExecutorService samlAuthorizationConsumerService;
   private ExecutorService ldapGroupSyncConsumerService;
   private ExecutorService instanceStatsConsumerService;
@@ -72,6 +77,8 @@ public class NGEventConsumerService implements Managed {
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_ACTIVITY).build());
     userMembershipConsumerService =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(USERMEMBERSHIP).build());
+    moduleLicenseConsumerService =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(MODULE_LICENSE).build());
     samlAuthorizationConsumerService = Executors.newSingleThreadExecutor(
         new ThreadFactoryBuilder().setNameFormat(SAML_AUTHORIZATION_ASSERTION).build());
     ldapGroupSyncConsumerService =
@@ -88,6 +95,7 @@ public class NGEventConsumerService implements Managed {
     setupUsageConsumerService.execute(setupUsageStreamConsumer);
     entityActivityConsumerService.execute(entityActivityStreamConsumer);
     userMembershipConsumerService.execute(userMembershipStreamConsumer);
+    moduleLicenseConsumerService.execute(moduleLicenseStreamConsumer);
     samlAuthorizationConsumerService.execute(samlAuthorizationStreamConsumer);
     ldapGroupSyncConsumerService.execute(ldapGroupSyncStreamConsumer);
     instanceStatsConsumerService.execute(instanceStatsStreamConsumer);
@@ -101,6 +109,7 @@ public class NGEventConsumerService implements Managed {
     setupUsageConsumerService.shutdownNow();
     entityActivityConsumerService.shutdownNow();
     userMembershipConsumerService.shutdownNow();
+    moduleLicenseConsumerService.shutdownNow();
     samlAuthorizationConsumerService.shutdownNow();
     ldapGroupSyncConsumerService.shutdown();
     gitSyncConfigStreamConsumerService.shutdownNow();
@@ -110,6 +119,7 @@ public class NGEventConsumerService implements Managed {
     setupUsageConsumerService.awaitTermination(SETUP_USAGE_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     entityActivityConsumerService.awaitTermination(ENTITY_ACTIVITY_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     userMembershipConsumerService.awaitTermination(USERMEMBERSHIP_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
+    moduleLicenseConsumerService.awaitTermination(MODULE_LICENSE_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     samlAuthorizationConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     ldapGroupSyncConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
     instanceStatsConsumerService.awaitTermination(DEFAULT_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);

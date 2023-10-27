@@ -6,17 +6,18 @@
  */
 
 package software.wings.delegatetasks.validation.capabilitycheck;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.utils.SshDelegateHelperUtils.populateBuilderWithCredentials;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse.CapabilityResponseBuilder;
@@ -26,6 +27,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.HostConnectionAttributes;
@@ -38,10 +40,10 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSchException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -70,7 +72,7 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
       hostConnectionTest.setSshSessionTimeout(timeout);
       performTest(hostConnectionTest);
       capabilityResponseBuilder.validated(true);
-    } catch (JSchException e) {
+    } catch (SshClientException e) {
       log.error("Failed to validate host - public dns: {}, message: {}", capability.getValidationInfo().getPublicDns(),
           ExceptionMessageSanitizer.sanitizeException(e).getMessage());
       capabilityResponseBuilder.validated(false);
@@ -83,12 +85,8 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig hostConnectionTest) throws Exception {
-    if (hostConnectionTest.isUseSshClient() || hostConnectionTest.isVaultSSH()) {
-      SshClientManager.test(hostConnectionTest);
-    } else {
-      getSSHSession(hostConnectionTest).disconnect();
-    }
+  void performTest(SshSessionConfig hostConnectionTest) throws SshClientException {
+    SshClientManager.test(hostConnectionTest);
   }
 
   private void decryptCredentials(SettingAttribute hostConnectionAttributes,

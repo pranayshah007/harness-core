@@ -223,7 +223,7 @@ public class JiraApprovalStepTest extends CategoryTest {
   public void testAbort() {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
-    jiraApprovalStep.handleAbort(ambiance, parameters, null);
+    jiraApprovalStep.handleAbort(ambiance, parameters, null, false);
     verify(approvalInstanceService).abortByNodeExecutionId(null);
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }

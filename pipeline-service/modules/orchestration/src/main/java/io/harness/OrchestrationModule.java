@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
@@ -91,7 +92,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.waiter.WaiterConfiguration.PersistenceLayer;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -116,6 +117,7 @@ import javax.cache.expiry.Duration;
 public class OrchestrationModule extends AbstractModule implements ServersModule {
   private static OrchestrationModule instance;
   private final OrchestrationModuleConfig config;
+  private final MetricRegistry threadPoolMetricRegistry;
 
   public static OrchestrationModule getInstance(OrchestrationModuleConfig orchestrationModuleConfig) {
     if (instance == null) {
@@ -124,8 +126,22 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     return instance;
   }
 
+  public static OrchestrationModule getInstance(
+      OrchestrationModuleConfig orchestrationModuleConfig, MetricRegistry threadPoolMetricRegistry) {
+    if (instance == null) {
+      instance = new OrchestrationModule(orchestrationModuleConfig, threadPoolMetricRegistry);
+    }
+    return instance;
+  }
+
   private OrchestrationModule(OrchestrationModuleConfig config) {
     this.config = config;
+    this.threadPoolMetricRegistry = new MetricRegistry();
+  }
+
+  private OrchestrationModule(OrchestrationModuleConfig config, MetricRegistry threadPoolMetricRegistry) {
+    this.config = config;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Override
@@ -214,8 +230,8 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   @Named("EngineExecutorService")
   public ExecutorService engineExecutionServiceThreadPool() {
-    return ThreadPool.create(config.getCorePoolSize(), config.getMaxPoolSize(), config.getIdleTimeInSecs(),
-        TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("EngineExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(config.getCorePoolSize(), config.getMaxPoolSize(),
+        config.getIdleTimeInSecs(), TimeUnit.SECONDS, "EngineExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides

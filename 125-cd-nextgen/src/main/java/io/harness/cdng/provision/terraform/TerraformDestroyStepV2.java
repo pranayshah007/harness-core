@@ -277,13 +277,29 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
         getGitRevisionsOutput(parameters, terraformTaskNGResponse, terraformPassThroughData);
 
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
+      boolean skipStateStorage = false;
+
+      if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+              TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
+        skipStateStorage = helper
+                               .getSavedInheritOutput(
+                                   ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()),
+                                   DESTROY.name(), ambiance)
+                               .isSkipStateStorage();
+      } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                     TerraformStepConfigurationType.INHERIT_FROM_APPLY.getDisplayName())) {
+        skipStateStorage = helper.getLastSuccessfulApplyConfig(parameters, ambiance).isSkipStateStorage();
+      }
+
       terraformConfigDAL.clearTerraformConfig(ambiance,
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance));
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      if (!skipStateStorage) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
     helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
@@ -315,6 +331,11 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
         ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
 
     builder.skipTerraformRefresh(skipRefreshCommand);
+
+    if (spec.getProviderCredential() != null) {
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
+    }
 
     return builder.currentStateFileId(helper.getLatestFileId(entityId))
         .taskType(TFTaskType.DESTROY)
@@ -361,6 +382,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
 
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
+
     return builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
             inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -386,6 +413,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
+        .skipStateStorage(inheritOutput.isSkipStateStorage())
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
   }
 
@@ -405,6 +433,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(stepParameters, ambiance);
 
+    if (terraformConfig.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(terraformConfig.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
+
     builder.workspace(terraformConfig.getWorkspace())
         .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, true))
         .backendConfig(terraformConfig.getBackendConfig())
@@ -419,6 +453,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+        .skipStateStorage(terraformConfig.isSkipStateStorage())
         .useOptimizedTfPlan(true);
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(

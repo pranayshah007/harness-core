@@ -49,6 +49,7 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.GeneralException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -190,16 +191,18 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     K8sRollingStepParameters stepParameters = new K8sRollingStepParameters();
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
-    K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
-                                              .k8sNGTaskResponse(K8sRollingDeployResponse.builder()
-                                                                     .k8sPodList(Collections.emptyList())
-                                                                     .previousK8sPodList(Collections.emptyList())
-                                                                     .releaseNumber(1)
-                                                                     .helmChartInfo(helmChartInfo)
-                                                                     .build())
-                                              .commandUnitsProgress(UnitProgressData.builder().build())
-                                              .commandExecutionStatus(SUCCESS)
-                                              .build();
+    K8sDeployResponse k8sDeployResponse =
+        K8sDeployResponse.builder()
+            .k8sNGTaskResponse(K8sRollingDeployResponse.builder()
+                                   .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                       K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
+                                   .previousK8sPodList(Collections.emptyList())
+                                   .releaseNumber(1)
+                                   .helmChartInfo(helmChartInfo)
+                                   .build())
+            .commandUnitsProgress(UnitProgressData.builder().build())
+            .commandExecutionStatus(SUCCESS)
+            .build();
     when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
@@ -218,6 +221,9 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(outcome.getOutcome()).isInstanceOf(K8sRollingOutcome.class);
     assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
     assertThat(outcome.getGroup()).isNull();
+    ((K8sRollingOutcome) outcome.getOutcome())
+        .getPodIps()
+        .forEach(podIp -> assertThat(List.of("ip1", "ip2", "ip3").contains(podIp)).isTrue());
 
     StepOutcome deploymentInfoOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(deploymentInfoOutcome.getOutcome()).isInstanceOf(DeploymentInfoOutcome.class);

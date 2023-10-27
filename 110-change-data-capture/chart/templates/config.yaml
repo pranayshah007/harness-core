@@ -3,10 +3,10 @@ kind: ConfigMap
 metadata:
   name: {{ include "change-data-capture.name" . }}
   namespace: '{{ .Release.Namespace }}'
+  {{- if .Values.global.commonLabels }}
   labels:
-    {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}

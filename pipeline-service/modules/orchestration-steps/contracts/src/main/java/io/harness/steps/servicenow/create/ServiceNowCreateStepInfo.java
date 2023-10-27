@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -25,6 +28,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
+import io.harness.steps.servicenow.beans.ServiceNowCreateType;
 import io.harness.steps.servicenow.beans.ServiceNowField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -49,6 +53,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.SERVICENOW_CREATE)
 @TypeAlias("serviceNowCreateStepInfo")
 @RecasterAlias("io.harness.steps.servicenow.create.ServiceNowCreateStepInfo")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, WithDelegateSelector {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -58,11 +63,13 @@ public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
 
-  @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @Deprecated
   ParameterField<Boolean> useServiceNowTemplate;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> templateName;
   List<ServiceNowField> fields;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ServiceNowCreateType createType;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
@@ -87,6 +94,7 @@ public class ServiceNowCreateStepInfo implements PMSStepInfo, WithConnectorRef, 
         .templateName(templateName)
         .useServiceNowTemplate(useServiceNowTemplate)
         .delegateSelectors(delegateSelectors)
+        .createType(createType)
         .build();
   }
 

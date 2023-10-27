@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
-import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -155,19 +154,10 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       long numberOfACLsDeleted =
           aclRepository.deleteByRoleAssignmentIdAndPermissions(roleAssignmentDBO.getId(), permissionsRemovedFromRole);
 
-      Set<ResourceSelector> existingResourceSelectors =
-          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
-      Set<String> existingPrincipals =
-          Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-
       long numberOfACLsCreated = 0;
 
-      if (existingResourceSelectors.isEmpty() || existingPrincipals.isEmpty()) {
-        numberOfACLsCreated += aclGeneratorService.createACLsForRoleAssignment(roleAssignmentDBO);
-      } else {
-        numberOfACLsCreated += aclGeneratorService.createACLs(
-            roleAssignmentDBO, existingPrincipals, permissionsAddedToRole, existingResourceSelectors);
-      }
+      numberOfACLsCreated += aclGeneratorService.createACLsFromPermissions(roleAssignmentDBO, permissionsAddedToRole);
+
       numberOfACLsCreated += aclGeneratorService.createImplicitACLsForRoleAssignment(
           roleAssignmentDBO, new HashSet<>(), permissionsAddedToRole);
 

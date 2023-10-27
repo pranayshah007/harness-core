@@ -64,6 +64,7 @@ import io.harness.pms.contracts.service.VariableResponseMapValueProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
@@ -531,8 +532,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, false, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false,
+            false, false, HarnessYamlVersion.V0);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -550,7 +551,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+        .applyTemplatesToYaml(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false, HarnessYamlVersion.V0);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -615,7 +617,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+        .applyTemplatesToYaml(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false, HarnessYamlVersion.V0);
     doReturn(yaml).when(templateYamlConversionHelper).convertTemplateYamlToEntityYaml(any(TemplateEntity.class));
     templateResource.createVariables(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
   }
@@ -628,7 +631,8 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+        .applyTemplatesToYaml(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false, HarnessYamlVersion.V0);
     doReturn(yaml).when(templateYamlConversionHelper).convertTemplateYamlToEntityYaml(any(TemplateEntity.class));
     doReturn(templateVariableCreatorService)
         .when(templateVariableCreatorFactory)
@@ -752,8 +756,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, true, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false,
+            true, false, HarnessYamlVersion.V0);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -774,8 +778,8 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false, true, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, YamlUtils.readAsJsonNode(yaml), false,
+            true, false, HarnessYamlVersion.V0);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,

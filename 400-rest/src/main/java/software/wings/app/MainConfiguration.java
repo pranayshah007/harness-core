@@ -195,6 +195,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("sampleTargetEnv") private String sampleTargetEnv;
   @JsonProperty("sampleTargetStatusHost") private String sampleTargetStatusHost;
   @JsonProperty("timescaledb") @ConfigSecret private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("licenseUsageTimescaleSocketTimeout") private int licenseUsageTimescaleSocketTimeout;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("ngAuthUIEnabled") private boolean ngAuthUIEnabled;
   @JsonProperty("gcpMarketplaceConfig") private GcpMarketplaceConfig gcpMarketplaceConfig;
@@ -258,6 +259,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
+  @JsonProperty("maxAccountsToDeleteInParallel") private int maxAccountsToDeleteInParallel;
 
   private int applicationPort;
   private boolean sslEnabled;

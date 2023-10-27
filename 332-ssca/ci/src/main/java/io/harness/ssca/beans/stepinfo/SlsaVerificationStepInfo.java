@@ -16,9 +16,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
 import io.harness.slsa.beans.verification.source.SlsaVerificationSource;
-import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
 import io.harness.slsa.beans.verification.verify.SlsaVerifyAttestation;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.yaml.extended.ci.container.ContainerResource;
@@ -66,10 +64,8 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep, WithConne
   @Override
   @ApiModelProperty(hidden = true)
   public ParameterField<String> getConnectorRef() {
-    if (source != null) {
-      if (source.getType() == SlsaVerificationSourceType.DOCKER) {
-        return ((SlsaDockerSourceSpec) source.getSpec()).getConnector();
-      }
+    if (source != null && source.getSpec() != null) {
+      return source.getSpec().getConnector();
     }
     return null;
   }
@@ -94,10 +90,8 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep, WithConne
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorMap = new HashMap<>();
-    if (source != null) {
-      if (source.getType() == SlsaVerificationSourceType.DOCKER) {
-        connectorMap.put("source.spec.connector", ((SlsaDockerSourceSpec) source.getSpec()).getConnector());
-      }
+    if (source != null && source.getSpec() != null) {
+      connectorMap.put("source.spec.connector", source.getSpec().getConnector());
     }
     return connectorMap;
   }

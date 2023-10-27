@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci.execution.states;
+
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -318,7 +319,16 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       executeStepRequest.setDistributed(true);
     }
     DliteVmExecuteStepTaskParams dliteVmExecuteStepTaskParams =
-        DliteVmExecuteStepTaskParams.builder().executeStepRequest(executeStepRequest).build();
+        DliteVmExecuteStepTaskParams.builder()
+            .executeStepRequest(executeStepRequest)
+            .context(DliteVmExecuteStepTaskParams.Context.builder()
+                         .accountID(AmbianceUtils.getAccountId(ambiance))
+                         .projectID(AmbianceUtils.getProjectIdentifier(ambiance))
+                         .pipelineID(AmbianceUtils.getPipelineIdentifier(ambiance))
+                         .orgID(AmbianceUtils.getOrgIdentifier(ambiance))
+                         .runSequence(ambiance.getMetadata().getRunSequence())
+                         .build())
+            .build();
     hostedVmSecretResolver.resolve(ambiance, dliteVmExecuteStepTaskParams);
     return dliteVmExecuteStepTaskParams;
   }
@@ -427,10 +437,6 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
-
-  @Override
   public UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
       Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
       StageDetails stageDetails, String podName) {
@@ -450,6 +456,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case DOCKER:
       case ECR:
       case ACR:
+      case GAR:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

@@ -5,3 +5,10 @@ proxy:
       '/api/proxy/harness/qa/?': '/'
     allowedHeaders:
       - authorization
+  '/harness/scorecard':
+    target: 'https://qa.harness.io/'
+    pathRewrite:
+      '/api/proxy/harness/scorecard/?': '/'
+    allowedHeaders:
+      - authorization
+      - Harness-Account

@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VLICA;
@@ -33,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -72,6 +74,7 @@ import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandler;
 import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryptionHandlerNG;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
@@ -105,6 +108,10 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
+import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
+import com.amazonaws.services.securitytoken.model.Credentials;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -112,6 +119,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -131,10 +139,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class TerraformBaseHelperImplTest extends CategoryTest {
-  @InjectMocks @Inject TerraformBaseHelperImpl terraformBaseHelper;
+  @InjectMocks @Inject @Spy TerraformBaseHelperImpl terraformBaseHelper;
   @Mock private LogCallback logCallback;
   @Mock private PlanJsonLogOutputStream planJsonLogOutputStream;
   @Mock private PlanLogOutputStream planLogOutputStream;
@@ -646,11 +655,76 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .downloadByFileId(any(), any(), any());
 
     terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir");
+        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir", false);
     File configFile = new File("baseDir/script-repository/repoName/localresource.tfvar");
     File stateFile = new File("baseDir/script-repository/repoName/terraform.tfstate.d/workspace/terraform.tfstate");
     assertThat(configFile.exists()).isTrue();
     assertThat(stateFile.exists()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
+
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
+    ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        ArtifactoryConnectorDTO.builder()
+            .auth(ArtifactoryAuthenticationDTO.builder().credentials(credentials).build())
+            .build();
+    ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
+        ArtifactoryStoreDelegateConfig.builder()
+            .artifacts(Arrays.asList("artifactPath"))
+            .repositoryName("repoName")
+            .encryptedDataDetails(encryptedDataDetails)
+            .connectorDTO(ConnectorInfoDTO.builder().connectorConfig(artifactoryConnectorDTO).build())
+            .build();
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    doReturn(null).when(secretDecryptionService).decrypt(credentials, encryptedDataDetails);
+    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(artifactoryConnectorDTO);
+    doReturn(classLoader.getResourceAsStream("terraform/localresource.tfvar.zip"))
+        .when(artifactoryNgService)
+        .downloadArtifacts(eq(artifactoryConfigRequest), any(), any(), eq("artifactPath"), eq("artifactName"));
+
+    terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir", true);
+    File configFile = new File("baseDir/script-repository/repoName/localresource.tfvar");
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
+    assertThat(configFile.exists()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchS3ConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+        S3StoreTFDelegateConfig.builder().paths(Collections.singletonList("testPath")).build();
+    TerraformTaskNGParameters terraformTaskNGParameters = TerraformTaskNGParameters.builder()
+                                                              .accountId("accountId")
+                                                              .taskType(TFTaskType.APPLY)
+                                                              .entityId("entityId")
+                                                              .build();
+    doNothing().when(terraformBaseHelper).downloadS3Objects(any(), any(), any(), any());
+
+    terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+        s3StoreTFDelegateConfig, terraformTaskNGParameters, "baseDir", new HashMap<>(), logCallback, true);
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchGitConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
+    doNothing().when(terraformBaseHelper).fetchConfigFileAndCloneLocally(any(), any());
+    doNothing().when(terraformBaseHelper).copyConfigFilestoWorkingDirectory(any(), any(), any(), any());
+
+    terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+        gitBaseRequest, "accountId", "workspace", "stateFileId", logCallback, "scriptPath", "baseDir", true);
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
   }
 
   @Test
@@ -879,6 +953,31 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     assertThat(varFilePaths.size()).isEqualTo(1);
     assertThat(varFilePaths.get(0)).contains(scriptDirectory);
     assertThat(varFilePaths.get(0)).contains(".auto.tfvars");
+    FileUtils.deleteDirectory(Paths.get(tfvarDir).toFile());
+    FileUtils.deleteDirectory(Paths.get(scriptDirectory).toFile());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testCheckoutRemoveVarFileAndConvertInlineVarFileWithJsonFormat() throws IOException {
+    HashMap<String, String> commitIdMap = new HashMap<>();
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    String tfvarDir = "repository/tfVarDir";
+    FileIo.createDirectoryIfDoesNotExist(tfvarDir);
+    doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
+
+    List<TerraformVarFileInfo> varFiles = getGitTerraformFileInfoListInline();
+    ((InlineTerraformVarFileInfo) varFiles.get(0)).setFilePath("testRandomVarFilePath.json");
+
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        varFiles, scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, false, null);
+    assertThat(varFilePaths.size()).isEqualTo(1);
+    assertThat(varFilePaths.get(0)).contains(scriptDirectory);
+    assertThat(varFilePaths.get(0)).contains(".json");
+    FileUtils.deleteDirectory(Paths.get(tfvarDir).toFile());
+    FileUtils.deleteDirectory(Paths.get(scriptDirectory).toFile());
   }
 
   @Test
@@ -1054,7 +1153,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .getObjectContent();
 
     terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
-        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback, false);
 
     verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
     verify(awsApiHelperService, times(1))
@@ -1093,7 +1192,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .getObjectContent();
 
     terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
-        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback, false);
 
     verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
     verify(awsApiHelperService, times(1)).getObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file1.tf"));
@@ -1197,6 +1296,44 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     assertThat(keyVersionMap.get("TF_BACKEND_FILE")).containsEntry("terraform/backend/backend.tf", "v1");
     assertThat(path).endsWith("tfBeDirectory/terraform/backend/backend.tf");
     FileUtils.deleteDirectory(Paths.get("baseDir").toFile());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetEnvironmentVariables() {
+    TerraformTaskNGParameters taskNGParameters =
+        TerraformTaskNGParameters.builder()
+            .entityId("entityId")
+            .accountId("account_id")
+            .taskType(TFTaskType.APPLY)
+            .environmentVariables(Map.of("envVar1", "envVal1"))
+            .providerCredentialDelegateInfo(
+                TerraformAwsProviderCredentialDelegateInfo.builder()
+                    .roleArn("roleArn")
+                    .connectorDTO(
+                        ConnectorInfoDTO.builder()
+                            .connectorConfig(
+                                AwsConnectorDTO.builder().credential(AwsCredentialDTO.builder().build()).build())
+                            .build())
+                    .build())
+            .build();
+
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    AWSSecurityTokenServiceClient mockAWSSecurityClient = mock(AWSSecurityTokenServiceClient.class);
+    doReturn(mockAWSSecurityClient).when(awsApiHelperService).getAWSSecurityTokenServiceClient(any(), any());
+    Credentials credentials = new Credentials("access-key", "secret-key", "session-token", new Date(2023, 1, 1));
+    AssumeRoleResult assumeRoleResult = new AssumeRoleResult();
+    assumeRoleResult.setCredentials(credentials);
+
+    doReturn(assumeRoleResult).when(mockAWSSecurityClient).assumeRole(any());
+
+    ImmutableMap<String, String> envVars = terraformBaseHelper.getEnvironmentVariables(taskNGParameters);
+    assertThat(envVars).isNotEmpty();
+    assertThat(envVars).hasSize(4);
+    assertThat(envVars.keySet())
+        .containsExactlyInAnyOrder("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "envVar1");
+    assertThat(envVars.values()).containsExactlyInAnyOrder("access-key", "secret-key", "session-token", "envVal1");
   }
 
   private List<TerraformVarFileInfo> getGitTerraformFileInfoList() {

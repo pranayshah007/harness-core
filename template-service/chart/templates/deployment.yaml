@@ -31,6 +31,9 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "template-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.global.commonLabels }}
@@ -87,16 +90,18 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" . "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "template-service" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET" ) | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 10 }}
           - name : TIMESCALE_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.timescaleSecret.password.name }}
                 key: {{ .Values.timescaleSecret.password.key }}
           - name: MONGO_URI
-            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "template-harness" "context" $) }}
+            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "template-harness" ) }}
           {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 10 }}
           {{- end }}

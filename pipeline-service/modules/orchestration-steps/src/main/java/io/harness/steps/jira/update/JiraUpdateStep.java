@@ -154,8 +154,8 @@ public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
+      TaskExecutableResponse executableResponse, boolean userMarked) {
     closeLogStream(ambiance);
   }
 

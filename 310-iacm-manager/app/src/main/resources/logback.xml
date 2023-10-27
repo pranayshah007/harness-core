@@ -7,7 +7,7 @@
         <if condition='property("STACK_DRIVER_LOGGING_ENABLED").equals("true")'>
             <then>
                 <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-                    <layout class="io.harness.logging.CustomJsonLayout"/>
+                    <layout class="io.harness.logging.common.CustomJsonLayout"/>
                 </encoder>
             </then>
             <else>

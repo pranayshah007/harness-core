@@ -26,6 +26,7 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -40,18 +41,18 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("cdInstanceSummary")
 @HarnessEntity(exportable = true)
 public class CdInstanceSummary implements PersistentEntity, CreatedAtAware {
-  @NotNull private String artifactId;
-  @NotNull private String tag;
-  @NotNull private String infrastructureMappingId;
-  @NotNull private String instanceKey;
-  @NotNull private String instanceType;
-
+  @Id private String id;
+  @NotNull private String artifactCorrelationId;
   @NotNull private String accountIdentifier;
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
 
-  @NotNull private String pipelineExecutionId;
-  @NotNull private String pipelineExecutionName;
+  @NotNull private String lastPipelineExecutionId;
+  @NotNull private String lastPipelineExecutionName;
+
+  @NotNull private String lastDeployedById;
+  @NotNull private String lastDeployedByName;
+  @NotNull private Long lastDeployedAt;
 
   EnvType envType;
   @NotNull String envIdentifier;

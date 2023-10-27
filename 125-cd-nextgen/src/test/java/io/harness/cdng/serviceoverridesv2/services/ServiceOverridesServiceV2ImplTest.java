@@ -565,6 +565,17 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     assertThat(envOverrideInputsYaml).isNull();
   }
 
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverrideInputsInvalidManifestType() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityWithInvalidManifestType(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    assertThatThrownBy(() -> serviceOverridesServiceV2.create(testOverrideEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unsupported Manifest Types: [K8sManifest] found for Environment Service override");
+  }
+
   private NGServiceOverridesEntity getTestOverrideEntityForRuntimeInput(
       ServiceOverridesType overridesType, boolean isInputsPresent) {
     return NGServiceOverridesEntity.builder()
@@ -613,6 +624,41 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                                   .build())
                           .build()))
                   .build())
+        .build();
+  }
+
+  private NGServiceOverridesEntity getTestOverrideEntityWithInvalidManifestType(ServiceOverridesType overridesType) {
+    return NGServiceOverridesEntity.builder()
+        .accountId(ACCOUNT_IDENTIFIER)
+        .orgIdentifier(ORG_IDENTIFIER)
+        .projectIdentifier(PROJECT_IDENTIFIER)
+        .type(overridesType)
+        .environmentRef(ENVIRONMENT_REF)
+        .serviceRef(SERVICE_REF)
+        .spec(
+            ServiceOverridesSpec.builder()
+                .manifests(List.of(
+                    ManifestConfigWrapper.builder()
+                        .manifest(
+                            ManifestConfig.builder()
+                                .type(ManifestConfigType.K8_MANIFEST)
+                                .identifier("manifest1")
+                                .spec(
+                                    ValuesManifest.builder()
+                                        .identifier("manifest1")
+                                        .store(ParameterField.createValueField(
+                                            StoreConfigWrapper.builder()
+                                                .type(StoreConfigType.GITHUB)
+                                                .spec(GithubStore.builder()
+                                                          .branch(ParameterField.createValueField("randomValue"))
+                                                          .connectorRef(ParameterField.createValueField("randomValue"))
+                                                          .paths(ParameterField.createValueField(List.of("file1")))
+                                                          .build())
+                                                .build()))
+                                        .build())
+                                .build())
+                        .build()))
+                .build())
         .build();
   }
 

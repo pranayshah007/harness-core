@@ -22,6 +22,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.expressions.NGTriggerExpressionEvaluatorProvider;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.yaml.YamlField;
@@ -57,31 +58,35 @@ public class YamlExpressionResolveHelper {
         planExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
 
     if (nodeExecution.isPresent()) {
-      EngineExpressionEvaluator engineExpressionEvaluator;
-      if (resolveInputYamlType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
-        engineExpressionEvaluator = ngTriggerExpressionEvaluatorProvider.get(nodeExecution.get().getAmbiance());
-      } else {
-        engineExpressionEvaluator =
-            pmsEngineExpressionService.prepareExpressionEvaluator(nodeExecution.get().getAmbiance());
-      }
-      try {
-        YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlString));
-        YamlField pipelineYamlField = yamlField.getNode().getField("pipeline");
-
-        resolveExpressions(Preconditions.checkNotNull(pipelineYamlField, "YAML does not have pipeline object"),
-            engineExpressionEvaluator);
-
-        JsonNode resolvedYamlNode = yamlField.getNode().getCurrJsonNode();
-        YamlUtils.removeUuid(resolvedYamlNode);
-        return YamlPipelineUtils.writeYamlString(resolvedYamlNode);
-
-      } catch (IOException ex) {
-        log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-        throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      }
+      return resolveExpressionsInYaml(yamlString, resolveInputYamlType, nodeExecution.get().getAmbiance());
     }
 
     throw new InvalidRequestException("Invalid request : No execution details found");
+  }
+
+  public String resolveExpressionsInYaml(
+      String yamlString, ResolveInputYamlType resolveInputYamlType, Ambiance ambiance) {
+    EngineExpressionEvaluator engineExpressionEvaluator;
+    if (resolveInputYamlType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+      engineExpressionEvaluator = ngTriggerExpressionEvaluatorProvider.get(ambiance);
+    } else {
+      engineExpressionEvaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
+    }
+    try {
+      YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlString));
+      YamlField pipelineYamlField = yamlField.getNode().getField("pipeline");
+
+      resolveExpressions(Preconditions.checkNotNull(pipelineYamlField, "YAML does not have pipeline object"),
+          engineExpressionEvaluator);
+
+      JsonNode resolvedYamlNode = yamlField.getNode().getCurrJsonNode();
+      YamlUtils.removeUuid(resolvedYamlNode);
+      return YamlPipelineUtils.writeYamlString(resolvedYamlNode);
+
+    } catch (IOException ex) {
+      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    }
   }
 
   private void resolveExpressions(YamlField field, EngineExpressionEvaluator engineExpressionEvaluator) {

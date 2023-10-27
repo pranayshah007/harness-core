@@ -27,6 +27,7 @@ import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NIKOLA;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.REETIKA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
@@ -87,6 +88,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -124,8 +126,15 @@ import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.security.UserGroupSearchTermType;
+import software.wings.beans.sso.LdapConnectionSettings;
+import software.wings.beans.sso.LdapGroupSettings;
+import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapUserSettings;
+import software.wings.beans.sso.SSOSettings;
+import software.wings.beans.sso.SSOType;
 import software.wings.features.api.UsageLimitedFeature;
 import software.wings.persistence.mail.EmailData;
+import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
 import software.wings.security.Filter;
@@ -139,6 +148,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.RoleService;
+import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserService;
 
 import com.google.common.collect.ImmutableSet;
@@ -161,6 +171,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
 public class UserGroupServiceImplTest extends WingsBaseTest {
@@ -181,6 +192,8 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
   private AppPermission envPermission = getEnvPermission();
   private List<String> appIds = asList("appId1", "appId2");
   private Set<Action> actions = new HashSet<>(Arrays.asList(Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE));
+
+  private LdapSettings ldapSettings;
 
   private Account account = anAccount()
                                 .withAccountName(ACCOUNT_NAME)
@@ -241,6 +254,10 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
   @Mock private CCMSettingService ccmSettingService;
   @Mock private AppService appService;
   @Mock private FeatureFlagService featureFlagService;
+
+  @Mock private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
+
+  @Mock private SSOSettingService ssoSettingService;
 
   @Inject private HPersistence persistence;
   //  @InjectMocks @Inject private AccountService accountService = spy(AccountServiceImpl.class);
@@ -1692,5 +1709,52 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
 
   private UserGroup createUserGroup(List<String> memberIds) {
     return builder().accountId(ACCOUNT_ID).uuid(USER_GROUP_ID).memberIds(memberIds).build();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void test_linkToLdapGroup() {
+    String LDAP_GROUP_NAME = "ldap_group";
+    String LDAP_GROUP_DN = "ldap_group_DN";
+    String LDAP_ID = "ldapId";
+
+    UserGroup userGroup1 = builder()
+                               .uuid(USER_GROUP_ID)
+                               .name(userGroupName)
+                               .accountId(ACCOUNT_ID)
+                               .description(description)
+                               .memberIds(asList(user1Id))
+                               .members(asList(user))
+                               .linkedSsoDisplayName("displayName")
+                               .build();
+    UserGroup savedUserGroup1 = userGroupService.save(userGroup1);
+
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setBindPassword("testBindPassword");
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+
+    ldapSettings = LdapSettings.builder()
+                       .accountId("testSettings")
+                       .connectionSettings(connectionSettings)
+                       .userSettingsList(userSettingsList)
+                       .displayName("displayName")
+                       .groupSettingsList(Arrays.asList(groupSettings))
+                       .build();
+    ldapSettings.setGroupSettings(groupSettings);
+    ldapSettings.setUserSettings(userSettings);
+
+    SSOSettings ssoSettings = (SSOSettings) ldapSettings;
+    doReturn(ssoSettings).when(ssoSettingService).getSsoSettings(any());
+
+    userGroupService.linkToSsoGroup(ACCOUNT_ID, USER_GROUP_ID, SSOType.LDAP, LDAP_ID, LDAP_GROUP_DN, LDAP_GROUP_NAME);
+    verify(ldapGroupSyncJobHelper, times(1)).syncUserGroupsParallel(anyString(), any(), any(), any());
+    verifyNoMoreInteractions(ldapGroupSyncJobHelper);
   }
 }

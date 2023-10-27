@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.asg;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.AsgAmiStepFunctor;
@@ -22,6 +24,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public abstract class AsgBaseStepMapper extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(

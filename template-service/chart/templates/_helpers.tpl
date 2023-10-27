@@ -64,3 +64,21 @@ Create the name of the service account to use
 {{- define "template-service.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage template-service Secrets
+USAGE:
+{{- "template-service.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "template-service.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 34
+version : 35
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -85,9 +85,30 @@ settings :
     allowedScopes:
       - ACCOUNT
   - identifier: pipeline_timeout
-    name: Pipeline Timeout
+    name: Max Pipeline Timeout
     category: PMS
     defaultValue: 1h
+    groupIdentifier: pms_execution_settings
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 4h
+        editable: true
+      TEAM:
+        defaultValue: 30d
+        editable: true
+      ENTERPRISE:
+        defaultValue: 35d
+        editable: true
+  - identifier: stage_timeout
+    name: Max Stage Timeout
+    category: PMS
+    defaultValue: 30m
+    groupIdentifier: pms_execution_settings
     valueType: STRING
     allowedScopes:
       - ACCOUNT
@@ -98,33 +119,15 @@ settings :
         defaultValue: 1h
         editable: true
       TEAM:
-        defaultValue: 24h
+        defaultValue: 30d
         editable: true
       ENTERPRISE:
-        defaultValue: 24h
-        editable: true
-  - identifier: stage_timeout
-    name: Stage Timeout
-    category: PMS
-    defaultValue: 30m
-    valueType: STRING
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-    allowedPlans:
-      FREE:
-        defaultValue: 30m
-        editable: true
-      TEAM:
-        defaultValue: 24h
-        editable: true
-      ENTERPRISE:
-        defaultValue: 24h
+        defaultValue: 35d
         editable: true
   - identifier: step_timeout
-    name: Step Timeout
+    name: Max Step Timeout
     category: PMS
+    groupIdentifier: pms_execution_settings
     defaultValue: 30m
     valueType: STRING
     allowedScopes:
@@ -133,10 +136,10 @@ settings :
       - PROJECT
     allowedPlans:
       FREE:
-        defaultValue: 30m
+        defaultValue: 1h
         editable: true
       TEAM:
-        defaultValue: 10h
+        defaultValue: 52w
         editable: true
       ENTERPRISE:
         defaultValue: 52w

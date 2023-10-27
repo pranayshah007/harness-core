@@ -1,7 +1,6 @@
 name: HeartBeat
 identifier: heartbeat_entry
 labels:
-  - time
   - accountId
   - accountName
   - companyName

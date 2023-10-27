@@ -6,9 +6,14 @@
  */
 
 package io.harness.ng.core.infrastructure.dto;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -19,6 +24,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -38,4 +45,9 @@ public class InfrastructureResponseDTO {
   InfrastructureType type;
   ServiceDefinitionType deploymentType;
   String yaml;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
+  @Schema(hidden = true) CacheResponseMetadataDTO cacheResponseMetadataDTO;
 }

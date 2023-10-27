@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.artifactstream;
-
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static final String VERSION_2 = "2.x";
   public static final String DOCKER = "docker";

@@ -7,12 +7,12 @@
 
 package io.harness.ngtriggers.expressions.functors;
 
-import io.harness.exception.InvalidRequestException;
 import io.harness.expression.LateBindingValue;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 public class PayloadFunctor implements LateBindingValue {
   private String payload;
@@ -26,7 +26,11 @@ public class PayloadFunctor implements LateBindingValue {
     try {
       return JsonPipelineUtils.read(payload, HashMap.class);
     } catch (IOException e) {
-      throw new InvalidRequestException("Event payload could not be converted to a hashmap");
+      try {
+        return JsonPipelineUtils.read(payload, List.class);
+      } catch (IOException ex) {
+        return payload;
+      }
     }
   }
 }

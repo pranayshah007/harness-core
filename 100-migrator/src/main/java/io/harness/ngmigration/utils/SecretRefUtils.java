@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.secrets.SecretService;
@@ -24,6 +26,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class SecretRefUtils {
   public static final Pattern secretNamePattern = Pattern.compile("secrets.getValue\\([^{}]+\\)");

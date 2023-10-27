@@ -14,9 +14,11 @@ import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.ng.core.eolbanner.dto.EOLBannerRequestDTO;
 import io.harness.ng.core.eolbanner.dto.EOLBannerResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -41,6 +43,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -113,9 +117,6 @@ public class EOLBannerService {
           }
         }
       }
-    } catch (WingsException e) {
-      throw new InvalidRequestException(
-          String.format("Exception while checking if pipeline using v1 stages: %s", e.getMessage()));
     } catch (Exception e) {
       failures.add(e.getMessage());
     }
@@ -192,9 +193,6 @@ public class EOLBannerService {
       } else if (STAGE_TEMPLATE.equals(response.getTemplateEntityType())) {
         return checkStageTemplate(response.getYaml());
       }
-    } catch (WingsException e) {
-      throw new InvalidRequestException(
-          String.format("Exception while checking if template using v1 stages: %s", e.getMessage()));
     } catch (Exception e) {
       failures.add(e.getMessage());
     }

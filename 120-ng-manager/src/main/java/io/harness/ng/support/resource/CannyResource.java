@@ -7,6 +7,7 @@
 
 package io.harness.ng.support.resource;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
 import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
@@ -22,6 +23,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.support.client.CannyClient;
 import io.harness.ng.support.dto.CannyBoardsResponseDTO;
+import io.harness.ng.support.dto.CannyPostResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -30,13 +32,19 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
 @Api("/canny")
 @Path("canny")
@@ -78,7 +86,30 @@ public class CannyResource {
         ApiResponse(responseCode = "default", description = "Get a list of boards available on Canny")
       })
   public ResponseDTO<CannyBoardsResponseDTO>
-  getBoardsList() {
+  getBoardsList(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+      "accountIdentifier") String accountIdentifier) {
     return ResponseDTO.newResponse(cannyClient.getBoards());
+  }
+
+  @POST
+  @Path("/post")
+  @Produces({"application/json", "application/yaml"})
+  @ApiOperation(value = "create Canny Post for given user", nickname = "createCannyPost")
+  @Operation(operationId = "createCannyPost", summary = "create Canny Post for given user",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "create Canny Post for given user")
+      })
+  public ResponseDTO<CannyPostResponseDTO>
+  createCannyPost(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotEmpty @QueryParam(
+                      "accountIdentifier") String accountIdentifier,
+      @Parameter(description = "emailId for user creating post") @NotEmpty @FormDataParam("email") String email,
+      @Parameter(description = "name of user creating post") @NotEmpty @FormDataParam("name") String name,
+      @Parameter(description = "title of the post") @NotEmpty @FormDataParam("title") String title,
+      @Parameter(description = "details of the post") @NotNull @FormDataParam("details") String details,
+      @Parameter(description = "boardId where post must be created") @NotEmpty @FormDataParam(
+          "boardId") String boardId) {
+    return ResponseDTO.newResponse(cannyClient.createPost(email, name, title, details, boardId));
   }
 }

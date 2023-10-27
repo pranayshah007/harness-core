@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-cluster-snapshot-prune-permissions
+cloudProvider: AWS
+resourceType: rds-cluster-snapshot
+description: Remove permissions on RDS cluster snapshots for accounts other than 112233445566
+rulesYamlPath: ../rds-cluster-snapshot-prune-permissions.yml

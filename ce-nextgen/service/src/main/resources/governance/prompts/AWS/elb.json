@@ -1,0 +1,79 @@
+{
+  "LoadBalancerName": "LoadBalancerName",
+  "DNSName": "DNSName.us-west-2.elb.amazonaws.com",
+  "CanonicalHostedZoneName": "CanonicalHostedZoneName.us-west-2.elb.amazonaws.com",
+  "CanonicalHostedZoneNameID": "CanonicalHostedZoneNameID",
+  "ListenerDescriptions": [
+    {
+      "Listener": {
+        "Protocol": "TCP",
+        "LoadBalancerPort": 443,
+        "InstanceProtocol": "TCP",
+        "InstancePort": 30531
+      },
+      "PolicyNames": []
+    },
+    {
+      "Listener": {
+        "Protocol": "TCP",
+        "LoadBalancerPort": 80,
+        "InstanceProtocol": "TCP",
+        "InstancePort": 32099
+      },
+      "PolicyNames": []
+    },
+    {
+      "Listener": {
+        "Protocol": "TCP",
+        "LoadBalancerPort": 15021,
+        "InstanceProtocol": "TCP",
+        "InstancePort": 30892
+      },
+      "PolicyNames": []
+    }
+  ],
+  "Policies": {
+    "AppCookieStickinessPolicies": [],
+    "LBCookieStickinessPolicies": [],
+    "OtherPolicies": []
+  },
+  "BackendServerDescriptions": [],
+  "AvailabilityZones": [
+    "us-west-2a",
+    "us-west-2b",
+    "us-west-2c"
+  ],
+  "Subnets": [
+    "subnet-Id1",
+    "subnet-Id2",
+    "subnet-Id3"
+  ],
+  "VPCId": "vpc-VPCId",
+  "Instances": [],
+  "HealthCheck": {
+    "Target": "TCP:30892",
+    "Interval": 10,
+    "Timeout": 5,
+    "UnhealthyThreshold": 6,
+    "HealthyThreshold": 2
+  },
+  "SourceSecurityGroup": {
+    "OwnerAlias": "AccountId",
+    "GroupName": "GroupName"
+  },
+  "SecurityGroups": [
+    "SecurityGroupId"
+  ],
+  "CreatedTime": "2023-02-07T10:56:50.020000+00:00",
+  "Scheme": "internet-facing",
+  "Tags": [
+    {
+      "Key": "kubernetes.io/service-name",
+      "Value": "istio-system/istio"
+    },
+    {
+      "Key": "kubernetes.io/cluster/ClusterName",
+      "Value": "owned"
+    }
+  ]
+}

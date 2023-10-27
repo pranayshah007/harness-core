@@ -461,6 +461,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    assertThat(evaluator.evaluateExpression(
+                   "<+c2.status> == \"RUNNING\" || <+c2.status> == \"END2\" && (<+c21.anotherStatus> == \"END-1\"\n"
+                   + "||\n"
+                   + "<+c21.anotherStatus> == \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+
     // size operator
     assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .isEqualTo("18");
@@ -729,6 +735,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    assertThat(evaluator.evaluateExpression(
+                   "<+c2.status> == \"RUNNING\" || <+c2.status> == \"END2\" && (<+c21.anotherStatus> == \"END-1\"\n"
+                   + "||\n"
+                   + "<+c21.anotherStatus> == \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+
     // size operator
     assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .isEqualTo("18");

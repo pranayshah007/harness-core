@@ -83,29 +83,26 @@ public class AwsAccountServiceImpl implements AwsAccountService {
     List<CECloudAccount> ceCloudAccounts = new ArrayList<>();
     List<Account> accountList =
         awsOrganizationHelperService.listAwsAccounts(awsCrossAccountAttributes, mainConfig.getCeProxyConfig());
-    String masterAwsAccountId = getMasterAccountIdFromArn(awsCrossAccountAttributes.getCrossAccountRoleArn());
     String externalId = awsCrossAccountAttributes.getExternalId();
     accountList.forEach(account -> {
       String awsAccountId = getAccountIdFromArn(account.getArn());
-      if (!awsAccountId.equals(masterAwsAccountId)) {
-        AwsCrossAccountAttributes linkedAwsCrossAccountAttributes =
-            AwsCrossAccountAttributes.builder()
-                .externalId(externalId)
-                .crossAccountRoleArn(InfraSetUpUtils.getLinkedAccountArn(
-                    awsAccountId, mainConfig.getBillingDataPipelineConfig().getAwsRoleName()))
-                .build();
-        CECloudAccount cloudAccount = CECloudAccount.builder()
-                                          .accountId(accountId)
-                                          .accountArn(account.getArn())
-                                          .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
-                                          .accountName(account.getName())
-                                          .infraAccountId(awsAccountId)
-                                          .infraMasterAccountId(infraMasterAccountId)
-                                          .masterAccountSettingId(settingId)
-                                          .awsCrossAccountAttributes(linkedAwsCrossAccountAttributes)
-                                          .build();
-        ceCloudAccounts.add(cloudAccount);
-      }
+      AwsCrossAccountAttributes linkedAwsCrossAccountAttributes =
+          AwsCrossAccountAttributes.builder()
+              .externalId(externalId)
+              .crossAccountRoleArn(InfraSetUpUtils.getLinkedAccountArn(
+                  awsAccountId, mainConfig.getBillingDataPipelineConfig().getAwsRoleName()))
+              .build();
+      CECloudAccount cloudAccount = CECloudAccount.builder()
+                                        .accountId(accountId)
+                                        .accountArn(account.getArn())
+                                        .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
+                                        .accountName(account.getName())
+                                        .infraAccountId(awsAccountId)
+                                        .infraMasterAccountId(infraMasterAccountId)
+                                        .masterAccountSettingId(settingId)
+                                        .awsCrossAccountAttributes(linkedAwsCrossAccountAttributes)
+                                        .build();
+      ceCloudAccounts.add(cloudAccount);
     });
     log.info("CE cloud account {}", ceCloudAccounts.size());
     return ceCloudAccounts;
@@ -144,9 +141,5 @@ public class AwsAccountServiceImpl implements AwsAccountService {
 
   public static String getAccountIdFromArn(String arn) {
     return StringUtils.substringAfterLast(arn, "/");
-  }
-
-  public static String getMasterAccountIdFromArn(String arn) {
-    return StringUtils.substringBefore(StringUtils.substringAfterLast(arn, "iam::"), ":");
   }
 }

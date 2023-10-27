@@ -177,9 +177,7 @@ public class ContainerDeploymentDelegateBaseHelper {
       }
     } else if (clusterConfigDTO instanceof EksK8sInfraDelegateConfig) {
       EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig = (EksK8sInfraDelegateConfig) clusterConfigDTO;
-      AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
-      return awsEKSDelegateTaskHelper.getKubeConfig(awsConnectorDTO, eksK8sInfraDelegateConfig.getCluster(),
-          eksK8sInfraDelegateConfig.isAddRegionalParam(), eksK8sInfraDelegateConfig.getNamespace(), logCallback);
+      return awsEKSDelegateTaskHelper.getKubeConfig(eksK8sInfraDelegateConfig, logCallback);
     } else if (clusterConfigDTO instanceof RancherK8sInfraDelegateConfig) {
       RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig = (RancherK8sInfraDelegateConfig) clusterConfigDTO;
       return rancherKubeConfigGenerator.createKubernetesConfig(

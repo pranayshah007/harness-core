@@ -27,4 +27,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "notificationRequests")
 public class MongoNotificationRequest extends Queuable {
   byte[] bytes;
+  String requestType;
 }

@@ -7,7 +7,12 @@
 
 package io.harness.secretusage;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.events.SecretRuntimeUsageEventProducer;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -18,11 +23,16 @@ import io.harness.eventsframework.schemas.entityactivity.EntityActivityCreateDTO
 import io.harness.ng.core.activityhistory.NGActivityStatus;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.inject.Inject;
+import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public class SecretRuntimeUsageServiceImpl implements SecretRuntimeUsageService {
   private final SecretRuntimeUsageEventProducer secretRuntimeUsageEventProducer;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   SecretRuntimeUsageServiceImpl(SecretRuntimeUsageEventProducer secretRuntimeUsageEventProducer) {
@@ -32,23 +42,42 @@ public class SecretRuntimeUsageServiceImpl implements SecretRuntimeUsageService 
   @Override
   public void createSecretRuntimeUsage(
       IdentifierRef secretIdentifierRef, EntityDetailProtoDTO referredByEntity, EntityUsageDetailProto usageDetail) {
-    IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTOHelper.fromIdentifierRef(secretIdentifierRef);
-    EntityActivityCreateDTO entityActivityCreateDTO = createRuntimeUsageDTOForSecret(
-        secretIdentifierRef.getAccountIdentifier(), identifierRefProtoDTO, referredByEntity, usageDetail);
-    secretRuntimeUsageEventProducer.publishEvent(
-        secretIdentifierRef.getAccountIdentifier(), secretIdentifierRef.getIdentifier(), entityActivityCreateDTO);
+    if (ngFeatureFlagHelperService.isEnabled(
+            secretIdentifierRef.getAccountIdentifier(), FeatureName.CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION)) {
+      IdentifierRefProtoDTO identifierRefProtoDTO = IdentifierRefProtoDTOHelper.fromIdentifierRef(secretIdentifierRef);
+      EntityActivityCreateDTO entityActivityCreateDTO = createRuntimeUsageDTOForSecret(
+          secretIdentifierRef.getAccountIdentifier(), identifierRefProtoDTO, referredByEntity, usageDetail);
+      secretRuntimeUsageEventProducer.publishEvent(
+          secretIdentifierRef.getAccountIdentifier(), secretIdentifierRef.getIdentifier(), entityActivityCreateDTO);
+    }
   }
 
   @Override
   public void createSecretRuntimeUsage(String accountIdentifier, SecretDTOV2 secretDTOV2,
       EntityDetailProtoDTO referredByEntity, EntityUsageDetailProto usageDetail) {
-    IdentifierRefProtoDTO identifierRefProtoDTO =
-        IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, secretDTOV2.getOrgIdentifier(),
-            secretDTOV2.getProjectIdentifier(), secretDTOV2.getIdentifier());
-    EntityActivityCreateDTO entityActivityCreateDTO =
-        createRuntimeUsageDTOForSecret(accountIdentifier, identifierRefProtoDTO, referredByEntity, usageDetail);
-    secretRuntimeUsageEventProducer.publishEvent(
-        accountIdentifier, secretDTOV2.getIdentifier(), entityActivityCreateDTO);
+    if (ngFeatureFlagHelperService.isEnabled(
+            accountIdentifier, FeatureName.CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION)) {
+      IdentifierRefProtoDTO identifierRefProtoDTO =
+          IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, secretDTOV2.getOrgIdentifier(),
+              secretDTOV2.getProjectIdentifier(), secretDTOV2.getIdentifier());
+      EntityActivityCreateDTO entityActivityCreateDTO =
+          createRuntimeUsageDTOForSecret(accountIdentifier, identifierRefProtoDTO, referredByEntity, usageDetail);
+      secretRuntimeUsageEventProducer.publishEvent(
+          accountIdentifier, secretDTOV2.getIdentifier(), entityActivityCreateDTO);
+    }
+  }
+
+  @Override
+  public void createSecretRuntimeUsage(
+      Set<VisitedSecretReference> secretReferences, EntityUsageDetailProto usageDetail) {
+    if (EmptyPredicate.isNotEmpty(secretReferences)) {
+      if (ngFeatureFlagHelperService.isEnabled(
+              secretReferences.stream().findFirst().get().getSecretRef().getAccountIdentifier(),
+              FeatureName.CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION)) {
+        secretReferences.forEach(secretReference
+            -> createSecretRuntimeUsage(secretReference.getSecretRef(), secretReference.getReferredBy(), usageDetail));
+      }
+    }
   }
 
   private EntityActivityCreateDTO createRuntimeUsageDTOForSecret(String accountIdentifier,

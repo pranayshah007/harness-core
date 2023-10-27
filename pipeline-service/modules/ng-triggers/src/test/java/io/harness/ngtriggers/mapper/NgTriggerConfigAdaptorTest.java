@@ -68,6 +68,7 @@ import io.harness.webhook.WebhookConfigProvider;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
@@ -170,8 +171,9 @@ public class NgTriggerConfigAdaptorTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testConvertGithubPRTriggerFromV0ToV2() throws Exception {
-    initiateTest(
-        "ng-trigger-github-pr-v0.yaml", GITHUB, GithubTriggerEvent.PULL_REQUEST, asList(GithubPRAction.values()));
+    List<GithubPRAction> githubPrActions = new ArrayList<>(asList(GithubPRAction.values()));
+    githubPrActions.remove(GithubPRAction.REVIEWREADY);
+    initiateTest("ng-trigger-github-pr-v0.yaml", GITHUB, GithubTriggerEvent.PULL_REQUEST, githubPrActions);
   }
 
   @Test

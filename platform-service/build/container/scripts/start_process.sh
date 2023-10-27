@@ -27,7 +27,7 @@ fi
 if [[ "${ENABLE_SERIALGC}" == "true" ]]; then
     export GC_PARAMS=" -XX:+UseSerialGC -Dfile.encoding=UTF-8"
 else
-    export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
+    export GC_PARAMS=" -XX:+UseG1GC -Dfile.encoding=UTF-8"
 fi
 
 export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS $JAVA_17_FLAGS"

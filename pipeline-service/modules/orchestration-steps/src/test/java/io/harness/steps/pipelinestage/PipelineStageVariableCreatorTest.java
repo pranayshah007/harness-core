@@ -76,7 +76,8 @@ public class PipelineStageVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.childPipeline.delegateSelectors", "pipeline.stages.childPipeline.spec.pipeline",
             "pipeline.stages.childPipeline.name", "pipeline.stages.childPipeline.spec.project",
             "pipeline.stages.childPipeline.description", "pipeline.stages.childPipeline.spec.org",
-            "pipeline.stages.childPipeline.spec.pipelineInputs", "pipeline.stages.childPipeline.when");
+            "pipeline.stages.childPipeline.spec.pipelineInputs", "pipeline.stages.childPipeline.when",
+            "pipeline.stages.childPipeline.timeout");
   }
 
   @Test

@@ -24,6 +24,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -67,5 +68,27 @@ public class ChaosResource {
     } catch (Exception e) {
       return ResponseDTO.newResponse(true);
     }
+  }
+
+  @POST
+  @Path("/chaosInfrastructure")
+  @InternalApi
+  @ApiOperation(value = "Register the chaos infrastructure entity with the parent environment",
+      nickname = "registerChaosInfrastructure", hidden = true)
+  public ResponseDTO<Boolean>
+  registerChaosInfrastructure(@Body ChaosInfrastructureRequest chaosInfrastructureRequest) {
+    boolean result = chaosService.registerChaosInfrastructure(chaosInfrastructureRequest);
+    return ResponseDTO.newResponse(result);
+  }
+
+  @DELETE
+  @Path("/chaosInfrastructure")
+  @InternalApi
+  @ApiOperation(value = "Deregister the chaos infrastructure entity relation with the parent environment",
+      nickname = "deleteChaosInfrastructure", hidden = true)
+  public ResponseDTO<Boolean>
+  deleteChaosInfrastructure(@Body ChaosInfrastructureRequest chaosInfrastructureRequest) {
+    boolean result = chaosService.deleteChaosInfrastructure(chaosInfrastructureRequest);
+    return ResponseDTO.newResponse(result);
   }
 }

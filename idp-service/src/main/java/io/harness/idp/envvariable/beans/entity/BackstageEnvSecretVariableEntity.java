@@ -30,6 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class BackstageEnvSecretVariableEntity extends BackstageEnvVariableEntity {
   private String harnessSecretIdentifier;
   private boolean isDeleted;
+  private long secretLastModifiedAt;
 
   @Override
   public BackstageEnvVariableType getType() {
@@ -39,11 +40,13 @@ public class BackstageEnvSecretVariableEntity extends BackstageEnvVariableEntity
   public static class BackstageEnvSecretVariableMapper
       implements BackstageEnvVariableMapper<BackstageEnvSecretVariable, BackstageEnvSecretVariableEntity> {
     @Override
-    public BackstageEnvSecretVariableEntity fromDto(BackstageEnvSecretVariable envVariable, String accountIdentifier) {
+    public BackstageEnvSecretVariableEntity fromDto(
+        BackstageEnvSecretVariable envVariable, String accountIdentifier, long secretLastModifiedAt) {
       BackstageEnvSecretVariableEntity envSecretVariableEntity =
           BackstageEnvSecretVariableEntity.builder()
               .harnessSecretIdentifier(envVariable.getHarnessSecretIdentifier())
               .isDeleted(envVariable.isIsDeleted())
+              .secretLastModifiedAt(secretLastModifiedAt)
               .build();
       setCommonFieldsEntity(envVariable, envSecretVariableEntity, accountIdentifier);
       return envSecretVariableEntity;

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.expression.functors.ExpressionFunctor;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class SecretMigratorFunctor implements ExpressionFunctor {
   private Map<String, String> nameToIdentifier;
   private CaseFormat caseFormat;

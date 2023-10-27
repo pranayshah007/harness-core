@@ -27,10 +27,9 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
-import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -66,6 +65,7 @@ public class NodeExecutionMap extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient NodeExecution nodeExecution;
   transient Set<NodeExecutionEntityType> entityTypes;
@@ -76,7 +76,8 @@ public class NodeExecutionMap extends LateBindingMap {
   @Builder
   NodeExecutionMap(NodeExecutionsCache nodeExecutionsCache, PmsOutcomeService pmsOutcomeService,
       PmsSweepingOutputService pmsSweepingOutputService, Ambiance ambiance, NodeExecution nodeExecution,
-      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine) {
+      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine,
+      NodeExecutionInfoService nodeExecutionInfoService) {
     this.nodeExecutionsCache = nodeExecutionsCache;
     this.pmsOutcomeService = pmsOutcomeService;
     this.pmsSweepingOutputService = pmsSweepingOutputService;
@@ -90,6 +91,7 @@ public class NodeExecutionMap extends LateBindingMap {
       this.children.putAll(children);
     }
     this.engine = engine;
+    this.nodeExecutionInfoService = nodeExecutionInfoService;
   }
 
   @Override
@@ -144,8 +146,7 @@ public class NodeExecutionMap extends LateBindingMap {
      * c) a Pipeline Stage -> which is same as normal stage
      */
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
-    // Todo: Fetch Ambiance on demand
-    Ambiance nodeAmbiance = nodeExecution.getAmbiance();
+    Ambiance nodeAmbiance = nodeExecutionsCache.getAmbiance(nodeExecution.getUuid());
     boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
     // If any other node expression is called, then return pipeline execution url.
     if (!currentLevelInsideStage) {
@@ -277,13 +278,10 @@ public class NodeExecutionMap extends LateBindingMap {
     return (Map<String, Object>) NodeExecutionUtils.resolveObject(node.getStepParameters());
   }
 
-  private static Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
-    if (nodeExecution.getAmbiance() != null) {
-      Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
-      if (currentLevel != null) {
-        return StrategyUtils.fetchStrategyObjectMap(
-            currentLevel, AmbianceUtils.shouldUseMatrixFieldName(nodeExecution.getAmbiance()));
-      }
+  private Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
+    if (nodeExecution.getUuid() != null) {
+      return nodeExecutionInfoService.fetchStrategyObjectMap(
+          nodeExecution.getUuid(), AmbianceUtils.shouldUseMatrixFieldName(ambiance));
     }
     return new HashMap<>();
   }

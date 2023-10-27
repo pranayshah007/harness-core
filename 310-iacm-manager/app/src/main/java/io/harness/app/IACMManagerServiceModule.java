@@ -155,6 +155,17 @@ public class IACMManagerServiceModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
+  @Named("harnessCodeGitBaseUrl")
+  String getHarnessCodeGitBaseUrl() {
+    String gitUrl = iacmManagerConfiguration.getHarnessCodeGitUrl();
+    if (gitUrl.endsWith("/")) {
+      return gitUrl.substring(0, gitUrl.length() - 1);
+    }
+    return gitUrl;
+  }
+
+  @Provides
   @Named(SECRET_CACHE_KEY)
   Cache<String, EncryptedDataDetails> getSecretTokenCache() {
     return new NoOpCache<>();

@@ -348,7 +348,7 @@ public class HarnessApprovalStepTest {
   public void testAbort() {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
-    harnessApprovalStep.handleAbort(ambiance, parameters, null);
+    harnessApprovalStep.handleAbort(ambiance, parameters, null, false);
     verify(approvalInstanceService).abortByNodeExecutionId(INSTANCE_ID);
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }

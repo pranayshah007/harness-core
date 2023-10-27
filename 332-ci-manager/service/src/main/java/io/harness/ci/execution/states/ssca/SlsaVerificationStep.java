@@ -31,6 +31,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
+import io.harness.slsa.beans.verification.source.SlsaGcrSourceSpec;
 import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
 import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 
@@ -82,6 +83,18 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
       String imageName = resolveStringParameter(
           "image_path", SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getImage_path(), true);
       String tag = resolveStringParameter("tag", SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getTag(), true);
+
+      stepArtifactsBuilder.publishedImageArtifact(
+          PublishedImageArtifact.builder().imageName(imageName).tag(tag).build());
+    }
+
+    if (slsaVerificationStepInfo != null && slsaVerificationStepInfo.getSource() != null
+        && SlsaVerificationSourceType.GCR.equals(slsaVerificationStepInfo.getSource().getType())) {
+      String identifier = stepParameters.getIdentifier();
+      SlsaGcrSourceSpec slsaGcrSourceSpec = (SlsaGcrSourceSpec) slsaVerificationStepInfo.getSource().getSpec();
+      String imageName =
+          resolveStringParameter("image_path", SLSA_VERIFICATION, identifier, slsaGcrSourceSpec.getImage_name(), true);
+      String tag = resolveStringParameter("tag", SLSA_VERIFICATION, identifier, slsaGcrSourceSpec.getTag(), true);
 
       stepArtifactsBuilder.publishedImageArtifact(
           PublishedImageArtifact.builder().imageName(imageName).tag(tag).build());

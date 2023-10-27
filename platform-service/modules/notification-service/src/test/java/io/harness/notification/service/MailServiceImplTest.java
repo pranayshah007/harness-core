@@ -17,8 +17,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
@@ -189,8 +187,6 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
-    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
-        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -236,8 +232,6 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
-    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
-        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);

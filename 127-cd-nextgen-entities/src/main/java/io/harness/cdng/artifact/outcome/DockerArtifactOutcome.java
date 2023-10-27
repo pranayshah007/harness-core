@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.DockerArtifactSummary;
+import io.harness.cdng.artifact.bean.ArtifactCorrelationDetails;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.Sets;
@@ -95,7 +96,11 @@ public class DockerArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return DockerArtifactSummary.builder().imagePath(getImagePath()).tag(getTag()).build();
+    return DockerArtifactSummary.builder()
+        .imagePath(getImagePath())
+        .tag(getTag())
+        .artifactIdentity(ArtifactCorrelationDetails.builder().image(getImage()).build())
+        .build();
   }
 
   @Override

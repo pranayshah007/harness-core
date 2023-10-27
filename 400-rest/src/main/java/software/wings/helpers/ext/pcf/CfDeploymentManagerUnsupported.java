@@ -24,6 +24,7 @@ import io.harness.pcf.model.CfRunPluginScriptRequestData;
 
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Map;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
@@ -195,6 +196,13 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   @Override
   public void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
       throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public Map<String, String> runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+      CfRunPluginScriptRequestData requestData, LogCallback logCallback, Map<String, String> inputVariables,
+      List<String> outputVariables) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 

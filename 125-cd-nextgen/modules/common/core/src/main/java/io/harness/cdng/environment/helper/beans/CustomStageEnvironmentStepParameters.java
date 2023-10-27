@@ -34,6 +34,6 @@ public class CustomStageEnvironmentStepParameters implements StepParameters {
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
-    return new LinkedList<>(Arrays.asList("envRef", "infraId", "envInputs", "childrenNodeIds"));
+    return new LinkedList<>(Arrays.asList("envInputs", "childrenNodeIds"));
   }
 }

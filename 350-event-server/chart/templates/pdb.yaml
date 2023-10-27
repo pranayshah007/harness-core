@@ -13,5 +13,5 @@ metadata:
 spec:
   minAvailable: 1
   selector:
-   matchLabels:
-    app: event-service
+    matchLabels:
+      {{- include "event-service.selectorLabels" . | nindent 6 }}

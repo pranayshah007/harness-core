@@ -1,0 +1,32 @@
+{
+  "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:AccountId:loadbalancer/net/LoadBalancerName/LoadBalancerId",
+  "DNSName": "DNSName.elb.us-east-1.amazonaws.com",
+  "CanonicalHostedZoneId": "CanonicalHostedZoneId",
+  "CreatedTime": "2023-06-01T10:16:26.681000+00:00",
+  "LoadBalancerName": "LoadBalancerName",
+  "Scheme": "internal",
+  "VpcId": "VpcId",
+  "State": {
+    "Code": "active"
+  },
+  "Type": "network",
+  "AvailabilityZones": [
+    {
+      "ZoneName": "us-east-1a",
+      "SubnetId": "SubnetId1",
+      "LoadBalancerAddresses": []
+    },
+    {
+      "ZoneName": "us-east-1b",
+      "SubnetId": "SubnetId2",
+      "LoadBalancerAddresses": []
+    }
+  ],
+  "IpAddressType": "ipv4",
+  "Tags": [
+    {
+      "Key": "service.k8s.aws/stack",
+      "Value": "StackName"
+    }
+  ]
+}

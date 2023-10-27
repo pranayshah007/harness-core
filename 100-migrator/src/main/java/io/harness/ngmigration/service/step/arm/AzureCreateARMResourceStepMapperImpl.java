@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.step.arm;
-
 import static io.harness.azure.model.AzureDeploymentMode.INCREMENTAL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.containsExpressions;
@@ -17,6 +16,9 @@ import static io.harness.ngmigration.utils.MigratorUtility.getYamlConfigFile;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.model.ARMResourceType;
 import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureDeploymentMode;
@@ -75,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class AzureCreateARMResourceStepMapperImpl extends BaseAzureARMProvisionerMapper {
   public List<CgEntityId> getReferencedEntities(

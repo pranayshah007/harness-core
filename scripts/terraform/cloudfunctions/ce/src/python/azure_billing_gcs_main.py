@@ -10,6 +10,7 @@ from google.cloud import bigquery
 from google.cloud import scheduler
 from google.cloud import pubsub_v1
 from google.cloud import storage
+from util import http_trigger_cf_v2_async
 import datetime
 
 """
@@ -72,6 +73,7 @@ client_bq = bigquery.Client(PROJECTID)
 client_gcs = storage.Client(PROJECTID)
 AZURECFTOPIC = os.environ.get('AZURECFTOPIC', f'projects/{PROJECTID}/topics/nikunjtesttopic')
 TOPIC_PATH = publisher.topic_path(PROJECTID, AZURECFTOPIC)
+AZUREBILLINGBQCFNAME = f"projects/{PROJECTID}/locations/us-central1/functions/ce-azure-billing-bq-terraform"
 
 def main(event, context):
     """Triggered when gcs data transfer job completes for Azure
@@ -89,7 +91,7 @@ def main(event, context):
 
     unique_cur_paths = get_csv_paths(jsonData)
     if len(unique_cur_paths) > 0:
-        send_event_for_processing(unique_cur_paths, jsonData)
+        trigger_bq_cf_for_processing(unique_cur_paths, jsonData)
     else:
         print("No events to send")
     #create_scheduler_job(jsonData) #deprecated
@@ -153,7 +155,7 @@ def get_csv_paths(jsonData):
     print("Found unique folders with CSVs: %s" % unique_cur_paths)
     return list(unique_cur_paths)
 
-def send_event_for_processing(unique_cur_paths, jsonData):
+def trigger_bq_cf_for_processing(unique_cur_paths, jsonData):
     active_months_in_gcs_bucket = {}
     for path in unique_cur_paths:
         ps = path.split("/")
@@ -180,23 +182,8 @@ def send_event_for_processing(unique_cur_paths, jsonData):
         if event_data["accountId"] not in processed_accounts:
             event_data["triggerHistoricalCostUpdateInPreferredCurrency"] = True
             event_data["disableHistoricalUpdateForMonths"] = active_months_in_gcs_bucket[event_data["accountId"]]
-        send_event(event_data)
+        http_trigger_cf_v2_async(AZUREBILLINGBQCFNAME, event_data)
         processed_accounts.add(event_data["accountId"])
-
-
-def send_event(event_data):
-    message_json = json.dumps({
-        'data': {'message': event_data},
-    })
-    message_bytes = message_json.encode('utf-8')
-
-    # Publishes a message
-    try:
-        publish_future = publisher.publish(TOPIC_PATH, data=message_bytes)
-        publish_future.result()  # Verify the publish succeeded
-        print('Message published: %s.' % event_data)
-    except Exception as e:
-        print(e)
 
 
 def create_scheduler_job(jsonData):

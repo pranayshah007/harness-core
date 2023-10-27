@@ -55,7 +55,7 @@ public class RevertPRStepInfo extends RevertPRBaseStepInfo implements CDAbstract
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.ASYNC_CHAIN;
   }
 
   @Override

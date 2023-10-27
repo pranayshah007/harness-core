@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
@@ -504,7 +505,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<Application> getAppsByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asList(findOptions);
@@ -513,7 +516,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<String> getAppIdsByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asKeyList(findOptions)
@@ -525,7 +530,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public Set<String> getAppIdsAsSetByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asKeyList(findOptions)
@@ -537,7 +544,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<String> getAppNamesByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     return wingsPersistence.createQuery(Application.class)
         .project(ApplicationKeys.name, true)
         .filter(ApplicationKeys.accountId, accountId)
@@ -550,7 +559,9 @@ public class AppServiceImpl implements AppService {
   @Override
   public void deleteByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     wingsPersistence.createQuery(Application.class)
         .filter(Application.ACCOUNT_ID_KEY2, accountId)
         .asKeyList(findOptions)

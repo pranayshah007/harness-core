@@ -21,7 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import lombok.experimental.UtilityClass;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @UtilityClass
 @OwnedBy(PL)
@@ -40,8 +44,26 @@ public class GlobalSecretManagerUtils {
             || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(ngSecretManagerMetadata.getIdentifier()));
   }
 
+  public static String getValueByJsonPath(Object input, String key) throws JsonProcessingException {
+    return isValidJson(input) ? getValueByJsonPath(parse(input), key) : input.toString();
+  }
+
+  public static String getValueByJsonPath(String input, String key) throws JsonProcessingException {
+    return isValidJson(input) ? getValueByJsonPath(parse(input), key) : input;
+  }
+
   public static String getValueByJsonPath(DocumentContext context, String key) throws JsonProcessingException {
-    Object value = isEmpty(key) ? context.read("$") : context.read("$." + key);
+    Object value = null;
+    if (isEmpty(key)) {
+      value = context.read("$");
+    } else {
+      try {
+        value = context.read("$." + key);
+      } catch (PathNotFoundException exception) {
+        value = context.read("$.['" + key + "']"); // This is to handle json key with dots
+      }
+    }
+
     if (value instanceof String) {
       return value.toString();
     }
@@ -55,5 +77,31 @@ public class GlobalSecretManagerUtils {
 
   public static DocumentContext parse(String json) {
     return JsonPath.using(configuration).parse(json);
+  }
+
+  public boolean isValidJson(Object json) {
+    try {
+      new JSONObject(json);
+    } catch (JSONException e) {
+      try {
+        new JSONArray(json);
+      } catch (JSONException ne) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean isValidJson(String json) {
+    try {
+      new JSONObject(json);
+    } catch (JSONException e) {
+      try {
+        new JSONArray(json);
+      } catch (JSONException ne) {
+        return false;
+      }
+    }
+    return true;
   }
 }

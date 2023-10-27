@@ -45,6 +45,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
@@ -71,6 +72,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private OutboxServiceImpl outboxService;
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private GitSyncSdkService gitSyncSdkService;
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private PipelineMetadataService pipelineMetadataService;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
@@ -126,6 +128,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    on(pmsPipelineService).set("pmsFeatureFlagHelper", pmsFeatureFlagHelper);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelperMocked)
@@ -169,6 +172,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    on(pmsPipelineService).set("pmsFeatureFlagHelper", pmsFeatureFlagHelper);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelperMocked)

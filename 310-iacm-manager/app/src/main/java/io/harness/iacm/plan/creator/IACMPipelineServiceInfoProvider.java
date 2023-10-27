@@ -7,12 +7,14 @@
 
 package io.harness.iacm.plan.creator;
 
+import static io.harness.beans.steps.StepSpecTypeConstants.PLUGIN;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.execution.creator.variables.ActionStepVariableCreator;
+import io.harness.ci.execution.creator.variables.GitCloneStepVariableCreator;
 import io.harness.ci.execution.creator.variables.PluginStepVariableCreator;
 import io.harness.ci.execution.creator.variables.RunStepVariableCreator;
 import io.harness.ci.execution.plan.creator.steps.CIStepsPlanCreator;
@@ -21,6 +23,7 @@ import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.ci.plancreator.V1.ActionStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
+import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.TestStepPlanCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
@@ -67,6 +70,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     planCreators.add(new IACMStagePMSPlanCreator()); // Creation of the Stage execution plan
     planCreators.add(new IACMStepPlanCreator()); // Supported steps for the Stage
     planCreators.add(new PluginStepPlanCreator()); // Plugin step
+    planCreators.add(new GitClonePlanCreator());
     planCreators.add(new RunStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator()); // Add GithubAction step
     planCreators.addAll(
@@ -107,6 +111,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new IACMStageVariableCreator()); // Variable creator for the stage
     variableCreators.add(new IACMStepVariableCreator()); // V1 step variable creator for external steps
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
+    variableCreators.add(new GitCloneStepVariableCreator());
     variableCreators.add(new IACMTerraformPluginStepVariableCreator());
     variableCreators.add(new IACMApprovalStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
@@ -133,7 +138,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<StepInfo> getStepInfo() {
     StepInfo pluginStepInfo = StepInfo.newBuilder()
                                   .setName("Plugin")
-                                  .setType(StepSpecTypeConstants.PLUGIN)
+                                  .setType(PLUGIN)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
     StepInfo runStepInfo = StepInfo.newBuilder()
@@ -146,12 +151,18 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
                                   .setType(StepSpecTypeConstants.ACTION)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
-
+    StepInfo gitCloneStepInfo =
+        StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(pluginStepInfo);
     stepInfos.add(runStepInfo);
     stepInfos.add(actionStepInfo);
+    stepInfos.add(gitCloneStepInfo);
     Arrays.asList(IACMStepType.values())
         .forEach(e -> e.getStepCategories().forEach(category -> stepInfos.add(createStepInfo(e, category))));
     return stepInfos;

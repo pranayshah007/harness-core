@@ -10,6 +10,7 @@ package io.harness.repositories.deploymentsummary;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertFalse;
@@ -60,11 +61,17 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
   @InjectMocks DeploymentSummaryCustomImpl deploymentSummaryCustom;
 
   @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+  @Owner(developers = {PIYUSH_BHUWALKA, PRATYUSH})
   @Category(UnitTests.class)
   public void fetchNthRecordFromNowTest() {
     int N = 5;
     InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
+    fetchNthRecordFromNow(N, infrastructureMappingDTO, null);
+    fetchNthRecordFromNow(N, infrastructureMappingDTO, false);
+  }
+
+  private void fetchNthRecordFromNow(
+      int N, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment) {
     Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
                             .is(INSTANCE_SYNC_KEY)
                             .and(DeploymentSummaryKeys.accountIdentifier)
@@ -76,7 +83,9 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getProjectIdentifier())) {
       criteria.and(DeploymentSummaryKeys.projectIdentifier).is(infrastructureMappingDTO.getProjectIdentifier());
     }
-
+    if (isRollbackDeployment != null) {
+      criteria.and(DeploymentSummaryKeys.isRollbackDeployment).is(isRollbackDeployment);
+    }
     criteria.and(DeploymentSummaryKeys.infrastructureMappingId).is(infrastructureMappingDTO.getId());
 
     Query query = new Query().addCriteria(criteria);
@@ -84,9 +93,11 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     query.skip((long) N - 1);
     query.limit(1);
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().build();
-    List<DeploymentSummary> deploymentSummaryList = Arrays.asList(deploymentSummary);
+    List<DeploymentSummary> deploymentSummaryList = Collections.singletonList(deploymentSummary);
     when(mongoTemplate.find(query, DeploymentSummary.class)).thenReturn(deploymentSummaryList);
-    assertThat(deploymentSummaryCustom.fetchNthRecordFromNow(N, INSTANCE_SYNC_KEY, infrastructureMappingDTO).get())
+    assertThat(deploymentSummaryCustom
+                   .fetchNthRecordFromNow(N, INSTANCE_SYNC_KEY, infrastructureMappingDTO, isRollbackDeployment)
+                   .get())
         .isEqualTo(deploymentSummary);
   }
 
@@ -137,7 +148,7 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     query.limit(1);
     when(mongoTemplate.find(query, DeploymentSummary.class)).thenReturn(Collections.emptyList());
     Optional<DeploymentSummary> record =
-        deploymentSummaryCustom.fetchNthRecordFromNow(n, INSTANCE_SYNC_KEY, infrastructureMappingDTO);
+        deploymentSummaryCustom.fetchNthRecordFromNow(n, INSTANCE_SYNC_KEY, infrastructureMappingDTO, null);
     assertFalse(record.isPresent());
   }
 
@@ -145,7 +156,7 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testFetchNthRecordFromNowWhenInfraMappingDTOIsNull() {
-    deploymentSummaryCustom.fetchNthRecordFromNow(5, INSTANCE_SYNC_KEY, null);
+    deploymentSummaryCustom.fetchNthRecordFromNow(5, INSTANCE_SYNC_KEY, null, null);
   }
 
   @Test

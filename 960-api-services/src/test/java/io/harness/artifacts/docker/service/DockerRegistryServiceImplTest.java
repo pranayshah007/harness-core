@@ -55,6 +55,7 @@ import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
@@ -73,6 +74,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import okhttp3.MediaType;
+import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -82,6 +85,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class DockerRegistryServiceImplTest extends CategoryTest {
@@ -555,6 +559,28 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     } catch (Exception ex) {
       assertThat(getMessage(ex)).isEqualTo("Null response found");
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testIsSuccessfulRateLimitExceedResponse() {
+    Response<DockerImageTagResponse> response =
+        Response.error(429, ResponseBody.create(MediaType.parse("text/plain"), "MSG"));
+    assertThatThrownBy(() -> DockerRegistryServiceImpl.isSuccessful(response))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Image pull rate limit reached");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testIsSuccessfulRateLimitExceedResponsePublicRegistry() {
+    Response<DockerImageTagResponse> response =
+        Response.error(429, ResponseBody.create(MediaType.parse("text/plain"), "MSG"));
+    assertThatThrownBy(() -> DockerRegistryServiceImpl.isSuccessfulPublicRegistry(response))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Image pull rate limit reached. Please authenticate Docker connector using Username and Password");
   }
 
   @Test

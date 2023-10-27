@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.sdk.core.steps.executables.AsyncChainExecutable;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -40,24 +41,27 @@ public interface AsyncChainExecutableWithRbac<T extends StepParameters> extends 
   }
 
   default AsyncChainExecutableResponse executeNextLink(Ambiance ambiance, T stepParameters,
-      StepInputPackage inputPackage, ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception {
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
-      return this.executeNextLinkWithSecurityContext(ambiance, stepParameters, inputPackage, responseSupplier);
+      return this.executeNextLinkWithSecurityContext(
+          ambiance, stepParameters, inputPackage, passThroughData, responseSupplier);
     }
   }
 
   AsyncChainExecutableResponse executeNextLinkWithSecurityContext(Ambiance ambiance, T stepParameters,
-      StepInputPackage inputPackage, ThrowingSupplier<ResponseData> responseSupplier) throws Exception;
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception;
 
-  default StepResponse finalizeExecution(
-      Ambiance ambiance, T stepParameters, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  default StepResponse finalizeExecution(Ambiance ambiance, T stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
-      return this.finalizeExecutionWithSecurityContext(ambiance, stepParameters, responseDataSupplier);
+      return this.finalizeExecutionWithSecurityContext(ambiance, stepParameters, passThroughData, responseDataSupplier);
     }
   }
 
-  StepResponse finalizeExecutionWithSecurityContext(
-      Ambiance ambiance, T stepParameters, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
+  StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, T stepParameters,
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
 
   AsyncChainExecutableResponse startChainLinkAfterRbac(
       Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);

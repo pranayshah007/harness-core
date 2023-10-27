@@ -154,6 +154,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private static final String DELEGATE_DISCONNECT_ERR_MSG =
       "The delegate %s disconnected while executing the task.\n\n";
 
+  // TODO: remove after resolving PL-40073
+  private static final String ACCOUNTID_FOR_DEBUG = "pitvBmtSMKNZU3gANq01Q";
+
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateService delegateService;
   @Inject private EnvironmentService environmentService;
@@ -510,9 +513,15 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     log.info("Selectors received : {}", selectorsCapabilityList);
 
     Set<String> delegateSelectors = trimmedLowercaseSet(delegateService.retrieveDelegateSelectors(delegate, true));
+
     if (isEmpty(delegateSelectors)) {
       return false;
     }
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(delegate.getAccountId())) {
+      log.info("Delegate {} has following selectors : {} ", delegate.getDelegateName(), delegateSelectors);
+    }
+
     boolean canAssignSelector = true;
 
     for (SelectorCapability selectorCapability : selectorsCapabilityList) {

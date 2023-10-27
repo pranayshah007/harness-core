@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -29,5 +30,5 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("outputAliasSweepingOutput")
 public class OutputAliasSweepingOutput implements ExecutionSweepingOutput {
-  Map<String, String> outputVariables;
+  @NotNull Map<String, String> outputVariables;
 }

@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.container.Label.Builder.aLabel;
@@ -2545,6 +2546,205 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     assertSavedAndDeletedInstancesOnNewDeployment(
         deploymentSummary, instancesInDb, existingK8sPod, singletonList("pod-1"), emptyList(), artifact);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testRollback_AddNewInstance_UpdateBuildNum() throws Exception {
+    final List<Instance> instances =
+        asList(Instance.builder()
+                   .uuid(INSTANCE_1_ID)
+                   .instanceType(KUBERNETES_CONTAINER_INSTANCE)
+                   .podInstanceKey(PodInstanceKey.builder().podName("pod:1").namespace("default").build())
+                   .instanceInfo(K8sPodInfo.builder()
+                                     .podName("pod:1")
+                                     .namespace("default")
+                                     .releaseName("releaseName")
+                                     .containers(singletonList(
+                                         K8sContainerInfo.builder().image("slightlyDifferent/image1:version1").build()))
+                                     .build())
+                   .lastArtifactId(ARTIFACT_ID)
+                   .lastWorkflowExecutionName("workflowName")
+                   .lastWorkflowExecutionId("workflowExecution_1")
+                   .build(),
+            Instance.builder()
+                .uuid(INSTANCE_2_ID)
+                .instanceType(KUBERNETES_CONTAINER_INSTANCE)
+                .podInstanceKey(PodInstanceKey.builder().podName("pod:2").namespace("default").build())
+                .instanceInfo(K8sPodInfo.builder()
+                                  .podName("pod:1")
+                                  .namespace("default")
+                                  .releaseName("releaseName")
+                                  .containers(singletonList(
+                                      K8sContainerInfo.builder().image("slightlyDifferent/image1:version1").build()))
+                                  .build())
+                .lastArtifactId(ARTIFACT_ID)
+                .lastWorkflowExecutionName("workflowName")
+                .lastWorkflowExecutionId("workflowExecution_1")
+                .build());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+    doReturn(Optional.of(DeploymentSummary.builder()
+                             .deploymentInfo(K8sDeploymentInfo.builder()
+                                                 .namespace("default")
+                                                 .releaseName("releaseName")
+                                                 .releaseNumber(1)
+                                                 .build())
+                             .accountId(ACCOUNT_ID)
+                             .artifactStreamId(ARTIFACT_STREAM_ID)
+                             .infraMappingId(INFRA_MAPPING_ID)
+                             .workflowExecutionId("workflowExecution_2")
+                             .stateExecutionInstanceId("stateExecutionInstanceId")
+                             .artifactId(ARTIFACT_ID)
+                             .artifactBuildNum("version2")
+                             .build()))
+        .when(deploymentService)
+        .get(any(DeploymentSummary.class));
+
+    doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
+        .when(infraMappingService)
+        .get(any(), any());
+
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
+        .thenReturn(asList(K8sPod.builder()
+                               .name("podName")
+                               .namespace("default")
+                               .releaseName("releaseName")
+                               .containerList(asList(
+                                   K8sContainer.builder().image("image1:version2").containerId("containerId1").build()))
+                               .build()));
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX), eq(ACCOUNT_ID)))
+        .thenReturn(true);
+
+    OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
+
+    final Map<String, String> metadata = new HashMap<>();
+    metadata.put("buildNo", "version1");
+    metadata.put("image", "slightlyDifferent/image1:version1");
+    persistence.save(anArtifact()
+                         .withUuid(ARTIFACT_ID)
+                         .withArtifactStreamId(ARTIFACT_STREAM_ID)
+                         .withAppId("app_id")
+                         .withMetadata(new ArtifactMetadata(metadata))
+                         .build());
+
+    containerInstanceHandler.handleNewDeployment(
+        Arrays.asList(
+            DeploymentSummary.builder()
+                .deploymentInfo(K8sDeploymentInfo.builder()
+                                    .namespace("default")
+                                    .releaseName("releaseName")
+                                    .releaseNumber(2)
+                                    .build())
+                .accountId(ACCOUNT_ID)
+                .k8sDeploymentKey(K8sDeploymentKey.builder().releaseNumber(2).releaseName("releaseName").build())
+                .artifactStreamId(ARTIFACT_STREAM_ID)
+                .infraMappingId(INFRA_MAPPING_ID)
+                .workflowExecutionId("workflowExecution_1")
+                .stateExecutionInstanceId("stateExecutionInstanceId")
+                .artifactBuildNum("version1")
+                .build()),
+        true, onDemandRollbackInfo);
+
+    ArgumentCaptor<Instance> captor = ArgumentCaptor.forClass(Instance.class);
+    verify(instanceService).saveOrUpdate(captor.capture());
+
+    Instance instance = captor.getValue();
+    assertThat(instance.getLastArtifactId()).isEqualTo(ARTIFACT_ID);
+    assertThat(instance.getLastArtifactName()).isEqualTo("image1:version2");
+    assertThat(instance.getLastArtifactSourceName()).isEqualTo("image1");
+    assertThat(instance.getLastArtifactBuildNum()).isEqualTo("version2");
+    assertThat(instance.getLastWorkflowExecutionId()).isEqualTo("workflowExecution_2");
+    persistence.delete(Artifact.class, ARTIFACT_ID);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testRollbackWithoutReleaseNumber_DoNotUpdateWorkflow() throws Exception {
+    final List<Instance> instances =
+        singletonList(Instance.builder()
+                          .uuid(INSTANCE_1_ID)
+                          .instanceType(KUBERNETES_CONTAINER_INSTANCE)
+                          .podInstanceKey(PodInstanceKey.builder().podName("podName").namespace("default").build())
+                          .instanceInfo(K8sPodInfo.builder()
+                                            .podName("podName")
+                                            .namespace("default")
+                                            .releaseName("releaseName")
+                                            .containers(singletonList(K8sContainerInfo.builder()
+                                                                          .containerId("containerId1")
+                                                                          .image("slightlyDifferent/image1:version1")
+                                                                          .build()))
+                                            .build())
+                          .lastArtifactId(ARTIFACT_ID)
+                          .lastWorkflowExecutionName("workflowName")
+                          .lastWorkflowExecutionId("workflowExecution_1")
+                          .build());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+    doReturn(Optional.of(DeploymentSummary.builder()
+                             .deploymentInfo(
+                                 K8sDeploymentInfo.builder().namespace("default").releaseName("releaseName").build())
+                             .accountId(ACCOUNT_ID)
+                             .artifactStreamId(ARTIFACT_STREAM_ID)
+                             .infraMappingId(INFRA_MAPPING_ID)
+                             .workflowExecutionId("workflowExecution_2")
+                             .stateExecutionInstanceId("stateExecutionInstanceId")
+                             .artifactId(ARTIFACT_ID)
+                             .artifactBuildNum("version2")
+                             .build()))
+        .when(deploymentService)
+        .get(any(DeploymentSummary.class));
+
+    doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
+        .when(infraMappingService)
+        .get(any(), any());
+
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
+        .thenReturn(asList(K8sPod.builder()
+                               .name("podName")
+                               .namespace("default")
+                               .releaseName("releaseName")
+                               .containerList(asList(K8sContainer.builder()
+                                                         .image("slightlyDifferent/image1:version1")
+                                                         .containerId("containerId1")
+                                                         .build()))
+                               .build()));
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX), eq(ACCOUNT_ID)))
+        .thenReturn(true);
+
+    OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
+
+    final Map<String, String> metadata = new HashMap<>();
+    metadata.put("buildNo", "version1");
+    metadata.put("image", "slightlyDifferent/image1:version1");
+    persistence.save(anArtifact()
+                         .withUuid(ARTIFACT_ID)
+                         .withArtifactStreamId(ARTIFACT_STREAM_ID)
+                         .withAppId("app_id")
+                         .withMetadata(new ArtifactMetadata(metadata))
+                         .build());
+
+    containerInstanceHandler.handleNewDeployment(Arrays.asList(DeploymentSummary.builder()
+                                                                   .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                                       .namespace("default")
+                                                                                       .releaseName("releaseName")
+                                                                                       .releaseNumber(2)
+                                                                                       .build())
+                                                                   .accountId(ACCOUNT_ID)
+                                                                   .artifactStreamId(ARTIFACT_STREAM_ID)
+                                                                   .infraMappingId(INFRA_MAPPING_ID)
+                                                                   .workflowExecutionId("workflowExecution_1")
+                                                                   .stateExecutionInstanceId("stateExecutionInstanceId")
+                                                                   .artifactBuildNum("version1")
+                                                                   .build()),
+        true, onDemandRollbackInfo);
+
+    ArgumentCaptor<Instance> captor = ArgumentCaptor.forClass(Instance.class);
+    verify(instanceService, never()).saveOrUpdate(captor.capture());
+
+    persistence.delete(Artifact.class, ARTIFACT_ID);
   }
 
   private void assertSavedAndDeletedInstances(List<Instance> instancesInDb, K8sInstanceSyncResponse syncResponse,

@@ -22,6 +22,7 @@ import io.harness.beans.steps.nodes.BitriseStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
+import io.harness.beans.steps.nodes.BuildAndPushGARNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.beans.steps.nodes.GCSUploadNode;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
@@ -226,6 +227,17 @@ public class CiBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(BuildAndPushECRNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.BUILD_AND_PUSH_GAR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(BuildAndPushGARNode.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.BUILD_AND_PUSH_GCR)

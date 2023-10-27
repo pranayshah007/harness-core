@@ -94,7 +94,6 @@ import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
 import io.harness.gitsync.common.helper.GitAccessMapper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.ScmExceptionUtils;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
@@ -102,6 +101,7 @@ import io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMa
 import io.harness.gitsync.common.service.GitBranchService;
 import io.harness.gitsync.common.service.GitBranchSyncService;
 import io.harness.gitsync.common.service.GitEntityService;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
@@ -158,7 +158,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private final GitCommitService gitCommitService;
   private final UserProfileHelper userProfileHelper;
   private final GitSyncErrorService gitSyncErrorService;
-  private final GitSyncConnectorHelper gitSyncConnectorHelper;
+  private final GitSyncConnectorService gitSyncConnectorService;
   private final FullSyncJobService fullSyncJobService;
   private final ScmFacilitatorService scmFacilitatorService;
   private final GitSyncSettingsService gitSyncSettingsService;
@@ -170,7 +170,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       GitBranchService gitBranchService, GitFilePathHelper gitFilePathHelper,
       ScmOrchestratorService scmOrchestratorService, GitBranchSyncService gitBranchSyncService,
       GitCommitService gitCommitService, UserProfileHelper userProfileHelper, GitSyncErrorService gitSyncErrorService,
-      GitSyncConnectorHelper gitSyncConnectorHelper, FullSyncJobService fullSyncJobService,
+      GitSyncConnectorService gitSyncConnectorService, FullSyncJobService fullSyncJobService,
       ScmFacilitatorService scmFacilitatorService, GitSyncSettingsService gitSyncSettingsService,
       AccountClient accountClient) {
     this.gitEntityService = gitEntityService;
@@ -184,7 +184,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     this.gitCommitService = gitCommitService;
     this.userProfileHelper = userProfileHelper;
     this.gitSyncErrorService = gitSyncErrorService;
-    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.gitSyncConnectorService = gitSyncConnectorService;
     this.fullSyncJobService = fullSyncJobService;
     this.scmFacilitatorService = scmFacilitatorService;
     this.gitSyncSettingsService = gitSyncSettingsService;
@@ -200,11 +200,11 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         yamlGitConfig.getOrganizationIdentifier(), yamlGitConfig.getProjectIdentifier(), null);
 
     final Optional<ConnectorResponseDTO> connectorResponseDTO =
-        gitSyncConnectorHelper.getConnectorFromDefaultBranchElseFromGitBranch(accountId,
+        gitSyncConnectorService.getConnectorFromDefaultBranchElseFromGitBranch(accountId,
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier(),
             connectorRepo, connectorBranch);
-    if (!connectorResponseDTO.isPresent()) {
-      throw new InvalidRequestException(String.format("Ref Connector [{}] doesn't exist.", gitConnectorId));
+    if (connectorResponseDTO.isEmpty()) {
+      throw new InvalidRequestException(String.format("Ref Connector [%s] doesn't exist.", gitConnectorId));
     }
     final ConnectorResponseDTO connector = connectorResponseDTO.get();
     if (principal.hasUserPrincipal()) {

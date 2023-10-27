@@ -27,6 +27,7 @@ import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_SECRET_AC
 import static io.harness.k8s.eks.EksConstants.REGION_DELIMITER;
 import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.CodePulse;
@@ -42,11 +43,11 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 import io.harness.k8s.model.kubeconfig.EnvVariable;
 import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.kubeconfig.Exec.ExecBuilder;
@@ -69,45 +70,77 @@ import software.amazon.awssdk.services.eks.model.DescribeClusterResponse;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class AwsEKSV2DelegateTaskHelper {
+  static final String EMPTY_CLUSTER_NAME_ERROR_MESSAGE =
+      "The cluster name provided in the EKS K8s infrastructure mapping is empty.";
+  private static final String CLUSTER_NAME_SPLIT_ERROR_MESSAGE =
+      "Failed to extract AWS region and cluster name from [%s].";
+  private static final String CLUSTER_FETCH_ERROR_MESSAGE =
+      "Failed to perform AWS EKS:DescribeClusterRequest on cluster: [%s] ,region: [%s]";
+  static final String CLUSTER_NAME_SPLIT_ERROR_MESSAGE_WITH_EXPLANATION = CLUSTER_NAME_SPLIT_ERROR_MESSAGE
+      + " The expected format for an EKS cluster name is `<region>/<clusterName>`. Prefixing the AWS region with the cluster name is not needed if `region` parameter in Infrastructure definition is specified";
+  private static final String AWS_IAM_AUTHENTICATOR_MISSING_MESSAGE =
+      "aws-iam-authenticator is required to be installed for using AWS EKS Infrastructure for k8s deployment";
   @Inject private EksV2Client eksV2Client;
 
-  public KubernetesConfig getKubeConfig(AwsConnectorDTO awsConnectorDTO, String regionAndClusterName,
-      boolean isAddRegionalParam, String namespace, LogCallback logCallback) {
-    if (EmptyPredicate.isEmpty(regionAndClusterName)) {
-      throw new InvalidRequestException("Cluster name is empty in Inframapping");
+  public KubernetesConfig getKubeConfig(EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig, LogCallback logCallback) {
+    if (!isExecAuthPluginBinaryAvailable(EKS_AUTH_PLUGIN_BINARY, logCallback)) {
+      throw new InvalidRequestException(AWS_IAM_AUTHENTICATOR_MISSING_MESSAGE);
     }
-    String[] regionClusterName = regionAndClusterName.split(REGION_DELIMITER, 2);
-    if (regionClusterName.length != 2) {
-      throw new InvalidRequestException(String.format("Cluster name is not in proper format. "
-              + "Expected format is <Region/ClusterName> i.e us-east-1/test-cluster. Provided cluster name: [%s]",
-          regionAndClusterName));
-    }
-    String regionName = regionClusterName[0];
-    String clusterName = regionClusterName[1];
+
+    AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
+    String namespace = eksK8sInfraDelegateConfig.getNamespace();
+    String region = eksK8sInfraDelegateConfig.getRegion();
+
+    Pair<String, String> regionClusterName = getRegionAndClusterName(eksK8sInfraDelegateConfig.getCluster(), region);
+    String regionName = regionClusterName.getLeft();
+    String clusterName = regionClusterName.getRight();
     AwsInternalConfig awsInternalConfig = createAwsInternalConfig(awsConnectorDTO, regionName);
 
     DescribeClusterResponse describeClusterResponse =
         eksV2Client.describeClusters(awsInternalConfig, regionName, clusterName);
     Cluster cluster = describeClusterResponse.cluster();
-    if (cluster != null) {
-      KubernetesConfigBuilder kubernetesConfigBuilder =
-          KubernetesConfig.builder()
-              .masterUrl(cluster.endpoint() + "/")
-              .namespace(isNotBlank(namespace) ? namespace : "default")
-              .caCert((cluster.certificateAuthority().data()).toCharArray())
-              .useKubeconfigAuthentication(true);
-      if (isExecAuthPluginBinaryAvailable(EKS_AUTH_PLUGIN_BINARY, logCallback)) {
-        kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
-        kubernetesConfigBuilder.exec(getEksExecConfig(clusterName, awsInternalConfig, isAddRegionalParam));
-      } else {
-        throw new InvalidRequestException(
-            "aws-iam-authenticator is required to be installed for using AWS EKS Infrastructure for k8s deployment");
-      }
-      return kubernetesConfigBuilder.build();
+
+    if (cluster == null) {
+      throw new InvalidRequestException(format(CLUSTER_FETCH_ERROR_MESSAGE, clusterName, regionName));
     }
-    throw new InvalidRequestException(String.format(
-        "Cannot get details of required cluster: [%s] via AWS EKS DescribeClusterRequest", regionAndClusterName));
+
+    return KubernetesConfig.builder()
+        .masterUrl(cluster.endpoint() + "/")
+        .namespace(isNotBlank(namespace) ? namespace : "default")
+        .caCert((cluster.certificateAuthority().data()).toCharArray())
+        .exec(getEksExecConfig(clusterName, awsInternalConfig, eksK8sInfraDelegateConfig.isAddRegionalParam()))
+        .authType(KubernetesClusterAuthType.EXEC_OAUTH)
+        .useKubeconfigAuthentication(true)
+        .build();
   }
+
+  static Pair<String, String> getRegionAndClusterName(String regionAndClusterName, String region) {
+    if (isEmpty(regionAndClusterName)) {
+      throw new InvalidRequestException(EMPTY_CLUSTER_NAME_ERROR_MESSAGE);
+    }
+
+    if (isEmpty(region)) {
+      return splitRegionAndClusterName(regionAndClusterName);
+    }
+
+    String[] result = regionAndClusterName.split(REGION_DELIMITER, 2);
+    if (!regionAndClusterName.startsWith(region) || result.length == 1) {
+      return Pair.of(region, regionAndClusterName);
+    }
+
+    return Pair.of(region, result[1]);
+  }
+
+  private static Pair<String, String> splitRegionAndClusterName(String regionAndClusterName) {
+    String[] result = regionAndClusterName.split(REGION_DELIMITER, 2);
+    if (result.length != 2) {
+      log.error(format(CLUSTER_NAME_SPLIT_ERROR_MESSAGE, regionAndClusterName));
+      throw new InvalidRequestException(
+          format(CLUSTER_NAME_SPLIT_ERROR_MESSAGE_WITH_EXPLANATION, regionAndClusterName));
+    }
+    return Pair.of(result[0], result[1]);
+  }
+
   private Exec getEksExecConfig(String clusterName, AwsInternalConfig awsInternalConfig, boolean isAddRegionalParam) {
     ExecBuilder execBuilder = Exec.builder()
                                   .apiVersion(API_VERSION)

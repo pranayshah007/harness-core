@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.pms.advise.publisher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.advise.NodeAdviserUtils;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
@@ -20,6 +22,7 @@ import io.harness.pms.events.base.PmsEventCategory;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
   @Inject private PmsEventSender eventSender;

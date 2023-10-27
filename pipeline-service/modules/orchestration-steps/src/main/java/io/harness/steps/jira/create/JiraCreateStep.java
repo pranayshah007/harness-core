@@ -155,8 +155,8 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
     return StepBaseParameters.class;
   }
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
+      TaskExecutableResponse executableResponse, boolean userMarked) {
     closeLogStream(ambiance);
   }
   private void closeLogStream(Ambiance ambiance) {

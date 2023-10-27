@@ -1,6 +1,6 @@
 # event-service
 
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.773.0](https://img.shields.io/badge/AppVersion-1.773.0-informational?style=flat-square)
+![Version: 0.11.0](https://img.shields.io/badge/Version-0.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80908](https://img.shields.io/badge/AppVersion-0.0.80908-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -8,7 +8,6 @@ A Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://charts.bitnami.com/bitnami | common | 2.x.x |
 | https://harness.github.io/helm-common | harness-common | 1.x.x |
 
 ## Values
@@ -26,6 +25,9 @@ A Helm chart for Kubernetes
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
+| global.database.clickhouse.enabled | bool | `false` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
@@ -51,6 +53,7 @@ A Helm chart for Kubernetes
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.enabled | bool | `false` |  |
 | global.ingress.hosts[0] | string | `"events-grpc-app.harness.io"` |  |
+| global.ingress.objects.annotations | object | `{}` |  |
 | global.ingress.tls.enabled | bool | `true` |  |
 | global.ingress.tls.secretName | string | `""` |  |
 | global.istio.enabled | bool | `false` |  |
@@ -64,9 +67,11 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/event-service-signed"` |  |
-| image.tag | string | `"79404-000"` |  |
+| image.tag | string | `"80908-000"` |  |
+| ingress.annotations | object | `{}` |  |
 | ingress.className | string | `"nginx"` |  |
 | java.memory | int | `1024` |  |
+| java17flags | string | `""` |  |
 | lifecycleHooks | object | `{}` |  |
 | maxSurge | string | `"100%"` |  |
 | maxUnavailable | int | `0` |  |
@@ -85,6 +90,7 @@ A Helm chart for Kubernetes
 | resources.requests.cpu | string | `"512m"` |  |
 | resources.requests.memory | string | `"1840Mi"` |  |
 | securityContext | object | `{}` |  |
+| service.annotations | object | `{}` |  |
 | service.port | int | `7280` |  |
 | service.port2 | int | `9889` |  |
 | service.type | string | `"ClusterIP"` |  |
@@ -94,6 +100,7 @@ A Helm chart for Kubernetes
 | timescaleSecret.password.key | string | `"timescaledbPostgresPassword"` |  |
 | timescaleSecret.password.name | string | `"harness-secrets"` |  |
 | tolerations | list | `[]` |  |
+| virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
 | waitForInitContainer.image.imagePullSecrets | list | `[]` |  |
 | waitForInitContainer.image.pullPolicy | string | `"IfNotPresent"` |  |

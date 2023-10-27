@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-underutilized-list
+cloudProvider: AWS
+resourceType: ec2
+description: List EC2 underutilized
+rulesYamlPath: ../ec2-underutilized-list.yml

@@ -15,6 +15,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -23,6 +24,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface InfrastructureRepositoryCustom {
   Page<InfrastructureEntity> findAll(Criteria criteria, Pageable pageable);
+  InfrastructureEntity saveGitAware(InfrastructureEntity infrastructureToSave);
   InfrastructureEntity upsert(Criteria criteria, InfrastructureEntity infrastructureEntity);
   InfrastructureEntity update(Criteria criteria, InfrastructureEntity infrastructureEntity);
   DeleteResult delete(Criteria criteria);
@@ -43,4 +45,8 @@ public interface InfrastructureRepositoryCustom {
 
   List<InfrastructureEntity> findAllFromProjectIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  Optional<InfrastructureEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
+      String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch);
 }

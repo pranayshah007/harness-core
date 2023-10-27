@@ -6,6 +6,7 @@
  */
 
 package io.harness.cf.pipeline;
+
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
@@ -24,11 +25,14 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -80,9 +84,13 @@ public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElemen
       PlanCreationContext ctx, StageElementConfig config, List<String> childrenNodeIds) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).logMessage("Execution Element").build();
+    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(config.getTimeout());
+    PlanNodeBuilder planNodeBuilder = PlanNode.builder();
+    if (null != sdkTimeoutObtainment) {
+      planNodeBuilder.timeoutObtainment(sdkTimeoutObtainment);
+    }
 
-    return PlanNode.builder()
-        .uuid(config.getUuid())
+    return planNodeBuilder.uuid(config.getUuid())
         .name(config.getName())
         .identifier(config.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())

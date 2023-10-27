@@ -6,7 +6,6 @@
  */
 
 package io.harness.event.handler.impl.account;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -16,7 +15,10 @@ import static io.harness.event.model.EventConstants.LAST_NAME;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.ccm.license.CeLicenseInfo;
@@ -65,6 +67,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @NoArgsConstructor
 @Singleton
@@ -240,7 +243,7 @@ public class AccountChangeHandler implements EventHandler {
   }
 
   private CountOptions createCountOptionsToHitSecondaryNode(String accountId) {
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       return new CountOptions().readPreference(ReadPreference.secondaryPreferred());
     }
     return new CountOptions();

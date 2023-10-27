@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.outbox;
-
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
@@ -15,8 +14,11 @@ import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -41,6 +43,8 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ServiceOutBoxEventHandler implements OutboxEventHandler {
@@ -90,6 +94,9 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
             .timestamp(outboxEvent.getCreatedAt())
             .newYaml(getYamlString(ServiceRequest.builder().service(serviceUpsertEvent.getService()).build()))
+            .oldYaml(serviceUpsertEvent.getOldService() != null
+                    ? getYamlString(ServiceRequest.builder().service(serviceUpsertEvent.getOldService()).build())
+                    : null)
             .build();
 
     Principal principal = null;
@@ -98,6 +105,11 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+
+    log.info(String.format(
+        "Handing service upsert flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+        outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
+
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
   private boolean handlerServiceUpdated(OutboxEvent outboxEvent) throws IOException {
@@ -175,6 +187,9 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
 
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
+    log.info(String.format(
+        "starting service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+        outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
     try {
       switch (outboxEvent.getEventType()) {
         case OutboxEventConstants.SERVICE_CREATED:
@@ -192,7 +207,15 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
       }
 
     } catch (IOException ex) {
+      log.info(String.format(
+          "Exception while handling service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+          outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
       return false;
+    } catch (Exception e) {
+      log.info(String.format(
+          "Exception while handling service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+          outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
+      throw e;
     }
   }
 }

@@ -83,6 +83,7 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
   private long lastDisabledAt;
   List<NotificationRuleRef> notificationRuleRefs;
   @FdIndex private long nextNotificationIteration;
+  @FdIndex private long nextErrorTrackingNotificationIteration;
   String templateIdentifier;
   String templateVersionLabel;
 
@@ -124,6 +125,9 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
     if (MonitoredServiceKeys.nextNotificationIteration.equals(fieldName)) {
       return this.nextNotificationIteration;
     }
+    if (MonitoredServiceKeys.nextErrorTrackingNotificationIteration.equals(fieldName)) {
+      return this.nextErrorTrackingNotificationIteration;
+    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -131,6 +135,10 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (MonitoredServiceKeys.nextNotificationIteration.equals(fieldName)) {
       this.nextNotificationIteration = nextIteration;
+      return;
+    }
+    if (MonitoredServiceKeys.nextErrorTrackingNotificationIteration.equals(fieldName)) {
+      this.nextErrorTrackingNotificationIteration = nextIteration;
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

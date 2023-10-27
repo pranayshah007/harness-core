@@ -1,0 +1,10 @@
+policies:
+  - name: storage-bypass
+    resource: azure.storage
+    filters:
+      - type: firewall-bypass
+        mode: equal
+        list:
+          - AzureServices
+          - Metrics
+          - Logging

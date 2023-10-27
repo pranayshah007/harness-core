@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.concurrent.TimeUnit;
 import org.redisson.api.BatchOptions;
@@ -75,6 +78,7 @@ import org.redisson.api.redisnode.RedisNodes;
 import org.redisson.client.codec.Codec;
 import org.redisson.config.Config;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MockedRedissonClient implements RedissonClient {
   @Override
   public <V> RTimeSeries<V> getTimeSeries(String s) {

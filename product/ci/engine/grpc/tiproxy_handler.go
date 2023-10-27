@@ -26,8 +26,8 @@ import (
 
 var (
 	getRemoteTiClient = external.GetTiHTTPClient
-	getWrkspcPath = external.GetWrkspcPath
-	getChFiles    = external.GetChangedFiles
+	getWrkspcPath     = external.GetWrkspcPath
+	getChFiles        = external.GetChangedFilesPush
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 
 // handler is used to implement TI Service Calls
 type tiProxyHandler struct {
-	log *zap.SugaredLogger
+	log        *zap.SugaredLogger
 	procWriter io.Writer
 }
 
@@ -141,9 +141,12 @@ func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) 
 	source := req.GetSource()
 	target := req.GetTarget()
 	timeMs := req.GetTimeMs()
-	encCg, msg, err := h.getEncodedData(req)
+	encCg, msg, emptyCg, err := h.getEncodedData(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get avro encoded callgraph")
+	} else if emptyCg {
+		h.log.Infow("Skipping call graph upload since no call graph was generated")
+		return &pb.UploadCgResponse{CgMsg: msg, EmptyCg: emptyCg}, nil
 	}
 
 	err = tiClient.UploadCg(ctx, stepID, source, target, timeMs, encCg)
@@ -200,36 +203,46 @@ func (h *tiProxyHandler) DownloadLink(ctx context.Context, req *pb.DownloadLinkR
 }
 
 // getEncodedData reads all files of specified format from datadir folder and returns byte array of avro encoded format
-func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string, error) {
+func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string, bool, error) {
 	var parser cgp.Parser
 
 	visDir := req.GetDataDir()
 	if visDir == "" {
-		return nil, "", fmt.Errorf("dataDir not present in request")
+		return nil, "", false, fmt.Errorf("dataDir not present in request")
 	}
 	cgFiles, visFiles, err := h.getCgFiles(visDir, "json", "csv")
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to fetch files inside the directory")
+		return nil, "", false, errors.Wrap(err, "failed to fetch files inside the directory")
 	}
 	fs := fs.NewOSFileSystem(h.log)
 	parser = cgp.NewCallGraphParser(h.log, fs)
 	cg, err := parser.Parse(cgFiles, visFiles)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to parse visgraph")
+		return nil, "", false, errors.Wrap(err, "failed to parse visgraph")
 	}
 	msg := fmt.Sprintf("Size of Test nodes: %d, Test relations: %d, Vis Relations %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations))
 	h.log.Infow(msg)
+	if isCgEmpty(cg) {
+		return nil, msg, true, nil
+	}
 
 	cgMap := cg.ToStringMap()
 	cgSer, err := avro.NewCgphSerialzer(cgSchemaType, false)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to create serializer")
+		return nil, "", false, errors.Wrap(err, "failed to create serializer")
 	}
 	encCg, err := cgSer.Serialize(cgMap)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to encode callgraph")
+		return nil, "", false, errors.Wrap(err, "failed to encode callgraph")
 	}
-	return encCg, msg, nil
+	return encCg, msg, false, nil
+}
+
+func isCgEmpty(cg *cgp.Callgraph) bool {
+	if len(cg.Nodes) == 0 && len(cg.TestRelations) == 0 && len(cg.VisRelations) == 0 {
+		return true
+	}
+	return false
 }
 
 // GetTestTimes gets the test timing data from the TI service
@@ -264,8 +277,8 @@ func (h *tiProxyHandler) GetTestTimes(ctx context.Context, req *pb.GetTestTimesR
 	}, nil
 }
 
-// GetLastSuccCommitInfo gets the last successful commit info for a particular account, repo, branch in Push Trigger Case 
-func (h *tiProxyHandler) GetLastSuccCommitInfo(ctx context.Context, req *pb.GetLastSuccCommitInfoRequest) (*pb.GetLastSuccCommitInfoResponse, error) { 
+// GetLastSuccCommitInfo gets the last successful commit info for a particular account, repo, branch in Push Trigger Case
+func (h *tiProxyHandler) GetLastSuccCommitInfo(ctx context.Context, req *pb.GetLastSuccCommitInfoRequest) (*pb.GetLastSuccCommitInfoResponse, error) {
 	repo := req.GetRepo()
 	var sha, commitLink string
 	skipVerify := false
@@ -274,7 +287,7 @@ func (h *tiProxyHandler) GetLastSuccCommitInfo(ctx context.Context, req *pb.GetL
 	// SelectTests API call
 	stepID := req.GetStepId()
 	branch := req.GetBranch()
-	
+
 	commitInfoResp, err := tiClient.CommitInfo(ctx, stepID, branch)
 	if err != nil {
 		return nil, err
@@ -296,13 +309,14 @@ func (h *tiProxyHandler) GetChangedFilesPushTrigger(ctx context.Context, req *pb
 	if lastSuccessfulCommitID == "" {
 		return nil, fmt.Errorf("last Successful Commit ID not present in request")
 	}
-
+	currentCommitID := req.GetCurrentCommit()
+	
 	workspace, err := getWrkspcPath()
 	if err != nil {
 		return nil, err
 	}
 
-	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, true, h.log, h.procWriter)
+	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, currentCommitID, h.log, h.procWriter)
 	if err != nil {
 		h.log.Errorw("failed to get changed files for push trigger in runTests step", "step_id", stepID, zap.Error(err))
 		return nil, err

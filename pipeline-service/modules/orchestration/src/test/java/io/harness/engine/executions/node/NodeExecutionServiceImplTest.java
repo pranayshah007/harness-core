@@ -24,6 +24,7 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -44,6 +45,7 @@ import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -54,6 +56,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.utils.AmbianceTestUtils;
 
@@ -67,6 +70,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +81,7 @@ import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentMatchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -851,11 +855,16 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     Reflect.on(nodeExecutionService).set("nodeDeleteObserverSubject", nodeDeleteObserverSubject);
 
     List<NodeExecution> nodeExecutionList = new LinkedList<>();
-    Set<String> batchNodeExecutionIds = new HashSet<>();
+    Set<String> firstBatchNodeExecutionIds = new HashSet<>();
+    Set<String> secondBatchNodeExecutionIds = new HashSet<>();
     for (int i = 0; i < 1200; i++) {
       String uuid = generateUuid();
       nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
-      batchNodeExecutionIds.add(uuid);
+      if (i < 1000) {
+        firstBatchNodeExecutionIds.add(uuid);
+      } else {
+        secondBatchNodeExecutionIds.add(uuid);
+      }
     }
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
@@ -863,11 +872,14 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         .when(nodeExecutionService)
         .fetchNodeExecutionsFromAnalytics(
             new HashSet<>(Arrays.asList("EXECUTION_1")), NodeProjectionUtils.fieldsForNodeExecutionDelete);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
     nodeExecutionService.deleteAllNodeExecutionAndMetadata(new HashSet<>(Arrays.asList("EXECUTION_1")));
     verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
 
-    verify(mongoTemplateMock, times(1))
-        .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
+    verify(mongoTemplateMock, times(2)).remove(queryArgumentCaptor.capture(), eq(NodeExecution.class));
+    assertThat(queryArgumentCaptor.getAllValues().size()).isEqualTo(2);
+    assertThat(queryArgumentCaptor.getAllValues().get(1))
+        .isEqualTo(query(where(NodeExecutionKeys.id).in(secondBatchNodeExecutionIds)));
   }
 
   @Test
@@ -1123,9 +1135,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
     Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
     UpdateResult updated = UpdateResult.acknowledged(1, null, null);
-    doReturn(updated)
-        .when(mongoTemplateMock)
-        .updateMulti(any(Query.class), any(Update.class), ArgumentMatchers.eq(NodeExecution.class));
+    doReturn(updated).when(mongoTemplateMock).updateMulti(any(Query.class), any(Update.class), eq(NodeExecution.class));
     boolean result = nodeExecutionService.updateRelationShipsForRetryNode(any(), any());
     assertThat(result).isFalse();
   }
@@ -1137,9 +1147,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
     Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
     UpdateResult updated = UpdateResult.unacknowledged();
-    doReturn(updated)
-        .when(mongoTemplateMock)
-        .updateMulti(any(Query.class), any(Update.class), ArgumentMatchers.eq(NodeExecution.class));
+    doReturn(updated).when(mongoTemplateMock).updateMulti(any(Query.class), any(Update.class), eq(NodeExecution.class));
     boolean result = nodeExecutionService.updateRelationShipsForRetryNode(any(), any());
     assertThat(result).isTrue();
   }
@@ -1209,5 +1217,68 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     List<Status> statuses = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionUuid);
     assertThat(statuses).contains(Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testAggregateRunningExecutionCountPerAccount() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    Map<String, String> m1 = new HashMap<>();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.INPUT_WAITING)
+            .build();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.APPROVAL_WAITING)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
+
+    List<ExecutionCountWithAccountResult> accountResults = nodeExecutionService.aggregateRunningNodesCountPerAccount();
+    assertThat(accountResults.size()).isEqualTo(2);
   }
 }

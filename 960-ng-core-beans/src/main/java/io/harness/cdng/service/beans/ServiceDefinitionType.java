@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.service.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -18,6 +20,7 @@ import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.KUBERNETES)
   KUBERNETES(ServiceSpecType.KUBERNETES,
@@ -58,8 +61,8 @@ public enum ServiceDefinitionType {
 
   @JsonProperty(ServiceSpecType.ECS)
   ECS("ECS",
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
-          ExecutionStrategyType.DEFAULT),
+      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+          ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ECS),
 
   @JsonProperty(ServiceSpecType.ELASTIGROUP)

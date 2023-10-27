@@ -22,4 +22,6 @@ public interface PluginsProxyInfoRepository
   List<PluginsProxyInfoEntity> findAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
   List<PluginsProxyInfoEntity> findAllByAccountIdentifier(String accountIdentifier);
   void deleteAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
+
+  void deleteAllByAccountIdentifierAndIdIn(String accountIdentifier, List<String> identifiers);
 }

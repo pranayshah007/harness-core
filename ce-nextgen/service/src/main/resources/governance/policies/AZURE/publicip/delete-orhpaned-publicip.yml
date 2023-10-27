@@ -1,0 +1,9 @@
+policies:
+  - name: delete-orhpaned-publicip
+    resource: azure.publicip
+    filters:
+      - type: value
+        key: properties.ipConfiguration
+        value:
+    actions:
+      - type: delete

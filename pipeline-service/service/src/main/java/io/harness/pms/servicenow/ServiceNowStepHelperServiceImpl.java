@@ -151,6 +151,8 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                                                             .build())
                                                  .collect(Collectors.toList());
       serviceNowTicketOutcomeBuilder.multipleOutcomeList(ticketOutcomes);
+    } else if (taskResponse.getTickets() != null && taskResponse.getTickets().isEmpty()) {
+      serviceNowTicketOutcomeBuilder.message("No change tasks to update");
     }
     return StepResponse.builder()
         .status(Status.SUCCEEDED)

@@ -136,12 +136,13 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
   @Override
   public ProgressUpdate fetchForProcessingProgressUpdate(Set<String> busyCorrelationIds, long now) {
     Query<ProgressUpdate> query;
-    if (busyCorrelationIds.isEmpty()) {
+    Set<String> busyCorrelationIdsCopy = Set.copyOf(busyCorrelationIds);
+    if (busyCorrelationIdsCopy.isEmpty()) {
       query = hPersistence.createQuery(ProgressUpdate.class, excludeAuthority).order(ProgressUpdateKeys.createdAt);
     } else {
       query = hPersistence.createQuery(ProgressUpdate.class, excludeAuthority)
                   .field(ProgressUpdateKeys.correlationId)
-                  .notIn(busyCorrelationIds)
+                  .notIn(busyCorrelationIdsCopy)
                   .order(ProgressUpdateKeys.createdAt);
     }
 

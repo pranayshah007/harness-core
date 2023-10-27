@@ -9,24 +9,33 @@ package io.harness.pms.exception;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.FilterCreatorException;
 import io.harness.exception.PlanCreatorException;
+import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.ErrorMetadata;
 import io.harness.pms.contracts.plan.ErrorResponse;
+import io.harness.pms.contracts.plan.ErrorResponseV2;
 import io.harness.pms.contracts.plan.YamlFieldBlob;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +47,17 @@ public class PmsExceptionUtilsTest extends CategoryTest {
   ErrorResponse errorResponse2 =
       ErrorResponse.newBuilder().addMessages("an error").addMessages("an error again").build();
   List<ErrorResponse> errorResponses = Arrays.asList(errorResponse1, errorResponse2);
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testGetUnresolvedDependencyPathsErrorMessage() {
+    Dependencies dependencies = Dependencies.getDefaultInstance();
+    String expected = String.format(
+        "Following yaml paths could not be parsed: %s", String.join(",", dependencies.getDependenciesMap().values()));
+    String result = PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(dependencies);
+    assertThat(result).isEqualTo(expected);
+  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -87,11 +107,44 @@ public class PmsExceptionUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowFilterCreatorExceptionEmptyErrorResponses() {
+    PmsExceptionUtils.checkAndThrowFilterCreatorException(Collections.emptyList(), Collections.emptyList());
+    assertDoesNotThrow(
+        () -> PmsExceptionUtils.checkAndThrowFilterCreatorException(Collections.emptyList(), Collections.emptyList()));
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowFilterCreatorExceptionNonEmptyErrorResponses() {
+    Descriptors.FieldDescriptor fieldDescriptor = mock(Descriptors.FieldDescriptor.class);
+    when(fieldDescriptor.getType()).thenReturn(Descriptors.FieldDescriptor.Type.STRING);
+    ErrorResponseV2 errorResponseV2 = mock(ErrorResponseV2.class);
+    ErrorMetadata errorMetadata = mock(ErrorMetadata.class);
+    when(errorMetadata.getWingsExceptionErrorCode()).thenReturn("UnitTests.");
+    when(errorResponseV2.getErrorsList()).thenReturn(Collections.singletonList(ErrorMetadata.getDefaultInstance()));
+    List<ErrorResponseV2> errorResponsesV2 = Collections.singletonList(errorResponseV2);
+    assertThatThrownBy(() -> PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses, errorResponsesV2))
+        .isInstanceOf(FilterCreatorException.class)
+        .hasMessage(",this is an error,this is also an error,an error,an error again");
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void checkAndThrowPlanCreatorException() {
     assertThatThrownBy(() -> PmsExceptionUtils.checkAndThrowPlanCreatorException(errorResponses))
         .isInstanceOf(PlanCreatorException.class)
         .hasMessage("Error creating Plan: this is an error,this is also an error,an error,an error again");
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCheckAndThrowPlanCreatorExceptionNoException() {
+    PmsExceptionUtils.checkAndThrowPlanCreatorException(Collections.emptyList());
+    assertDoesNotThrow(() -> PmsExceptionUtils.checkAndThrowPlanCreatorException(Collections.emptyList()));
   }
 }

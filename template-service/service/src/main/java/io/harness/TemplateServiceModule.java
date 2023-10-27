@@ -65,11 +65,9 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.reconcile.NgManagerReconcileClientModule;
 import io.harness.redis.RedisConfig;
-import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
@@ -203,11 +201,6 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new EntitySetupUsageClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
-    install(new PipelineYamlSchemaClientModule(
-        ServiceHttpClientConfig.builder()
-            .baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl())
-            .build(),
-        templateServiceConfiguration.getPipelineServiceSecret(), TEMPLATE_SERVICE.toString()));
     install(new DelegateServiceDriverGrpcClientModule(templateServiceConfiguration.getManagerServiceSecret(),
         templateServiceConfiguration.getManagerTarget(), templateServiceConfiguration.getManagerAuthority(), true));
     install(new AuditClientModule(this.templateServiceConfiguration.getAuditClientConfig(),

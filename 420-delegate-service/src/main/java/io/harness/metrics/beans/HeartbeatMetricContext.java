@@ -10,12 +10,11 @@ package io.harness.metrics.beans;
 import io.harness.metrics.AutoMetricContext;
 
 public class HeartbeatMetricContext extends AutoMetricContext {
-  public HeartbeatMetricContext(String time, String accountId, String accountName, String companyName, String ringName,
+  public HeartbeatMetricContext(String accountId, String accountName, String companyName, String ringName,
       String delegateImageTag, String upgraderImageTag, String watcherVersion, String watcherJREVersion,
       String delegateJREVersion, String orgId, String projectId, String delegateName, String delegateId,
       String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
       boolean isImmutable) {
-    put("time", time);
     put("accountId", accountId);
     put("accountName", accountName);
     put("companyName", companyName);

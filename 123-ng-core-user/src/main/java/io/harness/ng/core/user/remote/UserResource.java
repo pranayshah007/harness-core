@@ -771,4 +771,22 @@ public class UserResource {
     }
     return ResponseDTO.newResponse(ngUserService.updateUserMetadataInternal(userMetadataDTO));
   }
+
+  @GET
+  @Hidden
+  @Path("is-email-registered")
+  @ApiOperation(value = "checks if email is already registered", nickname = "isEmailRegistered")
+  @Operation(operationId = "isEmailRegistered", summary = "checks if email is already registered",
+      description = "checks if given email is already registered",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns true if user is already present.")
+      })
+  @InternalApi
+  public ResponseDTO<Boolean>
+  doesUserExist(@Parameter(description = "user Email") @NotNull @QueryParam("email") String userEmail) {
+    Optional<UserMetadataDTO> optionalUserMetadata = ngUserService.getUserByEmail(userEmail, false);
+    return ResponseDTO.newResponse(optionalUserMetadata.isPresent());
+  }
 }

@@ -20,6 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -61,10 +63,11 @@ public class EnvironmentMapper {
   }
 
   public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
-      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides,
+      @NonNull NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides,
       @Nullable EnvironmentGroupEntity envGroup,
       Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs, boolean isOverrideV2Enabled) {
-    List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
+    List<NGVariable> svcOverrideVariables =
+        (ngServiceOverrides == null || ngServiceOverrides.getServiceOverrideInfoConfig() == null)
         ? new ArrayList<>()
         : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
     final Map<String, Object> variables = isOverrideV2Enabled
@@ -104,5 +107,14 @@ public class EnvironmentMapper {
       }
     }
     return NGVariablesUtils.getMapOfVariables(new ArrayList<>(finalNGVariables.values()));
+  }
+
+  public ServiceStepV3Parameters toServiceStepV3Parameters(@NonNull CustomStageEnvironmentStepParameters parameters) {
+    return ServiceStepV3Parameters.builder()
+        .envRef(parameters.getEnvRef())
+        .infraId(parameters.getInfraId())
+        .childrenNodeIds(parameters.getChildrenNodeIds())
+        .envInputs(parameters.getEnvInputs())
+        .build();
   }
 }

@@ -9,6 +9,7 @@ package io.harness.serializer.morphia;
 
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.pms.plan.execution.beans.GraphUpdateInfo;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.Set;
@@ -17,6 +18,7 @@ public class OrchestrationVisualizationMorphiaRegistrar implements MorphiaRegist
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(PipelineExecutionSummaryEntity.class);
+    set.add(GraphUpdateInfo.class);
   }
 
   @Override

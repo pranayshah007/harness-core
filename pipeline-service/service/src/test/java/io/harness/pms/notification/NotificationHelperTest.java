@@ -8,10 +8,12 @@
 package io.harness.pms.notification;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.notification.PipelineEventType.STAGE_FAILED;
 import static io.harness.notification.PipelineEventType.STAGE_SUCCESS;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -35,14 +37,17 @@ import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.utils.PmsLevelUtils;
+import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.channelDetails.NotificationChannelType;
@@ -54,6 +59,9 @@ import io.harness.notification.notificationclient.NotificationClientImpl;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -73,6 +81,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -438,5 +448,211 @@ public class NotificationHelperTest extends CategoryTest {
     ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode));
     nodeExecutionBuilder.ambiance(ambianceBuilder.build());
     assertEquals(notificationHelper.getStageIdentifier(nodeExecutionBuilder.build()), "dummyIdentifier");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPipelineEvent() {
+    NodeExecution nodeExecution = NodeExecution.builder()
+                                      .identifier("nodeIdentifier")
+                                      .name("nodeName")
+                                      .status(Status.SUCCEEDED)
+                                      .startTs(0L)
+                                      .ambiance(ambiance)
+                                      .build();
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
+    when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
+    doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+    when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .name("Pipeline")
+                        .orgIdentifier("org")
+                        .pipelineIdentifier("pipelineIdentifier")
+                        .projectIdentifier("proj")
+                        .failureInfo(FailureInfoDTO.builder().message("Pipeline Failed").build())
+                        .tags(Collections.singleton(NGTag.builder().key("k1").value("v1").build()))
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    Map<String, String> notifyResponse = notificationHelper.constructTemplateData(
+        ambiance, PipelineEventType.PIPELINE_FAILED, nodeExecution, updatedAt, "org", "proj");
+    assertThat(notifyResponse).isNotEmpty();
+    JSONObject json = new JSONObject(notifyResponse.get("WEBHOOK_EVENT_DATA"));
+    assertThat(json.get("orgIdentifier")).isEqualTo("org");
+    JSONArray jsonArray = json.getJSONArray("tag");
+    jsonArray.get(0).toString();
+    assertThat("{\"value\":\"v1\",\"key\":\"k1\"}").isEqualTo(jsonArray.get(0).toString());
+    assertThat(json.get("pipelineName")).isEqualTo("Pipeline");
+    assertThat(json.get("eventType")).isEqualTo("PipelineFailed");
+    assertThat(json.get("errorMessage")).isEqualTo("Pipeline Failed");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .name("Pipeline")
+                        .orgIdentifier("org")
+                        .pipelineIdentifier("pipelineIdentifier")
+                        .projectIdentifier("proj")
+                        .tags(Collections.singleton(NGTag.builder().key("k1").value("v1").build()))
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    notifyResponse = notificationHelper.constructTemplateData(
+        ambiance, PipelineEventType.PIPELINE_SUCCESS, null, updatedAt, "org", "proj");
+    assertThat(notifyResponse).isNotEmpty();
+    json = new JSONObject(notifyResponse.get("WEBHOOK_EVENT_DATA"));
+    assertThat(json.get("orgIdentifier")).isEqualTo("org");
+    jsonArray = json.getJSONArray("tag");
+    jsonArray.get(0).toString();
+    assertThat("{\"value\":\"v1\",\"key\":\"k1\"}").isEqualTo(jsonArray.get(0).toString());
+    assertThat(json.get("pipelineName")).isEqualTo("Pipeline");
+    assertThat(json.get("eventType")).isEqualTo("PipelineSuccess");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testStageEvent() {
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .identifier("nodeIdentifier")
+            .name("nodeName")
+            .status(Status.SUCCEEDED)
+            .startTs(0L)
+            .ambiance(ambiance)
+            .failureInfo(FailureInfo.newBuilder()
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage("testing")
+                                                 .build())
+                             .build())
+            .build();
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
+    when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
+    doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+    when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .name("Pipeline")
+                        .orgIdentifier("org")
+                        .pipelineIdentifier("pipelineIdentifier")
+                        .projectIdentifier("proj")
+                        .failureInfo(FailureInfoDTO.builder().message("Pipeline Failed").build())
+                        .tags(Collections.singleton(NGTag.builder().key("k1").value("v1").build()))
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    Map<String, String> notifyResponse = notificationHelper.constructTemplateData(
+        ambiance, PipelineEventType.STAGE_FAILED, nodeExecution, updatedAt, "org", "proj");
+    assertThat(notifyResponse).isNotEmpty();
+    JSONObject json = new JSONObject(notifyResponse.get("WEBHOOK_EVENT_DATA"));
+    assertThat(json.get("orgIdentifier")).isEqualTo("org");
+    JSONArray jsonArray = json.getJSONArray("tag");
+    jsonArray.get(0).toString();
+    assertThat("{\"value\":\"v1\",\"key\":\"k1\"}").isEqualTo(jsonArray.get(0).toString());
+    assertThat(json.get("pipelineName")).isEqualTo("Pipeline");
+    assertThat(json.get("eventType")).isEqualTo("StageFailed");
+    assertThat(json.get("stageName")).isEqualTo("nodeName");
+    assertThat(json.get("errorMessage"))
+        .isEqualTo("failureData {\n"
+            + "  code: \"GENERAL_ERROR\"\n"
+            + "  level: \"ERROR\"\n"
+            + "  message: \"testing\"\n"
+            + "  failureTypes: APPLICATION_FAILURE\n"
+            + "}\n");
+    notifyResponse = notificationHelper.constructTemplateData(
+        ambiance, PipelineEventType.STAGE_SUCCESS, nodeExecution, updatedAt, "org", "proj");
+    assertThat(notifyResponse).isNotEmpty();
+    json = new JSONObject(notifyResponse.get("WEBHOOK_EVENT_DATA"));
+    assertThat(json.get("orgIdentifier")).isEqualTo("org");
+    jsonArray = json.getJSONArray("tag");
+    jsonArray.get(0).toString();
+    assertThat("{\"value\":\"v1\",\"key\":\"k1\"}").isEqualTo(jsonArray.get(0).toString());
+    assertThat(json.get("pipelineName")).isEqualTo("Pipeline");
+    assertThat(json.get("eventType")).isEqualTo("StageSuccess");
+    assertThat(json.get("stageName")).isEqualTo("nodeName");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testStepEvent() {
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .identifier("nodeIdentifier")
+            .name("nodeName")
+            .status(Status.SUCCEEDED)
+            .startTs(0L)
+            .ambiance(ambiance)
+            .failureInfo(FailureInfo.newBuilder()
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage("testing")
+                                                 .build())
+                             .build())
+            .build();
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
+    when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
+    doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+    when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+    when(pmsExecutionService.getPipelineExecutionSummaryEntity(any(), any(), any(), any()))
+        .thenReturn(PipelineExecutionSummaryEntity.builder()
+                        .name("Pipeline")
+                        .orgIdentifier("org")
+                        .pipelineIdentifier("pipelineIdentifier")
+                        .projectIdentifier("proj")
+                        .failureInfo(FailureInfoDTO.builder().message("Pipeline Failed").build())
+                        .tags(Collections.singleton(NGTag.builder().key("k1").value("v1").build()))
+                        .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
+                                                  .setTriggerType(TriggerType.MANUAL)
+                                                  .setTriggeredBy(TriggeredBy.newBuilder()
+                                                                      .setIdentifier("user")
+                                                                      .putExtraInfo("email", "user@harness.io")
+                                                                      .build())
+                                                  .build())
+                        .build());
+    Map<String, String> notifyResponse = notificationHelper.constructTemplateData(
+        ambiance, PipelineEventType.STEP_FAILED, nodeExecution, updatedAt, "org", "proj");
+    assertThat(notifyResponse).isNotEmpty();
+    JSONObject json = new JSONObject(notifyResponse.get("WEBHOOK_EVENT_DATA"));
+    assertThat(json.get("orgIdentifier")).isEqualTo("org");
+    JSONArray jsonArray = json.getJSONArray("tag");
+    jsonArray.get(0).toString();
+    assertThat("{\"value\":\"v1\",\"key\":\"k1\"}").isEqualTo(jsonArray.get(0).toString());
+    assertThat(json.get("pipelineName")).isEqualTo("Pipeline");
+    assertThat(json.get("eventType")).isEqualTo("StepFailed");
+    assertThat(json.get("stepName")).isEqualTo("nodeName");
+    assertThat(json.get("errorMessage"))
+        .isEqualTo("failureData {\n"
+            + "  code: \"GENERAL_ERROR\"\n"
+            + "  level: \"ERROR\"\n"
+            + "  message: \"testing\"\n"
+            + "  failureTypes: APPLICATION_FAILURE\n"
+            + "}\n");
   }
 }

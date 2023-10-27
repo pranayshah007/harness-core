@@ -204,6 +204,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .startingNodeId(startingNodeId)
             .planExecutionId(planExecutionId)
             .name(pipelineEntity.get().getName())
+            // TODO: Remove setting this `inputSetYaml` field by Nov 2023
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
             .pipelineTemplate(getPipelineTemplate(planExecutionMetadata))
             .internalStatus(planExecution.getStatus())

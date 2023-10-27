@@ -161,6 +161,9 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Update update = new Update().set(key, value);
     long timeOfUpdate = System.currentTimeMillis();
     update.set(PollingDocumentKeys.lastModifiedAt, timeOfUpdate);
+    if (key.equals(PollingDocumentKeys.polledResponse)) {
+      update.set(PollingDocumentKeys.lastModifiedPolledResponseTime, timeOfUpdate);
+    }
     return mongoTemplate.updateFirst(query, update, PollingDocument.class);
   }
 

@@ -68,6 +68,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -109,10 +110,25 @@ public class RetryExecutionHelper {
   public List<String> fetchOnlyFailedStages(String previousExecutionId, List<String> retryStagesIdentifier) {
     RetryInfo retryInfo = getRetryInfo(getStageDetails(previousExecutionId));
     if (retryInfo != null) {
-      List<RetryStageInfo> info = retryInfo.getGroups().get(retryInfo.getGroups().size() - 1).getInfo();
-      return fetchOnlyFailedStages(info, retryStagesIdentifier);
+      Optional<RetryGroup> retryGroupOptional =
+          retryInfo.getGroups()
+              .stream()
+              .filter(o -> checkIfCurrentStageGroupHasRetryStageIdentifiers(o.getInfo(), retryStagesIdentifier))
+              .findAny();
+      if (retryGroupOptional.isEmpty()) {
+        throw new InvalidRequestException(
+            "The execution can not be retried because the retryStagesIdentifier could not be found in any stage Groups. Please provide the correct list of retryStagesIdentifier");
+      }
+      return fetchOnlyFailedStages(retryGroupOptional.get().getInfo(), retryStagesIdentifier);
     }
     throw new InvalidRequestException("Pipeline is updated, cannot resume");
+  }
+
+  private boolean checkIfCurrentStageGroupHasRetryStageIdentifiers(
+      List<RetryStageInfo> retryStageInfos, List<String> retryStagesIdentifier) {
+    Set<String> stageIdentifiersInCurrentGroup =
+        retryStageInfos.stream().map(RetryStageInfo::getIdentifier).collect(Collectors.toSet());
+    return stageIdentifiersInCurrentGroup.containsAll(retryStagesIdentifier);
   }
 
   public boolean isFailedStatus(ExecutionStatus status) {

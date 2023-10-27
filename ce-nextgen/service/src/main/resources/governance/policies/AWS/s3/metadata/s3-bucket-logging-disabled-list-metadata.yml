@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-bucket-logging-disabled-list
+cloudProvider: AWS
+resourceType: s3
+description: List s3 buckets where logging is disabled
+rulesYamlPath: ../s3-bucket-logging-disabled-list.yml

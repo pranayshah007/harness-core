@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.CountInstanceSelection;
 import io.harness.cdng.k8s.InstanceSelectionBase;
 import io.harness.cdng.k8s.InstanceSelectionWrapper;
@@ -29,6 +31,7 @@ import software.wings.sm.states.k8s.K8sCanaryDeploy;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sCanaryDeployStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

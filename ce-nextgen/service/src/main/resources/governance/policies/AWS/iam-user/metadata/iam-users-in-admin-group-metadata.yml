@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: iam-users-in-admin-group
+cloudProvider: AWS
+resourceType: iam-user
+description: List all iam users where group name is Admins
+rulesYamlPath: ../iam-users-in-admin-group.yml

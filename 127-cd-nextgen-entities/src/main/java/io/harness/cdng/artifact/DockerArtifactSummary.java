@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.ArtifactCorrelationDetails;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -25,6 +26,7 @@ import lombok.Data;
 public class DockerArtifactSummary implements ArtifactSummary {
   String imagePath;
   String tag;
+  ArtifactCorrelationDetails artifactIdentity;
 
   @Override
   public String getDisplayName() {
@@ -34,5 +36,10 @@ public class DockerArtifactSummary implements ArtifactSummary {
   @Override
   public String getType() {
     return ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
+  }
+
+  @Override
+  public ArtifactCorrelationDetails getArtifactIdentity() {
+    return artifactIdentity;
   }
 }

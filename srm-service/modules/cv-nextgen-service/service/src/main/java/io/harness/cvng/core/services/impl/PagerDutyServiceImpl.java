@@ -68,7 +68,12 @@ public class PagerDutyServiceImpl implements PagerDutyService {
   public void registerPagerDutyWebhook(
       MonitoredServiceParams monitoredServiceParams, PagerDutyChangeSource pagerDutyChangeSource) {
     String token = randomAlphabetic(20);
-    String url = portalUrl.concat("cv/api/webhook/pagerduty/").concat(token);
+    String url = portalUrl.concat("cv/api/webhook/pagerduty/")
+                     .concat(token)
+                     .concat("?routingId=")
+                     .concat(monitoredServiceParams.getAccountIdentifier())
+                     .concat("&accountId=")
+                     .concat(monitoredServiceParams.getAccountIdentifier());
     DataCollectionRequest request = PagerDutyRegisterWebhookRequest.builder()
                                         .type(DataCollectionRequestType.PAGERDUTY_REGISTER_WEBHOOK)
                                         .url(url)

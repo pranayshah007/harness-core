@@ -15,6 +15,7 @@ import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,9 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class GitFilePathHelper {
-  GitSyncConnectorHelper gitSyncConnectorHelper;
+  private GitSyncConnectorService gitSyncConnectorService;
   public static final String FILE_PATH_SEPARATOR = "/";
-  public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
   public static final String NULL_FILE_PATH_ERROR_MESSAGE = "FilePath cannot be null or empty.";
   public static final String INVALID_FILE_PATH_FORMAT_ERROR_MESSAGE = "FilePath [%s] should not start or end with [/].";
 
@@ -38,7 +38,7 @@ public class GitFilePathHelper {
 
   public String getFileUrl(Scope scope, String connectorRef, String branchName, String filePath, String commitId,
       GitRepositoryDTO gitRepositoryDTO) {
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
+    ScmConnector scmConnector = gitSyncConnectorService.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO.getName());
     return scmConnector.getFileUrl(branchName, filePath, commitId, gitRepositoryDTO);
   }

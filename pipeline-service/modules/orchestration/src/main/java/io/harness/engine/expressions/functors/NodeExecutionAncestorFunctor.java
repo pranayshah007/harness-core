@@ -6,15 +6,18 @@
  */
 
 package io.harness.engine.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -25,6 +28,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.apache.commons.jexl3.JexlEngine;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -33,6 +37,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, String> groupAliases;
@@ -50,6 +55,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
                                             .nodeExecutionsCache(nodeExecutionsCache)
                                             .pmsOutcomeService(pmsOutcomeService)
                                             .pmsSweepingOutputService(pmsSweepingOutputService)
+                                            .nodeExecutionInfoService(nodeExecutionInfoService)
                                             .ambiance(ambiance)
                                             .startNodeExecution(startNodeExecution)
                                             .entityTypes(entityTypes)

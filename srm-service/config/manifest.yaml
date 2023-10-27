@@ -1,3 +1,4 @@
 DOCKER_FILE_PATH: /harness/harness-core/srm-service/build/container/Dockerfile-cv-nextgen-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/srm-service/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml
 

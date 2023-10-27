@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
@@ -20,7 +19,10 @@ import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.eraro.ErrorCode;
@@ -32,7 +34,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.command.CommandExecutionContext;
@@ -63,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * The Class SshCommandUnitExecutorServiceImpl.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @ValidateOnExecution
 @Singleton
 @Slf4j
@@ -84,7 +87,6 @@ public class SshCommandUnitExecutorServiceImpl implements CommandUnitExecutorSer
 
   @Override
   public void cleanup(String activityId, Host host) {
-    SshSessionManager.evictAndDisconnectCachedSession(activityId, host.getHostName());
     SshClientManager.evictCacheAndDisconnect(activityId, host.getHostName());
   }
 

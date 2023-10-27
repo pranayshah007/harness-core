@@ -475,6 +475,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
       Optional.ofNullable(specDTO.getAzureEnvironmentType()).ifPresent(azureVaultConfig::setAzureEnvironmentType);
       Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
       Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
+      Optional.ofNullable(specDTO.getEnablePurge()).ifPresent(azureVaultConfig::setEnablePurge);
       Optional.ofNullable(specDTO.getAzureManagedIdentityType())
           .ifPresent(azureVaultConfig::setAzureManagedIdentityType);
       List<String> vaultNames = azureSecretsManagerService.listAzureVaults(accountIdentifier, azureVaultConfig);

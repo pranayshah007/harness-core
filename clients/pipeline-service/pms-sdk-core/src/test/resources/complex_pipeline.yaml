@@ -10,6 +10,7 @@ pipeline:
         identifier: a11
         description: ""
         type: Approval
+        timeout: 10s
         spec:
           execution:
             steps:

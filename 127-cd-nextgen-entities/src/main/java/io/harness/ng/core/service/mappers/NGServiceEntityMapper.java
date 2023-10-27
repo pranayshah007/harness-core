@@ -104,7 +104,7 @@ public class NGServiceEntityMapper {
     }
   }
 
-  private void validateManifests(ServiceDefinition serviceDefinition) {
+  public void validateManifests(ServiceDefinition serviceDefinition) {
     List<ManifestConfigWrapper> manifests = serviceDefinition.getServiceSpec().getManifests();
 
     if (isNotEmpty(manifests)) {

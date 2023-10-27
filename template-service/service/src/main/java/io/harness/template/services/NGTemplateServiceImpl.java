@@ -364,10 +364,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
+    String yamlVersion = templateEntity.getHarnessVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
         templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false);
+        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false, yamlVersion);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);

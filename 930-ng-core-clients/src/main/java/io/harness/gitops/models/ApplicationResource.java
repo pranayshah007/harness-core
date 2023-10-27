@@ -6,7 +6,9 @@
  */
 
 package io.harness.gitops.models;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.HarnessStringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -16,6 +18,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

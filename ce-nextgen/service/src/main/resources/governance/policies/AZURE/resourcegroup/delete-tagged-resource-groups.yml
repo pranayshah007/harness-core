@@ -1,0 +1,7 @@
+policies:
+  - name: delete-tagged-resource-groups
+    resource: azure.resourcegroup
+    filters:
+      - tag:ShouldBeDeleted: present
+    actions:
+      - type: delete

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -21,12 +22,8 @@ import io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResp
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.exception.ExceptionUtils;
-import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.OciHelmDockerApiException;
 
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -49,23 +46,16 @@ public class EcrHelmApiListTagsDelegateTask extends AbstractDelegateRunnableTask
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
-    try {
-      EcrHelmApiListTagsTaskParams ecrHelmApiListTagsTaskParams = (EcrHelmApiListTagsTaskParams) parameters;
-      int pageSize = ecrHelmApiListTagsTaskParams.getPageSize() > 0 ? ecrHelmApiListTagsTaskParams.getPageSize()
-                                                                    : CHART_VERSIONS_PAGE_SIZE_DEFAULT;
-      List<String> versions =
-          ociHelmEcrConfigApiHelper.getChartVersions(getAccountId(), ecrHelmApiListTagsTaskParams, pageSize);
-      String lastTag = versions.size() == pageSize ? versions.get(versions.size() - 1) : null;
-
-      return OciHelmDockerApiListTagsTaskResponse.builder()
-          .chartName(ecrHelmApiListTagsTaskParams.getChartName())
-          .chartVersions(versions)
-          .lastTag(lastTag)
-          .build();
-    } catch (OciHelmDockerApiException e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          ExceptionUtils.getMessage(e), "Failed to query Oci Helm Docker API List Tags", e);
-    }
+    EcrHelmApiListTagsTaskParams ecrHelmApiListTagsTaskParams = (EcrHelmApiListTagsTaskParams) parameters;
+    int pageSize = ecrHelmApiListTagsTaskParams.getPageSize() > 0 ? ecrHelmApiListTagsTaskParams.getPageSize()
+                                                                  : CHART_VERSIONS_PAGE_SIZE_DEFAULT;
+    EcrImageDetailConfig ecrImageDetailConfig =
+        ociHelmEcrConfigApiHelper.getEcrImageDetailConfig(ecrHelmApiListTagsTaskParams, pageSize);
+    return OciHelmDockerApiListTagsTaskResponse.builder()
+        .chartName(ecrHelmApiListTagsTaskParams.getChartName())
+        .chartVersions(ociHelmEcrConfigApiHelper.getChartVersionsFromImageDetails(ecrImageDetailConfig))
+        .lastTag(ecrImageDetailConfig.getNextToken())
+        .build();
   }
 
   @Override

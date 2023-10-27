@@ -25,10 +25,15 @@ spec:
       {{- include "event-service.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.global.commonAnnotations .Values.podAnnotations }}
       annotations:
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
+    {{- end }}
       labels:
         {{- include "event-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.global.commonLabels }}
@@ -83,13 +88,13 @@ spec:
             - configMapRef:
                 name: event-service
           env:
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             - name: EVENTS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "events" "ctx" $) }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "harness" "ctx" $) }}
             - name: DMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "dms-harness" "ctx" $) }}
         {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
         {{- end }}

@@ -52,10 +52,4 @@ public class TestAsyncStep implements AsyncExecutable<TestStepParameters> {
       Ambiance ambiance, TestStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, TestStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do Nothing
-  }
 }

@@ -90,6 +90,8 @@ public class AzureVaultConfig extends SecretManagerConfig {
 
   @Attributes(title = "managedClientId") private String managedClientId;
 
+  @Attributes(description = "Boolean value to indicate if purge is enabled") private Boolean enablePurge;
+
   @Override
   public void maskSecrets() {
     this.secretKey = SECRET_MASK;
@@ -172,6 +174,7 @@ public class AzureVaultConfig extends SecretManagerConfig {
                                                           .useManagedIdentity(getUseManagedIdentity())
                                                           .managedClientId(getManagedClientId())
                                                           .azureManagedIdentityType(getAzureManagedIdentityType())
+                                                          .enablePurge(getEnablePurge())
                                                           .build();
     updateNGSecretManagerMetadata(getNgMetadata(), ngAzureKeyVaultConfigDTO);
     if (!maskSecrets) {

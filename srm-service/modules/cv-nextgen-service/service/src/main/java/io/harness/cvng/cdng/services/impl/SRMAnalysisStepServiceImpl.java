@@ -275,6 +275,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
         .startTime(TimeUnit.MILLISECONDS.toSeconds(analysisStepExecutionDetail.getAnalysisStartTime()))
         .endTime(TimeUnit.MILLISECONDS.toSeconds(analysisStepExecutionDetail.getAnalysisEndTime()))
         .details(SRMAnalysisStepInstanceDetails.builder()
+                     .stepName(analysisStepExecutionDetail.getStepName())
                      .analysisDuration(analysisStepExecutionDetail.getAnalysisDuration())
                      .analysisStatus(analysisStepExecutionDetail.getAnalysisStatus())
                      .build())

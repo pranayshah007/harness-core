@@ -35,6 +35,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -42,7 +43,6 @@ import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
@@ -54,7 +54,6 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
-import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
@@ -505,8 +504,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
 
       // InputSet yaml used during execution
-      String yaml = executionSummaryEntity.getInputSetYaml();
-      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+      String yaml =
+          resolveExpressionsInYaml(executionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
 
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
@@ -537,32 +536,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     throw new InvalidRequestException(
         "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
-  }
-
-  private String getLatestTemplate(
-      String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
-    EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();
-    // latestTemplate is templateYaml for the pipeline in the current branch with the latest changes
-    String latestTemplate;
-    if (entityGitDetails != null) {
-      // will come here if the pipeline was remote
-      GitSyncBranchContext gitSyncBranchContext = GitSyncBranchContext.builder()
-                                                      .gitBranchInfo(GitEntityInfo.builder()
-                                                                         .branch(entityGitDetails.getBranch())
-                                                                         .repoName(entityGitDetails.getRepoName())
-                                                                         .build())
-                                                      .build();
-      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-        latestTemplate = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId,
-            executionSummaryEntity.getPipelineIdentifier(), entityGitDetails.getBranch(),
-            entityGitDetails.getRepoIdentifier(), null);
-      }
-    } else {
-      // will come here if the pipeline was INLINE
-      latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
-    }
-    return latestTemplate;
   }
 
   @Override
@@ -751,8 +724,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
     String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
-    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
-    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    String inputSetYaml = resolveExpressionsInYaml(
+        pipelineExecutionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
     if (EmptyPredicate.isEmpty(pipelineTemplate)) {
       return "";
     }
@@ -760,8 +733,18 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
   }
 
-  private String resolveExpressionsInYaml(
-      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+  private String resolveExpressionsInYaml(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity,
+      boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    String yaml = pipelineExecutionSummaryEntity.getResolvedUserInputSetYaml();
+    if (yaml != null && !ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS.equals(resolveExpressionsType)) {
+      /* since `resolvedUserInputSetYaml` contains the resolved input set using
+        `ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS`, we can return it immediately. */
+      return yaml;
+    }
+    // Otherwise we need to fetch the raw inputSetYaml from PlanExecutionMetadata
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
+    yaml = planExecutionMetadata.getInputSetYaml();
     if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
       yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
           yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);

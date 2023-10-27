@@ -28,7 +28,7 @@ global:
     objects:
       annotations: {}
     hosts:
-      - 'my-host.example.org'
+      - my-host.example.org
     tls:
       enabled: false
       secretName: harness-cert
@@ -248,3 +248,5 @@ proxyAllowListConfigServices:
       - /aggregate/acl/usergroups
       - /token/validate
 name: idp-service
+
+internalAccounts: kmpySmUISimoRrJL6NL73w

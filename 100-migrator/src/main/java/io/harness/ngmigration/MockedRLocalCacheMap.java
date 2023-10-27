@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.Collection;
 import java.util.Date;
@@ -23,6 +26,7 @@ import org.redisson.api.RSemaphore;
 import org.redisson.api.mapreduce.RMapReduce;
 import org.redisson.client.codec.Codec;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   @Override
   public void preloadCache() {}

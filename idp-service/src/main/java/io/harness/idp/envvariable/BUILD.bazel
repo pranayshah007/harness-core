@@ -34,6 +34,7 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:javax_validation_validation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",

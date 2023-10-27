@@ -60,6 +60,7 @@ import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -110,6 +111,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
 
     boolean success = k8sTaskHelperBase.scale(
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
+    OffsetDateTime scaleActionTime = OffsetDateTime.now();
     if (success) {
       scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
     }
@@ -126,6 +128,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
               .denoteOverallSuccess(true)
               .isErrorFrameworkEnabled(true)
               .kubernetesConfig(kubernetesConfig)
+              .startTime(scaleActionTime)
               .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());
@@ -140,7 +143,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
         k8sScaleRequest.getReleaseName(), steadyStateTimeoutInMillis);
 
     K8sScaleResponse k8sScaleResponse =
-        K8sScaleResponse.builder().k8sPodList(k8sTaskHelperBase.tagNewPods(beforePodList, afterPodList)).build();
+        K8sScaleResponse.builder().k8sPodList(k8sTaskHelperBase.tagNewPods(afterPodList, beforePodList)).build();
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
 

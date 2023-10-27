@@ -16,6 +16,7 @@ import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
+import io.harness.ng.core.dashboard.ServiceDeployments;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.service.entity.ServiceSequence;
@@ -94,7 +95,7 @@ public interface CDOverviewDashboardService {
       long startTime, long endTime, List<String> sort) throws Exception;
 
   ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception;
+      String projectIdentifier, long startTime, long endTime, List<String> sort, String repoName) throws Exception;
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getServicesGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTimeInMs, long endTimeInMs,
@@ -168,6 +169,9 @@ public interface CDOverviewDashboardService {
 
   DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, long startTimeInMs, long endTimeInMs);
+
+  ServiceDeployments getAllDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs);
 
   ServiceHeaderInfo getServiceHeaderInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, boolean loadFromCache, boolean loadFromFallbackBranch);

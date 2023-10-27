@@ -94,6 +94,7 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
     expressionResolver.updateExpressions(ambiance, serviceSpec);
 
     checkForAccessOrThrow(ambiance, serviceSpec);
+    azureHelperService.publishSecretRuntimeUsage(ambiance, serviceSpec);
 
     final NGLogCallback logCallback =
         serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);

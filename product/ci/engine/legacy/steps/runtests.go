@@ -24,7 +24,7 @@ import (
 
 var (
 	getWrkspcPath = external.GetWrkspcPath
-	getChFiles    = external.GetChangedFiles
+	getChFiles    = external.GetChangedFilesPR
 )
 
 // RunTestsStep represents interface to execute a runTests step
@@ -60,7 +60,7 @@ func (e *runTestsStep) getDiffFiles(ctx context.Context) ([]types.File, error) {
 	if err != nil {
 		return []types.File{}, err
 	}
-	chFiles, err := getChFiles(ctx, workspace, "", false, e.log, nil) // Legacy code. Using <nil> for procWriter as it's only used for local testing.
+	chFiles, err := getChFiles(ctx, workspace, e.log, nil) // Legacy code. Using <nil> for procWriter as it's only used for local testing.
 	if err != nil {
 		e.log.Errorw("failed to get changed filed in runTests step", "step_id", e.id, zap.Error(err))
 		return []types.File{}, err

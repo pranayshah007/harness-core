@@ -65,11 +65,23 @@ public class ManifestDelegateConfigHelper {
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
-        for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
-          decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
-          ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+        ConnectorConfigDTO connectorConfigDTO = null;
+        if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getOciHelmConnector();
         }
+
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getAwsConnectorDTO();
+        }
+
+        if (connectorConfigDTO != null) {
+          for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
+            decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+            ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+                entity, ociHelmStoreConfig.getEncryptedDataDetails());
+          }
+        }
+
         break;
 
       case S3_HELM:

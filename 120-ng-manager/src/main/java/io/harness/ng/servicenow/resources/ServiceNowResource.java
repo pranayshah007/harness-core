@@ -8,6 +8,7 @@
 package io.harness.ng.servicenow.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.CodePulse;
@@ -18,6 +19,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -49,6 +51,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @OwnedBy(CDC)
 @Api("servicenow")
@@ -159,6 +164,28 @@ public class ServiceNowResource {
     List<ServiceNowTemplate> metadataResponse = serviceNowResourceService.getTemplateList(
         connectorRef, orgId, projectId, limit, offset, templateName, ticketType, searchTerm, templateType);
     return ResponseDTO.newResponse(metadataResponse);
+  }
+
+  @GET
+  @Path("getTemplateV2")
+  @ApiOperation(value = "Get ServiceNow template metadata", nickname = "getServiceNowTemplateMetadataV2")
+  public ResponseDTO<PageResponse<ServiceNowTemplate>> getTemplateMetadataV2(
+      @NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @NotNull @QueryParam("ticketType") String ticketType, @QueryParam("templateName") String templateName,
+      @QueryParam(NGCommonEntityConstants.SIZE) int size, @QueryParam(NGCommonEntityConstants.PAGE) int page,
+      @DefaultValue("Form") @QueryParam("templateType") ServiceNowTemplateTypeEnum templateType,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam("searchTerm") String searchTerm) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
+
+    List<ServiceNowTemplate> metadataResponse = serviceNowResourceService.getTemplateList(
+        connectorRef, orgId, projectId, size, page, templateName, ticketType, searchTerm, templateType);
+    Pageable pageable = PageRequest.of(0, size);
+
+    return ResponseDTO.newResponse(getNGPageResponse(new PageImpl<>(metadataResponse, pageable, 1)));
   }
   @POST
   @Path("getTicketDetails")

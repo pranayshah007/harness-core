@@ -197,7 +197,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       result.add(convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
           fullQualifiedDomainName, ciCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
     }
-
+    result.addAll(extractSecretRefs(filterCreationContext));
     IntegrationStageConfig integrationStage = stageNode.getIntegrationStageConfig();
     if (integrationStage.getInfrastructure() == null) {
       validateRuntime(integrationStage, accountIdentifier);

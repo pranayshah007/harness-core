@@ -548,7 +548,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     return callable.call();
   }
 
-  public static boolean isSuccessful(Response<?> response) {
+  private static boolean isSuccessful(Response<?> response, boolean isPublic) {
     if (response == null) {
       throw new InvalidArtifactServerException("Null response found", USER);
     }
@@ -564,6 +564,15 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       case 404:
       case 400:
         return false;
+      case 429:
+        if (isPublic) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Image pull rate limit reached. Please authenticate Docker connector using Username and Password",
+              "Docker has rate limit on image requests for anonymous usage. Please refer: https://www.docker.com/increase-rate-limits");
+        } else {
+          throw NestedExceptionUtils.hintWithExplanationException("Image pull rate limit reached",
+              "Docker has rate limit on image requests. Please refer: https://www.docker.com/increase-rate-limits");
+        }
       case 401:
         throw DockerRegistryUtils.unauthorizedException();
       default:
@@ -572,6 +581,14 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
                 : String.format("Server responded with the following error code - %d", code),
             USER);
     }
+  }
+
+  public static boolean isSuccessful(Response<?> response) {
+    return isSuccessful(response, false);
+  }
+
+  public static boolean isSuccessfulPublicRegistry(Response<?> response) {
+    return isSuccessful(response, true);
   }
 
   public static String parseLink(String headerLink) {

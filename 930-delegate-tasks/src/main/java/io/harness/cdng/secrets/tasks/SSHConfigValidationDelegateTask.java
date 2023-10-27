@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.secrets.tasks;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -26,17 +28,16 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.Session;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(PL)
 @Slf4j
 public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTask {
@@ -84,12 +85,7 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     sshSessionConfig.setHost(sshTaskParams.getHost());
     sshSessionConfig.setPort(sshTaskParams.getSshKeySpec().getPort());
     try {
-      if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
-        SshClientManager.test(sshSessionConfig);
-      } else {
-        Session session = SshSessionFactory.getSSHSession(sshSessionConfig);
-        session.disconnect();
-      }
+      SshClientManager.test(sshSessionConfig);
       return SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build();
     } catch (Exception e) {
       return SSHConfigValidationTaskResponse.builder().connectionSuccessful(false).errorMessage(e.getMessage()).build();

@@ -59,7 +59,7 @@ public class GitStatusCheckHelper {
   @Inject private BitbucketService bitbucketService;
   @Inject private GitlabService gitlabService;
   @Inject private AzureRepoService azureRepoService;
-  @Inject private CodeResourceClient codeResourceClient;
+  @Inject(optional = true) private CodeResourceClient codeResourceClient;
   @Inject private GitTokenRetriever gitTokenRetriever;
   private static final String DESC = "description";
   private static final String STATE = "state";
@@ -286,28 +286,35 @@ public class GitStatusCheckHelper {
   }
 
   private boolean sendBuildStatusToHarnessCode(GitStatusCheckParams gitStatusCheckParams) {
-    String checkUid = (gitStatusCheckParams.getOwner() + gitStatusCheckParams.getRepo() + gitStatusCheckParams.getSha())
-                          .replaceAll("/", "_");
+    String checkUid = gitStatusCheckParams.getIdentifier().replaceAll("/", "_").replaceAll("\\s", "");
     HarnessCodePayload harnessCodePayload =
         HarnessCodePayload.builder()
             .status(HarnessCodePayload.CheckStatus.fromString(gitStatusCheckParams.getState()))
             .link(gitStatusCheckParams.getDetailsUrl())
-            // todo(abhinav): add summary
-            .summary("Add status")
+            .summary(gitStatusCheckParams.getDesc())
             .payload(HarnessCodePayload.Payload.builder().kind(HarnessCodePayload.CheckPayloadKind.raw).build())
-            // todo(abhinav): find consistent check uid
             .check_uid(checkUid)
             .build();
-    String accountId = gitStatusCheckParams.getOwner();
     String[] repoSplit = gitStatusCheckParams.getRepo().split("/");
-    if (repoSplit.length != 3) {
-      throw new InvalidRequestException(String.format("incorrect repo provided: %s", gitStatusCheckParams.getRepo()));
+    int len = repoSplit.length;
+    if (len < 3 || len > 5) {
+      throw new InvalidRequestException(String.format("incorrect repo provided: %s, owner: %s, checkUid: %s",
+          gitStatusCheckParams.getRepo(), gitStatusCheckParams.getOwner(), checkUid));
     }
-    String orgId = repoSplit[0];
-    String projectId = repoSplit[1];
-    String repoId = repoSplit[2];
-    log.info("Sending status {} for sha {} and repo {}", harnessCodePayload.getStatus(), gitStatusCheckParams.getSha(),
-        gitStatusCheckParams.getRepo());
+
+    // CI splits URL to owner and repo. Owner is first part before / after URL and rest all is repo.
+    // URL: https://git.qa.harness.io/acc/org/proj/repo.git Owner: acc Repo: org/pro/repo
+    // URL: https://qa.harness.io/code/git/acc/org/proj/repo.git Owner: code Repo: git/org/proj/repo
+
+    String orgId = repoSplit[len - 3];
+    String projectId = repoSplit[len - 2];
+    String repoId = repoSplit[len - 1];
+    String accountId = gitStatusCheckParams.getOwner();
+    if (len > 3) {
+      accountId = repoSplit[len - 4];
+    }
+    log.info("Sending status {} for sha {} and repo {} and owner {} and checkUid {}", harnessCodePayload.getStatus(),
+        gitStatusCheckParams.getSha(), gitStatusCheckParams.getRepo(), gitStatusCheckParams.getOwner(), checkUid);
     return NGRestUtils.getGeneralResponse(codeResourceClient.sendStatus(
                accountId, orgId, projectId, repoId, gitStatusCheckParams.getSha(), harnessCodePayload))
         != null;

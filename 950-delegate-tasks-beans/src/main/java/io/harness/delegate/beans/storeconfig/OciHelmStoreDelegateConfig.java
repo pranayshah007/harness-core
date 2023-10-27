@@ -10,7 +10,7 @@ package io.harness.delegate.beans.storeconfig;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -30,7 +30,7 @@ public class OciHelmStoreDelegateConfig implements StoreDelegateConfig {
   OciHelmConnectorDTO ociHelmConnector;
   List<EncryptedDataDetail> encryptedDataDetails;
   boolean helmOciEnabled;
-  ConnectorConfigDTO connectorConfigDTO;
+  AwsConnectorDTO awsConnectorDTO;
   String region;
   String registryId;
   @NonFinal @Setter String repoUrl;

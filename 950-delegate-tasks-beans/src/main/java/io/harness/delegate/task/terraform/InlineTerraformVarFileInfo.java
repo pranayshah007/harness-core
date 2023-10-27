@@ -24,4 +24,7 @@ import lombok.Data;
 @RecasterAlias("io.harness.delegate.task.terraform.InlineTerraformVarFileInfo")
 public class InlineTerraformVarFileInfo implements TerraformVarFileInfo, NestedAnnotationResolver {
   @Expression(ALLOW_SECRETS) String varFileContent;
+  /*filePath is set to differentiate if created file from InlineTerraformVarFileInfo on delegate should be .tfvars or
+   * .json*/
+  @Expression(ALLOW_SECRETS) String filePath;
 }

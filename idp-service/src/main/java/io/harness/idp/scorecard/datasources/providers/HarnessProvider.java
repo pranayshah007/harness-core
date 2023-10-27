@@ -18,6 +18,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -28,12 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-public class HarnessProvider extends DataSourceProvider {
+public class HarnessProvider extends HttpDataSourceProvider {
   protected HarnessProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
-      IdpAuthInterceptor idpAuthInterceptor, String env) {
+      IdpAuthInterceptor idpAuthInterceptor, String env, DataSourceRepository dataSourceRepository) {
     super(HARNESS_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
     this.idpAuthInterceptor = idpAuthInterceptor;
     this.env = env;
   }
@@ -49,13 +50,9 @@ public class HarnessProvider extends DataSourceProvider {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     replaceableHeaders.put(HARNESS_ACCOUNT, accountIdentifier);
     replaceableHeaders.putAll(authHeaders);
-    log.info(
-        "Harness provider is called - account -{}, entity - {}, data points and input values - {} replace headers - {} body replaceable - {} url replaceable -{}",
-        accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, new HashMap<>(),
-        prepareUrlReplaceablePairs(env));
 
-    return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, new HashMap<>(),
-        prepareUrlReplaceablePairs(env));
+    return processOut(accountIdentifier, HARNESS_IDENTIFIER, entity, replaceableHeaders, new HashMap<>(),
+        prepareUrlReplaceablePairs(env), dataPointsAndInputValues);
   }
 
   @Override

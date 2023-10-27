@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -18,6 +20,8 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder
 @OwnedBy(CDP)

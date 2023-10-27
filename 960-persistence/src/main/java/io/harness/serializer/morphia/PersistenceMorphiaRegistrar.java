@@ -29,6 +29,8 @@ import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.NameAccess;
 import io.harness.persistence.NameAndValueAccess;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UniqueIdAccess;
+import io.harness.persistence.UniqueIdAware;
 import io.harness.persistence.UpdatedAtAccess;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAccess;
@@ -75,6 +77,8 @@ public class PersistenceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(NameAndValueAccess.class);
     set.add(GitAware.class);
     set.add(DelegateMigrationFlag.class);
+    set.add(UniqueIdAccess.class);
+    set.add(UniqueIdAware.class);
   }
 
   @Override

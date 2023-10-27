@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.yaml.kinds;
 
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 
 import io.harness.annotation.RecasterAlias;
@@ -62,6 +63,8 @@ public class AwsSamDirectoryManifest implements ManifestAttributes, Visitable {
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> samTemplateFile;
+
   // For Visitor Framework Impl
   String metadata;
 
@@ -85,7 +88,7 @@ public class AwsSamDirectoryManifest implements ManifestAttributes, Visitable {
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new AwsSamDirectoryManifestStepParameters(
-        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
+        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), samTemplateFile);
   }
 
   @Override
@@ -96,6 +99,9 @@ public class AwsSamDirectoryManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withStore(ParameterField.createValueField(
           store.getValue().applyOverrides(awsSamDirectoryManifest.getStore().getValue())));
     }
+    if (awsSamDirectoryManifest.getSamTemplateFile() != null) {
+      resultantManifest = resultantManifest.withSamTemplateFile(awsSamDirectoryManifest.getSamTemplateFile());
+    }
     return resultantManifest;
   }
 
@@ -103,5 +109,6 @@ public class AwsSamDirectoryManifest implements ManifestAttributes, Visitable {
   public static class AwsSamDirectoryManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
     StoreConfigWrapperParameters store;
+    ParameterField<String> samTemplateFile;
   }
 }

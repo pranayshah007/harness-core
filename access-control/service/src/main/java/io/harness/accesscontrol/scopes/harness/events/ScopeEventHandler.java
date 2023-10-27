@@ -7,9 +7,9 @@
 
 package io.harness.accesscontrol.scopes.harness.events;
 
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.PROJECT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;

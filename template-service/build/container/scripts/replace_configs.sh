@@ -205,10 +205,6 @@ if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
 fi
 
-if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
-fi
-
 if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
   export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
 fi
@@ -243,7 +239,6 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
-replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"

@@ -9,12 +9,14 @@ package io.harness.delegate.task.terragrunt.files;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.VLICA;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -28,6 +30,8 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.exception.HintException;
+import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.DownloadFilesRequest;
 import io.harness.logging.LogCallback;
@@ -70,20 +74,39 @@ public class GitStoreDownloadServiceTest extends CategoryTest {
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
-  public void testDownloadGitSsh() {
+  public void testDownloadGitSsh() throws IOException {
     final GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(GIT_URL).gitAuthType(GitAuthType.SSH).build();
     final SSHKeySpecDTO sshKeySpec = SSHKeySpecDTO.builder().build();
-    testDownloadGit(gitConfigDTO, sshKeySpec, singletonList("./"));
+    String repoFolderPath = "/testPath-1";
+    FileIo.createDirectoryIfDoesNotExist(OUTPUT_DIR + repoFolderPath);
+    testDownloadGit(gitConfigDTO, sshKeySpec, singletonList(repoFolderPath));
+    FileIo.deleteDirectoryAndItsContentIfExists(OUTPUT_DIR);
   }
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
-  public void testDownloadGitHttp() {
+  public void testDownloadGitHttp() throws IOException {
     final GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(GIT_URL).gitAuthType(GitAuthType.HTTP).build();
+    FileIo.createDirectoryIfDoesNotExist(OUTPUT_DIR + "/file1");
     testDownloadGit(gitConfigDTO, null, asList("file1", "file2"));
+    FileIo.deleteDirectoryAndItsContentIfExists(OUTPUT_DIR);
   }
 
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDownloadAndExThrown() throws IOException {
+    final GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(GIT_URL).gitAuthType(GitAuthType.HTTP).build();
+    final SSHKeySpecDTO sshKeySpec = SSHKeySpecDTO.builder().build();
+    assertThatThrownBy(() -> testDownloadGit(gitConfigDTO, sshKeySpec, singletonList("/non-existing-folder")))
+        .matches(throwable -> {
+          assertThat(throwable).isInstanceOf(HintException.class);
+          assertThat(throwable.getCause().getMessage())
+              .contains("Folder Path /non-existing-folder does not exist in the repo.");
+          return true;
+        });
+  }
   @Test
   @SneakyThrows
   @Owner(developers = ABOSII)

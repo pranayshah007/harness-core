@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.asg;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -22,6 +24,7 @@ import software.wings.sm.states.AwsAmiSwitchRoutesState;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class AsgBlueGreenSwapStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {

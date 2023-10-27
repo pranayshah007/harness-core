@@ -8,6 +8,7 @@
 package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
@@ -470,7 +471,9 @@ public class WorkflowServiceImpl implements WorkflowService {
   @Override
   public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
     FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });

@@ -12,6 +12,7 @@ import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction
 import static io.harness.ng.core.environment.beans.EnvironmentType.Production;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -115,6 +116,29 @@ public class EnvironmentMapperTest extends CategoryTest {
     Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO);
     assertThat(environment).isNotNull();
     assertThat(environment).isEqualTo(requestEnvironment);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testToEnvironmentFieldsDescriptionAndTags() {
+    final String filename = "env-desc-tags.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .name("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(Production)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO);
+    assertThat(environment).isNotNull();
+    assertThat(environment.getDescription()).isEqualTo("env description");
+    assertThat(environment.getTags()).isNotNull();
+    assertThat(environment.getTags().size()).isEqualTo(1);
+    assertThat(environment.getTags().get(0).getKey()).isEqualTo("key_yaml");
+    assertThat(environment.getTags().get(0).getValue()).isEqualTo("value_yaml");
   }
 
   @Test

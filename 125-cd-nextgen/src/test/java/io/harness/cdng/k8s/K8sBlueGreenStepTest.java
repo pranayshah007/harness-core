@@ -40,6 +40,7 @@ import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.GeneralException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -127,17 +128,19 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
 
-    K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
-                                              .k8sNGTaskResponse(K8sBGDeployResponse.builder()
-                                                                     .primaryColor("blue")
-                                                                     .stageColor("green")
-                                                                     .k8sPodList(Collections.emptyList())
-                                                                     .helmChartInfo(helmChartInfo)
-                                                                     .releaseNumber(1)
-                                                                     .build())
-                                              .commandUnitsProgress(UnitProgressData.builder().build())
-                                              .commandExecutionStatus(SUCCESS)
-                                              .build();
+    K8sDeployResponse k8sDeployResponse =
+        K8sDeployResponse.builder()
+            .k8sNGTaskResponse(K8sBGDeployResponse.builder()
+                                   .primaryColor("blue")
+                                   .stageColor("green")
+                                   .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                       K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
+                                   .helmChartInfo(helmChartInfo)
+                                   .releaseNumber(1)
+                                   .build())
+            .commandUnitsProgress(UnitProgressData.builder().build())
+            .commandExecutionStatus(SUCCESS)
+            .build();
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
@@ -157,6 +160,9 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(outcome.getOutcome()).isInstanceOf(K8sBlueGreenOutcome.class);
     assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
     assertThat(outcome.getGroup()).isNull();
+    ((K8sBlueGreenOutcome) outcome.getOutcome())
+        .getPodIps()
+        .forEach(ip -> assertThat(List.of("ip1", "ip2", "ip3").contains(ip)).isTrue());
 
     StepOutcome deploymentInfoOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(deploymentInfoOutcome.getOutcome()).isInstanceOf(DeploymentInfoOutcome.class);

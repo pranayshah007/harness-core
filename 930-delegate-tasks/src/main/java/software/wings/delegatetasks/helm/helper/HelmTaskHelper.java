@@ -788,12 +788,12 @@ public class HelmTaskHelper {
   @NotNull
   private String executeCommandWithLogOutput(String command, String errorMessage, HelmCliCommandType helmCliCommandType,
       StringBuilder sb, ProcessExecutor processExecutor) {
-    log.info("Helm command executed on delegate: {}", command);
+    log.debug(format("Helm command executed on delegate: %s", command));
 
     try {
       ProcessResult processResult = processExecutor.execute();
       if (processResult.getExitValue() != 0) {
-        log.warn("Command failed with following result: {}", sb.toString());
+        log.warn(format("Command [%s] failed with following result: %s", command, sb.toString()));
       }
       return sb.toString();
     } catch (IOException e) {

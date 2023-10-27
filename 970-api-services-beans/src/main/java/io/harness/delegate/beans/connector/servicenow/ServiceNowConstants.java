@@ -34,4 +34,9 @@ public class ServiceNowConstants {
   public static final String RESULT = "result";
   public static final String TEMPLATE = "template";
   public static final String VALUE = "value";
+  public static final String STANDARD = "Standard";
+  public static final String FORM = "Form";
+  public static final String NORMAL = "Normal";
+  public static final String META = "__meta";
+  public static final String IGNOREFIELDS = "ignoredFields";
 }

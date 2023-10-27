@@ -11,6 +11,7 @@ import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerificationAbortDTO;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -21,6 +22,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Progress
 
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.springframework.web.server.ResponseStatusException;
 
 public interface VerificationJobInstanceService {
@@ -46,7 +48,10 @@ public interface VerificationJobInstanceService {
   void markTimedOutIfNoProgress(VerificationJobInstance verificationJobInstance);
   CVConfig getEmbeddedCVConfig(String cvConfigId, String verificationJobInstanceId);
 
-  void abort(List<String> verificationJobInstanceIds);
+  boolean abort(List<String> verificationJobInstanceIds);
+
+  boolean abort(List<String> verificationJobInstanceIds, @Nullable VerificationAbortDTO verificationAbortDTO);
+
   List<String> getCVConfigIdsForVerificationJobInstance(
       String verificationJobInstanceId, List<String> filterIdentifiers);
   List<String> createDemoInstances(List<VerificationJobInstance> verificationJobInstances);

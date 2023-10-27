@@ -82,7 +82,7 @@ public class ShellScriptStepInfo
         .executionTarget(getExecutionTarget())
         .onDelegate(getOnDelegate())
         .outputVariables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(outputVariables))
-        .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
+        .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables))
         .secretOutputVariables(NGVariablesUtils.getSetOfSecretVars(outputVariables))
         .shellType(getShell())
         .source(getSource())

@@ -10,7 +10,7 @@ package io.harness.accesscontrol.scopes.harness.events;
 import io.harness.accesscontrol.commons.events.EventConsumer;
 import io.harness.accesscontrol.commons.events.EventFilter;
 import io.harness.accesscontrol.commons.events.EventHandler;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 

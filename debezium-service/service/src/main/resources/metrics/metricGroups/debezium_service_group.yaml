@@ -1,0 +1,6 @@
+name: Debezium Service Metrics Group
+identifier: debeziumServiceMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

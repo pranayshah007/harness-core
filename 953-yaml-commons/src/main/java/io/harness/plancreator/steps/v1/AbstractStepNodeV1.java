@@ -39,7 +39,7 @@ public abstract class AbstractStepNodeV1 {
   String name;
   String desc;
   ParameterField<String> when;
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<String>> delegate;
   ParameterField<StrategyConfigV1> strategy;
   PolicyConfig enforce;
 }

@@ -78,12 +78,13 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
-import io.harness.pms.plan.execution.preprocess.PipelineV1Preprocessor;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
+import io.harness.pms.yaml.preprocess.YamlV1PreProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
@@ -136,8 +137,8 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanService planService;
   @Mock NGSettingsClient settingsClient;
-  @Mock PipelinePreprocessorFactory pipelinePreprocessorFactory;
-  @Mock PipelineV1Preprocessor preprocessor;
+  @Mock YamlPreProcessorFactory yamlPreprocessorFactory;
+  @Mock YamlV1PreProcessor preProcessor;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -319,7 +320,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -355,7 +356,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -392,7 +393,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(inlinePipeline.getAccountId(),
             inlinePipeline.getOrgIdentifier(), inlinePipeline.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(inlinePipeline, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -428,7 +429,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(remotePipeline.getAccountId(),
             remotePipeline.getOrgIdentifier(), remotePipeline.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(remotePipeline, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -462,7 +463,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -508,7 +509,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.singletonList("s2"),
         null, executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -561,7 +562,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntityWithExpressions.getAccountId(),
             pipelineEntityWithExpressions.getOrgIdentifier(), pipelineEntityWithExpressions.getProjectIdentifier(),
-            pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE);
+            pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntityWithExpressions, moduleType,
         Collections.singletonList("s2"), expressionValues, executionTriggerInfo, null,
         RetryExecutionParameters.builder().isRetry(false).build(), false, false, null, null);
@@ -677,7 +678,7 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(
-            any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
+            any(), any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyString());
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -802,7 +803,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(null, pipelineEntity);
     assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
@@ -813,8 +814,10 @@ public class ExecutionHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testStartExecution() throws IOException {
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setHarnessVersion(HarnessYamlVersion.V0).build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setHarnessVersion(HarnessYamlVersion.V0)
+                                              .setProcessedYamlVersion(HarnessYamlVersion.V0)
+                                              .build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
     PlanCreationBlobResponse planCreationBlobResponse =
@@ -853,6 +856,7 @@ public class ExecutionHelperTest extends CategoryTest {
     ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
                                               .setHarnessVersion(HarnessYamlVersion.V0)
                                               .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                                              .setProcessedYamlVersion(HarnessYamlVersion.V0)
                                               .build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
@@ -943,8 +947,11 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     pipelineEntity.setYaml(pipelineYamlV1);
     pipelineEntity.setHarnessVersion(HarnessYamlVersion.V1);
-    doReturn(preprocessor).when(pipelinePreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
-    doReturn(pipelineYamlV1).when(preprocessor).preProcess(pipelineYamlV1);
+    doReturn(preProcessor).when(yamlPreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
+    doReturn(
+        YamlPreprocessorResponseDTO.builder().preprocessedJsonNode(YamlUtils.readAsJsonNode(pipelineYamlV1)).build())
+        .when(preProcessor)
+        .preProcess(pipelineYamlV1);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         null);

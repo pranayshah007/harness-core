@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.cdng.manifest.ManifestConfigType;
@@ -49,6 +51,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class K8sApplyStepMapperImpl extends StepMapper {
   @Override

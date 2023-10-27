@@ -51,6 +51,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetGitUpdateResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigResponseDTO;
@@ -80,6 +81,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -466,5 +468,24 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
             .filePath(gitMetadataUpdateRequestInfo.getFilePath())
             .build());
     return ResponseDTO.newResponse(InputSetGitUpdateResponseDTO.builder().identifier(inputSetAfterUpdate).build());
+  }
+
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<PageResponse<InputSetListResponseDTO>> listInputSetsForProject(int page, int size,
+      @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
+      @NotNull @ProjectIdentifier String projectIdentifier, InputSetListTypePMS inputSetListType,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
+    log.info(String.format(
+        "Get List of input sets for project %s, org %s, account %s", projectIdentifier, orgIdentifier, accountId));
+    Criteria criteria = PMSInputSetFilterHelper.listInputSetsForProjectCriteria(
+        accountId, orgIdentifier, projectIdentifier, inputSetListType, false);
+    Pageable pageRequest = PageUtils.getPageRequest(
+        page, size, new ArrayList<>(), Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
+    Page<InputSetEntity> inputSetEntities =
+        pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
+
+    Page<InputSetListResponseDTO> inputSetList =
+        inputSetEntities.map(PMSInputSetElementMapper::toInputSetListResponseDTO);
+    return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 }

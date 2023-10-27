@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.core.buckets.resources.s3;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
@@ -24,6 +26,7 @@ import io.harness.ng.core.buckets.resources.BucketsResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -49,6 +52,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_COMMON_STEPS})
 @Api("buckets")
 @Path("/buckets/s3")
 @Produces({"application/json"})
@@ -235,14 +240,15 @@ public class S3BucketResource {
   public ResponseDTO<List<FilePathDTO>> getFilePaths(@QueryParam("region") String region,
       @NotNull @QueryParam("connectorRef") String awsConnectorIdentifier,
       @NotNull @QueryParam("bucketName") String bucketName, @QueryParam("filePathRegex") String filePathRegex,
+      @QueryParam("fileFilter") String fileFilter,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    List<BuildDetails> s3ArtifactPaths = s3ResourceService.getFilePaths(
-        connectorRef, region, bucketName, filePathRegex, orgIdentifier, projectIdentifier);
+    List<BuildDetails> s3ArtifactPaths =
+        s3ResourceService.getFilePaths(connectorRef, region, bucketName, fileFilter, orgIdentifier, projectIdentifier);
 
     List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
 
@@ -259,7 +265,7 @@ public class S3BucketResource {
   @ApiOperation(value = "Gets s3 file paths", nickname = "getFilePathsV2ForS3")
   public ResponseDTO<List<FilePathDTO>> getFilePathsForServiceV2(@QueryParam("region") String region,
       @QueryParam("connectorRef") String awsConnectorIdentifier, @QueryParam("bucketName") String bucketName,
-      @QueryParam("filePathRegex") String filePathRegex,
+      @QueryParam("filePathRegex") String filePathRegex, @QueryParam("fileFilter") String fileFilter,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -285,6 +291,9 @@ public class S3BucketResource {
       if (StringUtils.isBlank(bucketName)) {
         bucketName = (String) amazonS3ArtifactConfig.getBucketName().fetchFinalValue();
       }
+      if (StringUtils.isBlank(fileFilter) && ParameterField.isNotNull(amazonS3ArtifactConfig.getFileFilter())) {
+        fileFilter = (String) amazonS3ArtifactConfig.getFileFilter().fetchFinalValue();
+      }
     }
 
     // Getting the resolved region in case of expressions
@@ -308,13 +317,19 @@ public class S3BucketResource {
             .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
                 pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef, null)
             .getValue();
+    // Getting the resolved fileFilter in case of expressions
+    fileFilter =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, fileFilter, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     // Common logic in case of ServiceV1 and ServiceV2
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         resolvedAwsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     List<BuildDetails> s3ArtifactPaths = s3ResourceService.getFilePaths(
-        connectorRef, resolvedRegion, resolvedBucketName, filePathRegex, orgIdentifier, projectIdentifier);
+        connectorRef, resolvedRegion, resolvedBucketName, fileFilter, orgIdentifier, projectIdentifier);
 
     List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
 

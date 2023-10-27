@@ -6,7 +6,9 @@
  */
 
 package io.harness.steps.servicenow.update;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -19,6 +21,7 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowUpdateStepPlanCreator extends PMSStepPlanCreatorV2<ServiceNowUpdateStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {

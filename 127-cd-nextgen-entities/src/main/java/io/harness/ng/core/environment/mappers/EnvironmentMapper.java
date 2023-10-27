@@ -63,6 +63,15 @@ public class EnvironmentMapper {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validateOrThrow(environmentRequestDTO, ngEnvironmentConfig);
+
+      String description = isEmpty(environmentRequestDTO.getDescription())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getDescription()
+          : environmentRequestDTO.getDescription();
+
+      Map<String, String> tags = isEmpty(environmentRequestDTO.getTags())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getTags()
+          : environmentRequestDTO.getTags();
+
       environment = Environment.builder()
                         .identifier(environmentRequestDTO.getIdentifier())
                         .accountId(accountId)
@@ -70,9 +79,9 @@ public class EnvironmentMapper {
                         .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
                         .name(environmentRequestDTO.getName())
                         .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
-                        .description(environmentRequestDTO.getDescription())
+                        .description(description)
                         .type(environmentRequestDTO.getType())
-                        .tags(convertToList(environmentRequestDTO.getTags()))
+                        .tags(convertToList(tags))
                         .build();
 
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -144,12 +153,16 @@ public class EnvironmentMapper {
         .storeType(environment.getStoreType())
         .connectorRef(environment.getConnectorRef())
         .cacheResponseMetadataDTO(getCacheResponse(environment))
+        .fallbackBranch(environment.getFallBackBranch())
         .build();
   }
 
-  private EntityGitDetails getEntityGitDetails(Environment environment) {
+  public EntityGitDetails getEntityGitDetails(Environment environment) {
     if (environment.getStoreType() == StoreType.REMOTE) {
-      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
     }
     return null; // Default if storeType is not remote
   }
@@ -171,6 +184,7 @@ public class EnvironmentMapper {
         .cacheState(cacheResponse.getCacheState())
         .ttlLeft(cacheResponse.getTtlLeft())
         .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 

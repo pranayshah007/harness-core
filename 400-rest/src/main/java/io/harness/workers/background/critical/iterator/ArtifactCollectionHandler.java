@@ -6,7 +6,6 @@
  */
 
 package io.harness.workers.background.critical.iterator;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -15,8 +14,11 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.FunctorException;
@@ -51,6 +53,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

@@ -74,6 +74,7 @@ import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
 import io.harness.credit.schedular.ProvisionMonthlyCICreditsHandler;
 import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
+import io.harness.delay.DelayEventListener;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -102,7 +103,8 @@ import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
-import io.harness.gitsync.gitxwebhooks.runnable.GitXWebhookProcessorRunnable;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.listener.WebhookGitXPushEventQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -137,8 +139,10 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
+import io.harness.ng.core.migration.AddUniqueIdParentIdToEntitiesJob;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
+import io.harness.ng.core.migration.UniqueIdParentIdMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
 import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
@@ -257,6 +261,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
@@ -316,6 +321,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private static final String APPLICATION_NAME = "CD NextGen Application";
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -394,7 +400,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         return appConfig.getDbAliases();
       }
     });
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new LogStreamingModule(appConfig.getLogStreamingServiceConfig().getBaseUrl()));
     modules.add(new AbstractCfModule() {
@@ -449,7 +455,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     });
     // Pipeline Service Modules
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(appConfig);
-    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
+    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration, threadPoolMetricRegistry));
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
@@ -550,6 +556,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerQueueListeners(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
     queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
   }
 
@@ -574,6 +581,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(NGBeanMigrationProvider.class); }
 
           { add(ProjectMigrationProvider.class); }
+
+          { add(UniqueIdParentIdMigrationProvider.class); }
 
           { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
 
@@ -906,11 +915,16 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(AddUniqueIdParentIdToEntitiesJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(WebhookGitXPushEventQueueProcessor.class));
+    }
+    if (appConfig.isUseQueueServiceForGitXWebhook()) {
+      environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));
     }
     createConsumerThreadsToListenToEvents(environment, injector);
   }
@@ -925,14 +939,19 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   private void registerResources(NextGenConfiguration appConfig, Environment environment, Injector injector) {
-    for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
-      if (Resource.isAcceptable(resource)) {
-        environment.jersey().register(injector.getInstance(resource));
+    try {
+      for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
+        if (Resource.isAcceptable(resource)) {
+          environment.jersey().register(injector.getInstance(resource));
+        }
       }
+      environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+      environment.jersey().property(
+          ServerProperties.RESOURCE_VALIDATION_DISABLE, appConfig.isDisableResourceValidation());
+    } catch (Exception e) {
+      log.error("Failed to register resources. Classes are: {}", Iterables.toString(HARNESS_RESOURCE_CLASSES));
+      throw e;
     }
-    environment.jersey().register(injector.getInstance(VersionInfoResource.class));
-    environment.jersey().property(
-        ServerProperties.RESOURCE_VALIDATION_DISABLE, appConfig.isDisableResourceValidation());
   }
 
   private void registerJerseyProviders(Environment environment, Injector injector) {
@@ -990,10 +1009,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
-
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitXWebhookEvents")))
-        .scheduleWithFixedDelay(
-            injector.getInstance(GitXWebhookProcessorRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);

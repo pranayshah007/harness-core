@@ -9,6 +9,7 @@ package io.harness.engine.executions.node;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
@@ -45,6 +46,7 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -711,16 +713,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         nodeExecutionsIdsToDelete.add(next.getUuid());
         batchNodeExecutionList.add(next);
         if (batchNodeExecutionList.size() >= MAX_BATCH_SIZE) {
+          // delete node Executions in batches of 1000
           deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+          deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
           batchNodeExecutionList.clear();
+          nodeExecutionsIdsToDelete.clear();
         }
       }
     }
+    // delete the remaining node Executions
     if (EmptyPredicate.isNotEmpty(batchNodeExecutionList)) {
       deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
     }
-    // At end delete all nodeExecutions
-    deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
+    if (isNotEmpty(nodeExecutionsIdsToDelete)) {
+      deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
+    }
   }
 
   /**
@@ -820,8 +827,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @VisibleForTesting
   void emitEvent(NodeExecution nodeExecution, OrchestrationEventType orchestrationEventType) {
+    if (nodeExecution == null) {
+      return;
+    }
     TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
-    if (nodeExecution != null && nodeExecution.getAmbiance() != null) {
+    if (nodeExecution.getAmbiance() != null) {
       PlanExecutionMetadata metadata =
           planExecutionMetadataService.findByPlanExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
               .orElseThrow(()
@@ -905,7 +915,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public List<NodeExecution> fetchStageExecutionsWithProjection(
       String planExecutionId, Set<String> fieldsToBeIncluded) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
@@ -1123,5 +1132,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       query.fields().include(field);
     }
     return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerAccount() {
+    return nodeExecutionReadHelper.aggregateRunningExecutionCountPerAccount();
   }
 }

@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,6 +90,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   private ResourceGroupService resourceGroupService;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
   @Inject @Named("mongoTemplate") private MongoTemplate mongoTemplate;
+  @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   @Before
   public void setup() {
@@ -113,7 +113,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     inMemoryPermissionRepository =
         new InMemoryPermissionRepository(mongoTemplate, Map.of("ccm_perspective_view", Set.of("CCM_FOLDER")));
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
-        new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
   }
 
   @Test
@@ -165,44 +165,6 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   }
 
   @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void createACLs_MoreThanAllowed_ReturnsZeroCreated() {
-    Set<String> principals = getRandomStrings(1000001);
-    Set<ResourceSelector> resourceSelectors = Set.of(builder().selector(ALL_RESOURCE_SELECTOR).build());
-    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
-    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
-
-    aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
-
-    verify(aclRepository, never()).insertAllIgnoringDuplicates(any());
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void createACLs_TillMaxAllowed_ReturnsCreated() {
-    Set<String> principals = getRandomStrings(2000000);
-    Set<ResourceSelector> resourceSelectors = Set.of(builder().selector(ALL_RESOURCE_SELECTOR).build());
-    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION);
-    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
-
-    List<List<ACL>> listOfParameters = new ArrayList<>();
-    when(aclRepository.insertAllIgnoringDuplicates(any())).thenAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      listOfParameters.add(new ArrayList<>((Collection<ACL>) args[0]));
-      long count = listOfParameters.get(0).size();
-      listOfParameters.clear();
-      return count;
-    });
-
-    long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
-
-    assertThat(aclCount).isEqualTo(2000000);
-    verify(aclRepository, times(40)).insertAllIgnoringDuplicates(any());
-  }
-
-  @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void createACLs() {
@@ -238,7 +200,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   @Category(UnitTests.class)
   public void createACLsOnlyForExactResourceTypeAndDoNotCreateRedundantOrDisabledACL() {
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
-        new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     Set<String> principals = of(getRandomString());
 
     Set<ResourceSelector> resourceSelectors =
@@ -276,7 +238,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   @Category(UnitTests.class)
   public void createImplicitACLs_NoScopeSelected_CreatesNoImplicitACLs() {
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
-        new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
     Set<String> permissions = new HashSet<>();
     Set<String> usersAdded = new HashSet<>();
@@ -300,7 +262,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     implicitPermissionsByScope.put(
         Pair.of(TestScopeLevels.TEST_SCOPE, false), new HashSet<>(Arrays.asList("core_account_view")));
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
-        new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
     Set<String> permissions = new HashSet<>(Arrays.asList("core_account_view"));
     Optional<Role> role = Optional.of(Role.builder().permissions(permissions).build());

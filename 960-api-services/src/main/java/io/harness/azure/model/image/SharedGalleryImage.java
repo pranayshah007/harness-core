@@ -38,6 +38,8 @@ public class SharedGalleryImage extends AzureMachineImage {
     // only applied on generalized images
     VirtualMachineScaleSetOSProfile osProfile = inner.virtualMachineProfile().osProfile();
     OSType osType = image.getOsType();
+    osProfile.withRequireGuestProvisionSignal(null);
+
     if (LINUX == osType) {
       osProfile.withLinuxConfiguration(new LinuxConfiguration());
       osProfile.linuxConfiguration().withDisablePasswordAuthentication(false);

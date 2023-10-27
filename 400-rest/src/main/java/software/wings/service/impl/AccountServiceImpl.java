@@ -730,6 +730,7 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     account.setPublicAccessEnabled(publicAccessEnabled);
     update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
   }
 
   private void ngAuditAccountDetailsCrossGenerationAccess(
@@ -2512,5 +2513,13 @@ public class AccountServiceImpl implements AccountService {
 
     log.info("Failed to update account trust level to {} for accountId = {} ", trustLevel, accountId);
     return false;
+  }
+
+  @Override
+  public List<Account> listAccountsMarkedForDeletion(int limit) {
+    return wingsPersistence.createQuery(Account.class)
+        .filter(AccountKeys.accountStatusKey, MARKED_FOR_DELETION)
+        .limit(limit)
+        .asList();
   }
 }

@@ -68,7 +68,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Value
-@Builder
+@Builder(toBuilder = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineEntityKeys")
 @StoreIn(DbAliases.PMS)

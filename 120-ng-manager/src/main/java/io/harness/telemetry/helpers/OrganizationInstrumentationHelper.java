@@ -35,7 +35,6 @@ public class OrganizationInstrumentationHelper extends InstrumentationHelper {
   String ORGANIZATION_NAME = "organization_name";
   String ORGANIZATION_VERSION = "organization_version";
   String HARNESS_MANAGED = "harness_managed";
-
   public CompletableFuture sendOrganizationCreateEvent(Organization organization, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {

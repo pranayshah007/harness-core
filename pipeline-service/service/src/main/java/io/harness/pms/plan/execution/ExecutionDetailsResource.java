@@ -664,8 +664,7 @@ public class ExecutionDetailsResource {
   @PUT
   @Path("/{planExecutionId}/notes")
   @ApiOperation(value = "Updates Notes of a pipelineExecution", nickname = "updateNotesForExecution")
-  @NGAccessControlCheck(
-      resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Operation(operationId = "updateNotesForExecution", summary = "Updates Notes for a pipelineExecution",
       responses =
       {

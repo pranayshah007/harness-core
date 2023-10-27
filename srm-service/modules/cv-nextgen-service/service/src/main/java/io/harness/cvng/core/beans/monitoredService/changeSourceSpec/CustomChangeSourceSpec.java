@@ -33,6 +33,7 @@ public class CustomChangeSourceSpec extends ChangeSourceSpec {
   @JsonProperty(DATA_SOURCE_TYPE) ChangeCategory type;
   String webhookUrl;
   String webhookCurlCommand;
+  String authorizationToken;
 
   @Override
   public ChangeSourceType getType() {

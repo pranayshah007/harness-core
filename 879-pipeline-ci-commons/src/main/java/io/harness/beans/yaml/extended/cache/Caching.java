@@ -44,4 +44,12 @@ public class Caching {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> key;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.cache.CachePolicy")
+  private ParameterField<CachePolicy> policy;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  private ParameterField<Boolean> override;
 }

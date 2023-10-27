@@ -6,12 +6,14 @@
  */
 
 package io.harness.rule;
-
 import static java.lang.String.format;
 
 import io.harness.NoopStatement;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.CategoryConfigException;
 import io.harness.rule.UserInfo.UserInfoBuilder;
 import io.harness.scm.ScmSecret;
@@ -33,6 +35,9 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_APPROVALS,
+        HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class OwnerRule implements TestRule {
@@ -69,6 +74,7 @@ public class OwnerRule implements TestRule {
   public static final String CET = "CET";
   public static final String CI = "CI";
   public static final String CIT = "CIT";
+  public static final String CF = "CF";
   public static final String CV = "CV";
   public static final String DEL = "DEL";
   public static final String DX = "DX";
@@ -82,6 +88,7 @@ public class OwnerRule implements TestRule {
   public static final String IDP = "IDP";
 
   public static final String AADITI = "aaditi.joag";
+  public static final String AASHRIT = "aashrit.garg";
   public static final String ABHIJEET = "abhijeet.sharma";
   public static final String ABHIJITH = "abhijith.pradeep";
   public static final String ABHINAV = "abhinav.singh";
@@ -331,8 +338,15 @@ public class OwnerRule implements TestRule {
   public static final String AYUSHI_TIWARI = "ayushi.tiwari";
   public static final String SAHITHI = "sahithi.banda";
 
+  public static final String ANINDITAA = "aninditaa.chauhan";
+
   public static final String SHOBHIT_SINGH = "shobhit.singh";
   public static final String RAKSHIT_AGARWAL = "rakshit.agarwal";
+  public static final String VINIT_KUMAR = "vinit.kumar";
+
+  public static final String EOIN_MCAFEE = "eoin.mcafee";
+
+  public static final String DMACK = "daniel.mack";
 
   @Deprecated public static final String UNKNOWN = "unknown";
 
@@ -343,6 +357,7 @@ public class OwnerRule implements TestRule {
   private static final Map<String, UserInfo> active =
       ImmutableMap.<String, UserInfo>builder()
           .put(AADITI, defaultUserInfo(AADITI).slack("UCFPUNRAQ").team(CDC).build())
+          .put(AASHRIT, defaultUserInfo(AASHRIT).slack("U05GY78UG1J").team(IDP).build())
           .put(ABHIJEET, defaultUserInfo(ABHIJEET).slack("U0395DJBXS7").team(CE).build())
           .put(ABHIJITH, defaultUserInfo(ABHIJITH).slack("U0270PE0T24").team(CV).build())
           .put(ABHINAV, defaultUserInfo(ABHINAV).slack("UQQPR8M6Y").team(DX).build())
@@ -456,7 +471,7 @@ public class OwnerRule implements TestRule {
           .put(SANYASI_NAIDU, defaultUserInfo(SANYASI_NAIDU).slack("U012P5KH3RU").team(DX).build())
           .put(SARTHAK_KASAT, defaultUserInfo(SARTHAK_KASAT).slack("U03NL4KT5F1").team(IDP).build())
           .put(SARVAGNYA_JATTI, defaultUserInfo(SARVAGNYA_JATTI).slack("U03NL4KTNNT").team(IDP).build())
-          .put(SATHISH, defaultUserInfo(SATHISH).slack("U0497B0V0FK").team(CV).build())
+          .put(SATHISH, defaultUserInfo(SATHISH).slack("U0497B0V0FK").team(IDP).build())
           .put(SEAN, defaultUserInfo(SEAN).slack("U020VELFZNK").team(DEL).build())
           .put(SHALINI, defaultUserInfo(SHALINI).slack("U02TYJR6ZR6").build())
           .put(SHASWAT, UserInfo.builder().email("shaswat.deep@harness.io").slack("UL9J5EH7A").build())
@@ -481,6 +496,8 @@ public class OwnerRule implements TestRule {
           .put(VIKAS_M, defaultUserInfo(VIKAS_M).slack("U0257UVS11T").team(PL).build())
           .put(VOJIN, defaultUserInfo(VOJIN).slack("U015TFFL83G").team(PL).build())
           .put(VISTAAR, defaultUserInfo(VISTAAR).slack("U0138Q1JEHM").team(CI).build())
+          .put(EOIN_MCAFEE, defaultUserInfo(EOIN_MCAFEE).slack("U020990GT0R").team(CI).build())
+          .put(DMACK, defaultUserInfo(DMACK).slack("U03UPSVNG48").team(CF).build())
           .put(VUK, defaultUserInfo(VUK).slack("U0115RT3EQL").team(DEL).build())
           .put(XIN, defaultUserInfo(XIN).slack("U01R3KSP3M1").team(DEL).build())
           .put(YOGESH, defaultUserInfo(YOGESH).slack("UJVLUUXAT").team(CDP).build())
@@ -590,6 +607,8 @@ public class OwnerRule implements TestRule {
           .put(SHOBHIT_SINGH, defaultUserInfo(SHOBHIT_SINGH).slack("U05GNUM4CNA").team(CI).build())
           .put(AYUSHI_TIWARI, defaultUserInfo(AYUSHI_TIWARI).slack("U05KLP7V9J5").team(SPG).build())
           .put(RAKSHIT_AGARWAL, defaultUserInfo(RAKSHIT_AGARWAL).slack("U05NERB33M0").team(CDC).build())
+          .put(VINIT_KUMAR, defaultUserInfo(VINIT_KUMAR).slack("U05N86G3PFY").team(CDC).build())
+          .put(ANINDITAA, defaultUserInfo(ANINDITAA).slack("U04PE4ZSEBB").build())
           .put(SAHITHI, defaultUserInfo(SAHITHI).slack("U05H8CUM2LR").team(CI).build())
           .put(ANSHIKA, defaultUserInfo(ANSHIKA).slack("U05LMLVA9FE").team(CV).build())
           .build();

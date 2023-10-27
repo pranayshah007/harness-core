@@ -30,9 +30,9 @@ public class AsgBlueGreenPrepareRollbackDataRequest implements AsgCommandRequest
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
-  List<AsgLoadBalancerConfig> loadBalancers;
+  @NonFinal @Expression(ALLOW_SECRETS) List<AsgLoadBalancerConfig> loadBalancers;
   String asgName;
 }

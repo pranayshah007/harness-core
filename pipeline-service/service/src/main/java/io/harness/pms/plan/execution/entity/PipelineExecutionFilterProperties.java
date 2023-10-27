@@ -6,9 +6,12 @@
  */
 
 package io.harness.pms.plan.execution.entity;
-
 import static io.harness.filter.FilterConstants.PIPELINE_SETUP_FILTER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.filter.FilterType;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -20,17 +23,15 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
+import org.bson.Document;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_PIPELINE})
+@Value
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -44,4 +45,18 @@ public class PipelineExecutionFilterProperties extends FilterProperties {
   private org.bson.Document moduleProperties;
   private List<TriggerType> triggerTypes;
   private List<String> triggerIdentifiers;
+
+  @Builder
+  public PipelineExecutionFilterProperties(List<NGTag> tags, FilterType type, List<NGTag> pipelineTags,
+      List<ExecutionStatus> status, TimeRange timeRange, String pipelineName, Document moduleProperties,
+      List<TriggerType> triggerTypes, List<String> triggerIdentifiers) {
+    super(tags, type);
+    this.pipelineTags = pipelineTags;
+    this.status = status;
+    this.timeRange = timeRange;
+    this.pipelineName = pipelineName;
+    this.moduleProperties = moduleProperties;
+    this.triggerTypes = triggerTypes;
+    this.triggerIdentifiers = triggerIdentifiers;
+  }
 }

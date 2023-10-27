@@ -10,7 +10,7 @@ package io.harness.engine.interrupts.handlers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY;
+import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY_NG;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.interrupts.Interrupt.State.DISCARDED;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
@@ -87,7 +87,7 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
 
   private Interrupt processInterrupt(@Valid @NonNull Interrupt interrupt, List<Interrupt> interrupts) {
     if (checkIfInterruptAlreadyPresent(interrupt, interrupts)) {
-      throw new InvalidRequestException("Execution already has ABORT_ALL interrupt", ABORT_ALL_ALREADY, USER);
+      throw new InvalidRequestException("Execution already has ABORT_ALL interrupt", ABORT_ALL_ALREADY_NG, USER);
     }
     if (isEmpty(interrupts)) {
       return interruptService.save(interrupt);

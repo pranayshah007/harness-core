@@ -6,9 +6,12 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.filter.FilterConstants.PIPELINE_SETUP_FILTER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.filter.FilterType;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.ng.core.common.beans.NGTag;
 
@@ -17,17 +20,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
+import org.bson.Document;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
+@Value
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -40,4 +40,15 @@ public class PipelineFilterProperties extends FilterProperties {
   private String description;
 
   private org.bson.Document moduleProperties;
+
+  @Builder
+  public PipelineFilterProperties(List<NGTag> pipelineTags, List<String> pipelineIdentifiers, String name,
+      String description, Document moduleProperties, List<NGTag> tags, FilterType type) {
+    super(tags, type);
+    this.pipelineTags = pipelineTags;
+    this.pipelineIdentifiers = pipelineIdentifiers;
+    this.name = name;
+    this.description = description;
+    this.moduleProperties = moduleProperties;
+  }
 }

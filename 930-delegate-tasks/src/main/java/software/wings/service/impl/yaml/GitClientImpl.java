@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -24,7 +23,6 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.AuthenticationScheme.HTTP_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_DEFAULT_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.GIT_HELM_LOG_PREFIX;
@@ -42,8 +40,11 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
@@ -63,6 +64,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -142,8 +144,6 @@ import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.HttpTransport;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.TagOpt;
@@ -151,6 +151,8 @@ import org.eclipse.jgit.transport.TransportHttp;
 import org.eclipse.jgit.transport.http.HttpConnection;
 import org.eclipse.jgit.transport.http.HttpConnectionFactory;
 import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig.Host;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.FS;
 import org.eclipse.jgit.util.HttpSupport;
@@ -160,6 +162,7 @@ import org.eclipse.jgit.util.SystemReader;
  * Created by anubhaw on 10/16/17.
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(DX)
 @Singleton
 @Slf4j
@@ -227,7 +230,7 @@ public class GitClientImpl implements GitClient {
     final String endCommitIdStr =
         StringUtils.defaultIfEmpty(gitOperationContext.getGitDiffRequest().getEndCommitId(), "HEAD");
 
-    ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+    ensureRepoLocallyClonedAndUpdated(gitOperationContext, false);
 
     GitDiffResult diffResult = GitDiffResult.builder()
                                    .branch(gitConfig.getBranch())
@@ -1138,8 +1141,8 @@ public class GitClientImpl implements GitClient {
     return fetchResult;
   }
 
-  public void cloneRepoAndCopyToDestDir(
-      GitOperationContext gitOperationContext, String destinationDir, LogCallback logCallback) {
+  public void cloneRepoAndCopyToDestDir(GitOperationContext gitOperationContext, String destinationDir,
+      LogCallback logCallback, boolean hardResetForGitRef) {
     String gitConnectorId = gitOperationContext.getGitConnectorId();
     saveInfoExecutionLogs(logCallback, "Trying to start synchronized git clone and copy to destination directory");
     File lockFile = gitClientHelper.getLockObject(gitConnectorId);
@@ -1150,7 +1153,7 @@ public class GitClientImpl implements GitClient {
         log.info("Successfully acquired lock on {}", lockFile);
         saveInfoExecutionLogs(
             logCallback, "Started synchronized operation: Cloning repo from git and copying to destination directory");
-        ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+        ensureRepoLocallyClonedAndUpdated(gitOperationContext, hardResetForGitRef);
         File dest = new File(destinationDir);
         File src = new File(gitClientHelper.getRepoDirectory(gitOperationContext));
         deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
@@ -1168,7 +1171,8 @@ public class GitClientImpl implements GitClient {
   }
 
   @Override
-  public synchronized void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext) {
+  public synchronized void ensureRepoLocallyClonedAndUpdated(
+      GitOperationContext gitOperationContext, boolean hardResetForGitRef) {
     GitConfig gitConfig = gitOperationContext.getGitConfig();
 
     File repoDir = new File(gitClientHelper.getRepoDirectory(gitOperationContext));
@@ -1183,14 +1187,23 @@ public class GitClientImpl implements GitClient {
         FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
                                       .setTagOpt(TagOpt.FETCH_TAGS)
                                       .call(); // fetch all remote references
+        String gitRef = gitConfig.getReference() != null ? gitConfig.getReference() : gitConfig.getBranch();
+
+        log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "starting checkout for: " + gitRef);
         checkout(gitOperationContext);
+        log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Checkout done for: " + gitRef);
 
         // Do not sync to the HEAD of the branch if a specific commit SHA is provided
         if (StringUtils.isEmpty(gitConfig.getReference())) {
           Ref ref = git.reset().setMode(ResetType.HARD).setRef("refs/remotes/origin/" + gitConfig.getBranch()).call();
+          log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Hard reset done for branch "
+              + gitConfig.getBranch());
+        } else if (hardResetForGitRef) {
+          git.reset().setMode(ResetType.HARD).call();
+          log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType())
+              + "Hard reset done for reference: " + gitConfig.getReference());
         }
-        log.info(
-            getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Hard reset done for branch " + gitConfig.getBranch());
+
         // TODO:: log failed commits queued and being ignored.
         return;
       } catch (Exception ex) {
@@ -1326,10 +1339,11 @@ public class GitClientImpl implements GitClient {
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
+
+        try {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
-        } else {
-          return getSSHSession(sshSessionConfig);
+        } catch (SshClientException sshClientException) {
+          throw new JSchException(sshClientException.getMessage());
         }
       }
 

@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.ecs;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -29,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class EcsBGServiceSetupStepMapperImpl extends EcsBaseStepMapper {
   @Override

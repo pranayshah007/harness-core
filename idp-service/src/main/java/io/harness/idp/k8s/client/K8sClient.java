@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface K8sClient {
-  V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace);
+  V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data);
   V1ConfigMap updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace);
   V1PodList getBackstagePodList(String namespace);
   void removeSecretData(String namespace, String backstageSecret, List<String> envNames);

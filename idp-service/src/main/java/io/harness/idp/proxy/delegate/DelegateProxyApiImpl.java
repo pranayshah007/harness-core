@@ -75,7 +75,12 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
         if (!key.equalsIgnoreCase(AUTHORIZATION)) {
           headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
         } else {
-          log.debug("Skipped logging {} header", AUTHORIZATION);
+          log.info("Hiding AUTHORIZATION header");
+          if (value.isBlank()) {
+            headerString.append(String.format(HEADER_STRING_PATTERN, key, "<missing>"));
+          } else {
+            headerString.append(String.format(HEADER_STRING_PATTERN, key, "<hidden>"));
+          }
         }
       });
       log.info("Parsed request body headers: {}", headerString);

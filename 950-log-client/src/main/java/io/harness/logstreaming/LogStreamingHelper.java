@@ -6,7 +6,6 @@
  */
 
 package io.harness.logstreaming;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static software.wings.beans.LogColor.Red;
@@ -15,7 +14,10 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogHelper.doneColoring;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.LogLevel;
 
 import software.wings.beans.LogHelper;
@@ -25,6 +27,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class LogStreamingHelper {

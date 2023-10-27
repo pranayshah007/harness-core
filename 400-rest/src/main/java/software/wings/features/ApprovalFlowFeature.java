@@ -6,7 +6,6 @@
  */
 
 package software.wings.features;
-
 import static software.wings.features.utils.PipelineUtils.getPipelinesPageRequest;
 import static software.wings.features.utils.PipelineUtils.getPipelinesWithApprovalSteps;
 import static software.wings.features.utils.WorkflowUtils.getWorkflowsPageRequest;
@@ -14,6 +13,10 @@ import static software.wings.features.utils.WorkflowUtils.getWorkflowsWithApprov
 import static software.wings.features.utils.WorkflowUtils.toDisallowedApprovalSteps;
 
 import static java.util.stream.Collectors.toList;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
@@ -36,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 public class ApprovalFlowFeature extends AbstractPremiumFeature implements ComplianceByRefactoringUsage {
   public static final String FEATURE_NAME = "APPROVAL_FLOW";

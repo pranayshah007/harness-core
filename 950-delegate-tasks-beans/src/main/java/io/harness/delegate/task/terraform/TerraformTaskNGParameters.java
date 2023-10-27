@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.terraform;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
@@ -14,6 +15,8 @@ import static io.harness.expression.Expression.DISALLOW_SECRETS;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V6;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V7;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V8;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -33,6 +36,7 @@ import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -91,7 +95,9 @@ public class TerraformTaskNGParameters
   EncryptedRecordData encryptedTfPlan;
   String planName;
   boolean encryptDecryptPlanForHarnessSMOnManager;
+  TerraformProviderCredentialDelegateInfo providerCredentialDelegateInfo;
   boolean skipColorLogs;
+  boolean skipStateStorage;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -183,6 +189,12 @@ public class TerraformTaskNGParameters
   }
 
   public TaskType getDelegateTaskType() {
+    if (this.skipStateStorage) {
+      return TERRAFORM_TASK_NG_V8;
+    }
+    if (hasProviderCredentialInfo()) {
+      return TERRAFORM_TASK_NG_V7;
+    }
     if (hasS3Store()) {
       return TERRAFORM_TASK_NG_V6;
     }
@@ -197,6 +209,10 @@ public class TerraformTaskNGParameters
     } else {
       return this.backendConfigFileInfo == null ? TERRAFORM_TASK_NG : TaskType.TERRAFORM_TASK_NG_V2;
     }
+  }
+
+  private boolean hasProviderCredentialInfo() {
+    return this.providerCredentialDelegateInfo != null;
   }
 
   private boolean hasS3Store() {

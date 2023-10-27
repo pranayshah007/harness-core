@@ -1,0 +1,17 @@
+policies:
+  - name: ec2-power-on
+    resource: ec2
+    description: |
+      power on ec2 instances matching below tag or instancetype
+    filters:
+      - or:
+          - type: instance-attribute
+            attribute: instanceType
+            key: 'Value'
+            value: p3.8xlarge
+          - type: value
+            key: tag:Name
+            op: regex
+            value: '.*blah-blah.*'
+    actions:
+      - type: start

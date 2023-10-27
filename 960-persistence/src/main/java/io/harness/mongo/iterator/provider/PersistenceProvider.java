@@ -28,7 +28,8 @@ public interface PersistenceProvider<T extends PersistentIterable, F extends Fil
 
   void recoverAfterPause(Class<T> clazz, String fieldName);
 
-  Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, boolean unsorted, int limit);
+  Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, F filterExpander, boolean unsorted, int limit,
+      boolean isDelegateTaskMigrationEnabled);
 
   BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
       Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval);

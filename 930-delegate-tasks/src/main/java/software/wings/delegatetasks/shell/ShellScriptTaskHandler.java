@@ -6,14 +6,16 @@
  */
 
 package software.wings.delegatetasks;
-
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.command.CommandExecutionResultMapper;
@@ -24,7 +26,6 @@ import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.JSchLogAdapter;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.delegation.ShellScriptParameters;
@@ -44,6 +45,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @BreakDependencyOn("software.wings.service.intfc.security.EncryptionService")
@@ -94,7 +97,6 @@ public class ShellScriptTaskHandler {
         } catch (Exception e) {
           throw new CommandExecutionException("Bash Script Failed to execute", e);
         } finally {
-          SshSessionManager.evictAndDisconnectCachedSession(parameters.getActivityId(), parameters.getHost());
           SshClientManager.evictCacheAndDisconnect(parameters.getActivityId(), parameters.getHost());
           disableJSchLogsPerSSHTaskExecution();
         }

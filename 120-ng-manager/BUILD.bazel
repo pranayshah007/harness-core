@@ -7,6 +7,14 @@ load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
+filegroup(
+    name = "oidc_config",
+    srcs = [
+        "oidc_config.json",
+    ],
+    visibility = ["//visibility:private"],
+)
+
 shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_grpc_grpc_alts",
@@ -57,10 +65,12 @@ shared_dependencies = [
     "//126-instance:module",
     "//136-git-sync-manager:module",
     "//295-cdng-contracts:module",
+    "//874-orchestration-delay:module",
     "//878-ng-common-utilities:module",
     "//pipeline-service/modules/pms-contracts:module",
     "//920-ng-signup:module",
     "//925-enforcement-service:module",
+    "//930-oidc-core:module",
     "//937-persistence-tracer:module",
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",
@@ -455,7 +465,6 @@ shared_dependencies = [
     "@maven//:org_apache_lucene_lucene_suggest",
     "@maven//:org_apache_maven_maven_artifact",
     "@maven//:org_apache_maven_maven_model",
-    "@maven//:org_apache_neethi_neethi",
     "@maven//:org_apache_santuario_xmlsec",
     "@maven//:org_apache_sshd_sshd_core",
     "@maven//:org_apache_sshd_sshd_common",
@@ -644,7 +653,10 @@ java_binary(
         ["src/main/java/**/*.java"],
         exclude = ["src/main/java/io/harness/ng/accesscontrol/**/*"],
     ),
-    data = ["//:resource"],
+    data = [
+        ":oidc_config",
+        "//:resource",
+    ],
     main_class = "io.harness.ng.NextGenApplication",
     resources = [
         "//120-ng-manager/src/main/resources:resource",

@@ -240,24 +240,27 @@ public class AsgSdkManager {
     return createLaunchTemplateVersionResult.getLaunchTemplateVersion();
   }
 
-  public CreateAutoScalingGroupResult createASG(
-      String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+  public CreateAutoScalingGroupResult createASG(String asgName, String launchTemplateName, String launchTemplateVersion,
+      CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     createAutoScalingGroupRequest.withAutoScalingGroupName(asgName).withLaunchTemplate(
-        new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion));
+        new LaunchTemplateSpecification()
+            .withLaunchTemplateName(launchTemplateName)
+            .withVersion(launchTemplateVersion));
 
     return asgCall(asgClient -> asgClient.createAutoScalingGroup(createAutoScalingGroupRequest));
   }
 
-  public void updateASG(
-      String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+  public void updateASG(String asgName, String launchTemplateName, String launchTemplateVersion,
+      CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
         createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
 
     updateAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
 
     if (isNotEmpty(launchTemplateVersion)) {
-      LaunchTemplateSpecification launchTemplateSpecification =
-          new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
+      LaunchTemplateSpecification launchTemplateSpecification = new LaunchTemplateSpecification()
+                                                                    .withLaunchTemplateName(launchTemplateName)
+                                                                    .withVersion(launchTemplateVersion);
       updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
     }
     asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));

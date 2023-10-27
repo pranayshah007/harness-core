@@ -40,6 +40,8 @@ public class InterruptEventUtils {
     switch (responseCase) {
       case ASYNC:
         return builder.setAsync(executableResponse.getAsync()).build();
+      case ASYNCCHAIN:
+        return builder.setAsyncChain(executableResponse.getAsyncChain()).build();
       case TASK:
         return builder.setTask(executableResponse.getTask()).build();
       case TASKCHAIN:

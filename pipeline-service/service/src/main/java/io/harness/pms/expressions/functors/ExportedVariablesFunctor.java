@@ -6,8 +6,8 @@
  */
 
 package io.harness.pms.expressions.functors;
-import static io.harness.expression.common.ExpressionConstants.EXPR_END;
-import static io.harness.expression.common.ExpressionConstants.EXPR_START;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -16,10 +16,14 @@ import io.harness.beans.FeatureName;
 import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.steps.shellscript.OutputAliasSweepingOutput;
 import io.harness.steps.shellscript.OutputAliasUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,10 +33,13 @@ import org.apache.commons.lang3.StringUtils;
 public class ExportedVariablesFunctor implements ExpressionFunctor {
   private final Ambiance ambiance;
   private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  private final ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String DOT = "\\.";
-  public ExportedVariablesFunctor(Ambiance ambiance, PmsFeatureFlagHelper pmsFeatureFlagHelper) {
+  public ExportedVariablesFunctor(Ambiance ambiance, PmsFeatureFlagHelper pmsFeatureFlagHelper,
+      ExecutionSweepingOutputService executionSweepingOutputService) {
     this.ambiance = ambiance;
     this.pmsFeatureFlagHelper = pmsFeatureFlagHelper;
+    this.executionSweepingOutputService = executionSweepingOutputService;
   }
 
   /**
@@ -44,16 +51,43 @@ public class ExportedVariablesFunctor implements ExpressionFunctor {
         || !OutputAliasUtils.validateExpressionFormat(exportExpression)) {
       return null;
     }
+    // getting the resolved expression in exportExpression in case of
+    // <+exportVariables.getValue("<+pipeline.variables.exp1")>
 
     String[] exportExpressionSplit = exportExpression.split(DOT);
+    String scope = exportExpressionSplit[0];
+    String userAlias = exportExpressionSplit[1];
+    String encodedAlias = OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias(userAlias, ambiance);
 
-    String encodedAlias = OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias(exportExpressionSplit[1], ambiance);
-    String sweepingOutputFqn =
-        String.format("%s.%s.%s", exportExpressionSplit[0], encodedAlias, YAMLFieldNameConstants.OUTPUT_VARIABLES);
-    if (exportExpressionSplit.length == 3) {
-      // if leaf expression
-      sweepingOutputFqn = String.format("%s.%s", sweepingOutputFqn, exportExpressionSplit[2]);
+    ExecutionSweepingOutput sweepingOutput;
+    try {
+      sweepingOutput = executionSweepingOutputService.resolve(ambiance,
+          RefObjectUtils.getSweepingOutputRefObjectUsingGroup(
+              encodedAlias, OutputAliasUtils.toStepOutcomeGroup(scope)));
+    } catch (Exception ex) {
+      log.warn(
+          "Error while resolving outputAlias for the key [{}:{}] for scope {}", userAlias, encodedAlias, scope, ex);
+      return null;
     }
-    return String.format("%s%s%s", EXPR_START, sweepingOutputFqn, EXPR_END);
+    if (isNull(sweepingOutput) || !(sweepingOutput instanceof OutputAliasSweepingOutput)) {
+      log.warn(
+          "Absent or incorrect type of sweeping output obtained after resolving outputAlias for the key [{}:{}] for scope {}",
+          userAlias, encodedAlias, scope);
+      return null;
+    }
+    OutputAliasSweepingOutput outputAliasSweepingOutput = (OutputAliasSweepingOutput) sweepingOutput;
+
+    if (isNull(outputAliasSweepingOutput.getOutputVariables())) {
+      log.warn(
+          "OutputVariables map not present in the sweeping output after resolving outputAlias for the key [{}:{}] for scope {}",
+          userAlias, encodedAlias, scope);
+      return null;
+    }
+    Map<String, String> exportVariablesMap = outputAliasSweepingOutput.getOutputVariables();
+
+    if (exportExpressionSplit.length == 2) {
+      return exportVariablesMap;
+    }
+    return exportVariablesMap.get(exportExpressionSplit[2]);
   }
 }

@@ -3,23 +3,23 @@ kind: ConfigMap
 metadata:
   name: template-service
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
   labels:
-    {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
   CACHE_BACKEND: "REDIS"
-  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
@@ -29,10 +29,10 @@ data:
   NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
   NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
   SCM_SERVICE_URI: "scm-service:8091"
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   ENABLE_AUTH: "true"
   ENABLE_GIT_SYNC: "true"
   ENABLE_AUDIT: "true"
@@ -48,7 +48,6 @@ data:
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
-  OPA_SERVER_SECRET: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
   OPA_CONNECTIVITY_ENABLED: 'true'
   {{- end }}
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service.{{ .Release.Namespace }}.svc.cluster.local:12001/api/

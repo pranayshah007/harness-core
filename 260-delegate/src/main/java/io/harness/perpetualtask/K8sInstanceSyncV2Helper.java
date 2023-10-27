@@ -112,6 +112,7 @@ public class K8sInstanceSyncV2Helper {
               .cluster(kubernetesCloudClusterConfig.getClusterName())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
               .addRegionalParam(kubernetesCloudClusterConfig.isAddRegionalParam())
+              .region(kubernetesCloudClusterConfig.getRegion())
               .build();
 
         case RANCHER:

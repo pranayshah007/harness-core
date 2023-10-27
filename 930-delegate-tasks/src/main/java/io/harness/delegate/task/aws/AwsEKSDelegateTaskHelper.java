@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.aws;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.FAILURE;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.SUCCESS;
@@ -15,8 +14,11 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)

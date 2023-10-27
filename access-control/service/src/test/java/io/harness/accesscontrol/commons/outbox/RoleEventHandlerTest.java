@@ -7,8 +7,10 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
+import static io.harness.accesscontrol.roles.RoleMapper.toDTO;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
@@ -31,6 +33,7 @@ import io.harness.ModuleType;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
+import io.harness.accesscontrol.roles.api.RoleRequest;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleCreateEventV2;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
@@ -134,6 +137,8 @@ public class RoleEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -166,6 +171,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.CREATE, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    RoleDTO roleDTO = toDTO(role);
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -175,6 +183,28 @@ public class RoleEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     Role role = getRole(identifier, null);
     RoleCreateEventV2 roleCreateEvent = new RoleCreateEventV2(null, role);
+    String eventData = objectMapper.writeValueAsString(roleCreateEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleCreated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleCreateEvent.getResourceScope())
+                                  .resource(roleCreateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    when(auditClientService.publishAudit(any(), any())).thenReturn(true);
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
+  public void testCreate_ForManagedRole_EventV1() throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    RoleDTO roleDTO = getRoleDTO(identifier);
+    RoleCreateEvent roleCreateEvent = new RoleCreateEvent(null, roleDTO, null);
     String eventData = objectMapper.writeValueAsString(roleCreateEvent);
     OutboxEvent outboxEvent = OutboxEvent.builder()
                                   .id(randomAlphabetic(10))
@@ -220,6 +250,14 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
+  }
+
+  private void assertUpdateRoleAudit(AuditEntry auditEntry, RoleDTO oldRole, RoleDTO newRole) {
+    assertNotNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(oldRole).build()));
+    assertEquals(auditEntry.getNewYaml(), getYamlString(RoleRequest.builder().role(newRole).build()));
   }
 
   @Test
@@ -252,6 +290,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
   }
 
   @Test
@@ -285,6 +326,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
   }
 
   @Test
@@ -318,6 +360,34 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
+  public void updateManagedRoleWithAclProcessingNotEnabled_EventV1_DoesNotDoAclProcessing()
+      throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    RoleDTO oldRole = getRoleDTO(identifier);
+    RoleDTO newRole = getRoleDTO(identifier);
+    RoleUpdateEvent roleUpdateEvent = new RoleUpdateEvent(null, newRole, oldRole, null);
+    String eventData = objectMapper.writeValueAsString(roleUpdateEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleUpdated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleUpdateEvent.getResourceScope())
+                                  .resource(roleUpdateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+    verify(scopeService, never()).buildScopeFromScopeIdentifier(any());
+    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
   }
 
   @Test
@@ -385,6 +455,7 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertUpdateRoleAudit(auditEntry, oldRole, newRole);
   }
 
   @Test
@@ -427,6 +498,43 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+    RoleDTO oldRoleDTO = toDTO(oldRole);
+    RoleDTO newRoleDTO = toDTO(newRole);
+    assertUpdateRoleAudit(auditEntry, oldRoleDTO, newRoleDTO);
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
+  public void updateManagedRole_WithAclProcessingEnabledAnd_EventV1_DoesAclProcessing() throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer, true, scopeService));
+    RoleDTO oldRole = getRoleDTO(identifier);
+    RoleDTO newRole = getRoleDTO(identifier);
+    RoleUpdateEvent roleUpdateEvent = new RoleUpdateEvent(null, newRole, oldRole, null);
+    String eventData = objectMapper.writeValueAsString(roleUpdateEvent);
+    roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer, true, scopeService));
+    Role newCoreRole = RoleDTOMapper.fromDTO(null, newRole);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleUpdated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleUpdateEvent.getResourceScope())
+                                  .resource(roleUpdateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    Set<String> permissionsAddedToRole = Sets.difference(newRole.getPermissions(), oldRole.getPermissions());
+    Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
+    RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .updatedRole(newCoreRole)
+                                                  .permissionsAdded(permissionsAddedToRole)
+                                                  .permissionsRemoved(permissionsRemovedFromRole)
+                                                  .build();
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
   }
 
   @Test
@@ -490,7 +598,9 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
-    assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getOldYaml());
+    assertNull(auditEntry.getNewYaml());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(roleDTO).build()));
   }
 
   @Test
@@ -522,7 +632,10 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
-    assertNull(auditEntry.getOldYaml());
+    assertNotNull(auditEntry.getOldYaml());
+    assertNull(auditEntry.getNewYaml());
+    RoleDTO deletedRoleDTO = toDTO(roleDeleteEvent.getRole());
+    assertEquals(auditEntry.getOldYaml(), getYamlString(RoleRequest.builder().role(deletedRoleDTO).build()));
   }
 
   private void assertAuditEntry(String accountIdentifier, String orgIdentifier, String identifier,

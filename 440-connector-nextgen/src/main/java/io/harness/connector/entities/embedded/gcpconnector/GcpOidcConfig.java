@@ -18,4 +18,5 @@ public class GcpOidcConfig implements GcpCredential {
   String workloadPoolId;
   String providerId;
   String gcpProjectId;
+  String serviceAccountEmail;
 }

@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.pms.contracts.plan.ImageDetails;
@@ -25,6 +27,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public abstract class AbstractPluginInfoProvider implements CDPluginInfoProvider {
   protected CdAbstractStepNode getCdAbstractStepNode(String requestType, String stepJsonNode) {

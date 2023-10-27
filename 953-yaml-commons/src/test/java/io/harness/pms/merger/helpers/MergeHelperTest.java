@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -22,12 +23,13 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -531,15 +533,10 @@ public class MergeHelperTest extends CategoryTest {
         + "  field: leaf\n";
     String runtime = "stage:\n"
         + "  field: not to be there\n";
-    YamlConfig baseConfig = new YamlConfig(base);
-    YamlConfig runtimeConfig = new YamlConfig(runtime);
-    String merged =
-        MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(baseConfig, runtimeConfig, true, true)
-            .getYaml();
+    String merged = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(base, runtime, true, true);
     assertThat(merged).isEqualTo(base);
 
-    merged = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(baseConfig, runtimeConfig, true, false)
-                 .getYaml();
+    merged = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(base, runtime, true, false);
     assertThat(merged).isEqualTo(runtime);
   }
 
@@ -561,5 +558,145 @@ public class MergeHelperTest extends CategoryTest {
         + "        - name: svc4\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(base, runtime, false);
     assertThat(result).isEqualTo(runtime);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testMergeRuntimeInputValuesIntoOriginalJsonNode() {
+    String inputSet1 = "pipeline:\n"
+        + "  identifier: test_pipeline\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: deplo1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          environment:\n"
+        + "            infrastructureDefinitions:\n"
+        + "              - identifier: qatargetinfra\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: rolloutDeployment\n"
+        + "                  type: K8sRollingDeploy\n"
+        + "                  timeout: 10s\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_1\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 10s";
+
+    String inputSet2 = "pipeline:\n"
+        + "  identifier: test_pipeline\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: deplo1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          environment:\n"
+        + "            infrastructureDefinitions:\n"
+        + "              - identifier: PIEinfra\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: rolloutDeployment\n"
+        + "                  type: K8sRollingDeploy\n"
+        + "                  timeout: 10m\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_2\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 20m\n";
+
+    String templateYaml = "pipeline:\n"
+        + "  identifier: test_pipeline\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: deplo1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          environment:\n"
+        + "            infrastructureDefinitions: \"\"\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: rolloutDeployment\n"
+        + "                  type: K8sRollingDeploy\n"
+        + "                  timeout: \"\"\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_1\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: \"\"\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_2\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: \"\"\n";
+
+    JsonNode inputSetJsonNode1 = YamlUtils.readAsJsonNode(inputSet1);
+    JsonNode inputSetJsonNode2 = YamlUtils.readAsJsonNode(inputSet2);
+    JsonNode templateJsonNode = YamlUtils.readAsJsonNode(templateYaml);
+    String mergedYaml = "pipeline:\n"
+        + "  identifier: test_pipeline\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: deplo1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          environment:\n"
+        + "            infrastructureDefinitions:\n"
+        + "              - identifier: qatargetinfra\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: rolloutDeployment\n"
+        + "                  type: K8sRollingDeploy\n"
+        + "                  timeout: 10s\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_1\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 10s\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_2\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 20m\n";
+
+    JsonNode mergeJsonNode = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+        templateJsonNode, List.of(inputSetJsonNode1, inputSetJsonNode2), false);
+    assertThat(YamlPipelineUtils.writeYamlString(mergeJsonNode)).isEqualTo(mergedYaml);
+
+    mergedYaml = "pipeline:\n"
+        + "  identifier: test_pipeline\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: deplo1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          environment:\n"
+        + "            infrastructureDefinitions:\n"
+        + "              - identifier: PIEinfra\n"
+        + "          execution:\n"
+        + "            steps:\n"
+        + "              - step:\n"
+        + "                  identifier: rolloutDeployment\n"
+        + "                  type: K8sRollingDeploy\n"
+        + "                  timeout: 10m\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_1\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 10s\n"
+        + "              - step:\n"
+        + "                  identifier: Wait_2\n"
+        + "                  type: Wait\n"
+        + "                  spec:\n"
+        + "                    duration: 20m\n";
+
+    mergeJsonNode = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+        templateJsonNode, List.of(inputSetJsonNode2, inputSetJsonNode1), false);
+    assertThat(YamlPipelineUtils.writeYamlString(mergeJsonNode)).isEqualTo(mergedYaml);
   }
 }

@@ -1,0 +1,13 @@
+environment:
+  name: ENV
+  identifier: ENV
+  description: "env description"
+  tags:
+    key_yaml: value_yaml
+  type: Production
+  orgIdentifier: ORG_ID
+  projectIdentifier: PROJECT_ID
+  variables:
+    - name: a
+      type: String
+      value: valueab

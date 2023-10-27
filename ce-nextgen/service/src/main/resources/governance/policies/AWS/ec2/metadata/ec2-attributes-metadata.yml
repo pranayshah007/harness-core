@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-attributes
+cloudProvider: AWS
+resourceType: ec2
+description: List EC2 with instanceType p3.8xlarge and tag name with pattern '.*blah-blah.*'
+rulesYamlPath: ../ec2-attributes.yml

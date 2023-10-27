@@ -71,6 +71,10 @@ func (b *rspecRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 		if err != nil {
 			return testCmd, err
 		}
+		err = WriteHelperFile(repoPath)
+		if err != nil {
+			b.log.Errorw("Unable to write rspec helper file automatically", err)
+		}
 	}
 	// Run all the tests
 	if runAll {

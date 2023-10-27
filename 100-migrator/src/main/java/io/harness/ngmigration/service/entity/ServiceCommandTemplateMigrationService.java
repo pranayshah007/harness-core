@@ -8,9 +8,11 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
@@ -261,6 +263,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     if (!UNKNOWN_SERVICE.equals(serviceId)) {
       identifierSource += serviceId;
     }
+    String serviceName =
+        MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, serviceId, SERVICE, serviceId);
 
     // Check if name has to cleaned up
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
@@ -305,7 +309,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                         .templateInfoConfig(NGTemplateInfoConfig.builder()
                                                 .type(ngTemplateService.getTemplateEntityType())
                                                 .identifier(identifier)
-                                                .name(name)
+                                                .name(String.format("%s_%s", serviceName, name))
                                                 .description(ParameterField.createValueField(description))
                                                 .projectIdentifier(projectIdentifier)
                                                 .orgIdentifier(orgIdentifier)
@@ -356,6 +360,11 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                                   .put("spec", configSpec)
                                   .put("type", ngTemplateService.getNgTemplateStepName(template))
                                   .put("timeout", ngTemplateService.getTimeoutString(template))
+                                  .put("when",
+                                      ImmutableMap.<String, String>builder()
+                                          .put("stageStatus", "Success")
+                                          .put("condition", RUNTIME_INPUT)
+                                          .build())
                                   .build());
     }
   }

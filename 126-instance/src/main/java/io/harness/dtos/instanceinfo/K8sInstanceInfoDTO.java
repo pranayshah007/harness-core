@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.util.InstanceSyncKey;
 
@@ -62,5 +63,13 @@ public class K8sInstanceInfoDTO extends InstanceInfoDTO {
   @Override
   public String getType() {
     return "K8s";
+  }
+
+  public void swapBlueGreenColor() {
+    if (HarnessLabelValues.colorBlue.equals(blueGreenColor)) {
+      this.blueGreenColor = HarnessLabelValues.colorGreen;
+    } else if (HarnessLabelValues.colorGreen.equals(blueGreenColor)) {
+      this.blueGreenColor = HarnessLabelValues.colorBlue;
+    }
   }
 }

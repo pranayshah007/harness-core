@@ -456,6 +456,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     String userName = azureUserAuthVMInstanceData.getUserName();
     String rootUsername = isBlank(userName) ? osProfile.adminUsername() : userName;
     osProfile.withAdminUsername(rootUsername);
+    osProfile.withRequireGuestProvisionSignal(null);
 
     if (vmssAuthType.equals(VMSS_AUTH_TYPE_DEFAULT)) {
       osProfile.withAdminPassword(azureUserAuthVMInstanceData.getPassword());

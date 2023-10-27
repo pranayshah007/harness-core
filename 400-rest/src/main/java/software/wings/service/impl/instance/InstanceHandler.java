@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.instance;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -17,8 +16,11 @@ import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 import static software.wings.service.impl.instance.InstanceSyncFlow.NEW_DEPLOYMENT;
 import static software.wings.service.impl.instance.InstanceSyncFlow.PERPETUAL_TASK;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
@@ -66,6 +68,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._441_CG_INSTANCE_SYNC)
@@ -254,6 +257,9 @@ public abstract class InstanceHandler {
       deploymentSummary.setArtifactId(deploymentSummaryFromDB.getArtifactId());
       deploymentSummary.setArtifactSourceName(deploymentSummaryFromDB.getArtifactSourceName());
       deploymentSummary.setArtifactStreamId(deploymentSummaryFromDB.getArtifactStreamId());
+      deploymentSummary.setWorkflowId(deploymentSummaryFromDB.getWorkflowId());
+      deploymentSummary.setWorkflowExecutionName(deploymentSummaryFromDB.getWorkflowExecutionName());
+      deploymentSummary.setWorkflowExecutionId(deploymentSummaryFromDB.getWorkflowExecutionId());
     } else {
       log.info("Unable to find DeploymentSummary while rolling back " + deploymentSummary);
     }

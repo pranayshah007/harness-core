@@ -59,6 +59,7 @@ message ResumeNodeExecutionRequest {
   map<string, bytes> response = 2;
   bool asyncError = 3;
   map<string, io.harness.pms.contracts.resume.ResponseDataProto> responseData = 4;
+  io.harness.pms.contracts.execution.ExecutableResponse executableResponse = 5;
 }
 
 message EventErrorRequest {

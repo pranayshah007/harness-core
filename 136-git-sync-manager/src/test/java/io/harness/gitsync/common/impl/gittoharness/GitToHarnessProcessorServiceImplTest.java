@@ -54,6 +54,7 @@ public class GitToHarnessProcessorServiceImplTest extends GitSyncTestBase {
                                       .build();
     mapOfEntityTypeAndContent.put(EntityType.TEMPLATE, Arrays.asList(templateChangeSet));
     mapOfEntityTypeAndContent.put(EntityType.PIPELINES, Arrays.asList(pipelineChangeSet));
+    mapOfEntityTypeAndContent.put(EntityType.FEATURE_FLAGS, Arrays.asList(pipelineChangeSet));
 
     List<GitToHarnessFilesGroupedByMsvc> gitToHarnessFilesGroupedByMsvcs =
         gitToHarnessProcessorService.groupFilesByMicroservices(mapOfEntityTypeAndContent);
@@ -112,14 +113,6 @@ public class GitToHarnessProcessorServiceImplTest extends GitSyncTestBase {
     mapOfEntityTypeAndContent.put(
         EntityType.CONNECTORS, new ArrayList<>(Arrays.asList(coreChangeSet1, coreChangeSet2)));
 
-    ChangeSet featureFlagChangeSet1 = ChangeSet.newBuilder()
-                                          .setChangeSetId("abc")
-                                          .setAccountId("accountId")
-                                          .setEntityType(EntityTypeProtoEnum.FEATURE_FLAGS)
-                                          .setYaml("yaml")
-                                          .build();
-    mapOfEntityTypeAndContent.put(EntityType.FEATURE_FLAGS, new ArrayList<>(Arrays.asList(featureFlagChangeSet1)));
-
     ChangeSet inputSetChangeSet1 = ChangeSet.newBuilder()
                                        .setChangeSetId("abc")
                                        .setAccountId("accountId")
@@ -139,7 +132,6 @@ public class GitToHarnessProcessorServiceImplTest extends GitSyncTestBase {
         gitToHarnessProcessorService.groupFilesByMicroservices(mapOfEntityTypeAndContent);
     assertThat(gitToHarnessFilesGroupedByMsvcs.get(0).getMicroservice()).isEqualTo(Microservice.CORE);
     assertThat(gitToHarnessFilesGroupedByMsvcs.get(1).getMicroservice()).isEqualTo(Microservice.TEMPLATESERVICE);
-    assertThat(gitToHarnessFilesGroupedByMsvcs.get(2).getMicroservice()).isEqualTo(Microservice.CF);
-    assertThat(gitToHarnessFilesGroupedByMsvcs.get(3).getMicroservice()).isEqualTo(Microservice.PMS);
+    assertThat(gitToHarnessFilesGroupedByMsvcs.get(2).getMicroservice()).isEqualTo(Microservice.PMS);
   }
 }
