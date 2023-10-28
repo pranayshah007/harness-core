@@ -69,6 +69,7 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public class CheckServiceImplTest extends CategoryTest {
+  private static final String DEVELOP_BRANCH = "develop";
   private CheckServiceImpl checkServiceImpl;
   @Mock CheckRepository checkRepository;
   @Mock NGSettingsClient settingsClient;
@@ -105,6 +106,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).save(checkEntityCaptor.capture());
@@ -121,6 +125,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
@@ -129,9 +136,6 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testUpdateCheck() {
-    InputDetails inputDetails = new InputDetails();
-    inputDetails.key(BRANCH_NAME);
-    inputDetails.key("develop");
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
     when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
     when(transactionTemplate.execute(any()))
@@ -140,7 +144,8 @@ public class CheckServiceImplTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
-        .thenReturn(DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(inputDetails)).build());
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).update(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
@@ -156,6 +161,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(null), ACCOUNT_ID);
   }
@@ -170,6 +178,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
@@ -391,5 +402,12 @@ public class CheckServiceImplTest extends CategoryTest {
     } catch (Exception ignored) {
     }
     return request;
+  }
+
+  private InputDetails getInputDetails() {
+    InputDetails inputDetails = new InputDetails();
+    inputDetails.key(BRANCH_NAME);
+    inputDetails.key(DEVELOP_BRANCH);
+    return inputDetails;
   }
 }
