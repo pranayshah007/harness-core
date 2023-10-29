@@ -69,6 +69,7 @@ import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.remote.ProjectMapper;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.user.entities.UserMembership;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.outbox.api.OutboxService;
@@ -136,15 +137,17 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Mock private DefaultUserGroupService defaultUserGroupService;
   @Mock private FavoritesService favoritesService;
   @Mock private UserHelperService userHelperService;
+  @Mock private ScopeInfoService scopeInfoService;
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
-        outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, featureFlagService, defaultUserGroupService, favoritesService, userHelperService));
+    projectService =
+        spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate, outboxService,
+            ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, yamlGitConfigService,
+            featureFlagService, defaultUserGroupService, favoritesService, userHelperService, scopeInfoService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
