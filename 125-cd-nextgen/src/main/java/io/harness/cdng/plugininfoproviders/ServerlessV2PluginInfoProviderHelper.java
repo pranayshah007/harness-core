@@ -376,6 +376,8 @@ public class ServerlessV2PluginInfoProviderHelper {
     } else if (artifactOutcome instanceof S3ArtifactOutcome) {
       String s3AwsAccessKey = null;
       String s3AwsSecretKey = null;
+      String s3CrossAccountRoleArn = null;
+      String s3ExternalId = null;
 
       S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
       connectorDTO = serverlessEntityHelper.getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
@@ -401,8 +403,28 @@ public class ServerlessV2PluginInfoProviderHelper {
         s3AwsSecretKey = getKey(ambiance, awsManualConfigSpecDTO.getSecretKeyRef());
       }
 
-      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ACCESS_KEY", s3AwsAccessKey);
-      serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_SECRET_KEY", s3AwsSecretKey);
+      if (awsCredentialDTO.getCrossAccountAccess() != null) {
+        s3CrossAccountRoleArn = awsCredentialDTO.getCrossAccountAccess().getCrossAccountRoleArn();
+        s3ExternalId = awsCredentialDTO.getCrossAccountAccess().getExternalId();
+      }
+
+      if (s3AwsAccessKey != null) {
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ACCESS_KEY", s3AwsAccessKey);
+      }
+      if (s3AwsSecretKey != null) {
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_SECRET_KEY", s3AwsSecretKey);
+      }
+      if (s3CrossAccountRoleArn != null) {
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ROLE_ARN", s3CrossAccountRoleArn);
+      }
+      if (s3ExternalId != null) {
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_STS_EXTERNAL_ID", s3ExternalId);
+      }
+
+      if (s3ArtifactOutcome.getRegion() != null) {
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_REGION", s3ArtifactOutcome.getRegion());
+      }
+
       serverlessPrepareRollbackEnvironmentVariablesMap.put(
           "PLUGIN_PRIMARY_ARTIFACT_TYPE", ArtifactType.S3.getArtifactType());
 
