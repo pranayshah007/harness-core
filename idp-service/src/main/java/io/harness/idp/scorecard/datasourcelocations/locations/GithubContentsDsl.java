@@ -41,10 +41,12 @@ import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
+@Slf4j
 public class GithubContentsDsl implements DataSourceLocation {
   private static final String FILE_PATH_REPLACER = "{FILE_PATH_REPLACER}";
   DslClientFactory dslClientFactory;
@@ -75,10 +77,12 @@ public class GithubContentsDsl implements DataSourceLocation {
       String requestBody =
           constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPoint, inputValues);
       apiRequestDetails.setRequestBody(requestBody);
+      log.info("Github contents API request {}", apiRequestDetails);
       DslClient dslClient =
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
       Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
       Map<String, Object> inputValueData = new HashMap<>();
+      log.info("Github contents API response {}", response);
       if (response.getStatus() == 200) {
         inputValueData.put(
             DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
