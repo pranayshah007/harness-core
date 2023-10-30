@@ -45,7 +45,7 @@ public interface DataSourceLocation {
       Map<String, String> possibleReplaceableRequestBodyPairs, DataPointEntity dataPoint,
       List<InputValue> inputValues) {
     String requestBody = apiRequestDetails.getRequestBody();
-    replaceInputValuePlaceholdersIfAny(requestBody, dataPoint, inputValues);
+    requestBody = replaceInputValuePlaceholdersIfAny(requestBody, dataPoint, inputValues);
     return replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
   }
 
