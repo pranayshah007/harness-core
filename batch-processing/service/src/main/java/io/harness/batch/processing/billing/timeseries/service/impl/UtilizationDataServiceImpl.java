@@ -58,6 +58,11 @@ public class UtilizationDataServiceImpl {
   private static final String UTILIZATION_DATA_PURGE_QUERY =
       "SELECT drop_chunks('utilization_data', interval '90 days')";
 
+  private static final String UTILIZATION_DATA_COUNT_QUERY =
+      "SELECT COUNT(*) AS UTIL_DATA_COUNT FROM UTILIZATION_DATA WHERE ACCOUNTID=?";
+
+  private static final String UTILIZATION_DATA_DELETE_QUERY = "DELETE FROM UTILIZATION_DATA WHERE ACCOUNTID = '%s'";
+
   public boolean create(List<InstanceUtilizationData> instanceUtilizationDataList) {
     boolean successfulInsert = false;
     if (timeScaleDBService.isValid() && isNotEmpty(instanceUtilizationDataList)) {
@@ -306,5 +311,31 @@ public class UtilizationDataServiceImpl {
         }
       }
     }
+  }
+
+  public Long count(String accountId) {
+    int retryCount = 0;
+    while (retryCount < MAX_RETRY_COUNT) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = dbConnection.prepareStatement(UTILIZATION_DATA_COUNT_QUERY)) {
+        statement.setString(1, accountId);
+        log.debug("UtilData count query {}", statement);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (null != resultSet && resultSet.next()) {
+            return resultSet.getLong("UTIL_DATA_COUNT");
+          }
+        }
+      } catch (SQLException e) {
+        log.error("Failed UtilData count retryCount=[{}]", retryCount, e);
+        retryCount++;
+      }
+    }
+    return 0L;
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    String deleteQuery = String.format(UTILIZATION_DATA_DELETE_QUERY, accountId);
+    log.info("UtilData Delete Query: {}", deleteQuery);
+    return executeQuery(deleteQuery);
   }
 }

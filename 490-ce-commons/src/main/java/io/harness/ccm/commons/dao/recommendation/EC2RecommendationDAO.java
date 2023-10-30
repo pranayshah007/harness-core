@@ -223,6 +223,19 @@ public class EC2RecommendationDAO {
         .execute();
   }
 
+  public long count(String accountId) {
+    return hPersistence.createQuery(EC2Recommendation.class)
+        .field(EC2RecommendationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<EC2Recommendation> query =
+        hPersistence.createQuery(EC2Recommendation.class).field(EC2RecommendationKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
+
   private Condition getEC2Condition(List<RecommendationEC2InstanceId> ec2Instances) {
     RecommendationEC2InstanceId ec2Instance = ec2Instances.get(0);
     Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(ec2Instance.getInstanceId())

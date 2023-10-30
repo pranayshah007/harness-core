@@ -12,6 +12,7 @@ import io.harness.ccm.cluster.entities.PricingProfile.PricingProfileKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -31,5 +32,15 @@ public class PricingProfileDaoImpl implements PricingProfileDao {
   @Override
   public boolean create(PricingProfile pricingProfile) {
     return hPersistence.save(pricingProfile) != null;
+  }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(PricingProfile.class).field(PricingProfileKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<PricingProfile> query =
+        hPersistence.createQuery(PricingProfile.class).field(PricingProfileKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
   }
 }

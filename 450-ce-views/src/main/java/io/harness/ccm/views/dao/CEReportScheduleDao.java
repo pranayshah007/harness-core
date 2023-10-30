@@ -138,4 +138,17 @@ public class CEReportScheduleDao {
     log.info(query.toString());
     return query.asList(new FindOptions());
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CEReportSchedule.class)
+        .field(CEReportScheduleKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEReportSchedule> query =
+        persistence.createQuery(CEReportSchedule.class).field(CEReportScheduleKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

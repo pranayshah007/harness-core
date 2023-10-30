@@ -236,4 +236,27 @@ public class RuleExecutionDAO {
         .in(recommendationObjectIds)
         .asList();
   }
+
+  public long countRuleRecommendations(String accountId) {
+    return hPersistence.createQuery(RuleRecommendation.class)
+        .field(RuleRecommendationId.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllRuleRecommendationsForAccount(String accountId) {
+    Query<RuleRecommendation> query =
+        hPersistence.createQuery(RuleRecommendation.class).field(RuleRecommendationId.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public long countRuleExecutions(String accountId) {
+    return hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllRuleExecutionsForAccount(String accountId) {
+    Query<RuleExecution> query =
+        hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

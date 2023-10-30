@@ -17,6 +17,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -36,5 +37,19 @@ public class RecommendationsIgnoreListDAO {
 
   public boolean save(RecommendationsIgnoreList recommendationsIgnoreList) {
     return hPersistence.save(recommendationsIgnoreList) != null;
+  }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(RecommendationsIgnoreList.class)
+        .field(RecommendationsIgnoreListKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<RecommendationsIgnoreList> query = hPersistence.createQuery(RecommendationsIgnoreList.class)
+                                                 .field(RecommendationsIgnoreListKeys.accountId)
+                                                 .equal(accountId);
+    return hPersistence.delete(query);
   }
 }
