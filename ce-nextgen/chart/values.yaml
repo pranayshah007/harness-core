@@ -316,7 +316,7 @@ fullnameOverride: ""
 serviceAccount:
   create: false
   annotations: {}
-  name: "harness-default"
+  name: "ccm-default"
 
 podAnnotations: {}
 
