@@ -201,8 +201,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     ArtifactDetailResponse response = artifactService.getArtifactDetails(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         "artifactId", "tag");
-    assertThat(response.getArtifactId()).isEqualTo("artifactId");
-    assertThat(response.getArtifactName()).isEqualTo("test/image");
+    assertThat(response.getId()).isEqualTo("artifactId");
+    assertThat(response.getName()).isEqualTo("test/image");
     assertThat(response.getTag()).isEqualTo("tag");
     assertThat(response.getComponentsCount()).isEqualTo(35);
     assertThat(response.getProdEnvCount()).isEqualTo(2);
@@ -253,8 +253,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactEntityPage.getTotalPages()).isEqualTo(2);
     assertThat(artifactListingResponses.size()).isEqualTo(2);
 
-    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifactId");
-    assertThat(artifactListingResponses.get(0).getArtifactName()).isEqualTo("test/image");
+    assertThat(artifactListingResponses.get(0).getId()).isEqualTo("artifactId");
+    assertThat(artifactListingResponses.get(0).getName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(0).getTag()).isEqualTo("tag");
     assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
@@ -265,8 +265,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
 
-    assertThat(artifactListingResponses.get(1).getArtifactId()).isEqualTo("artifact2");
-    assertThat(artifactListingResponses.get(1).getArtifactName()).isEqualTo("test/image");
+    assertThat(artifactListingResponses.get(1).getId()).isEqualTo("artifact2");
+    assertThat(artifactListingResponses.get(1).getName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(1).getTag()).isEqualTo("tag");
     assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
@@ -311,8 +311,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactEntityPage.getTotalPages()).isEqualTo(2);
     assertThat(artifactListingResponses.size()).isEqualTo(2);
 
-    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifactId");
-    assertThat(artifactListingResponses.get(0).getArtifactName()).isEqualTo("test/image");
+    assertThat(artifactListingResponses.get(0).getId()).isEqualTo("artifactId");
+    assertThat(artifactListingResponses.get(0).getName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(0).getTag()).isEqualTo("tag");
     assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
@@ -322,8 +322,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
 
-    assertThat(artifactListingResponses.get(1).getArtifactId()).isEqualTo("artifact2");
-    assertThat(artifactListingResponses.get(1).getArtifactName()).isEqualTo("test/image");
+    assertThat(artifactListingResponses.get(1).getId()).isEqualTo("artifact2");
+    assertThat(artifactListingResponses.get(1).getName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(1).getTag()).isEqualTo("tag");
     assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
@@ -355,11 +355,11 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
 
     assertThat(responses.getTotalElements()).isEqualTo(5);
     assertThat(responseList.size()).isEqualTo(2);
-    assertThat(responseList.get(0).getName()).isEqualTo("packageName");
-    assertThat(responseList.get(0).getLicense()).isEqualTo("license1, license2");
+    assertThat(responseList.get(0).getPackageName()).isEqualTo("packageName");
+    assertThat(responseList.get(0).getPackageLicense()).isEqualTo("license1, license2");
     assertThat(responseList.get(0).getPurl()).isEqualTo("purl");
     assertThat(responseList.get(0).getPackageManager()).isEqualTo("packageManager");
-    assertThat(responseList.get(0).getSupplier()).isEqualTo("packageOriginatorName");
+    assertThat(responseList.get(0).getPackageSupplier()).isEqualTo("packageOriginatorName");
   }
 
   @Test
@@ -381,8 +381,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
 
     List<ArtifactDeploymentViewResponse> responseList = responses.get().collect(Collectors.toList());
     assertThat(responseList.size()).isEqualTo(2);
-    assertThat(responseList.get(0).getName()).isEqualTo("envName");
-    assertThat(responseList.get(0).getId()).isEqualTo("env1");
+    assertThat(responseList.get(0).getEnvName()).isEqualTo("envName");
+    assertThat(responseList.get(0).getEnvId()).isEqualTo("env1");
     assertThat(responseList.get(0).getPipelineId()).isEqualTo("K8sDeploy");
     assertThat(responseList.get(0).getPipelineExecutionId()).isEqualTo("lastExecutionId");
     assertThat(responseList.get(0).getTriggeredBy()).isEqualTo("username");
