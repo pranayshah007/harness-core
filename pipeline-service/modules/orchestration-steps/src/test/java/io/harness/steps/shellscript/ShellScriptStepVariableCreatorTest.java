@@ -90,7 +90,8 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.environmentVariables.e1",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.source.spec.script",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.when",
-            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.includeInfraSelectors");
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.includeInfraSelectors",
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.executionTarget");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -127,7 +128,6 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
 
     assertThat(fqnExtraPropertiesForShellEnum)
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.shell",
-            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.executionTarget",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.outputAlias");
 
     // yaml output properties
