@@ -42,7 +42,6 @@ mongo:
   traceMode: DISABLED
 
 templateClient:
-  mongo:
     uri: mongodb://localhost:27017/template
     connectTimeout: 30000
     serverSelectionTimeout: 90000

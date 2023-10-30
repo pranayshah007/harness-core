@@ -14,6 +14,8 @@ import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.template.repositories.NGGlobalTemplateRepository;
+import io.harness.template.repositories.NGTemplateRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
@@ -39,8 +42,6 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
-import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
-import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.guice.annotation.GuiceModule;
 
@@ -62,10 +63,13 @@ public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration 
     //        injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getMongoConfig();
 
     this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
-    this.mongoConfig = injector.getInstance(Key.get(MongoConfig.class, Names.named("template-mongodb")));
+    this.mongoConfig =
+        injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getTemplateClientConfiguration();
   }
 
+  @Bean("template-mongo-client")
   @Override
+  @Primary
   public MongoClient mongoClient() {
     MongoClientSettings mongoClientSettings =
         MongoClientSettings.builder()
@@ -92,7 +96,7 @@ public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration 
     return new MongoClientURI(mongoConfig.getUri()).getDatabase();
   }
 
-  MongoTransactionManager transactionManager(@Qualifier("template-mongodb3") MongoDatabaseFactory dbFactory) {
+  MongoTransactionManager transactionManager(@Qualifier("template-mongo-factory") MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -101,9 +105,17 @@ public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration 
     return Collections.singleton("io.harness");
   }
 
+  @Override
+  @Bean("template-mongo-factory")
+  @Primary
+  public MongoDatabaseFactory mongoDbFactory() {
+    return new SimpleMongoClientDatabaseFactory(mongoClient(), getDatabaseName());
+  }
+
   @Bean(name = "template-mongodb")
-  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
-    return new HMongoTemplate(
-        new SimpleMongoClientDatabaseFactory(mongoClient(), getDatabaseName()), converter, mongoConfig);
+  @Primary
+  public MongoTemplate mongoTemplate(
+      @Qualifier("template-mongo-factory") MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+    return new HMongoTemplate(databaseFactory, converter, mongoConfig);
   }
 }

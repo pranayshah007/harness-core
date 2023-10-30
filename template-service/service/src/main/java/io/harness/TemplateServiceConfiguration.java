@@ -84,7 +84,7 @@ public class TemplateServiceConfiguration extends Configuration {
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConfig;
-  @JsonProperty("templateClient") private TemplateClientConfiguration templateClientConfiguration;
+  @JsonProperty("templateClient") private MongoConfig templateClientConfiguration;
   @Builder.Default @JsonProperty("allowedOrigins") private List<String> allowedOrigins = new ArrayList<>();
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;

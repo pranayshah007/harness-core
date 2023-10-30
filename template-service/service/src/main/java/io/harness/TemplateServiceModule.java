@@ -326,7 +326,7 @@ public class TemplateServiceModule extends AbstractModule {
   @Singleton
   @Named("template-mongodb")
   public MongoConfig mongoConfig1() {
-    return templateServiceConfiguration.getTemplateClientConfiguration().getMongoConfig();
+    return templateServiceConfiguration.getTemplateClientConfiguration();
   }
 
   @Provides
