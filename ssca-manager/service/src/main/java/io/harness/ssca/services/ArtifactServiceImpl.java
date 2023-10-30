@@ -177,7 +177,8 @@ public class ArtifactServiceImpl implements ArtifactService {
         .prodEnvCount(artifact.getProdEnvCount().intValue())
         .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
         .buildPipelineId(artifact.getPipelineId())
-        .buildPipelineExecutionId(artifact.getPipelineExecutionId());
+        .buildPipelineExecutionId(artifact.getPipelineExecutionId())
+        .orchestrationId(artifact.getOrchestrationId());
   }
 
   @Override
@@ -352,7 +353,10 @@ public class ArtifactServiceImpl implements ArtifactService {
                                                                                         : ActivityEnum.DEPLOYED)
               .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount(artifact.getProdEnvCount().intValue())
-              .nonProdEnvCount(artifact.getNonProdEnvCount().intValue()));
+              .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
+              .orchestrationId(artifact.getOrchestrationId())
+              .buildPipelineId(artifact.getPipelineId())
+              .buildPipelineExecutionId(artifact.getPipelineExecutionId()));
     }
     return responses;
   }
