@@ -59,15 +59,17 @@ public class TerraformHelperUtils {
     return ExceptionUtils.getMessage(t);
   }
 
-  public void copyFilesToWorkingDirectory(String sourceDir, String destinationDir) throws IOException {
+  public void copyFilesToWorkingDirectory(String sourceDir, String destinationDir)
+      throws IOException, InterruptedException {
     File dest = new File(destinationDir);
     File src = new File(sourceDir);
     deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
     FileUtils.copyDirectory(src, dest);
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcessWithInterrupt(dest.getPath(), 10);
   }
 
-  public void copytfCloudVarFilesToScriptDirectory(String sourceDir, String destinationDir) throws IOException {
+  public void copytfCloudVarFilesToScriptDirectory(String sourceDir, String destinationDir)
+      throws IOException, InterruptedException {
     File dest = new File(destinationDir);
     File src = new File(sourceDir);
 
@@ -89,7 +91,7 @@ public class TerraformHelperUtils {
       FileUtils.copyFile(src, tfCloudVarFile);
     }
     FileUtils.copyFileToDirectory(tfCloudVarFile, dest);
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcessWithInterrupt(dest.getPath(), 10);
   }
 
   public void ensureLocalCleanup(String scriptDirectory) throws IOException {

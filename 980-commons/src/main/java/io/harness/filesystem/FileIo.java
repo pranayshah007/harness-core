@@ -99,6 +99,31 @@ public class FileIo {
     }
   }
 
+  public static boolean waitForDirectoryToBeAccessibleOutOfProcessWithInterrupt(
+      final String directoryPath, int maxRetries) throws InterruptedException {
+    int retryCountRemaining = maxRetries;
+    while (true) {
+      try {
+        ProcessExecutor processExecutor = new ProcessExecutor()
+                                              .timeout(1, TimeUnit.SECONDS)
+                                              .directory(new File(directoryPath))
+                                              .commandSplit(getDirectoryCheckCommand())
+                                              .readOutput(true);
+        ProcessResult processResult = processExecutor.execute();
+        if (processResult.getExitValue() == 0) {
+          return true;
+        }
+      } catch (IOException | TimeoutException | InvalidExitValueException e) {
+        noop(); // Ignore
+      }
+      retryCountRemaining--;
+      if (retryCountRemaining == 0) {
+        return false;
+      }
+      sleep(ofSeconds(1));
+    }
+  }
+
   private static String getDirectoryCheckCommand() {
     String osName = System.getProperty("os.name");
     if (isNotEmpty(osName) && osName.startsWith("Windows")) {

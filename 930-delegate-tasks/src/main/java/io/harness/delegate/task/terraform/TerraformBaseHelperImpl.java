@@ -905,8 +905,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Override
   public Map<String, String> getAwsAuthEnvVariables(TerraformTaskNGParameters taskParameters) {
     Map<String, String> awsAuthEnvVariables = new HashMap<>();
-
     if (taskParameters.getProviderCredentialDelegateInfo() != null) {
+      log.info("taskParameters.getProviderCredentialDelegateInfo().getType(): "
+          + taskParameters.getProviderCredentialDelegateInfo().getType());
       if (TerraformProviderType.AWS.equals(taskParameters.getProviderCredentialDelegateInfo().getType())) {
         try {
           awsAuthEnvVariables = getAwsAuthVariablesInternal(
@@ -923,6 +924,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @NonNull
   public ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters) {
     Map<String, String> awsAuthEnvVariables = getAwsAuthEnvVariables(taskParameters);
+    log.info("awsAuthEnvVariables: " + awsAuthEnvVariables);
     ImmutableMap.Builder<String, String> envVars = ImmutableMap.builder();
     if (isNotEmpty(taskParameters.getEnvironmentVariables())) {
       envVars.putAll(taskParameters.getEnvironmentVariables());
@@ -946,6 +948,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     Map<String, String> awsAuthEnvVariables = new HashMap<>();
 
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+    log.info("awsInternalConfig.getAccessKey(): " + awsInternalConfig.getAccessKey());
+    log.info("awsInternalConfig.getSecretKey(): " + awsInternalConfig.getSecretKey());
     final String roleArn = awsProviderCredentialInfo.getRoleArn();
 
     if (isNotEmpty(roleArn)) {
@@ -958,16 +962,29 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       assumeRoleRequest.setRoleArn(roleArn);
       assumeRoleRequest.setRoleSessionName(UUIDGenerator.generateUuid());
       AssumeRoleResult assumeRoleResult = awsSecurityTokenServiceClient.assumeRole(assumeRoleRequest);
+      log.info("awsCredentialsProvider.getCredentials().getAWSAccessKeyId(): "
+          + assumeRoleResult.getCredentials().getAccessKeyId());
+      log.info("awsCredentialsProvider.getCredentials().getAWSSecretKey(): "
+          + assumeRoleResult.getCredentials().getSecretAccessKey());
+      log.info("assumeRoleResult.getCredentials().getSessionToken(): "
+          + assumeRoleResult.getCredentials().getSessionToken());
       awsAuthEnvVariables.put(AWS_SECRET_ACCESS_KEY, assumeRoleResult.getCredentials().getSecretAccessKey());
       awsAuthEnvVariables.put(AWS_ACCESS_KEY_ID, assumeRoleResult.getCredentials().getAccessKeyId());
       awsAuthEnvVariables.put(AWS_SESSION_TOKEN, assumeRoleResult.getCredentials().getSessionToken());
     } else {
       AWSCredentialsProvider awsCredentialsProvider = awsApiHelperService.getAwsCredentialsProvider(awsInternalConfig);
+      log.info("awsCredentialsProvider.getClass(): " + awsCredentialsProvider.getClass());
       AWSCredentials awsCredentials = awsCredentialsProvider.getCredentials();
+      log.info("awsCredentialsProvider.getCredentials().getAWSAccessKeyId(): "
+          + awsCredentialsProvider.getCredentials().getAWSAccessKeyId());
+      log.info("awsCredentialsProvider.getCredentials().getAWSSecretKey(): "
+          + awsCredentialsProvider.getCredentials().getAWSSecretKey());
       awsAuthEnvVariables.put(AWS_SECRET_ACCESS_KEY, awsCredentials.getAWSSecretKey());
       awsAuthEnvVariables.put(AWS_ACCESS_KEY_ID, awsCredentials.getAWSAccessKeyId());
       if (awsCredentials instanceof AWSSessionCredentials) {
         awsAuthEnvVariables.put(AWS_SESSION_TOKEN, ((AWSSessionCredentials) awsCredentials).getSessionToken());
+        log.info("((AWSSessionCredentials) awsCredentials).getSessionToken(): "
+            + ((AWSSessionCredentials) awsCredentials).getSessionToken());
       }
     }
     return awsAuthEnvVariables;
@@ -1098,7 +1115,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       File scriptDir = new File(dest, scriptDirectory);
       scriptDir.mkdirs();
       unzip(scriptDir, new ZipInputStream(inputStream));
-      FileIo.waitForDirectoryToBeAccessibleOutOfProcess(scriptDir.getPath(), 10);
+      FileIo.waitForDirectoryToBeAccessibleOutOfProcessWithInterrupt(scriptDir.getPath(), 10);
     } catch (Exception ex) {
       handleExceptionWhileCopyingConfigFiles(logCallback, baseDir, ExceptionMessageSanitizer.sanitizeException(ex));
     }

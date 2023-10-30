@@ -83,7 +83,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     String baseDir = terraformBaseHelper.getBaseDir(taskParameters.getEntityId());
     Map<String, String> commitIdToFetchedFilesMap = new HashMap<>();
     Map<String, Map<String, String> > keyVersionMap = new HashMap<>();
-
+    log.info("taskParameters: " + taskParameters);
     if (taskParameters.getConfigFile() != null) {
       GitStoreDelegateConfig conFileFileGitStore = taskParameters.getConfigFile().getGitStoreDelegateConfig();
       GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
@@ -178,6 +178,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     }
 
     ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
+    log.info("environmentVars: " + environmentVars);
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
              new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson());
