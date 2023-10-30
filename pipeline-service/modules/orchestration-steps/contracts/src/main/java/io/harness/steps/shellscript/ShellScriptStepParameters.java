@@ -48,9 +48,10 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
 
   @Builder(builderMethodName = "infoBuilder")
   public ShellScriptStepParameters(ShellType shellType, ShellScriptSourceWrapper source,
-      ExecutionTarget executionTarget, ParameterField<Boolean> onDelegate, Map<String, Object> outputVariables,
-      Map<String, Object> environmentVariables, ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
-      Set<String> secretOutputVariables, ParameterField<Boolean> includeInfraSelectors, OutputAlias outputAlias) {
+      ParameterField<ExecutionTarget> executionTarget, ParameterField<Boolean> onDelegate,
+      Map<String, Object> outputVariables, Map<String, Object> environmentVariables,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid, Set<String> secretOutputVariables,
+      ParameterField<Boolean> includeInfraSelectors, OutputAlias outputAlias) {
     super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors, outputAlias);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;

@@ -41,19 +41,14 @@ public class ShellScriptStepFilterJsonCreatorV2 extends GenericStepPMSFilterJson
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, AbstractStepNode yamlField) {
     ShellScriptStepNode scriptStepNode = (ShellScriptStepNode) yamlField;
     ShellScriptStepInfo scriptStepInfo = scriptStepNode.getShellScriptStepInfo();
-    if (Boolean.FALSE.equals(scriptStepInfo.getOnDelegate().getValue())) {
-      if (scriptStepInfo.getExecutionTarget() == null) {
-        throw new InvalidYamlRuntimeException(
-            format("Execution target details cannot be null for step %s. Please add it & try again.",
-                YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-      }
-      if (ParameterField.isBlank(scriptStepInfo.getExecutionTarget().getHost())) {
+    if (ParameterField.isNotNull(scriptStepInfo.getExecutionTarget())) {
+      if (ParameterField.isBlank(scriptStepInfo.getExecutionTarget().getValue().getHost())) {
         throw new InvalidYamlRuntimeException(
             format("Execution target host details cannot be null for step %s. Please add it & try again.",
                 YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
 
-      if (ParameterField.isBlank(scriptStepInfo.getExecutionTarget().getConnectorRef())) {
+      if (ParameterField.isBlank(scriptStepInfo.getExecutionTarget().getValue().getConnectorRef())) {
         throw new InvalidYamlRuntimeException(format(
             "Execution target ssh connection attribute details cannot be null for step %s. Please add it & try again.",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

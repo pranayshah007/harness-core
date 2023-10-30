@@ -53,8 +53,7 @@ public interface ShellScriptHelperService {
 
   String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance);
 
-  String getWorkingDirectory(
-      ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
+  String getWorkingDirectory(ParameterField<ExecutionTarget> executionTarget, @Nonnull ScriptType scriptType);
 
   TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout);

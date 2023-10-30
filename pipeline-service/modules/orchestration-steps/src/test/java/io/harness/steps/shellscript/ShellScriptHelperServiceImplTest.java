@@ -301,19 +301,16 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(taskParamsBuilder.build().getHost()).isNull();
 
     stepParameters.setOnDelegate(ParameterField.createValueField(false));
-    assertThatThrownBy(()
-                           -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
-                               ambiance, stepParameters, taskParamsBuilder))
-        .hasMessageContaining("Execution Target can't be empty with on delegate set to false");
 
-    ExecutionTarget executionTarget = ExecutionTarget.builder().build();
+    ParameterField<ExecutionTarget> executionTarget =
+        ParameterField.createValueField(ExecutionTarget.builder().build());
     stepParameters.setExecutionTarget(executionTarget);
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
                                ambiance, stepParameters, taskParamsBuilder))
         .hasMessageContaining("Connector Ref in Execution Target can't be empty");
 
-    executionTarget.setConnectorRef(ParameterField.createValueField("cRef"));
+    executionTarget.getValue().setConnectorRef(ParameterField.createValueField("cRef"));
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
                                ambiance, stepParameters, taskParamsBuilder))
@@ -329,10 +326,11 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
                             .build();
-    ExecutionTarget executionTarget = ExecutionTarget.builder()
-                                          .connectorRef(ParameterField.createValueField("cref"))
-                                          .host(ParameterField.createValueField("host"))
-                                          .build();
+    ParameterField<ExecutionTarget> executionTarget =
+        ParameterField.createValueField(ExecutionTarget.builder()
+                                            .connectorRef(ParameterField.createValueField("cref"))
+                                            .host(ParameterField.createValueField("host"))
+                                            .build());
     ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
                                                    .onDelegate(ParameterField.createValueField(false))
                                                    .executionTarget(executionTarget)
@@ -449,22 +447,17 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   public void testGetWorkingDirectory() {
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().onDelegate(ParameterField.createValueField(true)).build();
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
-                   ParameterField.ofNull(), ScriptType.BASH, stepParameters.onDelegate.getValue()))
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(ParameterField.ofNull(), ScriptType.BASH))
+        .isEqualTo("/tmp");
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(ParameterField.ofNull(), ScriptType.POWERSHELL))
         .isEqualTo("/tmp");
     assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
-                   ParameterField.ofNull(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
-        .isEqualTo("/tmp");
-    stepParameters.setOnDelegate(ParameterField.createValueField(false));
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
-                   ParameterField.ofNull(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
+                   ParameterField.createValueField(ExecutionTarget.builder().build()), ScriptType.POWERSHELL))
         .isEqualTo("%TEMP%");
 
-    stepParameters.setExecutionTarget(
-        ExecutionTarget.builder().workingDirectory(ParameterField.createValueField("dir")).build());
-    assertThat(
-        shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters.getExecutionTarget().getWorkingDirectory(),
-            ScriptType.BASH, stepParameters.onDelegate.getValue()))
+    stepParameters.setExecutionTarget(ParameterField.createValueField(
+        ExecutionTarget.builder().workingDirectory(ParameterField.createValueField("dir")).build()));
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters.getExecutionTarget(), ScriptType.BASH))
         .isEqualTo("dir");
   }
 
@@ -504,9 +497,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .when(shellScriptHelperService)
         .getEnvironmentVariables(inputVars, Ambiance.newBuilder().build());
     doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars, new HashSet<>());
-    doReturn("/tmp")
-        .when(shellScriptHelperService)
-        .getWorkingDirectory(ParameterField.ofNull(), ScriptType.BASH, stepParameters.onDelegate.getValue());
+    doReturn("/tmp").when(shellScriptHelperService).getWorkingDirectory(null, ScriptType.BASH);
 
     ShellScriptTaskParametersNG taskParams =
         (ShellScriptTaskParametersNG) shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
@@ -520,13 +511,15 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     // onDelegate parameter field null/empty cases
     stepParameters.setOnDelegate(ParameterField.createValueField(null));
     stepParameters.setExecutionTarget(null);
-    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
-    assertThat(stepParameters.onDelegate.getValue()).isTrue();
+    taskParams = (ShellScriptTaskParametersNG) shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+        ambiance, stepParameters, null);
+    assertThat(taskParams.isExecuteOnDelegate()).isTrue();
 
     stepParameters.setOnDelegate(ParameterField.createValueField(null));
-    stepParameters.setExecutionTarget(ExecutionTarget.builder().build());
-    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
-    assertThat(stepParameters.onDelegate.getValue()).isFalse();
+    stepParameters.setExecutionTarget(ParameterField.createValueField(ExecutionTarget.builder().build()));
+    taskParams = (ShellScriptTaskParametersNG) shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
+        ambiance, stepParameters, null);
+    assertThat(taskParams.isExecuteOnDelegate()).isFalse();
     stepParameters.setOnDelegate(ParameterField.createValueField(true));
 
     // negative cases for output alias configuration

@@ -82,15 +82,15 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfoV1 impleme
         .build();
   }
 
-  private ExecutionTarget toExecutionTarget(ExecutionTargetV1 executionTargetV1) {
+  private ParameterField<ExecutionTarget> toExecutionTarget(ExecutionTargetV1 executionTargetV1) {
     if (executionTargetV1 == null) {
       return null;
     }
-    return ExecutionTarget.builder()
-        .host(executionTargetV1.getHost())
-        .connectorRef(executionTargetV1.getConnector())
-        .workingDirectory(executionTargetV1.getDir())
-        .build();
+    return ParameterField.createValueField(ExecutionTarget.builder()
+                                               .host(executionTargetV1.getHost())
+                                               .connectorRef(executionTargetV1.getConnector())
+                                               .workingDirectory(executionTargetV1.getDir())
+                                               .build());
   }
 
   private ShellType toShellType(ShellTypeV1 shellTypeV1) {

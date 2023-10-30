@@ -46,7 +46,7 @@ public class ShellScriptBaseStepInfo {
   String uuid;
   @NotNull ShellType shell;
   @NotNull ShellScriptSourceWrapper source;
-  ExecutionTarget executionTarget;
+  ParameterField<ExecutionTarget> executionTarget;
   @NotNull
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})

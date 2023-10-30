@@ -55,8 +55,9 @@ public class ShellScriptStepInfo
   List<NGVariable> environmentVariables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
-      ParameterField<Boolean> onDelegate, List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
+  public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source,
+      ParameterField<ExecutionTarget> executionTarget, ParameterField<Boolean> onDelegate,
+      List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
       ParameterField<Boolean> includeInfraSelectors, OutputAlias outputAlias) {
     super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors, outputAlias);
@@ -100,8 +101,9 @@ public class ShellScriptStepInfo
   @Override
   public Map<String, ParameterField<String>> extractSecretRefs() {
     Map<String, ParameterField<String>> secretRefMap = new HashMap<>();
-    if (executionTarget != null && executionTarget.getConnectorRef() != null) {
-      secretRefMap.put("executionTarget.connectorRef", executionTarget.getConnectorRef());
+    if (!ParameterField.isBlank(executionTarget)
+        && !ParameterField.isBlank(executionTarget.getValue().getConnectorRef())) {
+      secretRefMap.put("executionTarget.connectorRef", executionTarget.getValue().getConnectorRef());
     }
 
     return secretRefMap;
