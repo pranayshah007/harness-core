@@ -8,9 +8,9 @@
 package software.wings.delegatetasks.container;
 
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.instancesync.DummyDelegateResponseData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
@@ -31,7 +31,7 @@ public class ContainerDummyTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(Object[] parameters) {
-    return DummyDelegateResponseData.builder().build();
+    return DelegateStringResponseData.builder().build();
   }
 
   @Override

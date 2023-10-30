@@ -344,7 +344,6 @@ import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
 import io.harness.delegate.beans.helm.HelmDeployProgressData;
-import io.harness.delegate.beans.instancesync.DummyDelegateResponseData;
 import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
@@ -2580,6 +2579,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmFetchChartManifestResponse.class, 20000618);
     kryo.register(HelmChartManifest.class, 20000619);
     kryo.register(ReleaseMetadata.class, 20001002);
-    kryo.register(DummyDelegateResponseData.class, 20000620);
   }
 }
