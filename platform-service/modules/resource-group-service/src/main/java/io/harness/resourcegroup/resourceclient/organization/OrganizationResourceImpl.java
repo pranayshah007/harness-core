@@ -10,8 +10,8 @@ package io.harness.resourcegroup.resourceclient.organization;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
-
 import static io.harness.resourcegroup.beans.ValidatorType.*;
+
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
@@ -65,14 +65,13 @@ public class OrganizationResourceImpl implements Resource {
         getResponse(organizationClient.listOrganizations(scope.getAccountIdentifier(), resourceIds));
     Set<String> validResourceIds =
         organizations.getContent().stream().map(e -> e.getOrganization().getIdentifier()).collect(Collectors.toSet());
-    return resourceIds.stream()
-        .map(validResourceIds::contains)
-        .collect(toList());
+    return resourceIds.stream().map(validResourceIds::contains).collect(toList());
   }
 
   @Override
   public Map<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind() {
-    return ImmutableMap.of(ScopeLevel.ACCOUNT, EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES));
+    return ImmutableMap.of(ScopeLevel.ACCOUNT,
+        EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES));
   }
 
   @Override
