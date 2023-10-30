@@ -324,6 +324,13 @@ public class TemplateServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("template-mongodb")
+  public MongoConfig mongoConfig1() {
+    return templateServiceConfiguration.getTemplateClientConfiguration().getMongoConfig();
+  }
+
+  @Provides
+  @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return templateServiceConfiguration.getDistributedLockImplementation();
   }

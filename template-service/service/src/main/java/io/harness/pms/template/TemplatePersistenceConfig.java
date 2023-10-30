@@ -18,6 +18,7 @@ import io.harness.springdata.HMongoTemplate;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;
@@ -50,77 +51,58 @@ import org.springframework.guice.annotation.GuiceModule;
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
 public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration {
-  private final MongoBackendConfiguration mongoBackendConfiguration;
+  //  private final MongoBackendConfiguration mongoBackendConfiguration;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   private final MongoConfig mongoConfig;
 
   @Inject
   public TemplatePersistenceConfig(Injector injector) {
-    this.mongoBackendConfiguration =
-        (MongoBackendConfiguration) injector.getInstance(Key.get(TemplateServiceConfiguration.class))
-            .getTemplateClientConfiguration()
-            .getTemplateClientBackendConfiguration();
+    //    this.mongoBackendConfiguration =
+    //        (MongoBackendConfiguration)
+    //        injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getMongoConfig();
+
     this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
-    this.mongoConfig = injector.getInstance(MongoConfig.class);
+    this.mongoConfig = injector.getInstance(Key.get(MongoConfig.class, Names.named("template-mongodb")));
   }
 
-  @Bean(name = "template-mongodb1")
   @Override
   public MongoClient mongoClient() {
     MongoClientSettings mongoClientSettings =
         MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(mongoBackendConfiguration.getUri()))
+            .applyConnectionString(new ConnectionString(mongoConfig.getUri()))
             .retryWrites(true)
             .applyToSocketSettings(
-                builder -> builder.connectTimeout(mongoBackendConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS))
+                builder -> builder.connectTimeout(mongoConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
             .applyToClusterSettings(builder
-                -> builder.serverSelectionTimeout(
-                    mongoBackendConfiguration.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
+                -> builder.serverSelectionTimeout(mongoConfig.getServerSelectionTimeout(), TimeUnit.MILLISECONDS))
             .applyToSocketSettings(
-                builder -> builder.readTimeout(mongoBackendConfiguration.getSocketTimeout(), TimeUnit.MILLISECONDS))
-            .applyToConnectionPoolSettings(builder
-                -> builder.maxConnectionIdleTime(
-                    mongoBackendConfiguration.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
+                builder -> builder.readTimeout(mongoConfig.getSocketTimeout(), TimeUnit.MILLISECONDS))
             .applyToConnectionPoolSettings(
-                builder -> builder.maxSize(mongoBackendConfiguration.getConnectionsPerHost()))
+                builder -> builder.maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS))
+            .applyToConnectionPoolSettings(builder -> builder.maxSize(mongoConfig.getConnectionsPerHost()))
             .readPreference(ReadPreference.primary())
             .applyToConnectionPoolSettings(builder -> builder.addConnectionPoolListener(harnessConnectionPoolListener))
             .build();
 
     return MongoClients.create(mongoClientSettings);
   }
-  @Bean(name = "template-mongodb2")
+
   @Override
   protected String getDatabaseName() {
-    return new MongoClientURI(mongoBackendConfiguration.getUri()).getDatabase();
+    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
   }
 
-  @Bean(name = "template-mongodb3")
-  @Override
-  public MongoDatabaseFactory mongoDbFactory() {
-    return super.mongoDbFactory();
-  }
-
-  @Bean(name = "template-mongodb4")
   MongoTransactionManager transactionManager(@Qualifier("template-mongodb3") MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
-  @Bean(name = "template-mongodb5")
+
   @Override
   protected Collection<String> getMappingBasePackages() {
     return Collections.singleton("io.harness");
   }
-  @Bean(name = "template-mongodb6")
-  @Override
-  public MappingMongoConverter mappingMongoConverter(
-      @Qualifier("template-mongodb3") MongoDatabaseFactory databaseFactory, MongoCustomConversions customConversions,
-      MongoMappingContext mappingContext) {
-    return super.mappingMongoConverter(databaseFactory, customConversions, mappingContext);
-  }
 
   @Bean(name = "template-mongodb")
-  public MongoTemplate mongoTemplate(
-      @Qualifier("template-mongodb3") MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter converter) {
     return new HMongoTemplate(
         new SimpleMongoClientDatabaseFactory(mongoClient(), getDatabaseName()), converter, mongoConfig);
   }

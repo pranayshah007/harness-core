@@ -7,6 +7,7 @@
 
 package io.harness.pms.template;
 
+import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -22,5 +23,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TemplateClientConfiguration {
-  @JsonProperty("mongo") TemplateClientBackendConfiguration templateClientBackendConfiguration;
+  // @JsonProperty("mongo") TemplateClientBackendConfiguration templateClientBackendConfiguration;
+  @JsonProperty("mongo") private MongoConfig mongoConfig;
 }
