@@ -51,7 +51,7 @@ public class JsonFieldUtils {
   }
 
   public JsonNode get(JsonNode jsonNode, String field) {
-    return jsonNode.get(field);
+    return jsonNode != null ? jsonNode.get(field) : null;
   }
 
   public boolean isStringTypeField(JsonNode jsonNode, String field) {

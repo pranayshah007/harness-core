@@ -132,11 +132,12 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     NGServiceOverridesEntity ngServiceOverridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(Collections.singletonList(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifestId").type(ManifestConfigType.KUSTOMIZE).build())
-                    .build()))
+            .manifests(Collections.singletonList(ManifestConfigWrapper.builder()
+                                                     .manifest(ManifestConfig.builder()
+                                                                   .identifier("manifestId")
+                                                                   .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                                   .build())
+                                                     .build()))
             .build());
 
     NGServiceOverridesEntity updatedEntity1 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
@@ -150,23 +151,24 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     assertThat(updatedEntity1.getSpec().getManifests()).hasSize(1);
     assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getIdentifier()).isEqualTo("manifestId");
     assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getType())
-        .isEqualTo(ManifestConfigType.KUSTOMIZE);
+        .isEqualTo(ManifestConfigType.KUSTOMIZE_PATCHES);
 
     // test multiple update
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(Collections.singletonList(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifestId").type(ManifestConfigType.K8_MANIFEST).build())
-                    .build()))
+            .manifests(Collections.singletonList(ManifestConfigWrapper.builder()
+                                                     .manifest(ManifestConfig.builder()
+                                                                   .identifier("manifestId")
+                                                                   .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                                   .build())
+                                                     .build()))
             .build());
 
     NGServiceOverridesEntity updatedEntity2 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
     assertThat(updatedEntity2).isNotNull();
     assertThat(updatedEntity2.getSpec().getManifests()).isNotEmpty();
     assertThat(updatedEntity2.getSpec().getManifests().get(0).getManifest().getType())
-        .isEqualTo(ManifestConfigType.K8_MANIFEST);
+        .isEqualTo(ManifestConfigType.KUSTOMIZE_PATCHES);
   }
 
   @Test
@@ -366,11 +368,12 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     overridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(List.of(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifest1").type(ManifestConfigType.KUSTOMIZE).build())
-                    .build()))
+            .manifests(List.of(ManifestConfigWrapper.builder()
+                                   .manifest(ManifestConfig.builder()
+                                                 .identifier("manifest1")
+                                                 .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                 .build())
+                                   .build()))
             .variables(
                 List.of(StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
                     StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
@@ -386,8 +389,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                 StringNGVariable.builder().name("varC").value(ParameterField.createValueField("valC")).build()))
             .manifests(List.of(
                 ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.K8_MANIFEST).build())
+                    .manifest(ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.VALUES).build())
                     .build()))
             .configFiles(List.of(
                 ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("configFile2").build()).build()))
@@ -420,7 +422,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                    .map(ManifestConfigWrapper::getManifest)
                    .map(ManifestConfig::getType)
                    .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(ManifestConfigType.K8_MANIFEST, ManifestConfigType.KUSTOMIZE);
+        .containsExactlyInAnyOrder(ManifestConfigType.KUSTOMIZE_PATCHES, ManifestConfigType.VALUES);
 
     assertThat(upsertedOverride.getSpec()
                    .getConfigFiles()

@@ -28,12 +28,12 @@ import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent;
 import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent;
 import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent;
-import io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardCreateEvent;
 import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.ngsettings.SettingIdentifiers;
@@ -42,11 +42,14 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.DataPoint;
+import io.harness.spec.server.idp.v1.model.InputDetails;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,6 +86,9 @@ public class CheckServiceImpl implements CheckService {
   @Override
   public void createCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      // TODO: To be removed once UI starts sending input values in the new format.
+      copyInputValues(checkDetails, accountIdentifier);
+
       validateCheckSaveRequest(checkDetails, accountIdentifier);
       CheckEntity savedCheckEntity = checkRepository.save(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
       outboxService.save(new CheckCreateEvent(accountIdentifier, CheckDetailsMapper.toDTO(savedCheckEntity)));
@@ -93,6 +99,9 @@ public class CheckServiceImpl implements CheckService {
   @Override
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      // TODO: To be removed once UI starts sending input values in the new format.
+      copyInputValues(checkDetails, accountIdentifier);
+
       validateCheckSaveRequest(checkDetails, accountIdentifier);
       CheckEntity oldCheckEntity =
           checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, checkDetails.getIdentifier());
@@ -231,6 +240,34 @@ public class CheckServiceImpl implements CheckService {
       DataPoint dataPoint = dataPointMap.get(key);
       if (dataPoint.isIsConditional() && isEmpty(rule.getConditionalInputValue())) {
         throw new InvalidRequestException("Conditional input value is required");
+      }
+
+      // TODO: Enable this validation once UI sends in new fprmat
+      //      if (dataPoint.isIsConditional()) {
+      //        List<InputValue> inputValues = rule.getInputValues();
+      //        if (inputValues.isEmpty()) {
+      //          throw new InvalidRequestException("Input value(s) is/are required");
+      //        }
+      //        for (InputValue inputValue : inputValues) {
+      //          if (isEmpty(inputValue.getValue())) {
+      //            throw new InvalidRequestException(String.format(
+      //                    "Conditional input value for key %s is required", inputValue.getKey()));
+      //          }
+      //        }
+      //      }
+    }
+  }
+
+  private void copyInputValues(CheckDetails checkDetails, String accountIdentifier) {
+    for (Rule rule : checkDetails.getRules()) {
+      DataPointEntity dataPoint = dataPointService.getDataPoint(
+          accountIdentifier, rule.getDataSourceIdentifier(), rule.getDataPointIdentifier());
+      List<InputDetails> inputsDetails = dataPoint.getInputDetails();
+      if (inputsDetails.size() == 1) {
+        InputValue inputValue = new InputValue();
+        inputValue.setKey(inputsDetails.get(0).getKey());
+        inputValue.setValue(rule.getConditionalInputValue());
+        rule.setInputValues(Collections.singletonList(inputValue));
       }
     }
   }

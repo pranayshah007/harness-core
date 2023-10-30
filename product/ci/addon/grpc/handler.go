@@ -43,14 +43,18 @@ func NewAddonHandler(stopCh chan bool, logMetrics bool, log *zap.SugaredLogger) 
 // SignalStop sends a signal to stop the GRPC service.
 func (h *handler) SignalStop(ctx context.Context, in *pb.SignalStopRequest) (*pb.SignalStopResponse, error) {
 	go func() {
+		h.log.Infow("sending stop signal to the channel")
 		// Ensure that all the addon service tasks are complete before sending the signal.
 		// Sleep will ensure that this RPC completes successfully
 		time.Sleep(1 * time.Second)
 		h.stopCh <- true
+		h.log.Infow("successfully sent stop signal to the channel")
 	}()
 	// Explicitly close pending logs before returning back, as they depend on the lite engine
 	// server being up.
+	h.log.Infow("attempting to close pending logs")
 	addonlogs.LogState().ClosePendingLogs()
+	h.log.Infow("successfully closed pending logs")
 	return &pb.SignalStopResponse{}, nil
 }
 
@@ -73,7 +77,9 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			rl.Writer, false, h.log).Run(ctx)
 		// close log stream only if detach == false
 		if !detach {
+			h.log.Infow("closing the stream after Run step execution", "step_id", in.GetStep().GetId())
 			err = close(rl.Writer, err)
+			h.log.Infow("closed the stream after Run step execution", "step_id", in.GetStep().GetId())
 		}
 		response := &pb.ExecuteStepResponse{
 			Output:     stepOutput,
@@ -86,7 +92,9 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			Output:     stepOutput,
 			NumRetries: numRetries,
 		}
+		h.log.Infow("closing the stream after RunTests step execution", "step_id", in.GetStep().GetId())
 		err = close(rl.Writer, err)
+		h.log.Infow("closed the stream after RunTests step execution", "step_id", in.GetStep().GetId())
 		return response, err
 	case *enginepb.UnitStep_Plugin:
 		stepOutput, artifact, numRetries, err := newPluginTask(in.GetStep(), in.GetPrevStepOutputs(), in.GetTmpFilePath(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
@@ -95,16 +103,18 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			Output:     stepOutput,
 			NumRetries: numRetries,
 		}
+		h.log.Infow("closing the stream after Plugin step execution", "step_id", in.GetStep().GetId())
 		err = close(rl.Writer, err)
+		h.log.Infow("closed the stream after Plugin step execution", "step_id", in.GetStep().GetId())
 		return response, err
 	case *enginepb.UnitStep_ExecuteTask:
- 	    _, err := newExecuteStep(in.GetStep(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
- 	    response := &pb.ExecuteStepResponse{
- 	        Output:     nil,
- 	        NumRetries: 1,
- 	    }
- 	    err = close(rl.Writer, err)
- 	    return response, err
+		_, err := newExecuteStep(in.GetStep(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
+		response := &pb.ExecuteStepResponse{
+			Output:     nil,
+			NumRetries: 1,
+		}
+		err = close(rl.Writer, err)
+		return response, err
 	case nil:
 		return &pb.ExecuteStepResponse{}, fmt.Errorf("UnitStep is not set")
 	default:

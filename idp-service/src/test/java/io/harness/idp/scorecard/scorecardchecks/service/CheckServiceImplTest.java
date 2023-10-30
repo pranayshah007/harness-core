@@ -7,8 +7,13 @@
 
 package io.harness.idp.scorecard.scorecardchecks.service;
 
+import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.CATALOG_TECH_DOCS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.BRANCH_NAME;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -25,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
@@ -36,6 +42,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.DataPoint;
+import io.harness.spec.server.idp.v1.model.InputDetails;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.utils.PageUtils;
 
@@ -62,6 +69,7 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public class CheckServiceImplTest extends CategoryTest {
+  private static final String DEVELOP_BRANCH = "develop";
   private CheckServiceImpl checkServiceImpl;
   @Mock CheckRepository checkRepository;
   @Mock NGSettingsClient settingsClient;
@@ -98,6 +106,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).save(checkEntityCaptor.capture());
@@ -114,6 +125,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.save(any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
@@ -129,6 +143,9 @@ public class CheckServiceImplTest extends CategoryTest {
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).update(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
@@ -144,6 +161,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(null), ACCOUNT_ID);
   }
@@ -158,6 +178,9 @@ public class CheckServiceImplTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(dataPointService.getDataPoint(ACCOUNT_ID, DATA_SOURCE_ID, DATA_POINT_ID))
+        .thenReturn(
+            DataPointEntity.builder().identifier(DATA_POINT_ID).inputDetails(List.of(getInputDetails())).build());
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
@@ -336,16 +359,24 @@ public class CheckServiceImplTest extends CategoryTest {
   }
 
   private List<CheckEntity> getCheckEntities() {
+    Rule rule1 = new Rule();
+    rule1.setDataSourceIdentifier(GITHUB_IDENTIFIER);
+    rule1.setDataPointIdentifier(IS_BRANCH_PROTECTED);
     CheckEntity entity1 = CheckEntity.builder()
                               .accountIdentifier(ACCOUNT_ID)
                               .identifier(GITHUB_CHECK_ID)
                               .name(GITHUB_CHECK_NAME)
+                              .rules(List.of(rule1))
                               .isCustom(true)
                               .build();
+    Rule rule2 = new Rule();
+    rule2.setDataSourceIdentifier(CATALOG_IDENTIFIER);
+    rule2.setDataPointIdentifier(CATALOG_TECH_DOCS);
     CheckEntity entity2 = CheckEntity.builder()
                               .accountIdentifier(GLOBAL_ACCOUNT_ID)
                               .identifier(CATALOG_CHECK_ID)
                               .name(CATALOG_CHECK_NAME)
+                              .rules(List.of(rule2))
                               .isCustom(false)
                               .build();
     return List.of(entity1, entity2);
@@ -371,5 +402,12 @@ public class CheckServiceImplTest extends CategoryTest {
     } catch (Exception ignored) {
     }
     return request;
+  }
+
+  private InputDetails getInputDetails() {
+    InputDetails inputDetails = new InputDetails();
+    inputDetails.key(BRANCH_NAME);
+    inputDetails.key(DEVELOP_BRANCH);
+    return inputDetails;
   }
 }
