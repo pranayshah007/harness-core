@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.NGInstanceUnitType.COUNT;
 import static io.harness.beans.NGInstanceUnitType.PERCENTAGE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static java.lang.String.format;
@@ -571,5 +572,57 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
     verify(k8sTaskHelperBase, times(1)).tagNewPods(anyList(), anyList());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testPodDiffOrder() throws Exception {
+    K8sScaleRequest scaleRequest = K8sScaleRequest.builder()
+                                       .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                       .instanceUnitType(PERCENTAGE)
+                                       .workload("Deployment/test-deployment")
+                                       .instances(200)
+                                       .maxInstances(Optional.of(5))
+                                       .releaseName(releaseName)
+                                       .skipSteadyStateCheck(false)
+                                       .timeoutIntervalInMin(timeoutIntervalInMin)
+                                       .build();
+
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder()
+                                                   .workingDirectory(workingDirectory)
+                                                   .kubectlPath(kubectlPath)
+                                                   .kubeconfigPath(kubeconfigPath)
+                                                   .build();
+    KubernetesResourceId deployment = KubernetesResourceId.builder()
+                                          .kind("Deployment")
+                                          .name("test-deployment")
+                                          .namespace(namespace)
+                                          .versioned(false)
+                                          .build();
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+
+    when(k8sTaskHelperBase.findScalableKubernetesResourceIdFromWorkload(eq(scaleRequest.getWorkload())))
+        .thenReturn(deployment);
+    when(k8sTaskHelperBase.getCurrentReplicas(
+             any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
+        .thenReturn(1);
+    when(k8sTaskHelperBase.scale(
+             any(Kubectl.class), eq(delegateTaskParams), eq(deployment), eq(10), eq(logCallback), eq(true)))
+        .thenReturn(true);
+    when(k8sTaskHelperBase.doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback)))
+        .thenReturn(true);
+
+    List<K8sPod> beforePodList = mock(List.class);
+    List<K8sPod> afterPodList = mock(List.class);
+    when(k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutIntervalInMillis))
+        .thenReturn(beforePodList)
+        .thenReturn(afterPodList);
+
+    k8sScaleRequestHandler.executeTaskInternal(
+        scaleRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
+    verify(k8sTaskHelperBase).tagNewPods(afterPodList, beforePodList);
   }
 }

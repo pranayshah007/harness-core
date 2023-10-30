@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.beans.logstreaming;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress.CommandUnitProgressBuilder;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
 import io.harness.logging.CommandExecutionStatus;
@@ -21,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class NGDelegateLogCallback implements LogCallback {

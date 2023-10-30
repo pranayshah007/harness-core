@@ -111,6 +111,12 @@ public class VmPluginStepSerializer {
         }
       }
     }
+
+    if (!isEmpty(settings) && settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)
+        && settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
+      settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
+    }
+
     if (!isEmpty(settings)) {
       for (Map.Entry<String, JsonNode> entry : settings.entrySet()) {
         String key = PLUGIN_ENV_PREFIX + entry.getKey().toUpperCase();
@@ -161,7 +167,7 @@ public class VmPluginStepSerializer {
       if (identifier.equals(SAVE_CACHE_STEP_ID) || identifier.equals(RESTORE_CACHE_STEP_ID)) {
         if (CIStepInfoUtils.canRunVmStepOnHost(
                 SAVE_CACHE_S3, stageInfraDetails, accountID, ciExecutionConfigService, featureFlagService, null)
-            && featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountID)) {
+            && featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountID)) {
           String name = ciExecutionConfigService.getContainerlessPluginNameForVM(SAVE_CACHE_S3, null);
           List<String> entrypoint = Arrays.asList("plugin", "-kind", "harness", "-name", name);
           return convertContainerlessStep(identifier, entrypoint, envVars, timeout, pluginStepInfo);
@@ -265,7 +271,7 @@ public class VmPluginStepSerializer {
       switch (identifier) {
         case SAVE_CACHE_STEP_ID:
         case RESTORE_CACHE_STEP_ID:
-          if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_CACHE, accountId)) {
+          if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountId)) {
             CICacheIntelligenceS3Config cacheIntelligenceConfig =
                 ciExecutionServiceConfig.getCacheIntelligenceS3Config();
             String cacheKeyString = cacheIntelligenceConfig.getAccessKey();

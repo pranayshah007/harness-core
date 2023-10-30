@@ -67,6 +67,8 @@ public class BudgetGroupDao {
     }
     if (budgetGroup.getAlertThresholds() != null) {
       updateOperations.set(BudgetGroupKeys.alertThresholds, budgetGroup.getAlertThresholds());
+    } else {
+      updateOperations.unset(BudgetGroupKeys.alertThresholds);
     }
     if (budgetGroup.getChildEntities() != null) {
       updateOperations.set(BudgetGroupKeys.childEntities, budgetGroup.getChildEntities());
@@ -201,6 +203,16 @@ public class BudgetGroupDao {
                                    .equal(accountId)
                                    .field(BudgetGroupKeys.uuid)
                                    .equal(uuid);
+    return hPersistence.delete(query);
+  }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<BudgetGroup> query =
+        hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.accountId).equal(accountId);
     return hPersistence.delete(query);
   }
 }

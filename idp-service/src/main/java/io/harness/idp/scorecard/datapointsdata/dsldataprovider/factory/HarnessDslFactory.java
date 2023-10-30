@@ -6,10 +6,10 @@
  */
 package io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory;
 
-import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
-import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
-import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
-import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_POLICY_EVALUATION_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_STO_SCAN_SETUP_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -249,6 +251,33 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTOWithStages.isAllowStageExecutions()).isTrue();
     assertThat(executionSummaryDTO.getStoreType()).isNull();
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testToDtoForStagesExecutionMetadataForRollbackExecution() {
+    PipelineExecutionSummaryEntity executionSummaryEntityWithStages =
+        PipelineExecutionSummaryEntity.builder()
+            .accountId(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projId)
+            .pipelineIdentifier(pipelineId)
+            .runSequence(1)
+            .planExecutionId(planId)
+            .stagesExecutionMetadata(StagesExecutionMetadata.builder()
+                                         .isStagesExecution(true)
+                                         .stageIdentifiers(Collections.singletonList("s1"))
+                                         .fullPipelineYaml(getPipelineYaml())
+                                         .build())
+            .allowStagesExecution(true)
+            .executionMode(ExecutionMode.PIPELINE_ROLLBACK)
+            .build();
+    PipelineExecutionSummaryDTO executionSummaryDTOWithStages =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityWithStages, null);
+    assertThat(executionSummaryDTOWithStages.isStagesExecution()).isTrue();
+    assertThat(executionSummaryDTOWithStages.getStagesExecuted()).isNull();
+    assertThat(executionSummaryDTOWithStages.isAllowStageExecutions()).isTrue();
   }
 
   private String getPipelineYaml() {

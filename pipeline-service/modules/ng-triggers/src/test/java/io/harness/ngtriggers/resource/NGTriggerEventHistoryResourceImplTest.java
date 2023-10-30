@@ -75,6 +75,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
+  public static final String POLLING_DOC_ID = "pollingDocId";
   private final String IDENTIFIER = "first_trigger";
   private final String NAME = "first trigger";
   private final String PIPELINE_IDENTIFIER = "myPipeline";
@@ -432,5 +433,66 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
             .getPolledResponse()
             .getAllPolledKeys())
         .isEqualTo(allPolledKeys);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void getPolledResponseWithPollingDocIdForTriggerTest() {
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .identifier(IDENTIFIER)
+            .name(NAME)
+            .targetType(TargetType.PIPELINE)
+            .type(NGTriggerType.ARTIFACT)
+            .metadata(
+                NGTriggerMetadata.builder()
+                    .buildMetadata(BuildMetadata.builder()
+                                       .pollingConfig(PollingConfig.builder().pollingDocId("pollingDocId").build())
+                                       .build())
+                    .build())
+            .yaml(ngTriggerYaml)
+            .version(0L)
+            .build();
+    doReturn(Optional.empty())
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    assertThatThrownBy(()
+                           -> ngTriggerEventHistoryResource.getPolledResponseForTrigger(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessage("Trigger " + IDENTIFIER + " does not exist");
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    assertThatThrownBy(()
+                           -> ngTriggerEventHistoryResource.getPolledResponseForTrigger(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Trigger " + IDENTIFIER + " is not of Artifact or Manifest type");
+
+    doReturn(Optional.of(ngTrigger))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    Set<String> allPolledKeys = new HashSet<>();
+    allPolledKeys.add("key1");
+    allPolledKeys.add("key2");
+    doReturn(ResponseDTO.newResponse(PollingInfoForTriggers.builder()
+                                         .polledResponse(PolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                                         .pollingDocId(POLLING_DOC_ID)
+                                         .build()))
+        .when(ngTriggerEventsService)
+        .getPollingInfo(ACCOUNT_ID, POLLING_DOC_ID);
+    assertThat(
+        ngTriggerEventHistoryResource
+            .getPolledResponseForTrigger(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER)
+            .getData()
+            .getPollingDocId())
+        .isEqualTo(POLLING_DOC_ID);
   }
 }

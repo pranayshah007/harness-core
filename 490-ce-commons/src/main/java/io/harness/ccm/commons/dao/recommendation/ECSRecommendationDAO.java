@@ -263,6 +263,34 @@ public class ECSRecommendationDAO {
         .execute();
   }
 
+  public long countPartialHistograms(String accountId) {
+    return hPersistence.createQuery(ECSPartialRecommendationHistogram.class)
+        .field(ECSPartialRecommendationHistogramKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public long countRecommendations(String accountId) {
+    return hPersistence.createQuery(ECSServiceRecommendation.class)
+        .field(ECSServiceRecommendationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllPartialHistogramsForAccount(String accountId) {
+    Query<ECSPartialRecommendationHistogram> query = hPersistence.createQuery(ECSPartialRecommendationHistogram.class)
+                                                         .field(ECSPartialRecommendationHistogramKeys.accountId)
+                                                         .equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public boolean deleteAllRecommendationsForAccount(String accountId) {
+    Query<ECSServiceRecommendation> query = hPersistence.createQuery(ECSServiceRecommendation.class)
+                                                .field(ECSServiceRecommendationKeys.accountId)
+                                                .equal(accountId);
+    return hPersistence.delete(query);
+  }
+
   private Condition getECSCondition(List<RecommendationECSServiceId> ecsServices) {
     RecommendationECSServiceId ecsService = ecsServices.get(0);
     Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(ecsService.getClusterName())

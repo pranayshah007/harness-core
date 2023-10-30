@@ -1,0 +1,10 @@
+policies:
+  - name: optimize-efs-storage-tier
+    resource: efs
+    filters:
+      - "ThroughputMode": "bursting"
+    actions:
+      - type: configure-lifecycle-policy
+        state: enable
+        rules:
+          - 'TransitionToIA': 'AFTER_60_DAYS'

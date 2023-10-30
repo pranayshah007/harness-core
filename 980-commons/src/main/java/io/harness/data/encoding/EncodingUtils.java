@@ -6,10 +6,10 @@
  */
 
 package io.harness.data.encoding;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.WingsException;
+import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -122,5 +122,11 @@ public class EncodingUtils {
 
   public static String decodeBase64ToString(String toDecode) {
     return new String(decodeBase64(toDecode), Charsets.UTF_8);
+  }
+
+  public static String convertToBase64String(Object object) throws IOException {
+    String jsonString = JsonUtils.asJson(object);
+    byte[] jsonByte = compressString(jsonString);
+    return encodeBase64(jsonByte);
   }
 }

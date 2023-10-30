@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: list-unused-efs
+cloudProvider: AWS
+resourceType: efs
+description: List all unused efs
+rulesYamlPath: ../list-unused-efs.yml

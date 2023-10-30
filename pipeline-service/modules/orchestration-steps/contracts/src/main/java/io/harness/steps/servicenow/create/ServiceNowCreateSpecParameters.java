@@ -8,12 +8,19 @@
 package io.harness.steps.servicenow.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET;
+import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET_USING_STANDARD_TEMPLATE;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.servicenow.ServiceNowActionNG;
+import io.harness.steps.servicenow.beans.ServiceNowCreateType;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("serviceNowCreateSpecParameters")
 @RecasterAlias("io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowCreateSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> connectorRef;
   @NotNull ParameterField<String> ticketType;
@@ -41,4 +49,33 @@ public class ServiceNowCreateSpecParameters implements SpecParameters {
   // template fields
   ParameterField<String> templateName;
   ParameterField<Boolean> useServiceNowTemplate;
+
+  ServiceNowCreateType createType;
+
+  public static ServiceNowActionNG getAction(ServiceNowCreateSpecParameters specParameters) {
+    if (specParameters.getCreateType() != null && ServiceNowCreateType.STANDARD == specParameters.getCreateType()) {
+      return CREATE_TICKET_USING_STANDARD_TEMPLATE;
+    }
+
+    return CREATE_TICKET;
+  }
+
+  public static boolean getUseServiceNowTemplate(ServiceNowCreateSpecParameters specParameters) {
+    if (!ParameterField.isBlank(specParameters.getUseServiceNowTemplate())) {
+      return specParameters.getUseServiceNowTemplate().getValue();
+    }
+
+    if (specParameters.getCreateType() != null) {
+      if (ServiceNowCreateType.STANDARD == specParameters.getCreateType()
+          || ServiceNowCreateType.FORM == specParameters.getCreateType()) {
+        return true;
+      }
+
+      if (ServiceNowCreateType.NORMAL == specParameters.getCreateType()) {
+        return false;
+      }
+    }
+
+    return false;
+  }
 }

@@ -6,8 +6,10 @@
  */
 
 package io.harness.pms.health;
-
 import io.harness.annotations.ExposeInternalException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
@@ -21,6 +23,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TRIGGERS})
 @Api("health")
 @Path("/health")
 @Consumes(MediaType.APPLICATION_JSON)

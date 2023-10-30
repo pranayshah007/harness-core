@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: vm-resize-by-name
+cloudProvider: AZURE
+resourceType: azure.vm
+description: Resize virtual machines with the given name
+rulesYamlPath: ../vm-resize-by-name.yml

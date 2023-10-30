@@ -32,6 +32,7 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
   TerraformExecutionDataParameters spec;
   List<TerraformCliOptionFlag> commandFlags;
   TerraformEncryptOutput encryptOutput;
+  ParameterField<Boolean> skipStateStorage;
 
   @Override
   public TerraformCloudCliStepConfigurationType getType() {

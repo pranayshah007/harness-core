@@ -364,6 +364,25 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
+  public String validatePipeline(String accountId, String orgIdentifier, String projectIdentifier, String pipelineId,
+      boolean loadFromFallbackBranch, boolean loadFromCache, boolean validateAsync, PipelineEntity pipelineEntity) {
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID = null;
+    if (validateAsync) {
+      validationUUID = getAsyncValidationIdAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, loadFromCache, pipelineEntity);
+    } else {
+      validatePipelineSync(orgIdentifier, projectIdentifier, pipelineId, loadFromCache, pipelineEntity);
+    }
+    if (PipelineGitXHelper.shouldPublishSetupUsages(loadFromCache, pipelineEntity.getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity);
+    }
+    return validationUUID;
+  }
+
+  @Override
   public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
       String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
@@ -374,24 +393,29 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
+    validatePipelineSync(orgIdentifier, projectIdentifier, identifier, loadFromCache, pipelineEntity);
+    return optionalPipelineEntity;
+  }
+
+  void validatePipelineSync(String orgIdentifier, String projectIdentifier, String identifier, boolean loadFromCache,
+      PipelineEntity pipelineEntity) {
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // This is added to add validation for stored invalid yaml (duplicate yaml fields)
       validateStoredYaml(pipelineEntity);
-
-      return optionalPipelineEntity;
+    } else {
+      if (EmptyPredicate.isEmpty(pipelineEntity.getData())) {
+        String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
+            orgIdentifier, projectIdentifier, identifier, GitAwareContextHelper.getBranchInRequest());
+        YamlSchemaErrorWrapperDTO errorWrapperDTO =
+            YamlSchemaErrorWrapperDTO.builder()
+                .schemaErrors(Collections.singletonList(
+                    YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
+                .build();
+        throw new io.harness.yaml.validator.InvalidYamlException(
+            errorMessage, errorWrapperDTO, pipelineEntity.getData());
+      }
+      pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity, loadFromCache);
     }
-    if (EmptyPredicate.isEmpty(pipelineEntity.getData())) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
-          orgIdentifier, projectIdentifier, identifier, GitAwareContextHelper.getBranchInRequest());
-      YamlSchemaErrorWrapperDTO errorWrapperDTO =
-          YamlSchemaErrorWrapperDTO.builder()
-              .schemaErrors(Collections.singletonList(
-                  YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
-              .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO, pipelineEntity.getData());
-    }
-    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity, loadFromCache);
-    return optionalPipelineEntity;
   }
 
   // This function validate the duplicate fields in yaml and throws error if any. This method will be called during get
@@ -476,17 +500,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           String.format("Pipeline with the given ID: %s does not exist or has been deleted.", identifier));
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
+    String validationUUID = getAsyncValidationIdAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, loadFromCache, pipelineEntity);
+    return PipelineGetResult.builder()
+        .pipelineEntity(optionalPipelineEntity)
+        .asyncValidationUUID(validationUUID)
+        .build();
+  }
+  String getAsyncValidationIdAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      boolean loadFromCache, PipelineEntity pipelineEntity) {
     pipelineValidationService.validateYamlWithUnresolvedTemplates(
         accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), pipelineEntity.getHarnessVersion());
 
     // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
     // inside the scm git metadata. Hence, the branch from there is the actual branch we need
     String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
-    String validationUUID = getValidationUuid(pipelineEntity, loadFromCache, branchFromScm);
-    return PipelineGetResult.builder()
-        .pipelineEntity(optionalPipelineEntity)
-        .asyncValidationUUID(validationUUID)
-        .build();
+    return getValidationUuid(pipelineEntity, loadFromCache, branchFromScm);
   }
 
   String getValidationUuid(PipelineEntity pipelineEntity, boolean loadFromCache, String branchFromScm) {

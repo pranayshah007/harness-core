@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: rds-delete-unused
+cloudProvider: AWS
+resourceType: rds
+description: Delete unused RDS database
+rulesYamlPath: ../rds-delete-unused.yml

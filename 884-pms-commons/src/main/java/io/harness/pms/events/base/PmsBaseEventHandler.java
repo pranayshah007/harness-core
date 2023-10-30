@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.events.base;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -66,7 +67,7 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
     try (PmsGitSyncBranchContextGuard ignore1 = gitSyncContext(event); AutoLogContext ignore2 = autoLogContext(event);
          PmsMetricContextGuard metricContext =
              new PmsMetricContextGuard(metadataMap, extractMetricContext(metadataMap, event))) {
-      log.info("[PMS_MESSAGE_LISTENER] Starting to process {} event ", event.getClass().getSimpleName());
+      log.debug("[PMS_MESSAGE_LISTENER] Starting to process {} event ", event.getClass().getSimpleName());
       MonitoringInfo monitoringInfo = MonitoringInfo.builder()
                                           .createdAt(messageTimeStamp)
                                           .readTs(readTs)

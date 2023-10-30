@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.sdk.execution;
-
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME;
@@ -45,8 +44,11 @@ import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_NODE_START_CONSUMER;
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_PROGRESS_CONSUMER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
@@ -59,6 +61,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import java.time.Duration;
 import org.redisson.api.RedissonClient;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkEventsFrameworkModule extends AbstractModule {
   private static PmsSdkEventsFrameworkModule instance;

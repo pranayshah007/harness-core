@@ -6,12 +6,14 @@
  */
 
 package software.wings.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -20,6 +22,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.HttpHeaders;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 public class JerseyFilterUtils {
   //

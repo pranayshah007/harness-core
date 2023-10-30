@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.manifest.steps;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -153,7 +154,7 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
     try {
       List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestOutcome);
       if (isNotEmpty(manifestsSummary)) {
-        stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
             StageExecutionInfoUpdateDTO.builder()
                 .manifestsSummary(ServiceExecutionSummaryDetails.ManifestsSummary.builder()
                                       .manifestSummaries(manifestsSummary)

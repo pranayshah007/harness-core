@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine.pms.advise.handlers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.interrupts.InterruptManager;
 import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
@@ -29,6 +31,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Slf4j
 public class RetryAdviserResponseHandler implements AdviserResponseHandler {

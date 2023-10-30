@@ -89,10 +89,10 @@ public class CIDelegateTaskExecutor {
         abstractions, task, Collections.emptyList(), Collections.emptyList(), true, ambiance.getStageExecutionId());
   }
 
-  public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
+  public String queueTask(Ambiance ambiance, TaskData taskData, String accountId, List<TaskSelector> taskSelectors) {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
+    return queueTask(abstractions, task, taskSelectors, new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<TaskSelector> taskSelectors,

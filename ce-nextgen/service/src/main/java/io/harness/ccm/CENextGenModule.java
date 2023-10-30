@@ -20,6 +20,7 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_BUDGET;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_RULE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
@@ -64,6 +65,7 @@ import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.ccm.eventframework.AccountEntityCRUDStreamListener;
 import io.harness.ccm.eventframework.BudgetCRUDStreamListener;
 import io.harness.ccm.eventframework.CCMSettingsCRUDStreamListener;
 import io.harness.ccm.eventframework.ConnectorEntityCRUDStreamListener;
@@ -137,6 +139,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
+import io.harness.ccm.views.service.GovernanceAiEngineService;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ccm.views.service.RuleEnforcementService;
@@ -151,6 +154,7 @@ import io.harness.ccm.views.service.impl.CEViewPreferenceServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
+import io.harness.ccm.views.service.impl.GovernanceAiEngineServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
@@ -452,6 +456,7 @@ public class CENextGenModule extends AbstractModule {
     bind(MspValidationService.class).to(MspValidationServiceImpl.class);
     bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CCMServiceNowHelper.class).to(CCMServiceNowHelperImpl.class);
+    bind(GovernanceAiEngineService.class).to(GovernanceAiEngineServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
@@ -593,6 +598,9 @@ public class CENextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(CCM_RULE + ENTITY_CRUD))
         .to(GovernanceRuleCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(AccountEntityCRUDStreamListener.class);
   }
 
   @Provides

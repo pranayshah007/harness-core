@@ -2280,34 +2280,17 @@ public class EcsStepCommonHelper extends EcsStepUtils {
           ecsRunTaskResult.getEcsTasks(), infrastructureKey, ecsRunTaskResult.getRegion());
     } else if (ecsCommandResponse instanceof EcsServiceSetupResponse) {
       EcsBasicDeployData deployData = ((EcsServiceSetupResponse) ecsCommandResponse).getDeployData();
-      return fetchServerInstanceInfoForBasicDeployment(deployData, infrastructureKey);
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          deployData.getOldServiceData().getTasks(), infrastructureKey, deployData.getOldServiceData().getRegion());
     } else if (ecsCommandResponse instanceof EcsUpgradeContainerResponse) {
       EcsBasicDeployData deployData = ((EcsUpgradeContainerResponse) ecsCommandResponse).getDeployData();
-      return fetchServerInstanceInfoForBasicDeployment(deployData, infrastructureKey);
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          deployData.getNewServiceData().getTasks(), infrastructureKey, deployData.getNewServiceData().getRegion());
     } else if (ecsCommandResponse instanceof EcsBasicRollbackResponse) {
       EcsBasicRollbackData rollbackData = ((EcsBasicRollbackResponse) ecsCommandResponse).getRollbackData();
-      return fetchServerInstanceInfoForBasicRollback(rollbackData, infrastructureKey);
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          rollbackData.getOldServiceData().getTasks(), infrastructureKey, rollbackData.getOldServiceData().getRegion());
     }
     throw new GeneralException("Invalid ecs command response instance");
-  }
-
-  private List<ServerInstanceInfo> fetchServerInstanceInfoForBasicDeployment(
-      EcsBasicDeployData deployData, String infrastructureKey) {
-    List<ServerInstanceInfo> serverInstanceInfos =
-        new ArrayList<>(EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
-            deployData.getNewServiceData().getTasks(), infrastructureKey, deployData.getNewServiceData().getRegion()));
-    serverInstanceInfos.addAll(EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
-        deployData.getOldServiceData().getTasks(), infrastructureKey, deployData.getOldServiceData().getRegion()));
-    return serverInstanceInfos;
-  }
-
-  private List<ServerInstanceInfo> fetchServerInstanceInfoForBasicRollback(
-      EcsBasicRollbackData rollbackData, String infrastructureKey) {
-    List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>(
-        EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(rollbackData.getNewServiceData().getTasks(),
-            infrastructureKey, rollbackData.getNewServiceData().getRegion()));
-    serverInstanceInfos.addAll(EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
-        rollbackData.getOldServiceData().getTasks(), infrastructureKey, rollbackData.getOldServiceData().getRegion()));
-    return serverInstanceInfos;
   }
 }

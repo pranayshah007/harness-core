@@ -35,6 +35,7 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerificationAbortDTO;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
@@ -97,6 +98,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -295,19 +297,30 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   }
 
   @Override
-  public void abort(List<String> verificationJobInstanceIds) {
+  public boolean abort(List<String> verificationJobInstanceIds) {
+    return abort(verificationJobInstanceIds, ActivityVerificationStatus.ABORTED);
+  }
+
+  @Override
+  public boolean abort(List<String> verificationJobInstanceIds, @NotNull VerificationAbortDTO verificationAbortDTO) {
+    return abort(
+        verificationJobInstanceIds, verificationAbortDTO.getVerificationStatus().getActivityVerificationStatus());
+  }
+
+  private boolean abort(
+      List<String> verificationJobInstanceIds, @NotNull ActivityVerificationStatus activityVerificationStatus) {
     UpdateOperations<VerificationJobInstance> abortUpdateOperation =
         hPersistence.createUpdateOperations(VerificationJobInstance.class)
             .set(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.ABORTED)
-            .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ABORTED);
+            .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
     Query<VerificationJobInstance> query = hPersistence.createQuery(VerificationJobInstance.class)
                                                .field(VerificationJobInstanceKeys.uuid)
                                                .in(verificationJobInstanceIds)
                                                .field(VerificationJobInstanceKeys.executionStatus)
                                                .in(ExecutionStatus.nonFinalStatuses());
-    hPersistence.update(query, abortUpdateOperation);
     List<String> verificationTaskIds = verificationTaskService.maybeGetVerificationTaskIds(verificationJobInstanceIds);
     dataCollectionTaskService.abortDeploymentDataCollectionTasks(verificationTaskIds);
+    return hPersistence.update(query, abortUpdateOperation).getUpdatedCount() > 0;
   }
 
   @Override
@@ -527,7 +540,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       case TIMEOUT:
         return ActivityVerificationStatus.ERROR;
       case ABORTED:
-        return ActivityVerificationStatus.ABORTED;
+        return verificationJobInstance.getVerificationStatus() != null ? verificationJobInstance.getVerificationStatus()
+                                                                       : ActivityVerificationStatus.ABORTED;
       case RUNNING:
         return ActivityVerificationStatus.IN_PROGRESS;
       case SUCCESS:

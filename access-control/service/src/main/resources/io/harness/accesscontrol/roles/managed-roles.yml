@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 60
+version: 61
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -805,6 +805,26 @@ roles:
         - account
         - organization
         - project
+    - identifier: _feature_flag_admin_role
+      name: Feature Flag Admin Role
+      description: Can create, edit, toggle and view feature flags
+      permissions:
+        - ff_environment_edit
+        - ff_environment_view
+        - ff_featureflag_edit
+        - ff_featureflag_view
+        - ff_featureflag_toggle
+        - ff_targetgroup_edit
+        - ff_targetgroup_view
+        - ff_target_view
+        - ff_environment_apiKeyView
+        - ff_environment_apiKeyCreate
+        - ff_environment_targetGroupEdit
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
     - identifier: _gitops_admin_role
       name: Gitops Admin Role
       description: Can create, edit, and view Gitops Resources
@@ -1065,6 +1085,7 @@ roles:
       name: SEI Admin
       description: Can create, edit, and view SEI resources
       permissions:
+        - sei_seiconfigurationsettings_create
         - sei_seiconfigurationsettings_view
         - sei_seiconfigurationsettings_edit
         - sei_seiconfigurationsettings_delete

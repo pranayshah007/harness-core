@@ -148,7 +148,7 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
                                                .getParentInfo()
                                                .getDataMap();
     assertThat(parentInfo.get("stageId").getStringValue()).isEqualTo(strategyField.getUuid());
-    assertThat(parentInfo.get("strategyId").getStringValue()).isEqualTo(customStageNode.getUuid());
+    assertThat(parentInfo.get("nearestStrategyId").getStringValue()).isEqualTo(customStageNode.getUuid());
     yamlUtilsMockSettings.close();
     strategyUtilsMockSettings.close();
   }

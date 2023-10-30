@@ -6,7 +6,6 @@
  */
 
 package io.harness.distribution.constraint;
-
 import static io.harness.distribution.constraint.Constraint.Strategy.ASAP;
 import static io.harness.distribution.constraint.Constraint.Strategy.FIFO;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
@@ -19,6 +18,9 @@ import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.distribution.constraint.RunnableConsumers.RunnableConsumersBuilder;
 import io.harness.threading.Morpheus;
@@ -54,6 +56,7 @@ import lombok.Value;
  *
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Value
 @Builder
 public class Constraint {

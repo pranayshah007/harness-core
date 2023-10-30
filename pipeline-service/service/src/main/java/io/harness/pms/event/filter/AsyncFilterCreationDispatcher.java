@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.event.filter;
-
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -24,6 +26,7 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AsyncFilterCreationDispatcher implements Runnable {
   private PMSPipelineServiceHelper pmsPipelineServiceHelper;

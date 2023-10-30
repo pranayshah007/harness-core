@@ -6,7 +6,7 @@
  */
 
 package io.harness.ng.core.serviceoverrides.resources;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
@@ -61,7 +61,6 @@ import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.Principal;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -212,7 +211,7 @@ public class ServiceOverridesResource {
     String yamlInternal = requestDTOV2.getYamlInternal();
     // if request is coming from v1 automation, yamlInternal is only to be used for sending back to v1 api response
     // In this case it cant be used for creating spec as v1 yaml and v2 yaml (created from spec) are different
-    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+    if (isNotEmpty(yamlInternal) && requestDTOV2.getSpec() == null && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);
@@ -247,7 +246,7 @@ public class ServiceOverridesResource {
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     String yamlInternal = requestDTOV2.getYamlInternal();
-    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+    if (isNotEmpty(yamlInternal) && requestDTOV2.getSpec() == null && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);
@@ -592,10 +591,9 @@ public class ServiceOverridesResource {
             "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
 
     ServiceOverridesSpec spec = serviceOverridesEntity.getSpec();
-    String yamlInternal = serviceOverridesEntity.getYamlInternal();
-    if (spec != null && isEmpty(yamlInternal)) {
+    if (spec != null) {
       try {
-        String yamlInternalFromSpec = JsonPipelineUtils.writeJsonString(spec);
+        String yamlInternalFromSpec = YamlUtils.writeYamlString(spec);
         serviceOverridesEntity.setYamlInternal(yamlInternalFromSpec);
       } catch (Exception ex) {
         log.error("Failed to generate yaml from the service override entity's spec", ex);

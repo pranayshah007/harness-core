@@ -4,6 +4,10 @@ derive_targets_from_directories: true
 workspace_type: java
 java_language_level: 11
 
+### Uncomment for go related development. If using IntelliJ, Ultimate Edition is needed for go support.
+#additional_languages:
+#  go
+
 build_flags:
   --announce_rc
   --show_timestamps

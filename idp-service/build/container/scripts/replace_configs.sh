@@ -189,6 +189,10 @@ if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
   export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$JWT_EXTERNAL_SERVICE_SECRET" ]]; then
+  export JWT_EXTERNAL_SERVICE_SECRET; yq -i '.jwtExternalServiceSecret=env(JWT_EXTERNAL_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
@@ -251,6 +255,7 @@ replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
 replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
+replace_key_value jwtExternalServiceSecret "$JWT_EXTERNAL_SERVICE_SECRET"
 replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
 replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
 replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"
@@ -269,6 +274,10 @@ replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $O
 replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
 replace_key_value shouldConfigureWithNotification "$SHOULD_CONFIGURE_WITH_NOTIFICATION"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
@@ -410,4 +419,9 @@ fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
   export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$INTERNAL_ACCOUNTS" ]]; then
+  yq -i 'del(.internalAccounts)' $CONFIG_FILE
+  export INTERNAL_ACCOUNTS; yq -i '.internalAccounts=(env(INTERNAL_ACCOUNTS) | split(",") | map(trim))' $CONFIG_FILE
 fi

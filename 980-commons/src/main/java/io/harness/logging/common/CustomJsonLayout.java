@@ -37,9 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
   private static final String TIMESTAMP = "timestamp";
+  private static final String TIMESTAMP_MILLIS = "timestamp_millis";
   private static final String SEVERITY = "severity";
-  private static final String VERSION_ENV_VAR = "VERSION";
-  private static final String VERSION = "version";
   private static final String THREAD = "thread";
   private static final String LOGGER = "logger";
   private static final String MESSAGE = "message";
@@ -83,8 +82,8 @@ public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
     final String formattedMessage = truncateLog(event.getFormattedMessage());
 
     addTimestamp(TIMESTAMP, true, event.getTimeStamp(), map);
+    add(TIMESTAMP_MILLIS, true, String.valueOf(event.getTimeStamp()), map);
     add(SEVERITY, true, String.valueOf(event.getLevel()), map);
-    add(VERSION, true, System.getenv(VERSION_ENV_VAR), map);
     add(THREAD, true, event.getThreadName(), map);
     add(LOGGER, true, event.getLoggerName(), map);
     add(MESSAGE, true, formattedMessage, map);

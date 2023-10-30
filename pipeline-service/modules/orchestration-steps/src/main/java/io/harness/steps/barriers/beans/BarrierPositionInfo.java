@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.barriers.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -17,6 +19,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "BarrierPositionInfoKeys")
@@ -46,6 +49,13 @@ public class BarrierPositionInfo {
     /* `strategySetupId` contains the setupId of the closest parent node containing a looping strategy
      (if there is any). */
     String strategySetupId;
+    /* `allStrategySetupIds` contains the setupIds of all parent nodes containing a looping strategy
+     (if there is any). */
+    List<String> allStrategySetupIds;
+    /* dummy positions are created in order to be later expanded by BarrierWithinStrategyExpander observer.
+       Once expansion is finished, they are deleted from `barrierPositionList`. This flow is carried out in
+       BarrierWithinStrategyExpander class. */
+    Boolean isDummyPosition;
 
     /* `strategyNodeType` is used to store whether the closest parent node containing a looping strategy
      is of type STEP_GROUP or STAGE. This field is used in `BarrierServiceImpl.obtainRuntimeIdUpdate` and

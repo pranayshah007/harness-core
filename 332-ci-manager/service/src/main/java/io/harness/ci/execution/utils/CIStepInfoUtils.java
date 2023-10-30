@@ -37,6 +37,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
+import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 import io.harness.sto.config.STOImageConfig;
 import io.harness.sto.config.STOStepConfig;
 import io.harness.sto.utils.STOSettingsUtils;
@@ -212,21 +213,42 @@ public class CIStepInfoUtils {
   private static CIStepInfoType getStepInfoType(PluginCompatibleStep step) {
     CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
     if (stepInfoType == CIStepInfoType.PROVENANCE) {
-      ProvenanceStepInfo stepInfo = (ProvenanceStepInfo) step;
-      if (stepInfo.getSource() == null) {
-        throw new CIStageExecutionException("Provenance source is not provided to fetch image from.");
-      }
-      switch (stepInfo.getSource().getType()) {
-        case DOCKER:
-          return CIStepInfoType.PROVENANCE;
-        case GCR:
-          return CIStepInfoType.PROVENANCE_GCR;
-        default:
-          throw new CIStageExecutionException(
-              "Initialization not handled for provenance subtype of " + stepInfo.getSource().getType());
-      }
+      return getProvenanceStepInfoType((ProvenanceStepInfo) step);
+    }
+    if (stepInfoType == CIStepInfoType.SLSA_VERIFICATION) {
+      return getSlsaVerificationStepInfoType((SlsaVerificationStepInfo) step);
     }
     return stepInfoType;
+  }
+
+  private static CIStepInfoType getProvenanceStepInfoType(ProvenanceStepInfo stepInfo) {
+    if (stepInfo.getSource() == null) {
+      throw new CIStageExecutionException("Provenance source is not provided to fetch image from.");
+    }
+    switch (stepInfo.getSource().getType()) {
+      case DOCKER:
+        return CIStepInfoType.PROVENANCE;
+      case GCR:
+        return CIStepInfoType.PROVENANCE_GCR;
+      default:
+        throw new CIStageExecutionException(
+            "Initialization not handled for provenance subtype of " + stepInfo.getSource().getType());
+    }
+  }
+
+  private static CIStepInfoType getSlsaVerificationStepInfoType(SlsaVerificationStepInfo stepInfo) {
+    if (stepInfo.getSource() == null) {
+      throw new CIStageExecutionException("Slsa Verification source is not provided to fetch image from.");
+    }
+    switch (stepInfo.getSource().getType()) {
+      case DOCKER:
+        return CIStepInfoType.SLSA_VERIFICATION;
+      case GCR:
+        return CIStepInfoType.SLSA_VERIFICATION_GCR;
+      default:
+        throw new CIStageExecutionException(
+            "Initialization not handled for slsa verification subtype of " + stepInfo.getSource().getType());
+    }
   }
 
   private static String getVmPluginCustomStepImageConfig(

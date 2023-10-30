@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: no-public-ips-services
+cloudProvider: AWS
+resourceType: ecs-service
+description: Update ecs service where assign public ip is enabled to disabled
+rulesYamlPath: ../no-public-ips-services.yml

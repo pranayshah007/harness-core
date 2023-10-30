@@ -179,7 +179,9 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void checkAndSendAlerts(BudgetCommon budgetCommon, Currency currency) {
-    checkNotNull(budgetCommon.getAlertThresholds());
+    if (budgetCommon.getAlertThresholds() == null || budgetCommon.getAlertThresholds().length < 1) {
+      return;
+    }
     checkNotNull(budgetCommon.getAccountId());
 
     List<String> emailAddresses =

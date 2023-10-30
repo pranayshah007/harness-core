@@ -49,10 +49,7 @@ public class DirectDslClient implements DslClient {
     String url = apiRequestDetails.getUrl();
     String method = apiRequestDetails.getMethod();
     String body = apiRequestDetails.getRequestBody();
-    log.info("Executing request through direct DSL for url = {}, method = {}, body - {}", url, method, body);
     Request request = buildRequest(url, method, apiRequestDetails.getHeaders(), body);
-    log.info("Request - {}", request.body());
-    log.info("Request - {} ", request.toString());
     return executeRequest(client, request);
   }
 
@@ -77,7 +74,6 @@ public class DirectDslClient implements DslClient {
 
     switch (method) {
       case POST_METHOD:
-        log.info("Request body for build Request - {}", body);
         RequestBody requestBody = RequestBody.create(body, MediaType.parse(APPLICATION_JSON));
         requestBuilder.post(requestBody);
         return requestBuilder.build();

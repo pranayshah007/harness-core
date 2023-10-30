@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.interrupts;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
@@ -22,6 +24,7 @@ import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton

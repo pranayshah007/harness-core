@@ -24,6 +24,7 @@ import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -38,6 +39,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 public class CatalogConnectorRepositoryCustomImplTest {
@@ -45,6 +49,9 @@ public class CatalogConnectorRepositoryCustomImplTest {
   @Mock SetupUsageProducer setupUsageProducer;
 
   @Mock private MongoTemplate mongoTemplate;
+  @Mock private TransactionTemplate transactionTemplate;
+
+  @Mock private OutboxService outboxService;
 
   private static final String ACCOUNT_ID = "123";
   private static final String GITHUB_IDENTIFIER = "testGithub";
@@ -62,6 +69,10 @@ public class CatalogConnectorRepositoryCustomImplTest {
     CatalogConnectorEntity catalogConnectorEntity = getGithubConnectorEntity();
     when(mongoTemplate.findOne(any(Query.class), eq(CatalogConnectorEntity.class))).thenReturn(null);
     when(mongoTemplate.save(any(CatalogConnectorEntity.class))).thenReturn(catalogConnectorEntity);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     doNothing().when(setupUsageProducer).publishConnectorSetupUsage(any(), any(), any());
     doNothing().when(setupUsageProducer).deleteConnectorSetupUsage(any(), any());
     CatalogConnectorEntity entity = catalogConnectorRepositoryCustomImpl.saveOrUpdate(catalogConnectorEntity);

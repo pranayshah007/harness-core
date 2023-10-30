@@ -53,30 +53,12 @@ spec:
         - configMapRef:
             name: log-service
         env:
-          {{- if .Values.s3.accessKeyId }}
-          - name: LOG_SERVICE_S3_ACCESS_KEY_ID
-            value: {{ .Values.s3.accessKeyId  }}
-          {{- else }}
-          - name: LOG_SERVICE_S3_ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.logServiceS3AccessKeyID.name }}
-                key: {{ .Values.logServiceS3AccessKeyID.key }}
-          {{- end }}
-          {{- if .Values.s3.secretAccessKey }}
-          - name: LOG_SERVICE_S3_SECRET_ACCESS_KEY
-            value: {{ .Values.s3.secretAccessKey }}
-          {{- else }}
-          - name: LOG_SERVICE_S3_SECRET_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.logServiceS3SecretAccessKey.name }}
-                key: {{ .Values.logServiceS3SecretAccessKey.key }}
-          {{- end }}
-          {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" "log-service-secret" "defaultKubernetesSecretKey" "LOG_SERVICE_GLOBAL_TOKEN" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) | indent 10 }}
-          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOG_SERVICE_SECRET" "defaultKubernetesSecretName" "log-service-secret" "defaultKubernetesSecretKey" "LOG_SERVICE_SECRET" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "LOG_SERVICE_REDIS_USERNAME" "passwordVariableName" "LOG_SERVICE_REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 10 }}
+          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" "log-service" "defaultKubernetesSecretKey" "LOG_SERVICE_GLOBAL_TOKEN") | indent 10 }}
+          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_SERVICE_SECRET" "defaultKubernetesSecretName" "log-service" "defaultKubernetesSecretKey" "LOG_SERVICE_SECRET") | indent 10 }}
+          {{- $globalMinioESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $ "ctxIdentifier" "minio") }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "S3_USER" "overrideEnvName" "LOG_SERVICE_S3_ACCESS_KEY_ID" "providedSecretValues" (list "s3.accessKeyId")  "defaultKubernetesSecretName" .Values.logServiceS3AccessKeyID.name "defaultKubernetesSecretKey" .Values.logServiceS3AccessKeyID.key "extKubernetesSecretCtxs" (list .Values.global.database.minio.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMinioESOSecretIdentifier "secretCtx" .Values.global.database.minio.secrets.secretManagement.externalSecretsOperator))) | indent 10 }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "S3_PASSWORD" "overrideEnvName" "LOG_SERVICE_S3_SECRET_ACCESS_KEY" "providedSecretValues" (list "s3.secretAccessKey") "defaultKubernetesSecretName" .Values.logServiceS3SecretAccessKey.name "defaultKubernetesSecretKey" .Values.logServiceS3SecretAccessKey.key "extKubernetesSecretCtxs" (list .Values.global.database.minio.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalMinioESOSecretIdentifier "secretCtx" .Values.global.database.minio.secrets.secretManagement.externalSecretsOperator))) | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOG_SERVICE_REDIS_USERNAME" "passwordVariableName" "LOG_SERVICE_REDIS_PASSWORD") | indent 10 }}
           - name: LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER
             value: {{ .Values.redis.disableWatcher | quote }}
         livenessProbe:

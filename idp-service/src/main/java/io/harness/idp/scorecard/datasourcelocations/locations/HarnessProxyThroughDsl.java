@@ -14,12 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.common.YamlUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
+import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
@@ -28,11 +31,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 import org.json.JSONObject;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -42,42 +44,40 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
   DslClientFactory dslClientFactory;
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      DataSourceLocationEntity dataSourceLocationEntity,
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
+      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
     String apiUrl = apiRequestDetails.getUrl();
     String requestBody = apiRequestDetails.getRequestBody();
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
-    log.info("RequestBodyPlaceholder - {}",
-        prepareRequestBodyReplaceablePairs(dataPointsAndInputValues, backstageCatalogEntity));
+    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
+    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
     requestBody = replaceRequestBodyPlaceholdersIfAny(
         prepareRequestBodyReplaceablePairs(dataPointsAndInputValues, backstageCatalogEntity), requestBody);
-    apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
-
-    log.info("HarnessProxyDsl, Replaced API - {} Replaced Body - {} ", apiUrl, requestBody);
+    apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
 
     apiRequestDetails.setRequestBody(requestBody);
     apiRequestDetails.setUrl(apiUrl);
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
 
-    log.info("Response Status", response.getStatus());
-    log.info("Response Entity", response.getEntity().toString());
-
     return GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
   }
 
   public Map<String, String> prepareRequestBodyReplaceablePairs(
-      Map<DataPointEntity, Set<String>> dataPointsAndInputValues, BackstageCatalogEntity backstageCatalogEntity) {
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues,
+      BackstageCatalogEntity backstageCatalogEntity) {
     Map<String, String> possibleReplaceableRequestBodyPairs = new HashMap<>();
     List<JSONObject> dataPointInfoList = new ArrayList<>();
-    for (DataPointEntity dataPointEntity : dataPointsAndInputValues.keySet()) {
+    for (Pair<DataPointEntity, List<InputValue>> dataPointAndInputValues : dataPointsAndInputValues) {
+      DataPointEntity dataPointEntity = dataPointAndInputValues.getFirst();
+      List<InputValue> inputValues = dataPointAndInputValues.getSecond();
       JSONObject dataPointInputValues = new JSONObject();
-      dataPointInputValues.put(
-          "values", dataPointsAndInputValues.get(dataPointEntity).stream().collect(Collectors.toList()));
+      dataPointInputValues.put("values", inputValues);
       dataPointInputValues.put("data_point_identifier", dataPointEntity.getIdentifier());
       dataPointInfoList.add(dataPointInputValues);
     }
@@ -96,7 +96,8 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

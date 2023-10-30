@@ -16,6 +16,7 @@ import static software.wings.beans.TaskType.TERRAFORM_TASK_NG;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V5;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V6;
 import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V7;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V8;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -94,8 +95,9 @@ public class TerraformTaskNGParameters
   EncryptedRecordData encryptedTfPlan;
   String planName;
   boolean encryptDecryptPlanForHarnessSMOnManager;
-  TerraformProviderCredentialDelegateInfo providerCredentialInfo;
+  TerraformProviderCredentialDelegateInfo providerCredentialDelegateInfo;
   boolean skipColorLogs;
+  boolean skipStateStorage;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -187,6 +189,9 @@ public class TerraformTaskNGParameters
   }
 
   public TaskType getDelegateTaskType() {
+    if (this.skipStateStorage) {
+      return TERRAFORM_TASK_NG_V8;
+    }
     if (hasProviderCredentialInfo()) {
       return TERRAFORM_TASK_NG_V7;
     }
@@ -207,7 +212,7 @@ public class TerraformTaskNGParameters
   }
 
   private boolean hasProviderCredentialInfo() {
-    return this.providerCredentialInfo != null;
+    return this.providerCredentialDelegateInfo != null;
   }
 
   private boolean hasS3Store() {

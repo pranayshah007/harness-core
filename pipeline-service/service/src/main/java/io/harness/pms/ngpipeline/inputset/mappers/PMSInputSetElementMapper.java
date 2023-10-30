@@ -7,6 +7,7 @@
 
 package io.harness.pms.ngpipeline.inputset.mappers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.merger.helpers.InputSetYamlHelper.getPipelineComponent;
 
@@ -17,7 +18,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.InputSetReference;
 import io.harness.common.NGExpressionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -33,6 +33,7 @@ import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.api.InputSetRequestInfoDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
@@ -53,11 +54,11 @@ public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntity(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
     String identifier = InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet");
-    if (EmptyPredicate.isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
+    if (isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
       throw new InvalidRequestException("Input Set Identifier cannot be empty or a runtime input");
     }
     String name = InputSetYamlHelper.getStringField(yaml, "name", "inputSet");
-    if (EmptyPredicate.isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
+    if (isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
       throw new InvalidRequestException("Input Set Name cannot be empty or a runtime input");
     }
     return InputSetEntity.builder()
@@ -77,7 +78,7 @@ public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntity(InputSetRequestInfoDTO requestInfoDTO, String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String yaml) {
     String identifier = requestInfoDTO.getIdentifier();
-    if (EmptyPredicate.isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
+    if (isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
       throw new InvalidRequestException("Input Set Identifier cannot be empty or a runtime input");
     }
     String name = requestInfoDTO.getName();
@@ -112,7 +113,7 @@ public class PMSInputSetElementMapper {
           requestInfoDTO.getDescription(), yamlDescription));
     }
     Map<String, String> yamlTags = InputSetYamlHelper.getTags(yaml, topKey);
-    if (isNotEmpty(yamlTags) && isNotEmpty(requestInfoDTO.getTags()) && !yamlTags.equals(requestInfoDTO.getTags())) {
+    if (isNotEmpty(requestInfoDTO.getTags()) && (isEmpty(yamlTags) || !yamlTags.equals(requestInfoDTO.getTags()))) {
       throw new InvalidRequestException(String.format(
           "Expected Input Set tags in YAML to be [%s], but was [%s]", requestInfoDTO.getTags(), yamlTags));
     }
@@ -154,7 +155,7 @@ public class PMSInputSetElementMapper {
       throw new InvalidRequestException("Invalid input set yaml provided");
     }
     String name = JsonNodeUtils.getString(inputSetNode, "name");
-    if (EmptyPredicate.isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
+    if (isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
       throw new InvalidRequestException("Input Set name cannot be empty or a runtime input");
     }
     String identifier = IdentifierGeneratorUtils.getId(name);
@@ -174,7 +175,7 @@ public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntityV1(InputSetRequestInfoDTO requestInfoDTO, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     String identifier = requestInfoDTO.getIdentifier();
-    if (EmptyPredicate.isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
+    if (isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
       throw new InvalidRequestException("Input Set Identifier cannot be empty or a runtime input");
     }
     String name = requestInfoDTO.getName();
@@ -327,6 +328,17 @@ public class PMSInputSetElementMapper {
     return toInputSetSummaryResponseDTOPMS(entity, null, null);
   }
 
+  public InputSetListResponseDTO toInputSetListResponseDTO(InputSetEntity entity) {
+    return InputSetListResponseDTO.builder()
+        .identifier(entity.getIdentifier())
+        .inputSetIdWithPipelineId(entity.getPipelineIdentifier() + "-" + entity.getIdentifier())
+        .name(entity.getName())
+        .description(entity.getDescription())
+        .pipelineIdentifier(entity.getPipelineIdentifier())
+        .inputSetType(entity.getInputSetEntityType())
+        .build();
+  }
+
   public EntityDetail toEntityDetail(InputSetEntity entity) {
     return EntityDetail.builder()
         .name(entity.getName())
@@ -375,6 +387,7 @@ public class PMSInputSetElementMapper {
             .cacheState(cacheResponse.getCacheState())
             .ttlLeft(cacheResponse.getTtlLeft())
             .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+            .isSyncEnabled(cacheResponse.isSyncEnabled())
             .build();
       }
     }

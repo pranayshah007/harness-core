@@ -18,6 +18,7 @@ proto_library(
         "identifier_ref.proto",
         "infra_definition_ref.proto",
         "input_set_ref.proto",
+        "pipeline_execution_usage_data.proto",
         "scope.proto",
         "template_reference.proto",
         "trigger_reference.proto",

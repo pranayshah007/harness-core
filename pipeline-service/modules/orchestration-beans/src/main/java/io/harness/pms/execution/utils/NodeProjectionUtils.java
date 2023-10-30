@@ -81,7 +81,7 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
       NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId,
       NodeExecutionKeys.retryIds, NodeExecutionKeys.skipExpressionChain, NodeExecutionKeys.identifier,
-      NodeExecutionKeys.group, NodeExecutionKeys.ambiance);
+      NodeExecutionKeys.group, NodeExecutionKeys.levelRuntimeIdx);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
@@ -112,4 +112,10 @@ public class NodeProjectionUtils {
 
   public static final Set<String> fieldsForRollbackTransformer =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.stageFqn);
+
+  public static final Set<String> withGroupAndIdentifier =
+      Sets.newHashSet(NodeExecutionKeys.group, NodeExecutionKeys.identifier);
+
+  public static final Set<String> WithAmbianceAndFailureInfo =
+      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.failureInfo);
 }

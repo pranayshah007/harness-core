@@ -6,7 +6,6 @@
  */
 
 package software.wings.app;
-
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
@@ -28,7 +27,10 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -841,7 +843,9 @@ import com.google.api.client.util.store.DataStore;
 import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
@@ -877,11 +881,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Guice Module for initializing all beans.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
 public class WingsModule extends AbstractModule implements ServersModule {
   private static final int OPEN_CENSUS_EXPORT_INTERVAL_MINUTES = 5;
+  private static final int LICENSE_USAGE_TIMESCALE_DEFAULT_SOCKET_TIMEOUT_SECONDS = 60;
   private static final String RETENTION_PERIOD_FORMAT = "%s months";
   private final String hashicorpvault = "hashicorpvault";
   private final MainConfiguration configuration;
@@ -1483,17 +1490,48 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DashboardSettingsService.class).to(DashboardSettingsServiceImpl.class);
     bind(NameService.class).to(NameServiceImpl.class);
     // bind(TimeScaleDBService.class).toInstance(new TimeScaleDBServiceImpl(configuration.getTimeScaleDBConfig()));
-    try {
-      bind(TimeScaleDBService.class)
-          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
-      bind(RetentionManager.class).to(RetentionManagerImpl.class);
-    } catch (NoSuchMethodException e) {
-      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
-    }
+
     bind(TimeScaleDBConfig.class)
         .annotatedWith(Names.named("TimeScaleDBConfig"))
         .toInstance(configuration.getTimeScaleDBConfig() != null ? configuration.getTimeScaleDBConfig()
                                                                  : TimeScaleDBConfig.builder().build());
+
+    bind(TimeScaleDBConfig.class)
+        .annotatedWith(Names.named("LicenseUsageTimeScaleDBConfig"))
+        .toProvider(new Provider<>() {
+          @Inject @Named("TimeScaleDBConfig") TimeScaleDBConfig timeScaleDBConfig;
+
+          @Override
+          public TimeScaleDBConfig get() {
+            return timeScaleDBConfig.toBuilder()
+                .socketTimeout(configuration.getLicenseUsageTimescaleSocketTimeout() != 0
+                        ? configuration.getLicenseUsageTimescaleSocketTimeout()
+                        : LICENSE_USAGE_TIMESCALE_DEFAULT_SOCKET_TIMEOUT_SECONDS)
+                .build();
+          }
+        });
+
+    try {
+      bind(TimeScaleDBService.class)
+          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+
+      bind(TimeScaleDBService.class)
+          .annotatedWith(Names.named("LicenseUsageTimeScaleDBService"))
+          .toProvider(new Provider<>() {
+            @Inject @Named("LicenseUsageTimeScaleDBConfig") private TimeScaleDBConfig timeScaleDBConfig;
+
+            @Override
+            public TimeScaleDBService get() {
+              return new TimeScaleDBServiceImpl(timeScaleDBConfig);
+            }
+          })
+          .in(Singleton.class);
+
+      bind(RetentionManager.class).to(RetentionManagerImpl.class);
+    } catch (NoSuchMethodException e) {
+      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
+    }
+
     if (configuration.getExecutionLogsStorageMode() == null) {
       configuration.setExecutionLogsStorageMode(DataStorageMode.MONGO);
     }

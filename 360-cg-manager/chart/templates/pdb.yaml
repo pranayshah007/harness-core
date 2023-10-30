@@ -13,5 +13,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: harness-manager
+    matchLabels:
+      {{- include "harness-manager.selectorLabels" . | nindent 6 }}

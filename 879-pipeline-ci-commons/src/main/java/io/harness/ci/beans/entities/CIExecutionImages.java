@@ -41,4 +41,5 @@ public class CIExecutionImages {
   @NotBlank String provenanceTag;
   @NotBlank String provenanceGcrTag;
   @NotBlank String slsaVerificationTag;
+  @NotBlank String slsaVerificationGcrTag;
 }

@@ -21,6 +21,8 @@ import io.harness.outbox.api.OutboxDao;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
 
+import software.wings.jersey.JsonViews;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -42,7 +44,7 @@ public class OutboxServiceImpl implements OutboxService {
   public OutboxEvent save(Event event) {
     String eventData;
     try {
-      eventData = objectMapper.writeValueAsString(event);
+      eventData = objectMapper.writerWithView(JsonViews.Internal.class).writeValueAsString(event);
     } catch (JsonProcessingException exception) {
       throw new UnexpectedException(
           "JsonProcessingException occurred while serializing eventData in the outbox.", exception);

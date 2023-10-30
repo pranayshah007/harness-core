@@ -139,13 +139,15 @@ public class StrategyHelper {
         StepGroupElementConfig stepGroupElementConfig =
             YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
         List<ExecutionWrapperConfig> executionWrapperConfigs = new ArrayList<>();
-        for (ExecutionWrapperConfig config : stepGroupElementConfig.getSteps()) {
-          ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-              expandExecutionWrapperConfig(config, maxExpansionLimit);
-          executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
-          uuidToMaxConcurrency.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+        if (stepGroupElementConfig != null && stepGroupElementConfig.getSteps() != null) {
+          for (ExecutionWrapperConfig config : stepGroupElementConfig.getSteps()) {
+            ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+                expandExecutionWrapperConfig(config, maxExpansionLimit);
+            executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+            uuidToMaxConcurrency.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+          }
+          stepGroupElementConfig.setSteps(executionWrapperConfigs);
         }
-        stepGroupElementConfig.setSteps(executionWrapperConfigs);
         JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
         StrategyInfo strategyInfo = expandJsonNodes(stepGroupNode, maxExpansionLimit);
         List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
@@ -223,13 +225,15 @@ public class StrategyHelper {
         StepGroupElementConfig stepGroupElementConfig =
             YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
         List<ExecutionWrapperConfig> executionWrapperConfigs = new ArrayList<>();
-        for (ExecutionWrapperConfig config : stepGroupElementConfig.getSteps()) {
-          ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-              expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, cls, ambiance);
-          executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
-          uuidToMaxConcurrency.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+        if (stepGroupElementConfig != null && stepGroupElementConfig.getSteps() != null) {
+          for (ExecutionWrapperConfig config : stepGroupElementConfig.getSteps()) {
+            ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+                expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, cls, ambiance);
+            executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+            uuidToMaxConcurrency.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
+          }
+          stepGroupElementConfig.setSteps(executionWrapperConfigs);
         }
-        stepGroupElementConfig.setSteps(executionWrapperConfigs);
         JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
         StrategyInfo strategyInfo = expandJsonNodesFromClass(stepGroupNode, maxExpansionLimit, true, cls, ambiance);
         List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();

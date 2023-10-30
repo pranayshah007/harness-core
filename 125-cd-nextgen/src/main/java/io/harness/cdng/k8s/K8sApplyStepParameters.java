@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestSourceWrapper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -39,8 +40,9 @@ public class K8sApplyStepParameters extends K8sApplyBaseStepInfo implements K8sS
   public K8sApplyStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
-      List<K8sStepCommandFlag> commandFlags) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags);
+      List<K8sStepCommandFlag> commandFlags, ManifestSourceWrapper manifestSource) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags,
+        manifestSource);
   }
 
   @Nonnull

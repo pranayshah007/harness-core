@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.refresh.helper;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -17,6 +18,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -136,6 +138,8 @@ public class RefreshInputsHelper {
         ? serviceNodeValue.get(YamlTypes.SERVICE_REF).asText()
         : null;
 
+    String gitBranch = serviceNodeValue.get(GIT_BRANCH) != null ? serviceNodeValue.get(GIT_BRANCH).asText() : null;
+
     // use from stage
     if (EmptyPredicate.isEmpty(serviceRef)) {
       serviceNodeValue.remove(YamlTypes.SERVICE_INPUTS);
@@ -148,8 +152,12 @@ public class RefreshInputsHelper {
       return serviceNodeValue;
     }
 
-    ServiceEntity serviceEntity = entityFetchHelper.getService(
-        context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
+    // fetch without cache since we're explicitly validating service YAML
+    ServiceEntity serviceEntity;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+      serviceEntity = entityFetchHelper.getService(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
+    }
 
     JsonNode serviceInputs = serviceNodeValue.get(YamlTypes.SERVICE_INPUTS);
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();

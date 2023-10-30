@@ -31,7 +31,6 @@ public class ProjectMigrationProvider implements MigrationProvider {
     return new ArrayList<Class<? extends MigrationDetails>>() {
       { add(ProjectMigrationDetails.class); }
       { add(ProjectTimeScaleMigrationDetails.class); }
-      { add(ProjectBackgroundMigrationDetails.class); }
     };
   }
 }

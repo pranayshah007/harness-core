@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: vms-with-public-ip
+cloudProvider: AZURE
+resourceType: azure.vm
+description: List virtual machines having public ip
+rulesYamlPath: ../vms-with-public-ip.yml

@@ -9,6 +9,7 @@ package io.harness.notification.service.api;
 
 import io.harness.ng.beans.PageRequest;
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 
@@ -25,4 +26,7 @@ public interface NotificationService {
   Page<Notification> list(Team team, PageRequest pageRequest);
 
   void deleteByAccountIdentifier(String accountIdentifier);
+
+  // Process notification trigger request
+  boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest);
 }

@@ -6,10 +6,12 @@
  */
 
 package software.wings.delegatetasks.validation.capabilitycheck;
-
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -30,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ShellConnectionCapabilityCheck implements CapabilityCheck {

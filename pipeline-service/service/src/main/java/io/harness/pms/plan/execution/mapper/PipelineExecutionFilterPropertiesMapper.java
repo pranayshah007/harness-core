@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.plan.execution.mapper;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -14,6 +16,7 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.entity.PipelineExecutionFilterProperties;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class PipelineExecutionFilterPropertiesMapper
     implements FilterPropertiesMapper<PipelineExecutionFilterPropertiesDTO, PipelineExecutionFilterProperties> {
   @Override

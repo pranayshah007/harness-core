@@ -386,7 +386,7 @@ public class RunStepTest extends CIExecutionTestBase {
                                                             .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                             .setLevel(io.harness.eraro.Level.ERROR.name())
                                                             .setCode(GENERAL_ERROR.name())
-                                                            .setMessage("HINT. EXPLANATION. INVALID_REQUEST")
+                                                            .setMessage("HINT. EXPLANATION")
                                                             .build())
                                         .build())
                        .build());

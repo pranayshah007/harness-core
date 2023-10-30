@@ -160,16 +160,28 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
     sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
-    # Updating static-schema for template.json
-    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
+    # Updating static-schema for v0 template.json
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/v0/template.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
     template_curl_result=$?
 
     if [ $template_curl_result -eq 0 ]; then
         git add ${TEMPLATE_JSON}
-        echo "Template file was updated"
+        echo "Template V0 file was updated"
     else
-        echo "Template file was not updated"
+        echo "Template V0 file was not updated"
+    fi
+
+    # Updating static-schema for v1 template.json
+    TEMPLATE_V1_JSON="template-service/service/src/main/resources/static-schema/v1/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v1/template.json" ${TEMPLATE_V1_JSON}
+    template_v1_curl_result=$?
+
+    if [ $template_v1_curl_result -eq 0 ]; then
+        git add ${TEMPLATE_V1_JSON}
+        echo "Template V1 file was updated"
+    else
+        echo "Template V1 file was not updated"
     fi
 
     # Continue with the rest of the script
@@ -187,16 +199,20 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout -b release/${PURPOSE}/${newBranch}
 
 
-    # Updating static-schema for template.json
-    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/template.json"
-    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
-    template_curl_result=$?
-
+    # Updating static-schema for v0 template.json in branch cut branch
     if [ $template_curl_result -eq 0 ]; then
         git add ${TEMPLATE_JSON}
-        echo "Template file was updated"
+        echo "Template V0 file was updated"
     else
-        echo "Template file was not updated"
+        echo "Template V0 file was not updated"
+    fi
+
+    # Updating static-schema for v1 template.json in branch cut branch
+    if [ $template_v1_curl_result -eq 0 ]; then
+        git add ${TEMPLATE_V1_JSON}
+        echo "Template V1 file was updated"
+    else
+        echo "Template V1 file was not updated"
     fi
 
     # Continue with the rest of the script

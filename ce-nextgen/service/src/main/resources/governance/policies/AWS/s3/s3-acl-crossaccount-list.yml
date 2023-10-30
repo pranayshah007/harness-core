@@ -1,0 +1,7 @@
+policies:
+  - name: s3-acl-crossaccount-list
+    resource: s3
+    description: Filters cross-account access to S3 buckets
+    region: us-east-1
+    filters:
+      - type: cross-account

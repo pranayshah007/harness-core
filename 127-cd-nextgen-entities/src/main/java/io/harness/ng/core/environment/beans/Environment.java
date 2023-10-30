@@ -99,7 +99,7 @@ public class Environment implements PersistentEntity, ScopeAware, GitAware, GitS
   @NotEmpty @EntityIdentifier private String identifier;
   @With @EntityName private String name;
   @With @Size(max = 1024) String description;
-  @Size(max = 100) String color;
+  @With @Size(max = 100) String color;
   @With @NotEmpty private EnvironmentType type;
   @Wither @Singular @Size(max = 128) private List<NGTag> tags;
 

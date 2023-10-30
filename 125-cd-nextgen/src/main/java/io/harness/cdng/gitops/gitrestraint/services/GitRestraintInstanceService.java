@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.gitops.gitrestraint.services;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintRegistry;
 import io.harness.gitopsprovider.entity.GitRestraintInstance;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 public interface GitRestraintInstanceService extends ConstraintRegistry {
   Constraint createAbstraction(String tokenRef);
   List<GitRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit);

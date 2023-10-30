@@ -27,6 +27,7 @@ import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.GroupFilterJsonCreator;
 import io.harness.filters.ParallelFilterJsonCreator;
 import io.harness.filters.PipelineFilterJsonCreator;
+import io.harness.plancreator.EmptyVariableCreatorV1;
 import io.harness.plancreator.approval.ApprovalStageFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
@@ -39,9 +40,7 @@ import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepPlanCreator;
 import io.harness.plancreator.steps.email.EmailStepVariableCreator;
 import io.harness.plancreator.steps.http.HTTPStepVariableCreator;
-import io.harness.plancreator.steps.http.HttpStepPlanCreator;
-import io.harness.plancreator.steps.http.v1.HTTPStepVariableCreatorV1;
-import io.harness.plancreator.steps.http.v1.HttpStepPlanCreatorV1;
+import io.harness.plancreator.steps.http.v1.HttpStepPlanCreator;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
 import io.harness.plancreator.steps.internal.HarnessApprovalStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
@@ -87,7 +86,6 @@ import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
 import io.harness.steps.customstage.CustomStagePlanCreator;
 import io.harness.steps.customstage.CustomStageVariableCreator;
-import io.harness.steps.customstage.v1.CustomStagePlanCreatorV1;
 import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
@@ -103,15 +101,15 @@ import io.harness.steps.servicenow.ServiceNowUpdateStepVariableCreator;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepPlanCreator;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStepPlanCreator;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
-import io.harness.steps.shellscript.ShellScriptStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
-import io.harness.steps.shellscript.v1.ShellScriptStepPlanCreatorV1;
+import io.harness.steps.shellscript.v1.ShellScriptStepPlanCreator;
 import io.harness.steps.wait.WaitStepPlanCreator;
 import io.harness.steps.wait.WaitStepVariableCreator;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,6 +118,7 @@ import java.util.List;
 @Singleton
 public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoProvider {
   @Inject InjectorUtils injectorUtils;
+  @Inject @Named("disableCustomStageInPipelineService") private boolean disableCustomStageInPipelineService;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -129,13 +128,13 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new StagesPlanCreator());
     planCreators.add(new StagesPlanCreatorV1());
     planCreators.add(new PMSStepPlanCreator());
+    planCreators.add(new io.harness.plancreator.steps.http.HttpStepPlanCreator());
     planCreators.add(new HttpStepPlanCreator());
-    planCreators.add(new HttpStepPlanCreatorV1());
     planCreators.add(new EmailStepPlanCreator());
     planCreators.add(new JiraCreateStepPlanCreator());
     planCreators.add(new JiraUpdateStepPlanCreator());
+    planCreators.add(new io.harness.steps.shellscript.ShellScriptStepPlanCreator());
     planCreators.add(new ShellScriptStepPlanCreator());
-    planCreators.add(new ShellScriptStepPlanCreatorV1());
     planCreators.add(new ApprovalStagePlanCreatorV2());
     planCreators.add(new ResourceConstraintStepPlanCreator());
     planCreators.add(new QueueStepPlanCreator());
@@ -150,8 +149,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ServiceNowCreateStepPlanCreator());
     planCreators.add(new ServiceNowUpdateStepPlanCreator());
     planCreators.add(new ServiceNowImportSetStepPlanCreator());
-    planCreators.add(new CustomStagePlanCreator());
-    planCreators.add(new CustomStagePlanCreatorV1());
     planCreators.add(new CustomApprovalStepPlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
@@ -162,6 +159,10 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new CdSscaOrchestrationStepPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new CdSscaEnforcementStepPlanCreator());
+
+    if (!disableCustomStageInPipelineService) {
+      planCreators.add(new CustomStagePlanCreator());
+    }
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -178,13 +179,16 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new PmsStepFilterJsonCreatorV3());
     filterJsonCreators.add(new ShellScriptStepFilterJsonCreatorV2());
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
-    filterJsonCreators.add(new CustomStageFilterCreator());
     filterJsonCreators.add(new PipelineStageFilterCreator());
     filterJsonCreators.add(new GroupFilterJsonCreator());
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(STAGE, ImmutableSet.of(PIPELINE_ROLLBACK_STAGE)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
+
+    if (!disableCustomStageInPipelineService) {
+      filterJsonCreators.add(new CustomStageFilterCreator());
+    }
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -197,7 +201,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new PipelineVariableCreator());
     variableCreators.add(new HTTPStepVariableCreator());
     variableCreators.add(new EmailStepVariableCreator());
-    variableCreators.add(new HTTPStepVariableCreatorV1());
     variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new ShellScriptStepVariableCreator());
     variableCreators.add(new JiraStepVariableCreator());
@@ -210,7 +213,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new ServiceNowCreateStepVariableCreator());
     variableCreators.add(new ServiceNowUpdateStepVariableCreator());
     variableCreators.add(new ServiceNowImportSetStepVariableCreator());
-    variableCreators.add(new CustomStageVariableCreator());
     variableCreators.add(new QueueStepVariableCreator());
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
@@ -223,6 +225,11 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new ContainerStepVariableCreator());
     variableCreators.add(new BarrierStepVariableCreator());
     variableCreators.add(new CdSscaStepVariableCreator());
+    variableCreators.add(new EmptyVariableCreatorV1());
+
+    if (!disableCustomStageInPipelineService) {
+      variableCreators.add(new CustomStageVariableCreator());
+    }
 
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;

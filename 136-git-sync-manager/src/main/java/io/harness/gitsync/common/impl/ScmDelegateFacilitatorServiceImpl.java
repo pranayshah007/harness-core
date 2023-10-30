@@ -91,10 +91,11 @@ import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.helper.FileBatchResponseMapper;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.GitSyncUtils;
 import io.harness.gitsync.common.helper.PRFileListMapper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
+import io.harness.gitsync.common.helper.UserSourceCodeManagerHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.manage.GlobalContextManager;
@@ -151,7 +152,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilitatorServiceImpl {
   private SecretManagerClientService secretManagerClientService;
   private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  private GitSyncConnectorHelper gitSyncConnectorHelper;
+  private GitSyncConnectorService gitSyncConnectorService;
   private final String errorFormat =
       "Unexpected error occurred while doing scm operation for %s for accountId [%s], orgId [%s], projectId [%s]";
   private final long DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS = 30;
@@ -160,12 +161,13 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public ScmDelegateFacilitatorServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
       ConnectorErrorMessagesHelper connectorErrorMessagesHelper, YamlGitConfigService yamlGitConfigService,
       SecretManagerClientService secretManagerClientService, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
-      UserProfileHelper userProfileHelper, GitSyncConnectorHelper gitSyncConnectorHelper) {
+      UserProfileHelper userProfileHelper, GitSyncConnectorService gitSyncConnectorService,
+      UserSourceCodeManagerHelper userSourceCodeManagerHelper) {
     super(connectorService, connectorErrorMessagesHelper, yamlGitConfigService, userProfileHelper,
-        gitSyncConnectorHelper);
+        gitSyncConnectorService, userSourceCodeManagerHelper);
     this.secretManagerClientService = secretManagerClientService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
-    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.gitSyncConnectorService = gitSyncConnectorService;
   }
 
   @Override
@@ -221,7 +223,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorRef, String repoName, String branchName, String filePath, String commitId) {
-    ScmConnector connector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+    ScmConnector connector = gitSyncConnectorService.getScmConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, connector);
@@ -243,7 +245,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public CreatePRResponse createPullRequest(
       Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+    final ScmConnector decryptedConnector = gitSyncConnectorService.getScmConnectorForGivenRepo(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), decryptedConnector);
@@ -816,8 +818,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     setUserGitCredsInConnector(scope.getAccountIdentifier(), connectorDTO);
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorDTO);
-    GitFileDetails gitFileDetails = getGitFileDetails(
-        createGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), connectorDTO));
+    GitFileDetails gitFileDetails =
+        getGitFileDetails(createGitFileRequestDTO, getUserDetails(scope.getAccountIdentifier(), connectorDTO));
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
                                               .useGitClient(createGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.ADD_V2)
@@ -849,8 +851,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     setUserGitCredsInConnector(scope.getAccountIdentifier(), connectorDTO);
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorDTO);
-    GitFileDetails gitFileDetails = getGitFileDetails(
-        updateGitFileRequestDTO, gitSyncConnectorHelper.getUserDetails(scope.getAccountIdentifier(), connectorDTO));
+    GitFileDetails gitFileDetails =
+        getGitFileDetails(updateGitFileRequestDTO, getUserDetails(scope.getAccountIdentifier(), connectorDTO));
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
                                               .useGitClient(updateGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.UPDATE_V2)
@@ -1250,7 +1252,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   }
 
   private void setUserGitCredsInConnector(String accountIdentifier, ScmConnector connectorDTO) {
-    gitSyncConnectorHelper.setUserGitCredsInConnectorIfPresent(accountIdentifier, connectorDTO);
+    setUserGitCredsInConnectorIfPresent(accountIdentifier, connectorDTO);
   }
 
   @Override

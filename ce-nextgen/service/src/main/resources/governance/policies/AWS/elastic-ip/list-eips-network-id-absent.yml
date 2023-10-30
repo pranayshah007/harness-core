@@ -1,0 +1,5 @@
+policies:
+  - name: list-eips-network-id-absent
+    resource: aws.elastic-ip
+    filters:
+      - NetworkInterfaceId: absent

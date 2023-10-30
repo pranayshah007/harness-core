@@ -104,7 +104,7 @@ public interface StageExecutionInfoService {
   StageExecutionInfo createStageExecutionInfo(
       Ambiance ambiance, StageElementParameters stageElementParameters, Level stageLevel);
 
-  StageExecutionInfo updateStageExecutionInfo(
+  StageExecutionInfo upsertStageExecutionInfo(
       Ambiance ambiance, StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO);
 
   Optional<StageExecutionInfo> findById(String id);

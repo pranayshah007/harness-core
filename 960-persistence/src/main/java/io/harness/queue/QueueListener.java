@@ -69,8 +69,10 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
   }
 
   public boolean execute() {
-    log.debug("Total event in running: [{}] and not running:[{}] - Class info [{}]",
-        queueConsumer.count(Filter.RUNNING), queueConsumer.count(Filter.NOT_RUNNING), this);
+    if (log.isDebugEnabled()) {
+      log.debug("Total event in running: [{}] and not running:[{}] - Class info [{}]",
+          queueConsumer.count(Filter.RUNNING), queueConsumer.count(Filter.NOT_RUNNING), this);
+    }
     T message = null;
     try {
       log.trace("Waiting for message");

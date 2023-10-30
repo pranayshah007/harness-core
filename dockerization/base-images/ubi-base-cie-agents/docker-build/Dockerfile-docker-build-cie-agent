@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/harness/ubi8/java11:11.0.19_7
+FROM us.gcr.io/platform-205701/harness/ubi8/java17:17.0.7_7
 
 USER root
 

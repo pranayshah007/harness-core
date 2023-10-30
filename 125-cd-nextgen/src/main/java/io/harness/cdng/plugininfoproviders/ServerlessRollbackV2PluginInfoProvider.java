@@ -9,8 +9,11 @@ package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
@@ -32,6 +35,8 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessRollbackV2PluginInfoProvider implements CDPluginInfoProvider {
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
@@ -54,9 +59,8 @@ public class ServerlessRollbackV2PluginInfoProvider implements CDPluginInfoProvi
     ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaRollbackV2StepInfo =
         (ServerlessAwsLambdaRollbackV2StepInfo) cdAbstractStepNode.getStepSpecType();
 
-    Builder pluginDetailsBuilder =
-        PluginInfoProviderHelper.buildPluginDetails(serverlessAwsLambdaRollbackV2StepInfo.getResources(),
-            serverlessAwsLambdaRollbackV2StepInfo.getRunAsUser(), usedPorts, true);
+    Builder pluginDetailsBuilder = getPluginDetailsBuilder(serverlessAwsLambdaRollbackV2StepInfo.getResources(),
+        serverlessAwsLambdaRollbackV2StepInfo.getRunAsUser(), usedPorts);
 
     final ImageDetails imageDetails;
 
@@ -99,7 +103,7 @@ public class ServerlessRollbackV2PluginInfoProvider implements CDPluginInfoProvi
 
   private Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, true);
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, false);
   }
 
   public CdAbstractStepNode read(String stepJsonNode) throws IOException {

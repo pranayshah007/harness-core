@@ -10,8 +10,11 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
@@ -62,7 +65,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
   @Inject private KryoSerializer kryoSerializer;
@@ -150,15 +156,16 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     String specNextNodeUuid = executionFieldUuid;
 
     EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
-    boolean envNodeExists =
-        finalEnvironmentYamlV2 != null && ParameterField.isNotNull(finalEnvironmentYamlV2.getEnvironmentRef());
+    boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null
+        && !(StringUtils.EMPTY).equals(finalEnvironmentYamlV2.getEnvironmentRef().getValue());
 
     String envNodeUuid;
     // Adding Env & Infra nodes
     if (envNodeExists) {
       String infraNodeUuid = null;
       if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())
-          || ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())) {
+          || (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())
+              && isNotEmpty(finalEnvironmentYamlV2.getInfrastructureDefinitions().getValue()))) {
         infraNodeUuid = addInfraNode(planCreationResponseMap, finalEnvironmentYamlV2, specField, ctx);
       }
       String envNextNodeUuid = EmptyPredicate.isNotEmpty(infraNodeUuid) ? infraNodeUuid : executionFieldUuid;

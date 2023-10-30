@@ -64,6 +64,8 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -269,11 +271,29 @@ public class StepUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateStepResponseFromChildResponse() {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
-    responseDataMap.put("key1", StepResponseNotifyData.builder().nodeUuid("nodeUuid").status(Status.SUCCEEDED).build());
+    responseDataMap.put("key1",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid1")
+            .nodeExecutionEndTs(Instant.now().toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
+    responseDataMap.put("key2",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid2")
+            .nodeExecutionEndTs(Instant.now().plus(15, ChronoUnit.MINUTES).toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
+    responseDataMap.put("key3",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid3")
+            .nodeExecutionEndTs(Instant.now().plus(8 * 7, ChronoUnit.DAYS).toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
-    responseDataMap.put("key2",
+
+    responseDataMap.put("key4",
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
     stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());

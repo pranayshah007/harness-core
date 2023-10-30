@@ -32,7 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class PipelineStageExecutionUpdateEventHandler implements OrchestrationEventHandler {
-  private static final Set<String> STAGES_TO_UPDATE = Sets.newHashSet(OrchestrationStepTypes.CUSTOM_STAGE);
+  private static final Set<String> STAGES_TO_UPDATE =
+      Sets.newHashSet(OrchestrationStepTypes.CUSTOM_STAGE, OrchestrationStepTypes.CUSTOM_STAGE_V1);
 
   @Inject private StageExecutionEntityService stageExecutionEntityService;
 

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: elb-unused-list
+cloudProvider: AWS
+resourceType: elb
+description: List ELB with no instances attached
+rulesYamlPath: ../elb-unused-list.yml

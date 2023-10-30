@@ -7,7 +7,7 @@ dependencies:
   version: 13.1.2
 - name: timescaledb
   repository: file://./timescaledb
-  version: 0.8.0
+  version: 0.8.1
 - name: redis
   repository: file://./redis
   version: 0.8.0
@@ -17,5 +17,8 @@ dependencies:
 - name: clickhouse
   repository: https://charts.bitnami.com/bitnami
   version: 2.1.0
-digest: sha256:d43e384b235286421c701a0d13be0ab9862120118cba07014c16bfb5d8b37cba
-generated: "2023-09-12T21:28:03.21271+05:30"
+- name: harness-common
+  repository: https://harness.github.io/helm-common
+  version: 1.1.13
+digest: sha256:2925dbb513e4f75dedf050d279268163b89ec4dafeb58b47d1e031416b31190c
+generated: "2023-10-30T10:25:27.373975-07:00"

@@ -1,0 +1,7 @@
+policies:
+  - name: ebs-unencrypted-ebs-list
+    description: |
+      List all unencrypted EBS volumes
+    resource: ebs
+    filters:
+      - Encrypted: false

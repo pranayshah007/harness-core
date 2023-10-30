@@ -108,7 +108,6 @@ public class IACMStepsUtils {
 
       return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
     } catch (Exception e) {
-      e.printStackTrace();
       return json;
     }
   }
@@ -285,10 +284,10 @@ public class IACMStepsUtils {
         if (credential.getConfig() instanceof AwsManualConfigSpecDTO) {
           AwsManualConfigSpecDTO dto = (AwsManualConfigSpecDTO) credential.getConfig();
           if (dto.getAccessKeyRef() != null) {
-            secrets.put(PLUGIN_ACCESS_KEY, dto.getAccessKeyRef().getIdentifier());
+            secrets.put(PLUGIN_ACCESS_KEY, dto.getAccessKeyRef().toSecretRefStringValue());
           }
           if (dto.getSecretKeyRef() != null) {
-            secrets.put(PLUGIN_SECRET_KEY, dto.getSecretKeyRef().getIdentifier());
+            secrets.put(PLUGIN_SECRET_KEY, dto.getSecretKeyRef().toSecretRefStringValue());
           }
         }
         break;
@@ -299,7 +298,7 @@ public class IACMStepsUtils {
         if (credential.getConfig() instanceof GcpManualDetailsDTO) {
           GcpManualDetailsDTO dto = (GcpManualDetailsDTO) credential.getConfig();
           if (dto.getSecretKeyRef() != null) {
-            secrets.put(PLUGIN_JSON_KEY, dto.getSecretKeyRef().getIdentifier());
+            secrets.put(PLUGIN_JSON_KEY, dto.getSecretKeyRef().toSecretRefStringValue());
           }
         }
         break;
@@ -313,12 +312,12 @@ public class IACMStepsUtils {
           if (authDTO.getCredentials() instanceof AzureClientSecretKeyDTO) {
             AzureClientSecretKeyDTO azureClientSecretKeyDTO = (AzureClientSecretKeyDTO) authDTO.getCredentials();
             if (azureClientSecretKeyDTO.getSecretKey() != null) {
-              secrets.put(CLIENT_SECRET, azureClientSecretKeyDTO.getSecretKey().getIdentifier());
+              secrets.put(CLIENT_SECRET, azureClientSecretKeyDTO.getSecretKey().toSecretRefStringValue());
             }
           } else if (authDTO.getCredentials() instanceof AzureClientKeyCertDTO) {
             AzureClientKeyCertDTO azureClientKeyCertDTO = (AzureClientKeyCertDTO) authDTO.getCredentials();
             if (azureClientKeyCertDTO.getClientCertRef() != null) {
-              secrets.put(CLIENT_CERTIFICATE, azureClientKeyCertDTO.getClientCertRef().getIdentifier());
+              secrets.put(CLIENT_CERTIFICATE, azureClientKeyCertDTO.getClientCertRef().toSecretRefStringValue());
             }
           }
         }
@@ -390,6 +389,8 @@ public class IACMStepsUtils {
       return new HashMap<>();
     }
     envVars.put("PLUGIN_ENDPOINT_VARIABLES", populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
+    envVars.put("PLUGIN_AUTO_APPROVE", iacmApprovalInfo.getAutoApprove().getValue().toString());
+
     return envVars;
   }
 

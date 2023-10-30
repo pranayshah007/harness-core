@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
 import static io.harness.annotations.dev.HarnessModule._951_CG_GIT_SYNC;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
@@ -82,7 +81,10 @@ import static java.util.Collections.sort;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CgEventConfig;
 import io.harness.beans.FeatureName;
@@ -218,6 +220,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @TargetModule(_951_CG_GIT_SYNC)

@@ -669,7 +669,11 @@ public enum EntityType {
       EntityYamlRootNames.ECS_BASIC_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CHAOS_INFRASTRUCTURE)
   CHAOS_INFRASTRUCTURE(ModuleType.CHAOS, EntityTypeConstants.CHAOS_INFRASTRUCTURE, IdentifierRef.class,
-      EntityYamlRootNames.CHAOS_INFRASTRUCTURE);
+      EntityYamlRootNames.CHAOS_INFRASTRUCTURE),
+  @JsonProperty(EntityTypeConstants.ANCHORE)
+  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE),
+  @JsonProperty(EntityTypeConstants.OVERRIDES)
+  OVERRIDES(ModuleType.CORE, EntityTypeConstants.OVERRIDES, IdentifierRef.class, EntityYamlRootNames.OVERRIDES);
 
   private final ModuleType moduleType;
   String yamlName;

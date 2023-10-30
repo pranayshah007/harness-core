@@ -40,14 +40,17 @@ type Config struct {
 
 	// S3 compatible store
 	S3 struct {
-		Bucket          string `envconfig:"LOG_SERVICE_S3_BUCKET"`
-		Acl             string `envconfig:"LOG_SERVICE_S3_ACL"`
-		Prefix          string `envconfig:"LOG_SERVICE_S3_PREFIX"`
-		Endpoint        string `envconfig:"LOG_SERVICE_S3_ENDPOINT"`
-		PathStyle       bool   `envconfig:"LOG_SERVICE_S3_PATH_STYLE"`
-		Region          string `envconfig:"LOG_SERVICE_S3_REGION"`
-		AccessKeyID     string `envconfig:"LOG_SERVICE_S3_ACCESS_KEY_ID" secret:"true"`
-		AccessKeySecret string `envconfig:"LOG_SERVICE_S3_SECRET_ACCESS_KEY" secret:"true"`
+		Bucket              string `envconfig:"LOG_SERVICE_S3_BUCKET"`
+		Acl                 string `envconfig:"LOG_SERVICE_S3_ACL"`
+		Prefix              string `envconfig:"LOG_SERVICE_S3_PREFIX"`
+		Endpoint            string `envconfig:"LOG_SERVICE_S3_ENDPOINT"`
+		PathStyle           bool   `envconfig:"LOG_SERVICE_S3_PATH_STYLE"`
+		Region              string `envconfig:"LOG_SERVICE_S3_REGION"`
+		AccessKeyID         string `envconfig:"LOG_SERVICE_S3_ACCESS_KEY_ID" secret:"true"`
+		AccessKeySecret     string `envconfig:"LOG_SERVICE_S3_SECRET_ACCESS_KEY" secret:"true"`
+		CustomHost          string `envconfig:"LOG_SERVICE_S3_CUSTOM_HOST" default:"app.harness.io/storage/harness-download"`
+		CredentialsPath     string `envconfig:"LOG_SERVICE_S3_CREDENTIALS_PATH"`
+		ReverseProxyEnabled bool   `envconfig:"LOG_SERVICE_S3_REVERSE_PROXY_ENABLED"`
 	}
 
 	Redis struct {
@@ -59,7 +62,7 @@ type Config struct {
 		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
 		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
-		MaxLineLimit         int64    `envconfig:"LOG_SERVICE_REDIS_MAX_LINE_LIMIT" default:"2196"`
+		MaxLineLimit         int64    `envconfig:"LOG_SERVICE_REDIS_MAX_LINE_LIMIT" default:"25600"`
 		MaxStreamSize        int64    `envconfig:"LOG_SERVICE_REDIS_MAX_STREAM_SIZE" default:"5000"`
 		ScanBatch            int64    `envconfig:"LOG_SERVICE_REDIS_SCAN_BATCH" default:"1000"`
 	}

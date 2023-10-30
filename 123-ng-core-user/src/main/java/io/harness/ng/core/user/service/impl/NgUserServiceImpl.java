@@ -136,6 +136,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -581,7 +582,9 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<String> getUserIdsByEmails(List<String> emailIds) {
-    return userMetadataRepository.findAllIds(Criteria.where(UserMetadataKeys.email).in(emailIds));
+    return userMetadataRepository.findAllIds(
+        Criteria.where(UserMetadataKeys.email)
+            .in(emailIds.stream().filter(Objects::nonNull).map(String::toLowerCase).collect(toList())));
   }
 
   @Override

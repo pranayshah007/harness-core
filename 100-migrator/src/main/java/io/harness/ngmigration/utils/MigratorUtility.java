@@ -29,6 +29,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
@@ -239,6 +240,9 @@ public class MigratorUtility {
   public static ParameterField<Timeout> getTimeout(Long timeoutInMillis) {
     if (timeoutInMillis == null) {
       return ParameterField.createValueField(Timeout.builder().timeoutString(DEFAULT_TIMEOUT).build());
+    }
+    if (timeoutInMillis < 10000L) {
+      timeoutInMillis = 10000L;
     }
     String timeOut = convertToHumanReadableTimeFormat(timeoutInMillis);
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeOut).build());
@@ -757,7 +761,7 @@ public class MigratorUtility {
     if (resp.code() >= 200 && resp.code() < 300) {
       return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     }
-    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
+    log.info("The Yaml of the generated data was - \n{}", NGYamlUtils.getYamlString(yamlFile.getYaml()));
     Map<String, Object> error = JsonUtils.asObject(
         resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
     log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",

@@ -76,7 +76,7 @@ public class PrometheusDataCollectionDSLV2TestSuiteChild extends DSLHoverflyCVNe
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     String code = readDSL("prometheus-v2-dsl-metric.datacollection");
-    Instant instant = Instant.parse("2023-06-15T10:21:00.000Z");
+    Instant instant = Instant.parse("2023-10-24T10:21:00.000Z");
     List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         DataSourceType.APP_DYNAMICS);

@@ -97,6 +97,7 @@ public class DockerResourceServiceImpl implements DockerResourceService {
   @Override
   public DockerResponseDTO getBuildDetails(IdentifierRef dockerConnectorRef, String imagePath, String orgIdentifier,
       String projectIdentifier, String tagRegex) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath));
     DockerConnectorDTO connector = getConnector(dockerConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

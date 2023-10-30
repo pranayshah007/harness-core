@@ -6,12 +6,14 @@
  */
 
 package io.harness.steps.email;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -56,6 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class EmailStep extends PipelineSyncExecutable {
@@ -150,7 +154,11 @@ public class EmailStep extends PipelineSyncExecutable {
                                                             .setEndTime(System.currentTimeMillis())
                                                             .build()))
             .build();
+      } else {
+        logCallback.saveExecutionLog(
+            String.format("Successfully sent an email with subject- [" + emailDTO.getSubject() + "]."));
       }
+
       if (response.body().getStatus() == io.harness.ng.core.Status.SUCCESS
           && StringUtils.isNotBlank(response.body().getData().getErrorMessage())) {
         logCallback.saveExecutionLog(String.format(response.body().getData().getErrorMessage()));

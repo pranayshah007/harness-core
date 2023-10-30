@@ -58,8 +58,7 @@ func parseArgs() {
 	// set defaults here
 	args.DeploymentEnvironment = "prod"
 	args.Verbose = false
-	args.LogMetrics = true
-	args.Port = 20002
+	args.LogMetrics = false
 
 	arg.MustParse(&args)
 }

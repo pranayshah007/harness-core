@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: add-tag-for-convertible-ec2-reserved
+cloudProvider: AWS
+resourceType: ec2-reserved
+description: Add Convertible tag with value as true to all reserved ec2 convertible host
+rulesYamlPath: ../add-tag-for-convertible-ec2-reserved.yml

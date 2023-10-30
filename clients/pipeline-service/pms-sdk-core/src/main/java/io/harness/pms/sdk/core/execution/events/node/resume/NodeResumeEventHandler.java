@@ -75,7 +75,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   }
 
   @Override
-  protected void handleEventWithContext(NodeResumeEvent event) {
+  public void handleEventWithContext(NodeResumeEvent event) {
     ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
     Map<String, ResponseData> response = new HashMap<>();
     // Todo: Remove this after the deployment in first jan 23

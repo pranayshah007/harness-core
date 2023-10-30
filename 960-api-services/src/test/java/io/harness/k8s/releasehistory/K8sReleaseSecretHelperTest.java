@@ -12,6 +12,10 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_ENV;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_INFRA_ID;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_INFRA_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_SERVICE;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_NAME_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_REPO_URL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY;
@@ -28,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
@@ -136,5 +141,42 @@ public class K8sReleaseSecretHelperTest extends CategoryTest {
                                             .build();
     assertThat(K8sReleaseSecretHelper.getHelmChartInfo(release)).isEqualTo(helmChartInfoDTO);
     assertThat(K8sReleaseSecretHelper.getHelmChartInfo(new V1Secret())).isNull();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testReleaseMetadataNoData() {
+    V1Secret release = createSecret("1", "Status");
+    K8sReleaseSecretHelper.putHarnessReleaseMetadata(release, null);
+
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_SERVICE)).isEmpty();
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_ENV)).isEmpty();
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_INFRA_ID)).isEmpty();
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_INFRA_KEY))
+        .isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testReleaseMetadata() {
+    String svcId = "svcId";
+    String envId = "envId";
+    String infraId = "infraId";
+    String infraKey = "infraKey";
+    V1Secret release = createSecret("1", "Status");
+    ReleaseMetadata releaseMetadata =
+        ReleaseMetadata.builder().envId(envId).infraKey(infraKey).infraId(infraId).serviceId(svcId).build();
+    K8sReleaseSecretHelper.putHarnessReleaseMetadata(release, releaseMetadata);
+
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_SERVICE))
+        .isEqualTo(svcId);
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_ENV))
+        .isEqualTo(envId);
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_INFRA_ID))
+        .isEqualTo(infraId);
+    assertThat(K8sReleaseSecretHelper.getReleaseAnnotationValue(release, RELEASE_SECRET_ANNOTATION_INFRA_KEY))
+        .isEqualTo(infraKey);
   }
 }

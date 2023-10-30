@@ -1,0 +1,9 @@
+policies:
+  - name: redshift-snapshot-revoke-access
+    resource: redshift-snapshot
+    filters:
+      - type: cross-account
+        whitelist:
+          - 012345678910
+    actions:
+      - type: revoke-access

@@ -1,0 +1,10 @@
+policies:
+  - name: s3-disable-versioning
+    resource: s3
+    filters:
+      - type: value
+        key: Versioning.Status
+        value: Enabled
+    actions:
+      - type: toggle-versioning
+        enabled: false

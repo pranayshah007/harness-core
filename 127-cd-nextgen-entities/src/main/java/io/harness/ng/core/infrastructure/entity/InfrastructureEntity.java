@@ -6,12 +6,14 @@
  */
 
 package io.harness.ng.core.infrastructure.entity;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -36,6 +38,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Setter;
 import lombok.Singular;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
@@ -46,6 +49,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Data
 @Builder
@@ -88,12 +93,12 @@ public class InfrastructureEntity implements PersistentEntity, GitAware, ScopeAw
 
   @Wither @Singular @Size(max = 128) private List<NGTag> tags;
 
-  @NotEmpty @EntityName String name;
-  @Size(max = 1024) String description;
+  @With @NotEmpty @EntityName String name;
+  @With @Size(max = 1024) String description;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
-  @NotNull InfrastructureType type;
+  @With @NotNull InfrastructureType type;
   @Wither ServiceDefinitionType deploymentType;
   @Wither String yaml;
   @Builder.Default Boolean obsolete = Boolean.FALSE;

@@ -6,14 +6,16 @@
  */
 
 package io.harness.steps.container.execution;
-
 import static io.harness.steps.StepUtils.buildAbstractions;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
@@ -52,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)

@@ -10,8 +10,11 @@ package io.harness.cdng.visitor.helpers;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.beans.DecryptableEntity;
@@ -156,5 +159,37 @@ public class SecretConnectorRefExtractorHelperTest extends CategoryTest {
     Set<VisitedSecretReference> secretReferences = secretConnectorRefExtractor.addSecretReference(
         withConnectorRef, ACCOUNT_ID, ORG_ID, PROJECT_ID, Collections.emptyMap());
     assertThat(secretReferences).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void emptyDecryptableEntities() {
+    final ConnectorConfigDTO configDTO = mock(ConnectorConfigDTO.class);
+    final WithConnectorRef withConnectorRef = mock(WithConnectorRef.class);
+
+    doReturn(Optional.of(ConnectorResponseDTO.builder()
+                             .connector(ConnectorInfoDTO.builder().connectorConfig(configDTO).build())
+                             .build()))
+        .when(connectorService)
+        .get(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONNECTOR_REF);
+
+    doReturn(Map.of(CONNECTOR_REF, ParameterField.createValueField(CONNECTOR_REF)))
+        .when(withConnectorRef)
+        .extractConnectorRefs();
+
+    // empty list
+    doReturn(List.of()).when(configDTO).getDecryptableEntities();
+    Set<VisitedSecretReference> secretReferences = secretConnectorRefExtractor.addSecretReference(
+        withConnectorRef, ACCOUNT_ID, ORG_ID, PROJECT_ID, Collections.emptyMap());
+    assertThat(secretReferences).isEmpty();
+    verify(secretRefInputValidationHelper, never()).getDecryptableFieldsData(anyList());
+
+    // null
+    doReturn(null).when(configDTO).getDecryptableEntities();
+    secretReferences = secretConnectorRefExtractor.addSecretReference(
+        withConnectorRef, ACCOUNT_ID, ORG_ID, PROJECT_ID, Collections.emptyMap());
+    assertThat(secretReferences).isEmpty();
+    verify(secretRefInputValidationHelper, never()).getDecryptableFieldsData(anyList());
   }
 }

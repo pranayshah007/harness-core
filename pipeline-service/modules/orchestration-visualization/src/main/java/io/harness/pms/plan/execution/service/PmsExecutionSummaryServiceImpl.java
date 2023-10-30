@@ -107,8 +107,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         continue;
       }
       if (graphLayoutNode.get(nodeExecution.getNodeId()) == null) {
-        log.error("layout node is null for key [{}] in GraphLayoutNodeMap for planExecutionId: [{}]",
-            nodeExecution.getNodeId(), planExecutionId);
         continue;
       }
 
@@ -259,6 +257,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   public void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId) {
     Update update = new Update();
     update.set(PlanExecutionSummaryKeys.notesExistForPlanExecutionId, notesExistForPlanExecutionId);
+    update(planExecutionId, update);
+  }
+
+  @Override
+  public void updateResolvedUserInputSetYaml(String planExecutionId, String resolvedInputSetYaml) {
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.resolvedUserInputSetYaml, resolvedInputSetYaml);
     update(planExecutionId, update);
   }
 

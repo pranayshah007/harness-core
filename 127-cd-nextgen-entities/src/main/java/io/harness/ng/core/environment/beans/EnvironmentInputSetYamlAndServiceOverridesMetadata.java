@@ -7,9 +7,13 @@
 
 package io.harness.ng.core.environment.beans;
 
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,7 +28,14 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("EnvironmentInputsetYamlAndServiceOverridesMetadata")
 public class EnvironmentInputSetYamlAndServiceOverridesMetadata {
   String envRef;
+  // scope identifiers
+  String orgIdentifier;
+  String projectIdentifier;
   String envYaml;
   String envRuntimeInputYaml;
   List<ServiceOverridesMetadata> servicesOverrides;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
 }

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,6 +44,7 @@ import io.harness.idp.scorecard.scores.entities.ScoreEntity;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
@@ -139,7 +141,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyList(), any()))
         .thenReturn(data1)
         .thenReturn(data2);
 
@@ -215,7 +217,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyList(), any()))
         .thenReturn(data);
 
     scoreComputerService.computeScores(ACCOUNT_ID, scorecardIdentifiers, entityIdentifiers);
@@ -269,12 +271,16 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
                              .ruleStrategy(CheckDetails.RuleStrategyEnum.ALL_OF)
                              .rules(Collections.singletonList(rule1))
                              .build();
+    InputValue inputValue = new InputValue();
+    inputValue.setKey("key");
+    inputValue.value(INPUT_VALUE);
     Rule rule2 = new Rule();
     rule2.setDataSourceIdentifier(DATA_SOURCE_IDENTIFIER);
     rule2.setDataPointIdentifier(DATA_POINT_IDENTIFIER2);
     rule2.setOperator(OPERATOR2);
     rule2.setValue(VALUE);
     rule2.setConditionalInputValue(INPUT_VALUE);
+    rule2.setInputValues(List.of(inputValue));
     CheckEntity check2 = CheckEntity.builder()
                              .accountIdentifier(ACCOUNT_ID)
                              .identifier(CHECK_IDENTIFIER2)

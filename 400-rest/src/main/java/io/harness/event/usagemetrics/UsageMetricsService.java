@@ -6,7 +6,6 @@
  */
 
 package io.harness.event.usagemetrics;
-
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,6 +17,9 @@ import static io.harness.event.model.EventConstants.VERIFICATION_STATE_TYPE;
 import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.function.Function.identity;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -55,6 +57,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class UsageMetricsService {

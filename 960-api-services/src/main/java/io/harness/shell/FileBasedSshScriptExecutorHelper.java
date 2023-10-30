@@ -6,10 +6,12 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
@@ -19,6 +21,7 @@ import io.harness.shell.ssh.xfer.ScpResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 public class FileBasedSshScriptExecutorHelper {

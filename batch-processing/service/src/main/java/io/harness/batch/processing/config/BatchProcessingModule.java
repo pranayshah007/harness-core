@@ -27,6 +27,7 @@ import io.harness.batch.processing.tasklet.util.ClusterHelperImpl;
 import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelperImpl;
 import io.harness.ccm.CENGGraphQLModule;
+import io.harness.ccm.LightwingClientModule;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.azurevmpricing.AzureVmPricingClientModule;
@@ -65,6 +66,7 @@ import io.harness.ccm.msp.service.intf.ManagedAccountService;
 import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ccm.msp.service.intf.MspValidationService;
+import io.harness.ccm.scheduler.SchedulerClientModule;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.serviceNow.CCMServiceNowHelper;
@@ -240,6 +242,10 @@ public class BatchProcessingModule extends AbstractModule {
     install(new NGSettingsClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
     install(new AzureVmPricingClientModule(batchMainConfig.getAzureVmPricingConfig()));
+    install(new LightwingClientModule(batchMainConfig.getLightwingAutoCUDClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+    install(new SchedulerClientModule(batchMainConfig.getDkronClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

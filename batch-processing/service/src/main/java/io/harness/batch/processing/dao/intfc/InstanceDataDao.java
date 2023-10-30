@@ -57,4 +57,8 @@ public interface InstanceDataDao {
 
   List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
       Instant endTime, List<InstanceType> instanceTypes, String clusterId);
+
+  long count(String accountId);
+
+  boolean deleteAllForAccount(String accountId);
 }

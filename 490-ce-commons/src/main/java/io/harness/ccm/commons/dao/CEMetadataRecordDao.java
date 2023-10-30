@@ -120,4 +120,17 @@ public class CEMetadataRecordDao {
     }
     return currency;
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CEMetadataRecord.class)
+        .field(CEMetadataRecordKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEMetadataRecord> query =
+        persistence.createQuery(CEMetadataRecord.class).field(CEMetadataRecordKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: sql-database-no-tde
+cloudProvider: AZURE
+resourceType: azure.sql-database
+description: List SQL databases with transparent data encryption disabled
+rulesYamlPath: ../sql-database-no-tde.yml

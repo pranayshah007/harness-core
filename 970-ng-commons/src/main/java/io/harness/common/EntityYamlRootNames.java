@@ -105,6 +105,7 @@ public class EntityYamlRootNames {
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
 
+  public static final String ANCHORE = "Anchore";
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
   public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
@@ -271,4 +272,6 @@ public class EntityYamlRootNames {
   public static final String AWS_CDK_DEPLOY = "AwsCdkDeploy";
   public static final String AWS_CDK_DESTROY = "AwsCdkDestroy";
   public static final String AWS_CDK_ROLLBACK = "AwsCdkRollback";
+
+  public static final String OVERRIDES = "Overrides";
 }

@@ -67,6 +67,10 @@ You can run multiple PR check triggers by comma separating them in a single comm
 ## PR check failures and solutions
 https://harness.atlassian.net/wiki/spaces/BT/pages/21106884744/PR+Checks+-+Failures+and+Solutions
 
+### Rebase Instructions:
+To rebase your branch onto the latest changes in the target branch, simply use the following command in a comment: `/rebase`
+
+
 
 ## [Contributor license agreement](https://github.com/harness/harness-core/blob/develop/CONTRIBUTOR_LICENSE_AGREEMENT.md)
 

@@ -766,30 +766,32 @@ public class TasStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCommandUnitsForTanzuCommand() {
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder().build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
-            CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteCustomFetch(true)
                                                                 .build()))
-        .isEqualTo(asList(
-            CfCommandUnitConstants.FetchCustomFiles, CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCustomFiles, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteGitStoreFetch(true)
                                                                 .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, K8sCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+            CfCommandUnitConstants.ResolveInputOutputVariables, CfCommandUnitConstants.Pcfplugin,
+            CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteHarnessStoreFetch(true)
                                                                 .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+            CfCommandUnitConstants.ResolveInputOutputVariables, CfCommandUnitConstants.Pcfplugin,
+            CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
                    TasStepPassThroughData.builder().pathsFromScript(Arrays.asList("path")).build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
-            CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
   }
 
   @Test

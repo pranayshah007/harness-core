@@ -36,6 +36,13 @@ public interface InfrastructureEntityService {
   Optional<InfrastructureEntity> get(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
 
+  Optional<InfrastructureEntity> getMetadata(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
+
+  Optional<InfrastructureEntity> get(@NotEmpty String accountId, String orgIdentifier, String projectIdentifier,
+      @NotEmpty String environmentIdentifier, @NotEmpty String infraIdentifier, boolean loadFromCache,
+      boolean loadFromFallbackBranch);
+
   InfrastructureEntity update(@NotNull InfrastructureEntity requestInfra);
 
   InfrastructureEntity upsert(@NotNull InfrastructureEntity requestInfra, UpsertOptions upsertOptions);
@@ -86,6 +93,9 @@ public interface InfrastructureEntityService {
 
   List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
       String projectIdentifier, String environmentIdentifier, List<String> infraIds);
+
+  List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentIdentifier, List<String> infraIds, boolean loadFromCache);
 
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String infraIdentifier);

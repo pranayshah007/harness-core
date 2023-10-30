@@ -10,6 +10,7 @@ package io.harness.accesscontrol.roles;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.ADITYA;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -432,8 +433,9 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     assertFalse(result);
     verify(roleDao, times(2)).removePermissionFromRoles(any(), any());
   }
+
   @Test
-  @Owner(developers = ADITYA)
+  @Owner(developers = {ADITYA, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testListWithPrincipalCountUser() {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
@@ -474,7 +476,13 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
             .pageIndex(0)
             .empty(false)
             .build();
-    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+
+    PageRequest roleAssignmentsPageRequest = PageRequest.builder().pageSize(50000).build();
+    RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder()
+                                                    .scopeFilter(roleFilter.getScopeIdentifier())
+                                                    .roleFilter(roleFilter.getIdentifierFilter())
+                                                    .build();
+    when(roleAssignmentService.list(roleAssignmentsPageRequest, roleAssignmentFilter, true))
         .thenReturn(roleAssignmentPageResponse);
 
     PageResponse<RoleWithPrincipalCount> pageResponse =
@@ -484,9 +492,11 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     for (int i = 0; i < pageResponse.getContent().size(); i++) {
       assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToUserCount());
     }
+    verify(roleAssignmentService, times(1)).list(roleAssignmentsPageRequest, roleAssignmentFilter, true);
   }
+
   @Test
-  @Owner(developers = ADITYA)
+  @Owner(developers = {ADITYA, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testListWithPrincipalCountUserGroup() {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
@@ -523,11 +533,18 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
             .totalPages(1)
             .totalItems(1)
             .pageItemCount(1)
-            .pageSize(50)
+            .pageSize(50000)
             .pageIndex(0)
             .empty(false)
             .build();
     when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+    PageRequest roleAssignmentsPageRequest = PageRequest.builder().pageSize(50000).build();
+    RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder()
+                                                    .scopeFilter(roleFilter.getScopeIdentifier())
+                                                    .roleFilter(roleFilter.getIdentifierFilter())
+                                                    .build();
+    when(roleAssignmentService.list(roleAssignmentsPageRequest, roleAssignmentFilter, true))
         .thenReturn(roleAssignmentPageResponse);
 
     PageResponse<RoleWithPrincipalCount> pageResponse =
@@ -537,9 +554,10 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     for (int i = 0; i < pageResponse.getContent().size(); i++) {
       assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToUserGroupCount());
     }
+    verify(roleAssignmentService, times(1)).list(roleAssignmentsPageRequest, roleAssignmentFilter, true);
   }
   @Test
-  @Owner(developers = ADITYA)
+  @Owner(developers = {ADITYA, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testListWithPrincipalCountServiceAccount() {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
@@ -576,11 +594,16 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
             .totalPages(1)
             .totalItems(1)
             .pageItemCount(1)
-            .pageSize(50)
+            .pageSize(50000)
             .pageIndex(0)
             .empty(false)
             .build();
-    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+    PageRequest roleAssignmentsPageRequest = PageRequest.builder().pageSize(50000).build();
+    RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder()
+                                                    .scopeFilter(roleFilter.getScopeIdentifier())
+                                                    .roleFilter(roleFilter.getIdentifierFilter())
+                                                    .build();
+    when(roleAssignmentService.list(roleAssignmentsPageRequest, roleAssignmentFilter, true))
         .thenReturn(roleAssignmentPageResponse);
 
     PageResponse<RoleWithPrincipalCount> pageResponse =
@@ -590,5 +613,6 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     for (int i = 0; i < pageResponse.getContent().size(); i++) {
       assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToServiceAccountCount());
     }
+    verify(roleAssignmentService, times(1)).list(roleAssignmentsPageRequest, roleAssignmentFilter, true);
   }
 }

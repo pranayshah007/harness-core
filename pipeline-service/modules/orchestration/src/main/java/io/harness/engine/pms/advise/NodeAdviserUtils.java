@@ -6,12 +6,14 @@
  */
 
 package io.harness.engine.pms.advise;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.advisers.CommonAdviserTypes;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
@@ -26,6 +28,7 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.EnumUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeAdviserUtils {

@@ -8,6 +8,7 @@
 package io.harness.k8s.releasehistory;
 
 import static io.harness.k8s.releasehistory.ReleaseHistory.createFromData;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.PUNEET;
 
@@ -227,5 +228,25 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
             .bgEnvironment(HarnessLabelValues.bgStageEnv)
             .build());
     return ReleaseHistory.builder().releases(k8sLegacyReleases).build();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testLastSuccessfulRelease() {
+    List<K8sLegacyRelease> k8sLegacyReleases = new ArrayList<>();
+    k8sLegacyReleases.add(K8sLegacyRelease.builder().number(1).status(IK8sRelease.Status.Succeeded).build());
+    k8sLegacyReleases.add(K8sLegacyRelease.builder().number(2).status(IK8sRelease.Status.InProgress).build());
+
+    K8SLegacyReleaseHistory releaseHistory =
+        K8SLegacyReleaseHistory.builder()
+            .releaseHistory(ReleaseHistory.builder().releases(k8sLegacyReleases).build())
+            .build();
+    assertThat(releaseHistory.getLastSuccessfulRelease().getReleaseNumber()).isEqualTo(1);
+    assertThat(releaseHistory.getLastSuccessfulRelease().getReleaseStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+
+    K8SLegacyReleaseHistory emptyReleaseHistory =
+        K8SLegacyReleaseHistory.builder().releaseHistory(ReleaseHistory.builder().build()).build();
+    assertThat(emptyReleaseHistory.getLastSuccessfulRelease()).isNull();
   }
 }

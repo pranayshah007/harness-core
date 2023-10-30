@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.executions.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
@@ -25,6 +27,7 @@ import lombok.NonNull;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
   PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops,
@@ -87,6 +90,9 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
   long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
+
+  long countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+      String accountId, String pipelineIdentifier);
 
   PlanExecution findNextExecutionToRunInAccount(String accountId);
 

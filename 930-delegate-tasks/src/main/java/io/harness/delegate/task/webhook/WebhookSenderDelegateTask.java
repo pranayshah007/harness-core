@@ -46,9 +46,9 @@ public class WebhookSenderDelegateTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     WebhookTaskParams webhookTaskParams = (WebhookTaskParams) parameters;
     try {
-      NotificationProcessingResponse processingResponse =
-          webhookSender.send(webhookTaskParams.getWebhookUrls(), webhookTaskParams.getMessage(),
-              webhookTaskParams.getNotificationId(), webhookTaskParams.getHeaders(), webhookTaskParams.getAccountId());
+      NotificationProcessingResponse processingResponse = webhookSender.send(webhookTaskParams.getWebhookUrls(),
+          webhookTaskParams.getMessage(), webhookTaskParams.getNotificationId(), webhookTaskParams.getHeaders(),
+          webhookTaskParams.getWebhookDomainAllowlist());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

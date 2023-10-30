@@ -443,6 +443,10 @@ public class CDStepHelper {
 
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
+    convertToRepoGitConfig(gitstoreConfig, scmConnector, repoName);
+  }
+
+  public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector, String repoName) {
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
       if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT
@@ -1261,9 +1265,11 @@ public class CDStepHelper {
                                                .collect(Collectors.toList()));
   }
 
-  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO) {
+  public ScmConnector getScmConnector(
+      ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO, String repoName) {
     if (scmConnector instanceof GithubConnectorDTO && isGithubAppAuth((GithubConnectorDTO) scmConnector)
         && cdFeatureFlagHelper.isEnabled(accountIdentifier, CDS_GITHUB_APP_AUTHENTICATION)) {
+      convertToRepoGitConfig(null, scmConnector, repoName);
       return scmConnector;
     } else {
       return gitConfigDTO;

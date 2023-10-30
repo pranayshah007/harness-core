@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.executions.node;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.events.PmsEventMonitoringConstants;
@@ -21,6 +23,7 @@ import com.google.inject.name.Named;
 import java.util.Map;
 import javax.cache.Cache;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorService {

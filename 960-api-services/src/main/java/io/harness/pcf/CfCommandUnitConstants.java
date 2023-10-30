@@ -31,4 +31,5 @@ public interface CfCommandUnitConstants {
   String Deploy = "Deploy";
   String Rollback = "Rollback";
   String RouteMapping = "Route Mapping";
+  String ResolveInputOutputVariables = "Resolve Input/Output Variables";
 }

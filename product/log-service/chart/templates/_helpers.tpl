@@ -74,11 +74,11 @@ USAGE:
     {{- $ := .ctx }}
     {{- $hasAtleastOneSecret := false }}
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 LOG_SERVICE_GLOBAL_TOKEN: {{ .ctx.Values.secrets.default.LOG_SERVICE_GLOBAL_TOKEN | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_SERVICE_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_SERVICE_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 LOG_SERVICE_SECRET: {{ .ctx.Values.secrets.default.LOG_SERVICE_SECRET | b64enc }}
     {{- end }}

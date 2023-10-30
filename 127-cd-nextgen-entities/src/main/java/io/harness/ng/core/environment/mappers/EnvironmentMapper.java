@@ -153,10 +153,11 @@ public class EnvironmentMapper {
         .storeType(environment.getStoreType())
         .connectorRef(environment.getConnectorRef())
         .cacheResponseMetadataDTO(getCacheResponse(environment))
+        .fallbackBranch(environment.getFallBackBranch())
         .build();
   }
 
-  private EntityGitDetails getEntityGitDetails(Environment environment) {
+  public EntityGitDetails getEntityGitDetails(Environment environment) {
     if (environment.getStoreType() == StoreType.REMOTE) {
       EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
 
@@ -183,6 +184,7 @@ public class EnvironmentMapper {
         .cacheState(cacheResponse.getCacheState())
         .ttlLeft(cacheResponse.getTtlLeft())
         .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 

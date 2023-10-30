@@ -20,6 +20,8 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails.InfraExecutionSummaryDetailsBuilder;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -50,6 +52,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
@@ -195,8 +198,13 @@ public class ServiceStepsHelper {
   }
 
   public void saveServiceExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder().serviceInfo(createServiceInfoFromResponse(stepResponse)).build());
+  }
+
+  public void saveEnvironmentExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
+        StageExecutionInfoUpdateDTO.builder().infraExecutionSummary(createEnvInfoFromResponse(stepResponse)).build());
   }
 
   private ServiceExecutionSummaryDetails createServiceInfoFromResponse(StepResponse stepResponse) {
@@ -214,6 +222,26 @@ public class ServiceStepsHelper {
       }
     }
     return ServiceExecutionSummaryDetails.builder().build();
+  }
+
+  private InfraExecutionSummaryDetails createEnvInfoFromResponse(StepResponse stepResponse) {
+    if (stepResponse.getStepOutcomes() != null) {
+      for (StepResponse.StepOutcome stepOutcome : stepResponse.getStepOutcomes()) {
+        if (stepOutcome.getOutcome() instanceof EnvironmentOutcome) {
+          EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) stepOutcome.getOutcome();
+          InfraExecutionSummaryDetailsBuilder infraExecutionSummaryDetailsBuilder =
+              InfraExecutionSummaryDetails.builder();
+          if (environmentOutcome != null) {
+            infraExecutionSummaryDetailsBuilder.identifier(environmentOutcome.getIdentifier())
+                .name(environmentOutcome.getName());
+            if (environmentOutcome.getType() != null)
+              infraExecutionSummaryDetailsBuilder.type(environmentOutcome.getType().name());
+          }
+          return infraExecutionSummaryDetailsBuilder.build();
+        }
+      }
+    }
+    return InfraExecutionSummaryDetails.builder().build();
   }
 
   public void publishTaskIdsStepDetailsForServiceStep(

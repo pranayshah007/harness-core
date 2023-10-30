@@ -23,6 +23,8 @@ import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.rule.Owner;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.Principal;
 
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -51,6 +53,7 @@ public class ProvisionApiImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdp() {
+    constructSecurityContextBuilder(true);
     doNothing().when(idpCommonService).checkUserAuthorization();
     NamespaceEntity namespaceEntity = NamespaceEntity.builder().accountIdentifier(ACCOUNT_ID).id(NAMESPACE).build();
     when(namespaceService.saveAccountIdNamespace(ACCOUNT_ID)).thenReturn(namespaceEntity);
@@ -63,6 +66,7 @@ public class ProvisionApiImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdpWithNamespaceExists() {
+    constructSecurityContextBuilder(true);
     doNothing().when(idpCommonService).checkUserAuthorization();
     NamespaceEntity namespaceEntity = NamespaceEntity.builder().accountIdentifier(ACCOUNT_ID).id(NAMESPACE).build();
     when(namespaceService.saveAccountIdNamespace(ACCOUNT_ID)).thenThrow(DuplicateKeyException.class);
@@ -77,9 +81,19 @@ public class ProvisionApiImplTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testProvisionIdpThrowsException() {
-    doNothing().when(idpCommonService).checkUserAuthorization();
+    constructSecurityContextBuilder(false);
     when(namespaceService.saveAccountIdNamespace(ACCOUNT_ID)).thenThrow(InvalidRequestException.class);
     Response response = provisionApiImpl.provisionIdp(ACCOUNT_ID);
     assertThat(response.getStatus()).isEqualTo(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+  }
+
+  private void constructSecurityContextBuilder(boolean valid) {
+    if (valid) {
+      io.harness.security.dto.UserPrincipal principal =
+          new io.harness.security.dto.UserPrincipal("name", "email", "username", "accountId");
+      SecurityContextBuilder.setContext(principal);
+    } else {
+      SecurityContextBuilder.setContext((Principal) null);
+    }
   }
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.plancreator.group;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.v1.FailureStrategiesUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -54,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;

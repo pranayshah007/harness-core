@@ -1,0 +1,3 @@
+filters: attributes, config-compliance, default-vpc, event, finding, health-event, healthcheck-protocol-mismatch, instance, is-logging, is-not-logging, is-ssl, json-diff, list-item, marked-for-op, metrics, network-location, ops-item, reduce, security-group, shield-enabled, shield-metrics, ssl-policy, subnet, tag-count, value, vpc
+actions: auto-tag-user, copy-related-tag, delete, disable-s3-logging, enable-s3-logging, invoke-lambda, invoke-sfn, mark-for-op, modify-security-groups, notify, post-finding, post-item, put-metric, remove-tag, set-shield, set-ssl-listener-policy, tag, webhook
+customPrompt:

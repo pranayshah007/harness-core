@@ -10,6 +10,7 @@ package io.harness.ccm.eventframework;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_BUDGET;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_RULE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
@@ -50,6 +51,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SETTINGS + ENTITY_CRUD) MessageListener ccmSettingsCRUDStreamListener,
       @Named(CCM_BUDGET + ENTITY_CRUD) MessageListener budgetCreateStreamListener,
       @Named(CCM_RULE + ENTITY_CRUD) MessageListener governanceRuleCreateStreamListener,
+      @Named(ACCOUNT_ENTITY + ENTITY_CRUD) MessageListener accountEntityCRUDStreamListener,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
@@ -58,6 +60,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(ccmSettingsCRUDStreamListener);
     messageListenersList.add(budgetCreateStreamListener);
     messageListenersList.add(governanceRuleCreateStreamListener);
+    messageListenersList.add(accountEntityCRUDStreamListener);
   }
 
   @Override

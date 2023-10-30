@@ -354,40 +354,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void shouldNotsaveDelegateTaskV2WhenRankLimitIsReached() {
-    DelegateTask delegateTask = DelegateTask.builder()
-                                    .uuid(generateUuid())
-                                    .accountId(ACCOUNT_ID)
-                                    .waitId(generateUuid())
-                                    .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-                                    .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
-                                    .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, INFRA_MAPPING_ID)
-                                    .setupAbstraction(Cd1SetupFields.SERVICE_TEMPLATE_ID_FIELD, SERVICE_TEMPLATE_ID)
-                                    .setupAbstraction(Cd1SetupFields.ARTIFACT_STREAM_ID_FIELD, ARTIFACT_STREAM_ID)
-                                    .version(VERSION)
-                                    .taskDataV2(TaskDataV2.builder()
-                                                    .async(false)
-                                                    .taskType(TaskType.HELM_COMMAND_TASK.name())
-                                                    .parameters(new Object[] {})
-                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                                                    .build())
-                                    .build();
-
-    PortalConfig portalConfig = new PortalConfig();
-    portalConfig.setImportantDelegateTaskRejectAtLimit(0);
-    when(mainConfiguration.getPortal()).thenReturn(portalConfig);
-
-    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-
-    delegateTaskServiceClassic.queueTaskV2(delegateTask);
-    assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
-        .isNull();
-  }
-
-  @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void shouldProcessDelegateTaskResponse() {
@@ -1163,6 +1129,40 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     final DelegateTask delegateTask = saveDelegateTaskV2(false, emptySet(), QUEUED);
 
     verify(delegateMetricsService).recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_CREATION);
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
+  public void shouldSaveDelegateTaskV2WhenRankLimitIsReached() {
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(generateUuid())
+                                    .accountId(ACCOUNT_ID)
+                                    .waitId(generateUuid())
+                                    .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+                                    .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)
+                                    .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, INFRA_MAPPING_ID)
+                                    .setupAbstraction(Cd1SetupFields.SERVICE_TEMPLATE_ID_FIELD, SERVICE_TEMPLATE_ID)
+                                    .setupAbstraction(Cd1SetupFields.ARTIFACT_STREAM_ID_FIELD, ARTIFACT_STREAM_ID)
+                                    .version(VERSION)
+                                    .taskDataV2(TaskDataV2.builder()
+                                                    .async(false)
+                                                    .taskType(TaskType.HELM_COMMAND_TASK.name())
+                                                    .parameters(new Object[] {})
+                                                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                                                    .build())
+                                    .build();
+
+    PortalConfig portalConfig = new PortalConfig();
+    portalConfig.setImportantDelegateTaskRejectAtLimit(0);
+    when(mainConfiguration.getPortal()).thenReturn(portalConfig);
+
+    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+
+    delegateTaskServiceClassic.queueTaskV2(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
+        .isNotNull();
   }
 
   @Test(expected = NoEligibleDelegatesInAccountException.class)

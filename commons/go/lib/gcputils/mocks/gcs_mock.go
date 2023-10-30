@@ -11,8 +11,9 @@ package gcputils
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockGCS is a mock of GCS interface.
@@ -38,18 +39,32 @@ func (m *MockGCS) EXPECT() *MockGCSMockRecorder {
 	return m.recorder
 }
 
-// UploadObject mocks base method.
-func (m *MockGCS) UploadObject(ctx context.Context, bucketName, objectName, srcFilePath string) error {
+// Close mocks base method.
+func (m *MockGCS) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadObject", ctx, bucketName, objectName, srcFilePath)
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UploadObject indicates an expected call of UploadObject.
-func (mr *MockGCSMockRecorder) UploadObject(ctx, bucketName, objectName, srcFilePath interface{}) *gomock.Call {
+// Close indicates an expected call of Close.
+func (mr *MockGCSMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadObject", reflect.TypeOf((*MockGCS)(nil).UploadObject), ctx, bucketName, objectName, srcFilePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockGCS)(nil).Close))
+}
+
+// DeleteObject mocks base method.
+func (m *MockGCS) DeleteObject(ctx context.Context, bucketName, objectName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteObject", ctx, bucketName, objectName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteObject indicates an expected call of DeleteObject.
+func (mr *MockGCSMockRecorder) DeleteObject(ctx, bucketName, objectName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockGCS)(nil).DeleteObject), ctx, bucketName, objectName)
 }
 
 // DownloadObject mocks base method.
@@ -81,18 +96,19 @@ func (mr *MockGCSMockRecorder) GetObjectMetadata(ctx, bucketName, objectName int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectMetadata", reflect.TypeOf((*MockGCS)(nil).GetObjectMetadata), ctx, bucketName, objectName)
 }
 
-// DeleteObject mocks base method.
-func (m *MockGCS) DeleteObject(ctx context.Context, bucketName, objectName string) error {
+// SignURL mocks base method.
+func (m *MockGCS) SignURL(bucketName, objectName, customHost string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteObject", ctx, bucketName, objectName)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "SignURL", bucketName, objectName, customHost)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// DeleteObject indicates an expected call of DeleteObject.
-func (mr *MockGCSMockRecorder) DeleteObject(ctx, bucketName, objectName interface{}) *gomock.Call {
+// SignURL indicates an expected call of SignURL.
+func (mr *MockGCSMockRecorder) SignURL(bucketName, objectName, customHost interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockGCS)(nil).DeleteObject), ctx, bucketName, objectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignURL", reflect.TypeOf((*MockGCS)(nil).SignURL), bucketName, objectName, customHost)
 }
 
 // UpdateObjectMetadata mocks base method.
@@ -109,16 +125,16 @@ func (mr *MockGCSMockRecorder) UpdateObjectMetadata(ctx, bucketName, objectName,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectMetadata", reflect.TypeOf((*MockGCS)(nil).UpdateObjectMetadata), ctx, bucketName, objectName, metadata)
 }
 
-// Close mocks base method.
-func (m *MockGCS) Close() error {
+// UploadObject mocks base method.
+func (m *MockGCS) UploadObject(ctx context.Context, bucketName, objectName, srcFilePath string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "UploadObject", ctx, bucketName, objectName, srcFilePath)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Close indicates an expected call of Close.
-func (mr *MockGCSMockRecorder) Close() *gomock.Call {
+// UploadObject indicates an expected call of UploadObject.
+func (mr *MockGCSMockRecorder) UploadObject(ctx, bucketName, objectName, srcFilePath interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockGCS)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadObject", reflect.TypeOf((*MockGCS)(nil).UploadObject), ctx, bucketName, objectName, srcFilePath)
 }

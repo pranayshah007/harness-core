@@ -61,7 +61,6 @@ import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
-import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.FireHydrantReportNotificationCondition;
@@ -119,6 +118,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
 
   @Inject Clock clock;
 
+  private String SLACK_WEBHOOK_URL = "https://slack.com/api/chat.postMessage";
+
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
     if (isEmpty(changeEventDTO.getMonitoredServiceIdentifier())) {
@@ -169,7 +170,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   }
 
   @Override
-  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl) {
+  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl, String authorizationToken) {
     register(changeEventDTO);
 
     ProjectParams projectParams = ProjectParams.builder()
@@ -188,12 +189,24 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         MonitoredServiceParams.builderWithProjectParams(projectParams)
             .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
             .build());
-    Map<String, Object> entityDetails = Map.of(ENTITY_IDENTIFIER, changeEventDTO.getMonitoredServiceIdentifier(),
-        ENTITY_NAME, monitoredService.getName(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier(),
-        MS_HEALTH_REPORT, msHealthReport);
-    msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
-        FireHydrantReportNotificationCondition.builder().build(),
-        new NotificationRule.CVNGSlackChannel(null, webhookUrl), changeEventDTO.getMonitoredServiceIdentifier());
+
+    String channelId = ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().getChannelId();
+
+    Map<String, Object> entityDetails = new HashMap(Map.of(ENTITY_IDENTIFIER,
+        changeEventDTO.getMonitoredServiceIdentifier(), ENTITY_NAME, monitoredService.getName(), SERVICE_IDENTIFIER,
+        monitoredService.getServiceIdentifier(), MS_HEALTH_REPORT, msHealthReport));
+
+    if (isNotEmpty(channelId) && isNotEmpty(authorizationToken)) {
+      entityDetails.put("CHANNEL_ID", channelId);
+      msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
+          FireHydrantReportNotificationCondition.builder().build(),
+          new NotificationRule.CVNGWebhookChannel(null, SLACK_WEBHOOK_URL, authorizationToken),
+          changeEventDTO.getMonitoredServiceIdentifier());
+    } else {
+      msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
+          FireHydrantReportNotificationCondition.builder().build(),
+          new NotificationRule.CVNGSlackChannel(null, webhookUrl), changeEventDTO.getMonitoredServiceIdentifier());
+    }
     return true;
   }
 
@@ -241,12 +254,20 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest,
       boolean isMonitoredServiceIdentifierScoped) {
     Query<Activity> query = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers,
-        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped);
+        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
+                                .order(Sort.descending(ActivityKeys.eventTime));
+    List<Activity> activities;
     if (featureFlagService.isFeatureFlagEnabled(
             projectParams.getAccountIdentifier(), FeatureName.SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE.name())) {
-      query = setProjectionsToFetchNecessaryFields(query);
+      long count = query.count();
+      query = setProjectionsToFetchNecessaryFields(query)
+                  .offset(pageRequest.getPageIndex() * pageRequest.getPageSize())
+                  .limit(pageRequest.getPageSize());
+      activities = query.asList();
+      return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()), count,
+          pageRequest.getPageIndex(), pageRequest.getPageSize());
     }
-    List<Activity> activities = query.order(Sort.descending(ActivityKeys.eventTime)).asList();
+    activities = query.asList();
     return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
         pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
@@ -302,10 +323,6 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           timeRangeDetail.incrementCount(timelineObject.count);
           milliSecondFromStartDetailMap.put(timelineObject.id.index, timeRangeDetail);
         });
-    if (!featureFlagService.isFeatureFlagEnabled(
-            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
-      categoryMilliSecondFromStartDetailMap.remove(ChangeCategory.CHAOS_EXPERIMENT);
-    }
 
     ChangeTimelineBuilder changeTimelineBuilder = ChangeTimeline.builder();
     categoryMilliSecondFromStartDetailMap.forEach(
@@ -466,10 +483,6 @@ public class ChangeEventServiceImpl implements ChangeEventService {
           countSoFar = countSoFar + timelineObject.count;
           changeCategoryToIndexToCount.get(changeCategory).put(timelineObject.id.index, countSoFar);
         });
-    if (!featureFlagService.isFeatureFlagEnabled(
-            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
-      changeCategoryToIndexToCount.put(ChangeCategory.CHAOS_EXPERIMENT, Map.of(0, 0, 1, 0));
-    }
 
     long currentTotalCount =
         changeCategoryToIndexToCount.values().stream().map(c -> c.getOrDefault(1, 0)).mapToLong(num -> num).sum();

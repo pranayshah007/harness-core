@@ -408,10 +408,10 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
                                                                .resourceType("ENVIRONMENT")
                                                                .resourceScope(resourceScope)
                                                                .permission("core_environment_access")
+                                                               .resourceIdentifier(entityRef.getIdentifier())
                                                                .build();
         if (patchInstruction.getType() == Type.SET_FEATURE_FLAG_STATE) {
           permissionCheckDTO.setPermission("ff_featureflag_toggle");
-          permissionCheckDTOEnvironment.setResourceIdentifier(entityRef.getIdentifier());
         } else {
           permissionCheckDTO.setPermission("ff_featureflag_edit");
         }

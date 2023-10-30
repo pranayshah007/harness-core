@@ -151,6 +151,8 @@ public class BudgetDao {
     }
     if (null != budget.getAlertThresholds()) {
       updateOperations.set(BudgetKeys.alertThresholds, budget.getAlertThresholds());
+    } else {
+      updateOperations.unset(BudgetKeys.alertThresholds);
     }
     if (null != budget.getEmailAddresses()) {
       updateOperations.set(BudgetKeys.emailAddresses, budget.getEmailAddresses());
@@ -257,6 +259,15 @@ public class BudgetDao {
                       .equal(accountId)
                       .field(BudgetKeys.uuid)
                       .in(budgetIds);
+    return persistence.delete(query);
+  }
+
+  public long count(String accountId) {
+    return persistence.createQuery(Budget.class).field(BudgetKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<Budget> query = persistence.createQuery(Budget.class).field(BudgetKeys.accountId).equal(accountId);
     return persistence.delete(query);
   }
 }

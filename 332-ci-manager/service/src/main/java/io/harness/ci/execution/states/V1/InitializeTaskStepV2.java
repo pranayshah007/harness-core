@@ -20,7 +20,6 @@ import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
 import static io.harness.ci.execution.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
@@ -72,6 +71,7 @@ import io.harness.ci.execution.validation.CIAccountValidationService;
 import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -312,7 +312,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
-      log.info("Created params for build task: {}", buildSetupTaskParams);
+      try {
+        log.info("Created params for build task: {}", EncodingUtils.convertToBase64String(buildSetupTaskParams));
+      } catch (Exception e) {
+        log.error("Could not serialize class CIInitializeTaskParams", e);
+      }
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
       AccountDTO accountDTO =
@@ -837,8 +841,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   private void addExternalDelegateSelector(
       List<TaskSelector> taskSelectors, InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    List<TaskSelector> selectorList = TaskSelectorYaml.toTaskSelector(
-        CollectionUtils.emptyIfNull(getParameterFieldValue(initializeStepInfo.getDelegateSelectors())));
+    List<TaskSelector> selectorList = TaskSelectorYaml.toTaskSelector(initializeStepInfo.getDelegateSelectors());
     if (isNotEmpty(selectorList)) {
       // Add to selectorList also add to sweeping output so that it can be used during cleanup task
       taskSelectors.addAll(selectorList);

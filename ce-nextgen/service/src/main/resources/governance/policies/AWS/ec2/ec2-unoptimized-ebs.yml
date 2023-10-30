@@ -1,0 +1,10 @@
+policies:
+  - name: ec2-unoptimized-ebs
+    resource: ec2
+    description: |
+      List all EC2s where ebs ebsOptimized is false
+    filters:
+      - type: instance-attribute
+        attribute: ebsOptimized
+        key: 'Value'
+        value: false

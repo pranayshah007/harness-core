@@ -49,6 +49,8 @@ import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -217,7 +219,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
             .build();
 
     TerraformApplyStepParameters applyStepParameters =
-        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(StoreConfigType.GITHUB, gitStoreConfigFiles);
+        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
+            StoreConfigType.GITHUB, gitStoreConfigFiles, false);
 
     applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
     applyStepParameters.getConfiguration().setCliOptions(
@@ -233,6 +236,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
                                     .url("https://github.com/wings-software")
                                     .branchName("master")
                                     .build();
+    applyStepParameters.getConfiguration().setSkipStateStorage(ParameterField.createValueField(true));
     GitStoreDelegateConfig gitStoreDelegateConfig =
         GitStoreDelegateConfig.builder().branch("master").connectorName("terraform").gitConfigDTO(gitConfigDTO).build();
     GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder()
@@ -263,6 +267,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         .when(terraformStepHelper)
         .executeTerraformTask(any(), any(), any(), any(), any(), any());
 
+    doReturn(TerraformAwsProviderCredentialDelegateInfo.builder().roleArn("roleArn").build())
+        .when(terraformStepHelper)
+        .getProviderCredentialDelegateInfo(any(), any());
+
     ArgumentCaptor<TerraformTaskNGParameters> tfTaskNGParametersArgumentCaptor =
         ArgumentCaptor.forClass(TerraformTaskNGParameters.class);
     ArgumentCaptor<TerraformPassThroughData> tfPassThroughDataArgumentCaptor =
@@ -279,6 +287,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
 
     TerraformPassThroughData terraformPassThroughData = tfPassThroughDataArgumentCaptor.getValue();
     assertThat(terraformPassThroughData).isNotNull();
@@ -287,6 +296,12 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+
+    assertThat(taskParameters.getProviderCredentialDelegateInfo()).isNotNull();
+    assertThat(taskParameters.getProviderCredentialDelegateInfo().getType()).isEqualTo(TerraformProviderType.AWS);
+    TerraformAwsProviderCredentialDelegateInfo awsCredentialDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo();
+    assertThat(awsCredentialDelegateInfo.getRoleArn()).isEqualTo("roleArn");
   }
 
   @Test
@@ -384,6 +399,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
     assertThat(taskParameters.getConfigFile()).isNotNull();
+    assertThat(taskParameters.isSkipStateStorage()).isFalse();
     assertThat(((RemoteTerraformVarFileInfo) taskParameters.getVarFileInfos().get(0)).getGitFetchFilesConfig())
         .isNotNull();
   }
@@ -552,7 +568,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
             .build();
 
     TerraformApplyStepParameters applyStepParameters =
-        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(StoreConfigType.GITHUB, gitStoreConfigFiles);
+        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
+            StoreConfigType.GITHUB, gitStoreConfigFiles, false);
     applyStepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().setValue(true);
 
     applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
@@ -641,7 +658,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     TerraformApplyStepParameters applyStepParameters =
         TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
-            StoreConfigType.ARTIFACTORY, artifactoryStoreConfigFiles);
+            StoreConfigType.ARTIFACTORY, artifactoryStoreConfigFiles, false);
 
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
         TerraformStepDataGenerator.createStoreDelegateConfig();
@@ -946,8 +963,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .skipStateStorage(ParameterField.createValueField(false))
+                               .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -985,6 +1004,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
     verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -995,8 +1015,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("Id"))
-            .configuration(
-                TerraformStepConfigurationParameters.builder().type(TerraformStepConfigurationType.INLINE).build())
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .skipStateStorage(ParameterField.createValueField(false))
+                               .build())
             .build();
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
         TerraformStepDataGenerator.createStoreDelegateConfig();
@@ -1024,6 +1046,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -1323,6 +1346,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         put("test-output-name2", "test-output-value2");
       }
     });
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder().skipStateStorage(true).build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
 
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
@@ -1350,6 +1375,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformApplyOutcome.size()).isEqualTo(2);
     assertThat(terraformApplyOutcome.get("test-output-name1")).isEqualTo("test-output-value1");
     assertThat(terraformApplyOutcome.get("test-output-name2")).isEqualTo("test-output-value2");
+    verify(terraformStepHelper, times(0)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -1380,6 +1406,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         .thenReturn(new HashMap<>() {
           { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
         });
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder().skipStateStorage(false).build();
+    doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
     commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
     commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
@@ -1407,6 +1435,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformApplyOutcome.size()).isEqualTo(1);
     assertThat(terraformApplyOutcome.get(TF_ENCRYPTED_JSON_OUTPUT_NAME))
         .isEqualTo("<+secrets.getValue(\"account.test-json-1\")>");
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test

@@ -29,10 +29,12 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
 @Data
@@ -44,14 +46,16 @@ public class CfRunPluginCommandRequestNG extends AbstractTasTaskRequest implemen
   @Expression(ALLOW_SECRETS) List<FileData> fileDataList;
   @Expression(ALLOW_SECRETS) String repoRoot;
   List<EncryptedDataDetail> encryptedDataDetails;
+  Map<String, String> inputVariables;
+  List<String> outputVariables;
 
   @Builder
   public CfRunPluginCommandRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
       CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
-      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
-
-      String renderedScriptString, List<String> filePathsInScript, List<FileData> fileDataList, String repoRoot,
-      List<EncryptedDataDetail> encryptedDataDetails) {
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String renderedScriptString,
+      List<String> filePathsInScript, List<FileData> fileDataList, String repoRoot,
+      List<EncryptedDataDetail> encryptedDataDetails, Map<String, String> inputVariables,
+      List<String> outputVariables) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
 
@@ -60,6 +64,8 @@ public class CfRunPluginCommandRequestNG extends AbstractTasTaskRequest implemen
     this.fileDataList = fileDataList;
     this.repoRoot = repoRoot;
     this.encryptedDataDetails = encryptedDataDetails;
+    this.inputVariables = inputVariables;
+    this.outputVariables = outputVariables;
   }
 
   @Override

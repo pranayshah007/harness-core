@@ -14,7 +14,10 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
@@ -91,6 +94,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @Slf4j
 @OwnedBy(DX)
@@ -322,11 +327,13 @@ public class SCMGitSyncHelper {
     final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
 
-    if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {
-      log.error("Git SDK getBatchFiles Failure: {}", getBatchFilesResponse);
-      scmErrorHandler.processAndThrowException(getBatchFilesResponse.getStatusCode(),
-          getScmErrorDetailsFromGitProtoResponse(getBatchFilesResponse.getError()), ScmGitMetaData.builder().build());
-    }
+    getBatchFilesResponse.getGetFileResponseMapMap().forEach((key, getBatchFileResponse) -> {
+      if (isFailureResponse(getBatchFileResponse.getStatusCode())) {
+        log.error("Git SDK getBatchFiles Failure: {}", getBatchFileResponse);
+        scmErrorHandler.processAndThrowException(getBatchFileResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(getBatchFileResponse.getError()), ScmGitMetaData.builder().build());
+      }
+    });
 
     return prepareScmGetBatchFilesResponse(getBatchFilesResponse);
   }

@@ -34,7 +34,7 @@ import java.util.Map;
  * based on which we spawn the child. If you set the chain end flag to true in the response we will straight away call
  * finalize execution else we will call executeNextChild.
  *
- * executeNextChild : This is the the repetitive link which is repetitively called until the chainEnd boolean is set in
+ * executeNextChild : This is the repetitive link which is repetitively called until the chainEnd boolean is set in
  * the response.
  *
  * finalizeExecution : This is where the step concludes and responds with step response.

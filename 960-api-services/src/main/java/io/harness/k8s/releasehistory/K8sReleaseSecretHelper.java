@@ -16,6 +16,10 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NAME_DEL
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_ENV;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_INFRA_ID;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_INFRA_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_SERVICE;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_NAME_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_REPO_URL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY;
@@ -34,6 +38,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
@@ -168,5 +173,33 @@ public class K8sReleaseSecretHelper {
       return null;
     }
     return helmChartInfoDTO;
+  }
+
+  public void putHarnessReleaseMetadata(@NotNull V1Secret release, ReleaseMetadata releaseMetadata) {
+    if (releaseMetadata == null) {
+      return;
+    }
+
+    if (isNotEmpty(releaseMetadata.getServiceId())) {
+      putAnnotationsItem(release, RELEASE_SECRET_ANNOTATION_SERVICE, releaseMetadata.getServiceId());
+    }
+    if (isNotEmpty(releaseMetadata.getEnvId())) {
+      putAnnotationsItem(release, RELEASE_SECRET_ANNOTATION_ENV, releaseMetadata.getEnvId());
+    }
+    if (isNotEmpty(releaseMetadata.getInfraId())) {
+      putAnnotationsItem(release, RELEASE_SECRET_ANNOTATION_INFRA_ID, releaseMetadata.getInfraId());
+    }
+    if (isNotEmpty(releaseMetadata.getInfraKey())) {
+      putAnnotationsItem(release, RELEASE_SECRET_ANNOTATION_INFRA_KEY, releaseMetadata.getInfraKey());
+    }
+  }
+
+  public ReleaseMetadata getHarnessReleaseMetadata(@NotNull V1Secret releaseSecret) {
+    return ReleaseMetadata.builder()
+        .serviceId(getReleaseAnnotationValue(releaseSecret, RELEASE_SECRET_ANNOTATION_SERVICE))
+        .envId(getReleaseAnnotationValue(releaseSecret, RELEASE_SECRET_ANNOTATION_ENV))
+        .infraId(getReleaseAnnotationValue(releaseSecret, RELEASE_SECRET_ANNOTATION_INFRA_ID))
+        .infraKey(getReleaseAnnotationValue(releaseSecret, RELEASE_SECRET_ANNOTATION_INFRA_KEY))
+        .build();
   }
 }

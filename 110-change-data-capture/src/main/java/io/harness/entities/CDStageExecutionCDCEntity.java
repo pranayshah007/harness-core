@@ -6,6 +6,7 @@
  */
 
 package io.harness.entities;
+
 import io.harness.ChangeHandler;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -13,6 +14,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changehandlers.CDStageExecutionHandler;
 import io.harness.changehandlers.CDStageHelmManifestInfoHandler;
+import io.harness.changehandlers.CustomStageExecutionHandler;
 import io.harness.changehandlers.StageExecutionHandler;
 import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 
@@ -24,6 +26,7 @@ public class CDStageExecutionCDCEntity implements CDCEntity<StageExecutionInfo> 
   @Inject private CDStageHelmManifestInfoHandler cdStageHelmManifestInfoHandler;
   @Inject private StageExecutionHandler stageExecutionHandler;
   @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
+  @Inject private CustomStageExecutionHandler customStageExecutionHandler;
 
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
@@ -35,6 +38,8 @@ public class CDStageExecutionCDCEntity implements CDCEntity<StageExecutionInfo> 
       return tagsInfoNGCDChangeDataHandler;
     } else if (handlerClass.contentEquals("CDStageHelmManifestInfoHandler")) {
       return cdStageHelmManifestInfoHandler;
+    } else if (handlerClass.contentEquals("CustomStageExecutionHandler")) {
+      return customStageExecutionHandler;
     }
     return null;
   }

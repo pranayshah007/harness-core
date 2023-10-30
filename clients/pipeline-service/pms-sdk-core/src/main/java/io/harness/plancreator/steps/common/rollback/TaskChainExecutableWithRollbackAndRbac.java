@@ -6,10 +6,12 @@
  */
 
 package io.harness.plancreator.steps.common.rollback;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -19,6 +21,7 @@ import io.harness.steps.executable.TaskChainExecutableWithRbac;
 import com.google.inject.Inject;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 public abstract class TaskChainExecutableWithRollbackAndRbac
     implements TaskChainExecutableWithRbac<StepBaseParameters> {

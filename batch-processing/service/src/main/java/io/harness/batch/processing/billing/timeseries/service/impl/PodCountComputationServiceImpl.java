@@ -51,6 +51,12 @@ public class PodCountComputationServiceImpl {
   private static final String ACTIVE_POD_COUNT_PURGE_QUERY =
       "SELECT drop_chunks('active_pod_count', interval '60 days')";
 
+  private static final String ACTIVE_POD_COUNT_DELETE_FOR_ACCOUNT =
+      "DELETE FROM ACTIVE_POD_COUNT WHERE ACCOUNTID = '%s'";
+
+  private static final String ACTIVE_POD_COUNT_FOR_ACCOUNT =
+      "SELECT count(*) as ACTIVEPODCOUNT FROM ACTIVE_POD_COUNT WHERE ACCOUNTID = '%s'";
+
   static final String GET_NODE_QUERY =
       "SELECT INSTANCEID, CLUSTERID FROM billing_data where INSTANCETYPE = 'K8S_NODE' AND ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' GROUP BY INSTANCEID, CLUSTERID";
 
@@ -106,6 +112,44 @@ public class PodCountComputationServiceImpl {
   public boolean purgeActivePodCount() {
     log.info("Purging old {} data !!", ACTIVE_POD_COUNT_PURGE_QUERY);
     return executeQuery(ACTIVE_POD_COUNT_PURGE_QUERY);
+  }
+
+  public Long getActivePodCountForAccount(String accountId) {
+    Long activePodCount = 0L;
+    if (timeScaleDBService.isValid()) {
+      ResultSet resultSet = null;
+      boolean successful = false;
+      int retryCount = 0;
+      String query = String.format(ACTIVE_POD_COUNT_FOR_ACCOUNT, accountId);
+      while (!successful && retryCount < MAX_RETRY) {
+        try (Connection connection = timeScaleDBService.getDBConnection();
+             Statement statement = connection.createStatement()) {
+          resultSet = statement.executeQuery(query);
+          successful = true;
+          while (resultSet.next()) {
+            activePodCount = resultSet.getLong("ACTIVEPODCOUNT");
+          }
+        } catch (SQLException e) {
+          retryCount++;
+          if (retryCount >= MAX_RETRY) {
+            log.error("Failed to execute query in getNodes, max retry count reached, query=[{}],accountId=[{}]", query,
+                accountId, e);
+          } else {
+            log.warn("Failed to execute query in getNodes, query=[{}],accountId=[{}], retryCount=[{}]", query,
+                accountId, retryCount);
+          }
+        } finally {
+          DBUtils.close(resultSet);
+        }
+      }
+    } else {
+      throw new InvalidRequestException("Cannot process request in getActivePodCountForAccount");
+    }
+    return activePodCount;
+  }
+
+  public boolean deleteActivePodCountForAccount(String accountId) {
+    return executeQuery(String.format(ACTIVE_POD_COUNT_DELETE_FOR_ACCOUNT, accountId));
   }
 
   private boolean executeQuery(String query) {

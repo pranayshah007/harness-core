@@ -75,7 +75,7 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
     }
     if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getSupplier())) {
       Pattern pattern = Pattern.compile("[.]*" + filterBody.getSupplier() + "[.]*");
-      criteria.and(NormalizedSBOMEntityKeys.packageSupplierName).regex(pattern);
+      criteria.and(NormalizedSBOMEntityKeys.packageOriginatorName).regex(pattern);
     }
 
     return sbomComponentRepo.findAll(criteria, pageable);

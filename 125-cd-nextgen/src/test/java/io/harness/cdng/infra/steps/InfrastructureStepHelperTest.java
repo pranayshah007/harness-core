@@ -9,6 +9,7 @@ package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.VINIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,6 +38,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
@@ -183,7 +186,22 @@ public class InfrastructureStepHelperTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unresolved Expression : [<+test>]");
   }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testValidateExpressionMap() {
+    InfrastructureStepHelper infrastructureStepHelper = new InfrastructureStepHelper();
 
+    ParameterField<String> validField = ParameterField.createValueField("test");
+    ParameterField<String> unresolvedField = ParameterField.createExpressionField(true, "<+test>", null, true);
+
+    Map<String, ParameterField<String>> fieldNameValueMap = new HashMap<>();
+    fieldNameValueMap.put("validField", validField);
+    fieldNameValueMap.put("unresolvedField", unresolvedField);
+    assertThatThrownBy(() -> infrastructureStepHelper.validateExpression(fieldNameValueMap))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unresolved Expression : [<+test>], for field [unresolvedField]");
+  }
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)

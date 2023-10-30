@@ -49,4 +49,9 @@ public class K8sReleaseConstants {
   public static final String RELEASE_LABEL_QUERY_SET_FORMAT = "%s in (%s)";
   public static final String RELEASE_LABEL_QUERY_LIST_FORMAT = "%s=%s";
   public static final Set<String> BLUE_GREEN_COLORS = ImmutableSet.of(colorBlue, colorGreen);
+
+  public static final String RELEASE_SECRET_ANNOTATION_SERVICE = "harness.io/service";
+  public static final String RELEASE_SECRET_ANNOTATION_ENV = "harness.io/env";
+  public static final String RELEASE_SECRET_ANNOTATION_INFRA_ID = "harness.io/infra";
+  public static final String RELEASE_SECRET_ANNOTATION_INFRA_KEY = "harness.io/infra-key";
 }

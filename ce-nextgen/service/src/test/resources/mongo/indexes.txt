@@ -46,6 +46,7 @@ governanceRule {"name": "recommendation", "background": true} {"isOOTB": 1, "for
 governanceRule {"name": "rules", "background": true} {"accountId": 1, "cloudProvider": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRule {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "cloudProvider": 1, "lastUpdatedAt": 1}
 governanceRule {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}
+governanceRuleEnforcement {"name": "account", "background": true} {"accountId": 1}
 governanceRuleEnforcement {"name": "ruleEnforcement", "background": true} {"name": 1, "accountId": 1, "cloudProvider": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRuleEnforcement {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "lastUpdatedAt": 1}
 governanceRuleEnforcement {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}

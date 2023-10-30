@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.artifacts.bamboo;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.BambooRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -83,16 +85,11 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
 
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(BambooArtifactDelegateRequest attributesRequest) {
-    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
-                                                            .jobName(attributesRequest.getPlanKey())
-                                                            .artifactPaths(attributesRequest.getArtifactPaths())
-                                                            .artifactStreamType(ArtifactStreamType.BAMBOO.name())
-                                                            .build();
-
     try {
-      List<BuildDetails> buildDetails = bambooBuildService.getBuildsWithoutTimeOut(artifactStreamAttributes,
+      List<BuildDetails> buildDetails = bambooService.getBuildsWithoutTimeout(
           BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails(),
-          Integer.MAX_VALUE);
+          attributesRequest.getPlanKey(), Collections.emptyList(), Integer.MAX_VALUE);
+
       checkIfEmptyBuilds(buildDetails);
 
       if (EmptyPredicate.isNotEmpty(attributesRequest.getBuildRegex())) {
@@ -110,8 +107,16 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
 
       checkIfEmptyBuilds(buildDetails);
 
+      BuildDetails firstBuild = buildDetails.get(0);
+      if (isNotEmpty(attributesRequest.getArtifactPaths())) {
+        List<ArtifactFileMetadata> artifactFileMetadata = bambooService.getArtifactFileMetadataList(
+            BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails(),
+            attributesRequest.getPlanKey(), firstBuild.getNumber(), attributesRequest.getArtifactPaths());
+        firstBuild.setArtifactDownloadMetadata(artifactFileMetadata);
+      }
+
       BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
-          BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+          BambooRequestResponseMapper.toBambooArtifactDelegateResponse(firstBuild, attributesRequest);
       return getSuccessTaskExecutionResponse(
           Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
 

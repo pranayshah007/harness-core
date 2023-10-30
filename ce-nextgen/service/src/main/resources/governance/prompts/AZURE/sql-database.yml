@@ -1,0 +1,3 @@
+filters: advisor-recommendation, cost, data-masking-policy, diagnostic-settings, event, list-item, long-term-backup-retention-policy, metric, offhour, onhour, parent, policy-compliant, reduce, resource-lock, short-term-backup-retention-policy, transparent-data-encryption, value
+actions: delete, lock, logic-app, notify, resize, update-long-term-backup-retention-policy, update-short-term-backup-retention-policy, webhook
+customPrompt:

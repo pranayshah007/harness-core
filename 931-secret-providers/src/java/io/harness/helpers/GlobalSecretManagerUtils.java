@@ -23,6 +23,9 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import lombok.experimental.UtilityClass;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @UtilityClass
 @OwnedBy(PL)
@@ -39,6 +42,14 @@ public class GlobalSecretManagerUtils {
     return ngSecretManagerMetadata != null
         && (Boolean.TRUE.equals(ngSecretManagerMetadata.getHarnessManaged())
             || HARNESS_SECRET_MANAGER_IDENTIFIER.equals(ngSecretManagerMetadata.getIdentifier()));
+  }
+
+  public static String getValueByJsonPath(Object input, String key) throws JsonProcessingException {
+    return isValidJson(input) ? getValueByJsonPath(parse(input), key) : input.toString();
+  }
+
+  public static String getValueByJsonPath(String input, String key) throws JsonProcessingException {
+    return isValidJson(input) ? getValueByJsonPath(parse(input), key) : input;
   }
 
   public static String getValueByJsonPath(DocumentContext context, String key) throws JsonProcessingException {
@@ -66,5 +77,31 @@ public class GlobalSecretManagerUtils {
 
   public static DocumentContext parse(String json) {
     return JsonPath.using(configuration).parse(json);
+  }
+
+  public boolean isValidJson(Object json) {
+    try {
+      new JSONObject(json);
+    } catch (JSONException e) {
+      try {
+        new JSONArray(json);
+      } catch (JSONException ne) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean isValidJson(String json) {
+    try {
+      new JSONObject(json);
+    } catch (JSONException e) {
+      try {
+        new JSONArray(json);
+      } catch (JSONException ne) {
+        return false;
+      }
+    }
+    return true;
   }
 }

@@ -31,6 +31,7 @@ import io.harness.batch.processing.cleanup.CEDataCleanupRequestService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.GcpScheduledQueryTriggerAction;
 import io.harness.batch.processing.connectors.ConnectorsHealthUpdateService;
+import io.harness.batch.processing.datadeletion.CCMDataDeletionService;
 import io.harness.batch.processing.events.timeseries.service.intfc.CostEventService;
 import io.harness.batch.processing.governance.GovernanceRecommendationService;
 import io.harness.batch.processing.metrics.ProductMetricsService;
@@ -103,6 +104,7 @@ public class EventJobScheduler {
   @Autowired private BatchMainConfig batchMainConfig;
   @Autowired private CEMetaDataRecordUpdateService ceMetaDataRecordUpdateService;
   @Autowired private CEDataCleanupRequestService ceDataCleanupRequestService;
+  @Autowired private CCMDataDeletionService ccmDataDeletionService;
   @Autowired private CfClient cfClient;
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private ConnectorsHealthUpdateService connectorsHealthUpdateService;
@@ -451,6 +453,20 @@ public class EventJobScheduler {
       log.info(format(
           "The feature flag cf_sample_flag resolves to %s for account %s", Boolean.toString(result), target.getName()));
     });
+  }
+
+  @Scheduled(cron = "0 0 */1 ? * *")
+  public void processDataDeletionRecords() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        try (AutoLogContext ignore2 = new BatchJobTypeLogContext("DataDeletion", OVERRIDE_ERROR)) {
+          ccmDataDeletionService.processDataDeletionRecords();
+        }
+      } catch (Exception ex) {
+        log.error("Exception while running processDataCleanupRequest", ex);
+      }
+    }
   }
 
   @SuppressWarnings("squid:S1166") // not required to rethrow exceptions.

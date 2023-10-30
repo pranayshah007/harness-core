@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.fabric8.utils.Strings;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
 
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);
-    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
+    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId, new ArrayList<>());
     log.info("Created parked task {} and lite engine task {}", parkedTaskId, liteEngineTaskId);
 
     return AsyncExecutableResponse.newBuilder()

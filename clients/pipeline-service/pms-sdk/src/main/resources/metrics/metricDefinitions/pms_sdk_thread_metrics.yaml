@@ -1,0 +1,112 @@
+name: Pipeline SDK Thread Metrics
+identifier: PipelineSDKThreadMetrics
+metricGroup: PipelineSDKThreadMetricsGroup
+metrics:
+  - metricName: PlanCreatorInternalExecutorService_completed_meanRate
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_completed_fifteenMinuteRate
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_submitted_meanRate
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_submitted_fifteenMinuteRate
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_completed_meanRate
+    metricDefinition: PmsSdkCoreEventListener ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_completed_fifteenMinuteRate
+    metricDefinition: PmsSdkCoreEventListener ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_submitted_meanRate
+    metricDefinition: PmsSdkCoreEventListener ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_submitted_fifteenMinuteRate
+    metricDefinition: PmsSdkCoreEventListener ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_completed_meanRate
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_completed_fifteenMinuteRate
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_submitted_meanRate
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_submitted_fifteenMinuteRate
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_duration_mean
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_duration_99thPercentile
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_idle_mean
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_idle_99thPercentile
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_duration_mean
+    metricDefinition: PmsSdkCoreEventListener ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_duration_99thPercentile
+    metricDefinition: PmsSdkCoreEventListener ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_idle_mean
+    metricDefinition: PmsSdkCoreEventListener ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_idle_99thPercentile
+    metricDefinition: PmsSdkCoreEventListener ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_duration_mean
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_duration_99thPercentile
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_idle_mean
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_idle_99thPercentile
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PlanCreatorInternalExecutorService_running
+    metricDefinition: PlanCreatorInternalExecutorService ThreadPool running tasks rate
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkCoreEventListener_running
+    metricDefinition: PmsSdkCoreEventListener ThreadPool running tasks count
+    type: LastValue
+    unit: count
+  - metricName: PmsSdkOrchestrationEventListener_running
+    metricDefinition: PmsSdkOrchestrationEventListener ThreadPool running tasks count
+    type: LastValue
+    unit: count

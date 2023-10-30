@@ -132,12 +132,6 @@ func (b *RemoteWriter) Write(p []byte) (n int, err error) {
 	// Return if a new line character is not present in the input.
 	// Commands like `mvn` flush character by character so this prevents
 	// spamming of single-character logs.
-
-
-	fmt.Print("Writing logs from addon for key:" + b.key + " length is ")
-	fmt.Println(len(p))
-
-
 	if !bytes.Contains(p, []byte("\n")) {
 		b.prev = append(b.prev, p...)
 		return len(p), nil
@@ -216,12 +210,14 @@ func (b *RemoteWriter) Open() error {
 // Close closes the writer and uploads the full contents to
 // the server.
 func (b *RemoteWriter) Close() error {
+	b.log.Infow("attempting to close the stream", "key", b.key)
 	if b.stop() {
+		b.log.Infow("attempting to flush lines before closing", "key", b.key)
 		// Flush anything waiting on a new line
 		if len(b.prev) > 0 {
 			b.Write([]byte("\n"))
 		}
-		b.flush()
+		b.flush(-1)
 	}
 	err := b.upload()
 	// Close the log stream once upload has completed. Log in case of any error
@@ -231,11 +227,13 @@ func (b *RemoteWriter) Close() error {
 	if errc := b.client.Close(context.Background(), b.key); errc != nil {
 		b.log.Errorw("failed to close log stream", "key", b.key, zap.Error(errc))
 	}
+	b.log.Infow("closed the stream", "key", b.key, "error", err)
 	return err
 }
 
 // upload uploads the full log history to the server.
 func (b *RemoteWriter) upload() error {
+	b.log.Infow("attempting to upload logs", "key", b.key)
 	// Write history to a file and use that for upload.
 	data := new(bytes.Buffer)
 	l := len(b.history)
@@ -260,58 +258,51 @@ func (b *RemoteWriter) upload() error {
 		}
 		data.Write(buf.Bytes())
 	}
-			b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
-			fmt.Println(data)
-    		err := b.client.Upload(context.Background(), b.key, data)
-    		if err != nil {
-    			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
-    			return err
-    		}
-// 	if b.indirectUpload {
-// 		b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
-// 		err := b.client.Upload(context.Background(), b.key, data)
-// 		if err != nil {
-// 			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
-// 			return err
-// 		}
-// 	}
-// 	else {
-// 		b.log.Infow("calling upload link", "key", b.key)
-// 		link, err := b.client.UploadLink(context.Background(), b.key)
-// 		if err != nil {
-// 			b.log.Errorw("errored while trying to get upload link", zap.Error(err))
-// 			return err
-// 		}
-// 		b.log.Infow("uploading logs", "key", b.key, "num_lines", len(b.history))
-// 		err = b.client.UploadUsingLink(context.Background(), link.Value, data)
-// 		if err != nil {
-// 			b.log.Errorw("failed to upload using link", "key", b.key, "link", link.Value, zap.Error(err))
-// 			return err
-// 		}
-// 	}
+	if b.indirectUpload {
+		b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
+		err := b.client.Upload(context.Background(), b.key, data)
+		if err != nil {
+			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
+			return err
+		}
+	} else {
+		b.log.Infow("calling upload link", "key", b.key)
+		link, err := b.client.UploadLink(context.Background(), b.key)
+		if err != nil {
+			b.log.Errorw("errored while trying to get upload link", zap.Error(err))
+			return err
+		}
+		b.log.Infow("uploading logs", "key", b.key, "num_lines", len(b.history))
+		err = b.client.UploadUsingLink(context.Background(), link.Value, data)
+		if err != nil {
+			b.log.Errorw("failed to upload using link", "key", b.key, "link", link.Value, zap.Error(err))
+			return err
+		}
+	}
+	b.log.Infow("finished upload logs", "key", b.key)
 	return nil
 }
 
 // flush batch uploads all buffered logs to the server.
-func (b *RemoteWriter) flush() error {
-    fmt.Print("About to flush lines for Key: " + b.key + " length of lines being flushed")
-    fmt.Print(len(b.copy()))
+func (b *RemoteWriter) flush(iteration int) error {
+	b.log.Infow("attempting to flush lines", "key", b.key, "iteration", iteration)
 	if !b.opened {
 		return nil
 	}
 	b.Lock()
-        defer b.Unlock()
+	defer b.Unlock()
 	lines := b.copy()
 	b.clear()
 	if len(lines) == 0 {
 		return nil
 	}
+	b.log.Infow("attempting to flush lines - starting write rpc call", "key", b.key, "iteration", iteration)
 	err := b.client.Write(context.Background(), b.key, lines)
 	if err != nil {
 		b.log.Errorw("failed to flush lines", "key", b.key, "num_lines", len(lines), zap.Error(err))
 		return err
 	}
-	b.log.Infow("successfully flushed lines", "key", b.key, "num_lines", len(lines))
+	b.log.Infow("successfully flushed lines", "key", b.key, "num_lines", len(lines), "iteration", iteration)
 	return nil
 }
 
@@ -353,7 +344,10 @@ func (b *RemoteWriter) stopped() bool {
 
 // Start starts a periodic loop to flush logs to the live stream
 func (b *RemoteWriter) Start() error {
+
+	b.log.Infow("starting periodic process for flushing lines")
 	intervalTimer := time.NewTimer(b.interval)
+	iterationCounter := 0
 	for {
 		select {
 		case <-b.close:
@@ -366,13 +360,14 @@ func (b *RemoteWriter) Start() error {
 			case <-intervalTimer.C:
 				// we intentionally ignore errors. log streams
 				// are ephemeral and are considered low priority
-				err := b.flush()
+				err := b.flush(iterationCounter)
 				// Write the error to help with debugging
 				if err != nil {
 					b.log.Errorw("errored while trying to flush lines", "key", b.key, zap.Error(err))
 				}
 			}
 		}
+		iterationCounter += 1
 	}
 }
 

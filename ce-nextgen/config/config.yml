@@ -286,12 +286,13 @@ isClickHouseEnabled: false
 
 aiEngineConfig:
   genAIService:
-    model: text-bison
+    provider: azureopenai
+    model: gpt3
     temperature: 0.1
     maxDecodeSteps: 1024
     topP: 0.8
     topK: 40
-    apiEndpoint: http://35.202.125.234/complete
+    apiEndpoint: http://35.202.125.234/chat
     genAIServiceSecret: placeholder
 
 proxy:
