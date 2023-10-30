@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.ABHINAV3;
 import static io.harness.rule.OwnerRule.HITESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -136,7 +136,6 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
     Mockito.when(bigQueryHelperService.getAwsBillingData(any(), any(), anyString(), anyString()))
         .thenReturn(someNotEmptyMap());
     Boolean result = customBillingMetaDataService.getPipelineJobStatus("RandomAccount", startTime, endTime);
-
     assertTrue(result);
   }
 
