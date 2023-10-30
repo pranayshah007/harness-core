@@ -14,7 +14,9 @@ import static io.harness.idp.common.Constants.MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTAINS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTENTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.BRANCH_NAME;
 import static io.harness.idp.scorecard.datapoints.constants.Inputs.FILE_PATH;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_BRANCH;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
@@ -102,14 +104,21 @@ public class GithubContentsDsl implements DataSourceLocation {
   public String replaceInputValuePlaceholdersIfAny(
       String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     if (dataPoint.getIdentifier().equals(FILE_CONTENTS) || dataPoint.getIdentifier().equals(FILE_CONTAINS)) {
-      Optional<InputValue> inputValueOpt =
-          inputValues.stream().filter(inputValue -> inputValue.getKey().equals(FILE_PATH)).findFirst();
-      if (inputValueOpt.isPresent()) {
-        String inputValue = inputValueOpt.get().getValue();
-        if (!inputValue.isEmpty()) {
-          inputValue = inputValue.replace("\"", "");
-          requestBody = requestBody.replace(FILE_PATH_REPLACER, inputValue);
-        }
+      requestBody = replaceInputValuePlaceholders(requestBody, inputValues, FILE_PATH, FILE_PATH_REPLACER);
+      requestBody = replaceInputValuePlaceholders(requestBody, inputValues, BRANCH_NAME, REPOSITORY_BRANCH);
+    }
+    return requestBody;
+  }
+
+  private String replaceInputValuePlaceholders(
+      String requestBody, List<InputValue> inputValues, String inputKey, String inputValuePlaceholder) {
+    Optional<InputValue> inputValueOpt =
+        inputValues.stream().filter(inputValue -> inputValue.getKey().equals(inputKey)).findFirst();
+    if (inputValueOpt.isPresent()) {
+      String inputValue = inputValueOpt.get().getValue();
+      if (!inputValue.isEmpty()) {
+        inputValue = inputValue.replace("\"", "");
+        requestBody = requestBody.replace(inputValuePlaceholder, inputValue);
       }
     }
     return requestBody;
