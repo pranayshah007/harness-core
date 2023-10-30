@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ArtifactApiUtils {
-  public static String getSorting(String field) {
+  public static String getSortFieldMapping(String field) {
     switch (field) {
       case "name":
         break;

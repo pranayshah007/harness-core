@@ -245,7 +245,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
 
-    Pageable pageable = PageResponseUtils.getPageable(0, 2, ArtifactApiUtils.getSorting("name"), "ASC");
+    Pageable pageable = PageResponseUtils.getPageable(0, 2, ArtifactApiUtils.getSortFieldMapping("name"), "ASC");
     Page<ArtifactListingResponse> artifactEntityPage = artifactService.listLatestArtifacts(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
         builderFactory.getContext().getProjectIdentifier(), pageable);

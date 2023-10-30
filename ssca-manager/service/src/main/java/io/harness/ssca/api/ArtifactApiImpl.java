@@ -33,7 +33,7 @@ public class ArtifactApiImpl implements ArtifactApi {
   public Response getArtifactDetailComponentView(String org, String project, String artifact, String tag,
       @Valid ArtifactComponentViewRequestBody body, String harnessAccount, @Min(1L) @Max(1000L) Integer limit,
       String order, @Min(0L) Integer page, String sort) {
-    sort = ArtifactApiUtils.getSorting(sort);
+    sort = ArtifactApiUtils.getSortFieldMapping(sort);
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactComponentViewResponse> artifactComponentViewResponses =
         artifactService.getArtifactComponentView(harnessAccount, org, project, artifact, tag, body, pageable);
@@ -44,7 +44,7 @@ public class ArtifactApiImpl implements ArtifactApi {
   public Response getArtifactDetailDeploymentView(String org, String project, String artifact, String tag,
       @Valid ArtifactDeploymentViewRequestBody body, String harnessAccount, @Min(1L) @Max(1000L) Integer limit,
       String order, @Min(0L) Integer page, String sort) {
-    sort = ArtifactApiUtils.getSorting(sort);
+    sort = ArtifactApiUtils.getSortFieldMapping(sort);
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactDeploymentViewResponse> artifactDeploymentViewResponses =
         artifactService.getArtifactDeploymentView(harnessAccount, org, project, artifact, tag, body, pageable);
@@ -60,7 +60,7 @@ public class ArtifactApiImpl implements ArtifactApi {
   @Override
   public Response listArtifacts(String org, String project, @Valid ArtifactListingRequestBody body,
       String harnessAccount, @Min(1L) @Max(1000L) Integer limit, String order, @Min(0L) Integer page, String sort) {
-    sort = ArtifactApiUtils.getSorting(sort);
+    sort = ArtifactApiUtils.getSortFieldMapping(sort);
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
         artifactService.listArtifacts(harnessAccount, org, project, body, pageable);
@@ -70,7 +70,7 @@ public class ArtifactApiImpl implements ArtifactApi {
   @Override
   public Response listLatestArtifacts(String org, String project, String harnessAccount,
       @Min(1L) @Max(1000L) Integer limit, String order, @Min(0L) Integer page, String sort) {
-    sort = ArtifactApiUtils.getSorting(sort);
+    sort = ArtifactApiUtils.getSortFieldMapping(sort);
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
         artifactService.listLatestArtifacts(harnessAccount, org, project, pageable);
