@@ -9,7 +9,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/harness/harness-core/product/ci/engine/new/state"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"go.uber.org/zap"
 )
@@ -25,14 +24,15 @@ func ExecuteStepInAsync(ctx context.Context, in *pb.ExecuteStepRequest,
 	log *zap.SugaredLogger, procWriter io.Writer) {
 	log.Infow("Received step for execution", "in", in)
 	go func() {
-		s := state.ExecutionState()
-		executionID := in.GetExecutionId()
-		if s.CanRun(executionID) {
-			executeStep(in, log, procWriter)
-		} else {
-			log.Infow("Job is already running with same execution ID",
-				"id", executionID, "arg", in)
-		}
+// 		s := state.ExecutionState()
+// 		executionID := in.GetExecutionId()
+		executeStep(in, log, procWriter)
+// 		if s.CanRun(executionID) {
+// 			executeStep(in, log, procWriter)
+// 		} else {
+// 			log.Infow("Job is already running with same execution ID",
+// 				"id", executionID, "arg", in)
+// 		}
 	}()
 }
 

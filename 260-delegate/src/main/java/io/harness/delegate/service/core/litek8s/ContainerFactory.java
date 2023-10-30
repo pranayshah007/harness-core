@@ -7,6 +7,9 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import io.harness.delegate.core.beans.ContainerSpec;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
 import io.harness.delegate.core.beans.StepRuntime;
@@ -21,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1CapabilitiesBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ContainerPortBuilder;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -77,13 +81,13 @@ public class ContainerFactory {
                                                     .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
                                                     .withEnv(K8SEnvVar.fromMap(envVars.build()))
-                                                    .withResources(getResources(containerRuntime.getCompute().getCpu(),
-                                                        containerRuntime.getCompute().getMemory()))
+                                                    .withResources(getResources(containerRuntime.getResource().getCpu(),
+                                                        containerRuntime.getResource().getMemory()))
                                                     .withImagePullPolicy("Always");
 
-    if (containerRuntime.hasCompute()) {
+    if (containerRuntime.hasResource()) {
       containerBuilder.withResources(
-          getResources(containerRuntime.getCompute().getCpu(), containerRuntime.getCompute().getMemory()));
+          getResources(containerRuntime.getResource().getCpu(), containerRuntime.getResource().getMemory()));
     }
 
     if (containerRuntime.hasSecurityContext()) {
@@ -99,12 +103,13 @@ public class ContainerFactory {
     return containerBuilder;
   }
 
-  public V1ContainerBuilder createAddonInitContainer() {
+  public V1ContainerBuilder createAddonInitContainer(K8SInfra k8SInfra) {
     final var envVars = ImmutableMap.<String, String>builder();
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
     return new V1ContainerBuilder()
         .withName(SETUP_ADDON_CONTAINER_NAME)
-        .withImage("raghavendramurali/ci-addon:tag1.6")
+        //        .withImage("raghavendramurali/ci-addon:tag1.6")
+        .withImage("us.gcr.io/gcr-play/delegate:anup-addon-writer-script-two")
         .withEnv(K8SEnvVar.fromMap(envVars.build()))
         .withCommand(getAddonCmd())
         .withArgs(getAddonArgs())
@@ -116,7 +121,8 @@ public class ContainerFactory {
   public V1ContainerBuilder createLEContainer(final ResourceRequirements resourceRequirements) {
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
-        .withImage("raghavendramurali/ci-lite-engine:tag1.6")
+        .withImage("us.gcr.io/gcr-play/delegate:anup-liteengine")
+        //   .withImage("us.gcr.io/gcr-play/delegate:anup-addon2")
         .withEnv(K8SEnvVar.fromMap(getLeEnvVars()))
         .withImagePullPolicy("Always")
         .withPorts(getPort(RESERVED_LE_PORT))
@@ -127,7 +133,7 @@ public class ContainerFactory {
   private Map<String, String> getLeEnvVars() {
     final var envVars = ImmutableMap.<String, String>builder();
     envVars.put(HARNESS_WORKSPACE, ContainerFactory.WORKING_DIR);
-    envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
+    envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "false");
     envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
     envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE,
         "delegate-service"); // Fixme: LE Can't start without it. Should use service discovery instead

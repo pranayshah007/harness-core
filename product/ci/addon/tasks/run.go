@@ -135,6 +135,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 
 	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
 	cmdToExecute, err := r.getScript(ctx, outputFile)
+	// cmdToExecute = "set -e\necho helloworld"
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +145,8 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		return nil, err
 	}
 
-	cmdArgs, err := r.getEntrypoint(ctx, cmdToExecute)
+	cmdArgs, err := r.getEntrypoint(ctx, cmdToExecute) // cmdToExecute is  "set -e\necho helloworld"
+	// cmdArgs will look like String[] = {"bash", "-c", "set -e\necho hello world"}
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +158,11 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 	if r.detach {
 		go func() {
 			ctx := context.Background()
+			// cmdArgs = {"bash", "-c", "set -e\necho helloworld"}
+			// or cmdArgs = {"bash", "-c", "set -e\n<command whatever needs to be exeucted>"}
+			// bash -c "set -e
+			// echo hello world"		
+			//
 			cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, cmdArgs[0], cmdArgs[1:]...).
 				WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
 			_ = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
@@ -203,6 +210,7 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 	}
 
 	earlyExitCmd, err := r.getEarlyExitCommand()
+	// earlyExitCmd = "set -e\n"
 	if err != nil {
 		return "", err
 	}
@@ -212,6 +220,7 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 	command := ""
 	if r.detach {
 		command = fmt.Sprintf("%s%s", earlyExitCmd, resolvedCmd)
+		// command = 'set -e\n''echo hello world' or  set -e\necho helloworld
 	} else {
 		command = fmt.Sprintf("%s%s%s", earlyExitCmd, resolvedCmd, outputVarCmd)
 	}
@@ -219,6 +228,7 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 }
 
 func (r *runTask) getEntrypoint(ctx context.Context, cmdToExecute string) ([]string, error) {
+	// cmdToExecute is  "set -e\necho helloworld"
 	// give priority to entrypoint
 	if len(r.entrypoint) != 0 {
 		return r.entrypoint, nil
@@ -228,6 +238,7 @@ func (r *runTask) getEntrypoint(ctx context.Context, cmdToExecute string) ([]str
 			return nil, err
 		}
 		return []string{shell, ep, cmdToExecute}, nil
+		// it will return String[] {"bash", "-c", "set -e\necho helloworld"}
 	}
 
 	// fetch default ep

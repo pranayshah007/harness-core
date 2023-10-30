@@ -23,12 +23,9 @@ RUN microdnf update \
 
 # Copy ci-addon binary
 COPY ci-addon_/ci-addon /usr/local/bin/ci-addon-linux
-COPY java-agent.jar /usr/local/bin/
-COPY split_tests /usr/local/bin/
-COPY tmate-client/tmate /usr/local/bin/
-RUN chmod +x /usr/local/bin/ci-addon-linux \
-    && chmod +x /usr/local/bin/split_tests \
-    && chmod +x /usr/local/bin/tmate
+# COPY split_tests /usr/local/bin/
+# COPY tmate-client/tmate /usr/local/bin/
+RUN chmod +x /usr/local/bin/ci-addon-linux
 
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness

@@ -18,7 +18,8 @@ delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://localhost:9090/api/
 verificationServiceUrl: https://localhost:7070/verification/
 cvNextGenUrl: https://localhost:6060/cv/api/
-logStreamingServiceBaseUrl: http://localhost:8079
+logStreamingServiceBaseUrl: https://e9f2-2405-201-d027-e117-d9d4-3632-6a41-e0e1.ngrok.io
+#logStreamingServiceBaseUrl: https://qa.harness.io/log-service/
 heartbeatIntervalMs: 50000
 localDiskPath: /tmp
 doUpgrade: false

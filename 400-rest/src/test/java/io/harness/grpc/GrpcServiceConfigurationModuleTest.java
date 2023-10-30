@@ -66,9 +66,8 @@ public class GrpcServiceConfigurationModuleTest extends IntegrationTestBase {
       }
     });
     modules.add(new PerpetualTaskServiceModule());
-    modules.add(new GrpcServiceConfigurationModule(configuration.getGrpcServerConfig(),
-        configuration.getPortal().getJwtNextGenManagerSecret(),
-        configuration.getLogStreamingServiceConfig().getServiceToken()));
+    modules.add(new GrpcServiceConfigurationModule(
+        configuration.getGrpcServerConfig(), configuration.getPortal().getJwtNextGenManagerSecret()));
 
     modules.add(new AbstractModule() {
       @Override

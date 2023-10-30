@@ -180,6 +180,8 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//token := "fetch token from qa for local testing or remove auth from local service"
 	token, ok := os.LookupEnv(logSvcToken)
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
@@ -188,6 +190,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 
 	delegateLogURL, delegateLogURLOk := os.LookupEnv(delegateLogURLEnv)
 	internalLogURL, internalLogURLOk := os.LookupEnv(logSvcEp)
+// 	internalLogURL:= "http://localhost:8079"
 
 	if delegateLogURLOk && !isUrlSame(delegateLogURL, internalLogURL) {
 		httpClient := client.NewHTTPClient(delegateLogURL, account, token, false, certsDir)
@@ -199,10 +202,12 @@ func GetRemoteHTTPClient() (client.Client, error) {
 			fmt.Printf("Failed to ping log-service: %w\n", err)
 		}
 	}
-	if internalLogURLOk {
-		fmt.Printf("Using internalLogURL %s:\n", internalLogURL)
-		return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
-	}
+    if internalLogURLOk {
+        fmt.Printf("Using internalLogURL %s:\n", internalLogURL)
+        return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
+    }
+
+	//return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
 
 	return nil, fmt.Errorf("No usable Log URL found.")
 
@@ -210,6 +215,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 
 // GetLogKey returns a key for log service
 func GetLogKey(id string) (string, error) {
+	//logPrefix := "someLogPrefix"
 	logPrefix, ok := os.LookupEnv(logPrefixEnv)
 	if !ok {
 		return "", fmt.Errorf("log prefix variable not set %s", logPrefixEnv)
@@ -284,6 +290,7 @@ func GetTiSvcEp() (string, error) {
 }
 
 func GetAccountId() (string, error) {
+	//account := "kmpySmUISimoRrJL6NL73w"
 	account, ok := os.LookupEnv(accountIDEnv)
 	if !ok {
 		return "", fmt.Errorf("account ID environment variable not set %s", accountIDEnv)
