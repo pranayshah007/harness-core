@@ -409,20 +409,21 @@ public class ServerlessV2PluginInfoProviderHelper {
       }
 
       if (s3AwsAccessKey != null) {
-        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ACCESS_KEY", s3AwsAccessKey);
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACT_AWS_ACCESS_KEY", s3AwsAccessKey);
       }
       if (s3AwsSecretKey != null) {
-        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_SECRET_KEY", s3AwsSecretKey);
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACT_AWS_SECRET_KEY", s3AwsSecretKey);
       }
       if (s3CrossAccountRoleArn != null) {
-        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_ROLE_ARN", s3CrossAccountRoleArn);
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACT_AWS_ROLE_ARN", s3CrossAccountRoleArn);
       }
       if (s3ExternalId != null) {
-        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_STS_EXTERNAL_ID", s3ExternalId);
+        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_ARTIFACT_AWS_STS_EXTERNAL_ID", s3ExternalId);
       }
 
       if (s3ArtifactOutcome.getRegion() != null) {
-        serverlessPrepareRollbackEnvironmentVariablesMap.put("PLUGIN_S3_AWS_REGION", s3ArtifactOutcome.getRegion());
+        serverlessPrepareRollbackEnvironmentVariablesMap.put(
+            "PLUGIN_ARTIFACT_AWS_REGION", s3ArtifactOutcome.getRegion());
       }
 
       serverlessPrepareRollbackEnvironmentVariablesMap.put(
