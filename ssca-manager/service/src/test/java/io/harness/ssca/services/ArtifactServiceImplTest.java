@@ -27,12 +27,14 @@ import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.EnvironmentTypeEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody.PolicyViolationEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
+import io.harness.ssca.api.ArtifactApiUtils;
 import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
 import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryBuilder;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMComponentEntityBuilder;
+import io.harness.ssca.utils.PageResponseUtils;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -243,9 +245,10 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     Mockito.when(enforcementSummaryRepo.findAll(Mockito.any(Aggregation.class)))
         .thenReturn(List.of(builderFactory.getEnforcementSummaryBuilder().build()));
 
+    Pageable pageable = PageResponseUtils.getPageable(0, 2, ArtifactApiUtils.getSorting("name"), "ASC");
     Page<ArtifactListingResponse> artifactEntityPage = artifactService.listLatestArtifacts(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
-        builderFactory.getContext().getProjectIdentifier(), Pageable.ofSize(2).withPage(0));
+        builderFactory.getContext().getProjectIdentifier(), pageable);
 
     List<ArtifactListingResponse> artifactListingResponses = artifactEntityPage.toList();
 
