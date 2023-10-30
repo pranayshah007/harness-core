@@ -226,6 +226,7 @@ import io.harness.runnable.InstanceAccountInfoRunnable;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
+import io.harness.security.ScopeInfoFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.service.deploymentevent.DeploymentEventListenerRegistrar;
@@ -470,6 +471,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
+    registerScopeInfoFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -977,6 +979,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerApiResponseFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
+  private void registerScopeInfoFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ScopeInfoFilter.class));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {

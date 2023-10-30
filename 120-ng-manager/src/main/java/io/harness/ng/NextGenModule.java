@@ -338,6 +338,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.scim.service.ScimGroupService;
 import io.harness.scim.service.ScimUserService;
+import io.harness.scopeinfoclient.ScopeInfoClientModule;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
@@ -873,6 +874,8 @@ public class NextGenModule extends AbstractModule {
     install(new TriggersClientModule(
         ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
         appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
+    install(new ScopeInfoClientModule(appConfig.getNgManagerClientConfig(),
+        appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);

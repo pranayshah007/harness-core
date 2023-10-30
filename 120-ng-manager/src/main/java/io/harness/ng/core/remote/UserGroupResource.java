@@ -32,6 +32,7 @@ import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.beans.ScopeInfo;
 import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -126,6 +127,7 @@ import retrofit2.http.Body;
 public class UserGroupResource {
   private final UserGroupService userGroupService;
   private final AccessControlClient accessControlClient;
+  private final ScopeInfo scopeInfo;
 
   @POST
   @ApiOperation(value = "Create a User Group", nickname = "postUserGroup")
@@ -280,6 +282,7 @@ public class UserGroupResource {
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @BeanParam PageRequest pageRequest) {
+
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));

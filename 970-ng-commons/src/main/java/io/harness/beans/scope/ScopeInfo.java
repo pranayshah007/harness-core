@@ -5,9 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ng.core.beans;
+package io.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+
+import javax.enterprise.context.RequestScoped;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
@@ -24,6 +26,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @AllArgsConstructor
+@RequestScoped
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScopeInfo {
