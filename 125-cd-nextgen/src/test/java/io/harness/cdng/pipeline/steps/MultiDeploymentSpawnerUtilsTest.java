@@ -205,13 +205,16 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testGetScopedEnvRefWithEnvironmentGroup() {
-    EnvironmentYamlV2 environmentYamlV2 =
-        EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("env1")).build();
+    EnvironmentYamlV2 environmentYamlV2 = EnvironmentYamlV2.builder()
+                                              .environmentRef(ParameterField.createValueField("env1"))
+                                              .gitBranch("envGitBranchValue")
+                                              .build();
     InfraStructureDefinitionYaml infraStructureDefinitionYaml =
         InfraStructureDefinitionYaml.builder().identifier(ParameterField.createValueField("identifier")).build();
     Map<String, String> envMap = MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
         environmentYamlV2, infraStructureDefinitionYaml, Scope.ACCOUNT);
     assertThat(envMap.get("environmentRef")).isEqualTo("account.env1");
+    assertThat(envMap.get("envGitBranch")).isEqualTo("envGitBranchValue");
   }
 
   @Test

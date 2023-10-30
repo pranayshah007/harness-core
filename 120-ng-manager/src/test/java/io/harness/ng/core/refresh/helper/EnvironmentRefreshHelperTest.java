@@ -314,7 +314,7 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         .get(anyString(), anyString(), anyString(), eq(identifier), eq(false));
     doReturn(null)
         .when(environmentService)
-        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), null);
+        .createEnvironmentInputsYaml(anyString(), anyString(), anyString(), eq(identifier), anyString());
   }
 
   private void mockEnvWithRuntimeInputs(String identifier) {
