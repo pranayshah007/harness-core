@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.docker.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -78,6 +79,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   private static String IMAGE_PATH = "imagePath";
   private static String ORG_IDENTIFIER = "orgIdentifier";
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
+  public static final String TAG_REGEX = "tagRegex";
   private static final String TAG = "tag";
   private static final String IDENTIFIER = "identifier";
   private static final String INPUT = "<+input>";
@@ -471,6 +473,38 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                                IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage(HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_NULL() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               IDENTIFIER_REF, null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_Empty() {
+    assertThatThrownBy(
+        () -> dockerResourceService.getBuildDetails(IDENTIFIER_REF, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_INPUT() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               IDENTIFIER_REF, INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
   }
 
   @Test

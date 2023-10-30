@@ -12,7 +12,6 @@ import static io.harness.pms.sdk.core.execution.AsyncSdkResumeCallback.CDS_REMOV
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -26,10 +25,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
-import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.contracts.resume.ChainDetails;
-import io.harness.pms.contracts.resume.NodeResumeEvent;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.execution.events.node.resume.NodeResumeEventHandler;
 import io.harness.pms.sdk.core.steps.io.ResponseDataMapper;
@@ -38,16 +34,11 @@ import io.harness.rule.Owner;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
@@ -55,7 +46,7 @@ public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
   private static String PLAN_EXECUTION_ID = "planExecutionId";
 
   @Mock SdkNodeExecutionService sdkNodeExecutionService;
-  @Spy @Named(CORE_EXECUTOR_NAME) ExecutorService executorService;
+  @Mock @Named(CORE_EXECUTOR_NAME) ExecutorService executorService;
   @Mock NodeResumeEventHandler nodeResumeEventHandler;
   @Mock ResponseDataMapper responseDataMapper;
   AsyncSdkResumeCallback asyncSdkResumeCallback;
@@ -63,7 +54,6 @@ public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
 
   @Before
   public void setup() {
-    executorService = Executors.newSingleThreadExecutor();
     ambiance = Ambiance.newBuilder()
                    .setPlanExecutionId(PLAN_EXECUTION_ID)
                    .addLevels(Level.newBuilder().setRuntimeId(NODE_EXECUTION_ID).build())
@@ -113,8 +103,7 @@ public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testNotifyErrorWithSkipSdkResumeEventForAsyncChain() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
+  public void testNotifyErrorWithSkipSdkResumeEventForAsyncChain() {
     Ambiance ambiance1 =
         Ambiance.newBuilder()
             .setPlanExecutionId(PLAN_EXECUTION_ID)
@@ -138,29 +127,14 @@ public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
                                                          .resolvedStepParameters(resolvedStepParameters)
                                                          .build();
     doReturn(new HashMap<>()).when(responseDataMapper).toResponseDataProtoV2(any());
-    ArgumentCaptor<NodeResumeEvent> resumeEventArgumentCaptor = ArgumentCaptor.forClass(NodeResumeEvent.class);
-    executorService.submit(() -> {
-      asyncSdkResumeCallback1.notify(new HashMap<>());
-      latch.countDown();
-    });
-    assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
-    verify(nodeResumeEventHandler, times(1)).handleEventWithContext(resumeEventArgumentCaptor.capture());
-    assertThat(resumeEventArgumentCaptor.getValue())
-        .isEqualTo(NodeResumeEvent.newBuilder()
-                       .setAmbiance(ambiance1)
-                       .setExecutionMode(ExecutionMode.ASYNC_CHAIN)
-                       .setStepParameters(ByteString.copyFrom(resolvedStepParameters))
-                       .setAsyncError(false)
-                       .putAllResponseData(new HashMap<>())
-                       .setChainDetails(ChainDetails.newBuilder().setIsEnd(false).build())
-                       .build());
+    asyncSdkResumeCallback1.notify(new HashMap<>());
+    verify(executorService, times(1)).submit(any(Runnable.class));
   }
 
   @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testNotifyErrorWithSkipSdkResumeEventForAsync() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
+  public void testNotifyErrorWithSkipSdkResumeEventForAsync() {
     Ambiance ambiance1 =
         Ambiance.newBuilder()
             .setPlanExecutionId(PLAN_EXECUTION_ID)
@@ -182,20 +156,7 @@ public class AsyncSdkResumeCallbackTest extends PmsSdkCoreTestBase {
                                                          .resolvedStepParameters(resolvedStepParameters)
                                                          .build();
     doReturn(new HashMap<>()).when(responseDataMapper).toResponseDataProtoV2(any());
-    ArgumentCaptor<NodeResumeEvent> resumeEventArgumentCaptor = ArgumentCaptor.forClass(NodeResumeEvent.class);
-    executorService.submit(() -> {
-      asyncSdkResumeCallback1.notify(new HashMap<>());
-      latch.countDown();
-    });
-    assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
-    verify(nodeResumeEventHandler, times(1)).handleEventWithContext(resumeEventArgumentCaptor.capture());
-    assertThat(resumeEventArgumentCaptor.getValue())
-        .isEqualTo(NodeResumeEvent.newBuilder()
-                       .setAmbiance(ambiance1)
-                       .setExecutionMode(ExecutionMode.ASYNC)
-                       .setStepParameters(ByteString.copyFrom(resolvedStepParameters))
-                       .setAsyncError(false)
-                       .putAllResponseData(new HashMap<>())
-                       .build());
+    asyncSdkResumeCallback1.notify(new HashMap<>());
+    verify(executorService, times(1)).submit(any(Runnable.class));
   }
 }

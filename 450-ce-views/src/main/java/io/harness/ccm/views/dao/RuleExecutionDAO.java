@@ -144,7 +144,7 @@ public class RuleExecutionDAO {
             CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, ruleExecutionFilter.getAccountId())) {
       query.field(RuleExecutionKeys.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
     }
-    ruleExecutionList.setTotalItems(query.asList().size());
+    ruleExecutionList.setTotalItems((int) query.count());
     final RuleExecutionSortType modifiedSortType = Objects.isNull(ruleExecutionFilter.getRuleExecutionSortType())
         ? RuleExecutionSortType.COST
         : ruleExecutionFilter.getRuleExecutionSortType();

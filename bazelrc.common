@@ -29,6 +29,7 @@ build --jvmopt="--add-opens java.base/java.util=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.util.concurrent=ALL-UNNAMED"
 build --jvmopt="--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
 build --jvmopt="--add-opens java.xml/com.sun.org.apache.xpath.internal=ALL-UNNAMED"
+build --jvmopt="--add-opens java.base/java.text=ALL-UNNAMED"
 
 # Use JDK17 --config=jdk17
 build:jdk17 --java_language_version=17
