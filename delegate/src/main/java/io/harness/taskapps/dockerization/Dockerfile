@@ -30,14 +30,9 @@ RUN chmod -R 775 /opt/harness \
 
 WORKDIR /opt/harness
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
-
 ENV HOME=/opt/harness
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
-
-COPY ./TaskApp_deploy.jar ./task.jar
-COPY ./taskfile /etc/config/taskfile
 
 USER 1001
 

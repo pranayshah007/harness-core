@@ -151,20 +151,24 @@ public class K8SLiteRunner implements Runner {
   }
 
   @Override
-  public void execute(final String taskGroupId, final InputData tasks, final Context context) {
+  public void execute(String taskGroupId, final InputData tasks, final Context context) {
+    taskGroupId = "MKP4fizISYWple8OyMdJ1Q-DEL";
     ExecuteStep executeStep = ExecuteStep.newBuilder()
                                   .setTaskParameters(tasks.getBinaryData())
                                   .addAllExecuteCommand(List.of("./start.sh"))
                                   .build();
 
-    UnitStep unitStep = UnitStep.newBuilder()
-                            .setId(taskGroupId)
-                            .setExecuteTask(executeStep)
-                            .setCallbackToken(config.getDelegateToken())
-                            .setTaskId(context.get(Context.TASK_ID))
-                            .setAccountId(config.getAccountId())
-                            .setContainerPort(RESERVED_ADDON_PORT)
-                            .build();
+    UnitStep unitStep =
+        UnitStep.newBuilder()
+            .setId(taskGroupId)
+            .setExecuteTask(executeStep)
+            .setCallbackToken(config.getDelegateToken())
+            .setTaskId(context.get(Context.TASK_ID))
+            .setAccountId(config.getAccountId())
+            .setContainerPort(RESERVED_ADDON_PORT)
+            .setLogKey(
+                "accountId:kmpySmUISimoRrJL6NL73w/orgId:default/projectId:dummy/pipelineId:shell/runSequence:196/level0:pipeline/level1:stages/level2:shell/level3:spec/level4:execution/level5:steps/level6:ShellScript_1-commandUnit:Execute")
+            .build();
 
     ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder().setStep(unitStep).build();
 
@@ -185,8 +189,8 @@ public class K8SLiteRunner implements Runner {
 
     final var namespace = config.getNamespace();
 
-    String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
-    // String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
+    //  String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
+    String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
     ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
     ManagedChannel channel = managedChannelBuilder.build();
 

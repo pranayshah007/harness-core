@@ -21,6 +21,7 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
 import io.harness.delegate.ComputingResource;
+import io.harness.delegate.ContainerSpec;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.delegate.Execution;
 import io.harness.delegate.ExecutionInfrastructure;
@@ -39,6 +40,8 @@ import io.harness.delegate.beans.RunnerType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.HTimestamps;
+import io.harness.logstreaming.LogStreamingServiceRestClient;
+import io.harness.network.SafeHttpCall;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest.RequestCase;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -52,6 +55,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Timestamps;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +76,8 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private static String ExecutionInfraID = generateUuid();
 
+  @Inject private LogStreamingServiceRestClient logServiceClient;
+
   @Override
   public String queueTask(Map<String, String> setupAbstractions, TaskRequest taskRequest, Duration holdFor) {
     TaskRequestValidityCheck check = validateTaskRequest(taskRequest, TaskMode.ASYNC);
@@ -86,11 +92,12 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
               SHELL_SCRIPT_TASK_NG.name())) {
         var submitRequest = taskRequest.getDelegateTaskRequest().getRequest();
 
+        //        //
+        //                                submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(
+        //                                    delegateServiceBlockingStub::initTask, buildK8sInfraReq(submitRequest));
+        //
         submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(
-            delegateServiceBlockingStub::initTask, buildK8sInfraReq(submitRequest));
-        sleep(Duration.ofSeconds(30));
-        submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(
-            delegateServiceBlockingStub::executeTask, buildK8sExecReq(submitRequest, "566698"));
+            delegateServiceBlockingStub::executeTask, buildK8sExecReq(submitRequest, "abc"));
       } else {
         submitTaskResponse = PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTaskV2,
             buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
@@ -138,9 +145,16 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
   private SetupExecutionInfrastructureRequest buildK8sInfraReq(SubmitTaskRequest submitTaskRequest) {
     SchedulingConfig schedulingConfig = buildK8sSchedulingConfig(submitTaskRequest);
 
-    LogConfig logConfig = LogConfig.newBuilder().setLogKey("asdsadasd").setToken("dfgdghdgh").build();
+    // Set log token here?
+    LogConfig logConfig =
+        LogConfig.newBuilder()
+            .setLogKey("initLogKeyFour")
+            //.setToken("ZTjUqWttcHlTbVVJU2ltb1JySkw2Tkw3M3dcsuvkxMkYxxglc2_JTI5pKxn_jnmOpuOUNkiZ5q61xw==")
+            // this is qa log-service token.
+            .setToken("...")
+            .build();
 
-    ComputingResource computingResource = ComputingResource.newBuilder().setCpu("100m").setMemory("100Mi").build();
+    ComputingResource computingResource = ComputingResource.newBuilder().setCpu("200m").setMemory("300Mi").build();
 
     List<Long> ports = new ArrayList<>();
     ports.add(Long.valueOf(20002));

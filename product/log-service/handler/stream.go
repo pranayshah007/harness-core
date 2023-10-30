@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
+	"fmt"
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
@@ -21,8 +21,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var pingInterval = time.Second * 30
-var tailMaxTime = time.Hour * 1
+var pingInterval = time.Second * 10
+var tailMaxTime = time.Minute * 10
 
 // BufioWriterCloser combines a bufio Writer with a Closer
 type BufioWriterCloser struct {
@@ -146,17 +146,17 @@ func HandleClose(logStream stream.Stream, store store.Store, scanBatch int64) ht
 				Infoln("api: successfully snapshotted all keys")
 		}
 
-		for _, k := range keys {
-
-			if err := logStream.Delete(ctx, k); err != nil {
-				WriteInternalError(w, err)
-				logger.FromRequest(r).
-					WithError(err).
-					WithField("key", k).
-					Warnln("api: cannot close stream")
-				return
-			}
-		}
+// 		for _, k := range keys {
+// //
+// // 			if err := logStream.Delete(ctx, k); err != nil {
+// // 				WriteInternalError(w, err)
+// // 				logger.FromRequest(r).
+// // 					WithError(err).
+// // 					WithField("key", k).
+// // 					Warnln("api: cannot close stream")
+// // 				return
+// // 			}
+// 		}
 
 		logger.FromRequest(r).WithField("keys", keys).
 			WithField("snapshot", snapshot).
@@ -178,6 +178,8 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		fmt.Println("Writing for key : " + key)
 
 		in := []*stream.Line{}
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -254,6 +256,7 @@ func HandleTail(s stream.Stream) http.HandlerFunc {
 			io.WriteString(w, "event: error\ndata: eof\n")
 			return
 		}
+        fmt.Println("Received line channel from memory stream in handleTail")
 
 		tailMaxTimeTimer := time.After(tailMaxTime)
 		msgDelayTimer := time.NewTimer(pingInterval) // if time b/w messages takes longer, send a ping

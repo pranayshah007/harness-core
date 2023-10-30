@@ -59,6 +59,7 @@ func parseArgs() {
 	args.DeploymentEnvironment = "prod"
 	args.Verbose = false
 	args.LogMetrics = true
+	args.Port = 20002
 
 	arg.MustParse(&args)
 }

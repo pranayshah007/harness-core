@@ -32,6 +32,7 @@ message K8SInfra {
   repeated Resource resources = 7;       // Any global resources like shared volumes
   string log_prefix = 8;
   string log_token = 9;  // Token for sending logs to logging service
+  // Add log prefix per K8SStep
 }
 
 message K8SStep {

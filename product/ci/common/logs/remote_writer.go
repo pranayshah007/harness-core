@@ -132,6 +132,12 @@ func (b *RemoteWriter) Write(p []byte) (n int, err error) {
 	// Return if a new line character is not present in the input.
 	// Commands like `mvn` flush character by character so this prevents
 	// spamming of single-character logs.
+
+
+	fmt.Print("Writing logs from addon for key:" + b.key + " length is ")
+	fmt.Println(len(p))
+
+
 	if !bytes.Contains(p, []byte("\n")) {
 		b.prev = append(b.prev, p...)
 		return len(p), nil
@@ -254,32 +260,42 @@ func (b *RemoteWriter) upload() error {
 		}
 		data.Write(buf.Bytes())
 	}
-	if b.indirectUpload {
-		b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
-		err := b.client.Upload(context.Background(), b.key, data)
-		if err != nil {
-			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
-			return err
-		}
-	} else {
-		b.log.Infow("calling upload link", "key", b.key)
-		link, err := b.client.UploadLink(context.Background(), b.key)
-		if err != nil {
-			b.log.Errorw("errored while trying to get upload link", zap.Error(err))
-			return err
-		}
-		b.log.Infow("uploading logs", "key", b.key, "num_lines", len(b.history))
-		err = b.client.UploadUsingLink(context.Background(), link.Value, data)
-		if err != nil {
-			b.log.Errorw("failed to upload using link", "key", b.key, "link", link.Value, zap.Error(err))
-			return err
-		}
-	}
+			b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
+			fmt.Println(data)
+    		err := b.client.Upload(context.Background(), b.key, data)
+    		if err != nil {
+    			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
+    			return err
+    		}
+// 	if b.indirectUpload {
+// 		b.log.Infow("uploading logs through log service as indirectUpload is specified as true", "key", b.key)
+// 		err := b.client.Upload(context.Background(), b.key, data)
+// 		if err != nil {
+// 			b.log.Errorw("failed to upload logs", "key", b.key, zap.Error(err))
+// 			return err
+// 		}
+// 	}
+// 	else {
+// 		b.log.Infow("calling upload link", "key", b.key)
+// 		link, err := b.client.UploadLink(context.Background(), b.key)
+// 		if err != nil {
+// 			b.log.Errorw("errored while trying to get upload link", zap.Error(err))
+// 			return err
+// 		}
+// 		b.log.Infow("uploading logs", "key", b.key, "num_lines", len(b.history))
+// 		err = b.client.UploadUsingLink(context.Background(), link.Value, data)
+// 		if err != nil {
+// 			b.log.Errorw("failed to upload using link", "key", b.key, "link", link.Value, zap.Error(err))
+// 			return err
+// 		}
+// 	}
 	return nil
 }
 
 // flush batch uploads all buffered logs to the server.
 func (b *RemoteWriter) flush() error {
+    fmt.Print("About to flush lines for Key: " + b.key + " length of lines being flushed")
+    fmt.Print(len(b.copy()))
 	if !b.opened {
 		return nil
 	}
