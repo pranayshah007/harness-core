@@ -162,6 +162,7 @@ public class K8SLiteRunner implements Runner {
                             .setId(taskGroupId)
                             .setExecuteTask(executeStep)
                             .setCallbackToken(config.getDelegateToken())
+                            .setLogKey("SomeLogKey")
                             .setTaskId(context.get(Context.TASK_ID))
                             .setAccountId(config.getAccountId())
                             .setContainerPort(RESERVED_ADDON_PORT)
