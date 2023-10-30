@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.notification.orchestration.handlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.utils.OrchestrationUtils;
@@ -18,10 +20,13 @@ import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.notification.NotificationHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class StageStartNotificationHandler implements AsyncInformObserver, NodeExecutionStartObserver {
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
   @Inject NotificationHelper notificationHelper;

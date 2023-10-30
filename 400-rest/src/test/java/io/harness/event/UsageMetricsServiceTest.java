@@ -13,9 +13,9 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
-import static software.wings.beans.AccountStatus.ACTIVE;
 import static software.wings.beans.AccountType.COMMUNITY;
 import static software.wings.beans.AccountType.PAID;
+import static software.wings.beans.account.AccountStatus.ACTIVE;
 import static software.wings.common.VerificationConstants.CV_META_DATA;
 import static software.wings.common.VerificationConstants.VERIFICATION_PROVIDER_TYPE_LOG;
 import static software.wings.common.VerificationConstants.VERIFICATION_PROVIDER_TYPE_METRIC;

@@ -34,6 +34,7 @@ import io.harness.pms.events.PipelineOutboxEvents;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -48,6 +49,7 @@ public class PMSOutboxEventHandlerTest {
   private PMSOutboxEventHandler pmsOutboxEventHandler;
   private Map<String, OutboxEventHandler> outboxEventHandlerMap = new HashMap<>();
   private AuditClientService auditClientService;
+  private PmsFeatureFlagService featureFlagService;
   private PMSInputSetService inputSetService;
   private String triggerNewYaml;
   private String triggerOldYaml;
@@ -70,10 +72,11 @@ public class PMSOutboxEventHandlerTest {
 
     auditClientService = mock(AuditClientService.class);
     inputSetService = mock(PMSInputSetService.class);
+    featureFlagService = mock(PmsFeatureFlagService.class);
     TriggerOutboxEventHandler triggerOutboxEventHandler = new TriggerOutboxEventHandler(auditClientService);
     InputSetEventHandler inputSetEventHandler = new InputSetEventHandler(auditClientService, inputSetService);
     PipelineOutboxEventHandler pipelineOutboxEventHandler =
-        new PipelineOutboxEventHandler(auditClientService, inputSetEventHandler);
+        new PipelineOutboxEventHandler(auditClientService, inputSetEventHandler, featureFlagService);
     outboxEventHandlerMap.put("PIPELINE", pipelineOutboxEventHandler);
     outboxEventHandlerMap.put("INPUT_SET", pipelineOutboxEventHandler);
     outboxEventHandlerMap.put("TRIGGER", triggerOutboxEventHandler);

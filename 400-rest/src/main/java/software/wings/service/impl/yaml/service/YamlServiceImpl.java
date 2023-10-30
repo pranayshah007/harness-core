@@ -6,8 +6,8 @@
  */
 
 package software.wings.service.impl.yaml.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY;
 import static io.harness.beans.FeatureName.SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL;
 import static io.harness.beans.FeatureName.SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -104,7 +104,10 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
@@ -229,6 +232,8 @@ import org.yaml.snakeyaml.scanner.ScannerException;
 /**
  * @author rktummala on 10/16/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -982,7 +987,13 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     try {
       checkThatEntityIdInChangeAndInYamlIsSame(yamlSyncHandler, accountId, change.getFilePath(), changeContext);
-      yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+
+      if (featureFlagService.isEnabled(CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY, accountId)) {
+        PersistentEntity entity = (PersistentEntity) yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+        changeContext.setEntity(entity);
+      } else {
+        yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+      }
 
       // Handling for tags
       harnessTagYamlHelper.upsertTagLinksIfRequired(changeContext);
@@ -1322,12 +1333,14 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
               .yamlFilePath(changeContext.getChange().getFilePath())
               .build();
         }
+        String dumpedYaml = software.wings.yaml.YamlHelper.toYamlString(changeContext.getYaml());
 
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)
             .errorMssg("")
             .yamlFilePath(changeContext.getChange().getFilePath())
             .entityId(entityId)
+            .entityYaml(dumpedYaml)
             .build();
       }
     } catch (YamlProcessingException ex) {

@@ -8,13 +8,16 @@
 package io.harness.ssca.services;
 
 import io.harness.repositories.EnforcementSummaryRepo;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.ssca.beans.Artifact;
 import io.harness.ssca.enforcement.constants.EnforcementStatus;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.transformers.EnforcementSummaryTransformer;
 
 import com.google.inject.Inject;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +43,7 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
                                            .denyListViolationCount(denyListResult.size())
                                            .allowListViolationCount(allowListResult.size())
                                            .status(status)
+                                           .createdAt(Instant.now().toEpochMilli())
                                            .build();
 
     EnforcementSummaryEntity savedEntity = enforcementSummaryRepo.save(summary);
@@ -50,5 +54,10 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
   public Optional<EnforcementSummaryEntity> getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId) {
     return enforcementSummaryRepo.findByEnforcementId(enforcementId);
+  }
+
+  @Override
+  public void create(EnforcementSummaryDTO enforcementSummaryDTO) {
+    enforcementSummaryRepo.save(EnforcementSummaryTransformer.toEntity(enforcementSummaryDTO));
   }
 }

@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/artifact/resources/githubpackages/dtos:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/artifact/resources/githubpackages/mappers:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/artifact/utils:module",
         "//127-cd-nextgen-entities:module",
         "//440-connector-nextgen:module",
         "//910-delegate-service-driver:module",

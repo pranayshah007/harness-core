@@ -34,6 +34,13 @@ public class MonthlyCalenderTarget extends CalenderSLOTarget {
   }
 
   @Override
+  public TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime) {
+    LocalDate windowEnd = getWindowEnd(currentDateTime.toLocalDate().minusMonths(1), windowEndDayOfMonth).plusDays(1);
+    LocalDate windowStart = windowEnd.minusMonths(1);
+    return TimePeriod.builder().startDate(windowStart).endDate(windowEnd).build();
+  }
+
+  @Override
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
     List<SLODashboardDetail.TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_HOUR_FILTER);

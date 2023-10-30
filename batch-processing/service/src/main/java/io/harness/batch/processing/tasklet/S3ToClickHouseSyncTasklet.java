@@ -77,7 +77,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     AWSCredentialsProvider credentials = awsClient.constructStaticBasicAwsCredentials(
         configuration.getAwsS3SyncConfig().getAwsAccessKey(), configuration.getAwsS3SyncConfig().getAwsSecretKey());
     S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
-        credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), "");
+        credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), "", configuration.getCeProxyConfig());
     for (S3ObjectSummary objectSummary : s3Objects) {
       try {
         List<String> path = Arrays.asList(objectSummary.getKey().split("/"));
@@ -285,11 +285,15 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
     String insertQuery = "INSERT INTO ccm.unifiedTable (product, startTime,  "
         + "      awsBlendedRate, awsBlendedCost,awsUnblendedRate,  "
+        + "      awsEffectiveCost, awsAmortisedCost, "
+        + "      awsNetAmortisedCost, awsLineItemType, "
         + "      awsUnblendedCost, cost, awsServicecode, region,  "
         + "      awsAvailabilityzone, awsUsageaccountid,  "
         + "      cloudProvider, awsBillingEntity, labels, awsInstancetype, awsUsagetype) "
         + "  SELECT productname AS product, date_trunc('day', usagestartdate) as startTime,  "
         + "      blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate,  "
+        + "      effectivecost as awsEffectiveCost, amortisedCost as awsAmortisedCost,  "
+        + "      netAmortisedCost as awsNetAmortisedCost, lineitemtype as awsLineItemType,  "
         + "      unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region,  "
         + "      availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,  "
         + "      'AWS' AS cloudProvider, billingentity as awsBillingEntity, tags AS labels, instancetype as awsInstancetype, usagetype as awsUsagetype  "
@@ -378,8 +382,8 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   public void insertIntoAwsBillingTableFromS3Bucket(String awsBillingTableId, String csvFolderPath) throws Exception {
     AWSCredentialsProvider credentials = awsClient.constructStaticBasicAwsCredentials(
         configuration.getAwsS3SyncConfig().getAwsAccessKey(), configuration.getAwsS3SyncConfig().getAwsSecretKey());
-    S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
-        credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), csvFolderPath);
+    S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(credentials,
+        configuration.getAwsS3SyncConfig().getAwsS3BucketName(), csvFolderPath, configuration.getCeProxyConfig());
     for (S3ObjectSummary objectSummary : s3Objects) {
       if (objectSummary.getKey().endsWith(".csv.gz")) {
         log.info("Ingesting CSV: {}", objectSummary.getKey());
@@ -424,11 +428,11 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   public String fetchSchemaFromManifestFileInFolder(String folderPath) throws Exception {
     AWSCredentialsProvider credentials = awsClient.constructStaticBasicAwsCredentials(
         configuration.getAwsS3SyncConfig().getAwsAccessKey(), configuration.getAwsS3SyncConfig().getAwsSecretKey());
-    S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
-        credentials, configuration.getAwsS3SyncConfig().getAwsS3BucketName(), folderPath);
+    S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(credentials,
+        configuration.getAwsS3SyncConfig().getAwsS3BucketName(), folderPath, configuration.getCeProxyConfig());
     for (S3ObjectSummary objectSummary : s3Objects) {
       if (objectSummary.getKey().endsWith("Manifest.json")) {
-        AmazonS3Client s3 = awsClient.getAmazonS3Client(credentials);
+        AmazonS3Client s3 = awsClient.getAmazonS3Client(credentials, configuration.getCeProxyConfig());
         S3Object o = s3.getObject(configuration.getAwsS3SyncConfig().getAwsS3BucketName(), objectSummary.getKey());
         S3ObjectInputStream s3is = o.getObjectContent();
         return getAsString(s3is);

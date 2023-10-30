@@ -9,6 +9,7 @@ package io.harness.accesscontrol.roleassignments;
 
 import static lombok.AccessLevel.PRIVATE;
 
+import io.harness.accesscontrol.publicaccess.PublicAccessUtils;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDao;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationRequest;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationResult;
@@ -49,10 +50,12 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
     if (!result.getScopeValidationResult().isValid()) {
       throw new InvalidRequestException(result.getScopeValidationResult().getErrorMessage());
     }
-    if (!result.getPrincipalValidationResult().isValid()) {
+    if (!PublicAccessUtils.isPrincipalPublic(roleAssignment.getPrincipalIdentifier())
+        && !result.getPrincipalValidationResult().isValid()) {
       throw new InvalidRequestException(result.getPrincipalValidationResult().getErrorMessage());
     }
-    if (!result.getResourceGroupValidationResult().isValid()) {
+    if (!PublicAccessUtils.isResourceGroupPublic(roleAssignment.getResourceGroupIdentifier())
+        && !result.getResourceGroupValidationResult().isValid()) {
       throw new InvalidRequestException(result.getResourceGroupValidationResult().getErrorMessage());
     }
     if (!result.getRoleValidationResult().isValid()) {

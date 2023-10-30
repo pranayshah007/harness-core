@@ -9,7 +9,6 @@ package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgInstanceRefresh;
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -31,7 +30,6 @@ import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -127,7 +125,6 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
       asgSdkManager.info("Rolling back to previous version of asg %s", asgName);
 
       // Get the content of all required manifest files
-      String asgLaunchTemplateVersion = asgTaskHelper.getAsgLaunchTemplateContent(asgManifestsDataForRollback);
       String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgManifestsDataForRollback);
       List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgManifestsDataForRollback);
       List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgManifestsDataForRollback);
@@ -139,16 +136,17 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
       AsgManifestHandlerChainState initialChainState = AsgManifestHandlerChainState.builder().asgName(asgName).build();
 
       if (isNotEmpty(createAutoScalingGroupRequest.getLaunchTemplate().getVersion())) {
+        initialChainState.setLaunchTemplateName(
+            createAutoScalingGroupRequest.getLaunchTemplate().getLaunchTemplateName());
         initialChainState.setLaunchTemplateVersion(createAutoScalingGroupRequest.getLaunchTemplate().getVersion());
       }
+
       // Chain factory code to handle each manifest one by one in a chain
       AsgManifestHandlerChainState chainState =
           AsgManifestHandlerChainFactory.builder()
               .initialChainState(initialChainState)
               .asgSdkManager(asgSdkManager)
               .build()
-              .addHandler(AsgLaunchTemplate,
-                  AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateVersion)).build())
               .addHandler(AsgConfiguration,
                   AsgConfigurationManifestRequest.builder()
                       .manifests(Arrays.asList(asgConfigurationContent))

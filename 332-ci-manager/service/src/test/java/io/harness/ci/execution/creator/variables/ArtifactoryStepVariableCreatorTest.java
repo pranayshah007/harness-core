@@ -99,7 +99,8 @@ public class ArtifactoryStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.type",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.identifier",
             "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.startTs",
-            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.endTs");
+            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.endTs",
+            "pipeline.stages.artifactory_saas_upload_success.spec.execution.steps.uploadFile.status");
 
     List<String> fqnExtraPropertiesList1 =
         variablesForParentNodeV2.getYamlExtraProperties()

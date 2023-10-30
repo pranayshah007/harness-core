@@ -20,8 +20,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-
+@Slf4j
 @OwnedBy(CE)
 public class TimeSeriesUtils {
   private TimeSeriesUtils() {}
@@ -59,6 +60,7 @@ public class TimeSeriesUtils {
     }
     if (age <= AnomalyDetectionConstants.MIN_DAYS_REQUIRED_DAILY) {
       anomalyDetectionTimeSeries.setNewEntity(true);
+      log.info("Anomaly with id: {} belongs to new entity and won't be shown", anomalyDetectionTimeSeries.getId());
     }
     anomalyDetectionTimeSeries.setTrainDataPointsList(replaceInvalidPointsWithzeros(pointsList));
     return true;

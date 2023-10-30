@@ -13,9 +13,11 @@ java_library(
     deps = [
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/notification/constant:module",
+        "//930-delegate-tasks/src/main/java/io/harness/notification/helper:module",
         "//950-delegate-tasks-beans:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",
+        "//clients/ngsettings:module",
         "@maven//:com_github_dikhan_pagerduty_client",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",

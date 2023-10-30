@@ -6,6 +6,7 @@
  */
 
 package software.wings.sm.states.provision;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.ExecutionStatus.FAILED;
@@ -14,6 +15,7 @@ import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG;
+import static io.harness.beans.FeatureName.CDS_TF_TG_HARD_RESET_GIT_REF;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
 import static io.harness.beans.FeatureName.SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR;
@@ -1033,7 +1035,8 @@ public abstract class TerraformProvisionState extends State {
             .syncGitCloneAndCopyToDestDir(
                 featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
             .analyseTfPlanSummary(
-                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
+                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()))
+            .hardResetForGitRef(featureFlagService.isEnabled(CDS_TF_TG_HARD_RESET_GIT_REF, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
@@ -1411,7 +1414,8 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
             .syncGitCloneAndCopyToDestDir(
                 featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
-            .analyseTfPlanSummary(featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
+            .analyseTfPlanSummary(featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()))
+            .hardResetForGitRef(featureFlagService.isEnabled(CDS_TF_TG_HARD_RESET_GIT_REF, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);

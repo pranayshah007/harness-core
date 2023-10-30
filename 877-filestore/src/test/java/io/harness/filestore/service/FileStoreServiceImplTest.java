@@ -156,6 +156,22 @@ public class FileStoreServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFolderCreate() {
+    FileDTO newFolder = aFolderDto();
+    newFolder.setParentIdentifier(ROOT_FOLDER_IDENTIFIER);
+    when(fileFailsafeService.saveAndPublish(any())).thenReturn(newFolder);
+
+    FileDTO createdFolder = fileStoreService.create(newFolder, null);
+
+    assertThat(createdFolder).isNotNull();
+    assertThat(createdFolder.getName()).isEqualTo(newFolder.getName());
+    assertThat(createdFolder.getDescription()).isEqualTo(newFolder.getDescription());
+    assertThat(createdFolder.getTags()).isEqualTo(newFolder.getTags());
+  }
+
+  @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testUpdate() {
@@ -192,6 +208,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThat(result).isNotNull();
     assertThat(result.getName()).isEqualTo(newFolder.getName());
     assertThat(result.getDescription()).isEqualTo(newFolder.getDescription());
+    assertThat(result.getTags()).isEqualTo(newFolder.getTags());
   }
 
   @Test
@@ -265,6 +282,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThat(folder.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
     assertThat(folder.getLastModifiedAt()).isEqualTo(1L);
     assertThat(folder.getPath()).isEqualTo("/some/dummy/path");
+    assertThat(folder.getDescription()).isEqualTo("some description");
+    assertThat(folder.getTags()).isEqualTo(getNgTags());
   }
 
   @Test
@@ -1392,13 +1411,14 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .build();
   }
 
-  private static FileDTO aFolderDto() {
+  private FileDTO aFolderDto() {
     return FileDTO.builder()
         .identifier(FOLDER_IDENTIFIER)
         .accountIdentifier(ACCOUNT_IDENTIFIER)
-        .description("some description")
-        .name("folder-name")
         .type(NGFileType.FOLDER)
+        .name("folder-name")
+        .description("some description")
+        .tags(getNgTags())
         .build();
   }
 
@@ -1462,6 +1482,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .lastUpdatedBy(EmbeddedUser.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build())
         .lastModifiedAt(1L)
         .path("/some/dummy/path")
+        .description("some description")
+        .tags(getNgTags())
         .build();
   }
 

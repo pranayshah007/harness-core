@@ -31,8 +31,8 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_TRADITIONAL, HarnessModuleComponent.CDS_AMI_ASG})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -59,6 +59,9 @@ public class CommandTaskDataFactory {
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
       return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GCS.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GCS_ARTIFACT;
     } else if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
       return TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
     } else if (gitConfigExists(taskParameters)) {

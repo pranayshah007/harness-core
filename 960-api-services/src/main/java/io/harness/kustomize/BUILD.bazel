@@ -19,6 +19,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-api-services/src/main/java/io/harness/cli:module",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl:module",
         "//970-api-services-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",

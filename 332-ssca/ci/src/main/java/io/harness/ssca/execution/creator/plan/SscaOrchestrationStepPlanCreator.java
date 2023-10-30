@@ -10,7 +10,7 @@ package io.harness.ssca.execution.creator.plan;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode;
 
@@ -35,6 +35,6 @@ public class SscaOrchestrationStepPlanCreator extends CIPMSStepPlanCreatorV2<Ssc
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

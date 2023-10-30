@@ -33,6 +33,7 @@ import dev.morphia.query.UpdateResults;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +50,7 @@ public class PerpetualTaskRecordDao {
 
   public void appointDelegate(String taskId, String delegateId, long lastContextUpdated) {
     try (DelegateLogContext ignore = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      log.info("Appoint perpetual task: {}", taskId);
+      log.debug("Appoint perpetual task: {}", taskId);
       Query<PerpetualTaskRecord> query =
           persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
       UpdateOperations<PerpetualTaskRecord> updateOperations =
@@ -125,6 +126,8 @@ public class PerpetualTaskRecordDao {
     UpdateOperations<PerpetualTaskRecord> updateOperations =
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED)
+            .set(PerpetualTaskRecordKeys.assignAfterMs,
+                System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(new Random().nextInt(5)))
             .unset(PerpetualTaskRecordKeys.unassignedReason)
             .unset(PerpetualTaskRecordKeys.assignTryCount);
     persistence.update(query, updateOperations);

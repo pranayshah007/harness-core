@@ -8,6 +8,7 @@
 package io.harness.ng.overview.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +43,8 @@ public class DashboardServiceHelperTest {
   private static final String INFRA_2 = "infra2";
   private static final String DISPLAY_NAME_1 = "displayName1";
   private static final String DISPLAY_NAME_2 = "displayName2";
+  private static final String CHART_VERSION_1 = "chartVersion1";
+  private static final String CHART_VERSION_2 = "chartVersion2";
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -63,9 +66,14 @@ public class DashboardServiceHelperTest {
   private Map<String, String> envIdToNameMap;
   private Map<String, String> infraIdToNameMap;
   private Map<String,
-      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+      Map<EnvironmentType,
+          Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
       instanceCountMap;
 
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactListChartVersion1;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactListChartVersion2;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactListChartVersion3;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactListChartVersion4;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList2;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList3;
@@ -73,58 +81,178 @@ public class DashboardServiceHelperTest {
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList2;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList3;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure>
+      instanceGroupedByInfrastructureListChartVersion1;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure>
+      instanceGroupedByInfrastructureListChartVersion2;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure>
+      instanceGroupedByInfrastructureListChartVersion3;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList2;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList3;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList2;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType>
+      instanceGroupedByEnvironmentTypeListChartVersion1;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType>
+      instanceGroupedByEnvironmentTypeListChartVersion2;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType>
       instanceGroupedByEnvironmentTypeListGitOps1;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType>
       instanceGroupedByEnvironmentTypeListGitOps2;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
+  private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment>
+      instanceGroupedByEnvironmentListChartVersion;
   private List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentListGitOps;
 
   @Before
   public void setup() {
+    instanceGroupedByArtifactListChartVersion1 = new ArrayList<>();
+    instanceGroupedByArtifactListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .artifact(DISPLAY_NAME_2)
+            .lastDeployedAt(3L)
+            .instanceGroupedByChartVersionList(
+                List.of(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                            .infrastructureMappingId(infraMappingId2)
+                            .instanceKey(instanceKey2)
+                            .chartVersion(CHART_VERSION_2)
+                            .lastDeployedAt(3L)
+                            .count(2)
+                            .build()))
+            .build());
+    instanceGroupedByArtifactListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(2L)
+            .instanceGroupedByChartVersionList(
+                Arrays.asList(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                  .infrastructureMappingId(infraMappingId1)
+                                  .instanceKey(instanceKey1)
+                                  .lastDeployedAt(2L)
+                                  .chartVersion(CHART_VERSION_2)
+                                  .count(2)
+                                  .build(),
+                    InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                        .infrastructureMappingId(infraMappingId1)
+                        .instanceKey(instanceKey1)
+                        .lastDeployedAt(1L)
+                        .chartVersion(CHART_VERSION_1)
+                        .count(3)
+                        .build()))
+            .build());
+    instanceGroupedByArtifactListChartVersion2 = new ArrayList<>();
+    instanceGroupedByArtifactListChartVersion2.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(5L)
+            .instanceGroupedByChartVersionList(
+                Arrays.asList(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                  .infrastructureMappingId(infraMappingId1)
+                                  .instanceKey(instanceKey1)
+                                  .lastDeployedAt(5L)
+                                  .chartVersion("")
+                                  .count(2)
+                                  .build(),
+                    InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                        .infrastructureMappingId(infraMappingId1)
+                        .instanceKey(instanceKey1)
+                        .lastDeployedAt(4L)
+                        .chartVersion(CHART_VERSION_1)
+                        .count(1)
+                        .build()))
+            .build());
+    instanceGroupedByArtifactListChartVersion3 = new ArrayList<>();
+    instanceGroupedByArtifactListChartVersion3.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(6L)
+            .instanceGroupedByChartVersionList(
+                List.of(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                            .infrastructureMappingId(infraMappingId1)
+                            .instanceKey(instanceKey1)
+                            .lastDeployedAt(6L)
+                            .chartVersion("")
+                            .count(3)
+                            .build()))
+            .build());
+    instanceGroupedByArtifactListChartVersion4 = new ArrayList<>();
+    instanceGroupedByArtifactListChartVersion4.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+            .artifact(DISPLAY_NAME_1)
+            .lastDeployedAt(7L)
+            .instanceGroupedByChartVersionList(
+                List.of(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                            .infrastructureMappingId(infraMappingId1)
+                            .instanceKey(instanceKey1)
+                            .lastDeployedAt(7L)
+                            .chartVersion(CHART_VERSION_2)
+                            .count(1)
+                            .build()))
+            .build());
     instanceGroupedByArtifactList1 = new ArrayList<>();
     instanceGroupedByArtifactList1.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                           .instanceKey(instanceKey2)
-                                           .infrastructureMappingId(infraMappingId2)
                                            .artifact(DISPLAY_NAME_2)
                                            .lastDeployedAt(2l)
-                                           .count(1)
+                                           .instanceGroupedByChartVersionList(Arrays.asList(
+                                               InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                                   .infrastructureMappingId(infraMappingId2)
+                                                   .instanceKey(instanceKey2)
+                                                   .chartVersion("")
+                                                   .lastDeployedAt(2l)
+                                                   .count(1)
+                                                   .build()))
                                            .build());
     instanceGroupedByArtifactList1.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                           .instanceKey(instanceKey1)
-                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(1l)
-                                           .count(1)
+                                           .instanceGroupedByChartVersionList(Arrays.asList(
+                                               InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                                   .infrastructureMappingId(infraMappingId1)
+                                                   .instanceKey(instanceKey1)
+                                                   .lastDeployedAt(1l)
+                                                   .chartVersion("")
+                                                   .count(1)
+                                                   .build()))
                                            .build());
     instanceGroupedByArtifactList2 = new ArrayList<>();
     instanceGroupedByArtifactList2.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                           .instanceKey(instanceKey1)
-                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(3l)
-                                           .count(1)
+                                           .instanceGroupedByChartVersionList(Arrays.asList(
+                                               InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                                   .infrastructureMappingId(infraMappingId1)
+                                                   .instanceKey(instanceKey1)
+                                                   .lastDeployedAt(3l)
+                                                   .chartVersion("")
+                                                   .count(1)
+                                                   .build()))
                                            .build());
     instanceGroupedByArtifactList3 = new ArrayList<>();
     instanceGroupedByArtifactList3.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                           .instanceKey(instanceKey1)
-                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(4l)
-                                           .count(1)
+                                           .instanceGroupedByChartVersionList(Arrays.asList(
+                                               InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                                   .infrastructureMappingId(infraMappingId1)
+                                                   .instanceKey(instanceKey1)
+                                                   .lastDeployedAt(4l)
+                                                   .chartVersion("")
+                                                   .count(1)
+                                                   .build()))
                                            .build());
     instanceGroupedByArtifactList4 = new ArrayList<>();
     instanceGroupedByArtifactList4.add(InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
-                                           .instanceKey(instanceKey1)
-                                           .infrastructureMappingId(infraMappingId1)
                                            .artifact(DISPLAY_NAME_1)
                                            .lastDeployedAt(5l)
-                                           .count(1)
+                                           .instanceGroupedByChartVersionList(Arrays.asList(
+                                               InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
+                                                   .infrastructureMappingId(infraMappingId1)
+                                                   .instanceKey(instanceKey1)
+                                                   .lastDeployedAt(5l)
+                                                   .chartVersion("")
+                                                   .count(1)
+                                                   .build()))
                                            .build());
 
     instanceGroupedByInfrastructureList1 = new ArrayList<>();
@@ -154,6 +282,38 @@ public class DashboardServiceHelperTest {
                                                  .lastDeployedAt(5l)
                                                  .instanceGroupedByArtifactList(instanceGroupedByArtifactList4)
                                                  .build());
+
+    instanceGroupedByInfrastructureListChartVersion1 = new ArrayList<>();
+    instanceGroupedByInfrastructureListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure.builder()
+            .infrastructureId(INFRA_2)
+            .infrastructureName(INFRA_2)
+            .lastDeployedAt(5L)
+            .instanceGroupedByArtifactList(instanceGroupedByArtifactListChartVersion2)
+            .build());
+    instanceGroupedByInfrastructureListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure.builder()
+            .infrastructureId(INFRA_1)
+            .infrastructureName(INFRA_1)
+            .lastDeployedAt(3L)
+            .instanceGroupedByArtifactList(instanceGroupedByArtifactListChartVersion1)
+            .build());
+    instanceGroupedByInfrastructureListChartVersion2 = new ArrayList<>();
+    instanceGroupedByInfrastructureListChartVersion2.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure.builder()
+            .infrastructureId(INFRA_1)
+            .infrastructureName(INFRA_1)
+            .lastDeployedAt(6L)
+            .instanceGroupedByArtifactList(instanceGroupedByArtifactListChartVersion3)
+            .build());
+    instanceGroupedByInfrastructureListChartVersion3 = new ArrayList<>();
+    instanceGroupedByInfrastructureListChartVersion3.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure.builder()
+            .infrastructureId(INFRA_1)
+            .infrastructureName(INFRA_1)
+            .lastDeployedAt(7L)
+            .instanceGroupedByArtifactList(instanceGroupedByArtifactListChartVersion4)
+            .build());
 
     instanceGroupedByClusterList1 = new ArrayList<>();
     instanceGroupedByClusterList1.add(InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure.builder()
@@ -204,6 +364,27 @@ public class DashboardServiceHelperTest {
             .instanceGroupedByInfrastructureList(instanceGroupedByInfrastructureList3)
             .build());
 
+    instanceGroupedByEnvironmentTypeListChartVersion1 = new ArrayList<>();
+    instanceGroupedByEnvironmentTypeListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType.builder()
+            .environmentType(EnvironmentType.Production)
+            .lastDeployedAt(6L)
+            .instanceGroupedByInfrastructureList(instanceGroupedByInfrastructureListChartVersion2)
+            .build());
+    instanceGroupedByEnvironmentTypeListChartVersion1.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType.builder()
+            .environmentType(EnvironmentType.PreProduction)
+            .lastDeployedAt(5L)
+            .instanceGroupedByInfrastructureList(instanceGroupedByInfrastructureListChartVersion1)
+            .build());
+    instanceGroupedByEnvironmentTypeListChartVersion2 = new ArrayList<>();
+    instanceGroupedByEnvironmentTypeListChartVersion2.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType.builder()
+            .environmentType(EnvironmentType.Production)
+            .lastDeployedAt(7L)
+            .instanceGroupedByInfrastructureList(instanceGroupedByInfrastructureListChartVersion3)
+            .build());
+
     instanceGroupedByEnvironmentTypeListGitOps1 = new ArrayList<>();
     instanceGroupedByEnvironmentTypeListGitOps1.add(
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType.builder()
@@ -243,6 +424,24 @@ public class DashboardServiceHelperTest {
             .lastDeployedAt(4l)
             .build());
 
+    instanceGroupedByEnvironmentListChartVersion = new ArrayList<>();
+    instanceGroupedByEnvironmentListChartVersion.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
+            .envId(ENV_2)
+            .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeListChartVersion2)
+            .envGroups(new ArrayList<>())
+            .envName(ENV_2)
+            .lastDeployedAt(7L)
+            .build());
+    instanceGroupedByEnvironmentListChartVersion.add(
+        InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
+            .envId(ENV_1)
+            .envGroups(new ArrayList<>())
+            .instanceGroupedByEnvironmentTypeList(instanceGroupedByEnvironmentTypeListChartVersion1)
+            .envName(ENV_1)
+            .lastDeployedAt(6L)
+            .build());
+
     instanceGroupedByEnvironmentListGitOps = new ArrayList<>();
     instanceGroupedByEnvironmentListGitOps.add(
         InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment.builder()
@@ -277,23 +476,57 @@ public class DashboardServiceHelperTest {
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 1l, DISPLAY_NAME_1, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 2l, DISPLAY_NAME_2, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 3l, DISPLAY_NAME_1, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(
         new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_1, ENV_1,
             EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 4l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
-            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(
         new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_2, ENV_2,
             EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 5l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
-            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, ""));
+    return activeServiceInstanceInfoWithEnvTypeList;
+  }
+
+  private List<ActiveServiceInstanceInfoWithEnvType>
+  getActiveServiceInstanceInfoWithEnvTypeListNonGitOpsWithChartVersion() {
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 1L, DISPLAY_NAME_1, 3,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus, CHART_VERSION_1));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 2L, DISPLAY_NAME_1, 2,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus, CHART_VERSION_2));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_1, INFRA_1, null, null, 3L, DISPLAY_NAME_2, 2,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus, CHART_VERSION_2));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 4L, DISPLAY_NAME_1, 1,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus, CHART_VERSION_1));
+    activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
+        ENV_1, ENV_1, EnvironmentType.PreProduction, INFRA_2, INFRA_2, null, null, 5L, DISPLAY_NAME_1, 2,
+        lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
+        rollbackStatus, ""));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_1, ENV_1,
+            EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 6L, DISPLAY_NAME_1, 3, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, ""));
+    activeServiceInstanceInfoWithEnvTypeList.add(
+        new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_2, ENV_2,
+            EnvironmentType.Production, INFRA_1, INFRA_1, null, null, 7L, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, CHART_VERSION_2));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
@@ -302,23 +535,23 @@ public class DashboardServiceHelperTest {
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 1l, DISPLAY_NAME_1, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey2, infraMappingId2,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_1, INFRA_1, 2l, DISPLAY_NAME_2, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1,
         ENV_1, ENV_1, EnvironmentType.PreProduction, null, null, INFRA_2, INFRA_2, 3l, DISPLAY_NAME_1, 1,
         lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId,
-        rollbackStatus));
+        rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(
         new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_1, ENV_1,
             EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 4l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
-            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, ""));
     activeServiceInstanceInfoWithEnvTypeList.add(
         new ActiveServiceInstanceInfoWithEnvType(instanceKey1, infraMappingId1, ENV_2, ENV_2,
             EnvironmentType.Production, null, null, INFRA_1, INFRA_1, 5l, DISPLAY_NAME_1, 1, lastPipelineExecutionName,
-            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus));
+            lastPipelineExecutionId, stageNodeExecutionId, stageStatus, stageSetupId, rollbackStatus, ""));
     return activeServiceInstanceInfoWithEnvTypeList;
   }
 
@@ -396,90 +629,128 @@ public class DashboardServiceHelperTest {
                                           .instanceGroupedOnEnvironmentTypeList(instanceGroupedOnEnvironmentType2)
                                           .build());
 
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion> instanceGroupedOnChartVersionList1 =
+        new ArrayList<>();
+    instanceGroupedOnChartVersionList1.add(InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion.builder()
+                                               .chartVersion("")
+                                               .lastDeployedAt(5l)
+                                               .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment1)
+                                               .build());
+
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion> instanceGroupedOnChartVersionList2 =
+        new ArrayList<>();
+    instanceGroupedOnChartVersionList2.add(InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion.builder()
+                                               .chartVersion("")
+                                               .lastDeployedAt(2l)
+                                               .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment2)
+                                               .build());
+
     InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact.InstanceGroupedOnArtifactBuilder artifactBuilder =
         InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact.builder()
             .artifact(DISPLAY_NAME_1)
             .lastDeployedAt(5l)
-            .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment1);
+            .instanceGroupedOnChartVersionList(instanceGroupedOnChartVersionList1);
     List<InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact> instanceGroupedOnArtifact = new ArrayList<>();
     instanceGroupedOnArtifact.add(artifactBuilder.build());
     instanceGroupedOnArtifact.add(artifactBuilder.artifact(DISPLAY_NAME_2)
                                       .lastDeployedAt(2l)
-                                      .instanceGroupedOnEnvironmentList(instanceGroupedOnEnvironment2)
+                                      .instanceGroupedOnChartVersionList(instanceGroupedOnChartVersionList2)
                                       .build());
 
     return InstanceGroupedOnArtifactList.builder().instanceGroupedOnArtifactList(instanceGroupedOnArtifact).build();
   }
 
   private Map<String,
-      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+      Map<EnvironmentType,
+          Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
   getInstanceCountMap() {
-    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap1 = new HashMap<>();
-    buildToCountMap1.put(DISPLAY_NAME_1,
-        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> buildToCountMap1 = new HashMap<>();
+    buildToCountMap1.put("",
+        InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
             .instanceKey(instanceKey1)
             .infrastructureMappingId(infraMappingId1)
             .count(1)
-            .artifact(DISPLAY_NAME_1)
+            .chartVersion("")
             .lastDeployedAt(1l)
             .build());
-    buildToCountMap1.put(DISPLAY_NAME_2,
-        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> buildToCountMap2 = new HashMap<>();
+    buildToCountMap2.put("",
+        InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
             .instanceKey(instanceKey2)
             .infrastructureMappingId(infraMappingId2)
-            .artifact(DISPLAY_NAME_2)
             .count(1)
+            .chartVersion("")
             .lastDeployedAt(2l)
             .build());
-    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap2 = new HashMap<>();
-    buildToCountMap2.put(DISPLAY_NAME_1,
-        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> artifactToChartMap1 =
+        new HashMap<>();
+    artifactToChartMap1.put(DISPLAY_NAME_1, buildToCountMap1);
+    artifactToChartMap1.put(DISPLAY_NAME_2, buildToCountMap2);
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> buildToCountMap3 = new HashMap<>();
+    buildToCountMap3.put("",
+        InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
             .instanceKey(instanceKey1)
             .infrastructureMappingId(infraMappingId1)
-            .artifact(DISPLAY_NAME_1)
             .count(1)
+            .chartVersion("")
             .lastDeployedAt(3l)
             .build());
-    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap3 = new HashMap<>();
-    buildToCountMap3.put(DISPLAY_NAME_1,
-        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> artifactToChartMap2 =
+        new HashMap<>();
+    artifactToChartMap2.put(DISPLAY_NAME_1, buildToCountMap3);
+
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> buildToCountMap4 = new HashMap<>();
+    buildToCountMap4.put("",
+        InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
             .instanceKey(instanceKey1)
             .infrastructureMappingId(infraMappingId1)
-            .artifact(DISPLAY_NAME_1)
             .count(1)
+            .chartVersion("")
             .lastDeployedAt(4l)
             .build());
-    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> buildToCountMap4 = new HashMap<>();
-    buildToCountMap4.put(DISPLAY_NAME_1,
-        InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> artifactToChartMap3 =
+        new HashMap<>();
+    artifactToChartMap3.put(DISPLAY_NAME_1, buildToCountMap4);
+
+    Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> buildToCountMap5 = new HashMap<>();
+    buildToCountMap5.put("",
+        InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
             .instanceKey(instanceKey1)
             .infrastructureMappingId(infraMappingId1)
-            .artifact(DISPLAY_NAME_1)
             .count(1)
+            .chartVersion("")
             .lastDeployedAt(5l)
             .build());
 
-    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap1 =
+    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> artifactToChartMap4 =
         new HashMap<>();
-    infraToBuildMap1.put(INFRA_1, buildToCountMap1);
-    infraToBuildMap1.put(INFRA_2, buildToCountMap2);
-    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap2 =
-        new HashMap<>();
-    infraToBuildMap2.put(INFRA_1, buildToCountMap3);
-    Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> infraToBuildMap3 =
-        new HashMap<>();
-    infraToBuildMap3.put(INFRA_1, buildToCountMap4);
+    artifactToChartMap4.put(DISPLAY_NAME_1, buildToCountMap5);
 
-    Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+    Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>
+        infraToBuildMap1 = new HashMap<>();
+    infraToBuildMap1.put(INFRA_1, artifactToChartMap1);
+    infraToBuildMap1.put(INFRA_2, artifactToChartMap2);
+    Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>
+        infraToBuildMap2 = new HashMap<>();
+    infraToBuildMap2.put(INFRA_1, artifactToChartMap3);
+    Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>
+        infraToBuildMap3 = new HashMap<>();
+    infraToBuildMap3.put(INFRA_1, artifactToChartMap4);
+
+    Map<EnvironmentType,
+        Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>
         environmentTypeToInfraMap1 = new HashMap<>();
     environmentTypeToInfraMap1.put(EnvironmentType.PreProduction, infraToBuildMap1);
     environmentTypeToInfraMap1.put(EnvironmentType.Production, infraToBuildMap2);
-    Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+    Map<EnvironmentType,
+        Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>
         environmentTypeToInfraMap2 = new HashMap<>();
     environmentTypeToInfraMap2.put(EnvironmentType.Production, infraToBuildMap3);
 
     Map<String,
-        Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+        Map<EnvironmentType,
+            Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
         environmentToTypeMap = new HashMap<>();
     environmentToTypeMap.put(ENV_1, environmentTypeToInfraMap1);
     environmentToTypeMap.put(ENV_2, environmentTypeToInfraMap2);
@@ -497,6 +768,20 @@ public class DashboardServiceHelperTest {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList2 =
         InstanceGroupedByEnvironmentList.builder()
             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
+            .build();
+    assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentList2);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByEnvironmentListHelper_NonGitOps_WithChartVersion() {
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
+        DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
+            null, getActiveServiceInstanceInfoWithEnvTypeListNonGitOpsWithChartVersion(), false, null);
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList2 =
+        InstanceGroupedByEnvironmentList.builder()
+            .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentListChartVersion)
             .build();
     assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentList2);
   }
@@ -709,11 +994,15 @@ public class DashboardServiceHelperTest {
     assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList().size()).isEqualTo(2);
     assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList()
                    .get(0)
+                   .getInstanceGroupedOnChartVersionList()
+                   .get(0)
                    .getInstanceGroupedOnEnvironmentList()
                    .size())
         .isEqualTo(2);
     assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList()
                    .get(1)
+                   .getInstanceGroupedOnChartVersionList()
+                   .get(0)
                    .getInstanceGroupedOnEnvironmentList()
                    .size())
         .isEqualTo(1);

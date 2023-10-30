@@ -6,18 +6,19 @@
  */
 
 package io.harness.plancreator.steps.common.v1;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -26,6 +27,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -38,7 +40,7 @@ public class StepElementParametersV1 implements StepBaseParameters {
   String name;
   String desc;
   ParameterField<String> timeout;
-  OnConfigV1 on;
+  List<FailureConfigV1> failure;
 
   String when;
 
@@ -50,31 +52,6 @@ public class StepElementParametersV1 implements StepBaseParameters {
 
   // Only for rollback failures
   OnFailRollbackParameters rollbackParameters;
-
-  @Override
-  public String toViewJson() {
-    StepElementParametersV1 stepElementParameters = cloneParameters(false, false);
-    if (spec != null) {
-      stepElementParameters.setSpec(spec.getViewJsonObject());
-    }
-    return RecastOrchestrationUtils.toJson(stepElementParameters);
-  }
-
-  public StepElementParametersV1 cloneParameters(boolean includeUuid, boolean includeSpec) {
-    return StepElementParametersV1.builder()
-        .uuid(includeUuid ? this.uuid : null)
-        .type(this.type)
-        .name(this.name)
-        .spec(includeSpec ? this.spec : null)
-        .desc(this.desc)
-        .id(this.id)
-        .timeout(this.timeout)
-        .enforce(this.enforce)
-        .on(this.on)
-        .when(this.when)
-        .delegateSelectors(this.delegateSelectors)
-        .build();
-  }
 
   @Override
   public String getIdentifier() {

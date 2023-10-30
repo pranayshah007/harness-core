@@ -15,6 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -24,7 +25,7 @@ public class UnallocatedCostStrategyTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUnallocatedCostDisplayNameStrategy() {
     final String displayName = "DISPLAY_NAME";
-    assertThat(UnallocatedCostStrategy.DISPLAY_NAME.name()).isEqualTo(displayName);
+    Assertions.assertThat(UnallocatedCostStrategy.DISPLAY_NAME.name()).isEqualTo(displayName);
     assertThat(UnallocatedCostStrategy.valueOf(displayName)).isEqualTo(UnallocatedCostStrategy.DISPLAY_NAME);
   }
 

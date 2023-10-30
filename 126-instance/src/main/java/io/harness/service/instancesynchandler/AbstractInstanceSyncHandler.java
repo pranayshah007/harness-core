@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -100,5 +101,10 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
   public InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer) {
     // Do nothing, handler should override it if required
     return instanceDTO;
+  }
+
+  public DeploymentInfoDTO updateDeploymentInfoDTO(
+      DeploymentInfoDTO deploymentInfoDTO, DeploymentOutcomeMetadata deploymentOutcomeMetadata) {
+    return deploymentInfoDTO;
   }
 }

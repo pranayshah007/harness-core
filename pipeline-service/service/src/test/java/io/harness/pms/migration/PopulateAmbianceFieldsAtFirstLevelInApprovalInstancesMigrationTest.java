@@ -7,7 +7,6 @@
 
 package io.harness.pms.migration;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -108,10 +107,8 @@ public class PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigrationTest 
     approvalInstance.setStatus(ApprovalStatus.WAITING);
     approvalInstance.setNodeExecutionId("dummy nodeExeId");
 
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid(generateUuid())
-                                              .setPipelineIdentifier(pipelineIdentifier)
-                                              .build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier(pipelineIdentifier).build();
 
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions(SetupAbstractionKeys.accountId, accountIdentifier)

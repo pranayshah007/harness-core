@@ -78,6 +78,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
                                                  .setStepType(StepType.newBuilder().setStepCategoryValue(2).build())
                                                  .build())
                                   .setStageExecutionId("stageExecId")
+                                  .setPlanExecutionId("executionuuid")
                                   .build();
 
   @Before
@@ -91,10 +92,8 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testIdentifierGeneration() throws IOException {
     prepareRepoLevelConnector(SOME_URL, null);
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid("executionuuid")
-                                              .setPipelineIdentifier("shortPipelineId")
-                                              .build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier("shortPipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname");
 
@@ -113,8 +112,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testRepoNameGeneration() throws IOException {
     prepareAccountLevelConnector("https://github.com/", null);
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname", "wings-software/jhttp");
 
@@ -137,7 +135,6 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     prepareRepoLevelConnector(SOME_URL, null);
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder()
-            .setExecutionUuid("executionuuid")
             .setPipelineIdentifier(
                 "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline")
             .build();
@@ -164,7 +161,6 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     prepareRepoLevelConnector("https://bitbucket.org/invastsecjp/sumo-report-batch-worker", null);
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder()
-            .setExecutionUuid("executionuuid")
             .setPipelineIdentifier(
                 "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline")
             .build();
@@ -191,7 +187,6 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     prepareRepoLevelConnector("https://bitbucket.org/invastsecjp/sumo-report-batch-worker", null);
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder()
-            .setExecutionUuid("executionuuid")
             .setPipelineIdentifier(
                 "longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglongPipline")
             .build();
@@ -217,10 +212,8 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     prepareRepoLevelConnector(SOME_URL, null);
     when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenCallRealMethod();
 
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid("executionuuid")
-                                              .setPipelineIdentifier("shortPipelineId")
-                                              .build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier("shortPipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname");
 
@@ -240,10 +233,8 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     prepareRepoLevelConnector(SOME_URL, VANITY_URL);
     when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any(), any(), any())).thenCallRealMethod();
 
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid("executionuuid")
-                                              .setPipelineIdentifier("shortPipelineId")
-                                              .build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier("shortPipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname");
 
@@ -269,8 +260,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(azureGitConfigDTO.getConnectorType()).thenReturn(AZURE_REPO);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.PROJECT);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname", "repo");
 
@@ -295,8 +285,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(azureGitConfigDTO.getUrl()).thenReturn(url);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.REPO);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname", null);
 
@@ -322,8 +311,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(azureGitConfigDTO.getConnectorType()).thenReturn(AZURE_REPO);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.PROJECT);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname", "repo");
 
@@ -348,8 +336,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     when(azureGitConfigDTO.getUrl()).thenReturn(url);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.REPO);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
         getBuildStatusUpdateParameter("shortIdentifier", "shortname", null);
 

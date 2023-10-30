@@ -27,4 +27,5 @@ public abstract class AbstractTerragruntCliRequest {
   @Getter Map<String, String> envVars;
   @Getter @Builder.Default TerragruntCliArgs args = TerragruntCliArgs.builder().build();
   @Getter Long timeoutInMillis;
+  @Getter boolean skipColorLogs;
 }

@@ -8,7 +8,6 @@
 package io.harness.accesscontrol.roleassignments.api;
 
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.PrincipalDTOV2;
@@ -56,13 +55,14 @@ public class RoleAssignmentAggregateMapper {
   public ScopeResponseDTO getScopeName(String scopeIdentifier) {
     Scope scope = scopeService.buildScopeFromScopeIdentifier(scopeIdentifier);
     ScopeDTO harnessScopeParams = ScopeMapper.toDTO(scope);
-    String accountName =
-        scopeService
-            .get(fromParams(
-                HarnessScopeParams.builder().accountIdentifier(harnessScopeParams.getAccountIdentifier()).build())
-                     .toString())
-            .orElse(null)
-            .getInstanceName();
+    String accountName = scopeService
+                             .get(ScopeMapper
+                                      .fromParams(HarnessScopeParams.builder()
+                                                      .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                                                      .build())
+                                      .toString())
+                             .orElse(null)
+                             .getInstanceName();
     ScopeResponseDTO scopeResponseDTO = ScopeResponseDTO.builder()
                                             .accountIdentifier(harnessScopeParams.getAccountIdentifier())
                                             .orgIdentifier(harnessScopeParams.getOrgIdentifier())
@@ -70,23 +70,26 @@ public class RoleAssignmentAggregateMapper {
                                             .accountName(accountName)
                                             .build();
     if (harnessScopeParams.getOrgIdentifier() != null) {
-      scopeResponseDTO.setOrgName(scopeService
-                                      .get(fromParams(HarnessScopeParams.builder()
-                                                          .accountIdentifier(harnessScopeParams.getAccountIdentifier())
-                                                          .orgIdentifier(harnessScopeParams.getOrgIdentifier())
-                                                          .build())
-                                               .toString())
-                                      .orElse(null)
-                                      .getInstanceName());
+      scopeResponseDTO.setOrgName(
+          scopeService
+              .get(ScopeMapper
+                       .fromParams(HarnessScopeParams.builder()
+                                       .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                                       .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                                       .build())
+                       .toString())
+              .orElse(null)
+              .getInstanceName());
     }
     if (harnessScopeParams.getProjectIdentifier() != null) {
       scopeResponseDTO.setProjectName(
           scopeService
-              .get(fromParams(HarnessScopeParams.builder()
-                                  .accountIdentifier(harnessScopeParams.getAccountIdentifier())
-                                  .orgIdentifier(harnessScopeParams.getOrgIdentifier())
-                                  .projectIdentifier(harnessScopeParams.getProjectIdentifier())
-                                  .build())
+              .get(ScopeMapper
+                       .fromParams(HarnessScopeParams.builder()
+                                       .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                                       .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                                       .projectIdentifier(harnessScopeParams.getProjectIdentifier())
+                                       .build())
                        .toString())
               .orElse(null)
               .getInstanceName());

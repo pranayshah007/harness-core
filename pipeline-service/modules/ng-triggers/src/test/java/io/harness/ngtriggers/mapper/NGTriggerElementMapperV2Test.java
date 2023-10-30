@@ -687,7 +687,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     ngTriggerEntity.setYaml(ngArtifactTriggerYaml2);
     assertThatThrownBy(() -> ngTriggerElementMapper.getTriggerEntityWithArtifactoryRepositoryUrl(ngTriggerEntity))
         .isInstanceOf(ArtifactoryRegistryException.class)
-        .hasMessage("Connector not found for identifier : [identifier] with scope: [null]");
+        .hasMessage("Connector not found for identifier : [identifier] with scope: [PROJECT]");
   }
 
   @Test

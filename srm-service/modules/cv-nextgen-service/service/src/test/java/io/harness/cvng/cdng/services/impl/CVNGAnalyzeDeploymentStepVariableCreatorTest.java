@@ -97,6 +97,7 @@ public class CVNGAnalyzeDeploymentStepVariableCreatorTest {
         .containsOnly("pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.type",
             "pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.identifier",
             "pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.startTs",
-            "pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.endTs");
+            "pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.endTs",
+            "pipeline.stages.QA_deployment.spec.execution.steps.analyze.steps.AnalyzeDeployment.status");
   }
 }

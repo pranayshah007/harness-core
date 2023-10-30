@@ -1,0 +1,10 @@
+policies:
+  - name: gluejob-enable-metrics
+    resource: glue-job
+    filters:
+      - type: value
+        key: 'DefaultArguments."--enable-metrics"'
+        value: absent
+    actions:
+      - type: toggle-metrics
+        enabled: true

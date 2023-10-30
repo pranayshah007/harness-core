@@ -181,11 +181,11 @@ public class ConstraintTest extends CategoryTest {
     assertThat(constraint.registerConsumer(unit1, consumer3, 8, null, registry)).isEqualTo(BLOCKED);
     assertThat(constraint.registerConsumer(unit1, consumer4, 3, null, registry)).isEqualTo(BLOCKED);
 
-    assertThat(constraint.runnableConsumers(unit1, registry).getConsumerIds()).isEmpty();
+    assertThat(constraint.runnableConsumers(unit1, registry, false).getConsumerIds()).isEmpty();
 
     assertThat(constraint.consumerFinished(unit1, consumer1, registry)).isTrue();
 
-    assertThat(constraint.runnableConsumers(unit1, registry).getConsumerIds()).contains(consumer2, consumer4);
+    assertThat(constraint.runnableConsumers(unit1, registry, false).getConsumerIds()).contains(consumer2, consumer4);
   }
 
   @Test
@@ -214,11 +214,11 @@ public class ConstraintTest extends CategoryTest {
     assertThat(constraint.registerConsumer(unit1, consumer3, 8, null, registry)).isEqualTo(BLOCKED);
     assertThat(constraint.registerConsumer(unit1, consumer4, 3, null, registry)).isEqualTo(BLOCKED);
 
-    assertThat(constraint.runnableConsumers(unit1, registry).getConsumerIds()).isEmpty();
+    assertThat(constraint.runnableConsumers(unit1, registry, false).getConsumerIds()).isEmpty();
 
     assertThat(constraint.consumerFinished(unit1, consumer1, registry)).isTrue();
 
-    assertThat(constraint.runnableConsumers(unit1, registry).getConsumerIds()).contains(consumer2);
+    assertThat(constraint.runnableConsumers(unit1, registry, false).getConsumerIds()).contains(consumer2);
   }
 
   @Test
@@ -240,7 +240,7 @@ public class ConstraintTest extends CategoryTest {
     Concurrent.test(2, i -> {
       while (true) {
         if (i == 0) {
-          final List<Consumer> consumers = registry.loadConsumers(constraint.getId(), unit1);
+          final List<Consumer> consumers = registry.loadConsumers(constraint.getId(), unit1, false);
           if (consumers.stream().noneMatch(consumer -> consumer.getState() != FINISHED)) {
             break;
           }
@@ -252,7 +252,7 @@ public class ConstraintTest extends CategoryTest {
           final Consumer consumer = list.get(random.nextInt(list.size()));
           registry.consumerFinished(constraint.getId(), unit1, consumer.getId(), null);
         } else {
-          final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit1, registry);
+          final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit1, registry, false);
           if (runnableConsumers.getUsedPermits() == 0 && isEmpty(runnableConsumers.getConsumerIds())) {
             break;
           }
@@ -266,7 +266,7 @@ public class ConstraintTest extends CategoryTest {
       }
     });
 
-    final List<Consumer> consumers = registry.loadConsumers(constraint.getId(), unit1);
+    final List<Consumer> consumers = registry.loadConsumers(constraint.getId(), unit1, false);
     assertThat(consumers.stream().anyMatch(consumer -> consumer.getState() != FINISHED)).isFalse();
   }
 

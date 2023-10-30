@@ -30,6 +30,7 @@ import io.harness.persistence.gitaware.GitAware;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
@@ -99,6 +100,35 @@ public class GitAwareContextHelper {
         .commitId(scmGitMetaData.getCommitId())
         .fileUrl(scmGitMetaData.getFileUrl())
         .build();
+  }
+
+  public EntityGitDetails updateEntityGitDetailsFromScmGitMetadata(@NonNull EntityGitDetails existingDetails) {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+
+    if (scmGitMetaData == null) {
+      return existingDetails;
+    }
+
+    if (isEmpty(existingDetails.getObjectId())) {
+      existingDetails.setObjectId(scmGitMetaData.getBlobId());
+    }
+    if (isEmpty(existingDetails.getBranch())) {
+      existingDetails.setBranch(scmGitMetaData.getBranchName());
+    }
+    if (isEmpty(existingDetails.getRepoName())) {
+      existingDetails.setRepoName(scmGitMetaData.getRepoName());
+    }
+    if (isEmpty(existingDetails.getFilePath())) {
+      existingDetails.setFilePath(scmGitMetaData.getFilePath());
+    }
+    if (isEmpty(existingDetails.getCommitId())) {
+      existingDetails.setCommitId(scmGitMetaData.getCommitId());
+    }
+    if (isEmpty(existingDetails.getFileUrl())) {
+      existingDetails.setFileUrl(scmGitMetaData.getFileUrl());
+    }
+
+    return existingDetails;
   }
 
   public CacheResponse getCacheResponseFromScmGitMetadata() {

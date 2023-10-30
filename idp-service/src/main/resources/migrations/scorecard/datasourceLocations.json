@@ -7,10 +7,9 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
       "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    pullRequests(states: MERGED, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      edges {\\n        node {\\n          number\\n          createdAt\\n          mergedAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -30,12 +29,11 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "/graphql",
       "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "{BEARER_AUTH}"
+        "Content-Type": "application/json"
       },
-      "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER}{\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER} {\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   },
   {
@@ -46,12 +44,387 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"query\":\"{\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{GITHUB_FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "64ef7856f616c89330020df1",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "harness_sto_scan_dsl",
+    "dataSourceIdentifier": "harness",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/v1/data-sources/harness/data-point/values",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "64ef7872f616c89330020df2",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "harness_policy_evaluation_dsl",
+    "dataSourceIdentifier": "harness",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/v1/data-sources/harness/data-point/values",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "64ef78b7f616c89330020df3",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "harness_ci_success_percent_in_seven_days",
+    "dataSourceIdentifier": "harness",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/v1/data-sources/harness/data-point/values",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "64ef78e1f616c89330020df4",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "harness_test_passing_on_ci_is_zero",
+    "dataSourceIdentifier": "harness",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/v1/data-sources/harness/data-point/values",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "65006535c28a1a3f5607e84e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_service_directory",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/service_directory/{SERVICE_ID}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "6500a8c6c28a1a3f5607f80e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "64fec18f2f002fcdd9031763",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "kubernetes",
+    "dataSourceIdentifier": "kubernetes",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/v1/data-sources/kubernetes/data-point/values",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "650ae5f5047ed6bddfdeee81",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_mean_time_to_merge_pr",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "650ae614f618a0c0a125440d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_is_branch_protection_set",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "650c086a9fc07a1b94f76e1a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_resolved_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/incidents?service_ids[]={SERVICE_ID}&statuses[]=resolved&limit=10&sort_by=created_at:desc",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "65143c9d1c555805963ef470",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_mean_time_to_resolve",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
+    }
+  },
+  {
+    "id": "65143d88580ef9b417b6484b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_issues_count",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
+    }
+  },
+  {
+    "id": "65155f9a60b2ca23e5123fd5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_issues_open_close_ratio",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"status\"],\n    \"maxResults\": 100}"
+    }
+  },
+  {
+    "id": "651c0fc2381555cde1290f9f",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_mean_time_to_merge_pr",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/api/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    mergeRequests(state: merged, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      nodes {\\n        title\\n        createdAt\\n        mergedAt\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "651c0fcadf7e3948a05eb5d6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_is_branch_protection_set",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/api/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    branchRules {\\n      nodes {\\n        name\\n        branchProtection {\\n          allowForcePush\\n        }\\n        approvalRules {\\n          nodes {\\n            approvalsRequired\\n          }\\n        }\\n        isDefault\\n        isProtected\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "651c0fd0da000b6007577bc2",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_is_file_exists",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/api/graphql",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "6523d9755284ab11055761ea",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflows_count",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "6523d97ada3444298db8964a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflow_success_rate",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "6524098b0e61b22bb32ec25c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "6524089b1f61b22bb32fc34d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_success_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=success&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "652d0aff299e6ea7ffe52784",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_dependabot_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/dependabot/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "652d12d8bec122fa440c56e5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_code_scanning_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/code-scanning/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "652d12dda3188184f6e0e553",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_secret_scanning_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/secret-scanning/alerts?state=open&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "652d155ea0d3cf3d54903551",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_pull_requests_by_account",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "/graphql",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "requestBody": "{\"query\":\"{\\n  search(query: \\\"repo:{REPOSITORY_OWNER}/{REPOSITORY_NAME} is:pr is:open author:{AUTHOR_NAME}\\\", type: ISSUE, last: 100) {\\n    edges {\\n      node {\\n        ... on PullRequest {\\n          url\\n          title\\n          createdAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "653783106d639d0b1de18fdf",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_file_contents",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/graphql",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"
       },
-      "requestBody": "{\"query\":\"query {\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\": \"{ repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") { object(expression: \\\"{REPOSITORY_BRANCH}:{FILE_PATH_REPLACER}\\\") { ... on Blob { text } } } }\"}"
     }
   }
 ]
+

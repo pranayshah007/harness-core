@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -144,7 +145,8 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
     ImageDetails imageDetails = mock(ImageDetails.class);
     Mockito.mockStatic(PluginInfoProviderHelper.class);
-    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(pluginDetailsBuilder);
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any(), anyBoolean()))
+        .thenReturn(pluginDetailsBuilder);
     when(PluginInfoProviderHelper.getImageDetails(any(), any(), any())).thenReturn(imageDetails);
 
     ConnectorConfigDTO connectorConfigDTO =

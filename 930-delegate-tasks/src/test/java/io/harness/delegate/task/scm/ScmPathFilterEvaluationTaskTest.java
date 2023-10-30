@@ -20,6 +20,8 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -95,6 +97,40 @@ public class ScmPathFilterEvaluationTaskTest extends CategoryTest {
     when(scmServiceClient.compareCommits(any(), any(), any(), any()))
         .thenReturn(
             CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("file1.txt").build()).build());
+    assertThat(scmPathFilterEvaluationTask.run(scmPathFilterEvaluationTaskParams1))
+        .isEqualTo(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build());
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void runAzureRepoTest() throws IOException {
+    ScmPathFilterEvaluationTaskParams scmPathFilterEvaluationTaskParams =
+        ScmPathFilterEvaluationTaskParams.builder()
+            .latestCommit("latest")
+            .previousCommit("previous")
+            .operator("Equals")
+            .standard("file1.txt")
+            .scmConnector(AzureRepoConnectorDTO.builder().url("url").build())
+            .build();
+    ScmPathFilterEvaluationTaskParams scmPathFilterEvaluationTaskParams1 =
+        ScmPathFilterEvaluationTaskParams.builder()
+            .latestCommit("latest")
+            .previousCommit("previous")
+            .operator("Equals")
+            .standard("file1.txt")
+            .scmConnector(AzureRepoConnectorDTO.builder()
+                              .apiAccess(AzureRepoApiAccessDTO.builder().build())
+                              .url("https://dev.azure.com.com")
+                              .build())
+            .build();
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(AzureRepoConnectorDTO.builder().build());
+    doReturn(CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("/file1.txt").build()).build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+    when(scmServiceClient.compareCommits(any(), any(), any(), any()))
+        .thenReturn(
+            CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("/file1.txt").build()).build());
     assertThat(scmPathFilterEvaluationTask.run(scmPathFilterEvaluationTaskParams1))
         .isEqualTo(ScmPathFilterEvaluationTaskResponse.builder().matched(true).build());
   }

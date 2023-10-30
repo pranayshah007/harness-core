@@ -91,26 +91,30 @@ public class NotificationRuleCommonUtils {
       String SLOPerformanceSectionTemplate) {
     StringBuilder sb = new StringBuilder();
 
-    associatedSLOsDetails.forEach(sloDetails -> {
-      ResourceParams resourceParams =
-          ScopedInformation.getResourceParamsFromScopedIdentifier(sloDetails.getScopedMonitoredServiceIdentifier());
-      Map<String, String> templateDataMap = new HashMap<>() {
-        {
-          put(SLO_URL, getAssociatedSLOUrl(resourceParams, sloDetails.getIdentifier(), currentInstant, baseUrl));
-          put(SLO_NAME, sloDetails.getName());
-          put(SLO_TARGET, sloDetails.getSloTarget().toString());
-          put(PAST_SLO_TARGET, String.format("%.2f", sloDetails.getPastSLOPerformance()));
-          put(CURRENT_SLO_TARGET, String.format("%.2f", sloDetails.getCurrentSLOPerformance()));
-          put(ERROR_BUDGET_BURNED, String.format("%.2f", sloDetails.getErrorBudgetBurned()));
-        }
-      };
-      final String[] sloPerformanceSection = {SLOPerformanceSectionTemplate};
-      templateDataMap.forEach((key, value) -> {
-        String variable = String.format("${%s}", key);
-        sloPerformanceSection[0] = sloPerformanceSection[0].replace(variable, value);
+    if (associatedSLOsDetails.isEmpty()) {
+      sb.append(" ");
+    } else {
+      associatedSLOsDetails.forEach(sloDetails -> {
+        ResourceParams resourceParams =
+            ScopedInformation.getResourceParamsFromScopedIdentifier(sloDetails.getScopedMonitoredServiceIdentifier());
+        Map<String, String> templateDataMap = new HashMap<>() {
+          {
+            put(SLO_URL, getAssociatedSLOUrl(resourceParams, sloDetails.getIdentifier(), currentInstant, baseUrl));
+            put(SLO_NAME, sloDetails.getName());
+            put(SLO_TARGET, sloDetails.getSloTarget().toString());
+            put(PAST_SLO_TARGET, String.format("%.2f", sloDetails.getPastSLOPerformance()));
+            put(CURRENT_SLO_TARGET, String.format("%.2f", sloDetails.getCurrentSLOPerformance()));
+            put(ERROR_BUDGET_BURNED, String.format("%.2f", sloDetails.getErrorBudgetBurned()));
+          }
+        };
+        final String[] sloPerformanceSection = {SLOPerformanceSectionTemplate};
+        templateDataMap.forEach((key, value) -> {
+          String variable = String.format("${%s}", key);
+          sloPerformanceSection[0] = sloPerformanceSection[0].replace(variable, value);
+        });
+        sb.append(sloPerformanceSection[0]);
       });
-      sb.append(sloPerformanceSection[0]);
-    });
+    }
 
     return sb.toString();
   }

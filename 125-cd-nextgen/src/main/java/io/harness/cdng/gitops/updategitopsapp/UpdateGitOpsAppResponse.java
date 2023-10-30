@@ -7,6 +7,8 @@
 
 package io.harness.cdng.gitops.updategitopsapp;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitops.models.Application;
 import io.harness.tasks.ResponseData;
 
@@ -15,6 +17,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.GITOPS)
 public class UpdateGitOpsAppResponse implements ResponseData {
   Application updatedApplication;
 }

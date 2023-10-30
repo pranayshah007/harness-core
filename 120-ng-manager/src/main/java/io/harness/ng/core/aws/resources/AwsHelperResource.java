@@ -231,11 +231,29 @@ public class AwsHelperResource {
   @GET
   @Path("auto-scaling-groups")
   @ApiOperation(value = "Get auto scaling groups", nickname = "autoScalingGroups")
-  public ResponseDTO<List<String>> getASGNames(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+  public ResponseDTO<List<String>> getASGNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("region") String region) {
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("region") String region,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((AwsBaseInfrastructure) spec).getRegion().getValue();
+    }
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
@@ -399,6 +417,7 @@ public class AwsHelperResource {
   @Path("eks/clusters")
   @ApiOperation(value = "Get EKS clusters list", nickname = "getEKSClusterNames")
   public ResponseDTO<List<String>> getEKSClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @QueryParam("region") String region,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -420,6 +439,7 @@ public class AwsHelperResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    return ResponseDTO.newResponse(awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier));
+    return ResponseDTO.newResponse(
+        awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 }

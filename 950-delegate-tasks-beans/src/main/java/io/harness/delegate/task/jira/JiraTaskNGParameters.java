@@ -58,6 +58,10 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
   Map<String, String> fields;
   // For new jira server versions old metadata endpoint is deprecated
   boolean newMetadata;
+  // Comma concatenated list of fields to filter in get issue call ; ex: "summary,description"
+  // when filterFields will be null -> response will include name to key mapping for all the fields possible for the
+  // jira issue else name to key mapping will only include fields present in jira issue
+  String filterFields;
   List<String> delegateSelectors;
 
   @Override

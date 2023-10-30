@@ -6,6 +6,7 @@ category: Discovery
 source: https://backstage.io/docs/integrations/github/discovery
 iconUrl: https://roadie.io/images/logos/github.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/github-catalog-discovery/
 config: |-
   catalog:
     providers:

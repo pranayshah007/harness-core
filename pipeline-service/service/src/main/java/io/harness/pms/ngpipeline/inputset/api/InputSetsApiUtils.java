@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.api;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.pipeline.api.PipelinesApiUtils.getMoveConfigType;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -25,7 +27,7 @@ import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
@@ -48,6 +50,7 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -204,7 +207,7 @@ public class InputSetsApiUtils {
 
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+    return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   public boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {

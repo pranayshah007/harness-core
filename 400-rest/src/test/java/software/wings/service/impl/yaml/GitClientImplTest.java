@@ -83,10 +83,10 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 import org.junit.Before;
 import org.junit.Test;
@@ -485,7 +485,7 @@ public class GitClientImplTest extends WingsBaseTest {
     doReturn(null).when(gitClient).clone(any(), any(), any(), anyBoolean());
     doReturn(null).when(gitClient).checkout(any());
 
-    gitClient.ensureRepoLocallyClonedAndUpdated(GitOperationContext.builder().gitConfig(gitConfig).build());
+    gitClient.ensureRepoLocallyClonedAndUpdated(GitOperationContext.builder().gitConfig(gitConfig).build(), false);
 
     verify(gitClient, times(1)).clone(any(), any(), any(), anyBoolean());
     verify(gitClient, times(1)).checkout(any());
@@ -501,8 +501,9 @@ public class GitClientImplTest extends WingsBaseTest {
     doReturn(null).when(gitClient).clone(any(), any(), any(), anyBoolean());
     doThrow(new IOException()).when(gitClient).checkout(any());
 
-    assertThatThrownBy(
-        () -> gitClient.ensureRepoLocallyClonedAndUpdated(GitOperationContext.builder().gitConfig(gitConfig).build()))
+    assertThatThrownBy(()
+                           -> gitClient.ensureRepoLocallyClonedAndUpdated(
+                               GitOperationContext.builder().gitConfig(gitConfig).build(), false))
         .hasMessage("Unable to checkout given reference: branch");
 
     verify(gitClient, times(1)).clone(any(), any(), any(), anyBoolean());
@@ -517,16 +518,16 @@ public class GitClientImplTest extends WingsBaseTest {
 
     when(gitClientHelper.getLockObject(any())).thenReturn(new File(format(INTER_PROCESS_LOCK_FILE, CONNECTOR_ID)));
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("testRepoDir");
-    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any());
+    doNothing().when(gitClient).ensureRepoLocallyClonedAndUpdated(any(), anyBoolean());
     FileIo.createDirectoryIfDoesNotExist("testRepoDir");
     FileIo.createDirectoryIfDoesNotExist("testDestDir");
 
     GitOperationContext gitOperationContext =
         GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(GIT_CONNECTOR_ID).build();
 
-    gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, "testDestDir", null);
+    gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, "testDestDir", null, false);
 
-    verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
+    verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class), anyBoolean());
   }
 
   private List<GitFileChange> getSampleGitFileChanges() {

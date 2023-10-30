@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
@@ -19,7 +20,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
@@ -35,6 +35,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -42,6 +43,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -77,14 +79,13 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
   @Inject private PlanService planService;
   @Inject private ExceptionManager exceptionManager;
   @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
   @Override
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
+  public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     return identityNodeExecutionStrategyHelper.createNodeExecution(ambiance, node, notifyId, parentId, previousId);
   }
@@ -245,7 +246,7 @@ public class IdentityNodeExecutionStrategy
           nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
       IdentityPlanNode idPlanNode = planService.fetchNode(ambiance.getPlanId(), newNodeExecution.getNodeId());
       if (idPlanNode.getUseAdviserObtainments()) {
-        nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
+        processOrQueueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
       } else {
         processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
       }
@@ -254,5 +255,9 @@ public class IdentityNodeExecutionStrategy
           ambiance.getPlanExecutionId(), ex);
       handleError(ambiance, ex);
     }
+  }
+
+  public PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return IdentityNodeExecutionMetadata.builder().strategyMetadata(strategyMetadata).build();
   }
 }

@@ -7,11 +7,13 @@
 
 package io.harness.steps.approval.step.beans;
 
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.OrchestrationStepsTestBase;
@@ -23,6 +25,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,5 +72,27 @@ public class KeyValuesCriteriaSpecDTOTest extends OrchestrationStepsTestBase {
                     .build()
                     .isEmpty());
     assertTrue(KeyValuesCriteriaSpecDTO.builder().conditions(new ArrayList<>()).build().isEmpty());
+  }
+
+  // Testing the method fetchKeySetFromKeyValueCriteriaDTO which returns the keySet of criteria
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testFetchKeySetFromKeyValueCriteriaDTO() {
+    assertThat(KeyValuesCriteriaSpecDTO.builder()
+                   .conditions(List.of(ConditionDTO.builder().key("key").value("value").build(),
+                       ConditionDTO.builder().key("key1").value("value1").build()))
+                   .build()
+                   .fetchKeySetFromKeyValueCriteriaDTO())
+        .isEqualTo(new HashSet<>(Arrays.asList("key", "key1")));
+    assertThat(KeyValuesCriteriaSpecDTO.builder()
+                   .conditions(List.of(ConditionDTO.builder().key("key").value("value").build(),
+                       ConditionDTO.builder().key("  ").value("value1").build()))
+                   .build()
+                   .fetchKeySetFromKeyValueCriteriaDTO())
+        .isEqualTo(new HashSet<>(List.of("key")));
+    assertThat(
+        KeyValuesCriteriaSpecDTO.builder().conditions(new ArrayList<>()).build().fetchKeySetFromKeyValueCriteriaDTO())
+        .isEmpty();
   }
 }

@@ -93,7 +93,7 @@ public class RuleSetServiceImpl implements RuleSetService {
   @Override
   public void validateCloudProvider(
       String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
-    if (rulesIdentifier.size() > 1) {
+    if (rulesIdentifier.size() > 0) {
       List<Rule> rules = ruleDAO.validateCloudProvider(accountId, rulesIdentifier, ruleCloudProviderType);
       if (rules.size() != rulesIdentifier.size()) {
         throw new InvalidRequestException(INVALID_CLOUD_PROVIDER_EXCEPTION);

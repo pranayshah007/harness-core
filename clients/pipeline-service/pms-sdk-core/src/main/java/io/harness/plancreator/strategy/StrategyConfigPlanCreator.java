@@ -14,7 +14,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -24,8 +23,8 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -92,10 +91,9 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
                                         .shouldProceedIfFailed(metadata.getShouldProceedIfFailed())
                                         .build();
     YamlNode currentNode = ctx.getCurrentField().getNode();
-    ExecutionMetadata executionMetadata = ctx.getGlobalContext().get("metadata").getMetadata();
     SkipType skipType = YamlUtils.getGivenYamlNodeFromParentPath(currentNode, STEPS) != null
             && YamlUtils.findParentNode(currentNode, ROLLBACK_STEPS) == null
-            && ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())
+            && ExecutionModeUtils.isRollbackMode(ctx.getExecutionMode())
         ? SkipType.SKIP_TREE
         : SkipType.NOOP;
 
@@ -127,6 +125,6 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
   }
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

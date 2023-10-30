@@ -25,7 +25,7 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext.SegmentGroupEventJobContextKeys;
 import software.wings.service.intfc.AccountService;
 

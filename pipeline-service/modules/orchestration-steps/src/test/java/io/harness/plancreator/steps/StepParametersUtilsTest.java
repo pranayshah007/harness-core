@@ -12,8 +12,6 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
-import io.harness.advisers.rollback.OnFailRollbackParameters;
-import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -74,18 +72,5 @@ public class StepParametersUtilsTest extends CategoryTest {
     assertThat(stepElementParameters.getType()).isEqualTo(shellScriptStepNode.getType());
     assertThat(stepElementParameters.getSkipCondition()).isEqualTo(shellScriptStepNode.getSkipCondition());
     assertThat(stepElementParameters.getWhen()).isEqualTo(shellScriptStepNode.getWhen());
-  }
-
-  @Test
-  @Owner(developers = VIVEK_DIXIT)
-  @Category(UnitTests.class)
-  public void testGetStepParametersWithRollbackParameters() {
-    ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    OnFailRollbackParameters onFailRollbackParameters =
-        OnFailRollbackParameters.builder().strategy(RollbackStrategy.UNKNOWN).build();
-    StepElementParameters stepElementParametersWithRollback =
-        StepParametersUtils.getStepParameters(shellScriptStepNode, onFailRollbackParameters).build();
-    assertThat(stepElementParametersWithRollback.getRollbackParameters().getStrategy())
-        .isEqualTo(RollbackStrategy.UNKNOWN);
   }
 }

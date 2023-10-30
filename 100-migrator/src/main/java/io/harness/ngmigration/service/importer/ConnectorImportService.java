@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.importer;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.connector.ConnectorFactory;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ConnectorImportService implements ImportService {
   @Inject private SettingsService settingsService;
   @Inject DiscoveryService discoveryService;

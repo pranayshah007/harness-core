@@ -27,6 +27,7 @@ import io.harness.pms.expressions.YamlExpressionEvaluator;
 import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
 import io.harness.rule.Owner;
 
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -131,8 +132,7 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
     Map<String, ExpressionEvaluationDetail> detailMap = new HashMap<>();
 
     // Test resolveByYaml
-    expressionEvaluatorService.evaluateExpression(
-        detailMap, Ambiance.newBuilder().build(), fqn, expression, new YamlExpressionEvaluator(yaml));
+    expressionEvaluatorService.evaluateExpression(detailMap, fqn, expression, new YamlExpressionEvaluator(yaml));
 
     String key = fqn + "+" + expression;
     assertThat(detailMap.containsKey(key)).isTrue();
@@ -141,8 +141,8 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
     // Test resolve by ambiance
     doReturn("dummy").when(engineExpressionService).resolve(any(), any(), any());
     detailMap = new HashMap<>();
-    expressionEvaluatorService.evaluateExpression(
-        detailMap, Ambiance.newBuilder().build(), fqn, staticExpression, new YamlExpressionEvaluator(yaml));
+    expressionEvaluatorService.evaluateExpressionUsingAmbiance(
+        detailMap, fqn, Lists.newArrayList(staticExpression), null);
     key = fqn + "+" + staticExpression;
     assertThat(detailMap.containsKey(key)).isTrue();
     assertThat(detailMap.get(key).isResolvedByYaml()).isFalse();
@@ -168,9 +168,10 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
   public void testGetFQNToAmbianceMap() {
     Ambiance ambiance = Ambiance.newBuilder().addAllLevels(prepareLevel()).build();
     String expectedFqn = "pipeline.stages.stage1.execution.steps.step1";
-    Map<String, Ambiance> fqnToAmbianceMap =
-        expressionEvaluatorService.getFQNToAmbianceMap(PipelineServiceTestHelper.createCloseableIterator(
-            List.of(NodeExecution.builder().ambiance(ambiance).build()).iterator()));
+    Map<String, Ambiance> fqnToAmbianceMap = expressionEvaluatorService.getFQNToAmbianceMap(
+        PipelineServiceTestHelper.createCloseableIterator(
+            List.of(NodeExecution.builder().ambiance(ambiance).build()).iterator()),
+        Lists.newArrayList(expectedFqn));
     assertThat(fqnToAmbianceMap.containsKey(expectedFqn)).isTrue();
     assertThat(fqnToAmbianceMap.get(expectedFqn)).isEqualTo(ambiance);
   }

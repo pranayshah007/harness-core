@@ -7,7 +7,7 @@
 
 package io.harness.artifacts.docker.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
+import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessfulPublicRegistry;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.CodePulse;
@@ -68,7 +68,7 @@ public class DockerPublicRegistryProcessor {
     }
     Response<DockerPublicImageTagResponse.Result> response =
         registryRestClient.getPublicImageTag(imageName, tag).execute();
-    if (!isSuccessful(response)) {
+    if (!isSuccessfulPublicRegistry(response)) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
           "The tag provided for the image may be incorrect.",
           new InvalidArtifactServerException(RetrofitUtils.getErrorBodyDetails(response, ERROR_MESSAGE_KEY), USER));
@@ -97,7 +97,7 @@ public class DockerPublicRegistryProcessor {
       DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
       Response<DockerPublicImageTagResponse> response =
           registryRestClient.listPublicImageTags(imageName, null, 1).execute();
-      if (!isSuccessful(response)) {
+      if (!isSuccessfulPublicRegistry(response)) {
         // image not found or user doesn't have permission to list image tags
         throw DockerRegistryUtils.imageNotFoundException(imageName);
       }
@@ -116,7 +116,7 @@ public class DockerPublicRegistryProcessor {
     Response<DockerPublicImageTagResponse> response =
         registryRestClient.listPublicImageTags(imageName, null, maxNumberOfBuilds).execute();
 
-    if (!isSuccessful(response)) {
+    if (!isSuccessfulPublicRegistry(response)) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the tags for the image",
           "Check if the image exists and if the permissions are scoped for the authenticated user",
           new InvalidArtifactServerException(RetrofitUtils.getErrorBodyDetails(response, ERROR_MESSAGE_KEY), USER));
@@ -154,7 +154,7 @@ public class DockerPublicRegistryProcessor {
       Response<DockerPublicImageTagResponse> pageResponse =
           registryRestClient.listPublicImageTags(imageName, Integer.valueOf(nextPageNum), limit).execute();
 
-      if (!isSuccessful(pageResponse)) {
+      if (!isSuccessfulPublicRegistry(pageResponse)) {
         throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the tags for the image",
             "Check if the image exists and if the permissions are scoped for the authenticated user",
             new InvalidArtifactServerException(

@@ -17,15 +17,15 @@ import lombok.Getter;
 
 @Getter
 public class AsgSwapServiceManifestRequest extends ManifestRequest {
-  private AsgLoadBalancerConfig asgLoadBalancerConfig;
+  private List<AsgLoadBalancerConfig> loadBalancers;
   private AwsInternalConfig awsInternalConfig;
   private String region;
 
   @Builder
-  public AsgSwapServiceManifestRequest(List<String> manifests, AsgLoadBalancerConfig asgLoadBalancerConfig,
+  public AsgSwapServiceManifestRequest(List<String> manifests, List<AsgLoadBalancerConfig> loadBalancers,
       AwsInternalConfig awsInternalConfig, String region) {
     super(manifests);
-    this.asgLoadBalancerConfig = asgLoadBalancerConfig;
+    this.loadBalancers = loadBalancers;
     this.awsInternalConfig = awsInternalConfig;
     this.region = region;
   }

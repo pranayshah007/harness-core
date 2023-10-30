@@ -32,6 +32,7 @@ public class AzureKeyVaultDTOToEntity
         .useManagedIdentity(connectorDTO.getUseManagedIdentity())
         .managedClientId(connectorDTO.getManagedClientId())
         .azureManagedIdentityType(connectorDTO.getAzureManagedIdentityType())
+        .enablePurge(connectorDTO.getEnablePurge())
         .build();
   }
 }

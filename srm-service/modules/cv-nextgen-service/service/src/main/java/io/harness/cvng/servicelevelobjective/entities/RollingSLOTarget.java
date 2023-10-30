@@ -34,6 +34,12 @@ public class RollingSLOTarget extends SLOTarget {
   }
 
   @Override
+  public TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime) {
+    currentDateTime = currentDateTime.truncatedTo(ChronoUnit.MINUTES);
+    return TimePeriod.createWithLocalTime(
+        currentDateTime.minusMinutes(TimeUnit.DAYS.toMinutes(periodLengthDays)), currentDateTime);
+  }
+  @Override
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
     List<SLODashboardDetail.TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_HOUR_FILTER);

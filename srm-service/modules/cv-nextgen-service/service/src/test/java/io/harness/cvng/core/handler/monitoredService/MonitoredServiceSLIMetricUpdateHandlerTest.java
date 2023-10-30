@@ -79,7 +79,7 @@ public class MonitoredServiceSLIMetricUpdateHandlerTest extends CvNextGenTestBas
             .sources(Sources.builder().healthSources(new HashSet<>()).build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceSLIMetricUpdateHandler.beforeUpdate(
@@ -135,7 +135,7 @@ public class MonitoredServiceSLIMetricUpdateHandlerTest extends CvNextGenTestBas
                          .build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceSLIMetricUpdateHandler.beforeUpdate(
@@ -191,7 +191,7 @@ public class MonitoredServiceSLIMetricUpdateHandlerTest extends CvNextGenTestBas
                          .build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     monitoredServiceSLIMetricUpdateHandler.beforeUpdate(
         builderFactory.getProjectParams(), existingMonitoredService, updatingMonitoredService);

@@ -84,6 +84,7 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
     return checkStrings(parent.getClusterId(), child.getClusterId())
         && checkStrings(parent.getNamespace(), child.getNamespace())
         && checkStrings(parent.getWorkloadName(), child.getWorkloadName())
+        && checkStrings(parent.getService(), child.getService())
         && checkStrings(parent.getGcpProject(), child.getGcpProject())
         && checkStrings(parent.getGcpProduct(), child.getGcpProduct())
         && checkStrings(parent.getGcpSKUId(), child.getGcpSKUId())
@@ -108,17 +109,17 @@ public class RemoveDuplicateAnomaliesTasklet implements Tasklet {
 
   private int getDepth(AnomalyEntity anomaly) {
     List<String> list = new ArrayList<>(Arrays.asList(anomaly.getClusterId(), anomaly.getNamespace(),
-        anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-        anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
-        anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
+        anomaly.getWorkloadName(), anomaly.getService(), anomaly.getGcpProject(), anomaly.getGcpProduct(),
+        anomaly.getGcpSKUId(), anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
+        anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     Iterables.removeIf(list, Objects::isNull);
     return list.size();
   }
 
   private String getConcatString(AnomalyEntity anomaly) {
     return Joiner.on(" ").skipNulls().join(anomaly.getClusterId(), anomaly.getNamespace(), anomaly.getWorkloadName(),
-        anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(), anomaly.getAwsAccount(),
-        anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
+        anomaly.getService(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
+        anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
         anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory());
   }
 }

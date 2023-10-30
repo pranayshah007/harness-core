@@ -108,6 +108,7 @@ public class DockerPushStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.identifier",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.type",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.startTs",
-            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.endTs");
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.endTs",
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.status");
   }
 }

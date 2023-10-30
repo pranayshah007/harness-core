@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.config;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
@@ -34,6 +36,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ManifestFileHandlerImpl extends FileHandler<ManifestFile> {
   private ApplicationManifest applicationManifest;
 

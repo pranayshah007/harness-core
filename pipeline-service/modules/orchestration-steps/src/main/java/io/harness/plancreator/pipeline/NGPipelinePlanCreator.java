@@ -23,8 +23,8 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -113,6 +113,6 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

@@ -1,0 +1,12 @@
+policies:
+  - name: tag-launch-template-with-DeleteOnTermination-as-false
+    resource: launch-template-version
+    filters:
+      - type: value
+        key: "LaunchTemplateData.BlockDeviceMappings[].Ebs.DeleteOnTermination"
+        value: false
+        op: contains
+    actions:
+      - type: tag
+        tags:
+          DeleteOnTermination: false

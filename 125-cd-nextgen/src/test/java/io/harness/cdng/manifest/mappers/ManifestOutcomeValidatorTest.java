@@ -29,8 +29,13 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.yaml.ParameterField;
@@ -471,6 +476,150 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
     assertInvalidParamsArgsMessage(()
                                        -> ManifestOutcomeValidator.validate(kustomizeManifestOutcome, false),
         "Path for patches.yaml files for manifest identifier: Test and manifest type: Kustomize is not valid. Check in the params.yaml setup in the manifest configuration to make sure it's not empty");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidOciHelmGenericStore() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreGenericConfig.builder()
+                              .connectorRef(ParameterField.createValueField("connector"))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
+                    .build()))
+            .build();
+
+    assertThatCode(
+        () -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", false))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidOciHelmEcrStore() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreEcrConfig.builder()
+                              .connectorRef(ParameterField.createValueField("connector"))
+                              .region(ParameterField.createValueField("region"))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.ECR)
+                    .build()))
+            .build();
+
+    assertThatCode(
+        () -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", false))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidOciHelmGenericStoreWithExpression() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreGenericConfig.builder()
+                              .connectorRef(ParameterField.createExpressionField(true, "<+expression>", null, true))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
+                    .build()))
+            .build();
+
+    assertThatCode(
+        () -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", true))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidOciHelmEcrStoreWithExpression() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreEcrConfig.builder()
+                              .connectorRef(ParameterField.createExpressionField(true, "<+expression>", null, true))
+                              .region(ParameterField.createValueField("<+expression>"))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.ECR)
+                    .build()))
+            .build();
+
+    assertThatCode(
+        () -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", true))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testInvalidOciHelmGenericStoreDisallowExpression() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreGenericConfig.builder()
+                              .connectorRef(ParameterField.createExpressionField(true, "<+expression>", null, true))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
+                    .build()))
+            .basePath(ParameterField.createValueField("basePath"))
+            .build();
+    assertInvalidParamsArgsMessage(
+        ()
+            -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", false),
+        "Missing or empty connectorRef in OCI Helm store spec for manifest with identifier: test");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testInvalidOciHelmEcrStoreDisallowExpression() {
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreEcrConfig.builder()
+                              .connectorRef(ParameterField.createExpressionField(true, "<+expression>", null, true))
+                              .region(ParameterField.createValueField("<+expression>"))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.ECR)
+                    .build()))
+            .basePath(ParameterField.createValueField("basePath"))
+            .build();
+
+    assertInvalidParamsArgsMessage(
+        ()
+            -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig, ManifestType.HelmChart, "test", false),
+        "Missing or empty connectorRef in OCI Helm store spec for manifest with identifier: test");
+
+    OciHelmChartConfig ociHelmChartConfig2 =
+        OciHelmChartConfig.builder()
+            .config(ParameterField.createValueField(
+                OciHelmChartStoreConfigWrapper.builder()
+                    .spec(OciHelmChartStoreEcrConfig.builder()
+                              .connectorRef(ParameterField.createValueField("connector"))
+                              .region(ParameterField.createExpressionField(true, "<+expression>", null, true))
+                              .build())
+                    .type(OciHelmChartStoreConfigType.ECR)
+                    .build()))
+            .basePath(ParameterField.createValueField("basePath"))
+            .build();
+
+    assertInvalidParamsArgsMessage(
+        ()
+            -> ManifestOutcomeValidator.validateStore(ociHelmChartConfig2, ManifestType.HelmChart, "test", false),
+        "Missing or empty region in OCI Helm store Ecr config for manifest with identifier: test");
   }
 
   private void assertInvalidParamsArgsMessage(ThrowableAssert.ThrowingCallable callable, String msg) {

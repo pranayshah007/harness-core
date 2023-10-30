@@ -6,10 +6,12 @@
  */
 
 package io.harness.steps.wait;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -26,6 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @NoArgsConstructor
 @TypeAlias("waitStepParameters")
@@ -45,10 +48,5 @@ public class WaitStepParameters implements SpecParameters {
   public WaitStepParameters(ParameterField<String> duration, String uuid) {
     this.duration = duration;
     this.uuid = uuid;
-  }
-  @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return WaitStepParameters.infoBuilder().duration(this.duration).uuid(this.uuid).build();
   }
 }

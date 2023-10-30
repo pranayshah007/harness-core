@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -103,7 +104,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     Builder ambiance = Ambiance.newBuilder()
                            .setPlanExecutionId(planExecutionId)
                            .putAllSetupAbstractions(prepareInputArgs())
-                           .setMetadata(ExecutionMetadata.newBuilder().setExecutionUuid(planExecutionId).build())
+                           .setMetadata(ExecutionMetadata.newBuilder().build())
                            .addLevels(Level.newBuilder().setRuntimeId(generateUuid()).build());
     PlanNode startingNode = PlanNode.builder()
                                 .uuid(DUMMY_NODE_1_ID)
@@ -198,7 +199,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void shouldSetServiceName() {
-    doReturn(Status.ERRORED).when(planExecutionService).calculateStatus(any());
+    doReturn(Status.ERRORED).when(planExecutionService).calculateStatus(any(), anyBoolean());
     doReturn(PlanExecution.builder().status(Status.ERRORED).build())
         .when(planExecutionService)
         .updateStatus(any(), any(), any());

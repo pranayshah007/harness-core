@@ -30,4 +30,9 @@ public class AsgInstanceSyncRequest implements AsgCommandRequest, ExpressionRefl
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   String asgNameWithoutSuffix;
   String executionStrategy;
+
+  @Override
+  public String getAsgName() {
+    return asgNameWithoutSuffix;
+  }
 }

@@ -75,7 +75,7 @@ public class RancherClusterHelper {
             .accountId(baseNGAccess.getAccountIdentifier())
             .taskType(RANCHER_LIST_CLUSTERS_TASK_NG.name())
             .taskParameters(taskParams)
-            .executionTimeout(Duration.ofMinutes(1))
+            .executionTimeout(Duration.ofMinutes(5))
             .taskSetupAbstractions(getTaskSetupAbstractions(baseNGAccess))
             .taskSelectors(taskParams.getRancherConnectorDTO().getDelegateSelectors())
             .build();

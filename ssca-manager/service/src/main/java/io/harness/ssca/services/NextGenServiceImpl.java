@@ -75,7 +75,7 @@ public class NextGenServiceImpl implements NextGenService {
       return response;
     } catch (Exception e) {
       log.error("Could not forward request GET to ng manager", e);
-      throw new InvalidRequestException("Failed to send Request");
+      throw new InvalidRequestException("Failed to send Request to Manager Service");
     }
   }
 }

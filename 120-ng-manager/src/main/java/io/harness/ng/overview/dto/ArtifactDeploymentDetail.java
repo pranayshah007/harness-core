@@ -18,6 +18,7 @@ public class ArtifactDeploymentDetail {
   String envName;
   String envId;
   String artifact;
+  String chartVersion;
   String lastPipelineExecutionId;
   long lastDeployedAt;
   String pipelineId;

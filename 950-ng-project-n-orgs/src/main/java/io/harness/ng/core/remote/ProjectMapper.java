@@ -48,6 +48,7 @@ public class ProjectMapper {
         .orgIdentifier(project.getOrgIdentifier())
         .identifier(project.getIdentifier())
         .name(project.getName())
+        .uniqueId(project.getUniqueId())
         .description(project.getDescription())
         .color(project.getColor())
         .tags(convertToMap(project.getTags()))
@@ -60,6 +61,7 @@ public class ProjectMapper {
         .lastModifiedAt(project.getLastModifiedAt())
         .project(writeDTO(project));
   }
+
   public static Page<ProjectResponse> toResponseWithFavouritesInfo(
       Page<Project> projects, List<Favorite> favoriteProjects) {
     Set<String> favoriteProjectIds =

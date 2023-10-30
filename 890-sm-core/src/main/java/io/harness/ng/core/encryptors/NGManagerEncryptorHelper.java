@@ -48,6 +48,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(PL)
 @Slf4j
@@ -143,6 +144,28 @@ public class NGManagerEncryptorHelper {
     return responseData.isConfigurationValid();
   }
 
+  public Pair<String, Boolean> validateConfigurationWithTaskId(
+      String accountId, ValidateSecretManagerConfigurationTaskParameters parameters) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .taskType(VALIDATE_SECRET_MANAGER_CONFIGURATION.name())
+            .taskParameters(parameters)
+            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .accountId(accountId)
+            .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
+            .build();
+    var responseEntry = delegateService.executeSyncTaskV2ReturnTaskId(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = responseEntry.getValue();
+    String taskId = responseEntry.getKey();
+    DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
+    if (!(delegateResponseData instanceof ValidateSecretManagerConfigurationTaskResponse)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+    }
+    ValidateSecretManagerConfigurationTaskResponse responseData =
+        (ValidateSecretManagerConfigurationTaskResponse) delegateResponseData;
+    return Pair.of(taskId, responseData.isConfigurationValid());
+  }
+
   public char[] fetchSecretValue(String accountId, String script, int expressionFunctorToken,
       EncryptedRecord encryptedRecord, EncryptionConfig encryptionConfig) {
     FetchCustomSecretTaskParameters parameters = FetchCustomSecretTaskParameters.builder()
@@ -187,6 +210,29 @@ public class NGManagerEncryptorHelper {
     ValidateCustomSecretManagerSecretReferenceTaskResponse responseData =
         (ValidateCustomSecretManagerSecretReferenceTaskResponse) delegateResponseData;
     return responseData.isReferenceValid();
+  }
+
+  public Pair<String, Boolean> validateCustomSecretManagerSecretReferenceWithTaskId(String accountId,
+      int expressionFunctorToken, ValidateCustomSecretManagerSecretReferenceTaskParameters parameters) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .taskType(VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE.name())
+            .taskParameters(parameters)
+            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .accountId(accountId)
+            .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
+            .expressionFunctorToken(expressionFunctorToken)
+            .build();
+    var responseEntry = delegateService.executeSyncTaskV2ReturnTaskId(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = responseEntry.getValue();
+    String taskId = responseEntry.getKey();
+    DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
+    if (!(delegateResponseData instanceof ValidateCustomSecretManagerSecretReferenceTaskResponse)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+    }
+    ValidateCustomSecretManagerSecretReferenceTaskResponse responseData =
+        (ValidateCustomSecretManagerSecretReferenceTaskResponse) delegateResponseData;
+    return Pair.of(taskId, responseData.isReferenceValid());
   }
 
   public String resolveSecretManagerConfig(String accountId, int expressionFunctorToken,

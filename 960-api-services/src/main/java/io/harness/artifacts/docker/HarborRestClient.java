@@ -18,7 +18,8 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface HarborRestClient {
   @GET("api/v2.0/projects") Call<List<Object>> getProjects(@Header("Authorization") String basicAuthHeader);

@@ -198,7 +198,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
           }
 
           processK8sPodsInstances(containerInfraMapping, perpetualTaskMetadata, emptyList(), deploymentSummaryMap,
-              syncResponse.getK8sPodInfoList());
+              syncResponse.getK8sPodInfoList(), rollback);
           return;
 
         } else if (responseData instanceof ContainerSyncResponse) {
@@ -251,7 +251,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
                         && StringUtils.isBlank(containerMetadata.getClusterName()))
                     || (syncResponse.getClusterName().equals(containerMetadata.getClusterName())))) {
               processK8sPodsInstances(containerInfraMapping, containerMetadata, instancesInDB, deploymentSummaryMap,
-                  syncResponse.getK8sPodInfoList());
+                  syncResponse.getK8sPodInfoList(), rollback);
 
               // Current logic is to catch any exception and if there is no successful sync status during 7 days then
               // delete all infra perpetual tasks. We're exploiting this to handle the case when replica is scaled down
@@ -267,7 +267,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
             }
           } else {
             // For iterator and new deployment flow will fetch existing pods from cluster
-            handleK8sInstances(containerInfraMapping, deploymentSummaryMap, containerMetadata, instancesInDB);
+            handleK8sInstances(containerInfraMapping, deploymentSummaryMap, containerMetadata, instancesInDB, rollback);
           }
 
         } else {
@@ -508,9 +508,10 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
   private void handleK8sInstances(ContainerInfrastructureMapping containerInfraMapping,
       Map<ContainerMetadata, DeploymentSummary> deploymentSummaryMap, ContainerMetadata containerMetadata,
-      Collection<Instance> instancesInDB) {
+      Collection<Instance> instancesInDB, boolean rollback) {
     List<K8sPod> k8sPods = getK8sPodsFromDelegate(containerInfraMapping, containerMetadata);
-    processK8sPodsInstances(containerInfraMapping, containerMetadata, instancesInDB, deploymentSummaryMap, k8sPods);
+    processK8sPodsInstances(
+        containerInfraMapping, containerMetadata, instancesInDB, deploymentSummaryMap, k8sPods, rollback);
   }
 
   @VisibleForTesting
@@ -587,7 +588,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
   private void processK8sPodsInstances(ContainerInfrastructureMapping containerInfraMapping,
       ContainerMetadata containerMetadata, Collection<Instance> instancesInDB,
-      Map<ContainerMetadata, DeploymentSummary> deploymentSummaryMap, List<K8sPod> currentPods) {
+      Map<ContainerMetadata, DeploymentSummary> deploymentSummaryMap, List<K8sPod> currentPods, boolean rollback) {
     Map<String, K8sPod> currentPodsMap = new HashMap<>();
     Map<String, Instance> dbPodMap = new HashMap<>();
 
@@ -616,6 +617,12 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     }
 
     DeploymentSummary deploymentSummary = deploymentSummaryMap.get(containerMetadata);
+    if (deploymentSummary != null
+        && (deploymentSummary.getK8sDeploymentKey() != null
+            && deploymentSummary.getK8sDeploymentKey().getReleaseNumber() != null)) {
+      deploymentSummary =
+          getDeploymentSummaryForInstanceCreation(deploymentSummaryMap.get(containerMetadata), rollback);
+    }
     for (String podName : instancesToBeAdded) {
       if (deploymentSummary == null) {
         deploymentSummary = DeploymentSummary.builder().build();
@@ -665,27 +672,36 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
     // log.info("Instances to be added {}", instancesToBeAdded.size());
 
-    if (deploymentSummaryMap.get(containerMetadata) != null) {
-      deploymentSummary = deploymentSummaryMap.get(containerMetadata);
+    if (deploymentSummary != null) {
       SetView<String> instancesToBeUpdated = Sets.intersection(currentPodsMap.keySet(), dbPodMap.keySet());
-
       for (String podName : instancesToBeUpdated) {
         Instance instanceToBeUpdated = dbPodMap.get(podName);
         K8sPod k8sPod = currentPodsMap.get(podName);
-        String deploymentWorkflowName = Optional.ofNullable(deploymentSummary.getWorkflowExecutionName()).orElse("");
-        if (deploymentWorkflowName.equals(instanceToBeUpdated.getLastWorkflowExecutionName())) {
-          boolean updated = updateHelmChartInfoForExistingK8sPod(instanceToBeUpdated, k8sPod, deploymentSummary);
 
-          if (!deploymentSummary.getWorkflowExecutionId().equals(instanceToBeUpdated.getLastWorkflowExecutionId())) {
-            updateInstanceBasedOnDeploymentSummary(instanceToBeUpdated, k8sPod, deploymentSummary);
-            updated = true;
-          }
-
-          if (updated) {
-            instanceService.saveOrUpdate(instanceToBeUpdated);
+        if (deploymentSummary.getK8sDeploymentKey() != null
+            && deploymentSummary.getK8sDeploymentKey().getReleaseNumber() != null) {
+          processInstance(instanceToBeUpdated, k8sPod, deploymentSummary);
+        } else if (deploymentSummaryMap.get(containerMetadata) != null) {
+          deploymentSummary = deploymentSummaryMap.get(containerMetadata);
+          String deploymentWorkflowName = Optional.ofNullable(deploymentSummary.getWorkflowExecutionName()).orElse("");
+          if (deploymentWorkflowName.equals(instanceToBeUpdated.getLastWorkflowExecutionName())) {
+            processInstance(instanceToBeUpdated, k8sPod, deploymentSummary);
           }
         }
       }
+    }
+  }
+
+  private void processInstance(Instance instanceToBeUpdated, K8sPod k8sPod, DeploymentSummary deploymentSummary) {
+    boolean updated = updateHelmChartInfoForExistingK8sPod(instanceToBeUpdated, k8sPod, deploymentSummary);
+
+    if (!deploymentSummary.getWorkflowExecutionId().equals(instanceToBeUpdated.getLastWorkflowExecutionId())) {
+      updateInstanceBasedOnDeploymentSummary(instanceToBeUpdated, k8sPod, deploymentSummary);
+      updated = true;
+    }
+
+    if (updated) {
+      instanceService.saveOrUpdate(instanceToBeUpdated);
     }
   }
 

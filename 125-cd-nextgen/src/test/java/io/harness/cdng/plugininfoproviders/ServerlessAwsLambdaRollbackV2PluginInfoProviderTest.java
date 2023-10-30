@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -112,7 +113,7 @@ public class ServerlessAwsLambdaRollbackV2PluginInfoProviderTest extends Categor
 
     Mockito.mockStatic(PluginInfoProviderHelper.class);
     Builder builder = PluginDetails.newBuilder();
-    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any(), anyBoolean())).thenReturn(builder);
 
     doReturn(cdAbstractStepNode).when(serverlessRollbackV2PluginInfoProvider).read(jsonNode);
 
@@ -152,7 +153,7 @@ public class ServerlessAwsLambdaRollbackV2PluginInfoProviderTest extends Categor
 
     Mockito.mockStatic(PluginInfoProviderHelper.class);
     Builder builder = PluginDetails.newBuilder();
-    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any(), anyBoolean())).thenReturn(builder);
 
     doThrow(IOException.class).when(serverlessRollbackV2PluginInfoProvider).read(jsonNode);
 

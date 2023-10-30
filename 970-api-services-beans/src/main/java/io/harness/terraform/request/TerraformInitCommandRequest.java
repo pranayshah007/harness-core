@@ -16,4 +16,5 @@ import lombok.Value;
 public class TerraformInitCommandRequest {
   String tfBackendConfigsFilePath;
   Map<String, String> additionalCliFlags;
+  boolean skipColorLogs;
 }

@@ -7,6 +7,7 @@
 
 package software.wings.exception;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +16,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
@@ -25,6 +27,7 @@ import software.wings.WingsBaseTest;
 
 import io.swagger.annotations.Api;
 import javax.ws.rs.GET;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -35,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
 public class GenericExceptionMapperTest extends WingsBaseTest {
+  private static final String DEFAULT_ACCOUNT_ID = UUIDGenerator.generateUuid();
   private GenericExceptionMapper<?> genericExceptionMapper;
   @Mock private ResourceInfo resourceInfo;
   @Before
@@ -126,6 +130,41 @@ public class GenericExceptionMapperTest extends WingsBaseTest {
     assertThat(response.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
     assertThat(((RestResponse) response.getEntity()).getResponseMessages())
         .isEqualTo(expectation.getResponseMessages());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldToResponseHandleAccountMigratedException() {
+    Exception cause = new AccountMigratedException(DEFAULT_ACCOUNT_ID);
+    Exception ex = new WebApplicationException(cause, Response.Status.MOVED_PERMANENTLY);
+
+    final Response response = genericExceptionMapper.toResponse(ex);
+
+    assertThat(response.getStatus()).isEqualTo(301);
+    assertThat(response.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
+    assertThat(response.getEntity()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldToResponseHandleWebApplicationException() {
+    Exception cause = new IllegalArgumentException();
+    Exception ex = new WebApplicationException(cause, Response.Status.MOVED_PERMANENTLY);
+
+    final Response response = genericExceptionMapper.toResponse(ex);
+
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
+    assertThat(response.getEntity()).isNotNull();
+    assertThat(response.getEntity()).isInstanceOf(RestResponse.class);
+
+    final RestResponse entity = (RestResponse) response.getEntity();
+    assertThat(entity.getResponseMessages()).hasSize(1);
+    assertThat(((ResponseMessage) entity.getResponseMessages().get(0)).getCode())
+        .isEqualTo(ErrorCode.DEFAULT_ERROR_CODE);
+    assertThat(((ResponseMessage) entity.getResponseMessages().get(0)).getLevel()).isEqualTo(Level.ERROR);
   }
 
   @Api

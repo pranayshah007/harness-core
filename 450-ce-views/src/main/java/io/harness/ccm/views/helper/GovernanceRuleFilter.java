@@ -37,6 +37,7 @@ public class GovernanceRuleFilter {
   @Schema(description = "limit") int limit;
   @Schema(description = "offset") int offset;
   @Schema(description = "The order by condition for Rule query") List<CCMSort> orderBy;
+  @Schema(description = "resourceType") String resourceType;
 
   @Builder
   public GovernanceRuleFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> policyIds,

@@ -40,7 +40,7 @@ public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("orchestrationid") String orchestrationId;
   @Field("sbomversion") String sbomVersion;
 
-  @Field("artifacturl") String artifactURL;
+  @Field("artifacturl") String artifactUrl;
   @Field("artifactid") String artifactId;
   @Field("artifactname") String artifactName;
   List<String> tags;
@@ -50,17 +50,17 @@ public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("toolname") String toolName;
   @Field("toolvendor") String toolVendor;
 
-  @Field("packageid") String packageID;
+  @Field("packageid") String packageId;
   @Field("packagename") String packageName;
   @Field("packagedescription") String packageDescription;
   @Field("packagelicense") List<String> packageLicense;
   @Field("packagesourceinfo") String packageSourceInfo;
   @Field("packageversion") String packageVersion;
-  @Field("packagesuppliername") String packageSupplierName;
+  @Field("packagesuppliername") @Deprecated String packageSupplierName;
   @Field("packageoriginatorname") String packageOriginatorName;
   @Field("originatortype") String originatorType;
   @Field("packagetype") String packageType;
-  @Field("packagecpe") String packageCPE;
+  @Field("packagecpe") String packageCpe;
   @Field("packageproperties") String packageProperties;
   String purl;
   @Field("packagemanager") String packageManager; // this will be parsed from the purl
@@ -73,6 +73,7 @@ public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("pipelineidentifier") String pipelineIdentifier;
   @Field("projectidentifier") String projectIdentifier;
   @Field("orgidentifier") String orgIdentifier;
-  @Field("sequenceid") String sequenceID;
-  @Field("accountid") String accountID;
+
+  @Field("sequenceid") String sequenceId;
+  @Field("accountid") String accountId;
 }

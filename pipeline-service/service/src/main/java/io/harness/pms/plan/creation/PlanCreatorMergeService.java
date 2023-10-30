@@ -6,14 +6,20 @@
  */
 
 package io.harness.pms.plan.creation;
+
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
+import static io.harness.pms.plan.execution.ExecutionHelper.PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_PIPELINE_TIMEOUT;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
+import static io.harness.pms.utils.PmsConstants.DEFAULT_TIMEOUT;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
@@ -22,12 +28,19 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobRequest;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -36,14 +49,18 @@ import io.harness.pms.contracts.plan.PlanCreationResponse;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
+import io.harness.pms.plan.utils.PlanExecutionContextMapper;
 import io.harness.pms.sdk.PmsSdkHelper;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.utils.PmsFeatureFlagService;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -62,6 +79,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
@@ -77,23 +95,25 @@ public class PlanCreatorMergeService {
   PmsEventSender pmsEventSender;
   PlanCreationValidator planCreationValidator;
   private final Integer planCreatorMergeServiceDependencyBatch;
-  private final PmsFeatureFlagService pmsFeatureFlagService;
   private final KryoSerializer kryoSerializer;
+  private final NGSettingsClient ngSettingsClient;
+  private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Inject
   public PlanCreatorMergeService(PmsSdkHelper pmsSdkHelper, PmsEventSender pmsEventSender,
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
       @Named("PlanCreatorMergeExecutorService") Executor executor,
       @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch,
-      PmsFeatureFlagService pmsFeatureFlagService, KryoSerializer kryoSerializer) {
+      KryoSerializer kryoSerializer, NGSettingsClient ngSettingsClient, PmsFeatureFlagHelper pmsFeatureFlagHelper) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
     this.planCreationValidator = planCreationValidator;
     this.executor = executor;
     this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
-    this.pmsFeatureFlagService = pmsFeatureFlagService;
     this.kryoSerializer = kryoSerializer;
+    this.ngSettingsClient = ngSettingsClient;
+    this.pmsFeatureFlagHelper = pmsFeatureFlagHelper;
   }
 
   public String getPublisher() {
@@ -139,10 +159,10 @@ public class PlanCreatorMergeService {
 
       YamlField pipelineField;
       switch (version) {
-        case PipelineVersion.V1:
+        case HarnessYamlVersion.V1:
           pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
           break;
-        case PipelineVersion.V0:
+        case HarnessYamlVersion.V0:
           pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
           break;
         default:
@@ -157,6 +177,13 @@ public class PlanCreatorMergeService {
           Dependencies.newBuilder()
               .setYaml(planExecutionMetadata.getProcessedYaml())
               .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
+              .putDependencyMetadata(pipelineField.getNode().getUuid(),
+                  Dependency.newBuilder()
+                      .setParentInfo(HarnessStruct.newBuilder()
+                                         .putData(PlanCreatorConstants.YAML_VERSION,
+                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                         .build())
+                      .build())
               .build();
 
       PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(
@@ -171,9 +198,11 @@ public class PlanCreatorMergeService {
   @VisibleForTesting
   Map<String, PlanCreationContextValue> createInitialPlanCreationContext(String accountId, String orgIdentifier,
       String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
+    Map<String, String> settingsMap = getTimeoutSettingsMap(accountId);
+    Map<String, Boolean> featureFlagMap = getFeatureFlagMap(accountId);
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
-        : PipelineVersion.V0;
+        : HarnessYamlVersion.V0;
     // TODO(BRIJESH): Remove the isExecutionInputEnabled field from PlanCreationContextValue. Once the change to remove
     // its usages is deployed in all services.
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
@@ -184,6 +213,7 @@ public class PlanCreatorMergeService {
                                                    .setIsExecutionInputEnabled(true);
     if (metadata != null) {
       builder.setMetadata(metadata);
+      builder.setExecutionContext(PlanExecutionContextMapper.toExecutionContext(metadata, settingsMap, featureFlagMap));
     }
     if (planExecutionMetadata != null) {
       if (planExecutionMetadata.getTriggerPayload() != null) {
@@ -197,6 +227,32 @@ public class PlanCreatorMergeService {
     }
     planCreationContextMap.put("metadata", builder.build());
     return planCreationContextMap;
+  }
+
+  public Map<String, String> getTimeoutSettingsMap(String accountId) {
+    Map<String, String> settingsMap = new HashMap<>();
+    try {
+      Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall = ngSettingsClient.listSettings(
+          accountId, null, null, SettingCategory.PMS, PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER);
+      List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
+
+      for (SettingResponseDTO settingDto : response) {
+        SettingDTO setting = settingDto.getSetting();
+        settingsMap.put(setting.getIdentifier(), setting.getValue());
+      }
+    } catch (Exception exception) {
+      settingsMap.put(MAX_STAGE_TIMEOUT.getName(), DEFAULT_TIMEOUT);
+      settingsMap.put(MAX_PIPELINE_TIMEOUT.getName(), DEFAULT_TIMEOUT);
+    }
+    return settingsMap;
+  }
+
+  public Map<String, Boolean> getFeatureFlagMap(String accountId) {
+    Map<String, Boolean> featureFlagMap = new HashMap<>();
+    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString())) {
+      featureFlagMap.put(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString(), true);
+    }
+    return featureFlagMap;
   }
 
   PlanCreationBlobResponse createPlanForDependenciesRecursive(String accountId, String orgIdentifier,
@@ -242,10 +298,9 @@ public class PlanCreatorMergeService {
       PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, String harnessVersion) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
-    PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
 
-    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(responseBuilder.getContextMap()).build();
+    try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
       long start = System.currentTimeMillis();
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap =
           new HashMap<>();
@@ -328,6 +383,7 @@ public class PlanCreatorMergeService {
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
       String harnessVersion) {
     for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
+      harnessVersion = getYamlVersionForDependencyEntry(harnessVersion, dependencyEntry, responseBuilder);
       // Always first check  -
       // 1. Affinity service
       // 2. pipeline-service dependencies
@@ -372,10 +428,9 @@ public class PlanCreatorMergeService {
   private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
       Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
       Map<String, String> batchServiceAffinityMap, Map<String, PlanCreationContextValue> contextMap) {
-    PlanCreationContextValue metadata = contextMap.get("metadata");
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(contextMap).build();
     completableFutures.supplyAsync(() -> {
-      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
         try {
           return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
               PlanCreationBlobRequest.newBuilder()
@@ -395,5 +450,26 @@ public class PlanCreatorMergeService {
         }
       }
     });
+  }
+
+  private String getYamlVersionForDependencyEntry(String harnessVersion, Map.Entry<String, String> dependencyEntry,
+      PlanCreationBlobResponse.Builder responseBuilder) {
+    if (responseBuilder.getDeps().getDependencyMetadataMap().get(dependencyEntry.getKey()) != null
+        && responseBuilder.getDeps()
+                .getDependencyMetadataMap()
+                .get(dependencyEntry.getKey())
+                .getParentInfo()
+                .getDataMap()
+                .get(PlanCreatorConstants.YAML_VERSION)
+            != null) {
+      harnessVersion = responseBuilder.getDeps()
+                           .getDependencyMetadataMap()
+                           .get(dependencyEntry.getKey())
+                           .getParentInfo()
+                           .getDataMap()
+                           .get(PlanCreatorConstants.YAML_VERSION)
+                           .getStringValue();
+    }
+    return harnessVersion;
   }
 }

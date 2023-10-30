@@ -84,6 +84,10 @@ public class AccountDTO {
   @VariableExpression(skipVariableExpression = true)
   boolean publicAccessEnabled;
 
+  @Schema(description = "Specifies if Account has harness support usergroup access.")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isHarnessSupportAccessAllowed;
+
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,

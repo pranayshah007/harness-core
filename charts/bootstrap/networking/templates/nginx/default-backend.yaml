@@ -8,8 +8,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   replicas: 1
@@ -70,7 +70,7 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if or .Values.defaultbackend.service.annotations .Values.global.commonAnnotation }}
+  {{- if or .Values.defaultbackend.service.annotations .Values.global.commonAnnotations }}
   annotations:
     {{- if .Values.defaultbackend.service.annotations }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.defaultbackend.service.annotations "context" $ ) | nindent 4 }}

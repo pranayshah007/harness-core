@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
@@ -15,7 +14,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
@@ -99,6 +101,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
@@ -177,6 +180,13 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
       }
     });
 

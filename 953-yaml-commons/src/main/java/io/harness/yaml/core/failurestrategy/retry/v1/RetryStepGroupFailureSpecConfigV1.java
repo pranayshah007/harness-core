@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -25,5 +26,5 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RetryStepGroupFailureSpecConfigV1 {
   ParameterField<Integer> attempts;
-  ParameterField<List<Timeout>> intervals;
+  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<Timeout>> interval;
 }

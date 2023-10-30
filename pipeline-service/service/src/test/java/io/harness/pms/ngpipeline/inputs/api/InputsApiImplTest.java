@@ -20,7 +20,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.ngpipeline.inputs.service.PMSInputsServiceImpl;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.InputsResponseBody;
 
@@ -73,7 +73,7 @@ public class InputsApiImplTest extends PipelineServiceTestBase {
                          .projectIdentifier(PROJ_IDENTIFIER)
                          .identifier(PIPELINE_IDENTIFIER)
                          .yaml(pipelineYaml)
-                         .harnessVersion(PipelineVersion.V1)
+                         .harnessVersion(HarnessYamlVersion.V1)
                          .version(1L)
                          .build();
   }

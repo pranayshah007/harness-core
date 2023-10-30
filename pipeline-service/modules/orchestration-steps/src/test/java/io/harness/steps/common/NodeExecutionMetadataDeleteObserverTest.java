@@ -25,7 +25,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -52,7 +52,7 @@ public class NodeExecutionMetadataDeleteObserverTest extends CategoryTest {
   @Mock private TimeoutEngine timeoutEngine;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private PlanService planService;
-  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Mock private WaitStepService waitStepService;
   @Mock private ExecutionInputService executionInputService;
   @Mock private ApprovalInstanceService approvalInstanceService;

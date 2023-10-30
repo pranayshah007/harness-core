@@ -6,7 +6,9 @@
  */
 
 package software.wings.timescale.migrations;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import io.fabric8.utils.Lists;
@@ -17,9 +19,10 @@ import java.sql.SQLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 public class TimescaleEntityMigrationHelper {
-  private static final String DELETE_STATEMENT = "DELETE FROM %s WHERE ID=?";
+  private static final String UPDATE_IS_DELETED = "UPDATE %s SET IS_DELETED = true WHERE ID=?";
 
   public static void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
@@ -33,7 +36,7 @@ public class TimescaleEntityMigrationHelper {
 
   public static void deleteFromTimescaleDB(
       String id, TimeScaleDBService timeScaleDBService, int maxTry, String tableName) {
-    String query = String.format(DELETE_STATEMENT, tableName);
+    String query = String.format(UPDATE_IS_DELETED, tableName);
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

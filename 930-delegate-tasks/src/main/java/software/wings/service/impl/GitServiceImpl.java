@@ -6,17 +6,18 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
 import static software.wings.utils.SshDelegateHelperUtils.createSshSessionConfig;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientV2;
 import io.harness.git.UsernamePasswordAuthRequest;
@@ -35,6 +36,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -64,11 +66,12 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.transport.HttpTransport;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @ValidateOnExecution
 @Slf4j
@@ -131,10 +134,10 @@ public class GitServiceImpl implements GitService {
           throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
+        try {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
-        } else {
-          return getSSHSession(sshSessionConfig);
+        } catch (SshClientException sshClientException) {
+          throw new JSchException(sshClientException.getMessage());
         }
       }
 

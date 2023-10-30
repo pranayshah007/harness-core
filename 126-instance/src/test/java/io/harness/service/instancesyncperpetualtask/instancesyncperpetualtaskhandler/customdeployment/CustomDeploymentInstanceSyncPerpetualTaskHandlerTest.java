@@ -122,7 +122,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandlerTest extends Instan
     List<String> tags = Arrays.asList("tag1", "tag2");
     DeploymentInfoDTO deploymentInfoDTO = CustomDeploymentNGDeploymentInfoDTO.builder()
                                               .instanceFetchScript(SCRIPT)
-                                              .tags(tags)
+                                              .tags(new HashSet<>(tags))
                                               .infratructureKey("infraKey")
                                               .build();
     Map<String, String> attributes = new HashMap<>();

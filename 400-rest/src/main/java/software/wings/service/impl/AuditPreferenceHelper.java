@@ -25,11 +25,11 @@ import io.harness.exception.WingsException;
 
 import software.wings.audit.AuditHeader;
 import software.wings.audit.AuditHeader.AuditHeaderKeys;
-import software.wings.beans.AccountAuditFilter;
 import software.wings.beans.ApplicationAuditFilter;
 import software.wings.beans.AuditPreference;
 import software.wings.beans.CGConstants;
 import software.wings.beans.Preference;
+import software.wings.beans.account.AccountAuditFilter;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 

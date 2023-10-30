@@ -80,7 +80,6 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Category(UnitTests.class)
   public void testMarkAsFailOrSuccess() {
     doReturn(Optional.of(waitStepInstance)).when(waitStepRepositoryMock).findByNodeExecutionId(nodeExecutionId);
-    when(planExecutionService.calculateStatusExcluding("", nodeExecutionId)).thenReturn(Status.FAILED);
     when(planExecutionService.updateStatus("", Status.FAILED)).thenReturn(PlanExecution.builder().build());
     waitStepServiceImpl.markAsFailOrSuccess("", nodeExecutionId, WaitStepAction.MARK_AS_FAIL);
     verify(waitNotifyEngine, times(1))
@@ -100,8 +99,6 @@ public class WaitStepServiceImplTest extends OrchestrationStepsTestBase {
   @Owner(developers = OwnerRule.SHALINI)
   @Category(UnitTests.class)
   public void testUpdatePlanStatus() {
-    when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.RUNNING);
-    when(planExecutionService.calculateStatusExcluding("plan", nodeExecutionId)).thenReturn(Status.FAILED);
     verify(planExecutionService, times(0)).updateStatus("plan", Status.FAILED);
   }
 

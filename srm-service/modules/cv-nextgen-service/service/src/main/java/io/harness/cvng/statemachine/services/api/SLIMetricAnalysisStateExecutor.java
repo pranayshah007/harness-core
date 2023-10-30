@@ -82,39 +82,46 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
   @Inject private Clock clock;
   @Override
   public AnalysisState execute(SLIMetricAnalysisState analysisState) {
-    Instant startTime = analysisState.getInputs().getStartTime();
-    Instant endTime = analysisState.getInputs().getEndTime();
-    String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorService.get(verificationTaskService.getSliId(verificationTaskId));
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(serviceLevelIndicator.getAccountId())
-                                      .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
-                                      .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
-                                      .build();
-    String monitoredServiceIdentifier = serviceLevelIndicator.getMonitoredServiceIdentifier();
-    List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
-        timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
-    Map<String, List<SLIAnalyseRequest>> sliAnalyseRequest =
-        sliMetricAnalysisTransformer.getSLIAnalyseRequest(timeSeriesRecordDTOS);
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
-        serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
-    List<SLIAnalyseResponse> sliAnalyseResponseList =
-        sliDataProcessorService.process(sliAnalyseRequest, serviceLevelIndicatorDTO, startTime, endTime);
-    List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
-    sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(
-        sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
-    sliRecordList = sliConsecutiveMinutesProcessorService.process(sliRecordList, serviceLevelIndicator);
-    sliRecordService.create(
-        sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
-    SimpleServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
-    sloHealthIndicatorService.upsert(serviceLevelObjective);
-    analysisState.setStatus(AnalysisStatus.SUCCESS);
-    // TODO (this end time won't always be the creation time, i.e in case of recalculation, we need to re-think this.
-    try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
-      metricService.recordDuration(
-          CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(clock.instant(), endTime));
+    try {
+      Instant startTime = analysisState.getInputs().getStartTime();
+      Instant endTime = analysisState.getInputs().getEndTime();
+      String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
+      ServiceLevelIndicator serviceLevelIndicator =
+          serviceLevelIndicatorService.get(verificationTaskService.getSliId(verificationTaskId));
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .accountIdentifier(serviceLevelIndicator.getAccountId())
+                                        .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                        .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                        .build();
+      String monitoredServiceIdentifier = serviceLevelIndicator.getMonitoredServiceIdentifier();
+      List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
+          timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
+      Map<String, List<SLIAnalyseRequest>> sliAnalyseRequest =
+          sliMetricAnalysisTransformer.getSLIAnalyseRequest(timeSeriesRecordDTOS);
+      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+          serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
+      List<SLIAnalyseResponse> sliAnalyseResponseList =
+          sliDataProcessorService.process(sliAnalyseRequest, serviceLevelIndicatorDTO, startTime, endTime);
+      List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
+      sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(sliRecordList, projectParams,
+          startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
+      sliRecordList = sliConsecutiveMinutesProcessorService.process(sliRecordList, serviceLevelIndicator);
+      sliRecordService.create(
+          sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
+      SimpleServiceLevelObjective serviceLevelObjective =
+          serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+      sloHealthIndicatorService.upsert(serviceLevelObjective);
+      analysisState.setStatus(AnalysisStatus.SUCCESS);
+      // TODO (this end time won't always be the creation time, i.e in case of recalculation, we need to re-think this.
+      try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
+        metricService.recordDuration(
+            CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(endTime, clock.instant()));
+      }
+    } catch (Exception exception) {
+      log.warn(
+          String.format("SLI Execute for sliId: {} failed with:", analysisState.getInputs().getVerificationTaskId()),
+          exception);
+      analysisState.setStatus(AnalysisStatus.RETRY);
     }
     return analysisState;
   }
@@ -126,7 +133,9 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Override
   public AnalysisState handleRerun(SLIMetricAnalysisState analysisState) {
-    return analysisState;
+    analysisState.setRetryCount(analysisState.getRetryCount() + 1);
+    analysisState.setStatus(AnalysisStatus.RETRY);
+    return execute(analysisState);
   }
 
   @Override
@@ -173,11 +182,6 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Override
   public AnalysisState handleTransition(SLIMetricAnalysisState analysisState) {
-    return analysisState;
-  }
-
-  @Override
-  public AnalysisState handleRetry(SLIMetricAnalysisState analysisState) {
     return analysisState;
   }
 }

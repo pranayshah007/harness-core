@@ -119,6 +119,7 @@ public class LdapSearch implements LdapValidator {
       env.put(Context.SECURITY_PRINCIPAL, bindDn);
       env.put(Context.SECURITY_CREDENTIALS, bindCredential);
       env.put(Context.SECURITY_AUTHENTICATION, "simple");
+      Exception ldapContextException = null;
 
       try {
         LdapContext ctx = new InitialLdapContext(env, null);
@@ -175,7 +176,7 @@ public class LdapSearch implements LdapValidator {
           return new SearchResult(entries);
         }
       } catch (Exception e) {
-        log.error("Error querying to ldap server with pagination", e);
+        ldapContextException = e;
       }
       try (Connection connection = connectionFactory.getConnection()) {
         log.info("Trying to query second time to LDAP server with old logic with searchfilter {} and baseDN {}",
@@ -184,6 +185,9 @@ public class LdapSearch implements LdapValidator {
         SearchOperation search = new SearchOperation(connection);
         return search.execute(request).getResult();
       } catch (Exception e) {
+        log.warn(
+            "Error encountered querying to ldap server with baseDn {}, initially with pagination failed. Querying LDAP with old logic was attempted next",
+            baseDN, ldapContextException);
         log.error("Error querying second time to LDAP server with old logic ", e);
         throw e;
       }

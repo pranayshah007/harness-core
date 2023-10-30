@@ -216,12 +216,17 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     if (startInterval <= 0 && endInterval <= 0) {
       throw new InvalidRequestException("Timestamp must be a positive long");
     }
-    String startTsQuery = "startts";
+
+    String selectStatusQuery;
     if (groupBy != null) {
-      startTsQuery = "time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", startts) as startts";
+      selectStatusQuery = "select status, tb.c_epoch_time AS startts FROM harness_time_bucket_list_bigint("
+          + startInterval + ", " + endInterval + ", " + groupBy.getNoOfMilliseconds() + ") tb "
+          + "LEFT JOIN " + tableName + " ON tb.c_epoch_time = (((pipeline_execution_summary_ci.startts) / "
+          + groupBy.getNoOfMilliseconds() + ")::bigint * " + groupBy.getNoOfMilliseconds() + ") where accountid=?";
+    } else {
+      selectStatusQuery = "select status, startts from " + tableName + " where accountid=?";
     }
 
-    String selectStatusQuery = "select status, " + startTsQuery + " from " + tableName + " where accountid=?";
     String orgIds = orgProjectIdentifiers.stream()
                         .map(OrgProjectIdentifier::getOrgIdentifier)
                         .distinct()

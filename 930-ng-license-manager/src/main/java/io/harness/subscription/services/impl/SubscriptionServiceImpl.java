@@ -15,9 +15,6 @@ import static io.harness.subscription.entities.SubscriptionDetail.INCOMPLETE;
 
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -75,7 +72,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.jooq.tools.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 @Singleton
 public class SubscriptionServiceImpl implements SubscriptionService {

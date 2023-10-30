@@ -18,6 +18,7 @@ import io.harness.pms.sdk.execution.PmsSdkEventsFrameworkModule;
 import io.harness.pms.sdk.registries.PmsSdkRegistryModule;
 import io.harness.testing.TestExecution;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
@@ -33,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PmsSdkModule extends AbstractModule {
   private static PmsSdkModule instance;
   private final PmsSdkConfiguration config;
+  private final MetricRegistry threadPoolMetricRegistry;
 
   public static PmsSdkModule getInstance(PmsSdkConfiguration config) {
     if (instance == null) {
@@ -41,8 +43,21 @@ public class PmsSdkModule extends AbstractModule {
     return instance;
   }
 
+  public static PmsSdkModule getInstance(PmsSdkConfiguration config, MetricRegistry threadPoolMetricRegistry) {
+    if (instance == null) {
+      instance = new PmsSdkModule(config, threadPoolMetricRegistry);
+    }
+    return instance;
+  }
+
   private PmsSdkModule(PmsSdkConfiguration config) {
     this.config = config;
+    this.threadPoolMetricRegistry = new MetricRegistry();
+  }
+
+  private PmsSdkModule(PmsSdkConfiguration config, MetricRegistry threadPoolMetricRegistry) {
+    this.config = config;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Override
@@ -77,7 +92,8 @@ public class PmsSdkModule extends AbstractModule {
                                          .orchestrationEventPoolConfig(config.getOrchestrationEventPoolConfig())
                                          .planCreatorServicePoolConfig(config.getPlanCreatorServiceInternalConfig())
                                          .pipelineSdkRedisEventsConfig(config.getPipelineSdkRedisEventsConfig())
-                                         .build()));
+                                         .build(),
+            threadPoolMetricRegistry));
     modules.add(
         PmsSdkEventsFrameworkModule.getInstance(config.getEventsFrameworkConfiguration(), config.getServiceName()));
     modules.add(PmsSdkRegistryModule.getInstance(config));

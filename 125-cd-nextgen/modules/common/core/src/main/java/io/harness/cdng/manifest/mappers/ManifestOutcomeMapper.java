@@ -434,6 +434,7 @@ public class ManifestOutcomeMapper {
     return AwsSamDirectoryManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
+        .samTemplateFile(attributes.getSamTemplateFile())
         .build();
   }
 }

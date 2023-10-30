@@ -6,7 +6,11 @@
  */
 
 package io.harness.ngmigration.exception;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MigrationException extends RuntimeException {
   public MigrationException(String error) {
     super(error);

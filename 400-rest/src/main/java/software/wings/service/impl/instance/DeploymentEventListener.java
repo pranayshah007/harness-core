@@ -9,6 +9,9 @@ package software.wings.service.impl.instance;
 
 import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ff.FeatureFlagService;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueListener;
@@ -28,6 +31,7 @@ import org.apache.commons.collections4.CollectionUtils;
  * For sender information,
  * @see software.wings.beans.CanaryWorkflowExecutionAdvisor
  */
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
   @Inject private InstanceHelper instanceHelper;
@@ -53,7 +57,7 @@ public class DeploymentEventListener extends QueueListener<DeploymentEvent> {
           instanceSyncServiceV2.handleInstanceSync(deploymentEvent);
           return;
         } catch (Exception e) {
-          log.error("[INSTANCE_SYNC_V2_CG] Exception for handling deployment event. Falling back to old flow.", e);
+          log.debug("[INSTANCE_SYNC_V2_CG] Exception for handling deployment event. Falling back to old flow.", e);
         }
       }
     }

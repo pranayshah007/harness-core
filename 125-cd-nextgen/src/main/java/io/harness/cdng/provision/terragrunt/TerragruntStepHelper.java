@@ -307,8 +307,8 @@ public class TerragruntStepHelper {
     } else {
       paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector((ScmConnector) connectorDTO.getConnectorConfig(),
+        basicNGAccessObject.getAccountIdentifier(), gitConfigDTO, repoName);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     return GitStoreDelegateConfig.builder()
@@ -335,8 +335,9 @@ public class TerragruntStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
+    ScmConnector scmConnector = cdStepHelper.getScmConnector((ScmConnector) connectorDTO.getConnectorConfig(),
+        basicNGAccessObject.getAccountIdentifier(), gitConfigDTO, repoName);
     encryptedDataDetails.addAll(
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject));
   }

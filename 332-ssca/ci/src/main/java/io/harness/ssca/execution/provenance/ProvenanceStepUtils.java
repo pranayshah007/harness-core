@@ -11,12 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.ssca.beans.provenance.DockerSourceSpec;
+import io.harness.ssca.beans.provenance.GcrSourceSpec;
 import io.harness.ssca.beans.provenance.ProvenanceSource;
 import io.harness.ssca.beans.provenance.ProvenanceSourceType;
 
@@ -27,7 +29,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ProvenanceStepUtils {
   public static final String PROVENANCE_STEP_GROUP = "ProvenanceStepGroup";
-  public static final String PROVENANCE_STEP = "ProvenanceStep";
+  public static final String PROVENANCE_STEP = "Provenance_Step";
   public static ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       return YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
@@ -64,6 +66,19 @@ public class ProvenanceStepUtils {
                   .connector(dockerStepInfo.getConnectorRef())
                   .repo(dockerStepInfo.getRepo())
                   .tags(dockerStepInfo.getTags())
+                  .build())
+        .build();
+  }
+
+  public static ProvenanceSource buildGcrProvenanceSource(GCRStepInfo gcrStepInfo) {
+    return ProvenanceSource.builder()
+        .type(ProvenanceSourceType.GCR)
+        .spec(GcrSourceSpec.builder()
+                  .connector(gcrStepInfo.getConnectorRef())
+                  .host(gcrStepInfo.getHost())
+                  .imageName(gcrStepInfo.getImageName())
+                  .projectID(gcrStepInfo.getProjectID())
+                  .tags(gcrStepInfo.getTags())
                   .build())
         .build();
   }

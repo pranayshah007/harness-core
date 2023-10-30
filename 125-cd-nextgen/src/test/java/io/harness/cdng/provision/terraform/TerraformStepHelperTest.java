@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -94,6 +95,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -116,10 +118,14 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
+import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.logging.UnitProgress;
@@ -236,7 +242,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         .updateParentEntityIdAndVersion(anyString(), anyString(), any(FileBucket.class));
     doReturn(mockFileServiceResponse).when(mockFileService).deleteFile(anyString(), any(FileBucket.class));
     doReturn(Response.success(null)).when(mockFileServiceResponse).execute();
-    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
   }
 
   @Test
@@ -767,7 +773,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any(), any());
+        .getScmConnector(any(), any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
@@ -827,7 +833,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any(), any());
+        .getScmConnector(any(), any(), any(), any());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
@@ -3243,7 +3249,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                          .commitId("commit")
                                          .build();
 
-    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
@@ -3274,5 +3280,169 @@ public class TerraformStepHelperTest extends CategoryTest {
             .isInstanceOf(GithubConnectorDTO.class);
       }
     }
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfoNull() {
+    Ambiance ambiance = getAmbiance();
+    TerraformProviderCredentialDelegateInfo credentialDelegateInfo =
+        helper.getProviderCredentialDelegateInfo(null, ambiance);
+    assertThat(credentialDelegateInfo).isNull();
+    credentialDelegateInfo = helper.getProviderCredentialDelegateInfo(
+        TerraformProviderCredential.builder().type(TerraformProviderType.AWS).build(), ambiance);
+    assertThat(credentialDelegateInfo).isNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfoInvalidConnector() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(
+        ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
+        .when(cdStepHelper)
+        .getConnector(anyString(), any());
+    assertThatThrownBy(()
+                           -> helper.getProviderCredentialDelegateInfo(
+                               TerraformProviderCredential.builder()
+                                   .type(TerraformProviderType.AWS)
+                                   .spec(AWSIAMRoleCredentialSpec.builder()
+                                             .connectorRef(ParameterField.createValueField("dummyConnector"))
+                                             .build())
+                                   .build(),
+                               ambiance))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Connector provided for terraform Aws provider must be of type AWS");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfo() {
+    Ambiance ambiance = getAmbiance();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(
+                AwsConnectorDTO.builder()
+                    .credential(
+                        AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build())
+                    .build())
+            .build();
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
+
+    TerraformProviderCredentialDelegateInfo credentialDelegateInfo = helper.getProviderCredentialDelegateInfo(
+        TerraformProviderCredential.builder()
+            .type(TerraformProviderType.AWS)
+            .spec(AWSIAMRoleCredentialSpec.builder()
+                      .connectorRef(ParameterField.createValueField("aws-connector"))
+                      .region(ParameterField.createValueField("us-east-1"))
+                      .roleArn(ParameterField.createValueField("dummy-role-arn"))
+                      .build())
+            .build(),
+        ambiance);
+
+    assertThat(credentialDelegateInfo).isNotNull();
+    assertThat(credentialDelegateInfo).isInstanceOf(TerraformAwsProviderCredentialDelegateInfo.class);
+    TerraformAwsProviderCredentialDelegateInfo tfAwsDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) credentialDelegateInfo;
+    assertThat(tfAwsDelegateInfo.getConnectorDTO()).isSameAs(connectorInfoDTO);
+    assertThat(tfAwsDelegateInfo.getRegion()).isEqualTo("us-east-1");
+    assertThat(tfAwsDelegateInfo.getRoleArn()).isEqualTo("dummy-role-arn");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToTerraformProviderCredential() {
+    TerraformProviderCredential providerCredential =
+        helper.toTerraformProviderCredential(TerraformAwsProviderCredentialConfig.builder()
+                                                 .connectorRef("connectorRef")
+                                                 .roleArn("roleArn")
+                                                 .region("region")
+                                                 .type(TerraformProviderType.AWS)
+                                                 .build());
+
+    assertThat(providerCredential).isNotNull();
+    assertThat(providerCredential.getSpec()).isNotNull();
+    assertThat(providerCredential.getSpec()).isInstanceOf(AWSIAMRoleCredentialSpec.class);
+    AWSIAMRoleCredentialSpec spec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getConnectorRef())).isEqualTo("connectorRef");
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRoleArn())).isEqualTo("roleArn");
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRegion())).isEqualTo("region");
+  }
+
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitId() {
+    String gitFileId = "gitFileId-test-123";
+    String commitId = "ag4j34m";
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(new HashMap<>() {
+                                                              { put(gitFileId, commitId); }
+                                                            })
+                                                            .gitVarFilesFromMultipleRepo(null)
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNotNull();
+    assertThat(fetchedCommitId).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdFromVarFilesRemoteRepo() {
+    String gitFileId = "gitFileId-test-123";
+    String commitId = "ag4j35a";
+    FetchFilesResult fetchFilesResult =
+        FetchFilesResult.builder().commitResult(CommitResult.builder().commitId(commitId).build()).build();
+
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(null)
+                                                            .gitVarFilesFromMultipleRepo(new HashMap<>() {
+                                                              { put(gitFileId, fetchFilesResult); }
+                                                            })
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNotNull();
+    assertThat(fetchedCommitId).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdWhenFileIdIsNull() {
+    String gitFileId = null;
+    String commitId = "ag4j35a";
+    FetchFilesResult fetchFilesResult =
+        FetchFilesResult.builder().commitResult(CommitResult.builder().commitId(commitId).build()).build();
+
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(null)
+                                                            .gitVarFilesFromMultipleRepo(new HashMap<>() {
+                                                              { put(gitFileId, fetchFilesResult); }
+                                                            })
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNull();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdWhenFetchedCommitIdsMapAndVarFilesFromMultipleRepoIsNull() {
+    String gitFileId = "gitFileId-test-123";
+
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(null).gitVarFilesFromMultipleRepo(null).build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNull();
   }
 }

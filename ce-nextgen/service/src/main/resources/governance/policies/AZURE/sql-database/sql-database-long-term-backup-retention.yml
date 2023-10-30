@@ -1,0 +1,9 @@
+policies:
+  - name: sql-database-long-term-backup-retention
+    resource: azure.sql-database
+    filters:
+      - type: long-term-backup-retention-policy
+        backup-type: weekly
+        op: gt
+        retention-period: 1
+        retention-period-units: months

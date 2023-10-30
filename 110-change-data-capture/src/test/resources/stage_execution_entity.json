@@ -15,7 +15,11 @@
   "status" : "APPROVAL_REJECTED",
   "startts" : 1688384110750,
   "tags" : [
-
+    "hello\"\":ahello\"\\\"{}",
+    "hello\\\"\\\":a",
+    "simple:hello",
+    "secret:${ngSecretManager.obtain(\"account.pcf_pass\", -724166992)}",
+    "<+<+pipeline.stages.Determine_Changes.spec.execution.steps.List_Packages.output.outputVariables.packages>==null?\\\"\\\":<+pipeline.name>>"
   ],
   "_class" : "stageExecutionEntity",
   "failureInfo" : {

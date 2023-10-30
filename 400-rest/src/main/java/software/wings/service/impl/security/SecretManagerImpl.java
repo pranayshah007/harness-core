@@ -43,6 +43,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EncryptedDataParent;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HarnessSecret;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -59,6 +60,7 @@ import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
@@ -152,6 +154,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Inject private SecretService secretService;
   @Inject private SecretYamlHandler secretYamlHandler;
   @Inject private SecretsDao secretsDao;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public EncryptionType getEncryptionType(String accountId) {
@@ -939,6 +942,10 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
       String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
       throws IllegalAccessException {
+    if (pageRequest.getLimit() == null
+        && featureFlagService.isEnabled(FeatureName.SPG_3K_DEFAULT_PAGE_SIZE, accountId)) {
+      pageRequest.setLimit(PageRequest.LIMIT_3K_PAGE_SIZE);
+    }
     PageResponse<EncryptedData> pageResponse =
         secretService.listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest);
     if (details) {

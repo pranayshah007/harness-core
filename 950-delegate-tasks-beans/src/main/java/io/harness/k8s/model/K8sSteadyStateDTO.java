@@ -10,6 +10,7 @@ package io.harness.k8s.model;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.logging.LogCallback;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,5 @@ public class K8sSteadyStateDTO {
   boolean denoteOverallSuccess;
   boolean isErrorFrameworkEnabled;
   KubernetesConfig kubernetesConfig;
+  OffsetDateTime startTime;
 }

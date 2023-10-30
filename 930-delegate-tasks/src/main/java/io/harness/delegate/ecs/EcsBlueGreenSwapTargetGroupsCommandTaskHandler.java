@@ -78,6 +78,18 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
+      // register scalable target to new service
+      ecsCommandTaskHelper.registerScalableTargets(
+          ecsBlueGreenSwapTargetGroupsRequest.getEcsScalableTargetManifestContentList(),
+          ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(),
+          ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
+
+      // attach scaling policies to new service
+      ecsCommandTaskHelper.attachScalingPolicies(
+          ecsBlueGreenSwapTargetGroupsRequest.getEcsScalingPolicyManifestContentList(),
+          ecsInfraConfig.getAwsConnectorDTO(), ecsBlueGreenSwapTargetGroupsRequest.getNewServiceName(),
+          ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), swapTargetGroupLogCallback);
+
       // modify target group of prod listener with stage target group and target group of stage listener with prod
       // target group
       ecsCommandTaskHelper.swapTargetGroups(ecsInfraConfig, swapTargetGroupLogCallback,

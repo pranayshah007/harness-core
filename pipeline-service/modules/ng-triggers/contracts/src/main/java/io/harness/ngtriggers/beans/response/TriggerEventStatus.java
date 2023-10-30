@@ -21,7 +21,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(PIPELINE)
 public class TriggerEventStatus {
-  public enum FinalResponse { SUCCESS, FAILED }
+  public enum FinalResponse { SUCCESS, FAILED, SKIPPED }
   private FinalResponse status;
   private String message;
 }

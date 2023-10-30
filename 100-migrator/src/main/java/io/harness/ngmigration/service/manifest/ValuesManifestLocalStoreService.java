@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.manifest;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -30,8 +32,8 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ValuesManifestLocalStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
@@ -40,9 +42,7 @@ public class ValuesManifestLocalStoreService implements NgManifestService {
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
-    String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
-                                                                     : applicationManifest.getName();
-    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    String identifier = MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat);
     ValuesManifest valuesManifest =
         ValuesManifest.builder()
             .identifier(identifier)

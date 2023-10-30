@@ -16,6 +16,7 @@ import io.harness.cvng.CVConstants;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.EnvironmentIdentifierResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -32,6 +33,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -90,6 +92,8 @@ public class SLODashboardResource {
   @GET
   @Path("widgets/list")
   @ExceptionMetered
+  @ResponseMetered
+  @Timed
   @ApiOperation(value = "get slo list view", nickname = "getSLOHealthListView")
   @Operation(operationId = "getSLOHealthListView", summary = "Get SLO list view",
       responses =
@@ -107,6 +111,8 @@ public class SLODashboardResource {
   @POST
   @Path("widgets/list")
   @ExceptionMetered
+  @ResponseMetered
+  @Timed
   @ApiOperation(value = "get slo list view", nickname = "getSLOHealthListViewV2")
   @Operation(operationId = "getSLOHealthListViewV2", summary = "Get SLO list view",
       responses =
@@ -124,6 +130,7 @@ public class SLODashboardResource {
   @GET
   @Path("widget/{identifier}")
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "get SLO Dashboard Detail", nickname = "getSLODetails")
   @Operation(operationId = "getSLODetails", summary = "Get SLO dashboard details",
       responses =
@@ -144,6 +151,7 @@ public class SLODashboardResource {
   @GET
   @Path("widget/{identifier}/consumption")
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "get SLO consumption breakdown", nickname = "getSloConsumptionBreakdownView")
   @Operation(operationId = "getSloConsumptionBreakdownView", summary = "Get SLO consumption breakdown",
       responses =
@@ -164,6 +172,7 @@ public class SLODashboardResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("risk-count")
   @ApiOperation(
       value = "get all service level objectives count by risk", nickname = "getServiceLevelObjectivesRiskCount")
@@ -183,6 +192,7 @@ public class SLODashboardResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("monitored-services")
   @ApiOperation(
       value = "get all monitored services associated with the slos", nickname = "getSLOAssociatedMonitoredServices")
@@ -195,6 +205,21 @@ public class SLODashboardResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
+  @Path("environment-identifiers")
+  @ApiOperation(value = "get all environment identifiers associated with the slos",
+      nickname = "getSLOAssociatedEnvironmentIdentifiers")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<EnvironmentIdentifierResponse>>
+  getSLOAssociatedEnvironmentIdentifiers(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSLOAssociatedEnvironmentIdentifiers(projectParams, pageParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @ResponseMetered
   @Path("/secondary-events/{identifier}")
   @ApiOperation(value = "Get Secondary events data points for SLO", nickname = "getSecondaryEvents")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
@@ -210,6 +235,7 @@ public class SLODashboardResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/secondary-events-details")
   @ApiOperation(value = "Get Secondary events details for SLO", nickname = "getSecondaryEventDetails")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)

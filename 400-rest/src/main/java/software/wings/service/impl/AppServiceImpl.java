@@ -63,7 +63,6 @@ import io.harness.service.EventService;
 import io.harness.validation.PersistenceValidator;
 
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.Base;
@@ -74,6 +73,7 @@ import software.wings.beans.InformationNotification;
 import software.wings.beans.Role;
 import software.wings.beans.Service;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountEventType;
 import software.wings.common.NotificationMessageResolver.NotificationMessageType;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
@@ -281,7 +281,7 @@ public class AppServiceImpl implements AppService {
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter, boolean hitSecondary) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary, false);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {

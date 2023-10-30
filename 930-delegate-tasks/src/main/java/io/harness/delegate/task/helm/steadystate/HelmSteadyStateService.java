@@ -65,12 +65,18 @@ public class HelmSteadyStateService {
   }
 
   public List<KubernetesResourceId> findEligibleWorkloadIds(List<KubernetesResource> resources) {
+    return findEligibleWorkloads(resources)
+        .stream()
+        .map(KubernetesResource::getResourceId)
+        .collect(Collectors.toList());
+  }
+
+  public List<KubernetesResource> findEligibleWorkloads(List<KubernetesResource> resources) {
     List<KubernetesResource> eligibleWorkloads = ManifestHelper.getEligibleWorkloads(resources);
 
     return eligibleWorkloads.stream()
         .filter(this::filterHooks)
         .filter(this::filterStrategy)
-        .map(KubernetesResource::getResourceId)
         .collect(Collectors.toList());
   }
 

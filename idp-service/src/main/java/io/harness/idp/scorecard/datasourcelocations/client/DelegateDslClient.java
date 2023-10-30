@@ -16,13 +16,13 @@ import io.harness.exception.UnexpectedException;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.DelegateProxyRequestForwarder;
+import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 
 import com.google.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
@@ -34,8 +34,9 @@ public class DelegateDslClient implements DslClient {
   DelegateProxyRequestForwarder delegateProxyRequestForwarder;
 
   @Override
-  public Response call(String accountIdentifier, String url, String method, Map<String, String> headers, String body) {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails) {
     URL urlObj;
+    String url = apiRequestDetails.getUrl();
     try {
       urlObj = new URL(url);
     } catch (MalformedURLException e) {
@@ -45,10 +46,11 @@ public class DelegateDslClient implements DslClient {
     Set<String> delegateSelectors = delegateSelectorsCache.get(accountIdentifier, host);
 
     List<HttpHeaderConfig> headerList = new ArrayList<>();
-    headers.forEach((k, v) -> headerList.add(HttpHeaderConfig.builder().key(k).value(v).build()));
+    apiRequestDetails.getHeaders().forEach(
+        (k, v) -> headerList.add(HttpHeaderConfig.builder().key(k).value(v).build()));
 
-    HttpStepResponse httpResponse = delegateProxyRequestForwarder.forwardRequestToDelegate(
-        accountIdentifier, url, headerList, body, method, delegateSelectors);
+    HttpStepResponse httpResponse = delegateProxyRequestForwarder.forwardRequestToDelegate(accountIdentifier, url,
+        headerList, apiRequestDetails.getRequestBody(), apiRequestDetails.getMethod(), delegateSelectors);
 
     if (httpResponse == null) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

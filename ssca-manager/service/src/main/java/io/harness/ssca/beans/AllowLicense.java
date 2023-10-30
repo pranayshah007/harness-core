@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 import org.bson.Document;
 import org.eclipse.jgit.ignore.internal.Strings;
 
@@ -24,7 +25,7 @@ import org.eclipse.jgit.ignore.internal.Strings;
 @Builder
 public class AllowLicense {
   String name;
-  String license;
+  @NonNull String license;
 
   public Document uniquePackageFilter() {
     Document nameFilter = new Document(NormalizedSBOMEntityKeys.packageName.toLowerCase(), name);

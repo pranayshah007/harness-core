@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: list-ec2-reserved-of-given-instanceType
+cloudProvider: AWS
+resourceType: ec2-reserved
+description: List all ec2 reserved instances of t3a.2xlarge instance type
+rulesYamlPath: ../list-ec2-reserved-of-given-instanceType.yml

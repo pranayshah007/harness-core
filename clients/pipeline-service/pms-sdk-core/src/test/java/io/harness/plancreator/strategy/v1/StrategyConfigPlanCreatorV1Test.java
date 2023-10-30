@@ -86,7 +86,7 @@ public class StrategyConfigPlanCreatorV1Test extends PmsSdkCoreTestBase {
                                             .strategyNodeId(strategyNodeId)
                                             .adviserObtainments(new ArrayList<>())
                                             .build();
-    metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyNodeId, ByteString.EMPTY);
+    metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyNodeId, ByteString.copyFromUtf8("test"));
     Mockito.when(kryoSerializer.asInflatedObject(Mockito.any())).thenReturn(strategyMetadata);
     PlanCreationContext context = PlanCreationContext.builder()
                                       .dependency(Dependency.newBuilder().putAllMetadata(metadataMap).build())

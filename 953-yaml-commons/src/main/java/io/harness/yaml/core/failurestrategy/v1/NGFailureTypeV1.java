@@ -68,4 +68,12 @@ public enum NGFailureTypeV1 {
     this.yamlName = yamlName;
     this.failureType = failureType;
   }
+
+  public String getYamlName() {
+    return yamlName;
+  }
+
+  public EnumSet<FailureType> getFailureTypes() {
+    return failureType;
+  }
 }

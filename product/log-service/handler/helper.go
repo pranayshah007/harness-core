@@ -53,6 +53,18 @@ func WriteJSON(w http.ResponseWriter, v interface{}, status int) {
 	enc.Encode(v)
 }
 
+func WriteUnescapeJSON(w http.ResponseWriter, v interface{}, status int) {
+	for k, v := range noCacheHeaders {
+		w.Header().Set(k, v)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	enc.Encode(v)
+}
+
 // writeError writes the json-encoded error message to the
 // response.
 func writeError(w http.ResponseWriter, err error, status int) {

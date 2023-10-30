@@ -6,9 +6,11 @@
  */
 
 package io.harness.template.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -16,28 +18,43 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
-import org.modelmapper.ModelMapper;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateFilterPropertiesMapper
     implements FilterPropertiesMapper<TemplateFilterPropertiesDTO, TemplateFilterProperties> {
   @Override
   public FilterProperties toEntity(FilterPropertiesDTO filterPropertiesDTO) {
-    ModelMapper modelMapper = new ModelMapper();
+    TemplateFilterPropertiesDTO propertiesDTO = (TemplateFilterPropertiesDTO) filterPropertiesDTO;
     TemplateFilterProperties templateFilterProperties =
-        modelMapper.map(filterPropertiesDTO, TemplateFilterProperties.class);
-    templateFilterProperties.setType(filterPropertiesDTO.getFilterType());
-    templateFilterProperties.setTags(TagMapper.convertToList(filterPropertiesDTO.getTags()));
+        TemplateFilterProperties.builder()
+            .templateNames(propertiesDTO.getTemplateNames())
+            .templateIdentifiers(propertiesDTO.getTemplateIdentifiers())
+            .childTypes(propertiesDTO.getChildTypes())
+            .templateEntityTypes(propertiesDTO.getTemplateEntityTypes())
+            .description(propertiesDTO.getDescription())
+            .repoName(propertiesDTO.getRepoName())
+            .tags(TagMapper.convertToList(filterPropertiesDTO.getTags()))
+            .type(filterPropertiesDTO.getFilterType())
+            .build();
+
     return templateFilterProperties;
   }
 
   @Override
   public FilterPropertiesDTO writeDTO(FilterProperties filterProperties) {
-    ModelMapper modelMapper = new ModelMapper();
+    TemplateFilterProperties properties = (TemplateFilterProperties) filterProperties;
     TemplateFilterPropertiesDTO templateFilterPropertiesDTO =
-        modelMapper.map(filterProperties, TemplateFilterPropertiesDTO.class);
-    templateFilterPropertiesDTO.setFilterType(filterProperties.getType());
-    templateFilterPropertiesDTO.setTags(TagMapper.convertToMap(filterProperties.getTags()));
+        TemplateFilterPropertiesDTO.builder()
+            .templateNames(properties.getTemplateNames())
+            .templateIdentifiers(properties.getTemplateIdentifiers())
+            .childTypes(properties.getChildTypes())
+            .description(properties.getDescription())
+            .templateEntityTypes(properties.getTemplateEntityTypes())
+            .repoName(properties.getRepoName())
+            .tags(TagMapper.convertToMap(filterProperties.getTags()))
+            .filterType(filterProperties.getType())
+            .build();
+
     return templateFilterPropertiesDTO;
   }
 }

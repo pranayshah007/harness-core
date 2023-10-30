@@ -107,7 +107,8 @@ public class GCRUploadStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.type",
             "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.identifier",
             "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.startTs",
-            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.endTs");
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.endTs",
+            "pipeline.stages.gcpBuildPush.spec.execution.steps.pushGCR.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(buildAndPushGCRNode.getGcrStepInfo().getUuid()) // step uuid

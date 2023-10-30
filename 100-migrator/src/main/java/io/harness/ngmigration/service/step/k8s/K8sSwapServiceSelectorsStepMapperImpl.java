@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepInfo;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -25,6 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

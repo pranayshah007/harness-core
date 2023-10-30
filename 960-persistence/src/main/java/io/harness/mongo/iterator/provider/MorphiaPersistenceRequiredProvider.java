@@ -94,9 +94,9 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander,
+  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
       boolean isDelegateTaskMigrationEnabled) {
-    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
+    Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, unsorted).project(fieldName, true);
     return resultQuery.get();
   }
 
@@ -109,10 +109,10 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public MorphiaIterator<T, T> obtainNextInstances(
-      Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, int limit) {
+  public MorphiaIterator<T, T> obtainNextInstances(Class<T> clazz, String fieldName,
+      MorphiaFilterExpander<T> filterExpander, boolean unsorted, int limit, boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
-    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, false);
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
 
     return query.fetch(new FindOptions().limit(limit));
   }

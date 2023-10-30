@@ -20,7 +20,10 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.KubernetesValuesException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.WingsException;
@@ -52,6 +55,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 @UtilityClass
 @OwnedBy(CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class ManifestHelper {
   public static final String values_filename = "values.yaml";
   public static final String yaml_file_extension = ".yaml";
@@ -60,6 +64,9 @@ public class ManifestHelper {
   public static final String kustomizeFileNameYml = "kustomization.yml";
   public static final String currentReleaseWorkloadExpression = "${k8s.currentReleaseWorkload}";
   public static final String previousReleaseWorkloadExpression = "${k8s.previousReleaseWorkload}";
+
+  public static final String SECRET_STRING_DATA_MASK = "***";
+  public static final String SECRET_DATA_MASK = "Kioq"; // *** encoded in base64
 
   private static final String VALUES_EXPRESSION = ".Values";
   public static final int MAX_VALUES_EXPRESSION_RECURSION_DEPTH = 10;
@@ -230,6 +237,32 @@ public class ManifestHelper {
       String spec = StringUtils.equals(Secret.name(), resource.getResourceId().getKind())
           ? redactSecretValues(resource.getSpec())
           : resource.getSpec();
+      if (!spec.startsWith(YAML_DOCUMENT_DELIMITER)) {
+        stringBuilder.append(YAML_DOCUMENT_DELIMITER).append(System.lineSeparator());
+      }
+      stringBuilder.append(spec);
+    }
+
+    return stringBuilder.toString();
+  }
+
+  public static List<DryRunOutput> toDryRunOutput(List<KubernetesResource> resources) {
+    List<DryRunOutput> result = new ArrayList<>();
+    for (KubernetesResource resource : resources) {
+      String spec = StringUtils.equals(Secret.name(), resource.getResourceId().getKind())
+          ? redactSecretValues(resource.getSpec(), SECRET_DATA_MASK, SECRET_STRING_DATA_MASK)
+          : resource.getSpec();
+      result.add(DryRunOutput.builder().resourceId(resource.getResourceId()).resourceSpec(spec).build());
+    }
+
+    return result;
+  }
+
+  public static String toYamlOutput(List<DryRunOutput> dryRunOutputList) {
+    final StringBuilder stringBuilder = new StringBuilder();
+
+    for (DryRunOutput dryRunOutput : dryRunOutputList) {
+      final String spec = dryRunOutput.getResourceSpec();
       if (!spec.startsWith(YAML_DOCUMENT_DELIMITER)) {
         stringBuilder.append(YAML_DOCUMENT_DELIMITER).append(System.lineSeparator());
       }

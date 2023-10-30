@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.EntityProcessController;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.exception.AccountNotFoundException;
 import software.wings.service.intfc.AccountService;
 

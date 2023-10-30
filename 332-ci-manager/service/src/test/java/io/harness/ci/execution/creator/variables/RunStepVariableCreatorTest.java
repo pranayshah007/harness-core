@@ -100,7 +100,8 @@ public class RunStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.setupdb.spec.execution.steps.f.identifier",
             "pipeline.stages.setupdb.spec.execution.steps.f.type",
             "pipeline.stages.setupdb.spec.execution.steps.f.startTs",
-            "pipeline.stages.setupdb.spec.execution.steps.f.endTs");
+            "pipeline.stages.setupdb.spec.execution.steps.f.endTs",
+            "pipeline.stages.setupdb.spec.execution.steps.f.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(runStepNode.getRunStepInfo().getUuid()) // step uuid

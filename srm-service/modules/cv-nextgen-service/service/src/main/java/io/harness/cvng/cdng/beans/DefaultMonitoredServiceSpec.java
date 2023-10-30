@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -22,6 +23,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Default")
 @OwnedBy(HarnessTeam.CV)
+@RecasterAlias("io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec")
 public class DefaultMonitoredServiceSpec extends DefaultAndConfiguredMonitoredServiceSpec {
   @Override
   public String getType() {

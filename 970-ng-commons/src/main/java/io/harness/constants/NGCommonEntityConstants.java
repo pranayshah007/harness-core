@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -114,6 +115,7 @@ public class NGCommonEntityConstants {
   public static final String ORG_PARAM_MESSAGE = "Organization Identifier for the Entity.";
   public static final String ORG_LIST_PARAM_MESSAGE = "List of Organization Identifiers for the Entities.";
   public static final String PROJECT_PARAM_MESSAGE = "Project Identifier for the Entity.";
+  public static final String TARGET_BRANCH = "targetBranch";
   public static final String FORCE_DELETE_MESSAGE =
       "If true, the Entity will be forced delete, without checking any references/usages";
   public static final String IDENTIFIER_PARAM_MESSAGE = "Identifier for the Entity.";
@@ -209,6 +211,8 @@ public class NGCommonEntityConstants {
   public static final String ARTIFACT_PATH = "artifactPath";
   public static final String ARTIFACT_VERSION = "artifactVersion";
   public static final String ARTIFACT = "artifact";
+  public static final String CHART_VERSION = "chartVersion";
+  public static final String FILTER_ON_CHART_VERSION = "filterOnChartVersion";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
@@ -223,4 +227,5 @@ public class NGCommonEntityConstants {
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
   public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
   public static final String ACTIVITY_TYPES = "activityTypes";
+  public static final String SCOPE_FILTER = "scopeFilter";
 }

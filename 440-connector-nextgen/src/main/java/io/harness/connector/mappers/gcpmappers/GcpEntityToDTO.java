@@ -8,12 +8,14 @@
 package io.harness.connector.mappers.gcpmappers;
 
 import io.harness.connector.entities.embedded.gcpconnector.GcpConfig;
+import io.harness.connector.entities.embedded.gcpconnector.GcpOidcConfig;
 import io.harness.connector.entities.embedded.gcpconnector.GcpServiceAccountKey;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +32,8 @@ public class GcpEntityToDTO implements ConnectorEntityToDTOMapper<GcpConnectorDT
         return buildInheritFromDelegate(connector);
       case MANUAL_CREDENTIALS:
         return buildManualCredential(connector);
+      case OIDC_AUTHENTICATION:
+        return buildOidcAuthenticationDetails(connector);
       default:
         throw new InvalidRequestException("Invalid Credential type.");
     }
@@ -54,6 +58,25 @@ public class GcpEntityToDTO implements ConnectorEntityToDTOMapper<GcpConnectorDT
         .credential(GcpConnectorCredentialDTO.builder()
                         .gcpCredentialType(GcpCredentialType.INHERIT_FROM_DELEGATE)
                         .config(null)
+                        .build())
+        .build();
+  }
+
+  private GcpConnectorDTO buildOidcAuthenticationDetails(GcpConfig connector) {
+    final GcpOidcConfig gcpOidcConfig = (GcpOidcConfig) connector.getCredential();
+
+    final GcpOidcDetailsDTO gcpOidcDetailsDTO = GcpOidcDetailsDTO.builder()
+                                                    .workloadPoolId(gcpOidcConfig.getWorkloadPoolId())
+                                                    .providerId(gcpOidcConfig.getProviderId())
+                                                    .gcpProjectId(gcpOidcConfig.getGcpProjectId())
+                                                    .serviceAccountEmail(gcpOidcConfig.getServiceAccountEmail())
+                                                    .build();
+
+    return GcpConnectorDTO.builder()
+        .delegateSelectors(connector.getDelegateSelectors())
+        .credential(GcpConnectorCredentialDTO.builder()
+                        .gcpCredentialType(GcpCredentialType.OIDC_AUTHENTICATION)
+                        .config(gcpOidcDetailsDTO)
                         .build())
         .build();
   }

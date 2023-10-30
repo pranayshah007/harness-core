@@ -99,7 +99,8 @@ public class GCSRestoreCacheStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.type",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.identifier",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.startTs",
-            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.endTs");
+            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.endTs",
+            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.status");
 
     List<String> fqnExtraPropertiesList1 =
         variablesForParentNodeV2.getYamlExtraProperties()

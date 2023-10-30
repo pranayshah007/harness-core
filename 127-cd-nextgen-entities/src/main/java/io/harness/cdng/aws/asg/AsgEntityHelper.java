@@ -84,6 +84,7 @@ public class AsgEntityHelper {
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
             .region(asgInfrastructureOutcome.getRegion())
             .infraStructureKey(asgInfrastructureOutcome.getInfrastructureKey())
+            .baseAsgName(asgInfrastructureOutcome.getBaseAsgName())
             .build();
       default:
         throw new UnsupportedOperationException(

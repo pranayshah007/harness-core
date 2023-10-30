@@ -48,9 +48,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.groovy.util.Maps;
 
 @Singleton
+@Slf4j
 public class VerificationTaskServiceImpl implements VerificationTaskService {
   @Inject private HPersistence hPersistence;
   @Inject private Clock clock;
@@ -245,11 +247,15 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
   }
 
   @Override
-  public String getSLIVerificationTaskId(String accountId, String sliId) {
+  public Optional<String> getSLIVerificationTaskId(String accountId, String sliId) {
     VerificationTask result = getSLITask(accountId, sliId);
-    Preconditions.checkNotNull(
-        result, "VerificationTask mapping does not exist for SLI Id %s. Please check sliId", sliId);
-    return result.getUuid();
+    Optional<String> sliVerificationTaskId = Optional.empty();
+    if (result != null) {
+      sliVerificationTaskId = Optional.ofNullable(result.getUuid());
+    } else {
+      log.warn("VerificationTask mapping does not exist for SLI Id {}. Please check sliId", sliId);
+    }
+    return sliVerificationTaskId;
   }
 
   @Override
@@ -263,8 +269,10 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
   @Override
   public List<String> getSLIVerificationTaskIds(String accountId, List<String> sliIds) {
     List<VerificationTask> result = getSLITasks(accountId, sliIds);
-    Preconditions.checkNotNull(
-        result, "VerificationTask mapping does not exist for SLI Id %s. Please check sliId", sliIds);
+    if (result == null) {
+      result = new ArrayList<>();
+      log.warn("VerificationTask mapping does not exist for SLI Id {}. Please check sliId", sliIds);
+    }
     return result.stream().map(VerificationTask::getUuid).collect(Collectors.toList());
   }
 

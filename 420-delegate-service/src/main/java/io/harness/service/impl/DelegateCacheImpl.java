@@ -7,6 +7,7 @@
 
 package io.harness.service.impl;
 
+import static io.harness.beans.DelegateTask.Status.runningStatuses;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.ABORTED_TASK_LIST_CACHE;
@@ -33,6 +34,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.service.intfc.DelegateCache;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -167,6 +169,20 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+  private LoadingCache<String, Long> parkedDelegateTasksCountCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Long>() {
+            @Override
+            public Long load(@NotNull String accountId) {
+              return persistence.createQuery(DelegateTask.class, true)
+                  .filter(DelegateTaskKeys.accountId, accountId)
+                  .filter(DelegateTaskKeys.status, DelegateTask.Status.PARKED)
+                  .count();
+            }
+          });
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -283,6 +299,16 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   @Override
+  public long getParkedTasksCount(String accountId) {
+    try {
+      return parkedDelegateTasksCountCache.get(accountId);
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to get count of optional delegate tasks from cache based on accountId.");
+      return 0;
+    }
+  }
+
+  @Override
   public Map<String, Long> getTasksCountPerAccount(@NotNull DelegateTaskRank rank) {
     if (rank == DelegateTaskRank.OPTIONAL) {
       return optionalDelegateTasksCountCache.asMap();
@@ -351,7 +377,8 @@ public class DelegateCacheImpl implements DelegateCache {
         .asList();
   }
 
-  private Long populateDelegateTaskCount(String accountId, DelegateTaskRank rank) {
+  @VisibleForTesting
+  protected Long populateDelegateTaskCount(String accountId, DelegateTaskRank rank) {
     long count = getDelegateTaskCount(accountId, rank, false);
 
     if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
@@ -363,6 +390,8 @@ public class DelegateCacheImpl implements DelegateCache {
   private long getDelegateTaskCount(String accountId, DelegateTaskRank rank, boolean isDelegateTaskMigrationEnabled) {
     return persistence.createQuery(DelegateTask.class, isDelegateTaskMigrationEnabled)
         .filter(DelegateTaskKeys.accountId, accountId)
+        .field(DelegateTaskKeys.status)
+        .in(runningStatuses())
         .filter(DelegateTaskKeys.rank, rank)
         .count();
   }

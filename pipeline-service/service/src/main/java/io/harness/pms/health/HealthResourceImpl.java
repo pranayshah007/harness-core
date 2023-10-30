@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.health;
-
 import static io.harness.exception.WingsException.USER;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
@@ -17,16 +19,22 @@ import io.harness.health.HealthService;
 import io.harness.rest.RestResponse;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 public class HealthResourceImpl implements HealthResource {
-  private HealthService healthService;
+  private final HealthService healthService;
+
+  private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
   @Inject
   public HealthResourceImpl(HealthService healthService) {
     this.healthService = healthService;
+    this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
   public RestResponse<String> get() throws Exception {
@@ -44,6 +52,16 @@ public class HealthResourceImpl implements HealthResource {
       return new RestResponse<>("healthy");
     }
 
+    throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @Override
+  public RestResponse<String> doLivenessCheck() {
+    HealthCheck.Result check = threadDeadlockHealthCheck.execute();
+    if (check.isHealthy()) {
+      return new RestResponse<>("live");
+    }
+    log.info(check.getMessage());
     throw new HealthException(check.getMessage(), check.getError());
   }
 }

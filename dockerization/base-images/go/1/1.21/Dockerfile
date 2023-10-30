@@ -17,10 +17,10 @@ FROM us.gcr.io/platform-205701/harness/ubi8:8.8
 
 USER root
 
-RUN curl -OL https://go.dev/dl/go1.21.0.linux-amd64.tar.gz \
-    && tar -xvf go1.21.0.linux-amd64.tar.gz \
+RUN curl -OL https://go.dev/dl/go1.21.1.linux-amd64.tar.gz \
+    && tar -xvf go1.21.1.linux-amd64.tar.gz \
     && mv go/ /usr/local/ \
-    && rm -rf go1.21.0.linux-amd64.tar.gz
+    && rm -rf go1.21.1.linux-amd64.tar.gz
 
 ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin
 

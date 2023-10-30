@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.resources.githubpackages;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.GITHUB_PACKAGES;
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceServiceImpl;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -105,6 +107,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
   @Mock SecretManagerClientService secretManagerClientService;
 
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock ArtifactStepHelper artifactStepHelper;
 
   @Spy @InjectMocks GithubPackagesResourceServiceImpl githubPackagesResourceService;
 
@@ -423,7 +426,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponse));
 
-    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
+    when(artifactStepHelper.getGithubEncryptedDetails(any(), any())).thenReturn(encryptionDetails);
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
@@ -524,7 +527,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponse));
 
-    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
+    when(artifactStepHelper.getGithubEncryptedDetails(any(), any())).thenReturn(encryptionDetails);
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
@@ -1222,6 +1225,67 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
                                packageType, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(ArtifactServerException.class);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, null, PACKAGE_TYPE,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, "", PACKAGE_TYPE, null,
+                               null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Input() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, INPUT, PACKAGE_TYPE,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, null,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, "", null,
+                               null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Input() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, INPUT,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
   }
 
   @Test

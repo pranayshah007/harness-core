@@ -44,5 +44,6 @@ public interface GraphGenerationService {
    * It will delete all related OrchestrationEventLog, cacheEntities
    * @param planExecutionIds
    */
-  void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds);
+  void deleteAllGraphMetadataForGivenExecutionIds(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 }

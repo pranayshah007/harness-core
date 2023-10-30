@@ -132,8 +132,8 @@ public class ResourceRestraintStep
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepElementParameters stepElementParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     IResourceRestraintSpecParameters specParameters =
         (IResourceRestraintSpecParameters) stepElementParameters.getSpec();
     NGLogCallback logCallback = getLogCallback(ambiance, false);

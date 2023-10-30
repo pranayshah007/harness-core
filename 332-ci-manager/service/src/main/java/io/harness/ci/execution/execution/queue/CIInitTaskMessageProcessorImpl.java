@@ -8,6 +8,7 @@
 package io.harness.ci.execution.queue;
 
 import io.harness.beans.execution.CIInitTaskArgs;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
 import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
@@ -47,8 +48,9 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
       String payload = dequeueResponse.getPayload();
       CIInitTaskArgs ciInitTaskArgs = RecastOrchestrationUtils.fromJson(payload, CIInitTaskArgs.class);
       Ambiance ambiance = ciInitTaskArgs.getAmbiance();
+      InitializeStepInfo initializeStepInfo = (InitializeStepInfo) ciInitTaskArgs.getStepElementParameters().getSpec();
       builder.accountId(AmbianceUtils.getAccountId(ambiance));
-      if (!buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance))) {
+      if (!buildEnforcer.shouldRun(AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure())) {
         log.info(String.format("skipping execution for account id: %s because of concurrency enforcement failure",
             AmbianceUtils.getAccountId(ambiance)));
         return builder.success(false).build();

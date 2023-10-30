@@ -6,14 +6,17 @@
  */
 
 package io.harness.engine.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsLevelUtils {
   public static Level buildLevelFromNode(String runtimeId, Node node) {
@@ -47,7 +50,7 @@ public class PmsLevelUtils {
     if (strategyMetadata != null) {
       levelBuilder.setStrategyMetadata(strategyMetadata);
       levelBuilder.setIdentifier(
-          AmbianceUtils.modifyIdentifier(levelBuilder.build(), node.getIdentifier(), useMatrixFieldName));
+          AmbianceUtils.modifyIdentifier(strategyMetadata, node.getIdentifier(), useMatrixFieldName));
     }
     return levelBuilder.build();
   }

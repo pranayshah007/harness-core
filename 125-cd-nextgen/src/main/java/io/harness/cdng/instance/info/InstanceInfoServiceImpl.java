@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.instance.util.InstanceSyncStepResolver;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -97,6 +98,25 @@ public class InstanceInfoServiceImpl implements InstanceInfoService {
         .build();
   }
 
+  @Override
+  public DeploymentOutcomeMetadata getDeploymentOutcomeMetadata(Ambiance ambiance, StepType stepType) {
+    if (!InstanceSyncStepResolver.shouldRunInstanceSync(stepType)) {
+      return null;
+    }
+    log.info("fetching deployment outcome data for step type: {}", stepType.getType());
+
+    RefObject sweepingOutputRefObject =
+        RefObjectUtils.getSweepingOutputRefObject(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList()) + "."
+            + OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME);
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputService.resolveOptional(ambiance, sweepingOutputRefObject);
+    if (!optionalSweepingOutput.isFound()) {
+      throw new InvalidRequestException(format("Not found sweeping output for step type: %s", stepType.getType()));
+    }
+    DeploymentInfoOutcome output = (DeploymentInfoOutcome) optionalSweepingOutput.getOutput();
+
+    return output.getDeploymentOutcomeMetadata();
+  }
   private DeploymentInfoOutcome buildDeploymentInfoOutcome(List<ServerInstanceInfo> instanceInfoList) {
     return DeploymentInfoOutcome.builder().serverInstanceInfoList(instanceInfoList).build();
   }

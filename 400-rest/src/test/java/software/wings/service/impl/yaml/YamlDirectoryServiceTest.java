@@ -828,7 +828,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
         aPageResponse()
             .withResponse(Arrays.asList(Pipeline.builder().appId(APP_ID).uuid(PIPELINE_ID).name(PIPELINE_NAME).build()))
             .build();
-    doReturn(pipelineResponse).when(pipelineService).listPipelines(any());
+    doReturn(pipelineResponse).when(pipelineService).listPipelines(any(), anyBoolean(), anyString());
 
     PageResponse<InfrastructureProvisioner> provisionerResponse =
         aPageResponse()

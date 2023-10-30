@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.connector;
-
 import static software.wings.settings.SettingVariableTypes.AMAZON_S3_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.APM_VERIFICATION;
 import static software.wings.settings.SettingVariableTypes.APP_DYNAMICS;
@@ -37,8 +36,11 @@ import static software.wings.settings.SettingVariableTypes.SPOT_INST;
 import static software.wings.settings.SettingVariableTypes.SUMO;
 import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.SettingAttribute;
 import software.wings.settings.SettingVariableTypes;
@@ -46,6 +48,7 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorFactory {
   private static final BaseConnector artifactoryConnector = new ArtifactoryConnectorImpl();

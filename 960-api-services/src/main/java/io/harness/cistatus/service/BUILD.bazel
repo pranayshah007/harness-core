@@ -29,6 +29,7 @@ java_library(
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
+        "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:commons_codec_commons_codec",

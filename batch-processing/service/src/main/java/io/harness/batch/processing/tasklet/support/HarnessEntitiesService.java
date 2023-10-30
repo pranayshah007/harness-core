@@ -11,6 +11,7 @@ import io.harness.exception.InvalidRequestException;
 
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ public class HarnessEntitiesService {
   public enum HarnessEntities { APP, SERVICE, ENV }
 
   @Value
+  @AllArgsConstructor
   public static class CacheKey {
     public String entityId;
     public HarnessEntities entity;

@@ -9,7 +9,10 @@ package io.harness.pms.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -17,6 +20,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
 @UtilityClass
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class OrchestrationFacilitatorType {
   // Provided From the orchestration layer system facilitators
   public static final String SYNC = "SYNC";
@@ -27,7 +31,8 @@ public class OrchestrationFacilitatorType {
   public static final String TASK = "TASK";
   public static final String TASK_CHAIN = "TASK_CHAIN";
   public static final String CHILD_CHAIN = "CHILD_CHAIN";
+  public static final String ASYNC_CHAIN = "ASYNC_CHAIN";
 
   public static final List<String> ALL_FACILITATOR_TYPES =
-      ImmutableList.of(SYNC, ASYNC, CHILD, CHILDREN, CHILD_CHAIN, TASK, TASK_CHAIN, WAIT_STEP);
+      ImmutableList.of(SYNC, ASYNC, CHILD, CHILDREN, CHILD_CHAIN, TASK, TASK_CHAIN, WAIT_STEP, ASYNC_CHAIN);
 }

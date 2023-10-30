@@ -24,7 +24,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.expansion.PlanExpansionService;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -43,7 +43,7 @@ public class PipelineExecutionEndEventHandlerTest extends CategoryTest {
 
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PlanExpansionService planExpansionService;
-  @Mock PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock NodeExecutionInfoService pmsGraphStepDetailsService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSweepingOutputService pmsSweepingOutputService;
   @Mock PlanExecutionService planExecutionService;

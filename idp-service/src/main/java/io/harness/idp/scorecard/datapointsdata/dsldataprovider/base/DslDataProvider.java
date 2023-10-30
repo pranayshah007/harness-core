@@ -11,5 +11,5 @@ import io.harness.spec.server.idp.v1.model.DataSourceDataPointInfo;
 import java.util.Map;
 
 public interface DslDataProvider {
-  Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo);
+  Map<String, Object> getDslData(String accountIdentifier, Object config);
 }

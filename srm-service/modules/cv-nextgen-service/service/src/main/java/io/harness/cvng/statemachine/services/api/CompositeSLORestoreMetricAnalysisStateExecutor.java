@@ -54,7 +54,7 @@ public class CompositeSLORestoreMetricAnalysisStateExecutor
     compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
       metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
-          Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
+          Duration.between(analysisState.getInputs().getStartTime(), clock.instant()));
     }
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
@@ -90,16 +90,6 @@ public class CompositeSLORestoreMetricAnalysisStateExecutor
 
   @Override
   public AnalysisState handleTransition(CompositeSLORestoreMetricAnalysisState analysisState) {
-    return analysisState;
-  }
-
-  @Override
-  public AnalysisState handleRetry(CompositeSLORestoreMetricAnalysisState analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.FAILED);
-    } else {
-      return handleRerun(analysisState);
-    }
     return analysisState;
   }
 }

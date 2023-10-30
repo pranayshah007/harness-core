@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,10 +25,12 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.filestore.dto.node.FileNodeDTO;
@@ -150,5 +153,18 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
     verify(engineExpressionService).renderExpression(ambiance, "content2", false);
     verify(engineExpressionService).renderExpression(ambiance, "content3", false);
     verify(engineExpressionService, never()).renderExpression(ambiance, null, false);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testHelmChartOutcome() {
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
+
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = k8sHelmCommonStepHelper.getHelmChartOutcome(helmChartInfo);
+    assertThat(releaseHelmChartOutcome.getVersion()).isEqualTo(helmChartInfo.getVersion());
+    assertThat(releaseHelmChartOutcome.getName()).isEqualTo(helmChartInfo.getName());
+    releaseHelmChartOutcome = k8sHelmCommonStepHelper.getHelmChartOutcome(null);
+    assertThat(releaseHelmChartOutcome).isNull();
   }
 }

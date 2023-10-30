@@ -10,6 +10,7 @@ package io.harness.delegate.ecs;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -121,7 +122,7 @@ public class EcsTaskArnBlueGreenCreateServiceCommandTaskHandlerTest extends Cate
     doReturn(ecsBlueGreenCreateServiceResponse)
         .when(ecsDeploymentHelper)
         .deployStageService(eq(createServiceLogCallback), eq(ecsCommandRequest), anyList(), anyList(), eq(null),
-            anyString(), eq("testArn"), eq(ecsLoadBalancerConfig), anyString());
+            anyString(), eq("testArn"), eq(ecsLoadBalancerConfig), anyString(), anyBoolean(), anyBoolean());
 
     EcsBlueGreenCreateServiceResponse actualEcsBlueGreenCreateServiceResponse =
         (EcsBlueGreenCreateServiceResponse) ecsTaskArnBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(

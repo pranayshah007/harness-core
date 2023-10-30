@@ -8,10 +8,12 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.cli.CliHelper;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -32,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 @UtilityClass
 public class TerragruntTestUtils {
@@ -86,6 +90,13 @@ public class TerragruntTestUtils {
         .configFilesStore(GitStoreDelegateConfig.builder().build())
         .stateFileId("test-state-file-id")
         .planName("test-plan-name")
+        .terragruntCommandFlags(new HashMap<>() {
+          {
+            put("PLAN", "-lock-timeout=10s");
+            put("INIT", "-lock-timeout=10s");
+          }
+        })
+        .skipColorLogs(true)
         .build();
   }
 
@@ -115,6 +126,9 @@ public class TerragruntTestUtils {
         .varFiles(Collections.singletonList(varFiles))
         .backendFilesStore(backendFileStore)
         .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .terragruntCommandFlags(new HashMap<>() {
+          { put("APPLY", "-lock-timeout=10s"); }
+        })
         .build();
   }
 
@@ -144,6 +158,10 @@ public class TerragruntTestUtils {
         .varFiles(Collections.singletonList(varFiles))
         .backendFilesStore(backendFileStore)
         .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .terragruntCommandFlags(new HashMap<>() {
+          { put("APPLY", "-lock-timeout=10s"); }
+          { put("DESTROY", "-lock-timeout=10s"); }
+        })
         .build();
   }
 

@@ -1,0 +1,15 @@
+failure:
+  errors:
+    - authorization
+  action:
+    type: retry
+    spec:
+      attempts: 2
+      interval: 1m
+      failure:
+        action:
+          type: manual-intervention
+          spec:
+            timeout: 10s
+            timeout_action:
+              type: abort

@@ -8,7 +8,16 @@
 package io.harness.execution;
 
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 
 public interface PmsNodeExecutionMetadata {
   NodeType forNodeType();
+
+  default StrategyMetadata getStrategyMetadata() {
+    return null;
+  }
+
+  default void setStrategyMetadata(StrategyMetadata strategyMetadata) {
+    // do Nothing
+  }
 }

@@ -20,6 +20,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.monitoring.EventMonitoringService;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
@@ -132,6 +133,8 @@ public class PmsSdkCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleM
             return false;
           }
         });
+
+        bind(EventMonitoringService.class).to(EventMonitoringTestService.class);
       }
     });
     return modules;

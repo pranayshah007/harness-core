@@ -39,9 +39,8 @@ public enum ChangeSourceType {
   CUSTOM_INCIDENT("CustomIncident", ChangeCategory.ALERTS, ActivityType.CUSTOM_INCIDENT, false),
   @JsonProperty("CustomInfrastructure")
   CUSTOM_INFRA("CustomInfrastructure", ChangeCategory.INFRASTRUCTURE, ActivityType.CUSTOM_INFRA, false),
-  @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false),
-  @JsonProperty("DeploymentImpactAnalysis")
-  SRM_STEP_ANALYSIS("DeploymentImpactAnalysis", ChangeCategory.DEPLOYMENT, ActivityType.SRM_STEP_ANALYSIS, true);
+  @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false);
+
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<ChangeCategory, List<ChangeSourceType>> CATEGORY_TO_CHANGE_SOURCE_TYPES_MAP;
 

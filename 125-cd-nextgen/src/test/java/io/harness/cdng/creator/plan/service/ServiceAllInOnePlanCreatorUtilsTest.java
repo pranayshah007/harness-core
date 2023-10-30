@@ -73,6 +73,18 @@ public class ServiceAllInOnePlanCreatorUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.VITALIE)
+  @Category(UnitTests.class)
+  public void addServiceNodeWithASG() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    Map<String, PlanCreationResponse> planCreationResponse = ServiceAllInOnePlanCreatorUtils.addServiceNode(pipeline,
+        kryoSerializer, ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("my_service")).build(),
+        EnvironmentYamlV2.builder().build(), "serviceNodeId", "mextNodeId", ServiceDefinitionType.ASG, null);
+    assertThat(planCreationResponse).hasSize(6);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
   public void addServiceNodeContainBothUseFromStageAndService() throws IOException {

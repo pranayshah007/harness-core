@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 {
 "javaAnnotation": ["javax.annotation.Generated(\"avro\")"],
  "namespace": "io.harness.avro",
@@ -72,6 +79,8 @@
      {"name": "maxstoragerequest", "type" : ["double", "null"]},
      {"name": "orgIdentifier", "type" : ["string", "null"]},
      {"name": "projectIdentifier", "type" : ["string", "null"]},
+     {"name": "usagestarttime", "type" : ["long", "null"]},
+     {"name": "usagestoptime", "type" : ["long", "null"]},
      {"name" : "labels", "type": {
           "type": "array",
           "items": [{

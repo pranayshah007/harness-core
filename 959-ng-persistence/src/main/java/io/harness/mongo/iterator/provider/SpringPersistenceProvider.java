@@ -99,9 +99,9 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
-  public T findInstance(
-      Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, boolean isDelegateTaskMigrationEnabled) {
-    return persistence.findOne(createQuery(fieldName, filterExpander, false), clazz);
+  public T findInstance(Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
+    return persistence.findOne(createQuery(fieldName, filterExpander, unsorted), clazz);
   }
 
   @Override
@@ -115,10 +115,10 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
-  public Iterator<T> obtainNextInstances(
-      Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, int limit) {
+  public Iterator<T> obtainNextInstances(Class<T> clazz, String fieldName, SpringFilterExpander filterExpander,
+      boolean unsorted, int limit, boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
-    Query query = createQuery(now, fieldName, filterExpander, false);
+    Query query = createQuery(now, fieldName, filterExpander, unsorted);
     query.limit(limit);
 
     List<T> docs = persistence.find(query, clazz);

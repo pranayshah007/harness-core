@@ -96,6 +96,7 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.security.spec.execution.steps.sto.identifier",
             "pipeline.stages.security.spec.execution.steps.sto.type",
             "pipeline.stages.security.spec.execution.steps.sto.startTs",
-            "pipeline.stages.security.spec.execution.steps.sto.endTs");
+            "pipeline.stages.security.spec.execution.steps.sto.endTs",
+            "pipeline.stages.security.spec.execution.steps.sto.status");
   }
 }

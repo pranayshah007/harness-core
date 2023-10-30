@@ -6,6 +6,7 @@
  */
 
 package io.harness.generator;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.execution.ExecutionModeUtils.isChainMode;
 
@@ -29,7 +30,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
@@ -54,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrchestrationAdjacencyListGenerator {
   @Inject private PmsOutcomeService pmsOutcomeService;
   @Inject private GraphVertexConverter graphVertexConverter;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   public OrchestrationAdjacencyListInternal generateAdjacencyList(
       String startingNodeExId, List<NodeExecution> nodeExecutions, boolean isOutcomePresent) {
@@ -77,10 +78,10 @@ public class OrchestrationAdjacencyListGenerator {
     // compute adjList
     String parentId = null;
     List<String> prevIds = new ArrayList<>();
-    if (isIdPresent(nodeExecution.getPreviousId())) {
+    if (isIdPresent(nodeExecution.getPreviousId()) && adjacencyList.containsKey(nodeExecution.getPreviousId())) {
       adjacencyList.get(nodeExecution.getPreviousId()).getNextIds().add(currentUuid);
       prevIds.add(nodeExecution.getPreviousId());
-    } else if (isIdPresent(nodeExecution.getParentId())) {
+    } else if (isIdPresent(nodeExecution.getParentId()) && adjacencyList.containsKey(nodeExecution.getParentId())) {
       parentId = nodeExecution.getParentId();
       EdgeListInternal parentEdgeList = Objects.requireNonNull(adjacencyList.get(parentId),
           String.format("[GRAPH_ERROR] ParentId: [%s] not present in the adjacency list. Please debug", parentId));
@@ -107,13 +108,11 @@ public class OrchestrationAdjacencyListGenerator {
 
     String currentUuid = nodeExecution.getUuid();
 
-    String parentId;
-    if (isIdPresent(nodeExecution.getPreviousId())) {
+    if (isIdPresent(nodeExecution.getPreviousId()) && adjacencyList.containsKey(nodeExecution.getPreviousId())) {
       EdgeListInternal previousEdgeList = adjacencyList.get(nodeExecution.getPreviousId());
       previousEdgeList.getNextIds().remove(currentUuid);
-    } else if (isIdPresent(nodeExecution.getParentId())) {
-      parentId = nodeExecution.getParentId();
-      EdgeListInternal parentEdgeList = adjacencyList.get(parentId);
+    } else if (isIdPresent(nodeExecution.getParentId()) && adjacencyList.containsKey(nodeExecution.getParentId())) {
+      EdgeListInternal parentEdgeList = adjacencyList.get(nodeExecution.getParentId());
       parentEdgeList.getEdges().remove(currentUuid);
     }
 

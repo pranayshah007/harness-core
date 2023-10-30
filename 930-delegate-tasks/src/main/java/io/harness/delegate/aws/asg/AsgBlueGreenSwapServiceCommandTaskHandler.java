@@ -8,6 +8,7 @@
 package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.LogHelper.color;
 
@@ -23,6 +24,7 @@ import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgSwapServiceManifestRequest;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -47,6 +49,8 @@ import software.wings.beans.LogWeight;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -87,6 +91,10 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
 
       AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(asgBlueGreenSwapServiceRequest.getProdAsgName());
 
+      List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenSwapServiceRequest.getLoadBalancers())
+          ? asgBlueGreenSwapServiceRequest.getLoadBalancers()
+          : Arrays.asList(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig());
+
       AsgManifestHandlerChainFactory asgManifestHandlerChainFactory =
           (AsgManifestHandlerChainFactory) AsgManifestHandlerChainFactory.builder()
               .initialChainState(AsgManifestHandlerChainState.builder()
@@ -97,7 +105,7 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
               .build()
               .addHandler(AsgSwapService,
                   AsgSwapServiceManifestRequest.builder()
-                      .asgLoadBalancerConfig(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig())
+                      .loadBalancers(lbConfigs)
                       .region(asgInfraConfig.getRegion())
                       .awsInternalConfig(awsInternalConfig)
                       .build());

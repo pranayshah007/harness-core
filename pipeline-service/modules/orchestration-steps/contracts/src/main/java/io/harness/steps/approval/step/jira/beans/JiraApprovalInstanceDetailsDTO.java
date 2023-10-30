@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.jira.JiraIssueKeyNG;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
@@ -37,6 +38,7 @@ public class JiraApprovalInstanceDetailsDTO implements ApprovalInstanceDetailsDT
   @NotNull io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO approvalCriteria;
   @NotNull CriteriaSpecWrapperDTO rejectionCriteria;
 
+  Timeout retryInterval;
   // id of the delegate task created in the latest polling event
   String latestDelegateTaskId;
   String delegateTaskName;

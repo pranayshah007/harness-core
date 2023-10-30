@@ -7,8 +7,10 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -20,7 +22,7 @@ import java.util.List;
 public interface DebugService {
   SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier);
 
-  Boolean isProjectDeleted(ProjectParams projectParams);
+  ProjectDeletionResponse isProjectDeleted(ProjectParams projectParams);
 
   Boolean isSLODeleted(ProjectParams projectParams, String identifier);
 
@@ -30,12 +32,16 @@ public interface DebugService {
 
   boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers);
 
+  boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers);
+
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 
   CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);
   DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier);
 
   boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO);
+
+  boolean registerSRMAnalysisStep(SRMAnalysisStepExecutionDetail srmAnalysisStepBody);
 
   void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody);
 

@@ -7,8 +7,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
   LOGGING_LEVEL: "INFO"
@@ -17,14 +17,18 @@ data:
   MANAGER_CLIENT_BASEURL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
   NG_MANAGER_CLIENT_BASEURL: "http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/"
   MANAGER_URL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
-  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  DEPLOY_MODE: {{ .Values.global.deployMode | quote }}
   CE_NEXTGEN_PORT: {{ .Values.service.port | quote}}
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: "harness-redis"
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
   EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   {{- if not .Values.workloadIdentity.enabled }}
   GOOGLE_CREDENTIALS_PATH: "/opt/harness/svc/ceng_gcp_credentials.json"
   GOOGLE_APPLICATION_CREDENTIALS: "/opt/harness/svc/ceng_gcp_credentials.json"
@@ -47,17 +51,28 @@ data:
   MOCK_ACCESS_CONTROL_SERVICE: "false"
   MEMORY: {{ .Values.java.memory | quote }}
   ENABLE_APPDYNAMICS: "false"
-  JWT_AUTH_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  JWT_IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
-  NOTIFICATION_CLIENT_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  ACCESS_CONTROL_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.distributedLockImplementation | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}
   CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
   {{- end }}
   USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}
   GCP_SERVICE_ACCOUNT_EMAIL: {{ .Values.cloudProviderConfig.GCP_SERVICE_ACCOUNT_EMAIL | quote }}
+  {{- if .Values.global.proxy.enabled }}
+  PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
+  PROXY_HOST: {{ .Values.global.proxy.host }}
+  PROXY_PORT: '{{ .Values.global.proxy.port }}'
+  PROXY_USERNAME: '{{ .Values.global.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.global.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.global.proxy.protocol }}
+  {{- end }}
+  {{- if .Values.global.awsServiceEndpointUrls.enabled }}
+  AWS_SERVICE_ENDPOINT_URLS_ENABLED: '{{ .Values.global.awsServiceEndpointUrls.enabled }}'
+  AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION: {{ .Values.global.awsServiceEndpointUrls.endPointRegion }}
+  AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.stsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ecsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
+  {{- end }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

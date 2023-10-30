@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration.serializer;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -15,6 +18,7 @@ import com.fasterxml.jackson.databind.KeyDeserializer;
 import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class CgEntityIdDeserializer extends KeyDeserializer {
   @Override
   public CgEntityId deserializeKey(String s, DeserializationContext deserializationContext) throws IOException {

@@ -98,6 +98,8 @@ public class BuildTriggerHelperTest extends CategoryTest {
   @InjectMocks BuildTriggerHelper buildTriggerHelper;
   @Mock private PipelineServiceClient pipelineServiceClient;
 
+  private static final String INPUT = "<+input>";
+
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
@@ -174,7 +176,7 @@ public class BuildTriggerHelperTest extends CategoryTest {
             .setConnectorRef("conn")
             .setArtifactoryRegistryPayload(ArtifactoryRegistryPayload.newBuilder()
                                                .setRepository(Strings.EMPTY)
-                                               .setArtifactDirectory("dir")
+                                               .setArtifactFilter("filter")
                                                .setRepositoryFormat("generic")
                                                .setArtifactPath(Strings.EMPTY)
                                                .setRepositoryUrl(Strings.EMPTY)
@@ -200,7 +202,61 @@ public class BuildTriggerHelperTest extends CategoryTest {
 
     assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoArtifactDirectory))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("artifactDirectory can not be blank. Needs to have concrete value");
+        .hasMessage(
+            "artifactDirectory, artifactFilter can not be blank or Runtime input. Please provide concrete value to one of these.");
+
+    final PollingItem pollingItemRuntimeArtifactDirectory =
+        generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+            PollingPayloadData.newBuilder()
+                .setConnectorRef("conn")
+                .setArtifactoryRegistryPayload(ArtifactoryRegistryPayload.newBuilder()
+                                                   .setRepository("repo")
+                                                   .setArtifactDirectory(INPUT)
+                                                   .setRepositoryFormat("generic")
+                                                   .setArtifactPath(Strings.EMPTY)
+                                                   .setRepositoryUrl(Strings.EMPTY)
+                                                   .build())
+                .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemRuntimeArtifactDirectory))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "artifactDirectory, artifactFilter can not be blank or Runtime input. Please provide concrete value to one of these.");
+
+    final PollingItem pollingItemNoArtifactFilter = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setArtifactoryRegistryPayload(ArtifactoryRegistryPayload.newBuilder()
+                                               .setRepository("repo")
+                                               .setArtifactFilter(Strings.EMPTY)
+                                               .setRepositoryFormat("generic")
+                                               .setArtifactPath(Strings.EMPTY)
+                                               .setRepositoryUrl(Strings.EMPTY)
+                                               .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoArtifactFilter))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "artifactDirectory, artifactFilter can not be blank or Runtime input. Please provide concrete value to one of these.");
+
+    final PollingItem pollingItemRuntimeArtifactFilter =
+        generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+            PollingPayloadData.newBuilder()
+                .setConnectorRef("conn")
+                .setArtifactoryRegistryPayload(ArtifactoryRegistryPayload.newBuilder()
+                                                   .setRepository("repo")
+                                                   .setArtifactFilter(INPUT)
+                                                   .setRepositoryFormat("generic")
+                                                   .setArtifactPath(Strings.EMPTY)
+                                                   .setRepositoryUrl(Strings.EMPTY)
+                                                   .build())
+                .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemRuntimeArtifactFilter))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "artifactDirectory, artifactFilter can not be blank or Runtime input. Please provide concrete value to one of these.");
 
     final PollingItem pollingItemNoRepositoryFormat =
         generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,

@@ -25,6 +25,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifier;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -135,6 +136,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -253,7 +255,7 @@ public class NgUserServiceImpl implements NgUserService {
       }
     }
     Page<String> userMembershipPage =
-        userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.unpaged());
+        userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.ofSize(NO_LIMIT));
     if (userMembershipPage.isEmpty()) {
       return PageResponse.getEmptyPageResponse(pageRequest);
     }
@@ -346,7 +348,7 @@ public class NgUserServiceImpl implements NgUserService {
                             .is(scope.getOrgIdentifier())
                             .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                             .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAllUserIds(criteria, Pageable.ofSize(50000)).getContent();
+    return userMembershipRepository.findAllUserIds(criteria, Pageable.ofSize(NO_LIMIT)).getContent();
   }
 
   @Override
@@ -514,7 +516,7 @@ public class NgUserServiceImpl implements NgUserService {
                                           .is(scope.getOrgIdentifier())
                                           .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
                                           .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.unpaged()).toSet();
+    return userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.ofSize(NO_LIMIT)).toSet();
   }
 
   @VisibleForTesting
@@ -566,7 +568,8 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<UserMetadataDTO> getUserMetadata(List<String> userIds) {
-    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.userId).in(userIds), Pageable.ofSize(50000))
+    return userMetadataRepository
+        .findAll(Criteria.where(UserMetadataKeys.userId).in(userIds), Pageable.ofSize(NO_LIMIT))
         .map(UserMetadataMapper::toDTO)
         .stream()
         .collect(toList());
@@ -579,7 +582,9 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<String> getUserIdsByEmails(List<String> emailIds) {
-    return userMetadataRepository.findAllIds(Criteria.where(UserMetadataKeys.email).in(emailIds));
+    return userMetadataRepository.findAllIds(
+        Criteria.where(UserMetadataKeys.email)
+            .in(emailIds.stream().filter(Objects::nonNull).map(String::toLowerCase).collect(toList())));
   }
 
   @Override

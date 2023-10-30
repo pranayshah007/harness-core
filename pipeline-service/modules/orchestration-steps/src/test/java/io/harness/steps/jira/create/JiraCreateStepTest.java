@@ -12,11 +12,15 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -38,6 +42,9 @@ public class JiraCreateStepTest extends OrchestrationStepsTestBase {
   @InjectMocks JiraCreateStep jiraCreateStep;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Mock private JiraStepHelperService jiraStepHelperService;
+  @Mock private NGLogCallback mockNgLogCallback;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ILogStreamingStepClient logStreamingStepClient;
 
   private static final String PROJECT = "project";
   private static final String ISSUE_TYPE = "issueType";
@@ -70,6 +77,7 @@ public class JiraCreateStepTest extends OrchestrationStepsTestBase {
             .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
             .delegateSelectors(DELEGATE_SELECTORS)
             .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
     StepElementParameters stepParameters = StepElementParameters.builder()
                                                .timeout(ParameterField.createValueField(TIMEOUT))
                                                .spec(jiraCreateSpecParameters)

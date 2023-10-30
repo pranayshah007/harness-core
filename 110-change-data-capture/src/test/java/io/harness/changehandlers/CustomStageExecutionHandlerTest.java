@@ -19,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
+import io.harness.execution.stage.StageExecutionEntity;
 import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -72,7 +73,9 @@ public class CustomStageExecutionHandlerTest extends CategoryTest {
     doReturn(mockConnection).when(timeScaleDBService).getDBConnection();
     doReturn(mock(PreparedStatement.class)).when(mockConnection).prepareStatement(anyString());
 
-    ChangeEvent<PersistentEntity> changeEvent = generateInsertChangeEvent("stage_execution_entity.json");
+    StageExecutionEntity stageExecutionEntity = StageExecutionEntity.builder().build();
+    ChangeEvent<PersistentEntity> changeEvent =
+        generateInsertChangeEvent("stage_execution_entity.json", stageExecutionEntity);
 
     handler.handleChange(changeEvent, "custom_stage_execution", new String[] {});
 
@@ -94,7 +97,9 @@ public class CustomStageExecutionHandlerTest extends CategoryTest {
     doReturn(mockConnection).when(timeScaleDBService).getDBConnection();
     doReturn(mock(PreparedStatement.class)).when(mockConnection).prepareStatement(anyString());
 
-    ChangeEvent<PersistentEntity> changeEvent = generateUpdateChangeEvent("stage_execution_entity.json");
+    StageExecutionEntity stageExecutionEntity = StageExecutionEntity.builder().build();
+    ChangeEvent<PersistentEntity> changeEvent =
+        generateUpdateChangeEvent("stage_execution_entity.json", stageExecutionEntity);
 
     handler.handleChange(changeEvent, "custom_stage_execution", new String[] {});
 
@@ -107,21 +112,23 @@ public class CustomStageExecutionHandlerTest extends CategoryTest {
             "INSERT INTO custom_stage_execution (id,failure_message) VALUES('_bNe7lGaRbGTwrnlUMIiXQ','Approval Step has been Rejected') ON CONFLICT (id) Do UPDATE  SET id='_bNe7lGaRbGTwrnlUMIiXQ',failure_message='Approval Step has been Rejected'");
   }
 
-  private ChangeEvent<PersistentEntity> generateInsertChangeEvent(String fileName) throws IOException {
+  private ChangeEvent<PersistentEntity> generateInsertChangeEvent(String fileName, Object o) throws IOException {
     String s = readFile(fileName);
     return ChangeEvent.builder()
         .uuid("uuid")
         .changeType(ChangeType.INSERT)
         .fullDocument(BasicDBObject.parse(s))
+        .entityType((Class<PersistentEntity>) o.getClass())
         .build();
   }
 
-  private ChangeEvent<PersistentEntity> generateUpdateChangeEvent(String fileName) throws IOException {
+  private ChangeEvent<PersistentEntity> generateUpdateChangeEvent(String fileName, Object o) throws IOException {
     String s = readFile(fileName);
     return ChangeEvent.builder()
         .uuid("uuid")
         .changeType(ChangeType.UPDATE)
         .fullDocument(BasicDBObject.parse(s))
+        .entityType((Class<PersistentEntity>) o.getClass())
         .build();
   }
 

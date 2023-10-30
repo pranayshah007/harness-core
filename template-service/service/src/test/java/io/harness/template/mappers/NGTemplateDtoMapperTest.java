@@ -10,6 +10,7 @@ package io.harness.template.mappers;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -33,14 +35,17 @@ import io.harness.gitsync.sdk.CacheState;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.resources.TemplateRequestInfoDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 
 import com.google.common.io.Resources;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
@@ -301,5 +306,180 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
     assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam("false"));
     //    when junk value is passed for string loadFromCache
     assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testToTemplateEntityWithSimplifiedYaml() {
+    String simplifiedTemplateYaml = "version: 1\n"
+        + "kind: template\n"
+        + "spec:\n"
+        + "  type: step\n"
+        + "  spec:\n"
+        + "    type: plugin\n"
+        + "    timeout: 10m\n"
+        + "    spec:\n"
+        + "      uses: http\n"
+        + "      with:\n"
+        + "        url: 'http://<+template.inputs.env>.harness.io'\n"
+        + "        method: GET\n"
+        + "  inputs:\n"
+        + "    env:\n"
+        + "      type: string\n";
+    String templateId = UUIDGenerator.generateUuid();
+    TemplateRequestInfoDTO requestInfoDTO = TemplateRequestInfoDTO.builder()
+                                                .yaml(simplifiedTemplateYaml)
+                                                .label("label1")
+                                                .tags(Map.of("tag1", "val1"))
+                                                .description("desc")
+                                                .identifier(templateId)
+                                                .name("template name")
+                                                .build();
+
+    TemplateEntity templateEntity =
+        NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, requestInfoDTO);
+    assertThat(templateEntity.getIdentifier()).isEqualTo(templateId);
+    assertThat(templateEntity.getName()).isEqualTo(requestInfoDTO.getName());
+    assertThat(templateEntity.getVersionLabel()).isEqualTo(requestInfoDTO.getLabel());
+    assertThat(templateEntity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
+    assertThat(templateEntity.getYaml()).isEqualTo(requestInfoDTO.getYaml());
+    assertThat(templateEntity.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(templateEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(templateEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+
+    assertThat(templateEntity.getTags().size()).isEqualTo(1);
+    assertThat(templateEntity.getTags().get(0).getKey()).isEqualTo("tag1");
+    assertThat(templateEntity.getTags().get(0).getValue()).isEqualTo("val1");
+    assertThat(templateEntity.getTemplateEntityType()).isEqualTo(TemplateEntityType.STEP_TEMPLATE);
+    assertThat(templateEntity.getChildType()).isEqualTo("plugin");
+
+    requestInfoDTO = TemplateRequestInfoDTO.builder()
+                         .yaml(yaml)
+                         .label("label1")
+                         .tags(Map.of("tag1", "val1"))
+                         .description("desc")
+                         .identifier(templateId)
+                         .name("template name")
+                         .build();
+
+    TemplateEntity templateEntityV0 =
+        NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, requestInfoDTO);
+
+    assertThat(templateEntityV0.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V0);
+    assertThat(templateEntityV0.getIdentifier()).isEqualTo(entity.getIdentifier());
+    assertThat(templateEntityV0.getAccountId()).isEqualTo(entity.getAccountIdentifier());
+    assertThat(templateEntityV0.getOrgIdentifier()).isEqualTo(entity.getOrgIdentifier());
+    assertThat(templateEntityV0.getProjectIdentifier()).isEqualTo(entity.getProjectIdentifier());
+    assertThat(templateEntityV0.getYaml()).isEqualTo(entity.getYaml());
+    assertThat(templateEntityV0.getName()).isEqualTo(entity.getName());
+    assertThat(templateEntityV0.getDescription())
+        .isEqualTo(entity.getDescription() == null ? "" : entity.getDescription());
+    assertThat(templateEntityV0.isStableTemplate()).isEqualTo(entity.isStableTemplate());
+    assertThat(templateEntityV0.getTemplateEntityType()).isEqualTo(entity.getTemplateEntityType());
+    assertThat(templateEntityV0.getChildType()).isEqualTo(entity.getChildType());
+    assertThat(templateEntityV0.getTemplateScope()).isEqualTo(entity.getTemplateScope());
+    assertThat(templateEntityV0.getVersionLabel()).isEqualTo(entity.getVersionLabel());
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testToTemplateEntityWithSimplifiedYamlForUpdates() {
+    String simplifiedTemplateYaml = "version: 1\n"
+        + "kind: template\n"
+        + "spec:\n"
+        + "  type: step\n"
+        + "  spec:\n"
+        + "    type: plugin\n"
+        + "    timeout: 10m\n"
+        + "    spec:\n"
+        + "      uses: http\n"
+        + "      with:\n"
+        + "        url: 'http://<+template.inputs.env>.harness.io'\n"
+        + "        method: GET\n"
+        + "  inputs:\n"
+        + "    env:\n"
+        + "      type: string\n";
+    String templateId = UUIDGenerator.generateUuid();
+    TemplateRequestInfoDTO requestInfoDTO = TemplateRequestInfoDTO.builder()
+                                                .yaml(simplifiedTemplateYaml)
+                                                .label("label1")
+                                                .tags(Map.of("tag1", "val1"))
+                                                .description("desc")
+                                                .identifier(templateId)
+                                                .name("template name")
+                                                .build();
+
+    // templateId not matching with the templateId provided in the body.
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "invalidTemplateId", "invalidTemplateLabel", requestInfoDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Template Identifier for template is not matching as in template yaml.");
+    // template versionLabel not matching with the label provided in the body.
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               templateId, "invalidTemplateLabel", requestInfoDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("VersionLabel for template is not matching as in template yaml.");
+
+    TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateId, requestInfoDTO.getLabel(), requestInfoDTO);
+
+    assertThat(templateEntity.getIdentifier()).isEqualTo(templateId);
+    assertThat(templateEntity.getName()).isEqualTo(requestInfoDTO.getName());
+    assertThat(templateEntity.getVersionLabel()).isEqualTo(requestInfoDTO.getLabel());
+    assertThat(templateEntity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
+    assertThat(templateEntity.getYaml()).isEqualTo(requestInfoDTO.getYaml());
+    assertThat(templateEntity.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(templateEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(templateEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+
+    assertThat(templateEntity.getTags().size()).isEqualTo(1);
+    assertThat(templateEntity.getTags().get(0).getKey()).isEqualTo("tag1");
+    assertThat(templateEntity.getTags().get(0).getValue()).isEqualTo("val1");
+    assertThat(templateEntity.getTemplateEntityType()).isEqualTo(TemplateEntityType.STEP_TEMPLATE);
+    assertThat(templateEntity.getChildType()).isEqualTo("plugin");
+
+    TemplateRequestInfoDTO requestInfoDTO1 = TemplateRequestInfoDTO.builder()
+                                                 .yaml(yaml)
+                                                 .label("label1")
+                                                 .tags(Map.of("tag1", "val1"))
+                                                 .description("desc")
+                                                 .identifier(templateId)
+                                                 .name("template name")
+                                                 .build();
+
+    // templateId not matching with the templateId provided in the body.
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "invalidTemplateId", "invalidTemplateLabel", requestInfoDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Template Identifier for template is not matching as in template yaml.");
+    // template versionLabel not matching with the label provided in the body.
+    assertThatThrownBy(()
+                           -> NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               templateId, "invalidTemplateLabel", requestInfoDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("VersionLabel for template is not matching as in template yaml.");
+
+    TemplateEntity templateEntityV0 =
+        NGTemplateDtoMapper.toTemplateEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, requestInfoDTO1);
+
+    assertThat(templateEntityV0.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V0);
+    assertThat(templateEntityV0.getIdentifier()).isEqualTo(entity.getIdentifier());
+    assertThat(templateEntityV0.getAccountId()).isEqualTo(entity.getAccountIdentifier());
+    assertThat(templateEntityV0.getOrgIdentifier()).isEqualTo(entity.getOrgIdentifier());
+    assertThat(templateEntityV0.getProjectIdentifier()).isEqualTo(entity.getProjectIdentifier());
+    assertThat(templateEntityV0.getYaml()).isEqualTo(entity.getYaml());
+    assertThat(templateEntityV0.getName()).isEqualTo(entity.getName());
+    assertThat(templateEntityV0.getDescription())
+        .isEqualTo(entity.getDescription() == null ? "" : entity.getDescription());
+    assertThat(templateEntityV0.isStableTemplate()).isEqualTo(entity.isStableTemplate());
+    assertThat(templateEntityV0.getTemplateEntityType()).isEqualTo(entity.getTemplateEntityType());
+    assertThat(templateEntityV0.getChildType()).isEqualTo(entity.getChildType());
+    assertThat(templateEntityV0.getTemplateScope()).isEqualTo(entity.getTemplateScope());
+    assertThat(templateEntityV0.getVersionLabel()).isEqualTo(entity.getVersionLabel());
   }
 }

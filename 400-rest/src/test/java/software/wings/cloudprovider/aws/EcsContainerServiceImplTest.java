@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.PRAKHAR;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -30,6 +31,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static com.amazonaws.regions.Regions.US_EAST_1;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -279,7 +281,17 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testWaitForTasksToBeInRunningStateButDontThrowException() throws Exception {
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
-    UpdateServiceCountRequestData requestData = mock(UpdateServiceCountRequestData.class);
+    Service service = new Service().withDesiredCount(DESIRED_COUNT).withRunningCount(0).withServiceArn("SERVICE_ARN");
+    when(awsHelperService.describeServices(any(), any(AwsConfig.class), any(), any()))
+        .thenReturn(new DescribeServicesResult().withServices(asList(service)));
+    UpdateServiceCountRequestData requestData = UpdateServiceCountRequestData.builder()
+                                                    .cluster("cluster")
+                                                    .region("region")
+                                                    .awsConfig(AwsConfig.builder().build())
+                                                    .serviceName("test")
+                                                    .desiredCount(DESIRED_COUNT)
+                                                    .build();
+
     ecsContainerService.waitForTasksToBeInRunningStateWithHandledExceptions(requestData);
 
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(new TimeoutException(null, "timeout", null));
@@ -297,6 +309,27 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(new WingsException(ErrorCode.INIT_TIMEOUT));
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> ecsContainerService.waitForTasksToBeInRunningStateWithHandledExceptions(requestData));
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testWaitForTasksToBeInRunningStateSkipFailure() throws Exception {
+    HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
+    Service service =
+        new Service().withDesiredCount(DESIRED_COUNT).withRunningCount(DESIRED_COUNT).withServiceArn("SERVICE_ARN");
+    when(awsHelperService.describeServices(any(), any(AwsConfig.class), any(), any()))
+        .thenReturn(new DescribeServicesResult().withServices(asList(service)));
+    UpdateServiceCountRequestData requestData = UpdateServiceCountRequestData.builder()
+                                                    .cluster("cluster")
+                                                    .region("region")
+                                                    .awsConfig(AwsConfig.builder().build())
+                                                    .serviceName("test")
+                                                    .desiredCount(DESIRED_COUNT)
+                                                    .build();
+
+    assertThatCode(() -> ecsContainerService.waitForTasksToBeInRunningStateWithHandledExceptions(requestData))
+        .doesNotThrowAnyException();
   }
 
   @Test

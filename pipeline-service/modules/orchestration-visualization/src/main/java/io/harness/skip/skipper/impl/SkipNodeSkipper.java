@@ -6,10 +6,12 @@
  */
 
 package io.harness.skip.skipper.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EphemeralOrchestrationGraph;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.internal.EdgeListInternal;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 public class SkipNodeSkipper extends VertexSkipper {
   @Override
@@ -57,11 +60,13 @@ public class SkipNodeSkipper extends VertexSkipper {
     } else if (skippedVertexEdgeList.getParentId() != null) {
       String parentId = skippedVertexEdgeList.getParentId();
       EdgeListInternal parentEdgeList = adjacencyList.get(parentId);
-      skippedVertexEdgeList.getEdges().forEach(edge -> {
-        adjacencyList.get(edge).setParentId(parentId);
-        parentEdgeList.getEdges().add(edge);
-      });
-      parentEdgeList.getEdges().remove(skippedVertex.getUuid());
+      if (parentEdgeList != null) {
+        skippedVertexEdgeList.getEdges().forEach(edge -> {
+          adjacencyList.get(edge).setParentId(parentId);
+          parentEdgeList.getEdges().add(edge);
+        });
+        parentEdgeList.getEdges().remove(skippedVertex.getUuid());
+      }
     } else {
       // vertex is a rootId
       orchestrationGraph.getRootNodeIds().clear();

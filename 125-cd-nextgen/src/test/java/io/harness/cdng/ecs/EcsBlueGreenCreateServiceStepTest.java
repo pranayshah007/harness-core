@@ -132,11 +132,13 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
     doReturn(taskChainResponse)
         .when(ecsStepCommonHelper)
         .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+    ecsBlueGreenCreateServiceStepParameters.setSameAsAlreadyRunningInstances(ParameterField.createValueField(false));
 
     ecsBlueGreenCreateServiceStep.executeEcsTask(
         ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
-    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
-        (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+
     EcsLoadBalancerConfig ecsLoadBalancerConfig =
         EcsLoadBalancerConfig.builder()
             .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
@@ -162,6 +164,8 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
             .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .sameAsAlreadyRunningInstances(false)
+            .removeAutoScalingFromBlueService(false)
             .build();
     verify(ecsStepCommonHelper)
         .queueEcsTask(stepElementParameters, ecsBlueGreenCreateServiceRequest, ambiance, ecsExecutionPassThroughData,

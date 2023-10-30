@@ -58,10 +58,12 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -134,6 +136,7 @@ public class MonitoredServiceResource {
   @Path("/yaml")
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "saves monitored service from yaml or template", nickname = "saveMonitoredServiceFromYaml")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
   public RestResponse<MonitoredServiceResponse> saveMonitoredServiceFromYaml(
@@ -145,6 +148,7 @@ public class MonitoredServiceResource {
   @POST
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "saves monitored service data", nickname = "saveMonitoredService")
   @Operation(operationId = "saveMonitoredService", summary = "Saves monitored service data",
       responses =
@@ -165,6 +169,7 @@ public class MonitoredServiceResource {
   @POST
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/create-default")
   @ApiOperation(value = "created default monitored service", nickname = "createDefaultMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
@@ -179,6 +184,7 @@ public class MonitoredServiceResource {
   @PUT
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}")
   @ApiOperation(value = "updates monitored service data", nickname = "updateMonitoredService")
   @Operation(operationId = "updateMonitoredService", summary = "Updates monitored service data",
@@ -206,6 +212,7 @@ public class MonitoredServiceResource {
   @Path("/{identifier}/yaml")
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "update monitored service from yaml or template", nickname = "updateMonitoredServiceFromYaml")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
   public RestResponse<MonitoredServiceResponse> updateMonitoredServiceFromYaml(
@@ -219,6 +226,7 @@ public class MonitoredServiceResource {
   @PUT
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/health-monitoring-flag")
   @ApiOperation(value = "updates monitored service data", nickname = "setHealthMonitoringFlag")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = TOGGLE_PERMISSION)
@@ -233,6 +241,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/overall-health-score")
   @ApiOperation(
       value = "get monitored service overall health score data ", nickname = "getMonitoredServiceOverAllHealthScore")
@@ -253,6 +262,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "list monitored service data", nickname = "listMonitoredService")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<MonitoredServiceListItemDTO>> list(
@@ -273,6 +283,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}")
   @ApiOperation(value = "get monitored service data ", nickname = "getMonitoredService")
   @Operation(operationId = "getMonitoredService", summary = "Get monitored service data",
@@ -291,6 +302,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/list")
   @ApiOperation(value = "get list of monitored service data ", nickname = "getMonitoredServiceList")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -311,6 +323,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/platform/list")
   @ApiOperation(value = "get list of monitored service data", nickname = "getMonitoredServicePlatformList")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -328,6 +341,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/all/time-series-health-sources")
   @ApiOperation(value = "get all of monitored service data with time series health sources",
       nickname = "getAllMonitoredServicesWithTimeSeriesHealthSources")
@@ -341,6 +355,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/service-environment")
   @ApiOperation(value = "get monitored service data from service and env ref",
       nickname = "getMonitoredServiceFromServiceAndEnvironment")
@@ -362,6 +377,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/scores")
   @ApiOperation(value = "get monitored service scores", nickname = "getMonitoredServiceScores")
@@ -381,6 +397,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{identifier}/secondary-events")
   @ApiOperation(value = "get monitored service secondary events", nickname = "getMSSecondaryEvents")
@@ -395,6 +412,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/secondary-events-details")
   @ApiOperation(value = "get monitored service secondary events details", nickname = "getMSSecondaryEventsDetails")
@@ -410,6 +428,7 @@ public class MonitoredServiceResource {
   @DELETE
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}")
   @ApiOperation(value = "delete monitored service data ", nickname = "deleteMonitoredService")
   @Operation(operationId = "deleteMonitoredService", summary = "Delete monitored service data",
@@ -429,21 +448,38 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
+  @Path("/services")
+  @ApiOperation(value = "get monitored service list services data", nickname = "getMonitoredServiceListServices")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<List<ServiceResponse>> getServices(
+      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
+      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getUniqueServices(accountId, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @ResponseMetered
   @Path("/environments")
   @ApiOperation(
-      value = "get monitored service list environments data ", nickname = "getMonitoredServiceListEnvironments")
+      value = "get monitored service list environments data", nickname = "getMonitoredServiceListEnvironments")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<List<EnvironmentResponse>>
   getEnvironments(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
       @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
-        monitoredServiceService.listEnvironments(accountId, orgIdentifier, projectIdentifier));
+        monitoredServiceService.getUniqueEnvironments(accountId, orgIdentifier, projectIdentifier));
   }
 
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/yaml-template")
   @ApiOperation(value = "yaml template for monitored service", nickname = "getMonitoredServiceYamlTemplate")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -455,6 +491,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/health-sources")
   @ApiOperation(value = "get all health sources for service and environment",
       nickname = "getAllHealthSourcesForServiceAndEnvironment")
@@ -476,6 +513,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/health-sources")
   @ApiOperation(value = "get all health sources for service and environment",
@@ -490,6 +528,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @Path("{identifier}/anomaliesCount")
   @ExceptionMetered
   @ApiOperation(value = "get anomalies summary details", nickname = "getAnomaliesSummary")
@@ -509,6 +548,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/count-of-services")
   @ApiOperation(value = "get count of types of services like Monitored Service, Services at Risk ",
@@ -523,6 +563,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("/{monitoredServiceIdentifier}/health-source/{healthSourceIdentifier}/slo-metrics")
   @ApiOperation(value = "get slo metrics in a healthSource ", nickname = "getSloMetrcs")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -536,6 +577,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("{monitoredServiceIdentifier}/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",
@@ -552,6 +594,7 @@ public class MonitoredServiceResource {
 
   @GET
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @Path("/service-details")
   @ApiOperation(value = "get details of a monitored service present in the Service Dependency Graph",
@@ -575,6 +618,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{monitoredServiceIdentifier}/logs")
   @ApiOperation(value = "get monitored service logs", nickname = "getMonitoredServiceLogs")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -593,6 +637,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{monitoredServiceIdentifier}/change-details")
   @ApiOperation(value = "get monitored service change details", nickname = "getMonitoredServiceChangeDetails")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
@@ -608,6 +653,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}/notification-rules")
   @ApiOperation(
       value = "get notification rules for MonitoredService", nickname = "getNotificationRulesForMonitoredService")
@@ -631,6 +677,7 @@ public class MonitoredServiceResource {
   @POST
   @Path("/template-input")
   @Timed
+  @ResponseMetered
   @ExceptionMetered
   @ApiOperation(
       value = "saves monitored service from template input", nickname = "saveMonitoredServiceFromTemplateInput")
@@ -654,6 +701,7 @@ public class MonitoredServiceResource {
   @Path("/{identifier}/template-input")
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(
       value = "update monitored service from yaml or template", nickname = "updateMonitoredServiceFromTemplateInput")
   @Operation(operationId = "updateMonitoredServiceFromTemplateInput",

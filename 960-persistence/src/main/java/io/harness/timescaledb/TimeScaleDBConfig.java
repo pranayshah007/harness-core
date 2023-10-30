@@ -17,7 +17,7 @@ import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @FieldNameConstants(innerTypeName = "TimeScaleDBConfigFields")
 @FieldDefaults(makeFinal = false)
 public class TimeScaleDBConfig {

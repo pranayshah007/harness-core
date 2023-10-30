@@ -21,6 +21,7 @@ import io.harness.idp.common.YamlUtils;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigType;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.HostInfo;
@@ -32,6 +33,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.*;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 public class AllowListServiceImplTest {
@@ -39,6 +43,10 @@ public class AllowListServiceImplTest {
   @Mock private ConfigManagerService configManagerService;
   private static final String ACCOUNT_ID = "123";
   @Captor private ArgumentCaptor<AppConfig> appConfigCaptor;
+
+  @Mock TransactionTemplate transactionTemplate;
+
+  @Mock OutboxService outboxService;
   private static final String schema =
       "{\"definitions\": {}, \"$schema\": \"http://json-schema.org/draft-07/schema#\", "
       + "\"$id\": \"https://example.com/object1686050391.json\", \"title\": \"Root\", \"type\": \"object\", \"required\": [\"backend\"], "
@@ -84,12 +92,18 @@ public class AllowListServiceImplTest {
     MockedStatic<YamlUtils> yamlUtilsMockedStatic = Mockito.mockStatic(YamlUtils.class);
     MockedStatic<CommonUtils> commonUtilsMockedStatic = Mockito.mockStatic(CommonUtils.class);
 
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
     String yamlString = "backend:\n  reading:\n    allow: []";
     String allowListString = "- host: stress.harness.io\n  paths: []\n- host: qa.harness.io\n  paths:\n  - /v1/secrets";
     when(YamlUtils.writeObjectAsYaml(any())).thenReturn(allowListString);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(yamlString).thenReturn(schema);
 
     when(configManagerService.saveUpdateAndMergeConfigForAccount(any(), any(), any())).thenReturn(new AppConfig());
+    when(configManagerService.getAppConfig(any(), any(), any())).thenReturn(new AppConfig());
     allowListServiceImpl.saveAllowList(hostInfoList, ACCOUNT_ID);
 
     String expectedConfig =

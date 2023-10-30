@@ -17,6 +17,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authenticationservice.beans.SAMLProviderType;
+import io.harness.common.AccountAuthenticationSettings;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -523,17 +524,17 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     List<NGAuthSettings> settingsList = buildAuthSettingsList(ssoConfig, accountIdentifier);
     log.info("NGAuthSettings list for accountId {}: {}", accountIdentifier, settingsList);
 
-    boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
-    Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
-    boolean publicAccessEnabled = getResponse(managerClient.getPublicAccess(accountIdentifier)).equals(Boolean.TRUE);
+    AccountAuthenticationSettings accountAuthenticationSettings =
+        getResponse(managerClient.getAuthenticationSettings(accountIdentifier));
 
     return AuthenticationSettingsResponse.builder()
         .whitelistedDomains(whitelistedDomains)
         .ngAuthSettings(settingsList)
         .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
-        .twoFactorEnabled(twoFactorEnabled)
-        .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
-        .publicAccessEnabled(publicAccessEnabled)
+        .twoFactorEnabled(accountAuthenticationSettings.isTwoFactorEnabled())
+        .sessionTimeoutInMinutes(accountAuthenticationSettings.getSessionTimeoutInMinutes())
+        .publicAccessEnabled(accountAuthenticationSettings.isPublicAccessEnabled())
+        .oauthEnabled(accountAuthenticationSettings.isOauthEnabled())
         .build();
   }
 

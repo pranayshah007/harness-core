@@ -51,6 +51,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.K8sReleaseWarningLogger;
 import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -74,6 +75,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -160,6 +162,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
 
     // At this point we're sure that manifest has been applied successfully and canary workload is deployed
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     this.canaryWorkloadDeployed = true;
     this.saveReleaseHistory = true;
     k8sTaskHelperBase.saveRelease(k8sCanaryDeployRequest.isUseDeclarativeRollback(), false,
@@ -181,6 +184,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .kubernetesConfig(k8sCanaryHandlerConfig.getKubernetesConfig())
+                                              .startTime(manifestApplyTime)
                                               .build();
 
     K8sClient k8sClient =
@@ -279,6 +283,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryHandlerConfig.setUseDeclarativeRollback(request.isUseDeclarativeRollback());
     k8sCanaryHandlerConfig.setReleaseName(request.getReleaseName());
 
+    K8sReleaseWarningLogger.logWarningIfReleaseConflictExists(
+        request.getReleaseMetadata(), releaseHistory, logCallback);
     k8sTaskHelperBase.deleteSkippedManifestFiles(k8sCanaryHandlerConfig.getManifestFilesDirectory(), logCallback);
 
     KubernetesReleaseDetails releaseDetails =
@@ -352,8 +358,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryBaseHandler.updateTargetInstances(
         k8sCanaryHandlerConfig, k8sRequestHandlerContext, targetInstances, logCallback);
 
-    IK8sRelease currentRelease = releaseHandler.createRelease(
-        k8sCanaryHandlerConfig.getReleaseName(), k8sCanaryHandlerConfig.getCurrentReleaseNumber());
+    IK8sRelease currentRelease = releaseHandler.createRelease(k8sCanaryHandlerConfig.getReleaseName(),
+        k8sCanaryHandlerConfig.getCurrentReleaseNumber(), k8sCanaryDeployRequest.getReleaseMetadata());
     currentRelease.setReleaseData(k8sCanaryHandlerConfig.getResources(), false);
 
     k8sCanaryHandlerConfig.setCurrentRelease(currentRelease);

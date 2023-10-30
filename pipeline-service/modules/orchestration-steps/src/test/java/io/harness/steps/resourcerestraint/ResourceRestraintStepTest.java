@@ -10,6 +10,7 @@ package io.harness.steps.resourcerestraint;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +35,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -100,11 +102,16 @@ public class ResourceRestraintStepTest extends CategoryTest {
     String planNodeId = generateUuid();
     String consumerId = generateUuid();
     String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
+
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
@@ -138,11 +145,14 @@ public class ResourceRestraintStepTest extends CategoryTest {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
     String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
@@ -172,11 +182,14 @@ public class ResourceRestraintStepTest extends CategoryTest {
   public void shouldTestHandleAsyncResponse() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
@@ -205,11 +218,14 @@ public class ResourceRestraintStepTest extends CategoryTest {
   public void shouldHandleAbort() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
@@ -221,8 +237,8 @@ public class ResourceRestraintStepTest extends CategoryTest {
     when(resourceRestraintInstanceService.finishInstance(any(), any()))
         .thenReturn(ResourceRestraintInstance.builder().build());
 
-    resourceRestraintStep.handleAbort(
-        ambiance, stepElementParameters, AsyncExecutableResponse.newBuilder().addCallbackIds(generateUuid()).build());
+    resourceRestraintStep.handleAbort(ambiance, stepElementParameters,
+        AsyncExecutableResponse.newBuilder().addCallbackIds(generateUuid()).build(), false);
 
     verify(resourceRestraintInstanceService).finishInstance(any(), any());
   }
@@ -233,11 +249,14 @@ public class ResourceRestraintStepTest extends CategoryTest {
   public void shouldHandleAbort_ThrowException() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
@@ -251,7 +270,7 @@ public class ResourceRestraintStepTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> resourceRestraintStep.handleAbort(ambiance, stepElementParameters,
-                               AsyncExecutableResponse.newBuilder().addCallbackIds("").build()))
+                               AsyncExecutableResponse.newBuilder().addCallbackIds("").build(), false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageStartingWith("Exception");
 

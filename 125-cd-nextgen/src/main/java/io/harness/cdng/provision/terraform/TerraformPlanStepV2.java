@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -231,10 +233,13 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
 
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       TerraformPlanOutcomeBuilder tfPlanOutcomeBuilder = TerraformPlanOutcome.builder();
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      if (!ParameterFieldHelper.getBooleanParameterFieldValue(
+              planStepParameters.getConfiguration().getSkipStateStorage())) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
       tfPlanOutcomeBuilder.detailedExitCode(terraformTaskNGResponse.getDetailedExitCode());
 
       if (!planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()) {
@@ -353,7 +358,12 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
-        .isTerraformCloudCli(isTerraformCloudCli);
+        .skipColorLogs(featureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+        .isTerraformCloudCli(isTerraformCloudCli)
+        .providerCredentialDelegateInfo(
+            helper.getProviderCredentialDelegateInfo(configuration.getProviderCredential(), ambiance))
+        .skipStateStorage(ParameterFieldHelper.getBooleanParameterFieldValue(
+            planStepParameters.getConfiguration().getSkipStateStorage()));
 
     return builder;
   }

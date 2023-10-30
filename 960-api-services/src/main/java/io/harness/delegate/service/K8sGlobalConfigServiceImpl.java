@@ -100,10 +100,15 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
 
   @Override
   public String getKustomizePath(boolean useLatestVersion) {
-    if (useLatestVersion) {
-      return getToolPath(KUSTOMIZE, KUSTOMIZE.getLatestVersion());
+    try {
+      if (useLatestVersion) {
+        return getToolPath(KUSTOMIZE, KUSTOMIZE.getLatestVersion());
+      }
+      return getToolPath(KUSTOMIZE, KustomizeVersion.V3);
+    } catch (IllegalArgumentException e) {
+      log.warn("Kustomize binary is not installed. Kubectl will be used instead");
+      return null;
     }
-    return getToolPath(KUSTOMIZE, KustomizeVersion.V3);
   }
 
   private String getToolPath(ClientTool tool, ClientToolVersion version) {

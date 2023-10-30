@@ -220,8 +220,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback.saveExecutionLog("#---------- Downsizing Successfully Completed", INFO, SUCCESS);
 
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-      cfRollbackCommandResult.setUpdatedValues(updateValues);
-      cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
+      cfRollbackCommandResult.setNewApplicationInfo(cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setCurrentProdInfo(cfRollbackCommandRequestNG.getNewApplicationDetails());
       if (cfRollbackCommandResult.getCfInstanceElements() != null) {
         cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
       } else {
@@ -237,7 +237,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
       executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage(), INFO, FAILURE);
       cfRollbackCommandResponseNG.setErrorMessage(sanitizedException.getMessage());
-      cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
     } finally {
       executionLogCallback =
@@ -389,6 +388,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       log.error("Failed to up size PCF application: " + inActiveAppName, sanitizedException);
       executionLogCallback.saveExecutionLog(
           "Failed while up sizing In Active application: " + encodeColor(inActiveAppName));
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
     }
   }
 
@@ -468,6 +468,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         log.error("Failed to downsize PCF application: " + appNameBeingDownsized, sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized));
+        executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
       }
     }
   }
@@ -534,7 +535,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               Bold));
       return;
     }
-    cfRollbackCommandResult.setInActiveAppAttachedRoutes(inActiveApplicationDetails.getUrls());
     if (isNotEmpty(inActiveApplicationDetails.getUrls())) {
       executionLogCallback.saveExecutionLog(
           String.format("%nUpdating routes for In Active application - [%s]", encodeColor(inActiveAppName)));

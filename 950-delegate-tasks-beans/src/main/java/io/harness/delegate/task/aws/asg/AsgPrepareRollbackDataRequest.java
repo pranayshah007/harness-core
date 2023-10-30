@@ -27,9 +27,10 @@ import lombok.experimental.NonFinal;
 public class AsgPrepareRollbackDataRequest implements AsgCommandRequest, NestedAnnotationResolver {
   String accountId;
   String commandName;
+  String asgName;
 
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 }

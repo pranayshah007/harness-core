@@ -241,7 +241,12 @@ public class CIExecutionPlanTestHelper {
   }
 
   public CodeBase getCICodebase() {
-    return CodeBase.builder().connectorRef(ParameterField.createValueField(GIT_CONNECTOR)).build();
+    return CodeBase.builder()
+        .connectorRef(ParameterField.createValueField(GIT_CONNECTOR))
+        .depth(ParameterField.createValueField(1))
+        .prCloneStrategy(ParameterField.ofNull())
+        .sslVerify(ParameterField.ofNull())
+        .build();
   }
 
   public CodeBase getCICodebaseWithRepoName() {

@@ -1,0 +1,9 @@
+name: Access control Entity Metrics
+identifier: access_control_entity_metrics
+metricGroup: access_control_entity_metrics_group
+metrics:
+  - metricName: access_control_entity_processing_time
+    metricDefinition: Access Control Entity processing time
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"

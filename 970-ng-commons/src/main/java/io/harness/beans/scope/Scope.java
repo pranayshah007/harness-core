@@ -6,7 +6,6 @@
  */
 
 package io.harness.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -14,7 +13,10 @@ import static java.lang.String.format;
 import static lombok.AccessLevel.PRIVATE;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(PL)
 @Data
 @Builder
@@ -43,6 +46,10 @@ public class Scope {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .build();
+  }
+
+  public static Scope of(String accountIdentifier) {
+    return Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
   }
 
   public static Scope of(final String accountIdentifier, final String orgIdentifier, final String projectIdentifier,

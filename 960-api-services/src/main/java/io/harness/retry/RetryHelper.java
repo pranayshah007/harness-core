@@ -53,6 +53,16 @@ public class RetryHelper {
     return globalRegistry.retry(name, config);
   }
 
+  public static Retry getExponentialRetryOnException(String name, Predicate<Throwable> throwablePredicate) {
+    final RetryConfig config =
+        RetryConfig.custom()
+            .maxAttempts(MAX_ATTEMPTS)
+            .intervalFunction(ofExponentialRandomBackoff(Duration.ofSeconds(BACKOFF_INTERVAL_SECONDS).toMillis(), 2d))
+            .retryOnException(throwablePredicate)
+            .build();
+    return globalRegistry.retry(name, config);
+  }
+
   public static Retry getExponentialRetry(String name, Predicate<Object> predicate) {
     final RetryConfig config =
         RetryConfig.custom()

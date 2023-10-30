@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.trigger;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.BYPASS_HELM_FETCH;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
@@ -56,8 +55,11 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.EncryptedData;
@@ -190,6 +192,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.quartz.TriggerKey;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution
@@ -240,7 +243,7 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public PageResponse<Trigger> list(PageRequest<Trigger> pageRequest, boolean withTags, String tagFilter) {
     PageResponse<Trigger> response =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags, false);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags, false, false);
     return postProcessTriggers(response);
   }
 
@@ -498,6 +501,8 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public void triggerExecutionPostArtifactCollectionAsync(
       String appId, String artifactStreamId, List<Artifact> artifacts) {
+    // THIS METHOD IS NOT CALLED FROM ANY PRODUCTION CODE, ONLY FROM TEST CODE.
+    // WHY KEEP IT ALIVE? CODE CLEANUP IS NEEDED HERE.
     executorService.execute(() -> triggerExecutionPostArtifactCollection(appId, artifactStreamId, artifacts));
   }
 
@@ -574,6 +579,9 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public void triggerExecutionPostArtifactCollectionAsync(
       String accountId, String appId, String artifactStreamId, List<Artifact> artifacts) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS, accountId)) {
+      return;
+    }
     executorService.execute(() -> {
       if (featureFlagService.isEnabled(FeatureName.TRIGGER_FOR_ALL_ARTIFACTS, accountId)) {
         List<Artifact> nonDuplicates = artifacts.stream().filter(t -> !t.isDuplicate()).collect(toList());
@@ -695,6 +703,9 @@ public class TriggerServiceImpl implements TriggerService {
 
   @Override
   public void triggerScheduledExecutionAsync(Trigger trigger, Date scheduledFireTime) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS, trigger.getAccountId())) {
+      return;
+    }
     executorService.submit(() -> triggerScheduledExecution(trigger, scheduledFireTime));
   }
 

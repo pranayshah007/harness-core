@@ -1,0 +1,89 @@
+pipeline:
+  identifier: Testing
+  name: Testing
+  projectIdentifier: Test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        identifier: build
+        type: CI
+        name: build
+        description: ""
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: ShobhitK8
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      identifier: echo
+                      type: Run
+                      name: echo
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          tpl:
+                            - cwq
+                            - brq
+                            - xhgq
+                          twsq:
+                            - qakx
+                            - aakq
+                  - step:
+                      identifier: echoParallel
+                      type: Run
+                      name: echoParallel
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hi
+                      strategy:
+                        matrix:
+                          ikaj:
+                            - djq
+                            - lsa
+                          gqgdc:
+                            - ejq
+                            - wjh
+              - step:
+                  identifier: Run_3
+                  type: Run
+                  name: echoParallel
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: echo world
+                  strategy:
+                    matrix:
+                      ikj:
+                        - djq
+                        - lsa
+                      gqg:
+                        - ejq
+                        - wjh
+        strategy:
+          matrix:
+            env:
+              - dev
+              - env
+            tts:
+              - c
+              - f
+              - w
+            abc:
+              - ab
+              - as

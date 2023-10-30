@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.beans.summary;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WorkflowType;
 
 import lombok.AllArgsConstructor;
@@ -14,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Data
 @Builder
 @NoArgsConstructor

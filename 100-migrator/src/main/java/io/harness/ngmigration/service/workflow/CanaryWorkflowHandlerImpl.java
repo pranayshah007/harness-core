@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.workflow;
-
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
@@ -15,6 +14,9 @@ import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
 import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
@@ -28,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   private static final Set<OrchestrationWorkflowType> ROLLING_WORKFLOW_TYPES =
       Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);

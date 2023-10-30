@@ -495,7 +495,11 @@ public class AuditServiceImpl implements AuditService {
           deleted++;
         }
         if (updated != 0 && updated % batchSize == 0) {
-          bulkWriteOperation.execute();
+          try {
+            bulkWriteOperation.execute();
+          } catch (Exception ex) {
+            log.error("Exception occurred while deleting a stale audits batch: ", ex);
+          }
           if (updated >= 20000) {
             log.info("Number of audits records processed: {}, deleted: {}", updated, deleted);
             return;
@@ -507,7 +511,11 @@ public class AuditServiceImpl implements AuditService {
       }
 
       if (batched != 0) {
-        bulkWriteOperation.execute();
+        try {
+          bulkWriteOperation.execute();
+        } catch (Exception ex) {
+          log.error("Exception occurred while deleting a stale audits batch: ", ex);
+        }
         log.info("Number of audits records processed: {}, deleted: {}", updated, deleted);
       }
     } catch (Exception e) {

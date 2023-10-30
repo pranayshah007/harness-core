@@ -16,7 +16,9 @@
     "lighthouse",
     "jenkins",
     "confluence",
-    "catalog"
+    "catalog",
+    "grafana",
+    "sonarqube"
   ],
   "properties": {
     "app": {
@@ -62,6 +64,14 @@
     "catalog": {
       "$id": "#root/catalog",
       "title": "Catalog"
+    },
+    "grafana": {
+      "$id": "#root/grafana",
+      "title": "Grafana"
+    },
+    "sonarqube": {
+      "$id": "#root/sonarqube",
+      "title": "Sonarqube"
     }
   }
 }

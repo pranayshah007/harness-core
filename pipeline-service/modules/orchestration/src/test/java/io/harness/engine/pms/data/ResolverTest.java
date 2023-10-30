@@ -143,6 +143,12 @@ public class ResolverTest extends OrchestrationTestBase {
     }
 
     @Override
+    public String resolveUsingLevelRuntimeIdx(
+        String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject) {
+      return null;
+    }
+
+    @Override
     public String consumeInternal(Ambiance ambiance, Level producedBy, String name, String value, String groupName) {
       return null;
     }

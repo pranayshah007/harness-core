@@ -31,12 +31,55 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD:
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
       # --  provide default values if mongo.installed is set to false
       hosts:
         - timescaledb-single-chart:5432
+      # -- Enable TimescaleDB SSL
+      sslEnabled: false
+      # -- TimescaleDB secrets
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""  
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -53,8 +96,44 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                REDIS_PASSWORD:
+                  name: ""
+                  property: ""
     clickhouse:
-      enabled: false
+      enabled: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              CLICKHOUSE_USERNAME: ""
+              CLICKHOUSE_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                CLICKHOUSE_USERNAME:
+                  name: ""
+                  property: ""
+                CLICKHOUSE_PASSWORD:
+                  name: ""
+                  property: ""
   ingress:
     enabled: false
     className: harness
@@ -77,8 +156,97 @@ global:
   stackDriverLoggingEnabled: false
   ccm:
     gcpProjectId: "placeHolder"
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
+  deployMode: KUBERNETES_ONPREM
 
 replicaCount: 2
+
+redis:
+  protocol: ""
+  hosts: []
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            REDIS_USERNAME:
+              name: ""
+              property: ""
+            REDIS_PASSWORD:
+              name: ""
+              property: ""
+
+timescaledb:
+  # -- TimescaleDB host names
+  hosts: []
+  # -- Enable TimescaleDB SSL
+  # sslEnabled: false
+  # -- TimescaleDB secrets
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          TIMESCALEDB_USERNAME: ""
+          TIMESCALEDB_PASSWORD: ""
+          TIMESCALEDB_SSL_ROOT_CERT: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            TIMESCALEDB_USERNAME:
+              name: ""
+              property: ""
+            TIMESCALEDB_PASSWORD:
+              name: ""
+              property: ""
+            TIMESCALEDB_SSL_ROOT_CERT:
+              name: ""
+              property: ""
+
+mongo:
+  protocol: "redis"
+  hosts: []
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          MONGO_USER: ""
+          MONGO_PASSWORD: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            MONGO_USER:
+              name: ""
+              property: ""
+            MONGO_PASSWORD:
+              name: ""
+              property: ""                            
 
 
 maxSurge: 100%
@@ -94,7 +262,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -104,7 +272,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -227,3 +395,42 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
+
+distributedLockImplementation: MONGO
+
+secrets:
+  default:
+    JWT_AUTH_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    NEXT_GEN_MANAGER_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    JWT_IDENTITY_SERVICE_SECRET: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
+    NOTIFICATION_CLIENT_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    ACCESS_CONTROL_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+  kubernetesSecrets:
+    - secretName: ""
+      keys:
+        JWT_AUTH_SECRET: ""
+        NEXT_GEN_MANAGER_SECRET: ""
+        JWT_IDENTITY_SERVICE_SECRET: ""
+        NOTIFICATION_CLIENT_SECRET: ""
+        ACCESS_CONTROL_SECRET: ""
+  secretManagement:
+    externalSecretsOperator:
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          JWT_AUTH_SECRET:
+            name: ""
+            property: ""
+          NEXT_GEN_MANAGER_SECRET:
+            name: ""
+            property: ""
+          JWT_IDENTITY_SERVICE_SECRET:
+            name: ""
+            property: ""
+          NOTIFICATION_CLIENT_SECRET:
+            name: ""
+            property: ""
+          ACCESS_CONTROL_SECRET:
+            name: ""
+            property: ""

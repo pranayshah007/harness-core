@@ -39,7 +39,8 @@ ENV HOME=/opt/harness-delegate
 ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools
 
 USER 1001
-COPY --chown=1001 --from=adoptopenjdk/openjdk11:jre-11.0.14_9-ubi-minimal /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
+
+COPY --chown=1001 --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ ./jdk-11.0.19+7-jre/
 
 ARG watcher_version
 RUN curl -#k https://app.harness.io/public/shared/watchers/builds/openjdk-8u242/$watcher_version/watcher.jar -o watcher.jar

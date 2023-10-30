@@ -6,6 +6,7 @@
  */
 
 package io.harness.plan;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -21,7 +22,6 @@ import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.expression.ExpressionModeMapper;
 import io.harness.timeout.contracts.TimeoutObtainment;
@@ -55,8 +55,9 @@ public class PlanNode implements Node {
   // Input/Outputs
   PmsStepParameters stepParameters;
   String executionInputTemplate;
-  // TODO change this to PmsStepInputs
-  OrchestrationMap stepInputs;
+
+  // This is a list of keys which needs to be excluded from stepParameter to view for customer
+  List<String> excludedKeysFromStepInputs;
   @Singular List<RefObject> refObjects;
 
   // Hooks
@@ -106,7 +107,7 @@ public class PlanNode implements Node {
         .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
         .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
         .serviceName(planNodeProto.getServiceName())
-        .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
+        .excludedKeysFromStepInputs(planNodeProto.getStepInputsKeyExcludeList())
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
   }

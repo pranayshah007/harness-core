@@ -50,9 +50,9 @@ public class TriggerCatalogFilterTest extends CategoryTest {
   public void testFilterWithFFsDisabled() {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(false);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(false);
-    List<TriggerCatalogType> triggerTypes = Collections.arrayToList(new TriggerCatalogType[] {
-        TriggerCatalogType.JENKINS, TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS3,
-        TriggerCatalogType.NEXUS2, TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE});
+    List<TriggerCatalogType> triggerTypes =
+        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS2,
+            TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.NG_SVC_ENV_REDESIGN))
@@ -67,8 +67,7 @@ public class TriggerCatalogFilterTest extends CategoryTest {
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CD_TRIGGER_V2)).thenReturn(true);
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     List<TriggerCatalogType> triggerTypes =
-        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.JENKINS,
-            TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS3, TriggerCatalogType.NEXUS2,
+        Collections.arrayToList(new TriggerCatalogType[] {TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS2,
             TriggerCatalogType.AMI, TriggerCatalogType.GOOGLE_CLOUD_STORAGE, TriggerCatalogType.BAMBOO});
     assertThat(triggerTypes.stream()
                    .filter(triggerCatalogFilter.filter(accountId, FeatureName.CD_TRIGGER_V2))

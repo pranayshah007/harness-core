@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -18,6 +20,7 @@ import software.wings.beans.Workflow;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class PcfStepFunctor extends StepExpressionFunctor {
   private final StepOutput stepOutput;
   private final Workflow workflow;

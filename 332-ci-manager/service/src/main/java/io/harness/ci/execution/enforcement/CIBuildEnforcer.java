@@ -9,8 +9,14 @@ package io.harness.ci.enforcement;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 
 @OwnedBy(HarnessTeam.CI)
 public interface CIBuildEnforcer {
-  boolean checkBuildEnforcement(String accountID);
+  default boolean shouldQueue(String accountID, Infrastructure infrastructure) {
+    return false;
+  }
+  default boolean shouldRun(String accountID, Infrastructure infrastructure) {
+    return true;
+  }
 }

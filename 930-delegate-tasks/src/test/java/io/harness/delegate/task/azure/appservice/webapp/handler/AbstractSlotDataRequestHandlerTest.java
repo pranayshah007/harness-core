@@ -132,9 +132,30 @@ public class AbstractSlotDataRequestHandlerTest extends CategoryTest {
     assertThat(deploymentContext.getStartupCommand()).isEqualTo("echo test");
   }
 
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testAzureAppServicePackageDeploymentContextDeployOptions() {
+    final AbstractSlotDataRequest request = createRequest(ImmutableSet.of("APP1", "APP2"),
+        ImmutableSet.of("CONN1", "CONN2"), "echo test", Collections.emptySet(), Collections.emptySet(), false, true);
+
+    AzureAppServicePackageDeploymentContext deploymentContext =
+        dataRequestHandler.toAzureAppServicePackageDeploymentContext(request, clientContext, null, logCallbackProvider);
+    assertThat(deploymentContext.isCleanDeployment()).isTrue();
+    assertThat(deploymentContext.isUseNewDeployApi()).isTrue();
+    assertThat(deploymentContext.toDeployOptions().cleanDeployment()).isTrue();
+  }
+
   private AbstractSlotDataRequest createRequest(Set<String> existingAppSettings, Set<String> existingConnStrings,
       String existingScript, Set<String> prevUserAddedAppSettings, Set<String> prevUserAddedConnStrings,
       boolean isPrevUserChangedStartupCommand) {
+    return createRequest(existingAppSettings, existingConnStrings, existingScript, prevUserAddedAppSettings,
+        prevUserAddedConnStrings, isPrevUserChangedStartupCommand, false);
+  }
+
+  private AbstractSlotDataRequest createRequest(Set<String> existingAppSettings, Set<String> existingConnStrings,
+      String existingScript, Set<String> prevUserAddedAppSettings, Set<String> prevUserAddedConnStrings,
+      boolean isPrevUserChangedStartupCommand, boolean clean) {
     return new AbstractSlotDataRequest() {
       @Override
       public AppSettingsFile getApplicationSettings() {
@@ -179,6 +200,11 @@ public class AbstractSlotDataRequestHandlerTest extends CategoryTest {
       @Override
       public AzureArtifactConfig getArtifact() {
         return AzureContainerArtifactConfig.builder().image("test").tag("test").build();
+      }
+
+      @Override
+      public boolean isCleanDeployment() {
+        return clean;
       }
     };
   }

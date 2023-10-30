@@ -21,10 +21,10 @@ public interface TIServiceClient {
   Call<String> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
 
   @GET(CICommonEndpointConstants.TI_SERVICE_REPORT_SUMMARY_ENDPOINT)
-  Call<JsonObject> getSummaryReport(@Header("Authorization") String token, @Query("accountId") String accountId,
-      @Query("orgId") String orgId, @Query("projectId") String projectId, @Query("pipelineId") String pipelineId,
-      @Query("buildId") int buildId, @Query("report") String report, @Query("stageId") String stageId,
-      @Query("stepId") String stepId);
+  Call<JsonObject> getSummaryReport(@Query("accountId") String accountId, @Query("orgId") String orgId,
+      @Query("projectId") String projectId, @Query("pipelineId") String pipelineId, @Query("buildId") int buildId,
+      @Query("report") String report, @Query("stageId") String stageId, @Query("stepId") String stepId,
+      @Header("X-Harness-Token") String globalToken);
 
   @POST(CICommonEndpointConstants.TI_SERVICE_INTERNAL_CLEANUP_ENDPOINT)
   Call<String> clean(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);

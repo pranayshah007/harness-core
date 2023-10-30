@@ -11,13 +11,10 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.models.InstanceStats;
 import io.harness.models.InstanceStatsIterator;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
@@ -35,7 +32,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   private static final String PROJECT_ID = "projectId";
   private static final String SERVICE_ID = "serviceId";
   @Mock InstanceStatsRepository instanceStatsRepository;
-  @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock InstanceStatsIteratorRepository instanceStatsIteratorRepository;
 
   @InjectMocks InstanceStatsServiceImpl instanceStatsService;
@@ -56,7 +52,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   public void getLastSnapshotTimeTestIfFFDisabled() throws Exception {
     InstanceStats instanceStats = InstanceStats.builder().reportedAt(Timestamp.valueOf("2012-07-07 01:01:01")).build();
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(instanceStats);
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(false);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .isEqualTo(instanceStats.getReportedAt().toInstant());
   }
@@ -71,7 +66,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(instanceStats);
     when(instanceStatsIteratorRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(instanceStatsFromIterator);
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .isEqualTo(instanceStatsFromIterator.getReportedAt().toInstant());
   }
@@ -86,7 +80,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(instanceStats);
     when(instanceStatsIteratorRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(instanceStatsFromIterator);
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .isEqualTo(instanceStats.getReportedAt().toInstant());
   }
@@ -97,7 +90,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   public void getLastSnapshotTimeTestIfFFEnabledAndRecordReturnedNull() throws Exception {
     InstanceStatsIterator instanceStatsFromIterator =
         InstanceStatsIterator.builder().reportedAt(Timestamp.valueOf("2012-07-09 01:01:01")).build();
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     when(instanceStatsIteratorRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(instanceStatsFromIterator);
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(null);
@@ -109,7 +101,6 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void getLastSnapshotTimeTestIfFFEnabledAndRecordsReturnedNull() throws Exception {
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     when(instanceStatsIteratorRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(null);
     when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(null);
     assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).isNull();

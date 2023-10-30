@@ -71,8 +71,8 @@ public class PluginInfoProviderHelper {
     pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build());
   }
 
-  public PluginDetails.Builder buildPluginDetails(
-      ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
+  public PluginDetails.Builder buildPluginDetails(ContainerResource resources, ParameterField<Integer> runAsUser,
+      Set<Integer> usedPorts, boolean isHarnessManaged) {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
     PluginContainerResources pluginContainerResources = PluginContainerResources.newBuilder()
@@ -85,7 +85,7 @@ public class PluginInfoProviderHelper {
     if (runAsUser != null && runAsUser.getValue() != null) {
       pluginDetailsBuilder.setRunAsUser(runAsUser.getValue());
     }
-    pluginDetailsBuilder.setIsHarnessManaged(BoolValue.of(true));
+    pluginDetailsBuilder.setIsHarnessManaged(BoolValue.of(isHarnessManaged));
 
     // Set used port and available port information
     PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);

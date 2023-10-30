@@ -15,7 +15,8 @@ import io.harness.annotations.dev.ProductModule;
 import lombok.Builder;
 import lombok.Data;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDC)

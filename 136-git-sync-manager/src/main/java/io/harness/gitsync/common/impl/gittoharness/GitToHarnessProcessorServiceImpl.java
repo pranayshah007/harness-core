@@ -22,7 +22,10 @@ import static java.util.stream.Collectors.toMap;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
@@ -92,6 +95,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -376,6 +380,9 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
       final EntityType entityType = entry.getKey();
       final List<ChangeSet> fileContents = entry.getValue();
       Microservice microservice = entityTypeMicroserviceMap.get(entityType);
+      if (microservice == null) {
+        continue;
+      }
       if (groupedFilesByMicroservices.containsKey(microservice)) {
         groupedFilesByMicroservices.get(microservice).addAll(fileContents);
       } else {

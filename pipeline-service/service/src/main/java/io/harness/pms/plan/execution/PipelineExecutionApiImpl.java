@@ -48,7 +48,7 @@ public class PipelineExecutionApiImpl implements PipelineExecutionApi {
           harnessAccount, org, project, pipeline, module, inputSetPipelineYaml, false, notifyOnlyUser, notes);
       PipelineExecuteResponseBody pipelineExecuteResponseBody = new PipelineExecuteResponseBody();
       ExecutionDetails executionDetails = new ExecutionDetails();
-      executionDetails.setExecutionId(planExecutionResponseDto.getPlanExecution().getPlanId());
+      executionDetails.setExecutionId(planExecutionResponseDto.getPlanExecution().getUuid());
       executionDetails.setStatus(planExecutionResponseDto.getPlanExecution().getStatus().toString());
       pipelineExecuteResponseBody.setExecutionDetails(executionDetails);
       return Response.ok().entity(pipelineExecuteResponseBody).build();

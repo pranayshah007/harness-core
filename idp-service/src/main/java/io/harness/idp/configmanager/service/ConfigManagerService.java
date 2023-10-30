@@ -36,7 +36,7 @@ public interface ConfigManagerService {
 
   MergedAppConfigEntity mergeAndSaveAppConfig(String accountIdentifier) throws Exception;
 
-  MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception;
+  MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier);
 
   List<AppConfigEntity> deleteDisabledPluginsConfigsDisabledMoreThanAWeekAgo();
   String mergeAllAppConfigsForAccount(String account) throws Exception;

@@ -77,7 +77,6 @@ import io.harness.validation.SuppressValidation;
 import io.harness.validation.Update;
 
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.AzureContainerRegistry;
 import software.wings.beans.EntityType;
 import software.wings.beans.Event.Type;
@@ -85,6 +84,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;

@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.k8s.taskhandler;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.DeleteFailedReleaseResources;
@@ -23,8 +22,11 @@ import static io.harness.logging.LogLevel.WARN;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
@@ -42,6 +44,7 @@ import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse;
+import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse.K8sRollingDeployRollbackResponseBuilder;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -51,6 +54,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @NoArgsConstructor
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -113,12 +117,16 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
       List<K8sPod> pods =
           k8sRollingRollbackBaseHandler.getPods(timeoutInMin, rollbackHandlerConfig, request.getReleaseName());
 
-      K8sRollingDeployRollbackResponse rollbackResponse =
-          K8sRollingDeployRollbackResponse.builder().k8sPodList(pods).build();
+      K8sRollingDeployRollbackResponseBuilder rollbackResponse =
+          K8sRollingDeployRollbackResponse.builder().k8sPodList(pods);
+      if (rollbackHandlerConfig.getPreviousRollbackEligibleRelease() != null) {
+        rollbackResponse.releaseNumber(rollbackHandlerConfig.getPreviousRollbackEligibleRelease().getReleaseNumber());
+      }
+
       k8sRollingRollbackBaseHandler.postProcess(rollbackHandlerConfig, request.getReleaseName());
       waitForSteadyStateLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
       return K8sTaskExecutionResponse.builder()
-          .k8sTaskResponse(rollbackResponse)
+          .k8sTaskResponse(rollbackResponse.build())
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
     } catch (Exception e) {

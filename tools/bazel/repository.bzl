@@ -7,4 +7,4 @@
 #For Local and CI Builds in GKE -> GKE hosted artifactory will be selected.
 #For CI Builds in Hosted Machines -> OVH hosted artifactory will be selected.
 
-REPOSITORY = "harness-artifactory"
+REPOSITORY = "harness-artifactory-ovh"

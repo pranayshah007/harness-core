@@ -1,41 +1,41 @@
-inputs:
-  image:
-    type: string
-    desc: image name
-    default: golang
-  repo:
-    type: string
-    desc: repository name
-    required: true
-    prompt: true
-  count:
-    type: number
-  password:
-    type: secret
-    desc: docker password
-    allowedValues: []
-    required: true
-  defaultInput1:
-    type: string
-    default: defaultValue
-  defaultInput2:
-    type: string
-    default: defaultValue
-
 version: 1
 name: Java with Maven
-stages:
-  - name: Build and test Java app
-    type: ci
-    spec:
-    strategy:
-    steps:
-      - name: publish
-        type: plugin
-        spec:
-          image: <+ inputs.image>
-          settings:
-            repo: <+ inputs.repo>
-            password: <+ inputs.password>
-            f1: <+inputs.defaultInput1>
-            f2: <+inputs.defaultInput2>
+spec:
+  stages:
+    - name: Build and test Java app
+      type: ci
+      spec:
+      strategy:
+      steps:
+        - name: publish
+          type: plugin
+          spec:
+            image: <+ inputs.image>
+            settings:
+              repo: <+ inputs.repo>
+              password: <+ inputs.password>
+              f1: <+inputs.defaultInput1>
+              f2: <+inputs.defaultInput2>
+  inputs:
+    image:
+      type: string
+      desc: image name
+      default: golang
+    repo:
+      type: string
+      desc: repository name
+      required: true
+      prompt: true
+    count:
+      type: number
+    password:
+      type: secret
+      desc: docker password
+      allowedValues: [ ]
+      required: true
+    defaultInput1:
+      type: string
+      default: defaultValue
+    defaultInput2:
+      type: string
+      default: defaultValue

@@ -1,0 +1,7 @@
+policies:
+  - name: ebs-unattached-list
+    resource: ebs
+    comments: |
+      List any unattached EBS volumes.
+    filters:
+      - Attachments: []

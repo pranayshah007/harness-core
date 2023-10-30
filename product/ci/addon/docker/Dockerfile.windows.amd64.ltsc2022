@@ -1,0 +1,29 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+# Create image for ci-addon which will be run as an entrypoint in customer
+# container
+#
+# Build the ci-addon docker image using:
+# > bazel build --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64 //product/ci/addon:ci-addon
+# > bazel build --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64 //product/ci/split_tests:split_tests
+# > cp $(bazel info bazel-bin)/product/ci/split_tests/split_tests_/split_tests.exe $(bazel info bazel-bin)/product/ci/addon/split_tests.exe
+# > docker build -t harness/ci-addon:tag1.0 -f product/ci/addon/docker/Dockerfile.windows.amd64.ltsc2022 $(bazel info bazel-bin)/product/ci/addon/
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022 as core
+
+
+FROM mcr.microsoft.com/powershell:nanoserver-ltsc2022
+USER ContainerAdministrator
+
+COPY --from=core /windows/system32/netapi32.dll /windows/system32/netapi32.dll
+ADD ci-addon_/ci-addon.exe C:/addon.exe
+ADD split_tests.exe C:/split_tests.exe
+ENV GODEBUG=netdns=go
+
+RUN setx /M PATH "%PATH%;C:\Program Files\PowerShell"
+SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ENTRYPOINT [ "C:\\addon.exe" ]

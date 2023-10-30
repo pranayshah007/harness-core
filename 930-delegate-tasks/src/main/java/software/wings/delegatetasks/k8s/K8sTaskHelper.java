@@ -211,8 +211,8 @@ public class K8sTaskHelper {
           String kustomizePath = manifestFilesDirectory + '/' + kustomizeDirPath;
           k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         }
-        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            pluginRootDir, kustomizeDirPath, executionLogCallback, Collections.emptyMap());
+        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams, pluginRootDir, kustomizeDirPath,
+            executionLogCallback, Collections.emptyMap());
       case OC_TEMPLATES:
         return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
             k8sDelegateManifestConfig.getGitFileConfig().getFilePath(), executionLogCallback, manifestOverrideFiles);
@@ -280,9 +280,9 @@ public class K8sTaskHelper {
       case KustomizeSourceRepo:
         KustomizeConfig kustomizeConfig = k8sDelegateManifestConfig.getKustomizeConfig();
         String pluginRootDir = kustomizeConfig != null ? kustomizeConfig.getPluginRootDir() : null;
-        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(), pluginRootDir,
-            manifestFilesDirectory, filesList, k8sTaskParameters.isUseLatestKustomizeVersion(), manifestOverrideFiles,
-            executionLogCallback, Collections.emptyMap());
+        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, pluginRootDir, manifestFilesDirectory,
+            filesList, k8sTaskParameters.isUseLatestKustomizeVersion(), manifestOverrideFiles, executionLogCallback,
+            Collections.emptyMap());
 
       default:
         unhandled(storeType);

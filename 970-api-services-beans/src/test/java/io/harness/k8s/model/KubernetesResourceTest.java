@@ -571,6 +571,18 @@ public class KubernetesResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRedactSecretValuesCustomMask() throws Exception {
+    URL url = this.getClass().getResource("/secret.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+    resource = processYaml(resource.redactSecretValues(resource.getSpec(), "masked+secret", "xxx")).get(0);
+    assertThat(resource.getField("stringData.cred")).isEqualTo("xxx");
+    assertThat(resource.getField("data.username")).isEqualTo("masked+secret");
+  }
+
+  @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testUpdateConfigMapAndSecretRef() throws Exception {
@@ -977,6 +989,121 @@ public class KubernetesResourceTest extends CategoryTest {
       KubernetesYamlException exception = (KubernetesYamlException) throwable;
       String errorMessage = exception.getParams().get("reason").toString();
       assertEquals(expectedError, errorMessage);
+      return true;
+    });
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromDeploymentConfig() throws IOException {
+    URL url = this.getClass().getResource("/deployment-config.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    Map<String, List<String>> labelSelectors = resource.getLabelSelectors();
+
+    assertThat(labelSelectors).hasSize(1);
+    List<String> labels = labelSelectors.get("anshul-dc");
+    assertThat(labels).hasSize(1);
+    assertThat(labels.get(0)).isEqualTo("name=anshul-dc");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromDeploymentWhenMatchExpressions() throws IOException {
+    URL url = this.getClass().getResource("/deployment-with-match-expressions-selectors.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    Map<String, List<String>> labelSelectors = resource.getLabelSelectors();
+
+    assertThat(labelSelectors).hasSize(1);
+    List<String> labels = labelSelectors.get("deployment-name");
+    assertThat(labels).hasSize(4);
+    assertThat(labels.contains("label1=label-1-name")).isTrue();
+    assertThat(labels.contains("label2=label-2-name")).isTrue();
+    assertThat(labels.contains("label3 in (label-3-a, label-3-b)")).isTrue();
+    assertThat(labels.contains("label4 notin (label-4)")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromDaemonSet() throws IOException {
+    URL url = this.getClass().getResource("/daemonset.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    Map<String, List<String>> labelSelectors = resource.getLabelSelectors();
+
+    assertThat(labelSelectors).hasSize(1);
+    List<String> labels = labelSelectors.get("fluentd-elasticsearch");
+    assertThat(labels).hasSize(1);
+    assertThat(labels.get(0)).isEqualTo("name=fluentd-elasticsearch");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromStatefullSet() throws IOException {
+    URL url = this.getClass().getResource("/statefulset.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    Map<String, List<String>> labelSelectors = resource.getLabelSelectors();
+
+    assertThat(labelSelectors).hasSize(1);
+    List<String> labels = labelSelectors.get("web");
+    assertThat(labels).hasSize(1);
+    assertThat(labels.get(0)).isEqualTo("app=nginx");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromJob() throws IOException {
+    URL url = this.getClass().getResource("/statefulset.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    Map<String, List<String>> labelSelectors = resource.getLabelSelectors();
+
+    assertThat(labelSelectors).hasSize(1);
+    List<String> labels = labelSelectors.get("web");
+    assertThat(labels).hasSize(1);
+    assertThat(labels.get(0)).isEqualTo("app=nginx");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromJobFails() throws IOException {
+    URL url = this.getClass().getResource("/job.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    assertThatThrownBy(resource::getLabelSelectors).matches(throwable -> {
+      KubernetesYamlException exception = (KubernetesYamlException) throwable;
+      String errorMessage = exception.getParams().get("reason").toString();
+      assertEquals("Job spec does not have selector", errorMessage);
+      return true;
+    });
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetLabelSelectorsFromServiceFails() throws IOException {
+    URL url = this.getClass().getResource("/service.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    assertThatThrownBy(resource::getLabelSelectors).matches(throwable -> {
+      InvalidRequestException exception = (InvalidRequestException) throwable;
+      String errorMessage = exception.getParams().get("message").toString();
+      assertEquals("Unhandled Kubernetes resource Service while getting labels to selector", errorMessage);
       return true;
     });
   }

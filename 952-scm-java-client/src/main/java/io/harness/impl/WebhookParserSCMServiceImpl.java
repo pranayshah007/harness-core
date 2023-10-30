@@ -107,7 +107,7 @@ public class WebhookParserSCMServiceImpl implements WebhookParserSCMService {
       ReleaseHook releaseHook = parseWebhookResponse.getRelease();
       builder = convertRelease(releaseHook);
     } else {
-      log.error("Unsupported webhook event");
+      log.warn("Unsupported webhook event");
       throw new InvalidRequestException("Unsupported webhook event", USER);
     }
     return builder.build();

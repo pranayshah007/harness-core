@@ -189,6 +189,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(1)
+                        .setIdentifierPostFix("_0")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT)
@@ -236,6 +237,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                         .setStrategyMetadata(
                                             StrategyMetadata.newBuilder()
                                                 .setTotalIterations(1)
+                                                .setIdentifierPostFix("_0")
                                                 .setMatrixMetadata(
                                                     MatrixMetadata.newBuilder()
                                                         .addMatrixCombination(0)
@@ -305,6 +307,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
+                        .setIdentifierPostFix("_0")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
@@ -317,6 +320,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
+                        .setIdentifierPostFix("_1")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
@@ -386,6 +390,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
+                        .setIdentifierPostFix("_0")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
@@ -398,6 +403,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
+                        .setIdentifierPostFix("_1")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .addAllMatrixKeysToSkipInName(MultiDeploymentSpawnerStep.SKIP_KEYS_LIST_FROM_STAGE_NAME)
@@ -469,6 +475,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(0)
+                        .setIdentifierPostFix("_0")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
@@ -481,6 +488,7 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                     StrategyMetadata.newBuilder()
                         .setTotalIterations(2)
                         .setCurrentIteration(1)
+                        .setIdentifierPostFix("_1")
                         .setMatrixMetadata(
                             MatrixMetadata.newBuilder()
                                 .addMatrixCombination(1)

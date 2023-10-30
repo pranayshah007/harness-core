@@ -26,6 +26,8 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -56,6 +58,7 @@ public class ApplicationSettingsStep implements SyncExecutable<ApplicationSettin
     logCallback.saveExecutionLog("Processing application settings...");
     StoreConfigWrapper storeConfig = stepParameters.getApplicationSettings().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
+    azureHelperService.publishSecretRuntimeUsage(ambiance, storeConfig);
     logCallback.saveExecutionLog("Processed application settings");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)

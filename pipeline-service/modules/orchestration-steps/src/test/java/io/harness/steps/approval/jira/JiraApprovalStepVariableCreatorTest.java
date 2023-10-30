@@ -106,7 +106,8 @@ public class JiraApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_approval.identifier",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_approval.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.status");
 
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get("AXE2wdxvRPO0zRfCaQByAQ") // pipeline uuid

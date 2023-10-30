@@ -1,0 +1,72 @@
+{
+  "AutoScalingGroupName": "AutoScalingGroupName",
+  "AutoScalingGroupARN": "arn:aws:autoscaling:us-east-1:AccountId:autoScalingGroup:AutoScalingGroupId:autoScalingGroupName/AutoScalingGroupName",
+  "LaunchConfigurationName": "LaunchConfigurationName",
+  "MinSize": 0,
+  "MaxSize": 2,
+  "DesiredCapacity": 0,
+  "DefaultCooldown": 300,
+  "AvailabilityZones": [
+    "us-east-1a",
+    "us-east-1b"
+  ],
+  "LoadBalancerNames": [],
+  "TargetGroupARNs": [],
+  "HealthCheckType": "EC2",
+  "HealthCheckGracePeriod": 0,
+  "Instances": [],
+  "CreatedTime": "2022-12-02T16:33:03.513000+00:00",
+  "SuspendedProcesses": [],
+  "VPCZoneIdentifier": "subnet-id1,subnet-id2",
+  "EnabledMetrics": [],
+  "Tags": [
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "Description",
+      "Value": "Description",
+      "PropagateAtLaunch": true
+    },
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "Name",
+      "Value": "Name",
+      "PropagateAtLaunch": true
+    },
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "aws:cloudformation:logical-id",
+      "Value": "LogicalId",
+      "PropagateAtLaunch": true
+    },
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "aws:cloudformation:stack-id",
+      "Value": "arn:aws:cloudformation:us-east-1:AccountId:stack/CloudformationStackName/CloudformationStackId",
+      "PropagateAtLaunch": true
+    },
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "aws:cloudformation:stack-name",
+      "Value": "CloudformationStackName",
+      "PropagateAtLaunch": true
+    },
+    {
+      "ResourceId": "AutoScalingGroupName",
+      "ResourceType": "auto-scaling-group",
+      "Key": "ttl",
+      "Value": "-1",
+      "PropagateAtLaunch": true
+    }
+  ],
+  "TerminationPolicies": [
+    "Default"
+  ],
+  "NewInstancesProtectedFromScaleIn": false,
+  "ServiceLinkedRoleARN": "arn:aws:iam::AccountId:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+  "TrafficSources": []
+}

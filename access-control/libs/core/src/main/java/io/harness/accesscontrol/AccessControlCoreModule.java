@@ -8,6 +8,7 @@
 package io.harness.accesscontrol;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 
 import io.harness.accesscontrol.acl.ACLModule;
 import io.harness.accesscontrol.permissions.PermissionsModule;
@@ -18,6 +19,8 @@ import io.harness.accesscontrol.roles.RoleModule;
 import io.harness.accesscontrol.scopes.ScopeModule;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.outbox.OutboxPollConfiguration;
+import io.harness.outbox.TransactionOutboxModule;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
@@ -29,12 +32,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 @OwnedBy(PL)
 public class AccessControlCoreModule extends AbstractModule {
   private static AccessControlCoreModule instance;
+  private final OutboxPollConfiguration outboxPollConfig;
+  private final boolean exportMetricsToStackDriver;
 
-  private AccessControlCoreModule() {}
+  private AccessControlCoreModule(OutboxPollConfiguration outboxPollConfig, boolean exportMetricsToStackDriver) {
+    this.outboxPollConfig = outboxPollConfig;
+    this.exportMetricsToStackDriver = exportMetricsToStackDriver;
+  }
 
-  public static synchronized AccessControlCoreModule getInstance() {
+  public static synchronized AccessControlCoreModule getInstance(
+      OutboxPollConfiguration outboxPollConfig, boolean exportMetricsToStackDriver) {
     if (instance == null) {
-      instance = new AccessControlCoreModule();
+      instance = new AccessControlCoreModule(outboxPollConfig, exportMetricsToStackDriver);
     }
     return instance;
   }
@@ -48,6 +57,8 @@ public class AccessControlCoreModule extends AbstractModule {
     install(PrincipalModule.getInstance());
     install(RoleAssignmentModule.getInstance());
     install(ACLModule.getInstance());
+    install(new TransactionOutboxModule(
+        outboxPollConfig, ACCESS_CONTROL_SERVICE.getServiceId(), exportMetricsToStackDriver));
     registerRequiredBindings();
   }
 

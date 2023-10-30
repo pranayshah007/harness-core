@@ -7,6 +7,8 @@
 
 package io.harness.cvng.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class PrometheusQueryUtils {
       throw new BadRequestException("Bad Prometheus Query: " + rawQuery);
     }
     rawQuery = cleanUpWhitespacesOnAggregationOperators(rawQuery);
+    rawQuery = removeRedundantParentheses(rawQuery);
     StringBuilder query = new StringBuilder(rawQuery);
     log.info("Original PromQL Query: " + query);
     Map<Integer, Integer> bracketPairs = mapBracketPairIndexes(query.toString());
@@ -59,16 +62,11 @@ public class PrometheusQueryUtils {
           bracketPairs = mapBracketPairIndexes(query.toString());
           int nextBrk = bracketPairs.get(startBracketIdx) + 1;
           int endLHSBrk = bracketPairs.get(nextBrk);
-          additionalMove = wrapWithSameOperator(query, matchAggOperator.start() - 1, SII, operator, endLHSBrk);
         } else { // Operate at RHS
           if (endBracketIdx + 4 <= query.length()
               && "by(".equals(query.substring(endBracketIdx + 1, endBracketIdx + 4))) {
             int startBracketOfByRHSClause = endBracketIdx + 3;
             appendInsideAByClause(SII, query, startBracketOfByRHSClause);
-            bracketPairs = mapBracketPairIndexes(query.toString());
-            int endBracketOfByRHSClause = bracketPairs.get(startBracketOfByRHSClause);
-            additionalMove =
-                wrapWithSameOperator(query, matchAggOperator.start() - 1, SII, operator, endBracketOfByRHSClause);
           } else {
             appendAtEndWithFullClause(SII, query, endBracketIdx);
           }
@@ -89,6 +87,8 @@ public class PrometheusQueryUtils {
     rawQuery = rawQuery.replaceAll(REGEX_CLOSING_PARENTHESIS + "\\s+" + REGEX_PARENTHESIS_OPEN, ")(");
     rawQuery = rawQuery.replaceAll(PROMQL_CLAUSE_BY + "\\s+" + REGEX_PARENTHESIS_OPEN, "by(");
     rawQuery = rawQuery.replaceAll(REGEX_CLOSING_PARENTHESIS + "\\s+" + PROMQL_CLAUSE_BY, ")by");
+    rawQuery = rawQuery.replaceAll(REGEX_PARENTHESIS_OPEN + "\\s+" + REGEX_PARENTHESIS_OPEN, "((");
+    rawQuery = rawQuery.replaceAll(REGEX_CLOSING_PARENTHESIS + "\\s+" + REGEX_CLOSING_PARENTHESIS, "))");
     for (String operator : aggregationOperatorList) {
       rawQuery = rawQuery.replaceAll(operator + "\\s+" + REGEX_PARENTHESIS_OPEN, operator + "(");
       rawQuery = rawQuery.replaceAll(operator + "\\s+" + PROMQL_CLAUSE_BY, operator + " by");
@@ -106,17 +106,6 @@ public class PrometheusQueryUtils {
     pattern.deleteCharAt(pattern.length() - 1);
     pattern.append(")\\b");
     return pattern;
-  }
-
-  private static int wrapWithSameOperator(
-      StringBuilder query, int startBracketIdx, String SII, String operator, int endBracketIdx) {
-    String byClause = " by (" + SII + ")";
-    String suffix = ")" + byClause; // edge case we have reached end
-    query.insert(Math.min(endBracketIdx + 1, query.length()), suffix);
-    String prefix =
-        operator.replaceAll(PROMQL_CLAUSE_BY, "") + '('; // we always use one style sum() by() and not sum by()()
-    query.insert(startBracketIdx + 1, prefix);
-    return prefix.length();
   }
 
   private static void appendInsideAByClause(String SII, StringBuilder query, int startByBracket) {
@@ -149,6 +138,40 @@ public class PrometheusQueryUtils {
       }
     }
     return stack.size() == 0;
+  }
+
+  private static String removeRedundantParentheses(String queryWithoutWhiteSpaces) {
+    Stack<Integer> parenthesesOpeningIndexes = new Stack<>();
+    StringBuilder queryBuilder = new StringBuilder(queryWithoutWhiteSpaces);
+    Integer childParenthesesOpenIndex = null, childParenthesesCloseIndex = null;
+    List<Integer> indexesToBeRemoved = new ArrayList<>();
+    for (int i = 0; i < queryWithoutWhiteSpaces.length(); i++) {
+      if (queryWithoutWhiteSpaces.charAt(i) == '(') {
+        if (parenthesesOpeningIndexes.size() < 1) {
+          // then there is no child indexes
+          childParenthesesOpenIndex = null;
+          childParenthesesCloseIndex = null;
+        }
+        parenthesesOpeningIndexes.push(i);
+      }
+      if (queryWithoutWhiteSpaces.charAt(i) == ')') {
+        Integer openingIndex = parenthesesOpeningIndexes.pop(), closingIndex = i;
+        if (childParenthesesOpenIndex != null && childParenthesesCloseIndex != null) {
+          if (childParenthesesOpenIndex == openingIndex + 1 && childParenthesesCloseIndex == closingIndex - 1) {
+            indexesToBeRemoved.add(openingIndex);
+            indexesToBeRemoved.add(closingIndex);
+          }
+        }
+        childParenthesesCloseIndex = closingIndex;
+        childParenthesesOpenIndex = openingIndex;
+      }
+    }
+
+    Collections.sort(indexesToBeRemoved, Collections.reverseOrder());
+
+    indexesToBeRemoved.stream().forEach(i -> queryBuilder.deleteCharAt(i));
+
+    return queryBuilder.toString();
   }
 
   private static boolean handleClosingAndCheck(Stack<Character> st, char currentCharacter) {

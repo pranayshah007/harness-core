@@ -9,15 +9,18 @@ package io.harness.beans.yaml.extended.infrastrucutre;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.IMAGE_PULL_POLICY_ENUM_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
@@ -103,5 +106,9 @@ public class K8sDirectInfraYaml implements Infrastructure {
     @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
     private ParameterField<OSType> os;
     @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> harnessImageConnectorRef;
+
+    @YamlSchemaTypes({expression})
+    @ApiModelProperty(dataType = IMAGE_PULL_POLICY_ENUM_CLASSPATH)
+    private ParameterField<ImagePullPolicy> imagePullPolicy;
   }
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
@@ -28,6 +30,8 @@ import io.harness.serializer.spring.converters.outcomes.PmsOutcomeReadConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeWriteConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoReadConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoWriteConverter;
+import io.harness.serializer.spring.converters.retryInfo.RetryInfoReadConverter;
+import io.harness.serializer.spring.converters.retryInfo.RetryInfoWriteConverter;
 import io.harness.serializer.spring.converters.sdk.SdkModuleInfoReadConverter;
 import io.harness.serializer.spring.converters.sdk.SdkModuleInfoWriteConverter;
 import io.harness.serializer.spring.converters.steptype.StepTypeReadConverter;
@@ -39,6 +43,7 @@ import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class PmsCommonsModuleRegistrars {
@@ -65,5 +70,5 @@ public class PmsCommonsModuleRegistrars {
           PlanNodeProtoReadConverter.class, PlanNodeProtoWriteConverter.class, NodeExecutionReadConverter.class,
           NodeExecutionWriteConverter.class, SdkModuleInfoReadConverter.class, SdkModuleInfoWriteConverter.class,
           OrchestrationMapReadConverter.class, OrchestrationMapWriteConverter.class, PmsOutcomeReadConverter.class,
-          PmsOutcomeWriteConverter.class);
+          PmsOutcomeWriteConverter.class, RetryInfoReadConverter.class, RetryInfoWriteConverter.class);
 }

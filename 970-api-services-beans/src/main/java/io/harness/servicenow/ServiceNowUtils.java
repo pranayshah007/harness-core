@@ -6,25 +6,34 @@
  */
 
 package io.harness.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
+@Slf4j
 public class ServiceNowUtils {
   public String prepareTicketUrlFromTicketNumber(String baseUrl, String ticketNumber, String ticketType) {
     try {
@@ -56,5 +65,46 @@ public class ServiceNowUtils {
   @NotNull
   private static String getUrlWithPath(String baseUrl, String ticketType) {
     return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "nav_to.do?uri=/" + ticketType.toLowerCase();
+  }
+
+  public static Map<String, ServiceNowFieldValueNG> getListOfFieldsFromStringOfFields(
+      String serviceNowFieldJsonNGListAsString) {
+    if (StringUtils.isBlank(serviceNowFieldJsonNGListAsString)) {
+      return Collections.emptyMap();
+    }
+    String[] fieldList = serviceNowFieldJsonNGListAsString.split("\\^");
+
+    Map<String, ServiceNowFieldValueNG> parsedFields = new HashMap<>();
+
+    for (String field : fieldList) {
+      if ("EQ".equals(field)) {
+        break;
+      }
+      String[] keyValue = field.split("=");
+      if (keyValue.length == 2) {
+        parsedFields.put(keyValue[0].trim(), ServiceNowFieldValueNG.builder().value(keyValue[1].trim()).build());
+      }
+    }
+    return parsedFields;
+  }
+
+  public static String getTicketUrlFromTicketIdOrNumber(
+      String serviceNowTicketType, String url, ServiceNowTicketNG ticketNg) {
+    String ticketUrlFromTicketId;
+
+    if (ticketNg.getNumber() != null) {
+      ticketUrlFromTicketId =
+          ServiceNowUtils.prepareTicketUrlFromTicketNumber(url, ticketNg.getNumber(), serviceNowTicketType);
+    } else if (ticketNg.getFields() != null && ticketNg.getFields().get("sys_id") != null
+        && ticketNg.getFields().get("sys_id").getDisplayValue() != null) {
+      log.info("ServiceNow response is not having field number");
+      ticketUrlFromTicketId = ServiceNowUtils.prepareTicketUrlFromTicketId(
+          url, ticketNg.getFields().get("sys_id").getDisplayValue(), serviceNowTicketType);
+    } else {
+      log.info("ServiceNow response is not having field number and sys_id");
+      throw new ServiceNowException(
+          String.format("Both sysId and ticketNumber are not present in serviceNow Response"), SERVICENOW_ERROR, USER);
+    }
+    return ticketUrlFromTicketId;
   }
 }

@@ -8,8 +8,11 @@
 package io.harness.cdng.infra.beans;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -26,12 +29,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.K8sDirectInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sDirectInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   String namespace;
   String releaseName;
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
+  String infrastructureKeyShort;
 
   @Override
   public String getKind() {

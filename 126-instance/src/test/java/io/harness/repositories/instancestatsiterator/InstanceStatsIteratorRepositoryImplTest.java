@@ -11,15 +11,12 @@ import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.models.InstanceStatsIterator;
 import io.harness.repositories.instancestats.InstanceStatsFields;
 import io.harness.rule.Owner;
@@ -48,7 +45,6 @@ public class InstanceStatsIteratorRepositoryImplTest extends InstancesTestBase {
   @Mock private PreparedStatement statement;
   @Mock private Connection dbConnection;
   @Mock private ResultSet resultSet;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks InstanceStatsIteratorRepositoryImpl instanceStatsIteratorRepository;
 
   @Test
@@ -78,7 +74,6 @@ public class InstanceStatsIteratorRepositoryImplTest extends InstancesTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void updateTimestampForIteratorTest() throws Exception {
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsIteratorQuery.UPDATE_RECORD.query())).thenReturn(statement);
     statement.setTimestamp(1, new Timestamp(timestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
@@ -97,7 +92,6 @@ public class InstanceStatsIteratorRepositoryImplTest extends InstancesTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void getLatestRecordTestThrowException() throws SQLException {
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(true);
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsIteratorQuery.UPDATE_RECORD.query())).thenReturn(statement);
     statement.setTimestamp(1, new Timestamp(timestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
@@ -112,16 +106,6 @@ public class InstanceStatsIteratorRepositoryImplTest extends InstancesTestBase {
                            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, timestamp.getTime()))
         .doesNotThrowAnyException();
     verify(dbConnection, times(4)).prepareStatement(InstanceStatsIteratorQuery.UPDATE_RECORD.query());
-  }
-
-  @Test
-  @Owner(developers = RISHABH)
-  @Category(UnitTests.class)
-  public void updateTimestampForIteratorTestFFDisabled() throws Exception {
-    when(cdFeatureFlagHelper.isEnabled(eq(ACCOUNT_ID), any())).thenReturn(false);
-    instanceStatsIteratorRepository.updateTimestampForIterator(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, timestamp.getTime());
-    verify(timeScaleDBService, times(0)).getDBConnection();
   }
 
   @Test

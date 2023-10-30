@@ -14,13 +14,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.rule.Owner;
 
 import io.fabric8.utils.Lists;
+import java.util.Optional;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,6 +35,7 @@ import org.mockito.MockitoAnnotations;
 
 public class PipelineExecutionUpdateEventHandlerTest extends CategoryTest {
   @Mock private GitBuildStatusUtility gitBuildStatusUtility;
+  @Mock private StepExecutionParametersRepository stepExecutionParametersRepository;
   @InjectMocks private PipelineExecutionUpdateEventHandler pipelineExecutionUpdateEventHandler;
 
   @Before
@@ -52,6 +56,9 @@ public class PipelineExecutionUpdateEventHandlerTest extends CategoryTest {
                           .addAllLevels(Lists.newArrayList(Level.newBuilder().setRuntimeId("node1").build()))
                           .build())
             .build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
     when(gitBuildStatusUtility.shouldSendStatus(any())).thenReturn(true);
     pipelineExecutionUpdateEventHandler.handleEvent(orchestrationEvent);
 

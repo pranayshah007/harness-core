@@ -6,18 +6,38 @@
  */
 
 package io.harness.pms.sdk.execution.events;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkEventFrameworkConstants {
   public static final String PT_INTERRUPT_CONSUMER = "INTERRUPT_CONSUMER";
+
+  public static final String SDK_INTERRUPT_CONSUMER = "SDK_INTERRUPT_CONSUMER";
+
   public static final String PT_FACILITATOR_CONSUMER = "FACILITATOR_CONSUMER";
+
+  public static final String SDK_FACILITATOR_CONSUMER = "SDK_FACILITATOR_CONSUMER";
+
   public static final String PT_NODE_START_CONSUMER = "NODE_START_CONSUMER";
+
+  public static final String SDK_NODE_START_CONSUMER = "SDK_NODE_START_CONSUMER";
+
   public static final String PT_PROGRESS_CONSUMER = "PROGRESS_CONSUMER";
+  public static final String SDK_PROGRESS_CONSUMER = "SDK_PROGRESS_CONSUMER";
+
   public static final String PT_NODE_ADVISE_CONSUMER = "NODE_ADVISE_CONSUMER";
+
+  public static final String SDK_NODE_ADVISE_CONSUMER = "SDK_NODE_ADVISE_CONSUMER";
+
   public static final String PT_NODE_RESUME_CONSUMER = "NODE_RESUME_CONSUMER";
+
+  public static final String SDK_NODE_RESUME_CONSUMER = "SDK_NODE_RESUME_CONSUMER";
+
   public static final String PT_ORCHESTRATION_EVENT_CONSUMER = "ORCHESTRATION_EVENT_CONSUMER";
   public static final String PT_ORCHESTRATION_EVENT_LISTENER = "ORCHESTRATION_EVENT_LISTENER";
 

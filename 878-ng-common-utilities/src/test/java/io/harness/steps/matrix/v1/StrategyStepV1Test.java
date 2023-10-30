@@ -23,9 +23,11 @@ import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -83,11 +85,19 @@ public class StrategyStepV1Test extends CategoryTest {
     StrategyStepParametersV1 stepParameters =
         StrategyStepParametersV1.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
 
-    when(matrixConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
 
-    strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+    when(matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance)).thenReturn(new ArrayList<>());
 
-    verify(matrixConfigService).fetchChildren(strategyConfig, "childNodeId");
+    strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
+
+    verify(matrixConfigService).fetchChildren(strategyConfig, "childNodeId", ambiance);
   }
 
   @Test
@@ -113,21 +123,29 @@ public class StrategyStepV1Test extends CategoryTest {
     StrategyStepParametersV1 stepParameters =
         StrategyStepParametersV1.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
 
-    when(forConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+
+    when(forConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance)).thenReturn(new ArrayList<>());
     ChildrenExecutableResponse childrenExecutableResponse =
-        strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+        strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
 
     // No children were returned from forConfigService so by default one child will be returned.
     assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(1);
     assertThat(childrenExecutableResponse.getMaxConcurrency()).isEqualTo(0);
     assertThat(childrenExecutableResponse.getChildren(0).getChildNodeId()).isEqualTo("childNodeId");
 
-    when(forConfigService.fetchChildren(strategyConfig, "childNodeId"))
+    when(forConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance))
         .thenReturn(List.of(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build(),
             ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build(),
             ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build()));
     childrenExecutableResponse =
-        strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+        strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
 
     // 3 children were returned from forConfigService and maxConcurrency=2 defined in yaml.
     assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(3);

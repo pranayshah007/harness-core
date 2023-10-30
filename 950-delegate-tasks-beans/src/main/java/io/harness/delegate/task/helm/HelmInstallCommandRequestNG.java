@@ -39,12 +39,12 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
       String gcpKeyPath, boolean ignoreReleaseHistFailStatus, String releaseHistoryPrefix,
       List<ServiceHookDelegateConfig> serviceHooks, boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck,
-      boolean sendTaskProgressEvents, boolean disableFabric8) {
+      boolean sendTaskProgressEvents, boolean disableFabric8, boolean improvedHelmTracking) {
     super(releaseName, HelmCommandType.INSTALL, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
         useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, useRefactorSteadyStateCheck,
-        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8);
+        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8, improvedHelmTracking);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
     this.ignoreReleaseHistFailStatus = ignoreReleaseHistFailStatus;

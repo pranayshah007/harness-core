@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
 import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.steps.Step;
@@ -33,4 +34,13 @@ public class DummyExecutionStrategy implements ExecuteStrategy {
   public void progress(ProgressPackage progressPackage) {
     // do Nothing
   }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {}
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {}
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {}
 }

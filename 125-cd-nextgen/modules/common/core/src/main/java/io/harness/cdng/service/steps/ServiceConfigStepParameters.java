@@ -6,19 +6,24 @@
  */
 
 package io.harness.cdng.service.steps;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
@@ -30,10 +35,8 @@ public class ServiceConfigStepParameters implements StepParameters {
 
   String childNodeId;
 
-  // Todo(Alexei) Remove this when @RecastIgnore annotation is added
   @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(
-        ServiceConfigStepParameters.builder().useFromStage(useFromStage).serviceRef(serviceRef).build());
+  public List<String> excludeKeysFromStepInputs() {
+    return new LinkedList<>(Arrays.asList("childNodeId"));
   }
 }

@@ -6,12 +6,14 @@
  */
 
 package io.harness.expression;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -45,6 +47,7 @@ import org.apache.commons.logging.impl.NoOpLog;
 import org.apache.commons.text.StrLookup;
 import org.apache.commons.text.StrSubstitutor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j
@@ -178,12 +181,23 @@ public class ExpressionEvaluatorUtils {
    * @return value wrapped in optional if field is found, else Optional.none()
    */
   public static Optional<Object> fetchField(Object obj, String field) {
+    return fetchField(engine, obj, field);
+  }
+
+  /**
+   * Fetch field from inside the object using jexl conventions. POJSs, Maps, Classes having get method are supported.
+   *
+   * @param obj the object whose field we have to find
+   * @param field the field name
+   * @return value wrapped in optional if field is found, else Optional.none()
+   */
+  public static Optional<Object> fetchField(JexlEngine jexlEngine, Object obj, String field) {
     if (obj == null || field == null) {
       return Optional.empty();
     }
 
     try {
-      Object retObj = engine.getProperty(obj, field);
+      Object retObj = jexlEngine.getProperty(obj, field);
       return Optional.ofNullable(retObj);
     } catch (JexlException ex) {
       log.debug(format("Could not fetch field '%s'", field), ex);

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: elb-delete-unused
+cloudProvider: AWS
+resourceType: elb
+description: Delete ELB which are not used
+rulesYamlPath: ../elb-delete-unused.yml

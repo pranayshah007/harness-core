@@ -80,6 +80,9 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
       Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
           DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
 
+  private static final List<String> BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS =
+      Arrays.asList(DELETE_NEW_ELASTI_GROUP);
+
   @Inject private ElastigroupEntityHelper entityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
@@ -181,6 +184,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
   public Collection<String> getExecutionUnits() {
     final HashSet<String> allExecutionUnits = new HashSet<>();
 
+    allExecutionUnits.addAll(BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS);
     allExecutionUnits.addAll(BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS);
     allExecutionUnits.addAll(BG_SETUP_ROLLBACK_EXECUTION_UNITS);
     allExecutionUnits.addAll(BG_SWAP_ROLLBACK_EXECUTION_UNITS);
@@ -196,7 +200,11 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         return BG_SETUP_ROLLBACK_EXECUTION_UNITS;
       }
     } else {
-      return BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS;
+      if (parameters.isSetupSuccessful()) {
+        return BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS;
+      } else {
+        return BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS;
+      }
     }
   }
 

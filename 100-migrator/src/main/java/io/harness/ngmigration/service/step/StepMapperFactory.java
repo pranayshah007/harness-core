@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.asg.AsgBlueGreenRollbackStepMapperImpl;
@@ -84,6 +86,7 @@ import software.wings.beans.GraphNode;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class StepMapperFactory {
   @Inject EcsServiceSetupStepMapperImpl ecsServiceSetupStepMapper;
@@ -284,6 +287,8 @@ public class StepMapperFactory {
       case "ARTIFACT_CHECK":
       case "ECS_STEADY_STATE_CHECK":
       case "ECS_SERVICE_DEPLOY":
+      case "AWS_AMI_SERVICE_DEPLOY":
+      case "CVNG":
         return emptyStepMapper;
       case "SPOTINST_SETUP":
         return elastigroupSetupStepMapper;
@@ -344,8 +349,6 @@ public class StepMapperFactory {
         return asgBlueGreenSwapStepMapper;
       case "AWS_AMI_ROLLBACK_SWITCH_ROUTES":
         return asgBlueGreenRollbackStepMapper;
-      case "AWS_AMI_SERVICE_DEPLOY":
-        return emptyStepMapper;
       case "ASG_AMI_ALB_SHIFT_SWITCH_ROUTES":
       case "ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY":
       case "ASG_AMI_SERVICE_ALB_SHIFT_SETUP":

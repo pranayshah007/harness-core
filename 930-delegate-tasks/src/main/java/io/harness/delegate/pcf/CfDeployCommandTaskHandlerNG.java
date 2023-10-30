@@ -43,6 +43,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
@@ -163,6 +164,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       } catch (IOException e) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
         log.warn("Failed to delete Temp Directory created for CF CLI login", sanitizedException);
+        executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
       }
     }
     if (noExceptionOccured) {

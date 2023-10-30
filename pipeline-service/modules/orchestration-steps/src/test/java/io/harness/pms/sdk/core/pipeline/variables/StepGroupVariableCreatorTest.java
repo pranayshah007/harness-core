@@ -104,7 +104,8 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.sg1.startTs",
             "pipeline.stages.stage1.spec.execution.steps.sg1.endTs",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.variables");
+            "pipeline.stages.stage1.spec.execution.steps.sg1.variables",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.status");
 
     // check for childrenVariableCreator
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
@@ -129,7 +130,7 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
   public void testGetStepGroupExtraProperties() {
     YamlExtraProperties yamlExtraProperties =
         stepGroupVariableCreator.getStepGroupExtraProperties("fqnPrefix", "localNamePrefix");
-    assertEquals(yamlExtraProperties.getPropertiesList().size(), 2);
+    assertEquals(yamlExtraProperties.getPropertiesList().size(), 3);
     assertThat(yamlExtraProperties.getPropertiesList())
         .contains(YamlProperties.newBuilder()
                       .setFqn("fqnPrefix"
@@ -143,6 +144,13 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                           + ".startTs")
                       .setLocalName("localNamePrefix"
                           + ".startTs")
+                      .build());
+    assertThat(yamlExtraProperties.getPropertiesList())
+        .contains(YamlProperties.newBuilder()
+                      .setFqn("fqnPrefix"
+                          + ".status")
+                      .setLocalName("localNamePrefix"
+                          + ".status")
                       .build());
   }
 

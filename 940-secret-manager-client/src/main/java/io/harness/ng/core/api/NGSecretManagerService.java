@@ -17,6 +17,7 @@ import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
 
 import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(PL)
 public interface NGSecretManagerService {
@@ -34,7 +35,8 @@ public interface NGSecretManagerService {
   ConnectorValidationResult validate(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
-  boolean validateNGSecretManager(@NotNull String accountIdentifier, SecretManagerConfigDTO secretManagerConfigDTO);
+  Pair<String, Boolean> validateNGSecretManager(
+      @NotNull String accountIdentifier, SecretManagerConfigDTO secretManagerConfigDTO);
 
   SecretManagerConfigDTO getGlobalSecretManager(String accountIdentifier);
 

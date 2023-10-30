@@ -7,7 +7,7 @@
 
 package io.harness.core.ci.dashboard;
 
-import io.harness.cache.CICacheManagementService;
+import io.harness.ci.cache.CICacheManagementService;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
 

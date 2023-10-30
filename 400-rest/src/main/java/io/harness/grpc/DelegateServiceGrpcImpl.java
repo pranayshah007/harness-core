@@ -58,7 +58,6 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.executionInfra.ExecutionInfrastructureService;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -66,7 +65,6 @@ import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
-import io.harness.taskclient.TaskClient;
 
 import software.wings.beans.SerializationFormat;
 import software.wings.service.intfc.DelegateService;
@@ -95,25 +93,21 @@ import org.apache.commons.lang3.NotImplementedException;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @BreakDependencyOn("io.harness.delegate.beans.DelegateTaskResponse")
 public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
-  private DelegateCallbackRegistry delegateCallbackRegistry;
-  private PerpetualTaskService perpetualTaskService;
-  private DelegateService delegateService;
-
-  private KryoSerializer referenceFalseKryoSerializer;
-  private DelegateTaskService delegateTaskService;
-  private DelegateTaskServiceClassic delegateTaskServiceClassic;
-
-  private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
-  private TaskClient taskClient;
-  private ExecutionInfrastructureService executionInfrastructureService;
+  private final DelegateCallbackRegistry delegateCallbackRegistry;
+  private final PerpetualTaskService perpetualTaskService;
+  private final DelegateService delegateService;
+  private final KryoSerializer referenceFalseKryoSerializer;
+  private final DelegateTaskService delegateTaskService;
+  private final DelegateTaskServiceClassic delegateTaskServiceClassic;
+  private final DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject
-  public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
-      PerpetualTaskService perpetualTaskService, DelegateService delegateService,
-      DelegateTaskService delegateTaskService,
-      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
-      DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper,
-      TaskClient delegateAPIClient, ExecutionInfrastructureService executionInfrastructureService) {
+  public DelegateServiceGrpcImpl(final DelegateCallbackRegistry delegateCallbackRegistry,
+      final PerpetualTaskService perpetualTaskService, final DelegateService delegateService,
+      final DelegateTaskService delegateTaskService,
+      @Named("referenceFalseKryoSerializer") final KryoSerializer referenceFalseKryoSerializer,
+      final DelegateTaskServiceClassic delegateTaskServiceClassic,
+      final DelegateTaskMigrationHelper delegateTaskMigrationHelper) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
@@ -121,8 +115,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
     this.delegateTaskMigrationHelper = delegateTaskMigrationHelper;
-    this.taskClient = taskClient;
-    this.executionInfrastructureService = executionInfrastructureService;
   }
 
   @Override
@@ -147,17 +139,9 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       TaskDetails taskDetails = request.getDetails();
       Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
-      LinkedHashMap<String, String> logAbstractions =
-          request.getLogAbstractions() == null || request.getLogAbstractions().getValuesMap() == null
-          ? new LinkedHashMap<>()
-          : new LinkedHashMap<>(request.getLogAbstractions().getValuesMap());
-      String baseLogKey = "";
-      boolean shouldSkipOpenStream = false;
-      if (request.getLogAbstractions() != null) {
-        baseLogKey =
-            request.getLogAbstractions().getBaseLogKey() == null ? "" : request.getLogAbstractions().getBaseLogKey();
-        shouldSkipOpenStream = request.getLogAbstractions().getShouldSkipOpenStream();
-      }
+      LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>(request.getLogAbstractions().getValuesMap());
+      String baseLogKey = request.getLogAbstractions().getBaseLogKey();
+      boolean shouldSkipOpenStream = request.getLogAbstractions().getShouldSkipOpenStream();
       List<ExecutionCapability> capabilities =
           request.getCapabilitiesList()
               .stream()
@@ -415,9 +399,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         contextBuilder.executionBundle(request.getContext().getExecutionBundle().toByteArray());
       }
 
-      if (request.getContext().getLastContextUpdated() != null) {
-        contextBuilder.lastContextUpdated(Timestamps.toMillis(request.getContext().getLastContextUpdated()));
-      }
+      contextBuilder.lastContextUpdated(Timestamps.toMillis(request.getContext().getLastContextUpdated()));
 
       String perpetualTaskId = perpetualTaskService.createTask(request.getType(), accountId, contextBuilder.build(),
           request.getSchedule(), request.getAllowDuplicate(), request.getTaskDescription());

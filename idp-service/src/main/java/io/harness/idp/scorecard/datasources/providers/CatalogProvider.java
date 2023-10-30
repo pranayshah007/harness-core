@@ -16,31 +16,38 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.math3.util.Pair;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class CatalogProvider extends DataSourceProvider {
+public class CatalogProvider extends NoopDataSourceProvider {
   protected CatalogProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
-      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
+      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
+      DataSourceRepository dataSourceRepository) {
     super(CATALOG_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
   }
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier), Collections.emptyMap());
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
+      throws NoSuchAlgorithmException, KeyManagementException {
+    return processOut(accountIdentifier, CATALOG_IDENTIFIER, entity, getAuthHeaders(accountIdentifier, null),
+        Collections.emptyMap(), Collections.emptyMap(), dataPointsAndInputValues);
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     return Collections.emptyMap();
   }
 }

@@ -25,6 +25,9 @@ import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -122,8 +125,12 @@ public class K8InitializeServiceUtilsHelper {
   }
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
+    K8sDirectInfraYamlSpec infraSpec = K8sDirectInfraYamlSpec.builder().build();
+    Infrastructure k8Infra =
+        K8sDirectInfraYaml.builder().type(Infrastructure.Type.KUBERNETES_DIRECT).spec(infraSpec).build();
     return IntegrationStageConfigImpl.builder()
         .serviceDependencies(ParameterField.createValueField(Collections.singletonList(getServiceDependencyElement())))
+        .infrastructure(k8Infra)
         .build();
   }
 }

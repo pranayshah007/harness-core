@@ -167,6 +167,19 @@ Resources:
               - 'organizations:Describe*'
               - 'organizations:List*'
             Resource: "*"
+          - Effect: Allow
+            Action:
+              - "ec2:DescribeReservedInstancesOfferings"
+              - "ce:GetSavingsPlansUtilization"
+              - "ce:GetReservationUtilization"
+              - "ec2:DescribeInstanceTypeOfferings"
+              - "ce:GetDimensionValues"
+              - "ce:GetSavingsPlansUtilizationDetails"
+              - "ec2:DescribeReservedInstances"
+              - "ce:GetReservationCoverage"
+              - "ce:GetSavingsPlansCoverage"
+              - "savingsplans:DescribeSavingsPlans"
+            Resource: "*"
       Roles:
         - !Ref HarnessCloudFormationRole
   HarnessOptimsationLambdaPolicy:

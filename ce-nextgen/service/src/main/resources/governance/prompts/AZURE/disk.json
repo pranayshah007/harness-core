@@ -1,0 +1,34 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/disks/DiskId",
+  "name": "Name",
+  "type": "Microsoft.Compute/disks",
+  "location": "centralus",
+  "sku": {
+    "name": "Premium_LRS",
+    "tier": "Premium"
+  },
+  "properties": {
+    "timeCreated": "2021-07-23T16:10:41.564465Z",
+    "osType": "Windows",
+    "hyperVGeneration": "V2",
+    "creationData": {
+      "createOption": "FromImage",
+      "imageReference": {
+        "id": "/Subscriptions/SubscriptionId/Providers/Microsoft.Compute/Locations/centralus/Publishers/MicrosoftWindowsServer/ArtifactTypes/VMImage/Offers/WindowsServer/Skus/2012-datacenter-smalldisk-g2/Versions/9200.23409.2107090423"
+      }
+    },
+    "diskSizeGB": 30,
+    "diskSizeBytes": 32214351872,
+    "uniqueId": "uniqueId",
+    "provisioningState": "Succeeded",
+    "diskIOPSReadWrite": 120,
+    "diskMBpsReadWrite": 25,
+    "diskState": "Unattached",
+    "encryption": {
+      "type": "EncryptionAtRestWithPlatformKey"
+    },
+    "networkAccessPolicy": "AllowAll",
+    "tier": "P4"
+  },
+  "resourceGroup": "ResourceGroupId"
+}

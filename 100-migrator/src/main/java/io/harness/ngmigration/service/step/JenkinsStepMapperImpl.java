@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
@@ -42,6 +44,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class JenkinsStepMapperImpl extends StepMapper {
   @Override
   public List<CgEntityId> getReferencedEntities(

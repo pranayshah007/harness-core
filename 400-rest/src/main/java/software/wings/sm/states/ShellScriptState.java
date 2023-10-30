@@ -537,7 +537,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
     }
     shellScriptParameters.serviceVariables(serviceVariables).safeDisplayServiceVariables(safeDisplayServiceVariables);
     ShellScriptParameters taskParams = shellScriptParameters.build();
-    log.info(
+    log.debug(
         "Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {} & commandPath - {}",
         taskParams.getAccountId(), taskParams.getAppId(), taskParams.getWorkingDirectory(), taskParams.getActivityId(),
         commandPath);

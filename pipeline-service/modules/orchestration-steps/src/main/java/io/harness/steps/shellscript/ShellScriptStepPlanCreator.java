@@ -10,7 +10,7 @@ package io.harness.steps.shellscript;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.steps.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
@@ -33,6 +33,6 @@ public class ShellScriptStepPlanCreator extends PMSStepPlanCreatorV2<ShellScript
   }
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

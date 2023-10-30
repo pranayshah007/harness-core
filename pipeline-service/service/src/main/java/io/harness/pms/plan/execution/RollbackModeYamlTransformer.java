@@ -51,12 +51,14 @@ import lombok.extern.slf4j.Slf4j;
 public class RollbackModeYamlTransformer {
   NodeExecutionService nodeExecutionService;
 
-  String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId) {
+  String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId,
+      List<String> stageNodeExecutionIds) {
     switch (executionMode) {
       case PIPELINE_ROLLBACK:
         return transformProcessedYamlForPipelineRollbackMode(processedYaml, originalPlanExecutionId);
       case POST_EXECUTION_ROLLBACK:
-        return transformProcessedYamlForPostExecutionRollbackMode(processedYaml, originalPlanExecutionId);
+        return transformProcessedYamlForPostExecutionRollbackMode(
+            processedYaml, originalPlanExecutionId, stageNodeExecutionIds);
       default:
         throw new InvalidRequestException(String.format(
             "Unsupported Execution Mode %s in RollbackModeExecutionHelper while transforming plan for execution with id %s",
@@ -116,12 +118,19 @@ public class RollbackModeYamlTransformer {
    *   - stage:
    *       identifier: s1
    */
-  String transformProcessedYamlForPostExecutionRollbackMode(String processedYaml, String originalPlanExecutionId) {
+  String transformProcessedYamlForPostExecutionRollbackMode(
+      String processedYaml, String originalPlanExecutionId, List<String> stageNodeExecutionIds) {
     List<String> executedStages = new ArrayList<>();
     List<NodeExecution> nodeExecutions =
         nodeExecutionService.fetchStageExecutionsWithProjection(originalPlanExecutionId,
             Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.status, NodeExecutionKeys.stepType));
     nodeExecutions.forEach(nodeExecution -> {
+      if (null != nodeExecution.getUuid() && stageNodeExecutionIds.contains(nodeExecution.getUuid())
+          && !StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
+        throw new InvalidRequestException(
+            String.format("Stage plan execution [%s] is still in Progress. Wait for Node Execution [%s] to complete.",
+                originalPlanExecutionId, nodeExecution.getIdentifier()));
+      }
       if (StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
         executedStages.add(nodeExecution.getIdentifier());
       } else if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
@@ -143,7 +152,7 @@ public class RollbackModeYamlTransformer {
     ArrayNode stagesList = (ArrayNode) pipelineInnerNode.get(YAMLFieldNameConstants.STAGES);
     ArrayNode reversedStages = stagesList.deepCopy().removeAll();
     int numStages = stagesList.size();
-    for (int i = numStages - 1; i >= 0; i--) {
+    for (int i = 0; i < numStages; i++) {
       JsonNode currentNode = stagesList.get(i);
       if (currentNode.get(YAMLFieldNameConstants.PARALLEL) == null) {
         handleSerialStage(currentNode, executedStageIds, reversedStages);

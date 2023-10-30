@@ -43,4 +43,6 @@ public interface CCMRbacPermissions {
   String RULE_ENFORCEMENT_DELETE = "ccm_cloudAssetGovernanceEnforcement_delete";
 
   String CONNECTOR_VIEW = "core_connector_view";
+  String CCM_ANOMALIES_VIEW = "ccm_anomalies_view";
+  String CCM_RECOMMENDATIONS_VIEW = "ccm_recommendations_view";
 }

@@ -7,6 +7,7 @@
 
 package io.harness.subscription.services;
 
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.TOMMY;
 import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_ACCOUNT_ID;
 import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_CREDIT_CARD_DTO;
@@ -160,23 +161,41 @@ public class CreditCardServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testHasValidCard() {
+  public void testHasAtleastOneValidCreditCard() {
     when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
     when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
 
-    creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID);
-    assertThat(creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID)).isTrue();
+    assertThat(creditCardService.hasAtleastOneValidCreditCard(DEFAULT_ACCOUNT_ID)).isTrue();
   }
 
   @Test
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testHasValidCardFailure() {
+  public void testHasAtleastOneValidCreditCard_WhenCardExpired() {
     when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
     when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(EXPIRED_PAYMENT_METHODS);
 
-    creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID);
-    assertThat(creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID)).isFalse();
+    assertThat(creditCardService.hasAtleastOneValidCreditCard(DEFAULT_ACCOUNT_ID)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsValid() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
+
+    assertThat(creditCardService.isValid(DEFAULT_ACCOUNT_ID, DEFAULT_CREDIT_CARD_IDENTIFIER)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsValid_WhenCardExpired() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(EXPIRED_PAYMENT_METHODS);
+
+    assertThat(creditCardService.isValid(DEFAULT_ACCOUNT_ID, DEFAULT_CREDIT_CARD_IDENTIFIER)).isFalse();
   }
 
   @Test

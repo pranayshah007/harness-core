@@ -1,0 +1,10 @@
+failure:
+  - errors:
+      - authentication
+      - connectivity
+    action:
+      type: ignore
+  - errors:
+      - all
+    action:
+      type: success

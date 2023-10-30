@@ -1,0 +1,134 @@
+pipeline:
+  name: sd
+  identifier: sd
+  projectIdentifier: NGPipeAutoTasIcjyZn4Qpo
+  orgIdentifier: Ng_Pipelines_K8s_Organisations
+  tags: {}
+  stages:
+    - parallel:
+        - stage:
+            name: s1
+            identifier: s1
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: k8svc
+              environment:
+                environmentRef: env
+                deployToAll: false
+                infrastructureDefinitions:
+                  - identifier: infra3
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                  - step:
+                      type: K8sDryRun
+                      name: K8sDryRun_1
+                      identifier: K8sDryRun_1
+                      spec: {}
+                      timeout: 10m
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+        - stage:
+            name: s2
+            identifier: s2
+            description: ""
+            type: Deployment
+            spec:
+              deploymentType: Kubernetes
+              service:
+                serviceRef: k8svc
+              environment:
+                environmentRef: env
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                        pruningEnabled: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec:
+                        pruningEnabled: false
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+    - stage:
+        name: s3
+        identifier: s3
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            useFromStage:
+              stage: s1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+          environment:
+            environmentRef: env
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: infra2
+                inputs:
+                  identifier: infra2
+                  type: KubernetesDirect
+                  spec:
+                    provisioner: <+input>
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

@@ -6,6 +6,7 @@
  */
 
 package io.harness.event;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
@@ -25,7 +26,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -49,7 +50,7 @@ public class GraphStatusUpdateHelper {
   @Inject private OrchestrationAdjacencyListGenerator orchestrationAdjacencyListGenerator;
   @Inject private DelegateInfoHelper delegateInfoHelper;
 
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   public OrchestrationGraph handleEvent(
       String planExecutionId, String nodeExecutionId, OrchestrationGraph orchestrationGraph) {
@@ -68,7 +69,6 @@ public class GraphStatusUpdateHelper {
     String nodeExecutionId = nodeExecution.getUuid();
     try {
       if (orchestrationGraph.getRootNodeIds().isEmpty()) {
-        log.info("[PMS_GRAPH]  Setting rootNodeId: [{}] for plan [{}]", nodeExecutionId, planExecutionId);
         orchestrationGraph.getRootNodeIds().add(nodeExecutionId);
       }
 

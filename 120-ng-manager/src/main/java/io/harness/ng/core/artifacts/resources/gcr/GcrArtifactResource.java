@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.core.artifacts.resources.gcr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -48,6 +50,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Api("artifacts")
 @Path("/artifacts/gcr")
@@ -111,15 +115,23 @@ public class GcrArtifactResource {
     }
     // todo(hinger): resolve other expressions here?
 
-    gcrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, gcrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    gcrConnectorIdentifier = artifactResourceUtils
+                                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                     projectIdentifier, pipelineIdentifier, runtimeInputYaml, gcrConnectorIdentifier,
+                                     fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                 .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
-    registryHostname = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, registryHostname, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                    .getValue();
+    registryHostname =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, registryHostname, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

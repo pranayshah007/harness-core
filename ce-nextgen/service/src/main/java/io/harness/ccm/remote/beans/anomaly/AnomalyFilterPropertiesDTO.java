@@ -48,6 +48,8 @@ public class AnomalyFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "This is the list of Namespaces on which filter will be applied.") List<String> k8sNamespaces;
   @Schema(description = "This is the list of Workload Names on which filter will be applied.")
   List<String> k8sWorkloadNames;
+  @Schema(description = "This is the list of Service Names on which filter will be applied.")
+  List<String> k8sServiceNames;
 
   @Schema(description = "This is the list of GCP Projects on which filter will be applied.") List<String> gcpProjects;
   @Schema(description = "This is the list of GCP Products on which filter will be applied.") List<String> gcpProducts;

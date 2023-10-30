@@ -745,7 +745,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     Sets.SetView<String> instancesToBeDeleted =
         Sets.difference(instancesInDBMap.keySet(), instanceInfosFromServerMap.keySet());
 
-    log.info("Instances to be deleted: {}", instancesToBeDeleted);
+    log.debug("Instances to be deleted: {}", instancesToBeDeleted.size());
 
     // Add instances to be deleted to the global map
     instancesToBeModified.get(OperationsOnInstances.DELETE)

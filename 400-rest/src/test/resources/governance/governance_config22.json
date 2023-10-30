@@ -1,0 +1,214 @@
+{
+  "accountId": "kmpySmUISimoRrJL6NL73w",
+  "deploymentFreeze": false,
+  "timeRangeBasedFreezeConfigs": [
+    {
+      "freezeForAllApps": false,
+      "appIds": [],
+      "environmentTypes": [],
+      "timeRange": {
+        "from": 1615577100548,
+        "to": 1615580700548,
+        "timeZone": "America/Los_Angeles",
+        "durationBased": false,
+        "expires": false
+      },
+      "name": "devops-test-stage",
+      "description": null,
+      "applicable": false,
+      "appSelections": [
+        {
+          "filterType": "CUSTOM",
+          "envSelection": {
+            "filterType": "CUSTOM",
+            "environments": [
+              "D6IdnIwpTX28lFTZYtDW1A"
+            ]
+          },
+          "apps": [
+            "7oR5kwtrRN6Q7PUNn1oZRg"
+          ]
+        }
+      ],
+      "excludeAppSelections": [],
+      "userGroups": [
+        "cCMnEpGdSE658rF_BvTPXA",
+        "cn5HDV3BRryiqFaGNGNi4g"
+      ],
+      "uuid": "5LUDWZmeQ46PtbnLoTn4Vw",
+      "userGroupSelection": {
+        "filterType": "CUSTOM",
+        "userGroups": [
+          "cCMnEpGdSE658rF_BvTPXA",
+          "cn5HDV3BRryiqFaGNGNi4g"
+        ]
+      },
+      "freezeWindowState": "INACTIVE"
+    },
+    {
+      "freezeForAllApps": false,
+      "appIds": [],
+      "environmentTypes": [],
+      "timeRange": {
+        "from": 1627606800146,
+        "to": 1627610400146,
+        "timeZone": "America/Los_Angeles",
+        "durationBased": false,
+        "expires": false
+      },
+      "name": "CTUTemplates Prod",
+      "description": null,
+      "applicable": false,
+      "appSelections": [
+        {
+          "filterType": "CUSTOM",
+          "envSelection": {
+            "filterType": "CUSTOM",
+            "environments": [
+              "qetgGRnYShWAgQOrBdrMlw"
+            ]
+          },
+          "apps": [
+            "-p5dBRsUQ32HqtIVgNgoeg"
+          ]
+        }
+      ],
+      "excludeAppSelections": [],
+      "userGroups": [
+        "EEjzxNpKQqmuKQDfpeMGlg"
+      ],
+      "uuid": "enjopqegS8ym4br74TVNbg",
+      "userGroupSelection": {
+        "filterType": "CUSTOM",
+        "userGroups": [
+          "EEjzxNpKQqmuKQDfpeMGlg"
+        ]
+      },
+      "freezeWindowState": "INACTIVE"
+    },
+    {
+      "freezeForAllApps": false,
+      "appIds": [],
+      "environmentTypes": [],
+      "timeRange": {
+        "from": 1627423737014,
+        "to": 1627427337014,
+        "timeZone": "America/Los_Angeles",
+        "durationBased": false,
+        "expires": false
+      },
+      "name": "CTUTemplates stage",
+      "description": null,
+      "applicable": false,
+      "appSelections": [
+        {
+          "filterType": "CUSTOM",
+          "envSelection": {
+            "filterType": "CUSTOM",
+            "environments": [
+              "CbijFiomSRGdDx9C4iTUcg"
+            ]
+          },
+          "apps": [
+            "-p5dBRsUQ32HqtIVgNgoeg"
+          ]
+        }
+      ],
+      "excludeAppSelections": [],
+      "userGroups": [
+        "EEjzxNpKQqmuKQDfpeMGlg"
+      ],
+      "uuid": "vkf6Tx-dQWiXlGRwq9wh6w",
+      "userGroupSelection": {
+        "filterType": "CUSTOM",
+        "userGroups": [
+          "EEjzxNpKQqmuKQDfpeMGlg"
+        ]
+      },
+      "freezeWindowState": "INACTIVE"
+    },
+    {
+      "freezeForAllApps": false,
+      "appIds": [],
+      "environmentTypes": [],
+      "timeRange": {
+        "from": 1628097240138,
+        "to": 1628557200138,
+        "timeZone": "America/Los_Angeles",
+        "durationBased": false,
+        "expires": false
+      },
+      "name": "Funnels Prod",
+      "description": null,
+      "applicable": false,
+      "appSelections": [
+        {
+          "filterType": "CUSTOM",
+          "envSelection": {
+            "filterType": "CUSTOM",
+            "environments": [
+              "Pwh1AC85RbWLHQJ-m4utNw"
+            ]
+          },
+          "apps": [
+            "mWDSUdNSSJCUGFm4_1I2cQ"
+          ]
+        }
+      ],
+      "excludeAppSelections": [],
+      "userGroups": [
+        "cCMnEpGdSE658rF_BvTPXA",
+        "cn5HDV3BRryiqFaGNGNi4g",
+        "EEjzxNpKQqmuKQDfpeMGlg",
+        "ffRUwkUJTx2-Y83LKquwkA"
+      ],
+      "uuid": "wzyHmBVPTLukEhi7lTJgxA",
+      "userGroupSelection": {
+        "filterType": "CUSTOM",
+        "userGroups": [
+          "cCMnEpGdSE658rF_BvTPXA",
+          "cn5HDV3BRryiqFaGNGNi4g",
+          "EEjzxNpKQqmuKQDfpeMGlg",
+          "ffRUwkUJTx2-Y83LKquwkA"
+        ]
+      },
+      "freezeWindowState": "INACTIVE"
+    },
+    {
+      "name": "test for harness",
+      "description": "test for harness",
+      "userGroupSelection": {
+        "filterType": "CUSTOM",
+        "userGroups": [
+          "N0GRNOQMQVi9Pa05KrByPg"
+        ]
+      },
+      "applicable": false,
+      "appSelections": [
+        {
+          "filterType": "ALL",
+          "apps": [],
+          "envSelection": {
+            "filterType": "ALL",
+            "environments": []
+          },
+          "serviceSelection": {
+            "filterType": "ALL"
+          }
+        }
+      ],
+      "timeRange": {
+        "from": "1694209440519",
+        "to": "1694242860520",
+        "timeZone": "America/Los_Angeles",
+        "durationBased": false,
+        "endTime": "1852095571518",
+        "freezeOccurrence": "WEEKLY",
+        "expires": false
+      },
+      "uuid": "",
+      "excludeAppSelections": []
+    }
+  ],
+  "weeklyFreezeConfigs": []
+}

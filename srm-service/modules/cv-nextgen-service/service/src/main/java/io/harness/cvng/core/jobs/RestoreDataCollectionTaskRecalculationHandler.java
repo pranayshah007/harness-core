@@ -19,6 +19,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.Optional;
 
 public class RestoreDataCollectionTaskRecalculationHandler
     implements MongoPersistenceIterator.Handler<EntityUnavailabilityStatuses> {
@@ -39,14 +40,16 @@ public class RestoreDataCollectionTaskRecalculationHandler
                 .build(),
             entity.getEntityType(), entity.getEntityIdentifier(), EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED);
     if (entityUnavailabilityStatuses.getStartTime() == entity.getStartTime()) {
-      String verificationTaskId =
+      Optional<String> verificationTaskId =
           verificationTaskService.getSLIVerificationTaskId(entity.getAccountId(), entity.getEntityIdentifier());
-      orchestrationService.queueAnalysis(AnalysisInput.builder()
-                                             .verificationTaskId(verificationTaskId)
-                                             .startTime(Instant.ofEpochSecond(entity.getStartTime()))
-                                             .endTime(DateTimeUtils.roundDownTo5MinBoundary(Instant.now()))
-                                             .isSLORestoreTask(true)
-                                             .build());
+      if (verificationTaskId.isPresent()) {
+        orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .verificationTaskId(verificationTaskId.get())
+                                               .startTime(Instant.ofEpochSecond(entity.getStartTime()))
+                                               .endTime(DateTimeUtils.roundDownTo5MinBoundary(Instant.now()))
+                                               .isSLORestoreTask(true)
+                                               .build());
+      }
     }
   }
 }

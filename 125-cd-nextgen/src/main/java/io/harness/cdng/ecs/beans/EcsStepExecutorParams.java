@@ -27,4 +27,7 @@ public class EcsStepExecutorParams {
   String targetGroupArnKey;
   String prodTargetGroupArn;
   String stageTargetGroupArn;
+  String oldServiceName;
+  String newServiceName;
+  boolean firstTimeDeployment;
 }

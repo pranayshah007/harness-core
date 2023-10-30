@@ -10,7 +10,6 @@ package io.harness.delegate.service.impl;
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateTokenDetails;
-import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
@@ -36,7 +35,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
   private final MainConfiguration mainConfiguration;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
 
-  private static final String ONPREM_HELM_REPO_SUFFIX = "storage/harness-download/delegate-helm-chart/";
+  private static final String ONPREM_HELM_REPO_SUFFIX = "/storage/harness-download/delegate-helm-chart/";
 
   private static final String DOCKER_COMMAND = "docker run --cpus=1 --memory=2g \\\n"
       + "  -e DELEGATE_NAME=docker-delegate \\\n"
@@ -142,10 +141,10 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
 
   private String getDefaultNgToken(String accountId, DelegateEntityOwner owner) {
     final DelegateTokenDetails delegateTokenDetails =
-        delegateNgTokenService.getDelegateToken(accountId, delegateNgTokenService.getDefaultTokenName(owner), true);
+        delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(accountId, owner);
     String tokenValue;
-    if (Objects.isNull(delegateTokenDetails) || !delegateTokenDetails.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
-      tokenValue = "<No Default Delegate Token available, create a default token>";
+    if (Objects.isNull(delegateTokenDetails)) {
+      tokenValue = "<No Token available, please create a new token and try again>";
     } else {
       tokenValue = delegateTokenDetails.getValue();
     }

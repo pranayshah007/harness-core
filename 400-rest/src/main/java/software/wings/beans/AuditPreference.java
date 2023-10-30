@@ -9,6 +9,8 @@ package software.wings.beans;
 
 import static software.wings.beans.PreferenceType.AUDIT_PREFERENCE;
 
+import software.wings.beans.account.AccountAuditFilter;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Data;

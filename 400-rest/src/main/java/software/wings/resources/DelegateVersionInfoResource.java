@@ -15,6 +15,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.delegate.beans.SupportedDelegateVersion;
+import io.harness.delegate.service.DelegateVersionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
@@ -48,6 +49,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class DelegateVersionInfoResource {
   private final AccountService accountService;
   private final DelegateRingService delegateRingService;
+  private final DelegateVersionService delegateVersionService;
 
   @GET
   @Path("/delegate/{ring}")
@@ -89,15 +91,7 @@ public class DelegateVersionInfoResource {
   @InternalApi
   public RestResponse<SupportedDelegateVersion> getSupportedDelegateVersion(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId) {
-    String latestSupportedDelegateImage = delegateRingService.getDelegateImageTag(accountId);
-    String[] split = latestSupportedDelegateImage.split(":");
-    String latestVersion = split[1];
-    SupportedDelegateVersion supportedDelegateVersion =
-        SupportedDelegateVersion.builder()
-            .latestSupportedVersion(latestVersion)
-            .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
-            .build();
-    return new RestResponse<>(supportedDelegateVersion);
+    return new RestResponse<>(delegateVersionService.getSupportedDelegateVersion(accountId));
   }
 
   @GET

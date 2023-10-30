@@ -24,6 +24,7 @@ public class OutcomeExpressionConstants {
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String MERGE_REVERT_PR_OUTCOME = "mergeRevertPROutcome";
   public final String REVERT_PR_OUTCOME = "revertPROutcome";
+  public final String UPDATE_GITOPS_APP_OUTCOME = "updateGitOpsAppOutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";
@@ -38,6 +39,8 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
   public final String OUTPUT = "output";
+  public final String RELEASE_HELM_CHART_OUTCOME = "releaseHelmChartOutcome";
+
   public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String TERRAGRUNT_CONFIG = "terragruntConfig";
@@ -57,6 +60,8 @@ public class OutcomeExpressionConstants {
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
+  public final String ECS_BASIC_PREPARE_ROLLBACK_DATA_OUTCOME = "ecsBasicPrepareRollbackDataOutcome";
+  public final String ECS_BASIC_PREPARE_DEPLOY_DATA_OUTCOME = "ecsBasicPrepareDeployDataOutcome";
   public final String ECS_CANARY_DELETE_DATA_OUTCOME = "ecsCanaryDeleteDataOutcome";
   public final String ECS_CANARY_DELETE_OUTCOME = "ecsCanaryDeleteOutcome";
   public final String ECS_CANARY_DEPLOY_OUTCOME = "ecsCanaryDeployOutcome";
@@ -95,4 +100,6 @@ public class OutcomeExpressionConstants {
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
   public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
+  public final String USER_DATA = "userData";
+  public final String ENVIRONMENT = "environment";
 }

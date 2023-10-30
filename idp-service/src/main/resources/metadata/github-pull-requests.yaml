@@ -6,6 +6,7 @@ category: Source Control Mgmt
 source: https://roadie.io/backstage/plugins/github-pull-requests/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=github-pull-requests
 iconUrl: https://roadie.io/images/logos/github.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/github-pull-requests/
 exports:
   defaultEntityTypes:
     - service

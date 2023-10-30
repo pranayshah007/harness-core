@@ -1,0 +1,19 @@
+---
+orgIdentifier: cvng_org_gc5qeLWq1W
+projectIdentifier: cvng_proj_fve79nRfOe
+identifier: cvng_service1_cvng_env1
+name: cvng_service1_cvng_env1
+type: Application
+description: ''
+serviceRef: cvng_service1
+environmentRefList: [cvng_env1]
+tags: {}
+enabled : true
+sources:
+  changeSources: []
+dependencies:
+  - monitoredServiceIdentifier: cvng_service2_cvng_env1
+    dependencyMetadata:
+      type: KUBERNETES
+      namespace: namespace
+      workload: workload

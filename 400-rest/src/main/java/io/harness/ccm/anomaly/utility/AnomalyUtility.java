@@ -39,6 +39,7 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.clusterName, anomaly.getClusterName());
     substitutes.put(AnomalyEntityKeys.namespace, anomaly.getNamespace());
     substitutes.put(AnomalyEntityKeys.workloadName, anomaly.getWorkloadName());
+    substitutes.put(AnomalyEntityKeys.serviceName, anomaly.getServiceName());
     substitutes.put(AnomalyEntityKeys.gcpProject, anomaly.getGcpProject());
     substitutes.put(AnomalyEntityKeys.gcpProduct, anomaly.getGcpProduct());
     substitutes.put(AnomalyEntityKeys.gcpSKUId, anomaly.getGcpSKUId());
@@ -46,6 +47,9 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
     substitutes.put(AnomalyEntityKeys.awsUsageType, anomaly.getAwsUsageType());
+    substitutes.put(AnomalyEntityKeys.azureSubscription, anomaly.getAzureSubscription());
+    substitutes.put(AnomalyEntityKeys.azureResourceGroup, anomaly.getAzureResourceGroup());
+    substitutes.put(AnomalyEntityKeys.azureMeterCategory, anomaly.getAzureMeterCategory());
     substitutes.put(
         AnomalyEntityKeys.actualCost, currencySymbol + getRoundedDoubleValue(anomaly.getActualCost()).toString());
     substitutes.put(
@@ -82,6 +86,8 @@ public class AnomalyUtility {
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("WORKLOAD_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("SERVICE_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("GCP_PROJECT_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("GCP_PRODUCT_URL",
@@ -91,6 +97,14 @@ public class AnomalyUtility {
     substitutes.put("AWS_ACCOUNT_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("AWS_SERVICE_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AWS_USAGE_TYPE_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AZURE_SUBSCRIPTION_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AZURE_RESOURCE_GROUP_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AZURE_METER_CATEGORY_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     return substitutes;
   }

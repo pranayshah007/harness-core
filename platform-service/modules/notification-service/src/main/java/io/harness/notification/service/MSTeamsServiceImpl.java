@@ -32,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -42,6 +43,7 @@ import io.harness.notification.senders.MSTeamsSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.common.collect.ImmutableList;
@@ -90,6 +92,7 @@ public class MSTeamsServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final MSTeamsSenderImpl microsoftTeamsSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -131,6 +134,8 @@ public class MSTeamsServiceImpl implements ChannelService {
               + notificationSettingDTO.getNotificationId(),
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse response = send(Collections.singletonList(webhookUrl), TEST_MSTEAMS_TEMPLATE,
         Collections.emptyMap(), msTeamSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
         Collections.emptyMap());
@@ -160,6 +165,8 @@ public class MSTeamsServiceImpl implements ChannelService {
           templateId, notificationId);
     }
     String message = messageOpt.get();
+    List<String> microsoftTeamsWebhookUrlDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
     if (notificationSettingsService.checkIfWebhookIsSecret(microsoftTeamsWebhookUrls)) {
       DelegateTaskRequest delegateTaskRequest =
@@ -170,6 +177,7 @@ public class MSTeamsServiceImpl implements ChannelService {
                                   .notificationId(notificationId)
                                   .message(message)
                                   .microsoftTeamsWebhookUrls(microsoftTeamsWebhookUrls)
+                                  .microsoftTeamsWebhookUrlDomainAllowlist(microsoftTeamsWebhookUrlDomainAllowlist)
                                   .build())
               .taskSetupAbstractions(abstractionMap)
               .expressionFunctorToken(expressionFunctorToken)
@@ -179,7 +187,8 @@ public class MSTeamsServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
-      processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId);
+      processingResponse = microsoftTeamsSender.send(
+          microsoftTeamsWebhookUrls, message, notificationId, microsoftTeamsWebhookUrlDomainAllowlist);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
@@ -205,7 +214,7 @@ public class MSTeamsServiceImpl implements ChannelService {
           notificationRequest.getMsTeam().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return recipients.stream().distinct().collect(Collectors.toList());
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 
   Map<String, String> processTemplateVariables(Map<String, String> templateVariables) {

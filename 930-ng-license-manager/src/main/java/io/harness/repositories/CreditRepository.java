@@ -9,9 +9,11 @@ package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
+import io.harness.CreditType;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.entities.Credit;
+import io.harness.credit.utils.CreditStatus;
 
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
@@ -22,4 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public interface CreditRepository extends CrudRepository<Credit, String> {
   List<Credit> findByAccountIdentifier(String accountIdentifier);
+
+  List<Credit> findByAccountIdentifierAndCreditTypeAndCreditStatus(
+      String accountIdentifier, CreditType creditType, CreditStatus creditStatus);
 }

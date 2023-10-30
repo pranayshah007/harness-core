@@ -24,6 +24,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummar
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.stages.BasicStageInfo;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
+import io.harness.utils.ExecutionModeUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,8 +45,10 @@ public class PipelineExecutionSummaryDtoMapper {
     String startingNodeId = pipelineExecutionSummaryEntity.getStartingNodeId();
     StagesExecutionMetadata stagesExecutionMetadata = pipelineExecutionSummaryEntity.getStagesExecutionMetadata();
     boolean isStagesExecution = stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution();
-    List<String> stageIdentifiers =
-        stagesExecutionMetadata == null ? null : stagesExecutionMetadata.getStageIdentifiers();
+    List<String> stageIdentifiers = stagesExecutionMetadata == null
+            || ExecutionModeUtils.isRollbackMode(pipelineExecutionSummaryEntity.getExecutionMode())
+        ? null
+        : stagesExecutionMetadata.getStageIdentifiers();
     Map<String, String> stagesExecutedNames = null;
     if (EmptyPredicate.isNotEmpty(stageIdentifiers)) {
       stagesExecutedNames = getStageNames(stageIdentifiers, stagesExecutionMetadata.getFullPipelineYaml());
@@ -76,7 +79,8 @@ public class PipelineExecutionSummaryDtoMapper {
                 ? new ArrayList<>()
                 : pipelineExecutionSummaryEntity.getModules())
         .gitDetails(entityGitDetails)
-        .canRetry(pipelineExecutionSummaryEntity.isLatestExecution())
+        .canRetry(!ExecutionModeUtils.isRollbackMode(pipelineExecutionSummaryEntity.getExecutionMode())
+            && pipelineExecutionSummaryEntity.isLatestExecution())
         .showRetryHistory(!pipelineExecutionSummaryEntity.isLatestExecution()
             || !pipelineExecutionSummaryEntity.getPlanExecutionId().equals(
                 pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId()))

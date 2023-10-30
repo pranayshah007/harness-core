@@ -20,4 +20,9 @@ message NativeHelmDeploymentRelease {
   repeated string namespaces = 2;
   string release_name = 3;
   bytes helm_chart_info = 4;
+  map<string, LabelSelectors> workload_label_selectors = 5;
+}
+
+message LabelSelectors {
+  repeated string label_selectors = 1;
 }

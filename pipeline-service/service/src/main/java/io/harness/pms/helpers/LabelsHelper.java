@@ -10,7 +10,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.pipeline.yaml.SimplifiedPipelineYaml;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import lombok.extern.log4j.Log4j;
 @Log4j
 public class LabelsHelper {
   public List<NGLabel> getLabels(String yaml, String version) {
-    if (PipelineVersion.V1.equals(version)) {
+    if (HarnessYamlVersion.V1.equals(version)) {
       List<NGLabel> ngLabelList = new ArrayList<>();
       try {
         SimplifiedPipelineYaml simplifiedPipelineYaml = SimplifiedPipelineYamlHelper.getSimplifiedPipelineYaml(yaml);

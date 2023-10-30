@@ -16,9 +16,11 @@ import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.RepeatUnit;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -34,18 +36,23 @@ import org.jetbrains.annotations.NotNull;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class ForLoopStrategyConfigService implements StrategyConfigService {
   @Override
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfig strategyConfig, String childNodeId, Ambiance ambiance) {
     try {
+      boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
       HarnessForConfig harnessForConfig = strategyConfig.getRepeat();
       List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
       if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
         for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
+          StrategyMetadata metadata = StrategyMetadata.newBuilder()
+                                          .setCurrentIteration(i)
+                                          .setTotalIterations(harnessForConfig.getTimes().getValue())
+                                          .build();
+          String nodeName = AmbianceUtils.getStrategyPostFixUsingMetadata(metadata, useMatrixFieldName);
+          metadata = metadata.toBuilder().setIdentifierPostFix(nodeName).build();
           children.add(ChildrenExecutableResponse.Child.newBuilder()
                            .setChildNodeId(childNodeId)
-                           .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                                    .setCurrentIteration(i)
-                                                    .setTotalIterations(harnessForConfig.getTimes().getValue())
-                                                    .build())
+                           .setStrategyMetadata(metadata)
                            .build());
         }
       } else if (!ParameterField.isBlank(harnessForConfig.getPartitionSize())) {
@@ -53,28 +60,33 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
         List<List<String>> partitions = partitionItems(harnessForConfig);
 
         for (List<String> partition : partitions) {
-          children.add(
-              ChildrenExecutableResponse.Child.newBuilder()
-                  .setChildNodeId(childNodeId)
-                  .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                           .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
-                                           .setCurrentIteration(currentIteration)
-                                           .setTotalIterations(partitions.size())
-                                           .build())
-                  .build());
+          StrategyMetadata metadata = StrategyMetadata.newBuilder()
+                                          .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
+                                          .setCurrentIteration(currentIteration)
+                                          .setTotalIterations(partitions.size())
+                                          .build();
+          String nodeName = AmbianceUtils.getStrategyPostFixUsingMetadata(metadata, useMatrixFieldName);
+          metadata = metadata.toBuilder().setIdentifierPostFix(nodeName).build();
+          children.add(ChildrenExecutableResponse.Child.newBuilder()
+                           .setChildNodeId(childNodeId)
+                           .setStrategyMetadata(metadata)
+                           .build());
           currentIteration++;
         }
       } else {
         int currentIteration = 0;
         List<String> params = splitParamsIfNeeded(harnessForConfig);
         for (String value : params) {
+          StrategyMetadata metadata = StrategyMetadata.newBuilder()
+                                          .setForMetadata(ForMetadata.newBuilder().setValue(value).build())
+                                          .setCurrentIteration(currentIteration)
+                                          .setTotalIterations(params.size())
+                                          .build();
+          String nodeName = AmbianceUtils.getStrategyPostFixUsingMetadata(metadata, useMatrixFieldName);
+          metadata = metadata.toBuilder().setIdentifierPostFix(nodeName).build();
           children.add(ChildrenExecutableResponse.Child.newBuilder()
                            .setChildNodeId(childNodeId)
-                           .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                                    .setForMetadata(ForMetadata.newBuilder().setValue(value).build())
-                                                    .setCurrentIteration(currentIteration)
-                                                    .setTotalIterations(params.size())
-                                                    .build())
+                           .setStrategyMetadata(metadata)
                            .build());
           currentIteration++;
         }

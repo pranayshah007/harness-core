@@ -20,14 +20,17 @@ import java.io.IOException;
 
 @OwnedBy(PIPELINE)
 public class ProtoJsonSerializer<T extends Message> extends StdSerializer<T> {
+  private final JsonFormat.Printer printer;
+
   public ProtoJsonSerializer(Class<T> t) {
     super(t);
+    this.printer = JsonFormat.printer().includingDefaultValueFields();
   }
   public ProtoJsonSerializer() {
     this(null);
   }
   @Override
   public void serialize(T entity, JsonGenerator jgen, SerializerProvider serializerProvider) throws IOException {
-    jgen.writeRawValue(JsonFormat.printer().includingDefaultValueFields().print(entity));
+    jgen.writeRawValue(printer.print(entity));
   }
 }

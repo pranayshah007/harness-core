@@ -104,6 +104,9 @@ public class GARResourceServiceImpl implements GARResourceService {
   @Override
   public GARResponseDTO getBuildDetails(IdentifierRef googleArtifactRegistryRef, String region, String repositoryName,
       String project, String pkg, String version, String versionRegex, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REGION, region),
+        MutablePair.of(NGArtifactConstants.REPOSITORY_NAME, repositoryName),
+        MutablePair.of(NGArtifactConstants.PROJECT, project), MutablePair.of(NGArtifactConstants.PACKAGE, pkg));
     GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

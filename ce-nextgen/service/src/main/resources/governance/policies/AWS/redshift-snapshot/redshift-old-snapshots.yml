@@ -1,0 +1,7 @@
+policies:
+  - name: redshift-old-snapshots
+    resource: redshift-snapshot
+    filters:
+      - type: age
+        days: 21
+        op: gt

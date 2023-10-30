@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.template;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -67,4 +68,5 @@ public class TemplateResponseDTO {
   String connectorRef;
   String icon;
   CacheResponseMetadataDTO cacheResponseMetadata;
+  String yamlVersion;
 }

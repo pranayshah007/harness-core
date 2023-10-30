@@ -24,7 +24,8 @@ import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface AzureArtifactsRegistryService {
   boolean validateCredentials(AzureArtifactsInternalConfig toAzureArtifactsInternalConfig);

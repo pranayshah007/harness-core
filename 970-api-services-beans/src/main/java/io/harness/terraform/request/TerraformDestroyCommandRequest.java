@@ -25,4 +25,5 @@ public class TerraformDestroyCommandRequest {
   String uiLogs; // Needed in CG to prevent printing secrets
   boolean isTerraformCloudCli;
   Map<String, String> additionalCliFlags;
+  boolean skipColorLogs;
 }

@@ -27,7 +27,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -88,9 +87,7 @@ public class CustomDeploymentInstanceSyncPerpetualTaskHandler extends InstanceSy
     if (deploymentPackageInfo.getTags() == null) {
       return null;
     }
-    List<String> tagsInDeploymentInfo = deploymentPackageInfo.getTags();
-    Set<String> tags = new HashSet<>(tagsInDeploymentInfo);
-
+    Set<String> tags = deploymentPackageInfo.getTags();
     return SelectorCapability.builder().selectors(tags).build();
   }
 }

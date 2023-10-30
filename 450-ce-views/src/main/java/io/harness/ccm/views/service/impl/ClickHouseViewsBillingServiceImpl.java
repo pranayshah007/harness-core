@@ -29,7 +29,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_GRID_ENTRY_NAM
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_GRANULARITY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.clickHouse.ClickHouseService;
@@ -113,6 +116,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 @OwnedBy(CE)

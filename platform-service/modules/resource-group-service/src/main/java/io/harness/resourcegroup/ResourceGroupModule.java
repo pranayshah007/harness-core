@@ -9,6 +9,8 @@ package io.harness.resourcegroup;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 
 import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AccountClient;
@@ -27,10 +29,13 @@ import io.harness.delegate.DelegateServiceResourceClientModule;
 import io.harness.envgroup.EnvironmentGroupResourceClientModule;
 import io.harness.envgroup.remote.EnvironmentGroupResourceClient;
 import io.harness.environment.EnvironmentResourceClientModule;
+import io.harness.featureflag.FeatureFlagResourceClient;
+import io.harness.featureflag.FeatureFlagResourceClientModule;
 import io.harness.filestore.FileStoreClientModule;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.migration.NGMigrationSdkModule;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -41,6 +46,7 @@ import io.harness.project.ProjectClientModule;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.resourcegroup.eventframework.AccountEntityCrudStreamListener;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceTypeService;
 import io.harness.resourcegroup.framework.v1.service.impl.ResourceGroupEventHandler;
@@ -91,6 +97,13 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(OutboxService.class);
     installResourceValidators();
     addResourceValidatorConstraints();
+    registerEventListeners();
+  }
+
+  private void registerEventListeners() {
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+        .to(AccountEntityCrudStreamListener.class);
   }
 
   @Provides
@@ -121,6 +134,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(CEViewFolderClient.class);
     requireBinding(CodeResourceClient.class);
     requireBinding(GovernanceRuleClient.class);
+    requireBinding(FeatureFlagResourceClient.class);
   }
 
   private void installResourceValidators() {
@@ -170,6 +184,9 @@ public class ResourceGroupModule extends AbstractModule {
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCode().getBaseUrl()).build(),
         resourceClients.getCode().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
     install(new GovernanceRuleClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
+        resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+    install(new FeatureFlagResourceClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }

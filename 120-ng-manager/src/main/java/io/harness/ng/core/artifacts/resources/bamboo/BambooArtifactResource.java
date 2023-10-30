@@ -81,8 +81,11 @@ public class BambooArtifactResource {
         bambooConnectorIdentifier = bambooArtifactConfig.getConnectorRef().getValue();
       }
     }
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    bambooConnectorIdentifier = artifactResourceUtils
+                                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                        projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                        bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                    .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     BambooPlanKeysDTO buildDetails = bambooResourceService.getPlanName(connectorRef, orgIdentifier, projectIdentifier);
@@ -111,10 +114,15 @@ public class BambooArtifactResource {
         planName = bambooArtifactConfig.getPlanKey().fetchFinalValue().toString();
       }
     }
-    planName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef);
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    planName = artifactResourceUtils
+                   .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                       pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                   .getValue();
+    bambooConnectorIdentifier = artifactResourceUtils
+                                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                        projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                        bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                    .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     List<String> artifactPaths =
@@ -148,10 +156,15 @@ public class BambooArtifactResource {
         artifactPath = bambooArtifactConfig.getArtifactPaths().getValue();
       }
     }
-    planName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef);
-    bambooConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    planName = artifactResourceUtils
+                   .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                       pipelineIdentifier, runtimeInputYaml, planName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                   .getValue();
+    bambooConnectorIdentifier = artifactResourceUtils
+                                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                        projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                        bambooConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                    .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(bambooConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     List<BuildDetails> artifactPaths =

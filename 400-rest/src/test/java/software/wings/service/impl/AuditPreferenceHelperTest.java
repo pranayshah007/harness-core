@@ -25,13 +25,13 @@ import software.wings.WingsBaseTest;
 import software.wings.audit.AuditHeader;
 import software.wings.audit.EntityAuditRecord;
 import software.wings.audit.ResourceType;
-import software.wings.beans.AccountAuditFilter;
 import software.wings.beans.ApplicationAuditFilter;
 import software.wings.beans.AuditPreference;
 import software.wings.beans.CGConstants;
 import software.wings.beans.EntityType;
 import software.wings.beans.Event.Type;
 import software.wings.beans.PreferenceType;
+import software.wings.beans.account.AccountAuditFilter;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AppService;
 

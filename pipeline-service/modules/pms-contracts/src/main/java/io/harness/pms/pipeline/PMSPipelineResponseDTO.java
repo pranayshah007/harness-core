@@ -9,6 +9,7 @@ package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.accesscontrol.publicaccess.dto.PublicAccessResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -47,4 +48,5 @@ public class PMSPipelineResponseDTO {
   // is not needed and will be null
   String validationUuid;
   StoreType storeType;
+  PublicAccessResponse publicAccessResponse;
 }

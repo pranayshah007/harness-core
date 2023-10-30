@@ -68,6 +68,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -128,6 +129,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true,
         isErrorFrameworkSupported(), commandFlags);
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
     if (!k8sApplyRequest.isSkipSteadyStateCheck() && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
@@ -150,6 +152,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
                                                 .denoteOverallSuccess(false)
                                                 .isErrorFrameworkEnabled(true)
                                                 .kubernetesConfig(k8sApplyHandlerConfig.getKubernetesConfig())
+                                                .startTime(manifestApplyTime)
                                                 .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sApplyRequest.isUseK8sApiForSteadyStateCheck());

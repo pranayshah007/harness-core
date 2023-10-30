@@ -63,4 +63,7 @@ type Client interface {
 
 	// Info returns the stream information.
 	Info(ctx context.Context) (*stream.Info, error)
+
+	// Healthz returns the health information.
+	Healthz(ctx context.Context) error
 }

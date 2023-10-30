@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -91,7 +92,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -161,9 +162,9 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
 
       @Provides
       @Singleton
-      @Named("logStreamingClientThreadPool")
-      public ThreadPoolExecutor logStreamingClientThreadPool() {
-        return Mockito.mock(ThreadPoolExecutor.class);
+      @Named("logStreamingDelayExecutor")
+      public ScheduledExecutorService logStreamingDelayExecutor() {
+        return Mockito.mock(ScheduledExecutorService.class);
       }
 
       @Provides
@@ -195,6 +196,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
       @Singleton
       public LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
         return LogStreamingServiceConfiguration.builder().baseUrl(logStreamingBaseURL).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
       }
     });
     modules.add(new ProviderModule() {

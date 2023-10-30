@@ -21,6 +21,10 @@ import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -29,6 +33,8 @@ import io.harness.ngtriggers.helpers.TriggerFilterStore;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.contracts.triggers.TriggerPayload.Builder;
 import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
@@ -98,7 +104,7 @@ public class BuildTriggerEventMapper {
       for (TriggerFilter triggerFilter : triggerFilters) {
         triggerFilterInAction = triggerFilter;
         webhookEventMappingResponse = triggerFilter.applyFilter(filterRequestData);
-        saveEventHistoryForNotMatchedTriggers(webhookEventMappingResponse);
+        saveEventHistoryForNotMatchedTriggers(webhookEventMappingResponse, pollingResponse);
         if (webhookEventMappingResponse.isFailedToFindTrigger()) {
           return webhookEventMappingResponse;
         } else {
@@ -112,8 +118,48 @@ public class BuildTriggerEventMapper {
     return webhookEventMappingResponse;
   }
 
-  private void saveEventHistoryForNotMatchedTriggers(WebhookEventMappingResponse webhookEventMappingResponse) {
+  private void saveEventHistoryForNotMatchedTriggers(
+      WebhookEventMappingResponse webhookEventMappingResponse, PollingResponse pollingResponse) {
     for (UnMatchedTriggerInfo unMatchedTriggerInfo : webhookEventMappingResponse.getUnMatchedTriggerInfoList()) {
+      String buildSourceType = null;
+      String build = null;
+      if (pollingResponse != null) {
+        build = pollingResponse.getBuildInfo().getVersions(0);
+      }
+      if (NGTriggerType.ARTIFACT.equals(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity() == null
+                  ? null
+                  : unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getType())) {
+        buildSourceType = ((ArtifactTriggerConfig) unMatchedTriggerInfo.getUnMatchedTriggers()
+                               .getNgTriggerConfigV2()
+                               .getSource()
+                               .getSpec())
+                              .fetchBuildType();
+      }
+      if (NGTriggerType.MANIFEST.equals(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity() == null
+                  ? null
+                  : unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getType())) {
+        buildSourceType = ((ManifestTriggerConfig) unMatchedTriggerInfo.getUnMatchedTriggers()
+                               .getNgTriggerConfigV2()
+                               .getSource()
+                               .getSpec())
+                              .fetchBuildType();
+      }
+      if (NGTriggerType.MULTI_REGION_ARTIFACT.equals(
+              unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity() == null
+                  ? null
+                  : unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getType())) {
+        buildSourceType = ((MultiRegionArtifactTriggerConfig) unMatchedTriggerInfo.getUnMatchedTriggers()
+                               .getNgTriggerConfigV2()
+                               .getSource()
+                               .getSpec())
+                              .fetchBuildType();
+      }
+      Builder triggerPayloadBuilder = TriggerPayload.newBuilder();
+      if (pollingResponse != null) {
+        triggerPayloadBuilder = triggerEventExecutionHelper.buildTriggerPayloadBuilder(
+            unMatchedTriggerInfo.getUnMatchedTriggers(), pollingResponse);
+      }
+      TriggerPayload triggerPayload = triggerPayloadBuilder.build();
       triggerEventHistoryRepository.save(
           TriggerEventHistory.builder()
               .triggerIdentifier(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getIdentifier())
@@ -132,10 +178,10 @@ public class BuildTriggerEventMapper {
               .triggerIdentifier(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getIdentifier())
               .accountId(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getAccountId())
               .eventCreatedAt(System.currentTimeMillis())
-              .build(webhookEventMappingResponse.getWebhookEventResponse() == null
-                      ? null
-                      : webhookEventMappingResponse.getWebhookEventResponse().getBuild())
+              .build(build)
+              .payload(triggerPayload.toString())
               .executionNotAttempted(true)
+              .buildSourceType(buildSourceType)
               .build());
     }
   }

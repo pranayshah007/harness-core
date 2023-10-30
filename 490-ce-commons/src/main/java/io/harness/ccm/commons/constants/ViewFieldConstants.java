@@ -15,11 +15,11 @@ public interface ViewFieldConstants {
   String CLUSTER_TYPE_FIELD_ID = "clusterType";
   String NAMESPACE_FIELD_ID = "namespace";
   String WORKLOAD_NAME_FIELD_ID = "workloadName";
+  String SERVICE_NAME_FIELD_ID = "serviceName";
   String INSTANCE_NAME_FIELD_ID = "instanceName";
   String STORAGE_FIELD_ID = "storage";
   String APP_NAME_FIELD_ID = "appName";
   String ENV_NAME_FIELD_ID = "envName";
-  String SERVICE_NAME_FIELD_ID = "serviceName";
   String CLOUD_PROVIDER_FIELD_ID = "cloudProvider";
   String CLOUD_SERVICE_NAME_FIELD_ID = "cloudServiceName";
   String TASK_FIELD_ID = "taskId";

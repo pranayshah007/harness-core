@@ -314,11 +314,11 @@ public class NextGenServiceImpl implements NextGenService {
     while (morePages) {
       List<ProjectDTO> projects =
           requestExecutor
-              .execute(nextGenNonPrivilegedClient.listAccessibleProjects(accountIdentifier, null, page, pageSize))
+              .execute(nextGenNonPrivilegedClient.listProjectsForUser(accountIdentifier, null, page, pageSize))
               .getData()
               .getContent()
               .stream()
-              .map(projectAggregateDTO -> projectAggregateDTO.getProjectResponse().getProject())
+              .map(projectResponse -> projectResponse.getProject())
               .collect(Collectors.toList());
 
       projectDTOList.addAll(projects);

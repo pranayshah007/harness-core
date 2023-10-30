@@ -92,4 +92,9 @@ public interface CIStepInfo extends StepSpecType, WithStepElementParameters, Spe
     stepParametersBuilder.spec(getSpecParameters());
     return stepParametersBuilder.build();
   }
+
+  @Override
+  default List<String> excludeKeysFromStepInputs() {
+    return StepSpecType.super.excludeKeysFromStepInputs();
+  }
 }

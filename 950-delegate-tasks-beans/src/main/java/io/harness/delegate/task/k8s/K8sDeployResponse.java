@@ -49,10 +49,12 @@ public class K8sDeployResponse implements CDDelegateTaskNotifyResponseData {
   @Override
   public StepExecutionInstanceInfo getStepExecutionInstanceInfo() {
     return StepExecutionInstanceInfo.builder()
-        .serviceInstancesBefore(convertK8sPodsToK8sStepInstanceInfo(k8sNGTaskResponse.getPreviousK8sPodList()))
-        .deployedServiceInstances(
-            convertK8sPodsToK8sStepInstanceInfo(filterNewK8sPods(k8sNGTaskResponse.getTotalK8sPodList())))
-        .serviceInstancesAfter(convertK8sPodsToK8sStepInstanceInfo(k8sNGTaskResponse.getTotalK8sPodList()))
+        .serviceInstancesBefore(convertK8sPodsToK8sStepInstanceInfo(
+            k8sNGTaskResponse == null ? Collections.emptyList() : k8sNGTaskResponse.getPreviousK8sPodList()))
+        .deployedServiceInstances(convertK8sPodsToK8sStepInstanceInfo(filterNewK8sPods(
+            k8sNGTaskResponse == null ? Collections.emptyList() : k8sNGTaskResponse.getTotalK8sPodList())))
+        .serviceInstancesAfter(convertK8sPodsToK8sStepInstanceInfo(
+            k8sNGTaskResponse == null ? Collections.emptyList() : k8sNGTaskResponse.getTotalK8sPodList()))
         .build();
   }
 

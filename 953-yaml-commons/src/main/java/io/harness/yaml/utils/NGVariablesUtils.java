@@ -6,9 +6,11 @@
  */
 
 package io.harness.yaml.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +32,8 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j
@@ -211,10 +215,10 @@ public class NGVariablesUtils {
     inputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
-        if (parameterFieldValue.getValue() == null) {
+        if (parameterFieldValue.fetchFinalValue() == null) {
           throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
         }
-        res.put(key, parameterFieldValue.getValue().toString());
+        res.put(key, parameterFieldValue.fetchFinalValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {

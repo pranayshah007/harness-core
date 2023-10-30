@@ -29,6 +29,8 @@ public class ChaosStepNotifyData implements ResponseData, Outcome {
   Integer totalFaults;
 
   public boolean isSuccess() {
-    return phase != null && phase.equalsIgnoreCase("completed");
+    return phase != null
+        && (phase.equalsIgnoreCase("completed") || phase.equalsIgnoreCase("completed_with_probe_failure")
+            || phase.equalsIgnoreCase("completed_with_error"));
   }
 }

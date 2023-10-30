@@ -134,7 +134,7 @@ public class EnvironmentServiceImplTest extends WingsBaseTest {
 
     Environment savedEnv = environmentService.save(env1);
     List<HarnessTagLink> tagLinksWithEntityId =
-        harnessTagService.getTagLinksWithEntityId(ACCOUNT_ID, savedEnv.getUuid());
+        harnessTagService.getTagLinksWithEntityId(ACCOUNT_ID, savedEnv.getUuid(), false);
     assertThat(tagLinksWithEntityId).hasSize(1);
     assertTrue(tagLinksWithEntityId.stream().anyMatch(
         tagLink -> tagLink.getKey().equals("environmentType") && tagLink.getValue().equals("PROD")));

@@ -35,6 +35,11 @@ public class AsgBlueGreenRollbackStepParameters extends AsgBlueGreenRollbackBase
     super(delegateSelectors, asgBlueGreenCreateServiceFnq, asgBlueGreenSwapTargetGroupsFnq);
   }
 
+  @Override
+  public ParameterField<String> getAsgName() {
+    return null;
+  }
+
   public List<String> getCommandUnits() {
     return Arrays.asList(AsgCommandUnitConstants.rollback.toString());
   }

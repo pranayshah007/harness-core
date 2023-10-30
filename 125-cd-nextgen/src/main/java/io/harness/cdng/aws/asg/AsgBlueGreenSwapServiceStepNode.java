@@ -35,9 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("asgBlueGreenSwapServiceStepNode")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode")
 public class AsgBlueGreenSwapServiceStepNode extends CdAbstractStepNode {
-  @JsonProperty("type")
-  @NotNull
-  AsgBlueGreenSwapServiceStepNode.StepType type = AsgBlueGreenSwapServiceStepNode.StepType.AsgBlueGreenSwapService;
+  @JsonProperty("type") @NotNull AsgBlueGreenSwapServiceStepNode.StepType type = StepType.AsgBlueGreenSwapService;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   AsgBlueGreenSwapServiceStepInfo asgBlueGreenSwapServiceStepInfo;

@@ -32,9 +32,11 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
+import io.harness.template.helpers.TemplatePreProcessorHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
@@ -58,6 +60,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+  @Mock TemplatePreProcessorHelper templatePreProcessorHelper;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
@@ -180,8 +183,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-template-step-diff-scope.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -260,8 +263,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-template-step.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -350,8 +353,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-stage-template.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull().hasSize(1);
@@ -421,8 +424,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-stage-template.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, true);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, true, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull().hasSize(1);
@@ -461,8 +464,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String pipelineYaml = readFile(pipelineYamlFile);
 
     assertThatThrownBy(()
-                           -> templateMergeService.applyTemplatesToYaml(
-                               ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false))
+                           -> templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml,
+                               false, false, false, HarnessYamlVersion.V0))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Exponentially growing template nesting. Aborting");
   }
@@ -500,7 +503,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String pipelineYamlFile = "pipeline-with-invalid-template-steps.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
     try {
-      templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+      templateMergeService.applyTemplatesToYaml(
+          ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     } catch (NGTemplateResolveException ngTemplateResolveException) {
       assertThat(ngTemplateResolveException.getErrorResponseDTO()).isNotNull();
       assertThat(ngTemplateResolveException.getErrorResponseDTO().getErrorMap()).hasSize(3);
@@ -582,8 +586,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     String pipelineYamlFile = "pipeline-with-stepgroup-template.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
 
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -626,8 +630,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-template-field.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
@@ -687,8 +691,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
     String pipelineYamlFile = "pipeline-with-template-for-opa-policy.yaml";
     String pipelineYaml = readFile(pipelineYamlFile);
-    TemplateMergeResponseDTO pipelineMergeResponse =
-        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true, false, false);
+    TemplateMergeResponseDTO pipelineMergeResponse = templateMergeService.applyTemplatesToYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true, false, false, HarnessYamlVersion.V0);
     String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYamlWithTemplateRef();
     assertThat(finalPipelineYaml).isNotNull();
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();

@@ -16,6 +16,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
@@ -73,5 +74,9 @@ public interface NodeExecutionStrategy<P extends Node, N extends PmsNodeExecutio
 
   default void handleSdkResponseEvent(SdkResponseEventProto event) {
     throw new UnsupportedOperationException("Start execution node Supported for plan");
+  }
+
+  default PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return null;
   }
 }

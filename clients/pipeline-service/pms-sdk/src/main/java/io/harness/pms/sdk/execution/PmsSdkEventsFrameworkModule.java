@@ -6,21 +6,26 @@
  */
 
 package io.harness.pms.sdk.execution;
-
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_ADVISE_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_ADVISE_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_ADVISE_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_RESUME_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_RESUME_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_START_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_START_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_ORCHESTRATION_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_ORCHESTRATION_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PROGRESS_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PROGRESS_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.START_PARTIAL_PLAN_CREATOR_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC;
 import static io.harness.pms.events.PmsEventFrameworkConstants.MAX_PROCESSING_TIME_SECONDS;
@@ -32,9 +37,18 @@ import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.PT_ORCHESTRATION_EVENT_CONSUMER;
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.PT_PROGRESS_CONSUMER;
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.PT_START_PLAN_CREATION_EVENT_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_FACILITATOR_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_INTERRUPT_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_NODE_ADVISE_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_NODE_RESUME_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_NODE_START_CONSUMER;
+import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_PROGRESS_CONSUMER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
@@ -47,6 +61,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import java.time.Duration;
 import org.redisson.api.RedissonClient;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkEventsFrameworkModule extends AbstractModule {
   private static PmsSdkEventsFrameworkModule instance;
@@ -74,6 +90,11 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(PT_INTERRUPT_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_INTERRUPT_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_ORCHESTRATION_EVENT_CONSUMER))
           .toInstance(
@@ -84,9 +105,18 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(PT_FACILITATOR_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_FACILITATOR_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_START_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_START_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
@@ -96,12 +126,27 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_PROGRESS_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_ADVISE_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_ADVISE_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_RESUME_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_RESUME_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
@@ -117,6 +162,12 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(PIPELINE_INTERRUPT_TOPIC, serviceName, redissonClient,
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_INTERRUPT_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_INTERRUPT_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_INTERRUPT_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_ORCHESTRATION_EVENT_CONSUMER))
           .toInstance(RedisConsumer.of(PIPELINE_ORCHESTRATION_EVENT_TOPIC, serviceName, redissonClient,
@@ -130,11 +181,24 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_FACILITATOR_EVENT_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
 
+      // facilitator
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_FACILITATOR_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_FACILITATOR_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_START_CONSUMER))
           .toInstance(RedisConsumer.of(PIPELINE_NODE_START_EVENT_TOPIC, serviceName, redissonClient,
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_NODE_START_EVENT_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_START_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_NODE_START_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_PROGRESS_CONSUMER))
@@ -143,16 +207,34 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
               redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_PROGRESS_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_PROGRESS_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_ADVISE_CONSUMER))
           .toInstance(RedisConsumer.of(PIPELINE_NODE_ADVISE_EVENT_TOPIC, serviceName, redissonClient,
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_NODE_ADVISE_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_ADVISE_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_NODE_ADVISE_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_NODE_ADVISE_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_RESUME_CONSUMER))
           .toInstance(RedisConsumer.of(PIPELINE_NODE_RESUME_EVENT_TOPIC, serviceName, redissonClient,
               Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS), PIPELINE_NODE_RESUME_BATCH_SIZE,
               redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_RESUME_CONSUMER))
+          .toInstance(RedisConsumer.of(String.format(PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName),
+              serviceName, redissonClient, Duration.ofSeconds(MAX_PROCESSING_TIME_SECONDS),
+              PIPELINE_NODE_RESUME_BATCH_SIZE, redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_START_PLAN_CREATION_EVENT_CONSUMER))

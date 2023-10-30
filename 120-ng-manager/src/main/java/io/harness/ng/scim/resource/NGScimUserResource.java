@@ -95,8 +95,7 @@ public class NGScimUserResource extends ScimResource {
       })
   public Response
   createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(
+    if (!accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), MANAGE_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
@@ -123,8 +122,7 @@ public class NGScimUserResource extends ScimResource {
   public Response
   updateUser(@PathParam("userIdentifier") String userIdentifier,
       @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
@@ -152,8 +150,7 @@ public class NGScimUserResource extends ScimResource {
   public Response
   getUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(
+    if (!accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userIdentifier), VIEW_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USER_PERMISSION, accountIdentifier),
@@ -187,8 +184,7 @@ public class NGScimUserResource extends ScimResource {
   public Response
   searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(
+    if (!accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), VIEW_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USER_PERMISSION, accountIdentifier),
@@ -218,8 +214,7 @@ public class NGScimUserResource extends ScimResource {
   public Response
   deleteUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
@@ -242,8 +237,7 @@ public class NGScimUserResource extends ScimResource {
   public ScimUser
   updateUser(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
-        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
       throw new AccessDeniedException(
           String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),

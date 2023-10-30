@@ -10,6 +10,7 @@ package io.harness.delegate.task.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 
@@ -25,6 +26,8 @@ public class K8sRollingDeployRollbackResponse implements K8sNGTaskResponse {
   List<K8sPod> k8sPodList;
   Set<KubernetesResourceId> recreatedResourceIds;
   List<K8sPod> previousK8sPodList;
+
+  HelmChartInfo helmChartInfo;
 
   public List<K8sPod> getPreviousK8sPodList() {
     return previousK8sPodList;

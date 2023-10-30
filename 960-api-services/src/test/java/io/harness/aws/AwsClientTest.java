@@ -8,11 +8,14 @@
 package io.harness.aws;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -24,8 +27,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.service.impl.AwsApiHelperService;
@@ -33,9 +39,13 @@ import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.ecr.model.DescribeImagesResult;
+import com.amazonaws.services.ecr.model.ImageDetail;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.identitymanagement.model.ListRolesResult;
 import com.amazonaws.services.identitymanagement.model.Role;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +58,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AwsClientTest extends CategoryTest {
   @Mock private AwsApiHelperService awsApiHelperService;
+  @Mock private AwsCallTracker tracker;
   @InjectMocks private AwsClientImpl mockCFAWSClient;
 
   @Test
@@ -96,5 +107,48 @@ public class AwsClientTest extends CategoryTest {
     AwsClientImpl service = spy(mockCFAWSClient);
     doThrow(Exception.class).when(service).getAmazonIdentityManagementClient(any());
     service.listIAMRoles(any());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testListEcrImageTags() {
+    String registryId = "registryId";
+    String region = "region";
+    String imageName = "imageName";
+    AwsInternalConfig awsConfig = AwsInternalConfig.builder().build();
+    int pageSize = 2;
+    DescribeImagesResult describeImagesResult = new DescribeImagesResult();
+    ImageDetail imageDetail = new ImageDetail();
+    imageDetail.setImageTags(Arrays.asList("0.1", "0.2"));
+    imageDetail.setRegistryId(registryId);
+    imageDetail.setRepositoryName(imageName);
+    describeImagesResult.setImageDetails(Collections.singletonList(imageDetail));
+    describeImagesResult.setNextToken("nextToken");
+    when(awsApiHelperService.describeEcrImages(any(), anyString(), any())).thenReturn(describeImagesResult);
+    EcrImageDetailConfig ecrImageDetailConfig =
+        mockCFAWSClient.listEcrImageTags(awsConfig, registryId, region, imageName, pageSize, null);
+    assertThat(ecrImageDetailConfig).isNotNull();
+    assertThat(ecrImageDetailConfig.getImageDetails().size()).isEqualTo(1);
+    assertThat(ecrImageDetailConfig.getImageDetails().get(0)).isEqualTo(imageDetail);
+    assertThat(ecrImageDetailConfig.getNextToken()).isNotNull();
+    assertThat(ecrImageDetailConfig.getNextToken()).isEqualTo("nextToken");
+    verify(tracker, times(1)).trackECRCall(eq("List Images"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetImageTagsThrowsException() {
+    String registryId = "registryId";
+    String region = "region";
+    String imageName = "imageName";
+    AwsInternalConfig awsConfig = AwsInternalConfig.builder().build();
+    int pageSize = 10;
+    when(awsApiHelperService.describeEcrImages(any(), anyString(), any())).thenThrow(new RuntimeException());
+    assertThatThrownBy(() -> mockCFAWSClient.listEcrImageTags(awsConfig, registryId, region, imageName, pageSize, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user");
   }
 }

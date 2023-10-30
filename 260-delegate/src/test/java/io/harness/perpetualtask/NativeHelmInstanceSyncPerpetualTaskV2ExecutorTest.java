@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -40,11 +41,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -55,6 +59,8 @@ public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBase
   @Inject private KryoSerializer kryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
+  @Captor
+  ArgumentCaptor<NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest> podDetailsRequestArgumentCaptor;
 
   private final String PERPETUAL_TASK = "perpetualTaskId";
   private final String ACCOUNT_IDENTIFIER = "acc";
@@ -82,11 +88,15 @@ public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBase
             .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
-    NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails = NativeHelmDeploymentReleaseDetails.builder()
-                                                                          .releaseName("releaseName")
-                                                                          .namespaces(namespaces)
-                                                                          .helmVersion("V380")
-                                                                          .build();
+    Map<String, List<String>> workloadLabelSelectors =
+        Map.of("deploymentName", List.of("label1=value1", "label2=value2"));
+    NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails =
+        NativeHelmDeploymentReleaseDetails.builder()
+            .releaseName("releaseName")
+            .namespaces(namespaces)
+            .helmVersion("V380")
+            .workloadLabelSelectors(workloadLabelSelectors)
+            .build();
     List<NativeHelmDeploymentReleaseDetails> helmDeploymentReleaseDetailsList = new ArrayList<>();
     helmDeploymentReleaseDetailsList.add(helmDeploymentReleaseDetails);
     DeploymentReleaseDetails deploymentReleaseDetails =
@@ -115,6 +125,13 @@ public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBase
     assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getHelmChartInfo()).isNotNull();
     assertThat(((NativeHelmServerInstanceInfo) serverInstanceInfoList.get(0)).getHelmChartInfo().getName())
         .isEqualTo("helmChart");
+    verify(k8sInstanceSyncV2Helper).getServerInstanceInfoList(podDetailsRequestArgumentCaptor.capture());
+    NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest request =
+        podDetailsRequestArgumentCaptor.getValue();
+    assertThat(request.getWorkloadLabelSelectors()).isNotEmpty();
+    assertThat(request.getWorkloadLabelSelectors().get("deploymentName")).isNotNull();
+    assertThat(request.getWorkloadLabelSelectors().get("deploymentName")).contains("label1=value1");
+    assertThat(request.getWorkloadLabelSelectors().get("deploymentName")).contains("label2=value2");
   }
 
   @Test

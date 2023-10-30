@@ -20,6 +20,7 @@ import java.util.List;
 @OwnedBy(CDP)
 public interface IK8sReleaseHistory extends IsEmpty {
   int getAndIncrementLastReleaseNumber();
+  IK8sRelease getLastSuccessfulRelease();
   IK8sRelease getLastSuccessfulRelease(int currentReleaseNumber);
   IK8sRelease getLatestRelease();
   boolean isEmpty();

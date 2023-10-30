@@ -167,7 +167,7 @@ def trigger_bq_cf_for_processing(folders_to_ingest, jsonData):
         else:
             active_months_in_gcs_bucket[accountIdInPath] = [f"{report_year}-{report_month}-01"]
 
-    print("Sending events for respective folders")
+    print("Triggering billing-bq CF for respective folders")
     # sending a single event for triggering historical update of each accountId.
     processed_accounts = set()
     for path in folders_to_ingest:

@@ -9,6 +9,7 @@ package io.harness.ldap.service.impl;
 
 import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS;
 import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
@@ -152,6 +153,24 @@ public class NGLdapServiceImplTest extends CategoryTest {
       assertThat(ex).isInstanceOf(HintException.class);
       assertEquals(ex.getMessage(), HintException.CHECK_LDAP_CONNECTION);
     }
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testWithInvalidHost() throws IOException {
+    final String accountId = "testAccountId";
+
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
+    ldapSettings.getConnectionSettings().setHost("abc");
+    LdapTestResponse unsuccessfulTestResponse =
+        LdapTestResponse.builder().status(FAILURE).message(INVALID_CREDENTIALS).build();
+    mockCgClientCall();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
+
+    assertThatThrownBy(() -> ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings))
+        .isInstanceOf(HintException.class);
   }
 
   @Test

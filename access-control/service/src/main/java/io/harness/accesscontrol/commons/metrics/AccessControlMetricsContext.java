@@ -24,4 +24,11 @@ public class AccessControlMetricsContext extends AutoMetricContext {
     put("containerName", containerName);
     put("serviceName", serviceName);
   }
+
+  public AccessControlMetricsContext(String entityIdentifier, String entityType, String action, String serviceId) {
+    put("entityIdentifier", entityIdentifier);
+    put("entityType", entityType);
+    put("action", action);
+    put("serviceId", serviceId);
+  }
 }

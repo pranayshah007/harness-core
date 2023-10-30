@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.IDP)
 public enum BackstageCatalogEntityTypes {
-  API("Api"),
+  API("API"),
   COMPONENT("Component"),
   DOMAIN("Domain"),
   GROUP("Group"),

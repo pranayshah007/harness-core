@@ -5,8 +5,8 @@
 1. This assumes you can run the following commands successfully from the root of `./portal`.
 
     ```BASH
-    bazel --output_base=/tmp/bazel/output build //product/ci/scm/proto/...
-    bazel build //product/ci/scm/...
+    bazelisk build //product/ci/scm/proto/...
+    bazelisk build //product/ci/scm/...
     ```
 
 2. git change.
@@ -23,20 +23,20 @@
     export GOPRIVATE=github.com/harness/harness-core
     ```
 
-4. Only open the scm folder in vscode `portal/product/ci/scm`, do not open from the portal root.
+4. Only open the scm folder in vscode `harness-core/product/ci/scm`, do not open from the portal root.
 5. You will need to comment out the logservice line from `commons/go/lib/go.mod`. Add below line in go.mod file
     
     ```BASH
     replace github.com/harness/harness-core/product/ci/scm/proto => ./proto
     ```
 
-6. If you change the proto file you will need to run `bazel build --output_base=/tmp/bazel/output //product/ci/scm/proto/...` to re-create the go file `scm.pb.go`. Then you can copy this file to `portal/product/ci/scm`.
+6. If you change the proto file you will need to run `bazelisk build  //product/ci/scm/proto/...` to re-create the go file `scm_service.pb.go`. Then you can copy this file to `portal/product/ci/scm`.
 
     ```BASH
-    cd /tmp/bazel/output
-    find . -name scm.pb.go -print
+    cd ~
+    find . -name scm_service.pb.go
     # copy the output of above statement
-    cp <filepath printed above> <your codebase root>/product/ci/scm/proto/scm.pb.go
+    cp <filepath printed above> <your codebase root>/product/ci/scm/proto/scm_service.pb.go
     
     Example: 
     cp ./execroot/harness_monorepo/bazel-out/darwin_arm64-fastbuild/bin/product/ci/scm/proto/ciscmpb_go_proto_/github.com/harness/harness-core/product/ci/scm/proto/scm.pb.go ~/workspace/portal/product/ci/scm/proto

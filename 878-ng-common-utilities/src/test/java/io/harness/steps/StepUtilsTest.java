@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -63,6 +64,8 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,12 +97,16 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
-    Ambiance ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
-            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setPipelineIdentifier("pipelineId")
+                                             .setRunSequence(1)
+                                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                             .build())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
+                            .build();
 
     LinkedHashMap<String, String> expectedLogAbstractionMap = new LinkedHashMap<>();
     expectedLogAbstractionMap.put("accountId", "accountId");
@@ -120,13 +127,17 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
-    Ambiance ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
-            .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").build())
-            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setPipelineIdentifier("pipelineId")
+                                             .setRunSequence(1)
+                                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                             .build())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
+                            .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").build())
+                            .build();
 
     LinkedHashMap<String, String> expectedLogAbstractionMap = new LinkedHashMap<>();
     expectedLogAbstractionMap.put("accountId", "accountId");
@@ -149,7 +160,11 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
     Ambiance ambiance =
         Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .setPipelineIdentifier("pipelineId")
+                             .setRunSequence(1)
+                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                             .build())
             .putAllSetupAbstractions(setupAbstractions)
             .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
             .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").setRetryIndex(2).build())
@@ -256,11 +271,29 @@ public class StepUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateStepResponseFromChildResponse() {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
-    responseDataMap.put("key1", StepResponseNotifyData.builder().nodeUuid("nodeUuid").status(Status.SUCCEEDED).build());
+    responseDataMap.put("key1",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid1")
+            .nodeExecutionEndTs(Instant.now().toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
+    responseDataMap.put("key2",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid2")
+            .nodeExecutionEndTs(Instant.now().plus(15, ChronoUnit.MINUTES).toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
+    responseDataMap.put("key3",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid3")
+            .nodeExecutionEndTs(Instant.now().plus(8 * 7, ChronoUnit.DAYS).toEpochMilli())
+            .status(Status.SUCCEEDED)
+            .build());
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
-    responseDataMap.put("key2",
+
+    responseDataMap.put("key4",
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
     stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());

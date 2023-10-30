@@ -14,6 +14,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,6 +74,7 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
   private UserGroup userGroup;
   private String user;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
+  @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   @Before
   public void setup() {
@@ -82,8 +84,11 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
-    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
+    ACLGeneratorService changeConsumerService =
+        new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(),
+            aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     scopeIdentifier =

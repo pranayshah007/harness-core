@@ -13,6 +13,7 @@ import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 
 @Value
@@ -20,6 +21,18 @@ import lombok.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DliteVmExecuteStepTaskParams implements CIExecuteStepTaskParams {
   @JsonProperty("execute_step_request") private ExecuteStepRequest executeStepRequest;
+  @JsonProperty("context") Context context;
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Context {
+    @JsonProperty("account_id") String accountID;
+    @JsonProperty("org_id") String orgID;
+    @JsonProperty("project_id") String projectID;
+    @JsonProperty("pipeline_id") String pipelineID;
+    @JsonProperty("run_sequence") int runSequence;
+  }
 
   @Builder.Default private static final Type type = Type.DLITE_VM;
 

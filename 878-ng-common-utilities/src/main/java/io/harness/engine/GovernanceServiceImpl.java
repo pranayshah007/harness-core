@@ -22,7 +22,7 @@ import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.opaclient.model.TemplateOpaEvaluationContext;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -45,9 +45,9 @@ public class GovernanceServiceImpl implements GovernanceService {
   @Override
   public GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
       String projectIdentifier, String action, String planExecutionId, String pipelineVersion) {
-    pipelineVersion = isEmpty(pipelineVersion) ? PipelineVersion.V0 : pipelineVersion;
+    pipelineVersion = isEmpty(pipelineVersion) ? HarnessYamlVersion.V0 : pipelineVersion;
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
       default:
         break;

@@ -15,10 +15,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.advisers.nextstep.NextStageAdviserParameters;
+import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
+import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -27,6 +34,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.wait.WaitStepNode;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
@@ -61,8 +69,22 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField);
+        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(null, kryoSerializer, yamlField);
     assertNull(adviserObtainment);
+
+    Dependency dependency = Dependency.newBuilder()
+                                .setNodeMetadata(HarnessStruct.newBuilder()
+                                                     .putData(PlanCreatorConstants.NEXT_ID,
+                                                         HarnessValue.newBuilder().setStringValue("nextId").build())
+                                                     .build())
+                                .build();
+    adviserObtainment = PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(dependency, kryoSerializer, yamlField);
+    assertThat(adviserObtainment).isNotNull();
+    assertThat(adviserObtainment.getType())
+        .isEqualTo(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build());
+    assertThat(adviserObtainment.getParameters())
+        .isEqualTo(ByteString.copyFrom(
+            kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId("nextId").build())));
   }
 
   @Test

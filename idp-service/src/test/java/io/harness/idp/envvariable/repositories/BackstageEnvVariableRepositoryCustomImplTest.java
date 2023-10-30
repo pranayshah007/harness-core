@@ -67,11 +67,13 @@ public class BackstageEnvVariableRepositoryCustomImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testUpdate() {
+    long secretLastModifiedAt = System.currentTimeMillis();
     BackstageEnvSecretVariableEntity envSecretEntity =
         BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
     envSecretEntity.setAccountIdentifier(TEST_ACCOUNT_IDENTIFIER);
     envSecretEntity.setEnvName(TEST_ENV_NAME);
     envSecretEntity.setDeleted(false);
+    envSecretEntity.setSecretLastModifiedAt(secretLastModifiedAt);
     Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
                             .is(envSecretEntity.getAccountIdentifier())
                             .and(BackstageEnvVariableKeys.envName)
@@ -80,6 +82,7 @@ public class BackstageEnvVariableRepositoryCustomImplTest extends CategoryTest {
     Update update = new Update();
     update.set(BackstageEnvSecretVariableKeys.harnessSecretIdentifier, TEST_SECRET_IDENTIFIER);
     update.set(BackstageEnvSecretVariableKeys.isDeleted, false);
+    update.set(BackstageEnvSecretVariableKeys.secretLastModifiedAt, secretLastModifiedAt);
     when(mongoTemplate.findAndModify(
              eq(query), eq(update), any(FindAndModifyOptions.class), eq(BackstageEnvVariableEntity.class)))
         .thenReturn(envSecretEntity);

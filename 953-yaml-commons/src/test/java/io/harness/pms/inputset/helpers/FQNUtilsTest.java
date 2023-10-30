@@ -231,16 +231,11 @@ public class FQNUtilsTest extends CategoryTest {
     JsonNode jsonNode = objectMapper.readTree(yamlWithUUID);
     JsonNode originalJsonNode = jsonNode.deepCopy();
     // Will not remove the uuid from stages' first child.
-    new YamlConfig(originalJsonNode, true);
+    YamlConfig yamlConfig = new YamlConfig(originalJsonNode, true);
+    assertThat(yamlConfig.getFqnToValueMap()).isNotEmpty();
 
     assertThat(jsonNode).isEqualTo(originalJsonNode);
     assertThat(originalJsonNode.get("pipeline").get("stages").get(0).get("__uuid")).isNotNull();
-    assertThat(originalJsonNode.get("pipeline").get("stages").get(1).get("__uuid")).isNotNull();
-
-    // Will remove the uuid from stages' first child. This is current logic.
-    new YamlConfig(originalJsonNode);
-    assertThat(jsonNode).isNotEqualTo(originalJsonNode);
-    assertThat(originalJsonNode.get("pipeline").get("stages").get(0).get("__uuid")).isNull();
     assertThat(originalJsonNode.get("pipeline").get("stages").get(1).get("__uuid")).isNotNull();
   }
 }

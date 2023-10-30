@@ -23,7 +23,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.pipeline.labels.OrchestrationEndLabelsResolveHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.NGLabel;
 
@@ -65,7 +65,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
   public void testOnEndForV1Yaml() {
     PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
                                                      .label(NGLabel.builder().key("key").value("val").build())
-                                                     .pipelineVersion(PipelineVersion.V1)
+                                                     .pipelineVersion(HarnessYamlVersion.V1)
                                                      .build();
     List<NGLabel> dummyLabels = new ArrayList<>();
     Ambiance ambiance =
@@ -93,7 +93,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
   public void testOnEndForV0Yaml() {
     PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
                                                      .label(NGLabel.builder().key("key").value("val").build())
-                                                     .pipelineVersion(PipelineVersion.V0)
+                                                     .pipelineVersion(HarnessYamlVersion.V0)
                                                      .build();
     List<NGLabel> dummyLabels = new ArrayList<>();
     Ambiance ambiance =

@@ -35,6 +35,8 @@ public interface DelegateNgTokenService extends OwnedByAccount {
    */
   DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue);
 
+  DelegateTokenDetails getDefaultTokenOrOldestActiveDelegateToken(String accountId, DelegateEntityOwner owner);
+
   /**
    * Get delegate token detailed information, exclude delegate token value
    * @param accountId
@@ -56,4 +58,6 @@ public interface DelegateNgTokenService extends OwnedByAccount {
   void deleteAllTokensOwnedByOrgAndProject(String accountId, DelegateEntityOwner owner);
 
   Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList);
+
+  boolean doesDelegateTokenExist(String accountId, String delegateTokenName);
 }

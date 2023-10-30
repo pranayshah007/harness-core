@@ -27,6 +27,8 @@ import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.buildstate.ServiceContainerUtils;
@@ -47,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -73,7 +76,7 @@ public class K8InitializeServiceUtils {
       if (dependencyElement.getDependencySpecType() instanceof CIServiceInfo) {
         ContainerDefinitionInfo containerDefinitionInfo =
             createServiceContainerDefinition((CIServiceInfo) dependencyElement.getDependencySpecType(), portFinder,
-                serviceIdx, stageNode.getIdentifier(), os);
+                serviceIdx, stageNode.getIdentifier(), os, stageNode);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -83,8 +86,8 @@ public class K8InitializeServiceUtils {
     return containerDefinitionInfos;
   }
 
-  private ContainerDefinitionInfo createServiceContainerDefinition(
-      CIServiceInfo service, PortFinder portFinder, int serviceIdx, String identifier, OSType os) {
+  private ContainerDefinitionInfo createServiceContainerDefinition(CIServiceInfo service, PortFinder portFinder,
+      int serviceIdx, String identifier, OSType os, IntegrationStageNode stageNode) {
     Integer port = portFinder.getNextPort();
     service.setGrpcPort(port);
 
@@ -123,6 +126,14 @@ public class K8InitializeServiceUtils {
       envVariables.put(HARNESS_SERVICE_ARGS, String.join(SEPARATOR, args));
     }
 
+    String imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(service.getImagePullPolicy());
+    if (stageNode != null && stageNode.getIntegrationStageConfig() != null) {
+      Infrastructure infrastructure = stageNode.getIntegrationStageConfig().getInfrastructure();
+      if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
+        K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infrastructure;
+        imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+      }
+    }
     return ContainerDefinitionInfo.builder()
         .name(containerName)
         .commands(ServiceContainerUtils.getCommand(os))
@@ -139,7 +150,7 @@ public class K8InitializeServiceUtils {
         .stepName(service.getName())
         .privileged(privileged)
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(service.getImagePullPolicy()))
+        .imagePullPolicy(imagePullPolicy)
         .build();
   }
 

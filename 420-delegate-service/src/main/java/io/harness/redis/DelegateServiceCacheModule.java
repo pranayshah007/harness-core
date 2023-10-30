@@ -39,6 +39,7 @@ public class DelegateServiceCacheModule extends AbstractModule {
   @Singleton
   @Named("redissonClient")
   RedissonClient redissonClient() {
+    redisConfig.setCodec(RedissonKryoCodec.class);
     return RedissonClientFactory.getClient(redisConfig);
   }
 

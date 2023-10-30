@@ -21,6 +21,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/expression/common:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:org_apache_commons_commons_text",
     ],
 )
 

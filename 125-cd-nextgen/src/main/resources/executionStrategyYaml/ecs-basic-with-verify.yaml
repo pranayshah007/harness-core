@@ -1,0 +1,40 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Basic Deployment
+          identifier: basicDepoyment
+          steps:
+            - step:
+                name: ECS Service Setup
+                identifier: EcsServiceSetup
+                type: EcsServiceSetup
+                timeout: 10m
+                spec: {}
+            - step:
+                type: Verify
+                name: Verify
+                identifier: Verify
+                timeout: 2h
+                spec: {}
+            - step:
+                name: ECS Upgrade Container
+                identifier: EcsUpgradeContainer
+                type: EcsUpgradeContainer
+                timeout: 10m
+                spec:
+                  newServiceInstanceCount: 100
+                  newServiceInstanceUnit: Percentage
+    rollbackSteps:
+      - step:
+          name: ECS Basic Rollback
+          identifier: EcsBasicRollback
+          type: EcsBasicRollback
+          timeout: 10m
+          spec: {}

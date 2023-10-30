@@ -154,6 +154,16 @@ public class SlackMessageGenerator {
     return templateString;
   }
 
+  public String addServiceInfo(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getServiceName())) {
+      if (anomaly.getEntityType().equals(EntityType.SERVICE)) {
+        templateString = templateString + " \n> *Service* : <${SERVICE_URL}|${" + AnomalyEntityKeys.serviceName + "}>";
+      } else {
+        templateString = templateString + " \n> *Service* : ${" + AnomalyEntityKeys.serviceName + "}";
+      }
+    }
+    return templateString;
+  }
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
@@ -213,12 +223,56 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
-
+  private String addAwsUsageType(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAwsUsageType())) {
+      if (anomaly.getEntityType().equals(EntityType.AWS_USAGE_TYPE)) {
+        templateString =
+            templateString + " \n> *UsageType* : <${AWS_USAGE_TYPE_URL}|${" + AnomalyEntityKeys.awsUsageType + "}>";
+      } else {
+        templateString = templateString + " \n> *UsageType* : ${" + AnomalyEntityKeys.awsUsageType + "}";
+      }
+    }
+    return templateString;
+  }
+  private String addAzureSubscription(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureSubscription())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_SUBSCRIPTION)) {
+        templateString = templateString + " \n> *Subscription* : <${AZURE_SUBSCRIPTION_URL}|${"
+            + AnomalyEntityKeys.azureSubscription + "}>";
+      } else {
+        templateString = templateString + " \n> *Subscription* : ${" + AnomalyEntityKeys.azureSubscription + "}";
+      }
+    }
+    return templateString;
+  }
+  private String addAzureResourceGroup(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureResourceGroup())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_RESOURCE_GROUP)) {
+        templateString = templateString + " \n> *ResourceGroup* : <${AZURE_RESOURCE_GROUP_URL}|${"
+            + AnomalyEntityKeys.azureResourceGroup + "}>";
+      } else {
+        templateString = templateString + " \n> *ResourceGroup* : ${" + AnomalyEntityKeys.azureResourceGroup + "}";
+      }
+    }
+    return templateString;
+  }
+  private String addAzureMeterCategory(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureMeterCategory())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_METER_CATEGORY)) {
+        templateString = templateString + " \n> *MeterCategory* : <${AZURE_METER_CATEGORY_URL}|${"
+            + AnomalyEntityKeys.azureMeterCategory + "}>";
+      } else {
+        templateString = templateString + " \n> *MeterCategory* : ${" + AnomalyEntityKeys.azureMeterCategory + "}";
+      }
+    }
+    return templateString;
+  }
   public LayoutBlock fromAnomaly(AnomalyEntity anomaly, Currency currency) {
     String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}) ";
     templateString = addClusterInfo(templateString, anomaly);
     templateString = addNamespaceInfo(templateString, anomaly);
     templateString = addWorkloadInfo(templateString, anomaly);
+    templateString = addServiceInfo(templateString, anomaly);
     templateString = addGcpProjectInfo(templateString, anomaly);
     templateString = addGcpProductInfo(templateString, anomaly);
     templateString = addGcpSkuInfo(templateString, anomaly);
@@ -241,11 +295,16 @@ public class SlackMessageGenerator {
     templateString = addClusterInfo(templateString, anomalyEntity);
     templateString = addNamespaceInfo(templateString, anomalyEntity);
     templateString = addWorkloadInfo(templateString, anomalyEntity);
+    templateString = addServiceInfo(templateString, anomalyEntity);
     templateString = addGcpProjectInfo(templateString, anomalyEntity);
     templateString = addGcpProductInfo(templateString, anomalyEntity);
     templateString = addGcpSkuInfo(templateString, anomalyEntity);
     templateString = addAwsAccountInfo(templateString, anomalyEntity);
     templateString = addAwsServiceInfo(templateString, anomalyEntity);
+    templateString = addAwsUsageType(templateString, anomalyEntity);
+    templateString = addAzureSubscription(templateString, anomalyEntity);
+    templateString = addAzureResourceGroup(templateString, anomalyEntity);
+    templateString = addAzureMeterCategory(templateString, anomalyEntity);
     templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
         + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
@@ -267,11 +326,16 @@ public class SlackMessageGenerator {
         .gcpProject(anomaly.getEntity().getGcpProjectId())
         .gcpSKUDescription(anomaly.getEntity().getGcpSKUDescription())
         .gcpSKUId(anomaly.getEntity().getGcpSKUId())
+        .azureSubscription(anomaly.getEntity().getAzureSubscriptionGuid())
+        .azureResourceGroup(anomaly.getEntity().getAzureResourceGroup())
+        .azureMeterCategory(anomaly.getEntity().getAzureMeterCategory())
         .clusterId(anomaly.getEntity().getClusterId())
         .clusterName(anomaly.getEntity().getClusterName())
         .workloadName(anomaly.getEntity().getWorkloadName())
         .workloadType(anomaly.getEntity().getWorkloadType())
         .namespace(anomaly.getEntity().getNamespace())
+        .service(anomaly.getEntity().getService())
+        .serviceName(anomaly.getEntity().getServiceName())
         .actualCost(anomaly.getActualAmount())
         .expectedCost(anomaly.getExpectedAmount())
         .build();

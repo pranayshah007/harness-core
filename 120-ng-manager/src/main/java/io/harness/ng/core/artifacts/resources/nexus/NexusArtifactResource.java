@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.core.artifacts.resources.nexus;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -53,6 +55,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_COMMON_STEPS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDP)
 @Api("artifacts")
 @Path("/artifacts/nexus")
@@ -75,10 +80,12 @@ public class NexusArtifactResource {
   public ResponseDTO<NexusResponseDTO> getBuildDetails(@QueryParam("repository") String repository,
       @QueryParam("repositoryPort") String repositoryPort, @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("connectorRef") String nexusConnectorIdentifier, @QueryParam("groupId") String groupId,
-      @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
+      @QueryParam("connectorRef") String nexusConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.GROUP_ID) String groupId,
+      @QueryParam(NGArtifactConstants.ARTIFACT_ID) String artifactId, @QueryParam("extension") String extension,
       @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
-      @QueryParam("group") String group, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGArtifactConstants.GROUP) String group,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
@@ -98,10 +105,12 @@ public class NexusArtifactResource {
   getBuildDetailsV2(@QueryParam("repository") String repository, @QueryParam("repositoryPort") String repositoryPort,
       @QueryParam("artifactPath") String artifactPath, @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
-      @QueryParam("connectorRef") String nexusConnectorIdentifier, @QueryParam("groupId") String groupId,
-      @QueryParam("artifactId") String artifactId, @QueryParam("extension") String extension,
+      @QueryParam("connectorRef") String nexusConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.GROUP_ID) String groupId,
+      @QueryParam(NGArtifactConstants.ARTIFACT_ID) String artifactId, @QueryParam("extension") String extension,
       @QueryParam("classifier") String classifier, @QueryParam("packageName") String packageName,
-      @QueryParam("group") String group, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGArtifactConstants.GROUP) String group,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
@@ -267,14 +276,23 @@ public class NexusArtifactResource {
       }
     }
 
-    nexusConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    nexusConnectorIdentifier = artifactResourceUtils
+                                   .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                       projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                       nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                   .getValue();
 
-    repositoryFormat = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryFormat =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
+    repository =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -359,17 +377,28 @@ public class NexusArtifactResource {
       }
     }
 
-    nexusConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    nexusConnectorIdentifier = artifactResourceUtils
+                                   .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                       projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                       nexusConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                   .getValue();
 
-    repositoryFormat = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryFormat =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
+    repository =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    groupId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, groupId, fqnPath, gitEntityBasicInfo, serviceRef);
+    groupId = artifactResourceUtils
+                  .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                      pipelineIdentifier, runtimeInputYaml, groupId, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                  .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

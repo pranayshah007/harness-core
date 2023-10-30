@@ -6,15 +6,18 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.events.SpawnChildRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
@@ -25,6 +28,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
 public class ChildStrategy implements ExecuteStrategy {
@@ -47,6 +51,21 @@ public class ChildStrategy implements ExecuteStrategy {
     StepResponse stepResponse = childExecutable.handleChildResponse(
         ambiance, resumePackage.getStepParameters(), resumePackage.getResponseDataMap());
     sdkNodeExecutionService.handleStepResponse(ambiance, StepResponseMapper.toStepResponseProto(stepResponse));
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Abort not supported for Child Chain");
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
   }
 
   @Override

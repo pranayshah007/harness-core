@@ -330,6 +330,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
         Delegate.builder().uuid(ID_KEY).accountId(ACCOUNT_ID).delegateName(DELEGATE_NAME).build();
 
     when(delegateService.update(updatedDelegate)).thenReturn(updatedDelegate);
+    when(delegateCache.get(anyString(), anyString(), anyBoolean())).thenReturn(updatedDelegate);
 
     RestResponse<Delegate> restResponse =
         RESOURCES.client()

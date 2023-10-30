@@ -6,19 +6,23 @@
  */
 
 package io.harness.exception.exceptionmanager;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.GeneralExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JGitExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.SpringDataAccessExceptionHandler;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.DX)
 public class ExceptionModule extends AbstractModule {
   private static volatile ExceptionModule instance;
@@ -37,6 +41,8 @@ public class ExceptionModule extends AbstractModule {
 
     GeneralExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(GeneralExceptionHandler.class));
+    SpringDataAccessExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(SpringDataAccessExceptionHandler.class));
     JexlRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(JexlRuntimeExceptionHandler.class));
     JGitExceptionHandler.exceptions().forEach(

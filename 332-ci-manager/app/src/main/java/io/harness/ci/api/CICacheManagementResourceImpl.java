@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.cache.api.CICacheManagementResource;
 import io.harness.beans.cache.api.CacheMetadataInfo;
 import io.harness.beans.cache.api.DeleteCacheResponse;
-import io.harness.cache.CICacheManagementService;
+import io.harness.ci.cache.CICacheManagementService;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import com.google.inject.Inject;
@@ -31,9 +31,9 @@ public class CICacheManagementResourceImpl implements CICacheManagementResource 
     return ResponseDTO.newResponse(ciCacheManagementService.getCacheMetadata(accountIdentifier));
   }
 
-  public ResponseDTO<DeleteCacheResponse> deleteCache(String accountIdentifier, String path) {
+  public ResponseDTO<DeleteCacheResponse> deleteCache(String accountIdentifier, String path, String cacheType) {
     log.info("Deleting cache");
 
-    return ResponseDTO.newResponse(ciCacheManagementService.deleteCache(accountIdentifier, path));
+    return ResponseDTO.newResponse(ciCacheManagementService.deleteCache(accountIdentifier, path, cacheType));
   }
 }

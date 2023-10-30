@@ -7,7 +7,7 @@
 
 package io.harness.dms.module;
 
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -84,7 +84,7 @@ public class DelegateServiceMongoModule extends ProviderModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
+    return config.getDistributedLockImplementation() == null ? REDIS : config.getDistributedLockImplementation();
   }
 
   @Provides

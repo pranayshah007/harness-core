@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -31,6 +32,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.common.AccountAuthenticationSettings;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
@@ -282,18 +284,16 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
     doReturn(Response.success(mockSSOConfigRes)).when(ssoConfigRequest).execute();
 
-    Call<RestResponse<Boolean>> twoFARequest = mock(Call.class);
-    Call<RestResponse<Integer>> sessionTimeoutRequest = mock(Call.class);
-    Call<RestResponse<Boolean>> publicAccessRequest = mock(Call.class);
-    doReturn(twoFARequest).when(managerClient).twoFactorEnabled(anyString());
-    doReturn(sessionTimeoutRequest).when(managerClient).getSessionTimeoutAtAccountLevel(anyString());
-    doReturn(publicAccessRequest).when(managerClient).getPublicAccess(anyString());
-    RestResponse<Boolean> twoFARep = new RestResponse<>(false);
-    RestResponse<Integer> sessionTimeoutResp = new RestResponse<>(50);
-    RestResponse<Boolean> publicAccessRep = new RestResponse<>(false);
-    doReturn(Response.success(twoFARep)).when(twoFARequest).execute();
-    doReturn(Response.success(sessionTimeoutResp)).when(sessionTimeoutRequest).execute();
-    doReturn(Response.success(publicAccessRep)).when(publicAccessRequest).execute();
+    Call<RestResponse<Boolean>> accountAuthenticationSettingsRequest = mock(Call.class);
+    doReturn(accountAuthenticationSettingsRequest).when(managerClient).getAuthenticationSettings(anyString());
+    RestResponse<AccountAuthenticationSettings> accountAuthenticationSettings =
+        new RestResponse<>(AccountAuthenticationSettings.builder()
+                               .twoFactorEnabled(false)
+                               .oauthEnabled(false)
+                               .publicAccessEnabled(false)
+                               .sessionTimeoutInMinutes(50)
+                               .build());
+    doReturn(Response.success(accountAuthenticationSettings)).when(accountAuthenticationSettingsRequest).execute();
     Call<RestResponse<LoginSettings>> loginSettingsRequest = mock(Call.class);
     doReturn(loginSettingsRequest).when(managerClient).getUserNamePasswordSettings(anyString());
 
@@ -320,6 +320,7 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
         authenticationSettingsServiceImpl.getAuthenticationSettingsV2(ACCOUNT_ID);
     assertNotNull(settingsV2Response);
     assertNotNull(settingsV2Response.getNgAuthSettings());
+    assertNotNull(settingsV2Response.isOauthEnabled());
     assertNotNull(settingsV2Response.getWhitelistedDomains());
     assertThat(settingsV2Response.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.SAML);
     assertThat(settingsV2Response.isTwoFactorEnabled()).isEqualTo(false);
@@ -642,5 +643,65 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
                                anyString(), anyString(), anyBoolean(), anyString(), anyString()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid logoutUrl " + logoutUrl);
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testGetAuthenticationSettingsWithOauthEnabled() throws IOException {
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(ACCOUNT_ID, PL_ENABLE_MULTIPLE_IDP_SUPPORT);
+    Call<RestResponse<Set<String>>> whitelistDomainsRequest = mock(Call.class);
+    doReturn(whitelistDomainsRequest).when(managerClient).getWhitelistedDomains(anyString());
+    Set<String> strs = new HashSet<>();
+    strs.add("wl1");
+    RestResponse<Set<String>> mockSetsResp = new RestResponse<>(strs);
+    doReturn(Response.success(mockSetsResp)).when(whitelistDomainsRequest).execute();
+    Call<RestResponse<SSOConfig>> ssoConfigRequest = mock(Call.class);
+    doReturn(ssoConfigRequest).when(managerClient).getAccountAccessManagementSettings(anyString());
+    List<SSOSettings> settings = new ArrayList<>();
+    SSOConfig config = SSOConfig.builder()
+                           .accountId(ACCOUNT_ID)
+                           .authenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                           .ssoSettings(settings)
+                           .build();
+    RestResponse<SSOConfig> mockSSOConfigRes = new RestResponse<>(config);
+    doReturn(Response.success(mockSSOConfigRes)).when(ssoConfigRequest).execute();
+    Call<RestResponse<Boolean>> accountAuthenticationSettingsRequest = mock(Call.class);
+    doReturn(accountAuthenticationSettingsRequest).when(managerClient).getAuthenticationSettings(anyString());
+    RestResponse<AccountAuthenticationSettings> accountAuthenticationSettings =
+        new RestResponse<>(AccountAuthenticationSettings.builder()
+                               .twoFactorEnabled(false)
+                               .oauthEnabled(true)
+                               .publicAccessEnabled(false)
+                               .sessionTimeoutInMinutes(50)
+                               .build());
+    doReturn(Response.success(accountAuthenticationSettings)).when(accountAuthenticationSettingsRequest).execute();
+    Call<RestResponse<LoginSettings>> loginSettingsRequest = mock(Call.class);
+    doReturn(loginSettingsRequest).when(managerClient).getUserNamePasswordSettings(anyString());
+
+    LoginSettings loginSettings = LoginSettings.builder()
+                                      .passwordExpirationPolicy(PasswordExpirationPolicy.builder()
+                                                                    .enabled(false)
+                                                                    .daysBeforeUserNotifiedOfPasswordExpiration(2)
+                                                                    .daysBeforePasswordExpires(1)
+                                                                    .build())
+                                      .userLockoutPolicy(UserLockoutPolicy.builder()
+                                                             .enableLockoutPolicy(false)
+                                                             .lockOutPeriod(24)
+                                                             .notifyUser(false)
+                                                             .numberOfFailedAttemptsBeforeLockout(3)
+                                                             .build())
+                                      .passwordStrengthPolicy(PasswordStrengthPolicy.builder().enabled(false).build())
+                                      .accountId(ACCOUNT_ID)
+                                      .build();
+
+    RestResponse<LoginSettings> loginSettingsResp = new RestResponse<>(loginSettings);
+    doReturn(Response.success(loginSettingsResp)).when(loginSettingsRequest).execute();
+
+    AuthenticationSettingsResponse settingsV2Response =
+        authenticationSettingsServiceImpl.getAuthenticationSettings(ACCOUNT_ID);
+    assertNotNull(settingsV2Response.getNgAuthSettings());
+    assertThat(settingsV2Response.isOauthEnabled()).isEqualTo(true);
+    assertThat(settingsV2Response.getAuthenticationMechanism()).isEqualTo(AuthenticationMechanism.USER_PASSWORD);
   }
 }

@@ -28,7 +28,7 @@ public class DslClientFactory {
   public DslClient getClient(String accountIdentifier, String host) {
     JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
     try {
-      if (hostProxyMap.getBoolean(host)) {
+      if (host != null && hostProxyMap.getBoolean(host)) {
         return delegateDslClient;
       }
     } catch (JSONException e) {

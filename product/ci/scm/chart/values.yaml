@@ -16,7 +16,7 @@ image:
   repository: harness/ci-scm-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: release-150-ubi
+  tag: release-161-ubi
   digest: ""
   imagePullSecrets: []
 

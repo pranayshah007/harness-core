@@ -33,6 +33,7 @@ import io.harness.notification.senders.PagerDutySenderImpl;
 import io.harness.notification.service.PagerDutyServiceImpl.PagerDutyTemplate;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -55,6 +56,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   @Mock private YamlUtils yamlUtils;
   @Mock private PagerDutySenderImpl pagerDutySender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private PagerDutyServiceImpl pagerdutyService;
   private String accountId = "accountId";
   private String pdTemplateName = "pd_test";
@@ -67,7 +69,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     pagerdutyService = new PagerDutyServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        pagerDutySender, delegateGrpcClientWrapper);
+        pagerDutySender, delegateGrpcClientWrapper, notificationSettingsHelper);
     pdTemplate.setSummary("this is test mail");
   }
 
@@ -141,7 +143,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(pagerDutySender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
@@ -191,7 +193,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(pagerDutySender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
@@ -246,7 +248,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(pagerDutySender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
@@ -306,7 +308,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
         PagerDutySettingDTO.builder().accountId(accountId).recipient("email@harness.io").build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(pagerDutySender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);

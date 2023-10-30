@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
@@ -27,6 +28,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 @NoArgsConstructor
+@RecasterAlias("io.harness.cvng.cdng.beans.SimpleVerificationJobSpec")
 public class SimpleVerificationJobSpec extends VerificationJobSpec {
   @Override
   public String getType() {

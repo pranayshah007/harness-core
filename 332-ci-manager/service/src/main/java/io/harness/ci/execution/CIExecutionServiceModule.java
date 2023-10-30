@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci;
+
 import io.harness.CIBeansModule;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -21,6 +22,7 @@ import io.harness.beans.steps.nodes.BitriseStepNode;
 import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
+import io.harness.beans.steps.nodes.BuildAndPushGARNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.beans.steps.nodes.GCSUploadNode;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
@@ -85,6 +87,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(BuildAndPushECRNode.class);
       add(BuildAndPushGCRNode.class);
       add(BuildAndPushACRNode.class);
+      add(BuildAndPushGARNode.class);
       add(SaveCacheS3Node.class);
       add(SaveCacheGCSNode.class);
       add(RestoreCacheGCSNode.class);
@@ -98,6 +101,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(BitriseStepNode.class);
     }
   };
+
   @Inject
   public CIExecutionServiceModule(CIExecutionServiceConfig ciExecutionServiceConfig, Boolean withPMS) {
     this.ciExecutionServiceConfig = ciExecutionServiceConfig;

@@ -521,6 +521,7 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+        - IDP
     Action:
       title: Action
       x-stoplight:

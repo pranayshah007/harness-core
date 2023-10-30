@@ -37,6 +37,7 @@ import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.gitsync.common.impl.GitBranchServiceImpl;
 import io.harness.gitsync.common.impl.GitBranchSyncServiceImpl;
 import io.harness.gitsync.common.impl.GitEntityServiceImpl;
+import io.harness.gitsync.common.impl.GitSyncConnectorServiceImpl;
 import io.harness.gitsync.common.impl.GitSyncSettingsServiceImpl;
 import io.harness.gitsync.common.impl.GitToHarnessProgressServiceImpl;
 import io.harness.gitsync.common.impl.HarnessToGitHelperServiceImpl;
@@ -51,6 +52,7 @@ import io.harness.gitsync.common.mappers.UserSourceCodeManagerMapper;
 import io.harness.gitsync.common.service.GitBranchService;
 import io.harness.gitsync.common.service.GitBranchSyncService;
 import io.harness.gitsync.common.service.GitEntityService;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.GitToHarnessProgressService;
 import io.harness.gitsync.common.service.HarnessToGitHelperService;
@@ -214,6 +216,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(GitFullSyncConfigService.class).toInstance(mock(GitFullSyncConfigServiceImpl.class));
         bind(FullSyncJobService.class).toInstance(mock(FullSyncJobServiceImpl.class));
         bind(ScmClient.class).toInstance(mock(SCMServiceGitClientImpl.class));
+        bind(GitSyncConnectorService.class).toInstance(mock(GitSyncConnectorServiceImpl.class));
         bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
             .toInstance(mock(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class));
         MapBinder<SCMType, UserSourceCodeManagerMapper> sourceCodeManagerMapBinder =
@@ -279,7 +282,6 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         return ImmutableMap.<EntityType, Microservice>builder()
             .put(EntityType.CONNECTORS, CORE)
             .put(EntityType.PIPELINES, PMS)
-            .put(EntityType.FEATURE_FLAGS, CF)
             .put(EntityType.INPUT_SETS, PMS)
             .put(EntityType.TEMPLATE, TEMPLATESERVICE)
             .build();

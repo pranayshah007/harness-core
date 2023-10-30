@@ -61,6 +61,8 @@ public class EnvironmentYamlV2 implements Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> environmentRef;
 
+  private String gitBranch;
+
   /*
   Deploy to all underlying infrastructures (or gitops clusters)
    */

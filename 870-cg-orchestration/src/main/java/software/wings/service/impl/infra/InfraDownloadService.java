@@ -10,7 +10,7 @@ package software.wings.service.impl.infra;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 
 import org.hibernate.validator.constraints.NotEmpty;
 

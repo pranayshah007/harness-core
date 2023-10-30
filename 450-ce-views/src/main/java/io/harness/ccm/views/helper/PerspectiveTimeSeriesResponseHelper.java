@@ -12,6 +12,9 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_DOUBLE_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_STRING_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ID_SEPARATOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
 import io.harness.ccm.views.businessmapping.entities.SharedCost;
@@ -37,6 +40,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 public class PerspectiveTimeSeriesResponseHelper {
   @Inject EntityMetadataService entityMetadataService;

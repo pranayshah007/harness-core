@@ -6,6 +6,7 @@ category: Core Feature
 source: https://backstage.io/docs/features/kubernetes/
 iconUrl: https://avatars.githubusercontent.com/u/13629408
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/kubernetes/
 config: |-
   kubernetes:
     serviceLocatorMethod:

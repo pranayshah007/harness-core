@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.creator.plan.infrastructure;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
@@ -74,6 +76,8 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfrastructurePmsPlanCreator {
@@ -118,6 +122,47 @@ public class InfrastructurePmsPlanCreator {
                                                           .infraInputs(infraInputs)
                                                           .deploymentType(deploymentType)
                                                           .skipInstances(skipInstances)
+                                                          .build();
+    return PlanNode.builder()
+        .uuid(UUIDGenerator.generateUuid())
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
+        .name(PlanCreatorConstants.INFRA_NODE_NAME)
+        .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
+        .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
+        .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
+        .stepParameters(params)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                .build())
+        .adviserObtainments(adviserObtainments)
+        .build();
+  }
+
+  /*
+  This is used for getting infrastructure step plan node when service definition is null (in custom stage). In those
+  cases we do not need to provide service definition type and skip  instances boolean.
+   */
+  public PlanNode getCustomStageInfraTaskExecutableStepV2PlanNode(
+      EnvironmentYamlV2 environmentYamlV2, List<AdviserObtainment> adviserObtainments) {
+    ParameterField<String> infraRef;
+    ParameterField<Map<String, Object>> infraInputs;
+
+    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+      infraInputs = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getInputs();
+    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+      infraInputs = environmentYamlV2.getInfrastructureDefinition().getValue().getInputs();
+    } else {
+      infraRef = ParameterField.createValueField(null);
+      infraInputs = ParameterField.createValueField(null);
+    }
+    InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
+                                                          .envRef(environmentYamlV2.getEnvironmentRef())
+                                                          .infraRef(infraRef)
+                                                          .infraInputs(infraInputs)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())

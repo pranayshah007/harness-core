@@ -7,6 +7,9 @@
 
 package io.harness.accesscontrol.principals.users;
 
+import static java.lang.Boolean.TRUE;
+import static java.util.Objects.nonNull;
+
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
@@ -42,7 +45,7 @@ public class HarnessUserServiceImpl implements HarnessUserService {
             "Could not find the user with the given identifier");
     UserMetadataDTO userMetadataDTO =
         NGRestUtils.getResponse(userMembershipClient.getUser(identifier, scopeParams.getAccountIdentifier()));
-    if (Boolean.TRUE.equals(isUserInScope)) {
+    if (TRUE.equals(isUserInScope) && nonNull(userMetadataDTO)) {
       User user = User.builder()
                       .identifier(identifier)
                       .scopeIdentifier(scope.toString())

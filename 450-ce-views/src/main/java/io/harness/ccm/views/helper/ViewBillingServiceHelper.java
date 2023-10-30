@@ -23,6 +23,9 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_A
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.currency.Currency;
@@ -87,6 +90,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 public class ViewBillingServiceHelper {

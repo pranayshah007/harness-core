@@ -145,7 +145,8 @@ public class WorkflowResourceTest extends WingsBaseTest {
     PageRequest<Workflow> pageRequest = aPageRequest().build();
     PageResponse<Workflow> pageResponse = aPageResponse().withResponse(Lists.newArrayList(WORKFLOW)).build();
     when(FEATURE_FLAG_SERVICE.isEnabled(any(), anyString())).thenReturn(false);
-    when(WORKFLOW_SERVICE.listWorkflows(any(PageRequest.class), any(), anyBoolean(), any())).thenReturn(pageResponse);
+    when(WORKFLOW_SERVICE.listWorkflows(any(PageRequest.class), any(), anyBoolean(), any(), anyBoolean()))
+        .thenReturn(pageResponse);
 
     RestResponse<PageResponse<Workflow>> restResponse =
         RESOURCES.client()
@@ -154,7 +155,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
             .get(new GenericType<RestResponse<PageResponse<Workflow>>>() {});
 
     log.info(JsonUtils.asJson(restResponse));
-    verify(WORKFLOW_SERVICE).listWorkflows(pageRequestArgumentCaptor.capture(), eq(2), eq(false), eq(null));
+    verify(WORKFLOW_SERVICE).listWorkflows(pageRequestArgumentCaptor.capture(), eq(2), eq(false), eq(null), eq(true));
     assertThat(pageRequestArgumentCaptor.getValue()).isNotNull();
     assertThat(restResponse).isNotNull().hasFieldOrPropertyWithValue("resource", pageResponse);
   }

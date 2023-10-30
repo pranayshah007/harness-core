@@ -37,35 +37,55 @@ public class CliHelper {
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback) throws IOException, InterruptedException, TimeoutException {
-    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, command,
-        new EmptyLogOutputStream(), new DefaultErrorLogOutputStream(executionLogCallback), 0);
+    CliCommandRequest request = CliCommandRequest.builder()
+                                    .command(command)
+                                    .timeoutInMillis(timeoutInMillis)
+                                    .envVariables(envVariables)
+                                    .directory(directory)
+                                    .logCallback(executionLogCallback)
+                                    .loggingCommand(command)
+                                    .logOutputStream(new EmptyLogOutputStream())
+                                    .errorLogOutputStream(new DefaultErrorLogOutputStream(executionLogCallback))
+                                    .secondsToWaitForGracefulShutdown(0)
+                                    .build();
+
+    return executeCliCommand(request);
   }
 
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream)
       throws IOException, InterruptedException, TimeoutException {
-    return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, loggingCommand,
-        logOutputStream, new DefaultErrorLogOutputStream(executionLogCallback), 0);
+    CliCommandRequest request = CliCommandRequest.builder()
+                                    .command(command)
+                                    .timeoutInMillis(timeoutInMillis)
+                                    .envVariables(envVariables)
+                                    .directory(directory)
+                                    .logCallback(executionLogCallback)
+                                    .loggingCommand(loggingCommand)
+                                    .logOutputStream(logOutputStream)
+                                    .errorLogOutputStream(new DefaultErrorLogOutputStream(executionLogCallback))
+                                    .secondsToWaitForGracefulShutdown(0)
+                                    .build();
+
+    return executeCliCommand(request);
   }
 
   @Nonnull
-  public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
-      String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream,
-      ErrorLogOutputStream errorLogOutputStream, long secondsToWaitForGracefulShutdown)
+  public CliResponse executeCliCommand(CliCommandRequest request)
       throws IOException, InterruptedException, TimeoutException {
-    executionLogCallback.saveExecutionLog(loggingCommand, LogLevel.INFO, RUNNING);
+    request.getLogCallback().saveExecutionLog(request.getLoggingCommand(), LogLevel.INFO, RUNNING);
 
     ProcessExecutor processExecutor = new ProcessExecutor()
-                                          .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
-                                          .command("/bin/sh", "-c", command)
+                                          .timeout(request.getTimeoutInMillis(), TimeUnit.MILLISECONDS)
+                                          .command("/bin/sh", "-c", request.getCommand())
                                           .readOutput(true)
-                                          .environment(CollectionUtils.emptyIfNull(envVariables))
-                                          .directory(new File(directory))
-                                          .redirectOutput(logOutputStream)
-                                          .redirectError(errorLogOutputStream);
+                                          .environment(CollectionUtils.emptyIfNull(request.getEnvVariables()))
+                                          .directory(new File(request.getDirectory()))
+                                          .redirectOutput(request.getLogOutputStream())
+                                          .redirectError(request.getErrorLogOutputStream());
 
-    if (secondsToWaitForGracefulShutdown > 0) {
+    if (request.getSecondsToWaitForGracefulShutdown() > 0) {
       // When the thread is interrupted, process executor calls the process destroy method. Process destroy calls
       // sigterm but doesn't wait for the process to be terminated. Since the process is not yet terminated, we don't
       // wait for the process gracefully shutdown and interrupting (killing) the current thread. Once the current thread
@@ -75,16 +95,16 @@ public class CliHelper {
       // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
       // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
       // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
-      processExecutor.stopper(new GracefulProcessStopper(secondsToWaitForGracefulShutdown));
+      processExecutor.stopper(new GracefulProcessStopper(request.getSecondsToWaitForGracefulShutdown()));
     }
 
     ProcessResult processResult = processExecutor.execute();
     CommandExecutionStatus status = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
     return CliResponse.builder()
-        .command(command)
+        .command(request.getCommand())
         .commandExecutionStatus(status)
         .output(processResult.outputUTF8())
-        .error(errorLogOutputStream.getError())
+        .error(request.getErrorLogOutputStream().getError())
         .exitCode(processResult.getExitValue())
         .build();
   }

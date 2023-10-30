@@ -23,12 +23,14 @@ import io.harness.cdng.helm.rollback.HelmRollbackBaseStepInfo.HelmRollbackBaseSt
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.container.ContainerInfo;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
@@ -128,9 +130,16 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
       nativeHelmRollbackOutcomeBuilder.containerInfoList(containerInfoList);
       NativeHelmRollbackOutcome nativeHelmRollbackOutcome = nativeHelmRollbackOutcomeBuilder.build();
 
-      StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
-          K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
-              response.getContainerInfoList(), response.getHelmChartInfo(), response.getHelmVersion()));
+      DeploymentInfoOutcome deploymentInfoOutcome =
+          DeploymentInfoOutcome.builder()
+              .serverInstanceInfoList(K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
+                  response.getContainerInfoList(), response.getHelmChartInfo(), response.getHelmVersion()))
+              .deploymentOutcomeMetadata(NativeHelmDeploymentOutcomeMetadata.builder()
+                                             .workloadLabelSelectors(response.getWorkloadLabelSelectors())
+                                             .build())
+              .build();
+      StepOutcome stepOutcome =
+          instanceInfoService.saveDeploymentInfoOutcomeIntoSweepingOutput(ambiance, deploymentInfoOutcome);
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_ROLLBACK_OUTCOME,
           nativeHelmRollbackOutcome, StepOutcomeGroup.STEP.name());
@@ -218,7 +227,9 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
         .skipSteadyStateCheck(skipSteadyStateCheck)
         .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG))
+        .improvedHelmTracking(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING));
 
     HelmRollbackCommandRequestNG helmCommandRequest = rollbackCommandRequestNGBuilder.build();
 

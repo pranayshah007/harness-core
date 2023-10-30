@@ -29,4 +29,6 @@ public class ExecutionStatusInfo {
   AuthorInfo author;
   List<ServiceDeploymentInfo> serviceInfoList;
   List<EnvironmentDeploymentsInfo> environmentInfoList;
+  String orgIdentifier;
+  String projectIdentifier;
 }

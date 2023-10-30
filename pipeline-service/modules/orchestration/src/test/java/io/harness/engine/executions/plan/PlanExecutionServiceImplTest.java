@@ -16,17 +16,17 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -43,15 +43,17 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.PlanExecutionRepository;
 import io.harness.rule.Owner;
 
@@ -69,12 +71,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -89,6 +95,14 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
   @Mock Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject;
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenReturn(SettingValueResponseDTO.builder().value("false").build());
+  }
 
   @Test
 
@@ -118,32 +132,6 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestCalculateStatusExcluding() {
-    String excludedNodeExecutionId = generateUuid();
-    String planExecutionId = generateUuid();
-    PlanExecution savedExecution =
-        planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(Status.PAUSED).build());
-    assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
-
-    List<NodeExecution> nodeExecutionList =
-        Arrays.asList(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
-            NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build());
-
-    CloseableIterator<NodeExecution> iterator =
-        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
-    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
-             eq(planExecutionId), eq(NodeProjectionUtils.withStatus)))
-        .thenReturn(iterator);
-
-    Status status = planExecutionService.calculateStatusExcluding(planExecutionId, excludedNodeExecutionId);
-    assertThat(status).isEqualTo(Status.RUNNING);
-  }
-
-  @Test
-
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void shouldTestFindAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps() {
@@ -363,20 +351,30 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, false);
+    Status status = planExecutionService.calculateStatus(planExecutionId);
+    assertEquals(Status.ABORTED, status);
+  }
+
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void shouldTestCalculateStatusExcludingIdentityNode() {
+    String planExecutionId = generateUuid();
+    doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
+        .when(nodeExecutionService)
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, true);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     assertEquals(Status.ABORTED, status);
   }
 
   @Test
-
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestUpdateCalculatedStatus() {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.PAUSED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, false);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     planExecutionService.save(PlanExecution.builder().status(Status.QUEUED).uuid(planExecutionId).build());
     PlanExecution planExecution = planExecutionService.updateCalculatedStatus(planExecutionId);
@@ -386,7 +384,26 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestCalculateAndUpdateRunningStatus() {
+    String planExecutionId = generateUuid();
+    // Check if planExecution is RUNNING
+    planExecutionService.save(PlanExecution.builder().status(Status.RUNNING).uuid(planExecutionId).build());
+    planExecutionService.calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
+    verify(nodeExecutionService, times(0)).fetchNonFlowingAndNonFinalStatuses(planExecutionId);
 
+    // Check if planExecution is not RUNNING
+    planExecutionService.updateStatus(planExecutionId, Status.WAIT_STEP_RUNNING);
+    List<Status> statuses = Arrays.asList(Status.RUNNING, Status.INTERVENTION_WAITING, Status.INTERVENTION_WAITING);
+    // Doing to keep the code testing consistent
+    List<Status> collectStatuses = statuses.stream().collect(Collectors.toList());
+    doReturn(collectStatuses).when(nodeExecutionService).fetchNonFlowingAndNonFinalStatuses(planExecutionId);
+    planExecutionService.calculateAndUpdateRunningStatusUnderLock(planExecutionId, Status.INTERVENTION_WAITING);
+    assertThat(planExecutionService.getStatus(planExecutionId)).isEqualTo(Status.INTERVENTION_WAITING);
+  }
+
+  @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void shouldTestFindByStatusWithProjections() {
@@ -427,9 +444,9 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     }
     doReturn(iterator).when(planExecutionRepositoryMock).fetchPlanExecutionsFromAnalytics(query);
 
-    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds);
+    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds, false);
 
-    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any());
+    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any(), anyBoolean());
     verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
   }
 
@@ -446,5 +463,25 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     planExecutionService.updateTTL(generateUuid(), ttlExpiry);
 
     verify(planExecutionRepositoryMock, times(1)).multiUpdatePlanExecution(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestAggregateRunningExecutionCountPerAccount() {
+    Map<String, String> m1 = new HashMap<>();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(Status.RUNNING).build());
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(Status.APPROVAL_WAITING).build());
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(SUCCEEDED).build());
+
+    List<ExecutionCountWithAccountResult> accountResults =
+        planExecutionService.aggregateRunningExecutionCountPerAccount();
+    assertThat(accountResults.size()).isEqualTo(2);
   }
 }

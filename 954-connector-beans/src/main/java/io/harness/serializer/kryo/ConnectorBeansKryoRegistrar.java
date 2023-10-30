@@ -106,6 +106,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConstants;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthCredentialsDTO;
@@ -381,6 +382,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(LocalConnectorDTO.class, 543237);
     kryo.register(GcpKmsConnectorDTO.class, 543238);
     kryo.register(GithubAppDTO.class, 20001000);
+    kryo.register(GcpOidcDetailsDTO.class, 20001001);
 
     kryo.register(AwsKmsConnectorDTO.class, 543286);
     kryo.register(AwsKmsConnectorCredentialDTO.class, 543288);

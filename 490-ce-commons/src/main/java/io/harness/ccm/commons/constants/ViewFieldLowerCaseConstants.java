@@ -23,6 +23,7 @@ public interface ViewFieldLowerCaseConstants {
   String APP_NAME_FIELD_ID = "appname";
   String ENV_NAME_FIELD_ID = "envname";
   String SERVICE_NAME_FIELD_ID = "servicename";
+  String SERVICE_FIELD_ID = "serviceid";
   String CLOUD_PROVIDER_FIELD_ID = "cloudprovider";
   String CLOUD_SERVICE_NAME_FIELD_ID = "cloudservicename";
   String TASK_FIELD_ID = "taskid";

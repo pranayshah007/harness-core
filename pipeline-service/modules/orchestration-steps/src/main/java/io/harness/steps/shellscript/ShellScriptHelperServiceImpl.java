@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.shellscript;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -16,6 +17,7 @@ import static io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -33,6 +35,8 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG.WinRmShellScriptTaskParametersNGBuilder;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -57,6 +61,7 @@ import io.harness.pms.expression.ParameterFieldResolverFunctor;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
@@ -93,6 +98,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   static final String FILE_STORE_SCRIPT_ERROR_MSG = "Script from Harness File Store cannot be empty, file: %s";
+  static final String NULL_STRING = "null";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
@@ -328,6 +334,22 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
                             .getValue());
   }
 
+  private void updateShellScriptStepOnDelegateParameterField(ShellScriptStepParameters shellScriptStepParameters) {
+    if (ParameterField.isNull(shellScriptStepParameters.onDelegate)) {
+      if (shellScriptStepParameters.getExecutionTarget() == null) {
+        shellScriptStepParameters.setOnDelegate(ParameterField.createValueField(true));
+      } else {
+        shellScriptStepParameters.setOnDelegate(ParameterField.createValueField(false));
+      }
+    } else {
+      if (!Boolean.class.isInstance(shellScriptStepParameters.onDelegate.getValue())) {
+        throw new InvalidRequestException(
+            "Provide a valid value for onDelegate as it is a boolean field. Provided onDelegate value is: "
+            + shellScriptStepParameters.onDelegate.getValue());
+      }
+    }
+  }
+
   @Override
   public TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout) {
@@ -337,12 +359,30 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
     ParameterField<String> workingDirectory = (shellScriptStepParameters.getExecutionTarget() != null)
         ? shellScriptStepParameters.getExecutionTarget().getWorkingDirectory()
         : ParameterField.ofNull();
+    validateExportVariables(shellScriptStepParameters.getOutputAlias());
+
+    // [TO BE REMOVED]: updating onDelegate Parameter Field in case it's empty
+    updateShellScriptStepOnDelegateParameterField(shellScriptStepParameters);
 
     if (ScriptType.BASH.equals(scriptType)) {
       return buildBashTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
     } else {
       return getWinRmTaskParametersNG(
           ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory, sessionTimeout);
+    }
+  }
+
+  private void validateExportVariables(OutputAlias exportVariables) {
+    if (isNull(exportVariables)) {
+      return;
+    }
+
+    ParameterField<String> alias = exportVariables.getKey();
+    if (ParameterField.isBlank(alias)) {
+      throw new InvalidRequestException("Empty value for key is not allowed in output alias configuration");
+    }
+    if (NULL_STRING.equals(alias.fetchFinalValue())) {
+      throw new InvalidRequestException("Expression provided for key in output alias configuration was not resolved");
     }
   }
 
@@ -381,7 +421,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .disableCommandEncoding(pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .disableWinRmEnvVarEscaping(pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS));
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
@@ -448,7 +490,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public ShellScriptOutcome prepareShellScriptOutcome(
+  public ShellScriptBaseOutcome prepareShellScriptOutcome(
       Map<String, String> sweepingOutputEnvVariables, Map<String, Object> outputVariables) {
     if (outputVariables == null || sweepingOutputEnvVariables == null) {
       return null;
@@ -458,7 +500,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
       resolvedOutputVariables.put(name, sweepingOutputEnvVariables.get(value));
     });
-    return ShellScriptOutcome.builder().outputVariables(resolvedOutputVariables).build();
+    return ShellScriptHelperService.getShellScriptOutcome(resolvedOutputVariables, HarnessYamlVersion.V0);
   }
 
   @Override
@@ -485,5 +527,36 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       }
     });
     return outputVars;
+  }
+
+  @Override
+  public void exportOutputVariablesUsingAlias(@Nonnull Ambiance ambiance,
+      @Nonnull ShellScriptStepParameters shellScriptStepParameters,
+      @Nonnull ShellScriptBaseOutcome shellScriptOutcome) {
+    if (isNull(shellScriptStepParameters.getOutputAlias())
+        || EmptyPredicate.isEmpty(shellScriptOutcome.getOutputVariables())) {
+      log.debug("Skipping exporting output variables as output alias not present or output variables are empty");
+      return;
+    }
+    String userAlias = (String) shellScriptStepParameters.getOutputAlias().getKey().fetchFinalValue();
+    String uuid = OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias(userAlias, ambiance);
+    try {
+      executionSweepingOutputService.consume(ambiance, uuid,
+          OutputAliasSweepingOutput.builder().outputVariables(shellScriptOutcome.getOutputVariables()).build(),
+          shellScriptStepParameters.getOutputAlias().getScope().toStepOutcomeGroup());
+    } catch (Exception ex) {
+      if (OutputAliasUtils.isDuplicateKeyException(ex, uuid)) {
+        log.warn("Error while publishing outputAlias due to the output already saved for the key [{}:{}] for scope {}",
+            userAlias, uuid, shellScriptStepParameters.getOutputAlias().getScope(), ex);
+        throw new InvalidRequestException(String.format(
+            "Output alias with key %s, already saved in %s scope. Please ensure that there are no duplicate output alias keys within the same scope",
+            userAlias, shellScriptStepParameters.getOutputAlias().getScope()));
+      }
+      log.warn("Error while publishing outputAlias for the key [{}:{}] for scope {}", userAlias, uuid,
+          shellScriptStepParameters.getOutputAlias().getScope(), ex);
+      throw new InternalServerErrorException(
+          String.format("Error while publishing outputAlias for the key %s for scope %s: %s", userAlias,
+              shellScriptStepParameters.getOutputAlias().getScope(), ExceptionUtils.getMessage(ex)));
+    }
   }
 }

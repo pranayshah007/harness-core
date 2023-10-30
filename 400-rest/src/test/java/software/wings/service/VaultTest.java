@@ -1968,34 +1968,6 @@ public class VaultTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  public void appRoleLoginRenewal_shouldBeSuccessful() {
-    if (isKmsEnabled) {
-      return;
-    }
-
-    long currentTime = System.currentTimeMillis();
-    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAppRole("appRoleId", "secretId");
-    vaultConfig.setAccountId(accountId);
-    String initialToken = "initialToken";
-    VaultAppRoleLoginResult vaultAppRoleLoginResult = mock(VaultAppRoleLoginResult.class);
-    when(secretManagementDelegateService.appRoleLogin(any())).thenReturn(vaultAppRoleLoginResult);
-    when(vaultAppRoleLoginResult.getClientToken()).thenReturn(initialToken);
-    String vaultConfigId = vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
-    vaultConfig = vaultService.getVaultConfig(accountId, vaultConfigId);
-    assertThat(vaultConfig.getAuthToken()).isEqualTo(initialToken);
-
-    String renewedToken = "renewedToken";
-    when(vaultAppRoleLoginResult.getClientToken()).thenReturn(renewedToken);
-    VaultConfig encryptedVaultConfig = (VaultConfig) wingsPersistence.get(SecretManagerConfig.class, vaultConfigId);
-    vaultService.renewAppRoleClientToken(encryptedVaultConfig);
-    vaultConfig = vaultService.getVaultConfig(accountId, vaultConfigId);
-    assertThat(vaultConfig.getAuthToken()).isEqualTo(renewedToken);
-    assertThat(vaultConfig.getRenewedAt()).isGreaterThan(currentTime);
-  }
-
-  @Test
-  @Owner(developers = UTKARSH)
-  @Category(UnitTests.class)
   public void testRenewToken_shouldSucceed() {
     if (isKmsEnabled) {
       return;

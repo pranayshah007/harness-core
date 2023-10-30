@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.ecs.request;
-
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
@@ -23,6 +25,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
@@ -40,4 +43,6 @@ public class EcsBlueGreenCreateServiceRequest
   @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
   @NonFinal @Expression(ALLOW_SECRETS) EcsLoadBalancerConfig ecsLoadBalancerConfig;
   String targetGroupArnKey;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean sameAsAlreadyRunningInstances;
+  boolean removeAutoScalingFromBlueService;
 }

@@ -182,6 +182,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, taskData.getAppId())
         .tags(awsCommandHelper.getAwsConfigTagsFromK8sConfig(delegateTaskParams))
         .executionCapabilities(executionCapabilities)
+        .waitId(generateUuid())
         .data(TaskData.builder()
                   .async(false)
                   .taskType(TaskType.CAPABILITY_VALIDATION.name())

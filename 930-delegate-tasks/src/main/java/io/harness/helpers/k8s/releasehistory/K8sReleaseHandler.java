@@ -10,6 +10,7 @@ package io.harness.helpers.k8s.releasehistory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -28,6 +29,7 @@ public interface K8sReleaseHandler {
   IK8sReleaseHistory getReleaseHistory(@NotNull KubernetesConfig kubernetesConfig, @NotNull String releaseName)
       throws Exception;
   IK8sRelease createRelease(@NotNull String name, @NotNull int number);
+  IK8sRelease createRelease(@NotNull String name, @NotNull int number, ReleaseMetadata releaseMetadata);
   void saveRelease(@NotNull K8sReleasePersistDTO releasePersistDTO) throws Exception;
   void cleanReleaseHistory(@NotNull K8sReleaseHistoryCleanupDTO releaseCleanupDTO) throws Exception;
   void cleanReleaseHistoryBG(@NotNull K8sBGReleaseHistoryCleanupDTO releaseHistoryCleanupDTO) throws Exception;

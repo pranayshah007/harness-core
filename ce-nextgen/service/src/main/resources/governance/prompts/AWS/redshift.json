@@ -1,0 +1,76 @@
+{
+  "ClusterIdentifier": "ClusterIdentifier",
+  "NodeType": "dc2.large",
+  "ClusterStatus": "available",
+  "ClusterAvailabilityStatus": "Available",
+  "MasterUsername": "MasterUsername",
+  "DBName": "dev",
+  "Endpoint": {
+    "Address": "redshift-cluster.endpoint.us-west-1.redshift.amazonaws.com",
+    "Port": 5439
+  },
+  "ClusterCreateTime": "2023-06-06T14:38:37.144000+00:00",
+  "AutomatedSnapshotRetentionPeriod": 1,
+  "ManualSnapshotRetentionPeriod": -1,
+  "ClusterSecurityGroups": [],
+  "VpcSecurityGroups": [
+    {
+      "VpcSecurityGroupId": "VpcSecurityGroupId",
+      "Status": "active"
+    }
+  ],
+  "ClusterParameterGroups": [
+    {
+      "ParameterGroupName": "default.redshift-1.0",
+      "ParameterApplyStatus": "in-sync"
+    }
+  ],
+  "ClusterSubnetGroupName": "default",
+  "VpcId": "VpcId",
+  "AvailabilityZone": "us-west-1a",
+  "PreferredMaintenanceWindow": "fri:07:30-fri:08:00",
+  "PendingModifiedValues": {},
+  "ClusterVersion": "1.0",
+  "AllowVersionUpgrade": true,
+  "NumberOfNodes": 2,
+  "PubliclyAccessible": false,
+  "Encrypted": false,
+  "ClusterPublicKey": "ClusterPublicKey",
+  "ClusterNodes": [
+    {
+      "NodeRole": "LEADER",
+      "PrivateIPAddress": "172.31.15.76",
+      "PublicIPAddress": "0.0.0.0"
+    },
+    {
+      "NodeRole": "COMPUTE-0",
+      "PrivateIPAddress": "172.31.1.86",
+      "PublicIPAddress": "0.0.0.0"
+    },
+    {
+      "NodeRole": "COMPUTE-1",
+      "PrivateIPAddress": "172.31.12.248",
+      "PublicIPAddress": "0.0.0.0"
+    }
+  ],
+  "ClusterRevisionNumber": "51304",
+  "Tags": [],
+  "EnhancedVpcRouting": false,
+  "IamRoles": [
+    {
+      "IamRoleArn": "arn:aws:iam::AccountId:role/RoleId",
+      "ApplyStatus": "in-sync"
+    }
+  ],
+  "MaintenanceTrackName": "current",
+  "ElasticResizeNumberOfNodeOptions": "[4]",
+  "DeferredMaintenanceWindows": [],
+  "NextMaintenanceWindowStartTime": "2023-06-09T07:30:00+00:00",
+  "AvailabilityZoneRelocationStatus": "disabled",
+  "ClusterNamespaceArn": "arn:aws:redshift:us-west-1:AccountId:namespace:NameSpaceId",
+  "TotalStorageCapacityInMegaBytes": 800000,
+  "AquaConfiguration": {
+    "AquaStatus": "disabled",
+    "AquaConfigurationStatus": "auto"
+  }
+}

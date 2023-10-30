@@ -453,6 +453,21 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   }
 
   @Override
+  public boolean deleteMulti(Criteria criteria) {
+    List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      boolean deleted = resourceGroupV2Repository.delete(criteria);
+      if (deleted) {
+        resourceGroups.forEach(rg
+            -> outboxService.save(
+                new ResourceGroupDeleteEvent(rg.getAccountIdentifier(), null, ResourceGroupMapper.toDTO(rg))));
+      }
+      return deleted;
+    }));
+    return false;
+  }
+
+  @Override
   public boolean delete(Scope scope, String identifier) {
     Optional<ResourceGroup> resourceGroupOpt = getResourceGroup(scope, identifier, ManagedFilter.ONLY_CUSTOM);
     if (!resourceGroupOpt.isPresent()) {

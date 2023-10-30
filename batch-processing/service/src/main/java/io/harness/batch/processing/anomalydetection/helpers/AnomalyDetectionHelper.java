@@ -46,6 +46,13 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
               timeSeries.getNamespace());
           break;
+        case SERVICE:
+          log.warn(
+              "Invalid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} , namespace : {}, service : {} ",
+              timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
+              timeSeries.getNamespace(), timeSeries.getService());
+          break;
+
         case GCP_PROJECT:
           log.warn("Invalid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {}  ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getGcpProject());
@@ -115,6 +122,12 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
               timeSeries.getNamespace());
           break;
+        case SERVICE:
+          log.warn(
+              "Valid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} , namespace : {}, service : {} ",
+              timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
+              timeSeries.getNamespace(), timeSeries.getService());
+          break;
         case GCP_PROJECT:
           log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {}  ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getGcpProject());
@@ -178,14 +191,14 @@ public class AnomalyDetectionHelper {
     if (includeTime) {
       return AnomalyDetectionHelper.generateHash(
           String.join(",", anomaly.getAnomalyTime().toString(), anomaly.getClusterId(), anomaly.getNamespace(),
-              anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-              anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
+              anomaly.getWorkloadName(), anomaly.getService(), anomaly.getGcpProject(), anomaly.getGcpProduct(),
+              anomaly.getGcpSKUId(), anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
               anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     } else {
       return AnomalyDetectionHelper.generateHash(String.join(",", anomaly.getClusterId(), anomaly.getNamespace(),
-          anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-          anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
-          anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
+          anomaly.getWorkloadName(), anomaly.getService(), anomaly.getGcpProject(), anomaly.getGcpProduct(),
+          anomaly.getGcpSKUId(), anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
+          anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     }
   }
 }

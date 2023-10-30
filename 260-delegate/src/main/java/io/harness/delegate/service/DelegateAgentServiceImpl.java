@@ -125,7 +125,6 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
-import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.service.common.AcquireTaskHelper;
@@ -535,8 +534,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       startTime = clock.millis();
       delegateHealthTimeLimiter = HTimeLimiter.create(healthMonitorExecutor);
       delegateTaskTimeLimiter = HTimeLimiter.create(taskExecutor);
-      DelegateStackdriverLogAppender.setTimeLimiter(delegateHealthTimeLimiter);
-      DelegateStackdriverLogAppender.setManagerClient(delegateAgentManagerClient);
 
       logProxyConfiguration();
 
@@ -646,7 +643,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       delegateId = registerDelegate(builder);
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
-      DelegateStackdriverLogAppender.setDelegateId(delegateId);
+
       if (isImmutableDelegate && dynamicRequestHandling) {
         // Enable dynamic throttling of requests only for immutable and FF enabled
         startDynamicHandlingOfTasks();
@@ -2033,6 +2030,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
     Optional.ofNullable(currentlyExecutingFutures.get(delegateTaskEvent.getDelegateTaskId()).getTaskFuture())
         .ifPresent(future -> future.cancel(true));
+    boolean isRemoved = currentlyAcquiringTasks.remove(delegateTaskEvent.getDelegateTaskId());
+    if (isRemoved) {
+      currentlyAcquiringTasksCount.getAndDecrement();
+    }
+
     currentlyExecutingTasks.remove(delegateTaskEvent.getDelegateTaskId());
     if (currentlyExecutingFutures.remove(delegateTaskEvent.getDelegateTaskId()) != null) {
       log.info("Removed from executing futures on abort");
@@ -2082,7 +2084,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
-    boolean incrementedCurrentlyAcquiredTaskCounter = false;
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
@@ -2108,20 +2109,18 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           return;
         }
 
+        final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
+        currentlyAcquiringTasks.add(delegateTaskId);
         // So this feature works only if ENV - DELEGATE_TASK_CAPACITY is defined.
         if (delegateTaskCapacity.isPresent()) {
           // Check if current acquiring tasks is below capacity.
           int taskCapacity = delegateTaskCapacity.get();
-          final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
-          incrementedCurrentlyAcquiredTaskCounter = true;
           if (processingTaskCount >= taskCapacity) {
             log.info("Not acquiring task - currently processing {} tasks count exceeds task capacity {}",
                 processingTaskCount, taskCapacity);
             return;
           }
         }
-
-        currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
         Call<DelegateTaskPackage> acquireCall =
@@ -2163,8 +2162,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Unable to get task for validation", e);
       } finally {
-        currentlyAcquiringTasks.remove(delegateTaskId);
-        if (incrementedCurrentlyAcquiredTaskCounter) {
+        boolean isRemoved = currentlyAcquiringTasks.remove(delegateTaskId);
+        if (isRemoved) {
           currentlyAcquiringTasksCount.getAndDecrement();
         }
         currentlyExecutingFutures.remove(delegateTaskId);
@@ -2609,7 +2608,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       finalizeSocket();
     }
 
-    DelegateStackdriverLogAppender.setManagerClient(null);
     if (perpetualTaskWorker != null) {
       perpetualTaskWorker.stop();
     }

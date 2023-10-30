@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.beans.MigrationInputSettingsType.SIMULTANEOUS_DEPLOYMENT_ON_SAME_INFRA;
 
@@ -19,8 +18,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -83,6 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InfraMigrationService extends NgMigrationService {
@@ -214,6 +217,26 @@ public class InfraMigrationService extends NgMigrationService {
             .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(infraReqDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      infraReqDTO = InfrastructureRequestDTO.builder()
+                        .identifier(infraConfig.getIdentifier())
+                        .type(infraConfig.getType())
+                        .orgIdentifier(infraConfig.getOrgIdentifier())
+                        .projectIdentifier(infraConfig.getProjectIdentifier())
+                        .name(infraConfig.getName())
+                        .tags(infraConfig.getTags())
+                        .type(infraConfig.getType())
+                        .environmentRef(infraConfig.getEnvironmentRef())
+                        .description(infraConfig.getDescription())
+                        .yaml(getYamlStringV2(yamlFile))
+                        .build();
+      resp = ngClient
+                 .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(infraReqDTO))
+                 .execute();
+    }
+
     log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

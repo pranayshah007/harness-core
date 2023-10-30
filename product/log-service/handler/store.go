@@ -259,7 +259,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			return
 		}
 
-		WriteJSON(w, info, 200)
+		WriteUnescapeJSON(w, info, 200)
 		logger.FromRequest(r).
 			WithField(usePrefixParam, prefix).
 			WithField("latency", time.Since(st)).

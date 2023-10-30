@@ -11,6 +11,7 @@ import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.utils.AggregationType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -28,6 +29,8 @@ public class QueryParamsDTO {
   String healthSourceMetricNamespace;
   AggregationType aggregationType;
 
+  List<String> indexes;
+
   @JsonIgnore
   public static QueryParamsDTO getQueryParamsDTO(QueryParams queryParams) {
     if (queryParams == null) {
@@ -42,6 +45,7 @@ public class QueryParamsDTO {
         .healthSourceMetricName(queryParams.getHealthSourceMetricName())
         .healthSourceMetricNamespace(queryParams.getHealthSourceMetricNamespace())
         .aggregationType(queryParams.getAggregationType())
+        .indexes(queryParams.getIndexes())
         .build();
   }
 
@@ -56,6 +60,7 @@ public class QueryParamsDTO {
         .healthSourceMetricName(healthSourceMetricName)
         .healthSourceMetricNamespace(healthSourceMetricNamespace)
         .aggregationType(aggregationType)
+        .indexes(indexes)
         .build();
   }
 }

@@ -258,13 +258,12 @@ public class CIPlanCreatorUtils {
       throw new InvalidRequestException("Git sync data cannot be null for remote pipeline");
     }
     boolean connectorOverride = !ParameterField.isBlank(repository.getConnector())
-        && !repository.getConnector().fetchFinalValue().equals(
-            ctx.getMetadata().getMetadata().getPipelineConnectorRef());
+        && !repository.getConnector().fetchFinalValue().equals(ctx.getPipelineConnectorRef());
     ParameterField<String> repoName = !connectorOverride && ParameterField.isBlank(repository.getName())
         ? ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName())
         : repository.getName();
     ParameterField<String> connector = ParameterField.isBlank(repository.getConnector())
-        ? ParameterField.createValueField(ctx.getMetadata().getMetadata().getPipelineConnectorRef())
+        ? ParameterField.createValueField(ctx.getPipelineConnectorRef())
         : repository.getConnector();
     return builder
         .build(ParameterField.createValueField(

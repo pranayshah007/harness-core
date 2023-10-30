@@ -20,6 +20,8 @@ import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -37,6 +39,7 @@ public class NativeHelmDeploymentInfoDTO extends DeploymentInfoDTO {
   private HelmChartInfo helmChartInfo;
   @NotNull private HelmVersion helmVersion;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
+  private Map<String, List<String>> workloadLabelSelectors;
 
   @Override
   public String getType() {

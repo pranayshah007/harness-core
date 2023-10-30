@@ -10,7 +10,7 @@ package io.harness.yaml.core.failurestrategy.manualintervention.v1;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.timeout.Timeout;
 
 import lombok.Builder;
@@ -21,5 +21,5 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ManualFailureSpecConfigV1 {
   ParameterField<Timeout> timeout;
-  FailureConfigV1 timeout_action;
+  FailureStrategyActionConfigV1 timeout_action;
 }

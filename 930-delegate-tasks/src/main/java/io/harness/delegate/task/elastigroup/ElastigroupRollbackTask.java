@@ -8,7 +8,7 @@
 package io.harness.delegate.task.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.RENAME_OLD_COMMAND_UNIT;
@@ -25,6 +25,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
@@ -33,19 +34,17 @@ import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTas
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -112,7 +111,6 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
 
     rollbackNew(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
 
-    cleanupNewElastigroups(true, parameters, spotInstAccountId, spotInstToken);
     return ElastigroupRollbackTaskResponse.builder()
         .status(CommandExecutionStatus.SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
@@ -132,7 +130,6 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     rollbackRoutes(parameters, commandUnitsProgress);
     rollbackNew(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
 
-    cleanupNewElastigroups(true, parameters, spotInstAccountId, spotInstToken);
     return ElastigroupRollbackTaskResponse.builder()
         .status(CommandExecutionStatus.SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
@@ -161,6 +158,11 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
         parameters.getAwsRegion(), getLogStreamingTaskClient(), commandUnitsProgress);
   }
 
+  private LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
+      CommandUnitsProgress commandUnitsProgress) {
+    return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, true, commandUnitsProgress);
+  }
+
   private void rollbackNew(ElastigroupRollbackTaskParameters parameters, String spotInstAccountId, String spotInstToken,
       int timeoutInMinutes, CommandUnitsProgress commandUnitsProgress) throws Exception {
     ElastiGroup elastigroup = parameters.getNewElastigroup();
@@ -173,9 +175,16 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     taskHelper.scaleElastigroup(elastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
         getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
-
-    taskHelper.deleteElastigroup(
-        elastigroup, spotInstToken, spotInstAccountId, getLogStreamingTaskClient(), commandUnitsProgress);
+    final LogCallback deleteLogCallback =
+        getLogCallback(getLogStreamingTaskClient(), DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+    try {
+      taskHelper.deleteElastigroup(elastigroup, spotInstToken, spotInstAccountId, deleteLogCallback);
+      taskHelper.cleanupNewElastigroups(true, parameters, spotInstAccountId, spotInstToken, deleteLogCallback);
+      deleteLogCallback.close(CommandExecutionStatus.SUCCESS);
+    } catch (Exception e) {
+      deleteLogCallback.close(CommandExecutionStatus.FAILURE);
+      throw e;
+    }
   }
 
   private ElastigroupRollbackTaskResponse executeBasicAndCanaryRollback(
@@ -187,23 +196,33 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     int timeoutInMinutes = parameters.getTimeout() > 0 ? parameters.getTimeout() : STEADY_STATE_TIME_OUT_IN_MINUTES;
 
     List<String> olderElastigroupInstanceIds = new ArrayList<>();
-    if (!parameters.isSetupSuccessful()) {
-      cleanupNewElastigroups(false, parameters, spotInstAccountId, spotInstToken);
-    } else {
-      ElastiGroup newElastigroup = parameters.getNewElastigroup();
-      ElastiGroup oldElastigroup = parameters.getOldElastigroup();
+    LogCallback logCallback = null;
+    try {
+      if (!parameters.isSetupSuccessful()) {
+        logCallback = getLogCallback(getLogStreamingTaskClient(), DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+        taskHelper.cleanupNewElastigroups(false, parameters, spotInstAccountId, spotInstToken, logCallback);
+        logCallback.close(CommandExecutionStatus.SUCCESS);
+      } else {
+        ElastiGroup newElastigroup = parameters.getNewElastigroup();
+        ElastiGroup oldElastigroup = parameters.getOldElastigroup();
 
-      taskHelper.scaleElastigroup(oldElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
-          getLogStreamingTaskClient(), UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
-          commandUnitsProgress);
-      taskHelper.scaleElastigroup(newElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
-          getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
-          commandUnitsProgress);
-      taskHelper.deleteElastigroup(
-          newElastigroup, spotInstToken, spotInstAccountId, getLogStreamingTaskClient(), commandUnitsProgress);
-
-      olderElastigroupInstanceIds = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
-          spotInstToken, spotInstAccountId, oldElastigroup);
+        taskHelper.scaleElastigroup(oldElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
+            getLogStreamingTaskClient(), UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
+            commandUnitsProgress);
+        taskHelper.scaleElastigroup(newElastigroup, spotInstToken, spotInstAccountId, timeoutInMinutes,
+            getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
+            commandUnitsProgress);
+        logCallback = getLogCallback(getLogStreamingTaskClient(), DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+        taskHelper.deleteElastigroup(newElastigroup, spotInstToken, spotInstAccountId, logCallback);
+        logCallback.close(CommandExecutionStatus.SUCCESS);
+        olderElastigroupInstanceIds = elastigroupCommandTaskNGHelper.getAllEc2InstanceIdsOfElastigroup(
+            spotInstToken, spotInstAccountId, oldElastigroup);
+      }
+    } catch (Exception e) {
+      if (logCallback != null) {
+        logCallback.close(CommandExecutionStatus.FAILURE);
+      }
+      throw e;
     }
 
     return ElastigroupRollbackTaskResponse.builder()
@@ -212,26 +231,6 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
         .errorMessage(getErrorMessage(CommandExecutionStatus.SUCCESS))
         .ec2InstanceIdsExisting(olderElastigroupInstanceIds)
         .build();
-  }
-
-  private void cleanupNewElastigroups(boolean blueGreen, ElastigroupRollbackTaskParameters parameters,
-      String spotInstAccountId, String spotInstToken) throws Exception {
-    List<ElastiGroup> prevElastigroups = parameters.getPrevElastigroups();
-    List<ElastiGroup> currentElastigroups = elastigroupCommandTaskNGHelper.listElastigroups(
-        blueGreen, parameters.getElastigroupNamePrefix(), spotInstAccountId, spotInstToken);
-    Set<String> prevElastigroupIds = prevElastigroups.stream().map(ElastiGroup::getId).collect(Collectors.toSet());
-    Set<String> currentElastigroupIds =
-        currentElastigroups.stream().map(ElastiGroup::getId).collect(Collectors.toSet());
-    Set<String> newElastigroupIds = Sets.difference(currentElastigroupIds, prevElastigroupIds);
-    if (isNotEmpty(newElastigroupIds)) {
-      newElastigroupIds.forEach(newElastigroupId -> {
-        try {
-          spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, newElastigroupId);
-        } catch (Exception e) {
-          //
-        }
-      });
-    }
   }
 
   private String getErrorMessage(CommandExecutionStatus status) {

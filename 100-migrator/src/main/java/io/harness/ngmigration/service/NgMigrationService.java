@@ -98,6 +98,24 @@ public abstract class NgMigrationService {
     return NGYamlUtils.getYamlString(yamlFile.getYaml(), MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
+  public static String getYamlStringV2(NGYamlFile yamlFile) {
+    return getYamlStringV2(yamlFile.getYaml());
+  }
+
+  public static String getYamlStringV2(YamlDTO yamlFile) {
+    final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory().enable(Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS))
+                                         .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                                         .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                                         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                                         .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                                         .enable(SerializationFeature.INDENT_OUTPUT);
+    YAML_MAPPER.registerModule(new PipelineJacksonModule());
+    return NGYamlUtils.getYamlString(yamlFile, MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
+  }
+
   public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
       MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     return null;

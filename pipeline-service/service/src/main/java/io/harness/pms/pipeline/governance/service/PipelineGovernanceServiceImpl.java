@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.governance.service;
+
 import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APPEND;
 
 import io.harness.annotations.dev.CodePulse;
@@ -31,8 +32,8 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.ExpansionsMerger;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.utils.PipelineYamlHelper;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -66,7 +67,7 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
     String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
         pipelineEntity, yamlWithResolvedTemplates, branch, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
-        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_SAVE, "", PipelineVersion.V0);
+        projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_SAVE, "", HarnessYamlVersion.V0);
   }
 
   @Override
@@ -106,8 +107,8 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
     if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
-    switch (PipelineYamlHelper.getVersion(pipelineYaml)) {
-      case PipelineVersion.V1:
+    switch (NGYamlHelper.getVersion(pipelineYaml)) {
+      case HarnessYamlVersion.V1:
         return null;
       default:
         break;

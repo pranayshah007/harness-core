@@ -49,5 +49,17 @@ public enum EcsCommandUnitConstants {
     public String toString() {
       return "Run Task";
     }
+  },
+  serviceSetup {
+    @Override
+    public String toString() {
+      return "Service Setup";
+    }
+  },
+  upgradeContainer {
+    @Override
+    public String toString() {
+      return "Upgrade Container";
+    }
   }
 }

@@ -7,17 +7,20 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.PAVIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
 import io.harness.cvng.beans.datadog.DatadogLogDefinition;
 import io.harness.cvng.core.entities.DatadogLogCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -50,6 +53,40 @@ public class DatadogLogDataCollectionInfoMapperTest extends CvNextGenTestBase {
                                                                .name(MOCKED_QUERY_NAME)
                                                                .query(MOCKED_QUERY)
                                                                .serviceInstanceIdentifier(MOCKED_INSTANCE_IDENTIFIER)
+                                                               .build();
+
+    DatadogLogDataCollectionInfo collectionInfoResult =
+        classUnderTest.toDataCollectionInfo(datadogLogCVConfig, TaskType.DEPLOYMENT);
+
+    assertThat(collectionInfoResult).isNotNull();
+    assertThat(collectionInfoResult.getLogDefinition()).isEqualTo(expectedDataLogDefinition);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testNextGenHealthSourceSpecToDataCollectionInfo() {
+    NextGenLogCVConfig datadogLogCVConfig =
+        NextGenLogCVConfig.builder()
+            .queryIdentifier("onboarding_query_name")
+            .queryParams(QueryParams.builder().serviceInstanceField("host").indexes(List.of("main")).build())
+            .dataSourceType(DataSourceType.DATADOG_LOG)
+            .groupName("onboarding_default_group")
+            .queryName("onboarding_query_name")
+            .query("service:todolist*")
+            .accountId("kmpySmUISimoRrJL6NL73w")
+            .connectorIdentifier("account.Datadog_metrics")
+            .monitoredServiceIdentifier("onboarding_monitored_service")
+            .projectIdentifier("Sumologic_SRM_Test")
+            .orgIdentifier("default")
+            .isDemo(false)
+            .build();
+
+    final DatadogLogDefinition expectedDataLogDefinition = DatadogLogDefinition.builder()
+                                                               .indexes(List.of("main"))
+                                                               .name("onboarding_query_name")
+                                                               .query("service:todolist*")
+                                                               .serviceInstanceIdentifier("host")
                                                                .build();
 
     DatadogLogDataCollectionInfo collectionInfoResult =

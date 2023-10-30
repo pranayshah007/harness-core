@@ -58,11 +58,11 @@ public class GraphVertexDTOConverter {
             .baseFqn(graphVertex.getBaseFqn());
     if (graphVertex.getAmbiance() != null) {
       Level level = AmbianceUtils.obtainCurrentLevel(graphVertex.getAmbiance());
-      if (level != null && level.hasStrategyMetadata()) {
+      if (level != null && AmbianceUtils.hasStrategyMetadata(level)) {
         builder.strategyMetadata(level.getStrategyMetadata());
       }
     }
-    if (graphVertex.getCurrentLevel() != null && graphVertex.getCurrentLevel().hasStrategyMetadata()) {
+    if (graphVertex.getCurrentLevel() != null && AmbianceUtils.hasStrategyMetadata(graphVertex.getCurrentLevel())) {
       builder.strategyMetadata(graphVertex.getCurrentLevel().getStrategyMetadata());
     }
     return builder.build();

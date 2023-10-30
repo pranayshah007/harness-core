@@ -96,7 +96,8 @@ public class GCSUploadStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.gcp_upload_success.spec.execution.steps.upload.type",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.identifier",
             "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.startTs",
-            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.endTs");
+            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.endTs",
+            "pipeline.stages.gcp_upload_success.spec.execution.steps.upload.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(gcsUploadNode.getUploadToGCSStepInfo().getUuid()) // step uuid

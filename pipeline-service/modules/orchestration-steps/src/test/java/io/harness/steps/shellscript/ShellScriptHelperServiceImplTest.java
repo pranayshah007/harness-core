@@ -9,9 +9,12 @@ package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +24,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -31,6 +36,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
+import io.harness.exception.GeneralException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.remote.FileStoreClient;
 import io.harness.network.SafeHttpCall;
@@ -41,13 +48,16 @@ import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
@@ -57,6 +67,7 @@ import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.shellscript.v1.ShellTypeV1;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import java.io.IOException;
@@ -103,7 +114,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Mock FileStoreClient fileStoreClient;
   @Mock private InputSetValidatorFactory inputSetValidatorFactory;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
-
+  @Mock Ambiance ambiance;
   @InjectMocks private ShellScriptHelperServiceImpl shellScriptHelperServiceImpl;
 
   @Before
@@ -468,13 +479,16 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     outputVars.put("key1", "val1");
     outputVars.put("key2", "val2");
 
-    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
-                                                   .shellType(ShellType.Bash)
-                                                   .onDelegate(ParameterField.createValueField(true))
-                                                   .environmentVariables(inputVars)
-                                                   .outputVariables(outputVars)
-                                                   .secretOutputVariables(new HashSet<>())
-                                                   .build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .shellType(ShellType.Bash)
+            .onDelegate(ParameterField.createValueField(true))
+            .environmentVariables(inputVars)
+            .outputVariables(outputVars)
+            .secretOutputVariables(new HashSet<>())
+            .outputAlias(
+                OutputAlias.builder().key(ParameterField.createValueField("abc")).scope(ExportScope.PIPELINE).build())
+            .build();
     String script = "echo hey";
     DirectK8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     Map<String, String> taskEnvVariables = new LinkedHashMap<>();
@@ -502,6 +516,43 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(taskParams.getWorkingDirectory()).isEqualTo("/tmp");
     assertThat(taskParams.getOutputVars()).isEqualTo(taskOutputVars);
     assertThat(taskParams.getEnvironmentVariables()).isEqualTo(taskEnvVariables);
+
+    // onDelegate parameter field null/empty cases
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(null);
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isTrue();
+
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(ExecutionTarget.builder().build());
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isFalse();
+    stepParameters.setOnDelegate(ParameterField.createValueField(true));
+
+    // negative cases for output alias configuration
+    stepParameters.setOutputAlias(OutputAlias.builder().build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("   ")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("null")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Expression provided for key in output alias configuration was not resolved");
   }
 
   private Ambiance buildAmbiance() {
@@ -516,7 +567,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testPrepareShellScriptOutcome() {
-    ShellScriptOutcome shellScriptOutcome =
+    ShellScriptBaseOutcome shellScriptOutcome =
         shellScriptHelperServiceImpl.prepareShellScriptOutcome(null, new HashMap<>());
     assertThat(shellScriptOutcome).isNull();
 
@@ -545,7 +596,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testPrepareShellScriptOutcomeWithSecretVars() {
-    ShellScriptOutcome shellScriptOutcome =
+    ShellScriptBaseOutcome shellScriptOutcome =
         ShellScriptHelperService.prepareShellScriptOutcome(null, new HashMap<>(), new HashSet<>());
     assertThat(shellScriptOutcome).isNull();
 
@@ -588,5 +639,81 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         ShellScriptHelperService.prepareShellScriptOutcome(new HashMap<>(), outputVariables, secretOutputVars);
     assertThat(shellScriptOutcome).isNotNull();
     assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testExportOutputVariablesUsingAlias() {
+    Map<String, String> outputVars = new LinkedHashMap<>();
+    outputVars.put("key1", "val1");
+    outputVars.put("key2", "val2");
+    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
+                                                   .shellType(ShellType.Bash)
+                                                   .onDelegate(ParameterField.createValueField(true))
+                                                   .secretOutputVariables(new HashSet<>())
+                                                   .build();
+    when(executionSweepingOutputService.consume(any(), any(), any(), any())).thenReturn("");
+    when(ambiance.getExpressionFunctorToken()).thenReturn(1234L);
+    // invalid cases
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(outputVars).build());
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("abc")).scope(ExportScope.PIPELINE).build());
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(new HashMap<>()).build());
+    // normal case
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(outputVars).build());
+    verify(executionSweepingOutputService, times(1))
+        .consume(ambiance, OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias("abc", ambiance),
+            OutputAliasSweepingOutput.builder().outputVariables(outputVars).build(), StepOutcomeGroup.PIPELINE.name());
+    // negative cases
+    when(executionSweepingOutputService.consume(any(), any(), any(), any()))
+        .thenThrow(new GeneralException("Sweeping output with name 2507ee91 is already saved"))
+        .thenThrow(new GeneralException("random"));
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(ambiance, stepParameters,
+                               ShellScriptOutcome.builder().outputVariables(outputVars).build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Output alias with key abc, already saved in Pipeline scope. Please ensure that there are no duplicate output alias keys within the same scope");
+
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(ambiance, stepParameters,
+                               ShellScriptOutcome.builder().outputVariables(outputVars).build()))
+        .isInstanceOf(InternalServerErrorException.class)
+        .hasMessage("Error while publishing outputAlias for the key abc for scope Pipeline: GENERAL_ERROR");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetShellScriptStepParameters() {
+    assertEquals(ShellScriptHelperService.getShellScriptStepParameters(
+                     StepElementParameters.builder()
+                         .spec(ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build())
+                         .build()),
+        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build());
+    assertEquals(ShellScriptHelperService.getShellScriptStepParameters(
+                     StepElementParameters.builder()
+                         .spec(io.harness.steps.shellscript.v1.ShellScriptStepParameters.infoBuilder()
+                                   .shell(ShellTypeV1.PowerShell)
+                                   .build())
+                         .build()),
+        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetShellScriptOutcome() {
+    assertEquals(ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), HarnessYamlVersion.V0),
+        io.harness.steps.shellscript.ShellScriptOutcome.builder().outputVariables(new HashMap<>()).build());
+    assertEquals(ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), HarnessYamlVersion.V1),
+        io.harness.steps.shellscript.v1.ShellScriptOutcome.builder().output_vars(new HashMap<>()).build());
+    assertThatThrownBy(() -> ShellScriptHelperService.getShellScriptOutcome(new HashMap<>(), "v1"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Version v1 not supported");
   }
 }

@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkConfigDAL;
@@ -33,6 +35,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider {
   @Inject private AwsCdkConfigDAL awsCdkConfigDAL;
@@ -55,9 +59,10 @@ public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider
         ParameterField.<String>builder().value(awsCdkConfig.getImage()).build(),
         ParameterField.<ImagePullPolicy>builder().value(awsCdkConfig.getImagePullPolicy()).build());
     Map<String, String> envVariables = getEnvironmentVariables(awsCdkConfig, awsCdkRollbackStepInfo);
-    PluginDetails pluginDetails = getPluginDetails(usedPorts,
-        ParameterField.<Integer>builder().value(awsCdkConfig.getRunAsUser()).build(), getResources(awsCdkConfig),
-        ParameterField.<Boolean>builder().value(awsCdkConfig.getPrivileged()).build(), envVariables, imageDetails);
+    PluginDetails pluginDetails =
+        getPluginDetails(usedPorts, ParameterField.<Integer>builder().value(awsCdkConfig.getRunAsUser()).build(),
+            getResources(awsCdkConfig), ParameterField.<Boolean>builder().value(awsCdkConfig.getPrivileged()).build(),
+            envVariables, imageDetails, false);
 
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
@@ -80,7 +85,7 @@ public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider
       if (containerResource.getLimits() != null) {
         limits = ContainerResource.Limits.builder()
                      .memory(ParameterField.<String>builder().value(containerResource.getLimits().getMemory()).build())
-                     .cpu(ParameterField.<String>builder().value(containerResource.getLimits().getMemory()).build())
+                     .cpu(ParameterField.<String>builder().value(containerResource.getLimits().getCpu()).build())
                      .build();
       }
       return ContainerResource.builder().requests(requests).limits(limits).build();

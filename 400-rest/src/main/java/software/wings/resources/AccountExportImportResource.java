@@ -34,7 +34,6 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.Application;
 import software.wings.beans.GitCommit;
 import software.wings.beans.KmsConfig;
@@ -42,6 +41,7 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.Schema;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettings.LdapSettingsKeys;
 import software.wings.beans.sso.SSOType;

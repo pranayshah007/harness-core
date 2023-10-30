@@ -20,8 +20,10 @@ import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -41,6 +43,7 @@ public class ArtifactEntity implements PersistentEntity {
   @Id String id;
   @Field("artifactid") String artifactId;
   @Field("orchestrationid") String orchestrationId;
+  String artifactCorrelationId;
   @NotEmpty String url;
   String name;
   String type;
@@ -58,6 +61,12 @@ public class ArtifactEntity implements PersistentEntity {
   @Field("isattested") boolean isAttested;
   @Field("attestedfileurl") String attestedFileUrl;
   Sbom sbom;
+  @Setter @NonFinal Boolean invalid;
+  @Setter @NonFinal Long lastUpdatedAt;
+  @Setter @NonFinal Long componentsCount;
+  @Setter @NonFinal Long prodEnvCount;
+  @Setter @NonFinal Long nonProdEnvCount;
+
   @Value
   @Builder
   public static class Sbom {

@@ -9,8 +9,12 @@ package io.harness.ccm.views.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
@@ -32,6 +36,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Singleton
 @OwnedBy(CE)
 public class AwsAccountFieldHelper {
@@ -134,7 +140,9 @@ public class AwsAccountFieldHelper {
       final List<QLCEViewFilter> idFilters, final String accountId) {
     final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
     idFilters.forEach(idFilter -> {
-      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
+      if (Objects.nonNull(idFilter.getField())
+          && (AWS_ACCOUNT_FIELD.equalsIgnoreCase(idFilter.getField().getFieldName())
+              || AWS_ACCOUNT_FIELD_ID.equalsIgnoreCase(idFilter.getField().getFieldId()))
           && Objects.nonNull(idFilter.getValues()) && idFilter.getValues().length != 0
           && !idFilter.getValues()[0].isEmpty()) {
         final String[] updatedValues =

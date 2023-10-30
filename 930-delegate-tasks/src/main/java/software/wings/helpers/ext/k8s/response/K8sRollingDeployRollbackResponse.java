@@ -6,11 +6,13 @@
  */
 
 package software.wings.helpers.ext.k8s.response;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.k8s.model.K8sPod;
 
@@ -18,10 +20,12 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Data
 @Builder
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
 public class K8sRollingDeployRollbackResponse implements K8sTaskResponse {
   List<K8sPod> k8sPodList;
+  Integer releaseNumber;
 }

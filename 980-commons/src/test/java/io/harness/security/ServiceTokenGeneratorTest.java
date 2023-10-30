@@ -7,15 +7,18 @@
 
 package io.harness.security;
 
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.auth0.jwt.JWT;
 import java.time.Duration;
@@ -60,5 +63,20 @@ public class ServiceTokenGeneratorTest extends CategoryTest {
         ServiceTokenAuthenticator.builder().secretKey(SECRETKEY).build();
 
     serviceTokenAuthenticator.authenticate(token + "123");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void test_getServiceTokenWithDurationAndPrinicipal() {
+    final ServiceTokenGenerator serviceTokenGenerator = new ServiceTokenGenerator();
+    final String token = serviceTokenGenerator.getServiceTokenWithDuration(
+        SECRETKEY, Duration.ofHours(12), new ServicePrincipal(AuthorizationServiceHeader.NG_MANAGER.getServiceId()));
+    final ServiceTokenAuthenticator serviceTokenAuthenticator =
+        ServiceTokenAuthenticator.builder().secretKey(SECRETKEY).build();
+    serviceTokenAuthenticator.authenticate(token);
+    JWT jwt = JWT.decode(token);
+    Duration duration = Duration.ofMillis(Math.abs(jwt.getIssuedAt().getTime() - jwt.getExpiresAt().getTime()));
+    assertThat(duration).isEqualTo(Duration.ofHours(12).plusMinutes(1));
   }
 }

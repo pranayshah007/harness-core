@@ -61,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -476,7 +477,8 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     when(wingsPersistence.getWithAppId(Environment.class, APP_ID, ENV_ID))
         .thenReturn(anEnvironment().appId(APP_ID).uuid(ENV_ID).name("PROD").build());
     when(wingsPersistence.delete(any(Environment.class))).thenReturn(true);
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(aPageResponse().build());
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
+        .thenReturn(aPageResponse().build());
     environmentService.delete(APP_ID, ENV_ID);
     InOrder inOrder = inOrder(wingsPersistence, serviceTemplateService, notificationService);
     inOrder.verify(wingsPersistence).getWithAppId(Environment.class, APP_ID, ENV_ID);
@@ -492,7 +494,7 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     when(wingsPersistence.getWithAppId(Environment.class, APP_ID, ENV_ID))
         .thenReturn(anEnvironment().appId(APP_ID).uuid(ENV_ID).name("PROD").build());
     when(wingsPersistence.delete(any(Query.class))).thenReturn(true);
-    when(pipelineService.listPipelines(any(PageRequest.class)))
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
         .thenReturn(aPageResponse().withResponse(asList(Pipeline.builder().name("PIPELINE_NAME").build())).build());
     List<String> pipelineNames = new ArrayList<>();
     pipelineNames.add("PIPELINE_NAME");
@@ -506,9 +508,10 @@ public class EnvironmentServiceTest extends WingsBaseTest {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void shouldPruneByApplication() {
-    when(query.asList()).thenReturn(asList(anEnvironment().appId(APP_ID).uuid(ENV_ID).name("PROD").build()));
+    when(query.asList(any())).thenReturn(asList(anEnvironment().appId(APP_ID).uuid(ENV_ID).name("PROD").build()));
     when(wingsPersistence.delete(any(Environment.class))).thenReturn(true);
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(aPageResponse().build());
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
+        .thenReturn(aPageResponse().build());
     environmentService.pruneByApplication(APP_ID);
     InOrder inOrder =
         inOrder(wingsPersistence, activityService, serviceTemplateService, notificationService, workflowService);

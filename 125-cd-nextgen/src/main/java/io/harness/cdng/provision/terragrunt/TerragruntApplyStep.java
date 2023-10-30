@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terragrunt;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
@@ -177,6 +179,9 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT))
         .encryptedDataDetailList(helper.getEncryptionDetails(
             spec.getConfigFiles().getStore().getSpec(), spec.getBackendConfig(), spec.getVarFiles(), ambiance))
+        .useUniqueDirectoryForBaseDir(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .build();
 
     return prepareCDTaskRequest(ambiance, builder, StepBaseParameters, stepParameters);
@@ -222,6 +227,9 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
             inheritOutput.getBackendConfigFile(), inheritOutput.getVarFileConfigs(), ambiance))
         .encryptDecryptPlanForHarnessSMOnManager(
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.encryptionConfig))
+        .useUniqueDirectoryForBaseDir(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT));
     builder.build();
 

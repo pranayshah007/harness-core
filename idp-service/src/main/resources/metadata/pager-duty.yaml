@@ -6,6 +6,7 @@ category: Monitoring
 source: https://github.com/backstage/backstage/tree/master/plugins/pagerduty
 iconUrl: https://avatars2.githubusercontent.com/u/766800?s=200&v=4
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/pagerduty/
 config: |-
   proxy:
     '/pagerduty':

@@ -32,7 +32,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -325,7 +325,7 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     assertThat(entity.getIdentifier()).isEqualTo("set1");
     assertThat(entity.getName()).isEqualTo("set1");
     assertThat(entity.getInputSetEntityType()).isEqualTo(InputSetEntityType.INPUT_SET);
-    assertThat(entity.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+    assertThat(entity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test

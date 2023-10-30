@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.helm;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.CodePulse;
@@ -55,13 +56,15 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     HelmVersion helmVersion = helmChartManifestDelegateConfig.getHelmVersion();
     StoreDelegateConfig storeDelegateConfig = helmChartManifestDelegateConfig.getStoreDelegateConfig();
+    String chartName = helmChartManifestDelegateConfig.getChartName();
 
-    return getHelmExecutionCapabilities(
-        helmVersion, storeDelegateConfig, maskingEvaluator, helmChartManifestDelegateConfig.isIgnoreResponseCode());
+    return getHelmExecutionCapabilities(helmVersion, storeDelegateConfig, maskingEvaluator,
+        helmChartManifestDelegateConfig.isIgnoreResponseCode(), chartName);
   }
 
   public static List<ExecutionCapability> getHelmExecutionCapabilities(HelmVersion helmVersion,
-      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
+      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode,
+      String chartName) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (helmVersion != null) {
       capabilities.add(HelmInstallationCapability.builder()
@@ -91,17 +94,25 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        if (ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl() != null) {
+        String criteria = null;
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          criteria = chartName + ":" + ociHelmStoreConfig.getRegion();
+          capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+        } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+          criteria = ociHelmStoreConfig.getRepoUrl();
           OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+          populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
+        }
+        if (isNotEmpty(criteria)) {
           capabilities.add(HelmInstallationCapability.builder()
                                .version(HelmVersion.V380)
-                               .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                               .criteria("OCI_HELM_REPO: " + criteria)
                                .build());
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
-        populateDelegateSelectorCapability(
-            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
+
         break;
 
       case S3_HELM:

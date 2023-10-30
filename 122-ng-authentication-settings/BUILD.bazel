@@ -13,6 +13,7 @@ shared_dependencies = [
     "//123-ng-core-user:module",
     "//925-enforcement-service:module",
     "//942-enforcement-sdk:module",
+    "//970-ng-commons/src/main/java/io/harness/common:module",
 ]
 
 java_library(

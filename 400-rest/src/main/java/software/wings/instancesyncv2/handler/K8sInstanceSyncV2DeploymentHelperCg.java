@@ -114,8 +114,8 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
     for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
       if (newIdentifier instanceof CgK8sReleaseIdentifier) {
         CgK8sReleaseIdentifier k8sNewIdentifier = (CgK8sReleaseIdentifier) newIdentifier;
+        removeDuplicate(identifiers, k8sNewIdentifier);
         identifiers.add(k8sNewIdentifier);
-
       } else {
         log.error("Unknown release identifier found: [{}]", newIdentifier);
       }
@@ -312,5 +312,22 @@ public class K8sInstanceSyncV2DeploymentHelperCg implements CgInstanceSyncV2Depl
       return releaseIdentifier.getDeleteAfter();
     }
     return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
+  }
+
+  private static void removeDuplicate(Set<CgReleaseIdentifiers> identifiers, CgK8sReleaseIdentifier k8sNewIdentifier) {
+    // When HELM_STEADY_STATE_CHECK_1_16 is enabled containerServiceName will be null, but when it's disabled it will
+    // have actual value. We should ignore this filed as they are part of the same release, and should always use new
+    // identifier
+    for (CgReleaseIdentifiers identifier : identifiers) {
+      CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) identifier;
+      if (Objects.equals(k8sNewIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getReleaseName())
+          && Objects.equals(k8sNewIdentifier.getNamespace(), cgK8sReleaseIdentifier.getNamespace())
+          && Objects.equals(k8sNewIdentifier.getClusterName(), cgK8sReleaseIdentifier.getClusterName())
+          && k8sNewIdentifier.isHelmDeployment() == cgK8sReleaseIdentifier.isHelmDeployment()) {
+        // if there is a duplicate remove it
+        identifiers.remove(identifier);
+        break;
+      }
+    }
   }
 }

@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.retention.AuditAccountSyncService;
 import io.harness.audit.retention.AuditRetentionIteratorHandler;
 import io.harness.health.HealthService;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
@@ -59,6 +61,7 @@ public class AuditServiceSetup {
     registerManagedBeans(environment, injector);
     registerIterators(injector);
     registerOasResource(appConfig, environment, injector);
+    initializeMonitoring(appConfig, injector);
 
     if (BooleanUtils.isTrue(appConfig.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -138,5 +141,12 @@ public class AuditServiceSetup {
         .resourceClasses(resourceClasses)
         .cacheTTL(0L)
         .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  private void initializeMonitoring(AuditServiceConfiguration appConfig, Injector injector) {
+    if (appConfig.isExportMetricsToStackDriver()) {
+      injector.getInstance(MetricService.class).initializeMetrics();
+      injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    }
   }
 }

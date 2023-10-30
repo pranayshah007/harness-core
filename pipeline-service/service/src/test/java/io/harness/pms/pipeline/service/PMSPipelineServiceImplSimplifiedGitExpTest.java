@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.NoopPipelineSettingServiceImpl;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -54,12 +55,13 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -92,6 +94,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
+  @Mock AccessControlClient accessControlClient;
+  @Mock PMSYamlSchemaService yamlSchemaService;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -102,11 +107,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    pipelineService =
-        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
-            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService, projectClient, organizationClient,
-            pmsFeatureFlagService, gitXSettingsHelper, accountClient, settingsClient, gitAwareEntityHelper);
+    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
+        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, pmsFeatureFlagHelper,
+        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
+        pipelineValidationService, projectClient, organizationClient, pmsFeatureFlagService, gitXSettingsHelper,
+        accountClient, settingsClient, gitAwareEntityHelper, accessControlClient, yamlSchemaService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -130,13 +135,13 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineToSave, HarnessYamlVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
     try (MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class)) {
       Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
@@ -164,13 +169,13 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineToSave, HarnessYamlVersion.V0);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
     try (MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class)) {
@@ -209,7 +214,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
       PipelineCRUDResult pipelineCRUDResult = pipelineService.validateAndCreatePipeline(pipelineToSave, true);
       assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
       assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
-      verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+      verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
       verify(pipelineRepository, times(0)).saveForOldGitSync(any());
       verify(pipelineRepository, times(0)).save(any());
     }
@@ -249,12 +254,12 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineToSave, HarnessYamlVersion.V0);
     doThrow(new HintException("this is a hint")).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
     try (MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class)) {
@@ -447,7 +452,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                           .projectIdentifier(projectIdentifier)
                                           .identifier(pipelineId)
                                           .yaml(pipelineYaml)
-                                          .harnessVersion(PipelineVersion.V0)
+                                          .harnessVersion(HarnessYamlVersion.V0)
                                           .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -455,7 +460,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .validatePipeline(eq(pipelineToUpdate), any(), anyBoolean());
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
@@ -481,7 +486,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                           .projectIdentifier(projectIdentifier)
                                           .identifier(pipelineId)
                                           .yaml(pipelineYaml)
-                                          .harnessVersion(PipelineVersion.V0)
+                                          .harnessVersion(HarnessYamlVersion.V0)
                                           .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -489,7 +494,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .validatePipeline(eq(pipelineToUpdate), any(), anyBoolean());
     doReturn(pipelineToSaveWithUpdatedInfo)
         .when(pipelineServiceHelper)
-        .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
@@ -521,7 +526,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     PipelineCRUDResult pipelineCRUDResult = pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true);
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
-    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     verify(pipelineRepository, times(0)).updatePipelineYaml(any());
     verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
   }

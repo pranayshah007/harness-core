@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.environment.SystemEnvironment;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 
 import software.wings.app.MainConfiguration;
 import software.wings.utils.CdnStorageUrlGenerator;
@@ -93,12 +93,8 @@ public class InfraDownloadServiceImpl implements InfraDownloadService {
                   throw new InvalidInfraException("Failed to refresh token");
                 }
 
-                return AccessTokenBean.builder()
-                    .projectId(credential.getServiceAccountProjectId())
-                    .tokenValue(credential.getAccessToken())
-                    .expirationTimeMillis(credential.getExpirationTimeMilliseconds())
-                    .build();
-
+                return new AccessTokenBean(credential.getServiceAccountProjectId(), credential.getAccessToken(),
+                    credential.getExpirationTimeMilliseconds());
               } catch (Exception e) {
                 throw new InvalidInfraException("Error getting logging token", e);
               }

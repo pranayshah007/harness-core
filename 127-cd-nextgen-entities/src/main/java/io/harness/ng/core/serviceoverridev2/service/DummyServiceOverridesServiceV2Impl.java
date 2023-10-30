@@ -34,6 +34,12 @@ public class DummyServiceOverridesServiceV2Impl implements ServiceOverridesServi
   }
 
   @Override
+  public Optional<NGServiceOverridesEntity> getOverridesContainingYaml(@NonNull String accountId, String orgIdentifier,
+      String projectIdentifier, @NonNull String serviceOverridesIdentifier) {
+    return Optional.empty();
+  }
+
+  @Override
   public NGServiceOverridesEntity create(@NonNull NGServiceOverridesEntity requestedEntity) {
     return null;
   }

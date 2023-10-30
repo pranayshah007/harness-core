@@ -46,8 +46,9 @@ public class SlackSenderDelegateTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     SlackTaskParams slackTaskParams = (SlackTaskParams) parameters;
     try {
-      NotificationProcessingResponse processingResponse = slackSender.send(
-          slackTaskParams.getSlackWebhookUrls(), slackTaskParams.getMessage(), slackTaskParams.getNotificationId());
+      NotificationProcessingResponse processingResponse =
+          slackSender.send(slackTaskParams.getSlackWebhookUrls(), slackTaskParams.getMessage(),
+              slackTaskParams.getNotificationId(), slackTaskParams.getSlackWebhookUrlDomainAllowlist());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

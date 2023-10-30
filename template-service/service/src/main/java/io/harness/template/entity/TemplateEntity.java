@@ -6,12 +6,14 @@
  */
 
 package io.harness.template.entity;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
@@ -31,6 +33,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -57,6 +60,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -115,6 +119,8 @@ public class TemplateEntity
 
   // icon support for templates
   @Wither @Setter @NonFinal String icon;
+  // to maintain template yaml version
+  @Setter @NonFinal String harnessVersion;
 
   @Override
   public String getAccountIdentifier() {
@@ -229,5 +235,12 @@ public class TemplateEntity
   @Override
   public void setData(String yaml) {
     this.yaml = yaml;
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return HarnessYamlVersion.V0;
+    }
+    return harnessVersion;
   }
 }

@@ -19,7 +19,10 @@ import static io.harness.ccm.views.entities.ViewIdOperator.NOT_IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
@@ -89,6 +92,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.tools.StringUtils;
 import org.springframework.util.CollectionUtils;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 @OwnedBy(CE)

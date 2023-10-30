@@ -12,7 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.notification.entities.Channel;
 import io.harness.notification.entities.Notification;
+import io.harness.notification.entities.NotificationChannel;
+import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.NotificationSetting;
 import io.harness.notification.entities.NotificationTemplate;
 
@@ -25,6 +28,9 @@ public class NotificationRegistrar implements MorphiaRegistrar {
     set.add(Notification.class);
     set.add(NotificationTemplate.class);
     set.add(NotificationSetting.class);
+    set.add(NotificationChannel.class);
+    set.add(NotificationRule.class);
+    set.add(Channel.class);
   }
 
   @Override

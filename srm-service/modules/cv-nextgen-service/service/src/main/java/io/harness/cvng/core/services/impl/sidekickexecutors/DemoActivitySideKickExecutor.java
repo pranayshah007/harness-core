@@ -10,8 +10,8 @@ package io.harness.cvng.core.services.impl.sidekickexecutors;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.core.beans.dependency.DependencyMetadataType;
 import io.harness.cvng.core.beans.dependency.KubernetesDependencyMetadata;
-import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.sidekick.DemoActivitySideKickData;
@@ -56,8 +56,7 @@ public class DemoActivitySideKickExecutor implements SideKickExecutor<DemoActivi
             .stream()
             .filter(serviceDependency
                 -> serviceDependency.getDependencyMetadata() != null
-                    && serviceDependency.getDependencyMetadata().getType()
-                        == ServiceDependencyMetadata.DependencyMetadataType.KUBERNETES)
+                    && serviceDependency.getDependencyMetadata().getType() == DependencyMetadataType.KUBERNETES)
             .findAny();
     if (serviceDependencyDTO.isPresent()) {
       List<ChangeSource> changeSources = changeSourceService.getEntityByType(

@@ -6,10 +6,13 @@
  */
 
 package io.harness.pms.plan.execution.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.Date;
@@ -18,12 +21,14 @@ import java.util.Set;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
-  // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
   void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId);
+  void updateResolvedUserInputSetYaml(String planExecutionId, String resolvedInputSetYaml);
+  // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
   PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**
@@ -72,4 +77,14 @@ public interface PmsExecutionSummaryService {
    * Uses - planExecutionId_unique idx
    */
   void updateTTL(String planExecutionId, Date ttlDate);
+
+  /**
+   * Adds the status updates for the PipelineExecutionSummaryEntity for give planExecution. It also updates the endTs if
+   * status is terminal.
+   * @param planExecution planExecution for which we want to update the PipelineExecutionSummaryEntity.
+   * @param summaryEntityUpdate Update object that will have the update operations inside it. Caller will apply all the
+   *     updates in once.
+   * Uses - planExecutionId_unique idx
+   */
+  Update updateStatusOps(PlanExecution planExecution, Update summaryEntityUpdate);
 }

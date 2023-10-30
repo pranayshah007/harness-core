@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.steps.container.ContainerStepSpecTypeConstants;
 import io.harness.steps.plugin.ContainerStepNode;
 
@@ -43,6 +43,6 @@ public class ContainerStepPlanCreator extends AbstractContainerStepPlanCreator<C
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

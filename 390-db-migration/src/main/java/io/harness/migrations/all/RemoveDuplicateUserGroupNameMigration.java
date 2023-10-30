@@ -6,9 +6,11 @@
  */
 
 package io.harness.migrations.all;
-
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.migrations.Migration;
@@ -26,6 +28,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class RemoveDuplicateUserGroupNameMigration implements Migration {
   @Inject private WingsPersistence wingsPersistence;
@@ -43,7 +47,7 @@ public class RemoveDuplicateUserGroupNameMigration implements Migration {
                   .addFilter(UserGroup.ACCOUNT_ID_KEY, SearchFilter.Operator.EQ, account.getUuid())
                   .build();
           List<UserGroup> userGroups =
-              userGroupService.list(account.getUuid(), pageRequest, false, null, null).getResponse();
+              userGroupService.list(account.getUuid(), pageRequest, false, null, null, false).getResponse();
           Set<String> alreadyUsedNames = new HashSet<>();
           userGroups.forEach(userGroup -> {
             if (userGroup.isImportedByScim()) {

@@ -663,8 +663,12 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest) {
+  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(
+      PageRequest<Workflow> pageRequest, boolean hitSecondary) {
     pageRequest.addFieldsExcluded(WorkflowKeys.orchestration);
+    if (hitSecondary) {
+      return wingsPersistence.querySecondary(Workflow.class, pageRequest);
+    }
     return wingsPersistence.query(Workflow.class, pageRequest);
   }
 
@@ -673,7 +677,7 @@ public class WorkflowServiceImpl implements WorkflowService {
    */
   @Override
   public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest) {
-    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null);
+    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null, false);
     return response == null ? new PageResponse<>() : response;
   }
 
@@ -686,10 +690,10 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflows(
-      PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
-    PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
+  public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest, Integer previousExecutionsCount,
+      boolean withTags, String tagFilter, boolean hitSecondary) {
+    PageResponse<Workflow> workflows = resourceLookupService.listWithTagFilters(
+        pageRequest, tagFilter, EntityType.WORKFLOW, withTags, hitSecondary, true);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -843,7 +847,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflow == null) {
       return null;
     }
-    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId));
+    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId, false));
     loadOrchestrationWorkflow(workflow, version);
     return workflow;
   }
@@ -1247,7 +1251,8 @@ public class WorkflowServiceImpl implements WorkflowService {
               .withLimit(PageRequest.UNLIMITED)
               .addFilter(PipelineKeys.appId, EQ, appId)
               .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflowId)
-              .build());
+              .build(),
+          false, accountId);
       if (isNotEmpty(pipelinesWithWorkflowLinked)) {
         updateEnvIdInLinkedPipelines(workflow, envId, pipelinesWithWorkflowLinked);
         pipelineService.savePipelines(pipelinesWithWorkflowLinked, true);
@@ -1480,7 +1485,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             .withLimit(PageRequest.UNLIMITED)
             .addFilter(PipelineKeys.appId, EQ, workflow.getAppId())
             .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflow.getUuid())
-            .build());
+            .build(),
+        false, workflow.getAccountId());
 
     if (isNotEmpty(pipelines)) {
       List<String> pipelineNames = pipelines.stream().map(Pipeline::getName).collect(toList());

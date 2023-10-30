@@ -19,6 +19,7 @@ import io.harness.ssca.enforcement.executors.mongo.filter.allowlist.PurlQueryBui
 import io.harness.ssca.enforcement.executors.mongo.filter.allowlist.SupplierQueryBuilder;
 import io.harness.ssca.enforcement.executors.mongo.filter.denylist.DenyListItemQueryBuilder;
 import io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields.LicenseField;
+import io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields.PackageName;
 import io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields.PurlField;
 import io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields.SupplierField;
 import io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields.VersionField;
@@ -38,24 +39,20 @@ public class MongoInterpreter implements IRuleInterpreter {
     filter.put("orchestrationid", orchestrationId);
 
     if (item.getType() == PolicyType.DENY_LIST) {
-      if (item.getPackageName() != null) {
-        filter.put("packagename", item.getPackageName());
-      }
-
-      queryBuilder =
-          DenyListItemQueryBuilder.builder()
-              .orchestrationId(orchestrationId)
-              .denyListItem((DenyListItem) item)
-              .filters(filter)
-              .fields(Arrays.asList(new LicenseField(), new SupplierField(), new PurlField(), new VersionField()))
-              .build();
+      queryBuilder = DenyListItemQueryBuilder.builder()
+                         .orchestrationId(orchestrationId)
+                         .denyListItem((DenyListItem) item)
+                         .filters(filter)
+                         .fields(Arrays.asList(new PackageName(), new LicenseField(), new SupplierField(),
+                             new PurlField(), new VersionField()))
+                         .build();
     } else if (type == AllowListRuleType.ALLOW_LICENSE_ITEM) {
       queryBuilder = AllowLicenseQueryBuilder.builder()
                          .orchestrationId(orchestrationId)
                          .licenses(((AllowListItem) item).getLicenses())
                          .allowLicenses(new ArrayList<>())
                          .ignorePackages(new ArrayList<>())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else if (type == AllowListRuleType.ALLOW_SUPPLIER_ITEM) {
       queryBuilder = SupplierQueryBuilder.builder()
@@ -63,13 +60,13 @@ public class MongoInterpreter implements IRuleInterpreter {
                          .suppliers(((AllowListItem) item).getSuppliers())
                          .allowSuppliers(new ArrayList<>())
                          .ignorePackages(new ArrayList<>())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else if (type == AllowListRuleType.ALLOW_PURL_ITEM) {
       queryBuilder = PurlQueryBuilder.builder()
                          .orchestrationId(orchestrationId)
                          .purls(((AllowListItem) item).getPurls())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else {
       throw new InvalidArgumentsException(String.format("Invalid value of type: %s", type.name()));

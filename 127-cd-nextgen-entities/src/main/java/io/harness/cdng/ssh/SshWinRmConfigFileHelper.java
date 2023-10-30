@@ -184,6 +184,10 @@ public class SshWinRmConfigFileHelper {
         continue;
       }
 
+      if (configFileParameter.getFileContent() == null) {
+        continue;
+      }
+
       String renderedContent;
       try {
         renderedContent = cdExpressionResolver.renderExpression(ambiance, configFileParameter.getFileContent(), false);

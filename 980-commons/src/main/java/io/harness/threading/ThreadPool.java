@@ -11,12 +11,21 @@ import static io.harness.threading.Morpheus.quietSleep;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.manage.ManagedExecutorService;
+import io.harness.manage.ManagedScheduledExecutorService;
 
+import com.codahale.metrics.InstrumentedExecutorService;
+import com.codahale.metrics.InstrumentedScheduledExecutorService;
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +80,58 @@ public class ThreadPool {
     executor.setRejectedExecutionHandler(rejectedExecutionHandler);
     queue.setThreadPoolExecutor(executor);
     return executor;
+  }
+
+  public static ExecutorService getInstrumentedExecutorService(int corePoolSize, int maxPoolSize, long idleTime,
+      TimeUnit unit, String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedExecutorService(create(corePoolSize, maxPoolSize, idleTime, unit,
+                                               new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build()),
+        metricRegistry, threadName);
+  }
+
+  public static ExecutorService getInstrumentedExecutorService(
+      ThreadPoolConfig poolConfig, String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedExecutorService(
+        create(poolConfig, new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build()), metricRegistry,
+        threadName);
+  }
+
+  public static ExecutorService getInstrumentedManagedExecutorService(
+      ThreadPoolConfig poolConfig, String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedExecutorService(
+        new ManagedExecutorService(
+            create(poolConfig.getCorePoolSize(), poolConfig.getMaxPoolSize(), poolConfig.getIdleTime(),
+                poolConfig.getTimeUnit(), new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build())),
+        metricRegistry, threadName);
+  }
+
+  public static ExecutorService getInstrumentedManagedExecutorService(ThreadPoolConfig poolConfig, int queueSize,
+      RejectedExecutionHandler rejectedExecutionHandler, String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedExecutorService(
+        new ManagedExecutorService(create(poolConfig, queueSize,
+            new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build(), rejectedExecutionHandler)),
+        metricRegistry, threadName);
+  }
+
+  public static ScheduledExecutorService getInstrumentedManagedScheduledExecutorService(
+      String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedScheduledExecutorService(
+        new ManagedScheduledExecutorService(threadName + "-%d"), metricRegistry, threadName);
+  }
+
+  public static ScheduledExecutorService getInstrumentedScheduledExecutorService(
+      String threadName, MetricRegistry metricRegistry) {
+    return new InstrumentedScheduledExecutorService(
+        new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build()),
+        metricRegistry, threadName);
+  }
+
+  public static ScheduledExecutorService getInstrumentedScheduledExecutorService(
+      String threadName, int corePoolSize, MetricRegistry metricRegistry) {
+    return new InstrumentedScheduledExecutorService(
+        new ScheduledThreadPoolExecutor(
+            corePoolSize, new ThreadFactoryBuilder().setNameFormat(threadName + "-%d").build()),
+        metricRegistry, threadName);
   }
 
   /**

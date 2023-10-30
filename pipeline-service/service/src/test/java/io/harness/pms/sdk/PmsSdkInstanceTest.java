@@ -106,7 +106,6 @@ public class PmsSdkInstanceTest extends CategoryTest {
     AcquiredLock<?> acquiredLock = mock(AcquiredLock.class);
     doReturn(acquiredLock).when(persistentLocker).waitToAcquireLockOptional(any(), any(), any());
     pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver);
-    verify(schemaFetcher, times(1)).invalidateAllCache();
     verify(ephemeralCacheService, times(1)).getDistributedSet("sdkStepsVisibleInUI");
   }
 

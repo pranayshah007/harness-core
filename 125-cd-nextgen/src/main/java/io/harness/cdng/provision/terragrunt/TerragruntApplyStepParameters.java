@@ -27,6 +27,8 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,12 +57,7 @@ public class TerragruntApplyStepParameters extends TerragruntApplyBaseStepInfo i
   }
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    TerragruntApplyStepParameters terragruntApplyStepParameters = this;
-    // this TerragruntModuleConfig we are settle to null so that it will not show in the input of Apply step execution
-    if (terragruntApplyStepParameters.getConfiguration().getSpec() != null) {
-      terragruntApplyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
-    }
-    return terragruntApplyStepParameters;
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("spec.configuration.spec.terragruntModuleConfig"));
   }
 }

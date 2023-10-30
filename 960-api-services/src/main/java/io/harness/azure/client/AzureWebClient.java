@@ -6,7 +6,9 @@
  */
 
 package io.harness.azure.client;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
@@ -17,6 +19,8 @@ import com.azure.core.http.rest.Response;
 import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
 import com.azure.resourcemanager.appservice.fluent.models.SiteConfigResourceInner;
 import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
+import com.azure.resourcemanager.appservice.models.DeployType;
 import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import com.azure.resourcemanager.appservice.models.WebApp;
 import com.azure.resourcemanager.appservice.models.WebAppBasic;
@@ -30,6 +34,7 @@ import java.util.Optional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public interface AzureWebClient {
   /**
    * List web application by resource group name.
@@ -403,6 +408,30 @@ public interface AzureWebClient {
    * @return
    */
   Mono<Void> deployZipToSlotAsync(AzureWebClientContext context, String slotName, File file);
+
+  /**
+   * Deploying async to deployment slot.
+   *
+   * @param context
+   * @param type
+   * @param slotName
+   * @param file
+   * @param options
+   * @return
+   */
+  Mono<Void> deployAsync(
+      AzureWebClientContext context, DeployType type, String slotName, File file, DeployOptions options);
+
+  /**
+   * Deploying async to deployment slot.
+   *
+   * @param context
+   * @param type
+   * @param file
+   * @param options
+   * @return
+   */
+  Mono<Void> deployToWebAppAsync(AzureWebClientContext context, DeployType type, File file, DeployOptions options);
 
   Mono<Void> deployZipToWebAppAsync(AzureWebClientContext context, File file);
 

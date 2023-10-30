@@ -18,6 +18,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -173,7 +174,7 @@ public class ContainerServiceTest extends WingsBaseTest {
     when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString())).thenReturn(replicationController);
     when(kubernetesContainerService.getServices(eq(kubernetesConfig), any()))
         .thenReturn(singletonList(kubernetesService));
-    when(kubernetesContainerService.getRunningPodsWithLabels(eq(kubernetesConfig), anyString(), any()))
+    when(kubernetesContainerService.getRunningPodsWithLabels(eq(kubernetesConfig), anyString(), anyMap()))
         .thenReturn(singletonList(pod));
     when(kubernetesContainerService.getControllers(eq(kubernetesConfig), any()))
         .thenReturn((List) singletonList(replicationController));

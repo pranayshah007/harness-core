@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cache;
+package io.harness.ci.cache;
 
 import io.harness.beans.cache.api.CacheMetadataInfo;
 import io.harness.beans.cache.api.DeleteCacheResponse;
 
 public interface CICacheManagementService {
   CacheMetadataInfo getCacheMetadata(String accountId);
-  DeleteCacheResponse deleteCache(String accountId, String path);
+  DeleteCacheResponse deleteCache(String accountId, String path, String cacheType);
 }

@@ -54,14 +54,4 @@ public class ServiceGuardLogClusterStateExecutor extends LogClusterStateExecutor
             + "of ServiceGuardLogClusterState: " + analysisState.getClusterLevel());
     }
   }
-
-  @Override
-  public AnalysisState handleRetry(ServiceGuardLogClusterState analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.IGNORED);
-    } else {
-      return handleRerun(analysisState);
-    }
-    return analysisState;
-  }
 }

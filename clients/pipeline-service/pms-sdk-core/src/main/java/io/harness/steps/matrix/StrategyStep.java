@@ -95,8 +95,8 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
                                        .getValue()))
                                .intValue();
         }
-        List<Child> children =
-            matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+        List<Child> children = matrixConfigService.fetchChildren(
+            stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
         if (maxConcurrency == 0) {
           maxConcurrency = children.size();
         }
@@ -119,7 +119,7 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
                 .intValue();
       }
       List<Child> children = forLoopStrategyConfigService.fetchChildren(
-          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
       if (maxConcurrency == 0) {
         maxConcurrency = children.size();
       }
@@ -134,7 +134,7 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
     }
     if (stepParameters.getStrategyConfig().getParallelism() != null) {
       List<Child> children = parallelismStrategyConfigService.fetchChildren(
-          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
       int maxConcurrency = stepParameters.getStrategyConfig().getParallelism().getValue();
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;

@@ -1259,7 +1259,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
               .name("userGroup1")
               .memberIds(asList(USER_ID))
               .build();
-      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null))
+      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null, false))
           .thenReturn(aPageResponse().withResponse(Arrays.asList(userGroup)).build());
       when(userGroupService.listByAccountId(anyString(), any(User.class), true))
           .thenReturn(aPageResponse().withResponse(Arrays.asList(userGroup)).build());

@@ -6,6 +6,7 @@
  */
 
 package io.harness.waiter;
+
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.CodePulse;
@@ -13,6 +14,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.MissingErrorResponseDataException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.AutoLogContext;
 import io.harness.tasks.ErrorResponseData;
@@ -76,7 +78,7 @@ public class NotifyEventListenerHelper {
         throw new UnsupportedOperationException(
             "No handling present for notify callback : " + notifyCallback.toString());
       }
-      log.info("WaitInstance callback finished");
+      log.debug("WaitInstance callback finished");
     } catch (Exception exception) {
       log.error("WaitInstance callback failed", exception);
     }
@@ -87,10 +89,12 @@ public class NotifyEventListenerHelper {
     responseMap.forEach((k, v) -> {
       final Supplier<ResponseData> responseDataSupplier = () -> {
         if (v instanceof ErrorResponseData) {
-          if (((ErrorResponseData) v).getException() == null) {
-            log.info("Exception is null for responseMap {}", v, new Exception());
+          final ErrorResponseData erd = (ErrorResponseData) v;
+          if (erd.getException() == null) {
+            log.warn("Exception is null for responseMap {}", v, new Exception());
+            throw new MissingErrorResponseDataException(erd.getErrorMessage());
           }
-          throw((ErrorResponseData) v).getException();
+          throw erd.getException();
         } else {
           return v;
         }

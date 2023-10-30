@@ -10,12 +10,10 @@ package io.harness.cdng.gitops.updategitopsapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.gitops.syncstep.AgentApplicationTargets;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,11 +27,14 @@ import lombok.NoArgsConstructor;
 public class UpdateGitOpsAppStepParameters
     extends UpdateGitOpsAppBaseStepInfo implements StepParameters, SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public UpdateGitOpsAppStepParameters(ParameterField<AgentApplicationTargets> application,
-      ParameterField<List<String>> helmValueFiles, ParameterField<List<UpdateGitOpsAppHelmParams>> helmParameters) {
-    super(application, helmValueFiles, helmParameters);
-    this.application = application;
-    this.helmValueFiles = helmValueFiles;
-    this.helmParameters = helmParameters;
+  public UpdateGitOpsAppStepParameters(ParameterField<String> applicationName, ParameterField<String> agentId,
+      ParameterField<String> targetRevision, ParameterField<HelmValues> helm,
+      ParameterField<KustomizeValues> kustomize) {
+    super(applicationName, agentId, targetRevision, helm, kustomize);
+    this.applicationName = applicationName;
+    this.agentId = agentId;
+    this.targetRevision = targetRevision;
+    this.helm = helm;
+    this.kustomize = kustomize;
   }
 }

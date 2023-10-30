@@ -35,6 +35,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.StringUtils;
 
 @JsonTypeName("DATADOG")
 @Data
@@ -65,6 +66,13 @@ public class DatadogMetricCVConfig extends MetricCVConfig<MetricInfo> {
                                 .build();
 
     datadogMetricDefinitions.forEach(definition -> {
+      if (definition.getAnalysis() != null && definition.getAnalysis().getDeploymentVerification() != null
+          && definition.getAnalysis().getDeploymentVerification().getEnabled() != null
+          && definition.getAnalysis().getDeploymentVerification().getEnabled()) {
+        Preconditions.checkArgument(StringUtils.isNotEmpty(definition.getServiceInstanceIdentifierTag()),
+            "metric: %s, serviceInstanceIdentifierTag is required for Deployment verification",
+            definition.getMetricName());
+      }
       TimeSeriesMetricType metricType = definition.getRiskProfile().getMetricType();
       metricInfoList.add(
           MetricInfo.builder()

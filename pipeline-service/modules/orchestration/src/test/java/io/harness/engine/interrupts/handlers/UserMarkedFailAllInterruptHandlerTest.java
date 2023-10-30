@@ -14,8 +14,10 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -25,7 +27,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.engine.interrupts.helpers.UserMarkedFailAllHelper;
 import io.harness.engine.utils.PmsLevelUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
@@ -56,6 +60,8 @@ import org.springframework.data.util.CloseableIterator;
 public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase {
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PlanExecutionService planExecutionService;
+
+  @Mock private UserMarkedFailAllHelper userMarkedFailAllHelper;
   @Inject @InjectMocks private UserMarkedFailAllInterruptHandler userMarkedFailAllInterruptHandler;
   @Inject private MongoTemplate mongoTemplate;
 
@@ -252,6 +258,73 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_SUCCESSFULLY);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProcessDiscontinuedInstances() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interruptWithNodeExecutionId = Interrupt.builder()
+                                                 .uuid(interruptUuid)
+                                                 .nodeExecutionId("nodeExecutionId")
+                                                 .type(InterruptType.USER_MARKED_FAIL_ALL)
+                                                 .interruptConfig(InterruptConfig.newBuilder().build())
+                                                 .planExecutionId(planExecutionId)
+                                                 .state(State.REGISTERED)
+                                                 .build();
+
+    mongoTemplate.save(interruptWithNodeExecutionId);
+
+    String nodeExecution1Id = generateUuid();
+    Ambiance.Builder ambianceBuilder = Ambiance.newBuilder().setPlanExecutionId(planExecutionId);
+    PlanNode planNode1 = preparePlanNode(false, "pipeline", "pipelineValue", "PIPELINE");
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(nodeExecution1Id)
+            .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
+            .status(RUNNING)
+            .build();
+    List<NodeExecution> nodeExecutionList1 = asList(nodeExecution1);
+    userMarkedFailAllInterruptHandler.processDiscontinuedInstances(interruptWithNodeExecutionId, nodeExecutionList1);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testProcessDiscontinuedInstancesWithException() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interruptWithNodeExecutionId = Interrupt.builder()
+                                                 .uuid(interruptUuid)
+                                                 .nodeExecutionId("nodeExecutionId")
+                                                 .type(InterruptType.USER_MARKED_FAIL_ALL)
+                                                 .interruptConfig(InterruptConfig.newBuilder().build())
+                                                 .planExecutionId(planExecutionId)
+                                                 .state(State.REGISTERED)
+                                                 .build();
+
+    mongoTemplate.save(interruptWithNodeExecutionId);
+
+    String nodeExecution1Id = generateUuid();
+    Ambiance.Builder ambianceBuilder = Ambiance.newBuilder().setPlanExecutionId(planExecutionId);
+    PlanNode planNode1 = preparePlanNode(false, "pipeline", "pipelineValue", "PIPELINE");
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(nodeExecution1Id)
+            .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
+            .status(RUNNING)
+            .build();
+    List<NodeExecution> nodeExecutionList1 = asList(nodeExecution1);
+    doThrow(new InvalidRequestException("Interrupt already processed"))
+        .when(userMarkedFailAllHelper)
+        .discontinueMarkedInstance(any(), any());
+    assertThatThrownBy(()
+                           -> userMarkedFailAllInterruptHandler.processDiscontinuedInstances(
+                               interruptWithNodeExecutionId, nodeExecutionList1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Interrupt already processed");
   }
 
   private PlanNode preparePlanNode(

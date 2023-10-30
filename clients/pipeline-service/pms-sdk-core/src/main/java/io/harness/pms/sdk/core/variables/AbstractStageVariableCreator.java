@@ -122,6 +122,14 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
                                        .setFqn(fqnPrefix + ".endTs")
                                        .setLocalName(YAMLFieldNameConstants.STAGE + ".endTs")
                                        .build();
-    return YamlExtraProperties.newBuilder().addProperties(startTsProperty).addProperties(endTsProperty).build();
+    YamlProperties statusProperty = YamlProperties.newBuilder()
+                                        .setFqn(fqnPrefix + ".status")
+                                        .setLocalName(YAMLFieldNameConstants.STAGE + ".status")
+                                        .build();
+    return YamlExtraProperties.newBuilder()
+        .addProperties(startTsProperty)
+        .addProperties(endTsProperty)
+        .addProperties(statusProperty)
+        .build();
   }
 }

@@ -1,0 +1,193 @@
+pipeline:
+  identifier: ComplexMatrixPipelines
+  name: ComplexMatrixPipelines
+  projectIdentifier: Test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        identifier: Build
+        type: CI
+        name: Build
+        description: ""
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: ShobhitK8
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      identifier: Run
+                      type: Run
+                      name: Run
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          var:
+                            - apple
+                            - banana
+                            - coconut
+                          bar:
+                            - doll
+                            - elephant
+                          tar:
+                            - fan
+                            - gun
+                  - step:
+                      identifier: echo
+                      type: Run
+                      name: echo
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: |-
+                          export ENV_NAME="<+matrix.env>"
+                          echo "Matrix env: ${ENV_NAME}"
+              - parallel:
+                  - stepGroup:
+                      identifier: Shobhit_group
+                      name: Shobhit_group
+                      steps:
+                        - parallel:
+                            - step:
+                                identifier: TestRun
+                                type: Run
+                                name: TestRun
+                                spec:
+                                  connectorRef: account.harnessImage
+                                  image: alpine
+                                  shell: Sh
+                                  command: |-
+                                    export ENV_NAME="<+matrix.env>"
+                                    echo "Matrix env: ${ENV_NAME}"
+                            - step:
+                                identifier: Shobhit
+                                type: Run
+                                name: Shobhit
+                                spec:
+                                  connectorRef: account.harnessImage
+                                  image: alpine
+                                  shell: Sh
+                                  command: echo hello
+                                strategy:
+                                  matrix:
+                                    env:
+                                      - dev
+                                      - int
+                        - step:
+                            identifier: ShobhitRun
+                            type: Run
+                            name: ShobhitRun
+                            spec:
+                              connectorRef: account.harnessImage
+                              image: alpine
+                              shell: Sh
+                              command: echo hello
+                            strategy:
+                              matrix:
+                                abcdef:
+                                  - secd
+                                  - okmf
+                                defqpl:
+                                  - ones
+                                  - twos
+                  - step:
+                      identifier: ExternalRun
+                      type: Run
+                      name: ExternalRun
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo helloWorld
+              - step:
+                  identifier: ExternalEcho
+                  type: Run
+                  name: ExternalEcho
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: echo hi
+                  strategy:
+                    matrix:
+                      puffing:
+                        - detto
+                        - inplm
+                        - longst
+              - stepGroup:
+                  identifier: OuterStepGroup
+                  name: OuterStepGroup
+                  steps:
+                    - stepGroup:
+                        identifier: InnerStepGroup
+                        name: InnerStepGroup
+                        steps:
+                          - parallel:
+                              - step:
+                                  identifier: InnerRun
+                                  type: Run
+                                  name: InnerRun
+                                  spec:
+                                    connectorRef: account.harnessImage
+                                    image: alpine
+                                    shell: Sh
+                                    command: echo inner
+                                  strategy:
+                                    matrix:
+                                      denvnb:
+                                        - inting
+                              - step:
+                                  identifier: ParallelInnerRun
+                                  type: Run
+                                  name: ParallelInnerRun
+                                  spec:
+                                    connectorRef: account.harnessImage
+                                    image: alpine
+                                    shell: Sh
+                                    command: echo parallelInnerRun
+                    - step:
+                        identifier: OuterRun
+                        type: Run
+                        name: OuterRun
+                        spec:
+                          connectorRef: account.harnessImage
+                          image: alpine
+                          shell: Sh
+                          command: echo OuterRun
+              - step:
+                  identifier: finalRun
+                  type: Run
+                  name: finalRun
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: echo final
+                  strategy:
+                    matrix:
+                      opr:
+                        - uts
+                        - lqv
+                        - syt
+                      usd:
+                        - cry
+                        - moz
+                        - xmq
+                      rew:
+                        - kqwkl
+                        - jdewj
+        strategy:
+          parallelism: 4

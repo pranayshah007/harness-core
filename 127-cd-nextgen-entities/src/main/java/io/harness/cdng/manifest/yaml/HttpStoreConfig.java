@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(ManifestStoreType.HTTP)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("httpStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.HttpStoreConfig")
 @FieldNameConstants(innerTypeName = "HttpStoreConfigKeys")

@@ -121,7 +121,7 @@ public class SubWorkflowState extends State {
     if (executionStatus != ExecutionStatus.SUCCESS) {
       executionResponseBuilder.executionStatus(executionStatus);
     }
-    log.info("Subworkflow state execution completed - displayName:{}", getName());
+    log.debug("Subworkflow state execution completed - displayName:{}", getName());
 
     ElementStateExecutionData stateExecutionData = (ElementStateExecutionData) context.getStateExecutionData();
     stateExecutionData.setElementStatusSummary(workflowExecutionService.getElementsSummary(

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.batch.processing.ccm.BatchJobType;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.service.intfc.BatchJobScheduledDataService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.category.element.UnitTests;
@@ -36,6 +37,7 @@ public class BatchJobRunnerTest extends CategoryTest {
   @InjectMocks private BatchJobRunner batchJobRunner;
   @Mock private BatchJobScheduledDataService batchJobScheduledDataService;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
+  @Mock private BatchMainConfig batchMainConfig;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final Instant NOW = Instant.now();

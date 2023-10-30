@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +33,7 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(min = 2, max = 20, message = "A minimum of 2 simple SLO's and a maximum of 20 simple SLO's can be referenced.")
+  @Size(min = 2, max = 30, message = "A minimum of 2 simple SLOs and a maximum of 30 simple SLOs can be referenced.")
   List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   private CompositeSLOFormulaType compositeSLOFormulaType;
@@ -42,11 +43,11 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   @FieldNameConstants(innerTypeName = "CompositeServiceLevelObjectiveDetailsKeys")
   @EqualsAndHashCode()
   public static class ServiceLevelObjectivesDetail {
-    String accountId;
-    String orgIdentifier;
-    String projectIdentifier;
-    String serviceLevelObjectiveRef;
-    @FieldNameConstants.Exclude Double weightagePercentage;
+    @NotNull String accountId;
+    @NotNull String orgIdentifier;
+    @NotNull String projectIdentifier;
+    @NotNull String serviceLevelObjectiveRef;
+    @NotNull @FieldNameConstants.Exclude Double weightagePercentage;
 
     public ServiceLevelObjectiveDetailsRefDTO getServiceLevelObjectiveDetailsRefDTO() {
       return ServiceLevelObjectiveDetailsRefDTO.builder()

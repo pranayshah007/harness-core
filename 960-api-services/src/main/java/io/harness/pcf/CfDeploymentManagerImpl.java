@@ -925,6 +925,14 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     cfCliClient.runPcfPluginScript(requestData, logCallback);
   }
 
+  @Override
+  public Map<String, String> runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+      CfRunPluginScriptRequestData requestData, LogCallback logCallback, Map<String, String> inputVariables,
+      List<String> outputVariables) throws PivotalClientApiException {
+    return cfCliClient.runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+        requestData, logCallback, inputVariables, outputVariables);
+  }
+
   private String generateRouteUrl(
       String host, String domain, String path, boolean tcpRoute, boolean useRandomPort, Integer port) {
     StringBuilder routeBuilder = new StringBuilder(128);

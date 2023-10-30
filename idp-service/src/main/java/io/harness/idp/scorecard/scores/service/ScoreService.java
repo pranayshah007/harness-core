@@ -9,6 +9,8 @@ package io.harness.idp.scorecard.scores.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.EntityScores;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
@@ -27,7 +29,6 @@ public interface ScoreService {
   void populateData(
       String checkEntities, String datapointEntities, String datasourceEntities, String datasourceLocationEntities);
 
-  void computeScores(String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers);
   List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier);
 
   List<ScorecardGraphSummaryInfo> getScoresGraphSummaryForAnEntityAndScorecard(
@@ -37,4 +38,5 @@ public interface ScoreService {
 
   ScorecardSummaryInfo getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
       String accountIdentifier, String entityIdentifier, String scorecardIdentifier);
+  List<EntityScores> getEntityScores(String harnessAccount, ScorecardFilter filter);
 }

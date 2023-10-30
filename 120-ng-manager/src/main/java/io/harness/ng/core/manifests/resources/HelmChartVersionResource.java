@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.manifests.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
@@ -19,11 +18,12 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.dtos.HelmChartResponseDTO;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
-import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HelmChartVersionResource {
   private final HelmChartService helmChartService;
-  private final ArtifactResourceUtils artifactResourceUtils;
+  private final HelmChartVersionResourceUtils helmChartVersionResourceUtils;
 
   // this is kept for compatibility reasons.
   // Once the UI completely moves the code to use getHelmChartVersionDetailsV1 and getHelmChartVersionDetailsV2 then
@@ -75,10 +75,11 @@ public class HelmChartVersionResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @QueryParam("fqnPath") String fqnPath,
       @QueryParam("connectorRef") String connectorIdentifier, @QueryParam("chartName") String chartName,
       @QueryParam("region") String region, @QueryParam("bucketName") String bucketName,
-      @QueryParam("folderPath") String folderPath, @QueryParam("lastTag") String lastTag) {
+      @QueryParam("folderPath") String folderPath, @QueryParam("lastTag") String lastTag,
+      @QueryParam("registryId") String registryId) {
     HelmChartResponseDTO helmChartResponseDTO =
         helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
-            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -93,10 +94,11 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
       @QueryParam("lastTag") String lastTag, @NotNull @QueryParam("storeType") String storeType,
-      @QueryParam("helmVersion") String helmVersion) {
-    HelmChartResponseDTO helmChartResponseDTO =
-        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, connectorIdentifier,
-            chartName, region, bucketName, folderPath, lastTag, storeType, helmVersion);
+      @QueryParam("ociHelmChartStoreConfigType") String ociHelmChartStoreConfigType,
+      @QueryParam("helmVersion") String helmVersion, @QueryParam("registryId") String registryId) {
+    HelmChartResponseDTO helmChartResponseDTO = helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier,
+        projectIdentifier, connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, storeType,
+        ociHelmChartStoreConfigType, helmVersion, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -113,8 +115,8 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
       @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
-      @QueryParam("lastTag") String lastTag, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml) {
+      @QueryParam("lastTag") String lastTag, @QueryParam("registryId") String registryId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
       HelmChartManifest helmChartManifest =
           (HelmChartManifest) helmChartService
@@ -122,75 +124,68 @@ public class HelmChartVersionResource {
               .getSpec();
       StoreConfig storeConfig = helmChartManifest.getStoreConfig();
 
-      if (isEmpty(connectorIdentifier)) {
-        connectorIdentifier = (String) storeConfig.getConnectorReference().fetchFinalValue();
-      }
+      connectorIdentifier = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, connectorIdentifier,
+          (String) storeConfig.getConnectorReference().fetchFinalValue(), fqnPath, gitEntityBasicInfo, serviceRef);
 
-      if (isEmpty(chartName)) {
-        chartName = (String) helmChartManifest.getChartName().fetchFinalValue();
-      }
+      chartName = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, chartName, (String) helmChartManifest.getChartName().fetchFinalValue(),
+          fqnPath, gitEntityBasicInfo, serviceRef);
 
       if (storeConfig instanceof S3StoreConfig) {
         S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
-        if (isEmpty(region)) {
-          region = (String) s3StoreConfig.getRegion().fetchFinalValue();
-        }
+        region = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, region, (String) s3StoreConfig.getRegion().fetchFinalValue(), fqnPath,
+            gitEntityBasicInfo, serviceRef);
 
-        if (isEmpty(bucketName)) {
-          bucketName = (String) s3StoreConfig.getBucketName().fetchFinalValue();
-        }
+        bucketName = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, bucketName, (String) s3StoreConfig.getBucketName().fetchFinalValue(),
+            fqnPath, gitEntityBasicInfo, serviceRef);
 
-        if (isEmpty(folderPath)) {
-          folderPath = (String) s3StoreConfig.getFolderPath().fetchFinalValue();
-        }
-
-        region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
-
-        bucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
-
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, folderPath, (String) s3StoreConfig.getFolderPath().fetchFinalValue(),
+            fqnPath, gitEntityBasicInfo, serviceRef);
       }
 
       if (storeConfig instanceof GcsStoreConfig) {
         GcsStoreConfig gcsStoreConfig = (GcsStoreConfig) storeConfig;
-        if (isEmpty(bucketName)) {
-          bucketName = (String) gcsStoreConfig.getBucketName().fetchFinalValue();
-        }
+        bucketName = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, bucketName, (String) gcsStoreConfig.getBucketName().fetchFinalValue(),
+            fqnPath, gitEntityBasicInfo, serviceRef);
 
-        if (isEmpty(folderPath)) {
-          folderPath = (String) gcsStoreConfig.getFolderPath().fetchFinalValue();
-        }
-
-        bucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
-
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, folderPath, (String) gcsStoreConfig.getFolderPath().fetchFinalValue(),
+            fqnPath, gitEntityBasicInfo, serviceRef);
       }
 
       if (storeConfig instanceof OciHelmChartConfig) {
         OciHelmChartConfig ociHelmChartConfig = (OciHelmChartConfig) storeConfig;
 
-        if (isEmpty(folderPath)) {
-          folderPath = (String) ociHelmChartConfig.getBasePath().fetchFinalValue();
+        if (ParameterFieldHelper.getParameterFieldValue(ociHelmChartConfig.getConfig()).getSpec()
+                instanceof OciHelmChartStoreEcrConfig) {
+          OciHelmChartStoreEcrConfig ociHelmChartStoreEcrConfig =
+              (OciHelmChartStoreEcrConfig) ParameterFieldHelper.getParameterFieldValue(ociHelmChartConfig.getConfig())
+                  .getSpec();
+
+          region = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+              pipelineIdentifier, runtimeInputYaml, region,
+              (String) ociHelmChartStoreEcrConfig.getRegion().fetchFinalValue(), fqnPath, gitEntityBasicInfo,
+              serviceRef);
+
+          registryId = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+              pipelineIdentifier, runtimeInputYaml, registryId,
+              (String) ociHelmChartStoreEcrConfig.getRegistryId().fetchFinalValue(), fqnPath, gitEntityBasicInfo,
+              serviceRef);
         }
 
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath = helmChartVersionResourceUtils.resolveExpression(accountId, orgIdentifier, projectIdentifier,
+            pipelineIdentifier, runtimeInputYaml, folderPath,
+            (String) ociHelmChartConfig.getBasePath().fetchFinalValue(), fqnPath, gitEntityBasicInfo, serviceRef);
       }
-
-      connectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, runtimeInputYaml, connectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-
-      chartName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, runtimeInputYaml, chartName, fqnPath, gitEntityBasicInfo, serviceRef);
     }
     HelmChartResponseDTO helmChartResponseDTO =
         helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
-            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 }

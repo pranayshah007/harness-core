@@ -14,43 +14,33 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
-import io.harness.ngtriggers.beans.response.TriggerEventResponse;
-import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
-import io.harness.pms.contracts.interrupts.InterruptEvent;
-import io.harness.pms.contracts.interrupts.InterruptType;
-import io.harness.pms.triggers.build.eventmapper.BuildTriggerEventMapper;
-import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
-import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.polling.contracts.BuildInfo;
+import io.harness.polling.contracts.Metadata;
+import io.harness.polling.contracts.PollingResponse;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @OwnedBy(PIPELINE)
-@PrepareForTest(TriggerEventResponseHelper.class)
 public class PollingEventStreamListenerTest extends CategoryTest {
-  @Mock private BuildTriggerEventMapper mapper;
-  @Mock private TriggerEventExecutionHelper triggerEventExecutionHelper;
-  @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
+  @Mock private PollingResponseHandler pollingResponseHandler;
   @InjectMocks PollingEventStreamListener pollingEventStreamListener;
 
   @Before
@@ -62,26 +52,28 @@ public class PollingEventStreamListenerTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandleMessage() {
-    assertTrue(pollingEventStreamListener.handleMessage(Message.newBuilder().build(), System.currentTimeMillis()));
-    doReturn(WebhookEventMappingResponse.builder().failedToFindTrigger(false).build())
-        .when(mapper)
-        .consumeBuildTriggerEvent(any());
-    Message message =
-        Message.newBuilder()
-            .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                            .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
-                            .putMetadata(ACTION, DELETE_ACTION)
-                            .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
-                            .build())
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ENTITY_TYPE, PIPELINE_ENTITY);
+    metadata.put(ACTION, DELETE_ACTION);
+
+    PollingResponse pollingResponse =
+        PollingResponse.newBuilder()
+            .setBuildInfo(BuildInfo.newBuilder()
+                              .addAllVersions(Collections.singletonList("release.1234"))
+                              .addAllMetadata(Collections.singletonList(
+                                  Metadata.newBuilder().putAllMetadata(ImmutableMap.of("k", "v")).build()))
+                              .build())
             .build();
+
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putAllMetadata(metadata)
+                                          .setData(pollingResponse.toByteString())
+                                          .build())
+                          .build();
+
     pollingEventStreamListener.handleMessage(message, System.currentTimeMillis());
-    verify(triggerEventHistoryRepository, times(0)).save(any());
-    doReturn(Collections.singletonList(TriggerEventResponse.builder().build()))
-        .when(triggerEventExecutionHelper)
-        .processTriggersForActivation(any(), any());
-    assertThatThrownBy(() -> pollingEventStreamListener.handleMessage(message, System.currentTimeMillis()));
-    Mockito.mockStatic(TriggerEventResponseHelper.class);
-    pollingEventStreamListener.handleMessage(message, System.currentTimeMillis());
-    verify(triggerEventHistoryRepository, times(1)).save(any());
+
+    verify(pollingResponseHandler).handleEvent(eq(pollingResponse), eq(metadata), anyLong(), anyLong());
   }
 }

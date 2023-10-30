@@ -7,6 +7,8 @@
 
 package io.harness.clients;
 
+import static io.harness.idp.common.Constants.LOCAL_ENV;
+
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.idp.common.Constants;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -51,7 +53,7 @@ public class BackstageRequestInterceptor implements Interceptor {
   }
 
   private String requestUrlModification(String urlStr) {
-    if (StringUtils.isEmpty(env)) {
+    if (StringUtils.isEmpty(env) || env.equals(LOCAL_ENV)) {
       urlStr = urlStr.replace("/idp/api/", "/api/");
 
       StringBuilder localUrl = new StringBuilder(urlStr);

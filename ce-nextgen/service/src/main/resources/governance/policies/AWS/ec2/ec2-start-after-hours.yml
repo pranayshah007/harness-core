@@ -1,0 +1,15 @@
+policies:
+  - name: ec2-start-after-hours
+    resource: ec2
+    filters:
+      - type: onhour
+        tag: CustodianOffHours
+        default_tz: pt
+        onhour: 7
+      - type: value
+        value: 1
+        key: LaunchTime
+        op: less-than
+        value_type: age
+    actions:
+      - type: start

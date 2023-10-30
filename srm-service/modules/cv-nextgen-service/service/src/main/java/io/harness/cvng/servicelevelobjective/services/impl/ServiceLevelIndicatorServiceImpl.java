@@ -84,6 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -128,6 +129,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
                                                 .toDataCollectionInfo(cvConfigs, serviceLevelIndicator);
 
+    if (Objects.isNull(dataCollectionInfo)) {
+      throw new IllegalStateException("No SLI Enabled CV Configs found");
+    }
     Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
     Instant startTime = endTime.minus(Duration.ofDays(1));
 
@@ -357,11 +361,14 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       List<ServiceLevelIndicator> serviceLevelIndicatorList = serviceLevelIndicatorQuery.asList();
       isDeleted = hPersistence.delete(serviceLevelIndicatorQuery);
       serviceLevelIndicatorList.forEach(sli -> {
-        String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(sli.getAccountId(), sli.getUuid());
-        if (StringUtils.isNotBlank(verificationTaskId)) {
-          sideKickService.schedule(
-              VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
-              clock.instant().plus(Duration.ofMinutes(15)));
+        Optional<String> sliVerificationTaskId =
+            verificationTaskService.getSLIVerificationTaskId(sli.getAccountId(), sli.getUuid());
+        if (sliVerificationTaskId.isPresent()) {
+          if (StringUtils.isNotBlank(sliVerificationTaskId.get())) {
+            sideKickService.schedule(
+                VerificationTaskCleanupSideKickData.builder().verificationTaskId(sliVerificationTaskId.get()).build(),
+                clock.instant().plus(Duration.ofMinutes(15)));
+          }
         }
       });
     }
@@ -399,18 +406,21 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         if (intervalEndTime.isAfter(endTime)) {
           intervalEndTime = endTime;
         }
-        AnalysisInput analysisInput = AnalysisInput.builder()
-                                          .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
-                                              serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
-                                          .startTime(intervalStartTime)
-                                          .endTime(intervalEndTime)
-                                          .build();
-        if (intervalStartTime.equals(startTime)) {
-          orchestrationService.queueAnalysis(analysisInput);
-        } else {
-          orchestrationService.queueAnalysisWithoutEventPublish(serviceLevelIndicator.getAccountId(), analysisInput);
+        Optional<String> sliVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+            serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid());
+        if (sliVerificationTaskId.isPresent()) {
+          AnalysisInput analysisInput = AnalysisInput.builder()
+                                            .verificationTaskId(sliVerificationTaskId.get())
+                                            .startTime(intervalStartTime)
+                                            .endTime(intervalEndTime)
+                                            .build();
+          if (intervalStartTime.equals(startTime)) {
+            orchestrationService.queueAnalysis(analysisInput);
+          } else {
+            orchestrationService.queueAnalysisWithoutEventPublish(serviceLevelIndicator.getAccountId(), analysisInput);
+          }
+          intervalStartTime = intervalEndTime;
         }
-        intervalStartTime = intervalEndTime;
       }
     } else {
       hPersistence.update(serviceLevelIndicator, updateOperations);

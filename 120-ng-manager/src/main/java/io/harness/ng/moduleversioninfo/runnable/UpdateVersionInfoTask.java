@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
-import io.harness.exception.UnexpectedException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.NextGenConfiguration;
 
 import com.amazonaws.util.StringUtils;
@@ -53,10 +53,14 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 public class UpdateVersionInfoTask {
   private static final String COMING_SOON = "Coming Soon";
-  private static final String VERSION = "version";
-  private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
+
+  private static final String JOB_INTERRUPTED =
+      "UpdateVersionInfoTask Sync job was interrupted for the moduleName= %s, due to= %s";
   public static final String CHAOS_MANAGER_API = "manager/api/";
   private static final String PLATFORM = "Platform";
+  private static final String RESOURCE = "resource";
+  private static final String VERSION = "version";
+  private static final String VERSION_INFO = "versionInfo";
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
   List<ModuleVersionInfo> moduleVersionInfos;
@@ -66,7 +70,7 @@ public class UpdateVersionInfoTask {
     moduleVersionInfos = new ArrayList<>();
   }
 
-  public void run() throws InterruptedException {
+  public void run() throws InterruptedException, RuntimeException {
     checkVersionChange();
   }
 
@@ -82,39 +86,47 @@ public class UpdateVersionInfoTask {
           String baseUrl = getBaseUrl(moduleVersionInfo.getModuleName());
           String latestVersion = getLatestVersion(moduleVersionInfo, baseUrl);
           moduleVersionInfo.setVersion(latestVersion);
-        } catch (IOException e) {
-          log.error("Encountered an exception while trying to update the version for module: {}",
-              moduleVersionInfo.getDisplayName());
-          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
-        } catch (InterruptedException e) {
-          log.error("Encountered an exception while trying to update the version for module: {}",
-              moduleVersionInfo.getDisplayName());
-          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:", e);
+          updateModuleVersionInfoCollection(moduleVersionInfo);
+        } catch (Exception e) {
+          String errorMsg =
+              String.format("Encountered an exception while trying to retrieve latest version of module=%s",
+                  moduleVersionInfo.getModuleName());
+          log.error(errorMsg, e);
         }
       }
-      updateModuleVersionInfoCollection(moduleVersionInfo);
     });
   }
 
-  private String getBaseUrl(String moduleName) {
-    String resultURL = "";
-    if (ModuleType.CD.name().equals(moduleName) || PLATFORM.equals(moduleName)) {
-      resultURL = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
-    } else if (ModuleType.CE.name().equals(moduleName)) {
-      resultURL = nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
-    } else if (ModuleType.CI.name().equals(moduleName)) {
-      resultURL = nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
-    } else if (ModuleType.SRM.name().equals(moduleName)) {
-      resultURL = nextGenConfiguration.getCvngClientConfig().getBaseUrl();
-    } else if (ModuleType.CHAOS.name().equalsIgnoreCase(moduleName)) {
-      StringBuilder chaosManagerUrl = new StringBuilder();
-      chaosManagerUrl.append(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl()).append(CHAOS_MANAGER_API);
-      resultURL = chaosManagerUrl.toString();
-    } else if (ModuleType.CF.name().equals(moduleName)) {
-      StringBuilder ffApiUrl = new StringBuilder();
-      resultURL = ffApiUrl.append(nextGenConfiguration.getFfServerClientConfig().getBaseUrl()).toString();
+  private String getBaseUrl(String moduleName) throws InvalidRequestException {
+    String baseUrlInfoMsg = String.format("Getting baseUrl for moduleName=%s", moduleName);
+    log.info(baseUrlInfoMsg);
+    if (PLATFORM.equals(moduleName)) {
+      return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     }
-    return resultURL;
+    ModuleType moduleType = ModuleType.valueOf(moduleName);
+
+    switch (moduleType) {
+      case CD:
+        return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
+      case CHAOS:
+        return new StringBuilder(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl())
+            .append(CHAOS_MANAGER_API)
+            .toString();
+      case CE:
+        return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
+      case CF:
+        return new StringBuilder(nextGenConfiguration.getFfServerClientConfig().getBaseUrl()).toString();
+      case CI:
+        return nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
+      case SRM:
+        return nextGenConfiguration.getCvngClientConfig().getBaseUrl();
+      case STO:
+        return nextGenConfiguration.getStoCoreClientConfig().getBaseUrl();
+      default:
+        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType=%s.", moduleType);
+        log.error(errorMsg);
+        throw new InvalidRequestException(errorMsg);
+    }
   }
 
   private String getLatestVersion(ModuleVersionInfo moduleVersionInfo, String baseUrl)
@@ -146,7 +158,7 @@ public class UpdateVersionInfoTask {
 
   private void getFormattedDateTime(ModuleVersionInfo module) {
     // as we'll add more modules this check will go away
-    if (module.getVersion().equals("Coming Soon")) {
+    if (module.getVersion().equals(COMING_SOON)) {
       return;
     }
 
@@ -158,9 +170,9 @@ public class UpdateVersionInfoTask {
   }
 
   private String getCurrentMicroserviceVersions(String serviceName, String serviceVersionUrl)
-      throws IOException, InterruptedException {
+      throws IOException, InterruptedException, JSONException {
     if (StringUtils.isNullOrEmpty(serviceName) || StringUtils.isNullOrEmpty(serviceVersionUrl)) {
-      return "Coming Soon";
+      return COMING_SOON;
     }
     HttpRequest request = HttpRequest.newBuilder()
                               .uri(URI.create(serviceVersionUrl))
@@ -170,39 +182,53 @@ public class UpdateVersionInfoTask {
     try {
       response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new IOException(JOB_INTERRUPTED, e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new IOException(errorMsg, e);
     } catch (InterruptedException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new InterruptedException(JOB_INTERRUPTED + e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new InterruptedException(errorMsg);
     }
     if (response == null) {
       return "";
     }
-    log.info("Request: {} and Response Body: {}", request, response.body());
+    log.info("Getting version for ModuleName={}, with Request={} and Response_Body={}", serviceName, request,
+        response.body());
     String responseString = response.body().toString().trim();
     JSONObject jsonObject = new JSONObject(responseString);
-    if (serviceName.equals(ModuleType.CF.name())) {
-      try {
-        if (jsonObject.has("versionInfo")) {
-          return jsonObject.get("versionInfo").toString();
-        } else {
-          log.error("Response from FF version endpoint doesn't have field 'versionInfo'. response={}", jsonObject);
-        }
-      } catch (JSONException je) {
-        log.error("Error while jsonifying FF server response={}", responseString, je);
-      }
-    }
-    // For all the other modules
+
     try {
-      JSONObject resourceJsonObject = (JSONObject) jsonObject.get("resource");
-      JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get("versionInfo");
-      return versionInfoJsonObject.getString("version");
+      ModuleType moduleType = ModuleType.valueOf(serviceName);
+      switch (moduleType) {
+        case CF:
+          if (jsonObject.has(VERSION_INFO)) {
+            return jsonObject.get(VERSION_INFO).toString();
+          } else {
+            String errorMsg = String.format(
+                "Response from FF version endpoint doesn't have field 'versionInfo'. response={}", jsonObject);
+            log.error(errorMsg);
+            throw new JSONException(errorMsg);
+          }
+        case STO:
+          if (jsonObject.has(VERSION)) {
+            return jsonObject.get(VERSION).toString();
+          } else {
+            String errorMsg = String.format(
+                "Response from STO version endpoint doesn't have field 'version'. response=%s", jsonObject);
+            log.error(errorMsg);
+            throw new JSONException(errorMsg);
+          }
+        default:
+          JSONObject resourceJsonObject = (JSONObject) jsonObject.get(RESOURCE);
+          JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get(VERSION_INFO);
+          return versionInfoJsonObject.getString(VERSION);
+      }
     } catch (JSONException je) {
-      String errorMsg = String.format(
-          "Error while jsonifying response=%s for moduleName=%s due to=%s", responseString, serviceName, je);
-      log.error(errorMsg);
-      throw new JSONException(errorMsg);
+      String errorMsg =
+          String.format("Error while trying to jsonify the response=%s for moduleName=%s", responseString, serviceName);
+      log.error(errorMsg, je);
+      throw new JSONException(errorMsg, je);
     }
   }
 

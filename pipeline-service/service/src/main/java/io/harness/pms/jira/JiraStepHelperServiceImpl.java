@@ -6,7 +6,10 @@
  */
 
 package io.harness.pms.jira;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+
+import static software.wings.delegatetasks.ShellScriptTaskHandlerNG.COMMAND_UNIT;
 
 import static java.util.Objects.isNull;
 
@@ -110,8 +113,8 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
                             .parameters(new Object[] {params})
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), false, taskName, delegateSelectors, Scope.PROJECT, EnvironmentType.ALL, false,
-        Collections.emptyList(), false, null);
+        Collections.singletonList(COMMAND_UNIT), true, taskName, delegateSelectors, Scope.PROJECT, EnvironmentType.ALL,
+        false, Collections.emptyList(), false, null);
   }
 
   @Override

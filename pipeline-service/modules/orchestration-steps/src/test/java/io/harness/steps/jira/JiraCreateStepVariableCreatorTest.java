@@ -106,6 +106,7 @@ public class JiraCreateStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_create.identifier",
             "pipeline.stages.stage1.spec.execution.steps.jira_create.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_create.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_create.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.jira_create.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.jira_create.status");
   }
 }

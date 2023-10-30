@@ -76,19 +76,13 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
       return Collections.emptyList();
     }
     SettingAttribute settingAttribute = (SettingAttribute) entities.get(connectorId).getEntity();
-    String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
-                                                                     : applicationManifest.getName();
 
     Service service =
         (Service) entities
             .get(
                 CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(applicationManifest.getServiceId()).build())
             .getEntity();
-    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
-    ParameterField<String> chartVersion = MigratorUtility.RUNTIME_INPUT;
-    if (StringUtils.isNotBlank(helmChartConfig.getChartVersion())) {
-      chartVersion = ParameterField.createValueField(helmChartConfig.getChartVersion());
-    }
+    String identifier = MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat);
 
     HelmChartManifestBuilder helmChartManifest =
         HelmChartManifest.builder()
@@ -96,8 +90,11 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
             .helmVersion(service.getHelmVersion())
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
-            .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
-            .chartVersion(chartVersion);
+            .chartName(ParameterField.createValueField(helmChartConfig.getChartName()));
+
+    if (StringUtils.isNotBlank(helmChartConfig.getChartVersion())) {
+      helmChartManifest.chartVersion(ParameterField.createValueField(helmChartConfig.getChartVersion()));
+    }
 
     helmChartManifest.commandFlags(getCommandFlags(applicationManifest));
 

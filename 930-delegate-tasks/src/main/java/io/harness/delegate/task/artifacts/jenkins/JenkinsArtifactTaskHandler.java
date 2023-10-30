@@ -209,8 +209,8 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     try {
       JenkinsInternalConfig jenkinsInternalConfig =
           JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest);
-      QueueReference queueReference = jenkinsRegistryUtils.trigger(
-          attributesRequest.getJobName(), jenkinsInternalConfig, attributesRequest.getJobParameter());
+      QueueReference queueReference = jenkinsRegistryUtils.trigger(attributesRequest.getJobName(),
+          jenkinsInternalConfig, attributesRequest.getJobParameter(), executionLogCallback);
       String queueItemUrl = queueReference != null ? queueReference.getQueueItemUrlPart() : null;
 
       // Check if jenkins job start is successful

@@ -18,6 +18,8 @@ import io.harness.waiter.notify.NotifyEventProto;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanNotifyMessageListener extends PmsAbstractMessageListener<NotifyEventProto, NotifyEventHandler> {
@@ -25,6 +27,11 @@ public class PlanNotifyMessageListener extends PmsAbstractMessageListener<Notify
   public PlanNotifyMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, NotifyEventHandler createPartialPlanEventHandler) {
     super(serviceName, NotifyEventProto.class, createPartialPlanEventHandler);
+  }
+
+  @Override
+  protected NotifyEventProto extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return NotifyEventProto.parseFrom(message);
   }
 
   @Override

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.NGServiceConstants;
 import io.harness.cdng.service.beans.CustomSequenceDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -29,15 +30,18 @@ import io.harness.ng.core.ProjectIdentifier;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
+import io.harness.ng.core.dashboard.ServiceDeployments;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.service.entity.ServiceSequence;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
+import io.harness.ng.overview.dto.ChartVersionInstanceDetails;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
 import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
@@ -50,6 +54,7 @@ import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.InstanceGroupedOnChartVersionList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
@@ -78,9 +83,11 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -316,10 +323,11 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
-      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
-      throws Exception {
+      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) throws Exception {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsListV2(
-        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort));
+        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort, repoName));
   }
 
   @GET
@@ -446,6 +454,26 @@ public class CDDashboardOverviewResource {
   }
 
   @GET
+  @Path("/getActiveInstanceGroupedByChartVersion")
+  @ApiOperation(
+      value = "Get active instance count for a service grouped on chart version, artifact, environment, infrastructure",
+      nickname = "getActiveInstanceGroupedByChartVersion")
+  @Hidden
+  public ResponseDTO<InstanceGroupedOnChartVersionList>
+  getActiveInstanceGroupedByChartVersion(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) String envGrpId,
+      @QueryParam(NGCommonEntityConstants.CHART_VERSION) String chartVersion,
+      @NotNull @QueryParam(NGCommonEntityConstants.FILTER_ON_CHART_VERSION) boolean filterOnChartVersion) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedOnChartVersionList(accountIdentifier,
+        orgIdentifier, projectIdentifier, serviceId, environmentId, envGrpId, chartVersion, filterOnChartVersion));
+  }
+
+  @GET
   @Path("/getInstancesByServiceEnvAndBuilds")
   @ApiOperation(value = "Get list of buildId and instances", nickname = "getActiveInstancesByServiceIdEnvIdAndBuildIds")
   @Hidden
@@ -499,10 +527,11 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName,
+      @QueryParam(NGCommonEntityConstants.CHART_VERSION) String chartVersion) {
     return ResponseDTO.newResponse(
         cdOverviewDashboardService.getInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-            projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName));
+            projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName, chartVersion));
   }
 
   @GET
@@ -551,6 +580,21 @@ public class CDDashboardOverviewResource {
   }
 
   @GET
+  @Path("/getAllDeploymentsByServiceId")
+  @ApiOperation(value = "Get all deployments by serviceId", nickname = "getAllDeploymentsByServiceId")
+  @Hidden
+  public ResponseDTO<ServiceDeployments> getAllDeploymentsByServiceId(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getAllDeploymentsByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval, endInterval));
+  }
+
+  @GET
   @Path("/getServiceHeaderInfo")
   @ApiOperation(value = "Get service header info", nickname = "getServiceHeaderInfo")
   @Hidden
@@ -558,9 +602,15 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
-    return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceHeaderInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceHeaderInfo(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch));
   }
 
   @GET
@@ -620,6 +670,21 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getArtifactInstanceDetails(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getChartVersionInstanceDetails")
+  @ApiOperation(
+      value = "Get last deployment detail in each environment for chart versions having active instances of a service",
+      nickname = "getChartVersionInstanceDetails")
+  @Hidden
+  public ResponseDTO<ChartVersionInstanceDetails>
+  getChartVersionInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getChartVersionInstanceDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 

@@ -9,8 +9,12 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.CIResourceCleanup;
+import io.harness.app.beans.entities.InfraResourceDetails;
 import io.harness.app.beans.entities.PluginMetadataConfig;
 import io.harness.app.beans.entities.PluginMetadataStatus;
+import io.harness.app.beans.entities.ResourceDetails;
+import io.harness.app.beans.entities.ResourceDetails.Type;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.build.BuildUpdateType;
 import io.harness.beans.build.CIPipelineDetails;
@@ -114,5 +118,9 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(PluginMetadataConfig.class, 110143);
     kryo.register(PluginMetadataStatus.class, 110144);
     kryo.register(ReleaseWebhookEvent.class, 110149);
+    kryo.register(CIResourceCleanup.class, 110150);
+    kryo.register(ResourceDetails.class, 110151);
+    kryo.register(Type.class, 110152);
+    kryo.register(InfraResourceDetails.class, 110153);
   }
 }

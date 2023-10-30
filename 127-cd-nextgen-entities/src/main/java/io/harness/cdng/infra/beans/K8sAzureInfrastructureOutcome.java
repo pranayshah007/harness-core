@@ -8,8 +8,11 @@
 package io.harness.cdng.infra.beans;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.helper.K8sAzureCloudConfigMetadata;
 import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -27,12 +30,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.K8sAzureInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sAzureInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String connectorRef;
   String namespace;
   String cluster;
   String releaseName;
   String infrastructureKey;
+  String infrastructureKeyShort;
   String subscription;
   String resourceGroup;
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;

@@ -8,8 +8,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   progressDeadlineSeconds: 800
@@ -30,6 +30,9 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
         {{- end }}
         {{- include "harnesscommon.monitoring.annotations" . | nindent 8 }}
       labels:
@@ -80,42 +83,35 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
-            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALE_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
-            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
-            
-            - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ng-harness" "context" $) }}
-            - name : NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
-            - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
-            - name: TIMESCALE_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
-            {{- if .Values.global.ccm.enabled }}
-            - name : CE_AWS_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.ceSecret.access_key.name }}
-                  key: {{ .Values.ceSecret.access_key.key }}
-            - name : CE_AWS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.ceSecret.secret_key.name }}
-                  key: {{ .Values.ceSecret.secret_key.key }}
-            - name : CE_AWS_DESTINATION_BUCKET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.ceSecret.destination_bucket.name }}
-                  key: {{ .Values.ceSecret.destination_bucket.key }}
-            - name : CE_AWS_TEMPLATE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.ceSecret.template_url.name }}
-                  key: {{ .Values.ceSecret.template_url.key }}
+            {{- include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 12 }}
+            {{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
+            {{- $ngLicenseENV := include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "NG_LICENSE" "overrideEnvName" "SMP_LICENSE" "providedSecretValues" (list "global.license.ng") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator)))}}
+            {{- if $ngLicenseENV }}
+            - name: ENABLE_SMP_LICENSING
+              value: 'true'
+              {{- $ngLicenseENV | indent 12 }}
             {{- end }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET" "defaultKubernetesSecretName" "ng-manager" "defaultKubernetesSecretKey" "GITOPS_SERVICE_SECRET") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
+            {{- if .Values.global.ccm.enabled }}
+              {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_ACCESS_KEY" "defaultKubernetesSecretName" .Values.ceSecret.access_key.name "defaultKubernetesSecretKey" .Values.ceSecret.access_key.key) | indent 12 }}
+              {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_SECRET_KEY" "defaultKubernetesSecretName" .Values.ceSecret.secret_key.name "defaultKubernetesSecretKey" .Values.ceSecret.secret_key.key) | indent 12 }}
+              {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_DESTINATION_BUCKET" "defaultKubernetesSecretName" .Values.ceSecret.destination_bucket.name "defaultKubernetesSecretKey" .Values.ceSecret.destination_bucket.key) | indent 12 }}
+              {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "CE_AWS_TEMPLATE_URL" "defaultKubernetesSecretName" .Values.ceSecret.template_url.name "defaultKubernetesSecretKey" .Values.ceSecret.template_url.key) | indent 12 }}
+            {{- end }}
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "ng-harness" ) }}
+            - name : NOTIFICATION_MONGO_URI
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
+            - name: PMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "pms-harness" ) }}
+            - name: TIMESCALE_URI
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -129,12 +125,6 @@ spec:
         envFrom:
         - configMapRef:
             name: ng-manager
-          {{- if .Values.global.secrets.app.external.enabled }}
-          {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
-        - secretRef:
-            name: ng-manager-external-secret
-          {{- end }}
-          {{- end }}
         {{- toYaml .Values.probes | nindent 8}}
       affinity:
         podAntiAffinity:

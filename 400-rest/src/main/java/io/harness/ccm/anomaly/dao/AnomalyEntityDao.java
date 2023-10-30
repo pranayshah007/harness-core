@@ -183,6 +183,12 @@ public class AnomalyEntityDao {
           case WORKLOAD_TYPE:
             anomalyBuilder.workloadType(resultSet.getString(field.getFieldName()));
             break;
+          case SERVICE:
+            anomalyBuilder.service(resultSet.getString(field.getFieldName()));
+            break;
+          case SERVICE_NAME:
+            anomalyBuilder.serviceName(resultSet.getString(field.getFieldName()));
+            break;
           case GCP_PRODUCT:
             anomalyBuilder.gcpProduct(resultSet.getString(field.getFieldName()));
             break;
@@ -322,6 +328,8 @@ public class AnomalyEntityDao {
                .addColumn(AnomaliesDataTableSchema.namespace, anomaly.getNamespace())
                .addColumn(AnomaliesDataTableSchema.workloadType, anomaly.getWorkloadType())
                .addColumn(AnomaliesDataTableSchema.workloadName, anomaly.getWorkloadName())
+               .addColumn(AnomaliesDataTableSchema.service, anomaly.getService())
+               .addColumn(AnomaliesDataTableSchema.serviceName, anomaly.getServiceName())
                .addColumn(AnomaliesDataTableSchema.region, anomaly.getRegion())
                .addColumn(AnomaliesDataTableSchema.gcpProduct, anomaly.getGcpProduct())
                .addColumn(AnomaliesDataTableSchema.gcpProject, anomaly.getGcpProject())

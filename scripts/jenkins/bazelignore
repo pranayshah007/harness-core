@@ -37,6 +37,9 @@ toolset
 .*.tgz$
 .*.go$
 .*.lock$
+.*/chart/templates/
+.*/chart/.*\.yaml$
+.*/chart/.*\.yml$
 100-migrator/chart/Chart.yaml
 100-migrator/chart/templates/config.yaml
 100-migrator/chart/templates/deployment.yaml
@@ -252,3 +255,4 @@ template-service/chart/templates/pdb.yaml
 template-service/chart/templates/service.yaml
 template-service/chart/templates/virtualservice.yaml
 template-service/chart/values.yaml
+product/log-service/chart/templates/external-secret.yaml

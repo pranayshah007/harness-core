@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -240,7 +241,8 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     harnessTagLinkList.add(constructHarnessTagLink("env", "${workflow.variables.env}"));
     harnessTagLinkList.add(constructHarnessTagLink("company", "foobar"));
     harnessTagLinkList.add(constructHarnessTagLink("${account.defaults.owner}", ""));
-    when(harnessTagService.getTagLinksWithEntityId(anyString(), anyString())).thenReturn(harnessTagLinkList);
+    when(harnessTagService.getTagLinksWithEntityId(anyString(), anyString(), anyBoolean()))
+        .thenReturn(harnessTagLinkList);
     when(context.renderExpression(eq("foo"))).thenReturn("foo");
     when(context.renderExpression(eq(""))).thenReturn("");
     when(context.renderExpression(eq("env"))).thenReturn("env");
@@ -271,7 +273,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     harnessTagLinkList.add(constructHarnessTagLink("${app.defaults.RUNTIME_PATH}", ""));
     harnessTagLinkList.add(constructHarnessTagLink("${mytag}", ""));
     harnessTagLinkList.add(constructHarnessTagLink("${mytag1}", ""));
-    when(harnessTagService.getTagLinksWithEntityId(any(), any())).thenReturn(harnessTagLinkList);
+    when(harnessTagService.getTagLinksWithEntityId(any(), any(), anyBoolean())).thenReturn(harnessTagLinkList);
     when(context.renderExpression(eq("foo"))).thenReturn("foo");
     when(context.renderExpression(eq(""))).thenReturn("");
     when(context.renderExpression(eq("env"))).thenReturn("env");

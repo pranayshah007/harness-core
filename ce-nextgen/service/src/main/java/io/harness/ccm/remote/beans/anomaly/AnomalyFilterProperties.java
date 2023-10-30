@@ -40,6 +40,7 @@ public class AnomalyFilterProperties extends FilterProperties {
   List<String> k8sClusterNames;
   List<String> k8sNamespaces;
   List<String> k8sWorkloadNames;
+  List<String> K8sServiceNames;
 
   List<String> gcpProjects;
   List<String> gcpProducts;

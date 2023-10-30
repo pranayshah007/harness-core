@@ -17,6 +17,7 @@ import static io.harness.git.model.GitRepositoryType.HELM;
 import static io.harness.git.model.GitRepositoryType.TERRAFORM;
 import static io.harness.git.model.GitRepositoryType.TRIGGER;
 import static io.harness.git.model.GitRepositoryType.YAML;
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARVIND;
@@ -59,8 +60,10 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -807,7 +810,46 @@ public class GitClientHelperTest extends CategoryTest {
     repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo.git");
     assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
 
-    repoName = GitClientHelper.getHarnessRepoName("https://app.harness.io/code/git/acc/org/proj/repo.git/");
+    repoName = GitClientHelper.getHarnessRepoName("https://git.qa.harness.io/acc/org/proj/repo.git");
     assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://abhinavs.pr2.harness.io/devspace/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://git.qa.harness.io/acc/org/proj/repo.git/");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://abhinavs.pr2.harness.io/devspace/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://abhinavs.pr2.harness.io/devspace/acc/org/proj/repo.git/");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testSanitiseFilesForAzureRepo() {
+    Set<String> s = new HashSet<>();
+    s.add("/file.txt");
+    s.add("/folder/file1.txt");
+    s = GitClientHelper.sanitiseFilesForAzureRepo(s);
+    assertThat(s.size()).isEqualTo(2);
+    assertThat(s.contains("file.txt")).isTrue();
+    assertThat(s.contains("folder/file1.txt")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForHarness() {
+    assertThat(GitClientHelper.getGitOwner("https://git.harness.io/account/org/proj/repo.git", false))
+        .isEqualTo("account");
+    assertThat(GitClientHelper.getGitRepo("https://git.harness.io/account/org/proj/repo.git"))
+        .isEqualTo("org/proj/repo");
+    assertThat(GitClientHelper.getGitOwner("https://git.harness.io/code/git/account/org/proj/repo.git", false))
+        .isEqualTo("code");
+    assertThat(GitClientHelper.getGitRepo("https://git.harness.io/code/git/account/org/proj/repo.git"))
+        .isEqualTo("git/account/org/proj/repo");
   }
 }

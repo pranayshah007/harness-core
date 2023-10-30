@@ -90,9 +90,8 @@ public class GcrResourceServiceImpl implements GcrResourceService {
   @Override
   public GcrResponseDTO getBuildDetails(IdentifierRef gcrConnectorRef, String imagePath, String registryHostname,
       String orgIdentifier, String projectIdentifier) {
-    if (EmptyPredicate.isEmpty(imagePath)) {
-      throw new InvalidRequestException("imagePath cannot be null");
-    }
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath),
+        MutablePair.of(NGArtifactConstants.REGISTRY_HOST_NAME, registryHostname));
     GcpConnectorDTO connector = getConnector(gcrConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(gcrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

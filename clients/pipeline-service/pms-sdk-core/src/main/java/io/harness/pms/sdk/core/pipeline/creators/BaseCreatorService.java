@@ -99,15 +99,20 @@ public abstract class BaseCreatorService<R extends CreatorResponse, M, N> {
       }
       R response = processNodeInternal(metadata, yamlField, request);
 
-      if (response == null) {
-        // do not add template yaml fields as dependency.
-        if (yamlField.getNode().getTemplate() == null) {
-          finalResponse.addDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
+      if (yamlField == null) {
+        throw new InvalidRequestException("yamlField is null for yamlPath " + yamlPath);
+      } else {
+        if (response == null) {
+          // do not add template yaml fields as dependency.
+          if (yamlField.getNode().getTemplate() == null) {
+            finalResponse.addDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
+          }
+          continue;
         }
-        continue;
+        mergeResponses(finalResponse, response, dependencies);
+        finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
       }
-      mergeResponses(finalResponse, response, dependencies);
-      finalResponse.addResolvedDependency(currentYaml, yamlField.getNode().getUuid(), yamlPath);
+
       // (TODO: archit) onboard service affinity to filter/variable creators
       // PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(response, currentServiceName, yamlField,
       // "");

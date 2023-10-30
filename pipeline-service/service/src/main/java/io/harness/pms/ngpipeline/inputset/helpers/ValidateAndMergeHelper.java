@@ -45,7 +45,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PipelineGitXHelper;
 
@@ -253,10 +253,10 @@ public class ValidateAndMergeHelper {
     Set<String> inputSetVersions = inputSetMetadataDTO.getInputSetVersions();
     List<JsonNode> inputSetJsonNodeList = inputSetMetadataDTO.getInputSetJsonNodeList();
     JsonNode pipelineTemplate = inputSetMetadataDTO.getPipelineTemplate();
-    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
+    if (inputSetVersions.contains(HarnessYamlVersion.V0) && inputSetVersions.contains(HarnessYamlVersion.V1)) {
       throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
     }
-    if (inputSetVersions.contains(PipelineVersion.V1)) {
+    if (inputSetVersions.contains(HarnessYamlVersion.V1)) {
       return InputSetMergeHelper.mergeInputSetsV1(inputSetJsonNodeList);
     }
 
@@ -282,7 +282,7 @@ public class ValidateAndMergeHelper {
     }
     JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
     JsonNode pipelineTemplate = null;
-    if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+    if (HarnessYamlVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
       if (keepDefaultValues) {
         pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
             ? createTemplateWithDefaultValuesFromPipeline(pipelineJsonNode)

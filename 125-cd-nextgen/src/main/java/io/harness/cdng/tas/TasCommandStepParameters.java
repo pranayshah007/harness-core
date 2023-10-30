@@ -20,6 +20,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,8 +35,13 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasCommandStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasCommandStepParameters")
 public class TasCommandStepParameters extends TasCommandBaseStepInfo implements SpecParameters {
+  Map<String, Object> inputVariables;
+  Map<String, Object> outputVariables;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCommandStepParameters(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public TasCommandStepParameters(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      Map<String, Object> inputVariables, Map<String, Object> outputVariables) {
     super(script, delegateSelectors);
+    this.inputVariables = inputVariables;
+    this.outputVariables = outputVariables;
   }
 }

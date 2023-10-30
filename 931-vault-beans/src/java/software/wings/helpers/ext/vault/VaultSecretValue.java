@@ -30,5 +30,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @OwnedBy(PL)
 public class VaultSecretValue {
-  private Map<String, String> data;
+  private Map<String, Object> data;
 }

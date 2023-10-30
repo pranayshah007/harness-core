@@ -17,6 +17,7 @@ import static io.harness.cvng.beans.DataCollectionExecutionStatus.WAITING;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.cvng.core.entities.DeploymentDataCollectionTask.MAX_RETRY_COUNT;
 import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANSUMAN;
@@ -152,7 +153,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   private String dataCollectionWorkerId;
   private String verificationTaskId;
 
-  private String sliVerificationTaskId;
+  private Optional<String> sliVerificationTaskId;
   private CVConfig cvConfig;
   private BuilderFactory builderFactory;
   private ServiceLevelIndicator serviceLevelIndicator;
@@ -957,10 +958,10 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService.updateTaskStatus(result);
     DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)), serviceLevelIndicator);
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(2)), fakeNow.plus(Duration.ofMinutes(300)), serviceLevelIndicator);
     assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.FAILED);
     assertThat(updated.getRetryCount()).isEqualTo(1);
@@ -971,9 +972,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     assertThat(newTask.getRetryCount()).isEqualTo(0);
     assertThat(newTask.getStartTime())
         .isEqualTo(CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.HOURS));
-    assertThat(newTask.getEndTime())
-        .isEqualTo(
-            CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.HOURS).plus(5, ChronoUnit.MINUTES));
+    assertThat(newTask.getEndTime()).isEqualTo(roundUpTo5MinBoundary(clock.instant()));
     assertThat(newTask.getValidAfter())
         .isEqualTo(
             CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(29, ChronoUnit.HOURS).plus(5, ChronoUnit.SECONDS));
@@ -1308,7 +1307,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .build();
     } else if (type == Type.SLI) {
       return SLIDataCollectionTask.builder()
-          .verificationTaskId(sliVerificationTaskId)
+          .verificationTaskId(sliVerificationTaskId.get())
           .type(Type.SLI)
           .dataCollectionWorkerId(dataCollectionWorkerId)
           .accountId(accountId)

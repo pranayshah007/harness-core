@@ -275,4 +275,14 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   public void deleteByAccount(String accountId) {
     notificationSettingRepository.deleteAllByAccountId(accountId);
   }
+
+  @Override
+  public boolean checkIfHeadersHasAnySecretValue(Map<String, String> headers) {
+    for (var header : headers.entrySet()) {
+      if (SECRET_EXPRESSION.matcher(header.getValue()).matches()) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

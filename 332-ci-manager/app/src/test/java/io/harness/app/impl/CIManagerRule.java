@@ -18,7 +18,6 @@ import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerConfigurationOverride;
-import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
@@ -41,6 +40,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -73,6 +73,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -150,6 +151,13 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       List<YamlSchemaRootClass> yamlSchemaRootClass() {
         return ImmutableList.<YamlSchemaRootClass>builder().addAll(CiBeansRegistrars.yamlSchemaRegistrars).build();
       }
+
+      @Provides
+      @Singleton
+      @Named("harnessCodeGitBaseUrl")
+      String getHarnessCodeGitBaseUrl() {
+        return "http://localhost:3000/git";
+      }
     });
 
     CacheConfigBuilder cacheConfigBuilder =
@@ -218,6 +226,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())
             .ngManagerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .apiUrl("https://localhost:8181/#/")
+            .distributedLockImplementation(DistributedLockImplementation.NOOP)
             .build();
 
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
@@ -225,7 +234,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
-    modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
+    modules.add(new CIManagerServiceTestModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
     modules.add(new AbstractCfModule() {
       @Override

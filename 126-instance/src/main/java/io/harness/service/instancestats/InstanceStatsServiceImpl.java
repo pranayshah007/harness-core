@@ -6,8 +6,9 @@
  */
 
 package io.harness.service.instancestats;
-
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.models.InstanceStats;
 import io.harness.models.InstanceStatsIterator;
@@ -18,6 +19,7 @@ import com.google.inject.Inject;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceStatsServiceImpl implements InstanceStatsService {
   private InstanceStatsRepository instanceStatsRepository;
@@ -28,17 +30,15 @@ public class InstanceStatsServiceImpl implements InstanceStatsService {
   public Instant getLastSnapshotTime(String accountId, String orgId, String projectId, String serviceId)
       throws Exception {
     InstanceStats record = instanceStatsRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME)) {
-      InstanceStatsIterator iteratorRecord =
-          instanceStatsIteratorRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
-      if (iteratorRecord != null) {
-        if (record == null) {
-          return iteratorRecord.getReportedAt().toInstant();
-        }
-        return record.getReportedAt().toInstant().isAfter(iteratorRecord.getReportedAt().toInstant())
-            ? record.getReportedAt().toInstant()
-            : iteratorRecord.getReportedAt().toInstant();
+    InstanceStatsIterator iteratorRecord =
+        instanceStatsIteratorRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
+    if (iteratorRecord != null) {
+      if (record == null) {
+        return iteratorRecord.getReportedAt().toInstant();
       }
+      return record.getReportedAt().toInstant().isAfter(iteratorRecord.getReportedAt().toInstant())
+          ? record.getReportedAt().toInstant()
+          : iteratorRecord.getReportedAt().toInstant();
     }
     if (record == null) {
       // no record found

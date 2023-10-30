@@ -95,7 +95,6 @@ public class CoreDelegateResource {
 
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
       final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
-      final List<Secret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var resources = ResourceRequirements.newBuilder()
                                 .setMemory("128Mi")
@@ -109,24 +108,23 @@ public class CoreDelegateResource {
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
               //              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
-              .addAllInputSecrets(protoSecrets)
               .setRuntime(StepRuntime.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
-                              .setResource(resources)
+                              .setCompute(resources)
                               .build())
-              .setLoggingToken(delegateTaskPackage.getLogStreamingToken())
               .build();
       final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
       final var k8SInfra = K8SInfra
                                .newBuilder()
                                //                               .addAllInfraSecrets(protoSecrets) // Not supported now
                                .addSteps(k8sStep)
-                               .setResource(resources)
+                               .setCompute(resources)
                                .setWorkingDir("pera")
                                .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
                                .setLogPrefix(logPrefix)
+                               .setLogToken(delegateTaskPackage.getLogStreamingToken())
                                .build();
 
       final TaskPayload task =
@@ -163,7 +161,7 @@ public class CoreDelegateResource {
 
     return Secret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
-        .setSecrets(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
+        .setEncryptedRecord(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
         .build();
   }
 

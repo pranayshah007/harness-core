@@ -1,0 +1,8 @@
+policies:
+  - name: expensive-sql-servers
+    resource: azure.sql-server
+    filters:
+      - type: cost
+        timeframe: 30
+        op: gt
+        value: 2000

@@ -1,0 +1,42 @@
+{
+  "Description": "Description",
+  "Encrypted": false,
+  "OwnerId": "AccountId",
+  "Progress": "100%",
+  "SnapshotId": "SnapshotId",
+  "StartTime": "2023-01-10T20:13:26.094000+00:00",
+  "State": "completed",
+  "VolumeId": "VolumeId",
+  "VolumeSize": 8,
+  "Tags": [
+    {
+      "Key": "OS_Version",
+      "Value": "Ubuntu"
+    },
+    {
+      "Key": "Release",
+      "Value": "Latest"
+    },
+    {
+      "Key": "Base_AMI_Name",
+      "Value": "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20210928"
+    },
+    {
+      "Key": "Name",
+      "Value": "Name"
+    },
+    {
+      "Key": "source",
+      "Value": "hashicorp/learn"
+    },
+    {
+      "Key": "Base_AMI_ID",
+      "Value": "Base_AMI_ID"
+    },
+    {
+      "Key": "purpose",
+      "Value": "demo"
+    }
+  ],
+  "StorageTier": "standard"
+}

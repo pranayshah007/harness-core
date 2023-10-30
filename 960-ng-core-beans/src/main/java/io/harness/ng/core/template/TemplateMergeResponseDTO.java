@@ -7,8 +7,11 @@
 
 package io.harness.ng.core.template;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -33,4 +36,12 @@ public class TemplateMergeResponseDTO {
   List<TemplateReferenceSummary> templateReferenceSummaries;
   String mergedPipelineYamlWithTemplateRef;
   CacheResponseMetadataDTO cacheResponseMetadata;
+  String processedYamlVersion;
+
+  public String getProcessedYamlVersion() {
+    if (isNotEmpty(processedYamlVersion)) {
+      return processedYamlVersion;
+    }
+    return HarnessYamlVersion.V0;
+  }
 }

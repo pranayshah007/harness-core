@@ -57,7 +57,7 @@ public class OutboxPollJobTest extends CategoryTest {
     outboxMetricsServiceImpl = mock(OutboxMetricsServiceImpl.class);
     outboxEventPollJob = new OutboxEventPollJob(outboxService, outboxEventHandler, persistentLocker,
         OutboxPollConfiguration.builder().maximumRetryAttemptsForAnEvent(2).lockId("LOCK_ID").build(),
-        outboxMetricsServiceImpl);
+        outboxMetricsServiceImpl, "service-id");
     MaintenanceController.forceMaintenance(false);
   }
 

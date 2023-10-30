@@ -20,9 +20,11 @@ public class SettingsDTO {
   String sequenceID;
   String accountID;
   String artifactID;
+  String artifactURL;
+  String artifactTag;
+
   Tool tool;
   String format;
-  String artifactURL;
 
   @Data
   @Builder

@@ -16,7 +16,7 @@ import javax.validation.constraints.NotNull;
 public interface ConstraintRegistry {
   void save(ConstraintId id, Spec spec) throws UnableToSaveConstraintException;
   Constraint load(ConstraintId id) throws UnableToLoadConstraintException;
-  List<Consumer> loadConsumers(@NotNull ConstraintId id, @NotNull ConstraintUnit unit);
+  List<Consumer> loadConsumers(@NotNull ConstraintId id, @NotNull ConstraintUnit unit, boolean hitSecondaryNode);
 
   // When a new consumer is registered it goes into either blocked or running state.
   boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning)

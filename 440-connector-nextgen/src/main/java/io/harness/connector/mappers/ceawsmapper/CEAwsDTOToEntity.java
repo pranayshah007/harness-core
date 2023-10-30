@@ -19,7 +19,9 @@ import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
+import io.harness.remote.CEProxyConfig;
 
 import com.amazonaws.arn.Arn;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -36,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CEAwsDTOToEntity implements ConnectorDTOToEntityMapper<CEAwsConnectorDTO, CEAwsConfig> {
   @Inject AwsClient awsClient;
   @Inject CEAwsSetupConfig ceAwsSetupConfig;
+  @Inject CEProxyConfig ceProxyConfig;
+  @Inject CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   @Override
   public CEAwsConfig toConnectorEntity(CEAwsConnectorDTO connectorDTO) {
@@ -86,8 +90,9 @@ public class CEAwsDTOToEntity implements ConnectorDTOToEntityMapper<CEAwsConnect
           awsClient.getAssumedCredentialsProvider(awsClient.constructStaticBasicAwsCredentials(
                                                       ceAwsSetupConfig.getAccessKey(), ceAwsSetupConfig.getSecretKey()),
               connectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
-              connectorDTO.getCrossAccountAccess().getExternalId());
-      return awsClient.getReportDefinition(credentialsProvider, connectorDTO.getCurAttributes().getReportName());
+              connectorDTO.getCrossAccountAccess().getExternalId(), ceAwsServiceEndpointConfig);
+      return awsClient.getReportDefinition(
+          credentialsProvider, connectorDTO.getCurAttributes().getReportName(), ceProxyConfig);
     } catch (Exception ex) {
       log.error("Error getting report definition", ex);
       return Optional.empty();

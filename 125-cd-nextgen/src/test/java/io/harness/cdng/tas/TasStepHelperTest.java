@@ -32,6 +32,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -214,6 +215,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -293,7 +295,12 @@ public class TasStepHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
                                         .setStageExecutionId(STAGE_EXECUTION_ID)
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder()
           .identifier("env")
@@ -759,30 +766,32 @@ public class TasStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCommandUnitsForTanzuCommand() {
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder().build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
-            CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteCustomFetch(true)
                                                                 .build()))
-        .isEqualTo(asList(
-            CfCommandUnitConstants.FetchCustomFiles, CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCustomFiles, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteGitStoreFetch(true)
                                                                 .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, K8sCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+            CfCommandUnitConstants.ResolveInputOutputVariables, CfCommandUnitConstants.Pcfplugin,
+            CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
                                                                 .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteHarnessStoreFetch(true)
                                                                 .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+            CfCommandUnitConstants.ResolveInputOutputVariables, CfCommandUnitConstants.Pcfplugin,
+            CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
                    TasStepPassThroughData.builder().pathsFromScript(Arrays.asList("path")).build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
-            CfCommandUnitConstants.Wrapup));
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.ResolveInputOutputVariables,
+            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
   }
 
   @Test

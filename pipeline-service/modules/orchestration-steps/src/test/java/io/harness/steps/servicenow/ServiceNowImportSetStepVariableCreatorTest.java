@@ -115,7 +115,8 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.identifier",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.type",
             "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.startTs",
-            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs");
+            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs",
+            "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.status");
     List<YamlProperties> outputProperties = variablesForParentNodeV2.getYamlExtraProperties()
                                                 .get("-QisXuoqS_eJZTnix7M2PQ") // uuid for step node
                                                 .getOutputPropertiesList();
@@ -123,7 +124,7 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
                                           .get("-QisXuoqS_eJZTnix7M2PQ") // uuid for step node
                                           .getPropertiesList();
     assertThat(outputProperties).hasSize(5);
-    assertThat(properties).hasSize(4);
+    assertThat(properties).hasSize(5);
     assertYamlProperties(outputProperties.get(0),
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.output.importSetNumber",
         "execution.steps.app.output.importSetNumber", "", true);
@@ -151,6 +152,9 @@ public class ServiceNowImportSetStepVariableCreatorTest extends CategoryTest {
     assertYamlProperties(properties.get(3),
         "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.endTs", "execution.steps.app.endTs",
         "", false);
+    assertYamlProperties(properties.get(4),
+        "pipeline.stages.Service_Now_Import_Set_Identifier.spec.execution.steps.app.status",
+        "execution.steps.app.status", "", false);
   }
 
   private void assertYamlProperties(

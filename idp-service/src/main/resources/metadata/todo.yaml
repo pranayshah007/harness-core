@@ -6,6 +6,7 @@ category: Discovery
 source: https://github.com/backstage/backstage/tree/master/plugins/todo
 iconUrl: https://backstage.io/img/todo-logo.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/todo/
 exports:
   defaultEntityTypes:
     - service

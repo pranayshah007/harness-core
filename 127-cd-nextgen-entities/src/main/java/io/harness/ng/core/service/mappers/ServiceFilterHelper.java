@@ -25,6 +25,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
@@ -53,28 +54,26 @@ public class ServiceFilterHelper {
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled,
-      boolean includeAllServicesAccessibleAtScope) {
+      boolean includeAllServicesAccessibleAtScope, String repoName) {
     return createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, null, deleted, searchTerm, type,
-        gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       List<String> scopedServiceRefs, boolean deleted, String searchTerm, ServiceDefinitionType type,
-      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope) {
-    Criteria criteria = createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, scopedServiceRefs, deleted, includeAllServicesAccessibleAtScope);
-    final List<Criteria> andCriterias = new ArrayList<>();
-    if (isNotEmpty(searchTerm)) {
-      Criteria searchCriteria = createSearchTermCriteria(searchTerm);
-      andCriterias.add(searchCriteria);
+      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope, String repoName) {
+    Criteria criteria = createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, scopedServiceRefs,
+        deleted, includeAllServicesAccessibleAtScope, searchTerm);
+
+    if (isNotEmpty(repoName)) {
+      criteria.and(ServiceEntityKeys.repo).is(repoName);
     }
 
     if (type != null) {
-      criteria.and(ServiceEntityKeys.type).is(type.name());
-    }
-
-    if (isNotEmpty(andCriterias)) {
-      criteria = criteria.andOperator(andCriterias.toArray(Criteria[] ::new));
+      // since type can be in YAML we are also returning all remote services
+      // these remote service can have type stored remotely
+      criteria.orOperator(Criteria.where(ServiceEntityKeys.type).is(type.name()),
+          Criteria.where(ServiceEntityKeys.storeType).is(StoreType.REMOTE.name()));
     }
 
     return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);
@@ -149,7 +148,7 @@ public class ServiceFilterHelper {
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope) {
+      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope, String searchTerm) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(accountId)) {
       // accountId
@@ -177,6 +176,12 @@ public class ServiceFilterHelper {
       if (scopedServicesCriteria != null) {
         criteriaList.add(scopedServicesCriteria);
       }
+
+      if (isNotEmpty(searchTerm)) {
+        Criteria searchCriteria = createSearchTermCriteria(searchTerm);
+        criteriaList.add(searchCriteria);
+      }
+
       if (criteriaList.size() != 0) {
         criteria.andOperator(criteriaList.toArray(new Criteria[0]));
       }

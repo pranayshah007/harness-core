@@ -154,7 +154,6 @@ import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.WorkflowElement;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.ArtifactStreamMetadata;
@@ -195,6 +194,7 @@ import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
@@ -965,7 +965,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     // 2nd workflow
     createExecutableWorkflow(appId, env, "workflow2");
     PageRequest<Workflow> pageRequest = aPageRequest().addFilter(Workflow.APP_ID_KEY2, EQ, appId).build();
-    PageResponse<Workflow> res = workflowService.listWorkflows(pageRequest, null, false, null);
+    PageResponse<Workflow> res = workflowService.listWorkflows(pageRequest, null, false, null, false);
 
     assertThat(res).isNotNull().hasSize(2);
   }

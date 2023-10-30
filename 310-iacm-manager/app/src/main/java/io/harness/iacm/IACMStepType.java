@@ -13,10 +13,8 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.nodes.iacm.IACMApprovalStepNode;
-import io.harness.beans.steps.nodes.iacm.IACMCostEstimationStepNode;
 import io.harness.beans.steps.nodes.iacm.IACMTerraformPluginStepNode;
 import io.harness.iacm.plan.creator.step.IACMApprovalStepPlanCreator;
-import io.harness.iacm.plan.creator.step.IACMCostEstimationStepPlanCreator;
 import io.harness.iacm.plan.creator.step.IACMTerraformPluginStepPlanCreator;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -33,12 +31,8 @@ public enum IACMStepType {
   IACM_TERRAFORM_PLUGIN("IACMTerraformPlugin", "IACM Terraform Plugin", FeatureName.IACM_ENABLED,
       IACMTerraformPluginStepNode.class, EntityType.IACM_TERRAFORM_PLUGIN, new IACMTerraformPluginStepPlanCreator(),
       new String[] {"IACM"}),
-
   IACM_APPROVAL("IACMApproval", "IACM Approval", FeatureName.IACM_ENABLED, IACMApprovalStepNode.class,
-      EntityType.IACM_APPROVAL, new IACMApprovalStepPlanCreator(), new String[] {"IACM"}),
-  IACM_COST_ESTIMATION("IACMCostEstimation", "IACM Cost Estimation", FeatureName.IACM_ENABLED,
-      IACMCostEstimationStepNode.class, EntityType.IACM_COST_ESTIMATION, new IACMCostEstimationStepPlanCreator(),
-      new String[] {"IACM"});
+      EntityType.IACM_APPROVAL, new IACMApprovalStepPlanCreator(), new String[] {"IACM"});
 
   @Getter private String name;
   @Getter private String displayName;

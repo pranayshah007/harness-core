@@ -99,7 +99,8 @@ public class PluginStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.download_plugin_success.spec.execution.steps.download.type",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.identifier",
             "pipeline.stages.download_plugin_success.spec.execution.steps.download.startTs",
-            "pipeline.stages.download_plugin_success.spec.execution.steps.download.endTs");
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.endTs",
+            "pipeline.stages.download_plugin_success.spec.execution.steps.download.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(pluginStepNode.getPluginStepInfo().getUuid()) // step uuid

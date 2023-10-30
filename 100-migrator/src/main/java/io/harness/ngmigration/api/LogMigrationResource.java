@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.api;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
@@ -14,7 +13,10 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.dto.RunStat;
 import io.harness.ngmigration.service.LogMigrationService;
 import io.harness.rest.RestResponse;
@@ -35,6 +37,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(CDC)
 @Slf4j
 @Path("/log-migration")

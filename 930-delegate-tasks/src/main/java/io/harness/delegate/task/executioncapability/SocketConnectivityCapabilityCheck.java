@@ -21,6 +21,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -69,6 +70,10 @@ public class SocketConnectivityCapabilityCheck implements CapabilityCheck, Proto
       socket.connect(new InetSocketAddress(host, port), 5000); // 5 sec timeout
       log.info("[Delegate Capability] Socket Connection Succeeded for url {} on port {}", host, port);
       return true;
+
+    } catch (UnknownHostException unknownHostException) {
+      log.warn("Invalid Host or Port provided {}:{} : Error {}", host, port,
+          ExceptionUtils.getMessage(unknownHostException));
     } catch (final IOException e) {
       log.info("[Delegate Capability] Socket Connection Failed for url {} on port {} error", host, port,
           ExceptionUtils.getMessage(e));

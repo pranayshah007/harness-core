@@ -22,6 +22,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.expressions.YamlExpressionEvaluator;
 import io.harness.pms.merger.fqn.FQN;
@@ -34,6 +35,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -52,70 +54,122 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
   @Override
   public ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml) {
     YamlExpressionEvaluator yamlExpressionEvaluator = new YamlExpressionEvaluator(yaml);
-    // TODO Optimise this further to avoid getting ambiance for all the node executions for a planExecution
-    CloseableIterator<NodeExecution> nodeExecutions =
-        nodeExecutionService.fetchAllWithPlanExecutionId(planExecutionId, NodeProjectionUtils.withAmbiance);
-
-    // This map matches the fqn with each Ambiance. Here the fqn is calculated using level's identifier (till where last
-    // group in level is not null) of each ambiance.
-    Map<String, Ambiance> fqnToAmbianceMap = getFQNToAmbianceMap(nodeExecutions);
 
     // expression along with their fqn from the given yaml. Here the string can be an object too (eg -> echo
     // <+pipeline.name>)
     Map<FQN, String> fqnObjectMap = RuntimeInputFormHelper.fetchExpressionAndFqnFromYaml(yaml);
 
     Map<String, ExpressionEvaluationDetail> mapData = new HashMap<>();
-    for (Map.Entry<FQN, String> entry : fqnObjectMap.entrySet()) {
-      String fqn = entry.getKey().getExpressionFqn();
-      String value = entry.getValue();
 
-      // calculating the fqn to find the ambiance which will resolve the expression
-      String fqnTillLastGroup = getFQNTillLastGroup(fqn, fqnToAmbianceMap);
-      Ambiance ambiance = fqnToAmbianceMap.get(fqnTillLastGroup);
-      evaluateExpression(mapData, ambiance, fqn, value, yamlExpressionEvaluator);
+    // This stores the list of all fqns for ambiance for expressions that could not be resolved via yaml
+    List<String> unresolvedAmbianceFqns = new ArrayList<>();
+
+    // This stores the Orginal fqn to unresolved expressions in yamk
+    Map<String, List<String>> fqnToUnresolvedExpressionsViaYaml = new HashMap<>();
+
+    for (Map.Entry<FQN, String> entry : fqnObjectMap.entrySet()) {
+      String yamlFqn = entry.getKey().getExpressionFqn();
+      String value = entry.getValue();
+      List<String> unresolvedExpression = evaluateExpression(mapData, yamlFqn, value, yamlExpressionEvaluator);
+      fqnToUnresolvedExpressionsViaYaml.put(yamlFqn, unresolvedExpression);
+      String fqnTillLastGroup = fqnForAmbiance(yamlFqn);
+      unresolvedAmbianceFqns.add(fqnTillLastGroup);
     }
 
+    // This fetches all the leaf node executions for the given plan execution id.
+    CloseableIterator<NodeExecution> nodeExecutions =
+        nodeExecutionService.fetchAllLeavesUsingPlanExecutionId(planExecutionId, NodeProjectionUtils.withAmbiance);
+    Map<String, Ambiance> fqnToAmbianceMap = getFQNToAmbianceMap(nodeExecutions, unresolvedAmbianceFqns);
+
+    for (Map.Entry<FQN, String> entry : fqnObjectMap.entrySet()) {
+      String fqn = entry.getKey().getExpressionFqn();
+
+      // We should call ambiance expression resolution only if the expression was unresolved via yaml
+      if (fqnToUnresolvedExpressionsViaYaml.containsKey(fqn)) {
+        String fqnTillLastGroup = fqnForAmbiance(fqn);
+        Ambiance ambiance = fqnToAmbianceMap.get(fqnTillLastGroup);
+        evaluateExpressionUsingAmbiance(mapData, fqn, fqnToUnresolvedExpressionsViaYaml.get(fqn), ambiance);
+      }
+    }
     return ExpressionEvaluationDetailDTO.builder().mapExpression(mapData).compiledYaml(yaml).build();
   }
 
-  private String getFQNTillLastGroup(String fqn, Map<String, Ambiance> lastGroupFqnToAmbianceMap) {
-    List<String> expressionKeys = Arrays.asList(fqn.split("\\."));
-    String subStringFqn = expressionKeys.get(0);
-    String resultedFqn = subStringFqn;
-
-    // Using the fqn, we are finding the fqn which can resolve the expression. For that we have
-    // lastGroupFqnToAmbianceMap which stores the fqn with Ambiance
-    /*
-    For example:
-    pipeline.stages.cs.spec.execution.steps.ShellScript_1.timeout: <+pipeline.variables.var1>
-
-    For fqn: pipeline.stages.cs.spec.execution.steps.ShellScript_1.timeout, this function will return
-    pipeline.stages.cs.spec.execution.steps.ShellScript_1
-     */
-    for (int index = 1; index < expressionKeys.size(); index++) {
-      subStringFqn += "." + expressionKeys.get(index);
-      if (lastGroupFqnToAmbianceMap.containsKey(subStringFqn)) {
-        resultedFqn = subStringFqn;
+  /**
+   * This is used to fetch the ambiance fqn to the nearest pipeline,stage or step
+   * For example:
+   * Given this yaml:
+   * pipeline:
+   *   stages:
+   *     stage:
+   *       spec:
+   *         execution:
+   *           steps:
+   *             - step:
+   *                 identifier: step1
+   *                 spec:
+   *                   script: echo <+pipeline.variables.name1>
+   *
+   *
+   * The fqn to the place where the expression is pipeline.stages.stage.spec.execution.steps.step1.spec.script
+   *
+   * This fqn would not be anywhere in ambiance since via ambiance this would give us the fqn till step1
+   *
+   * The function does the same, it removes additional names in the fully qualified name that might not be present in
+   * ambiance.
+   *
+   * To Summarize:
+   *  - We traverse all the names in the path to the given node.
+   *  - We get to the nearest step/stage/pipeline node name as they might be present in the ambiance.
+   *
+   * @param fqn
+   * @return
+   */
+  private String fqnForAmbiance(String fqn) {
+    List<String> qualifiedName = Arrays.asList(fqn.split("\\."));
+    int n = qualifiedName.size();
+    int indexToNearestGroup;
+    for (indexToNearestGroup = n - 1; indexToNearestGroup > 0; indexToNearestGroup--) {
+      if (qualifiedName.get(indexToNearestGroup).equals("stages")
+          || qualifiedName.get(indexToNearestGroup).equals("steps")
+          || qualifiedName.get(indexToNearestGroup).equals("pipeline")) {
+        break;
       }
     }
-
-    return resultedFqn;
+    // Add back the
+    List<String> result = new ArrayList<>();
+    for (int j = 0; j <= indexToNearestGroup + 1; j++) {
+      result.add(qualifiedName.get(j));
+    }
+    return String.join(".", result);
   }
 
-  public Map<String, Ambiance> getFQNToAmbianceMap(CloseableIterator<NodeExecution> nodeExecutions) {
+  /**
+   *
+   * This traverses all the leaf node executions of the given plan execution id.
+   * If the fqn of that ambiance is a superset of the unresolved fqn set, we use that ambiance to resolve any expression
+   * @param nodeExecutions
+   * @param unresolvedFqnSet
+   * @return
+   */
+  public Map<String, Ambiance> getFQNToAmbianceMap(
+      CloseableIterator<NodeExecution> nodeExecutions, List<String> unresolvedFqnSet) {
     Map<String, Ambiance> fqnToAmbianceMap = new HashMap<>();
 
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
       Ambiance ambiance = nodeExecution.getAmbiance();
 
-      String fqn = getFqnTillLastGroupInAmbiance(ambiance);
-      fqnToAmbianceMap.put(fqn, ambiance);
+      String fqnTillLastGroupWithoutStrategy = getFqnTillLastGroupInAmbianceWithoutStrategy(ambiance);
+      for (String usedFqn : unresolvedFqnSet) {
+        if (fqnTillLastGroupWithoutStrategy.contains(usedFqn)) {
+          fqnToAmbianceMap.put(usedFqn, ambiance);
+        }
+      }
     }
     return fqnToAmbianceMap;
   }
 
-  private String getFqnTillLastGroupInAmbiance(Ambiance ambiance) {
+  private String getFqnTillLastGroupInAmbianceWithoutStrategy(Ambiance ambiance) {
     List<Level> levelsList = ambiance.getLevelsList();
     int lastGroupIndex = ambiance.getLevelsCount() - 1;
     for (int index = ambiance.getLevelsCount() - 1; index >= 0; index--) {
@@ -124,14 +178,27 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
         break;
       }
     }
-    return levelsList.stream().limit(lastGroupIndex + 1).map(Level::getIdentifier).collect(Collectors.joining("."));
+    return levelsList.stream()
+        .limit(lastGroupIndex + 1)
+        .filter(level -> !AmbianceUtils.hasStrategyMetadata(level))
+        .map(Level::getIdentifier)
+        .collect(Collectors.joining("."));
   }
 
-  public void evaluateExpression(Map<String, ExpressionEvaluationDetail> mapData, Ambiance ambiance, String key,
-      String value, YamlExpressionEvaluator yamlExpressionEvaluator) {
+  /**
+   * returns expressions that are unresolved by yaml
+   *
+   * @param mapData
+   * @param key
+   * @param value
+   * @param yamlExpressionEvaluator
+   * @return
+   */
+  public List<String> evaluateExpression(Map<String, ExpressionEvaluationDetail> mapData, String key, String value,
+      YamlExpressionEvaluator yamlExpressionEvaluator) {
     // There can be n number of expression in the value (eg -> echo <+pipeline.name> \n echo <+pipeline.variables.var1>)
     List<String> expressions = EngineExpressionEvaluator.findExpressions(value);
-
+    List<String> unresolvedExpressions = new ArrayList<>();
     for (String expression : expressions) {
       ExpressionEvaluationDetailBuilder expressionEvaluationDetailBuilder =
           ExpressionEvaluationDetail.builder().originalExpression(expression).fqn(key);
@@ -142,12 +209,31 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
 
         // If result is null, try evaluating with ambiance
         if (result == null) {
-          result = resolveValueFromAmbiance(ambiance, expression);
-          resolvedByYaml = false;
+          unresolvedExpressions.add(expression);
+          continue;
         }
 
         mapData.put(key + "+" + expression,
             expressionEvaluationDetailBuilder.resolvedValue(result).resolvedByYaml(resolvedByYaml).build());
+
+      } catch (Exception e) {
+        mapData.put(key + "+" + expression, expressionEvaluationDetailBuilder.error(e.getMessage()).build());
+      }
+    }
+    return unresolvedExpressions;
+  }
+
+  public void evaluateExpressionUsingAmbiance(
+      Map<String, ExpressionEvaluationDetail> mapData, String key, List<String> expressions, Ambiance ambiance) {
+    for (String expression : expressions) {
+      // There can be n number of expression in the value (eg -> echo <+pipeline.name> \n echo
+      // <+pipeline.variables.var1>)
+      ExpressionEvaluationDetailBuilder expressionEvaluationDetailBuilder =
+          ExpressionEvaluationDetail.builder().originalExpression(expression).fqn(key);
+      try {
+        String result = resolveValueFromAmbiance(ambiance, expression);
+        mapData.put(key + "+" + expression,
+            expressionEvaluationDetailBuilder.resolvedValue(result).resolvedByYaml(false).build());
 
       } catch (Exception e) {
         mapData.put(key + "+" + expression, expressionEvaluationDetailBuilder.error(e.getMessage()).build());

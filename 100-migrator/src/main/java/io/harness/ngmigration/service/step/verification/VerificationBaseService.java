@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.verification;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.cdng.beans.AutoVerificationJobSpec;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
@@ -18,6 +20,7 @@ import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.core.beans.CVVerifyStepNode;
 import io.harness.cvng.core.beans.StepSpecTypeConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -28,6 +31,7 @@ import io.harness.ngmigration.monitoredservice.utils.MonitoredServiceEntityToMon
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -48,8 +52,10 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public abstract class VerificationBaseService extends StepMapper {
+  private static String CONNECTOR_ID_FIELD = "analysisServerConfigId";
   private static String TEMPLATE_INPUT = "type: \"Application\"\n"
       + "serviceRef: \"<+service.identifier>\"\n"
       + "environmentRef: \"<+env.identifier>\"\n"
@@ -58,7 +64,7 @@ public abstract class VerificationBaseService extends StepMapper {
       + "  - identifier: \"{$hsIdentifier}\"\n"
       + "    type: \"{$hsType}\"\n"
       + "    spec:\n"
-      + "      connectorRef: \"<+input>\"";
+      + "      connectorRef: \"{$hsConnectorRef}\"";
   @Inject MonitoredServiceEntityToMonitoredServiceMapper monitoredServiceEntityToMonitoredServiceMapper;
   @Inject HealthSourceGeneratorFactory healthSourceGeneratorFactory;
 
@@ -74,8 +80,8 @@ public abstract class VerificationBaseService extends StepMapper {
 
   public List<CgEntityId> getReferencedEntities(
       String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
-    List<CgEntityId> referencedEntities = new ArrayList<>();
-    referencedEntities.addAll(super.getReferencedEntities(accountId, workflow, graphNode, stepIdToServiceIdMap));
+    List<CgEntityId> referencedEntities =
+        new ArrayList<>(super.getReferencedEntities(accountId, workflow, graphNode, stepIdToServiceIdMap));
     if (monitoredServiceEntityToMonitoredServiceMapper.isMigrationSupported(graphNode)) {
       CGMonitoredServiceEntity cgMonitoredServiceEntity =
           CGMonitoredServiceEntity.builder().stepNode(graphNode).workflow(workflow).build();
@@ -83,6 +89,13 @@ public abstract class VerificationBaseService extends StepMapper {
                                  .id(cgMonitoredServiceEntity.getId())
                                  .type(NGMigrationEntityType.MONITORED_SERVICE_TEMPLATE)
                                  .build());
+      if (graphNode.getProperties() != null
+          && EmptyPredicate.isNotEmpty((String) graphNode.getProperties().get(CONNECTOR_ID_FIELD))) {
+        referencedEntities.add(CgEntityId.builder()
+                                   .type(NGMigrationEntityType.CONNECTOR)
+                                   .id(graphNode.getProperties().get(CONNECTOR_ID_FIELD).toString())
+                                   .build());
+      }
     }
     return referencedEntities;
   }
@@ -122,6 +135,10 @@ public abstract class VerificationBaseService extends StepMapper {
   private MonitoredServiceNode getMonitoredServiceNode(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     if (monitoredServiceEntityToMonitoredServiceMapper.isMigrationSupported(graphNode)) {
+      String connectorId = null;
+      if (graphNode.getProperties() != null && graphNode.getProperties().get("analysisServerConfigId") != null) {
+        connectorId = graphNode.getProperties().get("analysisServerConfigId").toString();
+      }
       CGMonitoredServiceEntity cgMonitoredServiceEntity =
           CGMonitoredServiceEntity.builder().workflow(context.getWorkflow()).stepNode(graphNode).build();
       NgEntityDetail ngEntityDetail = migrationContext.getMigratedEntities()
@@ -130,13 +147,16 @@ public abstract class VerificationBaseService extends StepMapper {
                                                    .id(cgMonitoredServiceEntity.getId())
                                                    .build())
                                           .getNgEntityDetail();
-      String templateInput = StringUtils.replaceEach(TEMPLATE_INPUT, new String[] {"{$hsIdentifier}", "{$hsType}"},
-          new String[] {MigratorUtility.generateIdentifier(graphNode.getName(), CaseFormat.LOWER_CASE),
-              MonitoredServiceDataSourceType
-                  .getDataSourceType(healthSourceGeneratorFactory.getHealthSourceGenerator(graphNode.getType())
-                                         .get()
-                                         .getDataSourceType(graphNode))
-                  .getDisplayName()});
+      String templateInput =
+          StringUtils.replaceEach(TEMPLATE_INPUT, new String[] {"{$hsIdentifier}", "{$hsType}", "{$hsConnectorRef}"},
+              new String[] {MigratorUtility.generateIdentifier(graphNode.getName(), CaseFormat.LOWER_CASE),
+                  MonitoredServiceDataSourceType
+                      .getDataSourceType(healthSourceGeneratorFactory.getHealthSourceGenerator(graphNode.getType())
+                                             .get()
+                                             .getDataSourceType(graphNode))
+                      .getDisplayName(),
+                  MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), connectorId,
+                      NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT)});
       return MonitoredServiceNode.builder()
           .type(MonitoredServiceSpecType.TEMPLATE.getName())
           .spec(TemplateMonitoredServiceSpec.builder()

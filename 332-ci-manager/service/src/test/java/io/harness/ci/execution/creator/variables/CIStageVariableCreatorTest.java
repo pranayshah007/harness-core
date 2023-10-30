@@ -145,7 +145,9 @@ public class CIStageVariableCreatorTest {
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.os",
             "pipeline.stages.gcpBuildPush.spec.serviceDependencies", "pipeline.stages.gcpBuildPush.name",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.containerSecurityContext",
-            "pipeline.stages.gcpBuildPush.when", "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.initTimeout");
+            "pipeline.stages.gcpBuildPush.when", "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.initTimeout",
+            "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.imagePullPolicy",
+            "pipeline.stages.gcpBuildPush.timeout");
 
     List<String> fqnExtraPropertiesList = variableCreationResponse.getYamlExtraProperties()
                                               .get(integrationStageNode.getUuid()) // step uuid
@@ -157,6 +159,7 @@ public class CIStageVariableCreatorTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.gcpBuildPush.type", "pipeline.stages.gcpBuildPush.pipelineVariables",
             "pipeline.stages.gcpBuildPush.identifier", "pipeline.stages.gcpBuildPush.tags",
-            "pipeline.stages.gcpBuildPush.startTs", "pipeline.stages.gcpBuildPush.endTs");
+            "pipeline.stages.gcpBuildPush.startTs", "pipeline.stages.gcpBuildPush.endTs",
+            "pipeline.stages.gcpBuildPush.status");
   }
 }

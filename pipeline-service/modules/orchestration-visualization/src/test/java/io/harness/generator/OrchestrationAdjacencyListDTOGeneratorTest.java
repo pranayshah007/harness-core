@@ -8,6 +8,7 @@
 package io.harness.generator;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -24,6 +25,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
@@ -75,16 +77,20 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldGenerateOrchestrationAdjacencyListInternalWithSection() {
-    NodeExecution dummyStart = NodeExecution.builder()
-                                   .uuid("node1")
-                                   .ambiance(Ambiance.newBuilder()
-                                                 .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                                 .addAllLevels(Collections.singletonList(
-                                                     Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
-                                                 .build())
-                                   .mode(ExecutionMode.SYNC)
-                                   .nextId("node2")
-                                   .build();
+    NodeExecution dummyStart =
+        NodeExecution.builder()
+            .uuid("node1")
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(PLAN_EXECUTION_ID)
+                          .addAllLevels(Collections.singletonList(
+                              Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .nextId("node2")
+            .build();
     Map<String, Object> sectionStepParams =
         RecastOrchestrationUtils.toMap(DummySectionStepParameters.builder().childNodeId("child_section_2").build());
     NodeExecution section =
@@ -93,6 +99,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
             .ambiance(Ambiance.newBuilder()
                           .setPlanExecutionId(PLAN_EXECUTION_ID)
                           .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("section_2").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
                           .build())
             .mode(ExecutionMode.CHILD)
             .resolvedStepParameters(sectionStepParams)
@@ -105,6 +114,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                 Ambiance.newBuilder()
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("child_section_2").build()))
+                    .setMetadata(ExecutionMetadata.newBuilder()
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                     .build())
                     .build())
             .mode(ExecutionMode.SYNC)
             .parentId(section.getUuid())
@@ -143,6 +155,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .setPlanExecutionId(PLAN_EXECUTION_ID)
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_plan_node").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
                           .build())
             .mode(ExecutionMode.CHILD_CHAIN)
             .createdAt(System.currentTimeMillis())
@@ -156,6 +171,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .setPlanExecutionId(PLAN_EXECUTION_ID)
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_child1_plan_node").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
                           .build())
             .mode(ExecutionMode.TASK)
             .createdAt(System.currentTimeMillis())
@@ -171,6 +189,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .setPlanExecutionId(PLAN_EXECUTION_ID)
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_child2_plan_node").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
                           .build())
             .mode(ExecutionMode.TASK)
             .createdAt(System.currentTimeMillis())
@@ -186,6 +207,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                 Ambiance.newBuilder()
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_1").build()))
+                    .setMetadata(ExecutionMetadata.newBuilder()
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                     .build())
                     .build())
             .mode(ExecutionMode.SYNC)
             .createdAt(System.currentTimeMillis())
@@ -201,6 +225,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                 Ambiance.newBuilder()
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_2").build()))
+                    .setMetadata(ExecutionMetadata.newBuilder()
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                     .build())
                     .build())
             .mode(ExecutionMode.SYNC)
             .createdAt(System.currentTimeMillis())
@@ -244,36 +271,47 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                                            .setPlanExecutionId(PLAN_EXECUTION_ID)
                                            .addAllLevels(Collections.singletonList(
                                                Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
+                                           .setMetadata(ExecutionMetadata.newBuilder()
+                                                            .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                            .build())
                                            .build())
                              .mode(ExecutionMode.CHILDREN)
                              .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
                              .createdAt(System.currentTimeMillis())
                              .lastUpdatedAt(System.currentTimeMillis())
                              .build();
-    NodeExecution parallelNode1 = NodeExecution.builder()
-                                      .uuid("parallel_node_1")
-                                      .ambiance(Ambiance.newBuilder()
-                                                    .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                                    .addAllLevels(Collections.singletonList(
-                                                        Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
-                                                    .build())
-                                      .mode(ExecutionMode.SYNC)
-                                      .parentId(fork.getUuid())
-                                      .createdAt(System.currentTimeMillis())
-                                      .lastUpdatedAt(System.currentTimeMillis())
-                                      .build();
-    NodeExecution parallelNode2 = NodeExecution.builder()
-                                      .uuid("parallel_node_2")
-                                      .ambiance(Ambiance.newBuilder()
-                                                    .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                                    .addAllLevels(Collections.singletonList(
-                                                        Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
-                                                    .build())
-                                      .mode(ExecutionMode.SYNC)
-                                      .parentId(fork.getUuid())
-                                      .createdAt(System.currentTimeMillis())
-                                      .lastUpdatedAt(System.currentTimeMillis())
-                                      .build();
+    NodeExecution parallelNode1 =
+        NodeExecution.builder()
+            .uuid("parallel_node_1")
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(PLAN_EXECUTION_ID)
+                          .addAllLevels(
+                              Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .parentId(fork.getUuid())
+            .createdAt(System.currentTimeMillis())
+            .lastUpdatedAt(System.currentTimeMillis())
+            .build();
+    NodeExecution parallelNode2 =
+        NodeExecution.builder()
+            .uuid("parallel_node_2")
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(PLAN_EXECUTION_ID)
+                          .addAllLevels(
+                              Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .parentId(fork.getUuid())
+            .createdAt(System.currentTimeMillis())
+            .lastUpdatedAt(System.currentTimeMillis())
+            .build();
     List<NodeExecution> nodeExecutions = Lists.newArrayList(fork, parallelNode1, parallelNode2);
 
     OrchestrationAdjacencyListInternal adjacencyList =
@@ -301,6 +339,9 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                 Ambiance.newBuilder()
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_1").build()))
+                    .setMetadata(ExecutionMetadata.newBuilder()
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                     .build())
                     .build())
             .mode(ExecutionMode.SYNC)
             .createdAt(System.currentTimeMillis())
@@ -314,37 +355,48 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                                            .setPlanExecutionId(PLAN_EXECUTION_ID)
                                            .addAllLevels(Collections.singletonList(
                                                Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
+                                           .setMetadata(ExecutionMetadata.newBuilder()
+                                                            .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                            .build())
                                            .build())
                              .mode(ExecutionMode.CHILDREN)
                              .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
                              .createdAt(System.currentTimeMillis())
                              .lastUpdatedAt(System.currentTimeMillis())
                              .build();
-    NodeExecution parallelNode1 = NodeExecution.builder()
-                                      .uuid("parallel_node_1")
-                                      .ambiance(Ambiance.newBuilder()
-                                                    .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                                    .addAllLevels(Collections.singletonList(
-                                                        Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
-                                                    .build())
-                                      .mode(ExecutionMode.SYNC)
-                                      .parentId(fork.getUuid())
-                                      .createdAt(System.currentTimeMillis())
-                                      .lastUpdatedAt(System.currentTimeMillis())
-                                      .build();
-    NodeExecution parallelNode2 = NodeExecution.builder()
-                                      .uuid("parallel_node_2")
-                                      .ambiance(Ambiance.newBuilder()
-                                                    .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                                    .addAllLevels(Collections.singletonList(
-                                                        Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
-                                                    .build())
-                                      .mode(ExecutionMode.SYNC)
-                                      .parentId(fork.getUuid())
-                                      .nextId(dummyNode1.getUuid())
-                                      .createdAt(System.currentTimeMillis())
-                                      .lastUpdatedAt(System.currentTimeMillis())
-                                      .build();
+    NodeExecution parallelNode1 =
+        NodeExecution.builder()
+            .uuid("parallel_node_1")
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(PLAN_EXECUTION_ID)
+                          .addAllLevels(
+                              Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .parentId(fork.getUuid())
+            .createdAt(System.currentTimeMillis())
+            .lastUpdatedAt(System.currentTimeMillis())
+            .build();
+    NodeExecution parallelNode2 =
+        NodeExecution.builder()
+            .uuid("parallel_node_2")
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(PLAN_EXECUTION_ID)
+                          .addAllLevels(
+                              Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .parentId(fork.getUuid())
+            .nextId(dummyNode1.getUuid())
+            .createdAt(System.currentTimeMillis())
+            .lastUpdatedAt(System.currentTimeMillis())
+            .build();
     List<NodeExecution> nodeExecutions = Lists.newArrayList(fork, parallelNode1, parallelNode2, dummyNode1);
 
     OrchestrationAdjacencyListInternal adjacencyList =

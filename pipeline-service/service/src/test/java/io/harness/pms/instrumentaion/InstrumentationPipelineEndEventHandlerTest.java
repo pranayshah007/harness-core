@@ -131,7 +131,11 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
                              .build())
             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
             .build();
-    List<NodeExecution> nodeExecutionList = Arrays.asList(NodeExecution.builder().ambiance(ambiance).build());
+    List<NodeExecution> nodeExecutionList =
+        Arrays.asList(NodeExecution.builder()
+                          .ambiance(ambiance)
+                          .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).setType("Http").build())
+                          .build());
 
     CloseableIterator<NodeExecution> iterator =
         PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList.iterator());

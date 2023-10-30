@@ -9,6 +9,7 @@ package io.harness.helpers.ext.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -20,20 +21,32 @@ import lombok.Value;
 @Value
 public class AzureParsedSecretReference {
   public static final char SECRET_NAME_AND_VERSION_SEPARATOR = '/';
+  public static final char SECRET_NAME_AND_KEY_SEPARATOR = '#';
 
   String secretName;
+  String key;
   String secretVersion;
 
   public AzureParsedSecretReference(String secretPath) {
     Preconditions.checkState(isNotBlank(secretPath), "'secretPath' is blank");
+    String tempSecretName;
 
     int separatorIndex = secretPath.indexOf(SECRET_NAME_AND_VERSION_SEPARATOR);
     if (separatorIndex != -1) {
-      secretName = secretPath.substring(0, separatorIndex);
+      tempSecretName = secretPath.substring(0, separatorIndex);
       secretVersion = secretPath.substring(separatorIndex + 1);
     } else {
-      secretName = secretPath;
+      tempSecretName = secretPath;
       secretVersion = "";
+    }
+
+    int keyIndex = tempSecretName.indexOf(SECRET_NAME_AND_KEY_SEPARATOR);
+    if (keyIndex > 0) {
+      secretName = tempSecretName.substring(0, keyIndex);
+      key = tempSecretName.substring(keyIndex + 1);
+    } else {
+      secretName = tempSecretName;
+      key = EMPTY;
     }
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -30,10 +31,12 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
   @NonFinal @Expression(ALLOW_SECRETS) boolean skipMatching;
   @NonFinal @Expression(ALLOW_SECRETS) boolean useAlreadyRunningInstances;
   @NonFinal @Expression(ALLOW_SECRETS) Integer instanceWarmup;
   @NonFinal @Expression(ALLOW_SECRETS) Integer minimumHealthyPercentage;
   String amiImageId;
+  AsgCapacityConfig asgCapacityConfig;
+  String asgName;
 }

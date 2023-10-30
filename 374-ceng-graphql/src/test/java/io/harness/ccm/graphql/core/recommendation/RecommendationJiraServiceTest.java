@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.beans.recommendation.ResourceType.WORKLOAD;
 import static io.harness.rule.OwnerRule.ANMOL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,10 +31,12 @@ import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.graphql.dto.recommendation.CCMJiraCreateDTO;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.views.dao.RuleExecutionDAO;
-import io.harness.jira.JiraConstantsNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -201,10 +204,42 @@ public class RecommendationJiraServiceTest extends CategoryTest {
   }
 
   private JiraIssueNG getJiraIssueNG() {
-    return new JiraIssueNG("url", "restUrl", "id", JIRA_KEY_ISSUE,
-        Map.ofEntries(Map.entry(JiraConstantsNG.STATUS_INTERNAL_NAME,
-            Map.ofEntries(
-                Map.entry("name", "done"), Map.entry("statusCategory", Map.ofEntries(Map.entry("key", "done")))))));
+    String getIssueResponse = "{\n"
+        + "    \"id\": \"476152\",\n"
+        + "    \"self\": \"https://test.atlassian.net/rest/api/2/issue/476152\",\n"
+        + "    \"key\": \"jiraissuekey\",\n"
+        + "    \"names\": {\n"
+        + "        \"status\": \"Status\"\n"
+        + "    },\n"
+        + "    \"schema\": {\n"
+        + "        \"status\": {\n"
+        + "            \"type\": \"status\",\n"
+        + "            \"system\": \"status\"\n"
+        + "        }\n"
+        + "    },\n"
+        + "    \"fields\": {\n"
+        + "        \"status\": {\n"
+        + "            \"self\": \"https://test.atlassian.net/rest/api/2/status/10000\",\n"
+        + "            \"description\": \"\",\n"
+        + "            \"name\": \"done\",\n"
+        + "            \"id\": \"10000\",\n"
+        + "            \"statusCategory\": {\n"
+        + "                \"self\": \"https://test.atlassian.net/rest/api/2/statuscategory/2\",\n"
+        + "                \"id\": 2,\n"
+        + "                \"key\": \"done\",\n"
+        + "                \"name\": \"done\"\n"
+        + "            }\n"
+        + "        }\n"
+        + "    }\n"
+        + "}";
+    try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      JsonNode jsonNode = objectMapper.readTree(getIssueResponse);
+      return new JiraIssueNG(jsonNode);
+    } catch (JsonProcessingException ex) {
+      fail("Error generating jira issue from response: %s", ex.getMessage());
+      return null;
+    }
   }
 
   private CCMJiraCreateDTO getJiraCreateDTO(ResourceType resourceType) {

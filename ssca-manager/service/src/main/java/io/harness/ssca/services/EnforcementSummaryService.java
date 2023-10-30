@@ -7,6 +7,7 @@
 
 package io.harness.ssca.services;
 
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
@@ -20,4 +21,6 @@ public interface EnforcementSummaryService {
 
   Optional<EnforcementSummaryEntity> getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
+
+  void create(EnforcementSummaryDTO enforcementSummaryDTO);
 }

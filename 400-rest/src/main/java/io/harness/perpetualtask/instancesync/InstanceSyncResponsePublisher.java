@@ -49,7 +49,7 @@ public class InstanceSyncResponsePublisher {
       retry += 1;
     }
 
-    log.info(
+    log.debug(
         "Successfully pushed instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
         accountIdentifier, perpetualTaskId);
   }
@@ -74,7 +74,7 @@ public class InstanceSyncResponsePublisher {
       retry += 1;
     }
 
-    log.info(
+    log.debug(
         "Successfully pushed instance sync perpetual task v2 response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",
         accountIdentifier, perpetualTaskId);
   }

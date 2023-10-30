@@ -21,5 +21,5 @@ import lombok.Data;
 @Builder
 @OwnedBy(PL)
 public class VaultReadResponse {
-  private Map<String, String> data;
+  private Map<String, Object> data;
 }

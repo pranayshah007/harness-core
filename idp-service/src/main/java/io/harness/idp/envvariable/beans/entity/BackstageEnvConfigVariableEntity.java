@@ -38,7 +38,8 @@ public class BackstageEnvConfigVariableEntity extends BackstageEnvVariableEntity
   public static class BackstageEnvConfigVariableMapper
       implements BackstageEnvVariableMapper<BackstageEnvConfigVariable, BackstageEnvConfigVariableEntity> {
     @Override
-    public BackstageEnvConfigVariableEntity fromDto(BackstageEnvConfigVariable envVariable, String accountIdentifier) {
+    public BackstageEnvConfigVariableEntity fromDto(
+        BackstageEnvConfigVariable envVariable, String accountIdentifier, long secretLastModifiedAt) {
       BackstageEnvConfigVariableEntity envConfigVariableEntity =
           BackstageEnvConfigVariableEntity.builder().value(envVariable.getValue()).build();
       setCommonFieldsEntity(envVariable, envConfigVariableEntity, accountIdentifier);

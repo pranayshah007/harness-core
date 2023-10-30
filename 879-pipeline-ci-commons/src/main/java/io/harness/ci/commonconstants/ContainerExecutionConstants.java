@@ -34,6 +34,8 @@ public class ContainerExecutionConstants {
   public static final String SHARED_VOLUME_PREFIX = "shared-";
   public static final String VOLUME_PREFIX = "volume-";
 
+  public static final Integer POD_WAIT_BUFFER_SECONDS = 10;
+
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
   public static final String UNIX_SETUP_ADDON_ARGS =
@@ -49,6 +51,8 @@ public class ContainerExecutionConstants {
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;
   public static final Integer DEFAULT_CONTAINER_CPU_POV = 1000;
   public static final Integer LITE_ENGINE_CONTAINER_CPU = 100;
+  public static final Integer ADDON_CONTAINER_CPU = 300;
+  public static final Integer ADDON_CONTAINER_MEMORY = 400;
   public static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   public static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   public static final String DELEGATE_SERVICE_ID_VARIABLE_VALUE = "delegate-grpc-service";

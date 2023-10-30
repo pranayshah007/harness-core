@@ -31,6 +31,10 @@ import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -38,6 +42,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,11 +99,36 @@ public class K8InitializeStepUtilsHelper {
 
   public static IntegrationStageConfig getIntegrationStageConfig() {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigList();
+    K8sDirectInfraYamlSpec infraSpec = K8sDirectInfraYamlSpec.builder().build();
+    Infrastructure k8Infra =
+        K8sDirectInfraYaml.builder().type(Infrastructure.Type.KUBERNETES_DIRECT).spec(infraSpec).build();
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
+        .infrastructure(k8Infra)
         .build();
   }
 
+  public static IntegrationStageNode getIntegrationStageNodeForGitCloneAndRunStep() throws Exception {
+    return IntegrationStageNode.builder()
+        .identifier("ciStage")
+        .type(IntegrationStageNode.StepType.CI)
+        .integrationStageConfig((IntegrationStageConfigImpl) getIntegrationStageConfigForGitCloneAndRunStep())
+        .build();
+  }
+
+  public static IntegrationStageConfig getIntegrationStageConfigForGitCloneAndRunStep() throws Exception {
+    List<ExecutionWrapperConfig> executionList = getExecutionWrapperConfigListContainsGitCloneAndRunStep();
+    ParameterField<ImagePullPolicy> imagePullPolicyField = new ParameterField<>();
+    imagePullPolicyField.setValue(ImagePullPolicy.NEVER);
+
+    K8sDirectInfraYamlSpec infraSpec = K8sDirectInfraYamlSpec.builder().imagePullPolicy(imagePullPolicyField).build();
+    Infrastructure k8Infra =
+        K8sDirectInfraYaml.builder().type(Infrastructure.Type.KUBERNETES_DIRECT).spec(infraSpec).build();
+    return IntegrationStageConfigImpl.builder()
+        .execution(ExecutionElementConfig.builder().steps(executionList).build())
+        .infrastructure(k8Infra)
+        .build();
+  }
   public static List<ExecutionWrapperConfig> getExecutionWrapperConfigList() {
     return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
         ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build());
@@ -210,6 +240,7 @@ public class K8InitializeStepUtilsHelper {
     stepSpecType.put("command", BUILD_SCRIPT);
     stepSpecType.put("image", RUN_STEP_IMAGE);
     stepSpecType.put("connectorRef", RUN_STEP_CONNECTOR);
+    stepSpecType.put("imagePullPolicy", "Always");
 
     Map<String, String> envMap = new HashMap<>();
     envMap.put("stepVar", "stepVar");
@@ -287,6 +318,17 @@ public class K8InitializeStepUtilsHelper {
 
     stepElementConfig.set("spec", stepSpecType);
     return stepElementConfig;
+  }
+
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListContainsGitCloneAndRunStep()
+      throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().step(getSingleRunStepAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().step(getRunStepElementConfigWithVariables()).build());
+  }
+
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigForNullStageExecution() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getSingleRunStepAsJsonNode()).build());
   }
 
   public static JsonNode getBackgroundStepElementConfigAsJsonNode() {
@@ -534,8 +576,12 @@ public class K8InitializeStepUtilsHelper {
 
   public static IntegrationStageConfig getIntegrationStageConfigWithStepGroup1() throws Exception {
     List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigListWithStepGroup1();
+    K8sDirectInfraYamlSpec k8sDirectInfraYamlSpec = K8sDirectInfraYamlSpec.builder().build();
+    Infrastructure k8Infra =
+        K8sDirectInfraYaml.builder().type(Infrastructure.Type.KUBERNETES_DIRECT).spec(k8sDirectInfraYamlSpec).build();
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
+        .infrastructure(k8Infra)
         .build();
   }
 

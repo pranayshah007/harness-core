@@ -160,7 +160,7 @@ public class ApprovalUtils {
             waitNotifyEngine, action, approvalId, appId, workflowExecutionId, issueStatus, currentStatus,
             stateExecutionInstanceId);
       } else if (issueStatus == ExecutionStatus.PAUSED) {
-        log.info("Still waiting for approval or rejected for issueId {}. Issue Status {} and Current Status {}",
+        log.debug("Still waiting for approval or rejected for issueId {}. Issue Status {} and Current Status {}",
             approvalStateExecutionData.getIssueKey(), issueStatus, currentStatus);
         continuePauseWorkflow(
             stateExecutionService, workflowExecutionId, stateExecutionInstanceId, errorMsg, approvalStateExecutionData);

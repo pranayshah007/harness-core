@@ -32,6 +32,7 @@ import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MSTeamsSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -51,6 +52,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private MSTeamsSenderImpl msTeamsSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private MSTeamsServiceImpl msTeamService;
   private String accountId = "accountId";
   private String msTeamsTemplateName = "msteams_test";
@@ -61,8 +63,8 @@ public class MSTeamsServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    msTeamService = new MSTeamsServiceImpl(
-        notificationSettingsService, notificationTemplateService, msTeamsSender, delegateGrpcClientWrapper);
+    msTeamService = new MSTeamsServiceImpl(notificationSettingsService, notificationTemplateService, msTeamsSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -134,7 +136,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -185,7 +187,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -239,7 +241,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -296,7 +298,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         MSTeamSettingDTO.builder().accountId(accountId).recipient(msTeamsWebhookurl).build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     boolean response = msTeamService.sendTestNotification(notificationSettingDTO4);

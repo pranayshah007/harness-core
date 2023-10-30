@@ -64,7 +64,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -479,11 +479,11 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountIdentifier, importedInputSetYAML);
     InputSetEntity inputSetEntity;
     switch (inputSetVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         inputSetEntity = PMSInputSetElementMapper.toInputSetEntityV1(accountIdentifier, orgIdentifier,
             projectIdentifier, pipelineIdentifier, importedInputSetYAML, InputSetEntityType.INPUT_SET);
         break;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
             inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
         inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);

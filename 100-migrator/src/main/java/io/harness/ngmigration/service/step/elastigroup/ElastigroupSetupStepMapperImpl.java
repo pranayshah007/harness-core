@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.elastigroup;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig;
 import io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml;
 import io.harness.cdng.elastigroup.CloudProvider;
@@ -46,6 +48,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ElastigroupSetupStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
@@ -59,9 +62,10 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
     SpotInstServiceSetup elastigroupState = (SpotInstServiceSetup) state;
     Integer timeoutIntervalInMin = elastigroupState.getTimeoutIntervalInMin();
     if (null != timeoutIntervalInMin) {
-      return MigratorUtility.getTimeout(timeoutIntervalInMin * 60 * 1000);
+      return MigratorUtility.getTimeout(timeoutIntervalInMin * 60 * 1000L);
     } else {
-      return MigratorUtility.getTimeout(state.getTimeoutMillis());
+      Integer timeoutMillis = state.getTimeoutMillis();
+      return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
     }
   }
 

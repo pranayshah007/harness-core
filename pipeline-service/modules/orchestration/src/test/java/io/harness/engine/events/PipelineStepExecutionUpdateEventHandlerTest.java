@@ -8,7 +8,6 @@
 package io.harness.engine.events;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -65,10 +64,7 @@ public class PipelineStepExecutionUpdateEventHandlerTest extends CategoryTest {
           .putAllSetupAbstractions(ImmutableMap.of("accountId", ACCOUNT_IDENTIFIER, "orgIdentifier", ORG_IDENTIFIER,
               "projectIdentifier", PROJECT_IDENTIFIER))
           .setStageExecutionId(STAGE_EXECUTION_ID)
-          .setMetadata(ExecutionMetadata.newBuilder()
-                           .setExecutionUuid(generateUuid())
-                           .setPipelineIdentifier(PIPELINE_ID)
-                           .build())
+          .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_ID).build())
           .addLevels(Level.newBuilder()
                          .setIdentifier(STEP_ID)
                          .setStepType(StepType.newBuilder()

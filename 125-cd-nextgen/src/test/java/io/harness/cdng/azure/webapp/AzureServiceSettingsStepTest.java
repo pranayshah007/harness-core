@@ -50,6 +50,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.steps.EntityReferenceExtractorUtils;
 
 import java.util.ArrayList;
@@ -76,6 +77,7 @@ public class AzureServiceSettingsStepTest {
   @Mock private CDExpressionResolver expressionResolver;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
 
   private final ApplicationSettingsConfiguration appSettingConfig =

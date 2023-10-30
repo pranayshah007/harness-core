@@ -31,6 +31,7 @@ import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
 import io.harness.licensing.usage.utils.PageableUtils;
+import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -117,7 +118,7 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
     List<ActiveServiceDTO> activeServiceDTOList =
         monitoredServiceService.listActiveMonitoredServices(projectParams, filterParams.getServiceIdentifier());
 
-    return new PageImpl<>(activeServiceDTOList, pageRequest, activeServiceDTOList.size());
+    return PageUtils.getPage(activeServiceDTOList, (int) pageRequest.getPageNumber(), pageRequest.getPageSize());
   }
 
   @Override

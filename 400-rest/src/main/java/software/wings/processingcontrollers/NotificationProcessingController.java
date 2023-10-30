@@ -9,7 +9,7 @@ package software.wings.processingcontrollers;
 
 import io.harness.persistence.ProcessingController;
 
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.exception.AccountNotFoundException;
 import software.wings.service.intfc.AccountService;
 

@@ -92,8 +92,13 @@ public class SecretUtils {
     log.info("Getting secret variable details for secret ref [{}]", secretIdentifier);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(secretRefData.toSecretRefStringValue(),
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-
-    SecretVariableDTO.Type secretType = getSecretType(getSecret(identifierRef).getType());
+    SecretVariableDTO.Type secretType = SecretVariableDTO.Type.TEXT;
+    try {
+      secretType = getSecretType(getSecret(identifierRef).getType());
+    } catch (CIStageExecutionException e) {
+      // If secret does not exist, fall back to plain string
+      log.warn("Failed to get secret type, assuming TEXT, may fall back to plain string ref: [{}]", secretIdentifier);
+    }
     SecretVariableDTO secret =
         SecretVariableDTO.builder().name(secretVariable.getName()).secret(secretRefData).type(secretType).build();
     log.info("Getting secret variable encryption details for secret type:[{}] ref:[{}]", secretType, secretIdentifier);

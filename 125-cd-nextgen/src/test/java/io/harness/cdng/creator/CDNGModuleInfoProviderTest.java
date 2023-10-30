@@ -24,6 +24,7 @@ import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.Metadata;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.manifest.outcome.HelmChartOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -166,6 +167,28 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     assertThat(pipelineLevelModuleInfo.getEnvIdentifiers()).containsExactlyInAnyOrder("env1");
     assertThat(pipelineLevelModuleInfo.getEnvironmentTypes()).containsExactlyInAnyOrder(EnvironmentType.Production);
     assertThat(pipelineLevelModuleInfo.getInfrastructureTypes()).containsExactlyInAnyOrder("KubernetesDirect");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetPipelineLevelModuleInfo_HelmOutcome() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(ReleaseHelmChartOutcome.builder().name("todolist").version("0.2.0").build())
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("releaseHelmChartOutcome"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
+
+    assertThat(pipelineLevelModuleInfo.getHelmChartVersions().get(0)).isEqualTo("0.2.0");
   }
 
   @Test
@@ -807,6 +830,42 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     manifestsOutcomeOptional = Optional.empty();
     manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
     assertThat(manifestInfo).isEqualTo(ManifestStoreInfo.builder().build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldPopulateHelmManifestInfoInStageModuleInfo() {
+    String folderPath = "folderPath";
+    List<String> paths = new ArrayList<>();
+    paths.add("sample/path/1");
+    paths.add("sample/path/2");
+    ParameterField<List<String>> pathParam = ParameterField.createValueField(paths);
+
+    GithubStore githubStore = GithubStore.builder()
+                                  .branch(ParameterField.createValueField("branch"))
+                                  .commitId(ParameterField.createValueField("commitId"))
+                                  .folderPath(ParameterField.createValueField(folderPath))
+                                  .repoName(ParameterField.createValueField("repoName"))
+                                  .build();
+
+    K8sManifestOutcomeBuilder k8sManifestOutcome =
+        K8sManifestOutcome.builder().identifier("k8sManifest").valuesPaths(pathParam);
+
+    Optional<ReleaseHelmChartOutcome> manifestHelmChartOutcome =
+        Optional.of(ReleaseHelmChartOutcome.builder().name("todolist").version("0.2.0").build());
+
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", k8sManifestOutcome.store(githubStore).build());
+    Optional<ManifestsOutcome> manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    ManifestStoreInfo manifestInfo =
+        provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional, manifestHelmChartOutcome);
+    assertThat(manifestInfo.getBranch()).isEqualTo("branch");
+    assertThat(manifestInfo.getCommitId()).isEqualTo("commitId");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    assertThat(manifestInfo.getRepoName()).isEqualTo("repoName");
+    assertThat(manifestInfo.getChartName()).isEqualTo("todolist");
+    assertThat(manifestInfo.getChartVersion()).isEqualTo("0.2.0");
   }
 
   public Ambiance buildAmbiance(StepType stepType) {

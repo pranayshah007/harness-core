@@ -80,5 +80,5 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = Caching.class)
   private Caching caching;
 
-  SlsaConfig slsa;
+  SlsaConfig slsa_provenance;
 }

@@ -23,6 +23,7 @@ public class VmImageConfig {
   String buildAndPushECR;
   String buildAndPushACR;
   String buildAndPushGCR;
+  String buildAndPushGAR;
   String gcsUpload;
   String s3Upload;
   String security;
@@ -32,4 +33,5 @@ public class VmImageConfig {
   String iacmTerraform;
   String sscaOrchestration;
   String sscaEnforcement;
+  String slsaVerification;
 }

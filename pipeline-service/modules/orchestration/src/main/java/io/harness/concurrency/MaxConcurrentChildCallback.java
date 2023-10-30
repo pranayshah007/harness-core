@@ -6,16 +6,18 @@
  */
 
 package io.harness.concurrency;
-
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -34,6 +36,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @Slf4j
@@ -43,7 +46,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   @Inject OrchestrationEngine engine;
   @Inject NodeExecutionService nodeExecutionService;
-  @Inject PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
   @Inject PersistentLocker persistentLocker;
 
   long maxConcurrency;

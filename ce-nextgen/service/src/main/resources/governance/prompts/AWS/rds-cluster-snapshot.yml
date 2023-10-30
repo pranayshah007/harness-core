@@ -1,0 +1,3 @@
+filters: age, config-compliance, cross-account, event, finding, json-diff, list-item, marked-for-op, ops-item, reduce, value
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, notify, post-finding, post-item, put-metric, remove-tag, rename-tag, set-permissions, tag, webhook
+customPrompt:

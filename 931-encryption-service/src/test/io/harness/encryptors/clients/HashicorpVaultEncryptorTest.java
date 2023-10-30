@@ -8,11 +8,15 @@
 package io.harness.encryptors.clients;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
+import static java.lang.String.valueOf;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
@@ -41,13 +45,24 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.helpers.ext.vault.VaultK8sLoginResult;
+import software.wings.helpers.ext.vault.VaultReadResponse;
+import software.wings.helpers.ext.vault.VaultReadResponseV2;
 import software.wings.helpers.ext.vault.VaultRestClient;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
+import software.wings.helpers.ext.vault.VaultRestClientFactory.V1Impl;
+import software.wings.helpers.ext.vault.VaultRestClientFactory.V2Impl;
+import software.wings.helpers.ext.vault.VaultRestClientFactory.VaultPathAndKey;
+import software.wings.helpers.ext.vault.VaultRestClientV1;
+import software.wings.helpers.ext.vault.VaultRestClientV2;
+import software.wings.helpers.ext.vault.VaultSecretValue;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +71,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockedStatic;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(PL)
@@ -421,7 +438,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -446,7 +464,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(AWS_IAM_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     EncryptedRecord encryptedRecord =
@@ -472,7 +490,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     EncryptedRecord encryptedRecord =
@@ -532,7 +550,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .build();
     performK8sAuthLoginResult();
     when(vaultRestClient.readSecret(K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
-             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> "");
     try {
       hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -551,7 +569,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenThrow(new IOException("dummy error"));
     try {
       hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
@@ -575,7 +594,8 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(),
+             vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey() + "#value"))
         .thenAnswer(invocationOnMock -> plainText);
     when(vaultRestClient.deleteSecretPermanentely(
              vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath))
@@ -642,17 +662,175 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = UTKARSH)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testFetchSecret() throws IOException {
-    String plainText = "plainText";
-    EncryptedRecord record =
-        EncryptedRecordData.builder().path(UUIDGenerator.generateUuid() + "#" + UUIDGenerator.generateUuid()).build();
-    when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), record.getPath()))
-        .thenAnswer(invocationOnMock -> plainText);
-    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), record, vaultConfig);
-    assertThat(value).isEqualTo(plainText.toCharArray());
+  public void testFetchSecretV2() throws IOException {
+    Map<String, Object> data = Map.of("key.with.dot", "value-for-key-with-dot");
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key.with.dot");
+    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-for-key-with-dot");
+
+    data = Map.of("key-having-value-with-curly-braces", "{01dkd7}op910");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-value-with-curly-braces");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{01dkd7}op910");
+
+    data = Map.of("key-having-special-characters-in-value-1", "[,\":]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[,\":]");
+
+    data = Map.of("key-having-special-characters-in-value-2", "[1,2,3]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-2");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[1,2,3]");
+
+    data = Map.of("key-having-special-characters-in-value-3", "[\"adfd\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-3");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd\"]");
+
+    data = Map.of("key-having-special-characters-in-value-4", "[\"adfd:asdf\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-4");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd:asdf\"]");
+
+    data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+        Map.of("key-31", Map.of("key-311", "value-311")));
+
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-1");
+
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-2");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    ObjectMapper objectMapper = new ObjectMapper();
+    assertThat(valueOf(value)).isEqualTo("{\"key-21\":\"value-21\"}");
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data.get("key-2")));
+
+    encryptedRecord = setupJsonResponseMockingV2(data, EMPTY);
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data));
+
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-3");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data.get("key-3")));
+
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-3.key-31");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value))
+        .isEqualTo(objectMapper.writeValueAsString(((Map<String, Object>) data.get("key-3")).get("key-31")));
+
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-3.key-31.key-311");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-311");
+
+    encryptedRecord = setupJsonResponseMockingV2(Map.of("list-key", List.of("value1", "value2", "value3")), "list-key");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"value1\",\"value2\",\"value3\"]");
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchSecretV2_throwsExceptionForInvalidKey() throws IOException {
+    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+        Map.of("key-31", Map.of("key-311", "value-311")));
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "invalidKey");
+    hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+  }
+
+  private EncryptedRecord setupJsonResponseMockingV2(Map<String, Object> responseMap, String key) throws IOException {
+    Call<VaultReadResponseV2> call = mock(Call.class);
+    VaultRestClientV2 vaultRestClientV2 = mock(VaultRestClientV2.class);
+    V2Impl vaultRestClientV2Impl = new V2Impl(vaultRestClientV2);
+    when(VaultRestClientFactory.create(vaultConfig)).thenReturn(vaultRestClientV2Impl);
+
+    VaultReadResponseV2 vaultReadResponseV2 =
+        VaultReadResponseV2.builder().data(VaultSecretValue.builder().data(responseMap).build()).build();
+    String path = "harness";
+    String fullPath = path;
+    if (key != null) {
+      fullPath = fullPath + "#" + key;
+    }
+    VaultPathAndKey pathAndKey = VaultPathAndKey.builder().path(path).keyName(key).build();
+    when(VaultRestClientFactory.parseFullPath(fullPath)).thenAnswer(answer -> pathAndKey);
+    when(VaultRestClientFactory.parseFullPath(fullPath, EMPTY)).thenAnswer(answer -> pathAndKey);
+    when(call.execute()).thenReturn(Response.success(vaultReadResponseV2));
+    when(vaultRestClientV2.readSecret(
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), path))
+        .thenAnswer(answer -> call);
+    return EncryptedRecordData.builder().path(fullPath).build();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchSecretV1() throws IOException {
+    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+        Map.of("key-31", Map.of("key-311", "value-311")));
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV1(data, "key-1");
+    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-1");
+
+    encryptedRecord = setupJsonResponseMockingV1(data, "key-2");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    ObjectMapper objectMapper = new ObjectMapper();
+    assertThat(valueOf(value)).isEqualTo("{\"key-21\":\"value-21\"}");
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data.get("key-2")));
+
+    encryptedRecord = setupJsonResponseMockingV1(data, EMPTY);
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data));
+
+    encryptedRecord = setupJsonResponseMockingV1(data, "key-3");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo(objectMapper.writeValueAsString(data.get("key-3")));
+
+    encryptedRecord = setupJsonResponseMockingV1(data, "key-3.key-31");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value))
+        .isEqualTo(objectMapper.writeValueAsString(((Map<String, Object>) data.get("key-3")).get("key-31")));
+
+    encryptedRecord = setupJsonResponseMockingV1(data, "key-3.key-31.key-311");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-311");
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchSecretV1_throwsExceptionForInvalidKey() throws IOException {
+    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+        Map.of("key-31", Map.of("key-311", "value-311")));
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV1(data, "invalidKey");
+    hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+  }
+
+  private EncryptedRecord setupJsonResponseMockingV1(Map<String, Object> responseMap, String key) throws IOException {
+    Call<VaultReadResponse> call = mock(Call.class);
+    VaultRestClientV1 vaultRestClientV1 = mock(VaultRestClientV1.class);
+    V1Impl vaultRestClientV1Impl = new V1Impl(vaultRestClientV1);
+    when(VaultRestClientFactory.create(vaultConfig)).thenReturn(vaultRestClientV1Impl);
+
+    VaultReadResponse vaultReadResponse = VaultReadResponse.builder().data(responseMap).build();
+    String path = "harness";
+    String fullPath = path;
+    if (key != null) {
+      fullPath = fullPath + "#" + key;
+    }
+    VaultPathAndKey pathAndKey = VaultPathAndKey.builder().path(path).keyName(key).build();
+    when(VaultRestClientFactory.parseFullPath(fullPath)).thenAnswer(answer -> pathAndKey);
+    when(VaultRestClientFactory.parseFullPath(fullPath, EMPTY)).thenAnswer(answer -> pathAndKey);
+    when(call.execute()).thenReturn(Response.success(vaultReadResponse));
+    when(vaultRestClientV1.readSecret(
+             vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), path))
+        .thenAnswer(answer -> call);
+    return EncryptedRecordData.builder().path(fullPath).build();
   }
 
   @Test
@@ -696,7 +874,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                  .encryptionKey(UUIDGenerator.generateUuid())
                                  .build();
     when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
-             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + record.getEncryptionKey()))
+             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + record.getEncryptionKey() + "#value"))
         .thenThrow(new IOException("dummy error"));
     try {
       hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), record, vaultConfig);
@@ -766,6 +944,36 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
       assertThat(e.getMessage())
           .isEqualTo("Decryption failed after 3 retries for secret " + record.getEncryptionKey() + " or path null");
     }
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    String plainText = "true";
+    String fullPath = vaultConfig.getBasePath() + "/" + name;
+    when(vaultRestClient.writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
+             vaultConfig.getSecretEngineName(), fullPath, plainText))
+        .thenAnswer(invocationOnMock -> true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(1))
+        .writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
+            fullPath, plainText);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateSecret_forReadOnlyVault() throws IOException {
+    String name = VaultConfig.VAULT_VAILDATION_URL;
+    vaultConfig.setReadOnly(true);
+    boolean validateConfig =
+        hashicorpVaultEncryptor.validateSecretManagerConfiguration(vaultConfig.getAccountId(), vaultConfig);
+    assertThat(validateConfig).isEqualTo(true);
+    verify(vaultRestClient, times(0)).writeSecret(anyString(), anyString(), anyString(), anyString(), anyString());
   }
 
   @NotNull

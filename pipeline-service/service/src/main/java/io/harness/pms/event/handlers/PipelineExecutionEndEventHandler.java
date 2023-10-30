@@ -18,7 +18,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.expansion.PlanExpansionService;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 
@@ -37,7 +37,7 @@ public class PipelineExecutionEndEventHandler implements OrchestrationEventHandl
 
   @Inject NodeExecutionService nodeExecutionService;
   @Inject PlanExpansionService planExpansionService;
-  @Inject PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject NodeExecutionInfoService pmsGraphStepDetailsService;
   @Inject PmsOutcomeService pmsOutcomeService;
   @Inject PmsSweepingOutputService pmsSweepingOutputService;
   @Inject PlanExecutionService planExecutionService;

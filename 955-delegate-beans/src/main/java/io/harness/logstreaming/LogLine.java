@@ -6,9 +6,12 @@
  */
 
 package io.harness.logstreaming;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.LogLevel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Map;
@@ -16,6 +19,8 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 public class LogLine {
@@ -28,4 +33,6 @@ public class LogLine {
   @JsonProperty("pos") int position;
 
   @JsonProperty("args") Map<String, String> arguments;
+
+  @JsonIgnore boolean skipColoring;
 }

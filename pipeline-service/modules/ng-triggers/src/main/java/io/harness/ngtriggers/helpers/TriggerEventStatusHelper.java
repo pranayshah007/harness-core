@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.helpers;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.isSkippedResponse;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.isSuccessResponse;
 
 import io.harness.annotations.dev.CodePulse;
@@ -22,6 +23,12 @@ public class TriggerEventStatusHelper {
   public TriggerEventStatus toStatus(TriggerEventResponse.FinalStatus finalStatus) {
     if (!isSuccessResponse(finalStatus)) {
       if (finalStatus != null) {
+        if (isSkippedResponse(finalStatus)) {
+          return TriggerEventStatus.builder()
+              .status(TriggerEventStatus.FinalResponse.SKIPPED)
+              .message(finalStatus.getMessage())
+              .build();
+        }
         return TriggerEventStatus.builder()
             .status(TriggerEventStatus.FinalResponse.FAILED)
             .message(finalStatus.getMessage())

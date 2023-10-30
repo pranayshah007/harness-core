@@ -52,7 +52,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.List;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.junit.Test;
@@ -133,7 +133,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
@@ -177,7 +177,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
 
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -187,7 +186,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary))
+    doReturn(List.of(applicationSummary))
         .when(cfDeploymentManager)
         .getPreviousReleasesForRolling(cfRequestConfig, cfRollingDeployRequestNG.getApplicationName());
 
@@ -213,7 +212,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
 
     doReturn(applicationDetail).when(cfDeploymentManager).createRollingApplicationWithSteadyStateCheck(any(), any());
 
-    CfCommandResponseNG cfCommandExecutionResponse = cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
+    cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
   }
 
@@ -270,7 +269,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = CfRollingDeployRequestNG.builder()
@@ -288,25 +287,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -316,7 +298,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -344,6 +326,18 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -404,7 +398,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = CfRollingDeployRequestNG.builder()
@@ -422,25 +416,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -450,7 +427,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -478,6 +455,18 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -533,7 +522,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = CfRollingDeployRequestNG.builder()
@@ -569,16 +558,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
 
     String name = "name";
     String id = "id";
-    String url = "url";
-    ApplicationSummary applicationSummary = ApplicationSummary.builder()
-                                                .id(id)
-                                                .diskQuota(1)
-                                                .instances(0)
-                                                .memoryLimit(1)
-                                                .name(name)
-                                                .requestedState(STOPPED)
-                                                .runningInstances(0)
-                                                .build();
     doThrow(PivotalClientApiException.class).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
@@ -606,6 +585,9 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     CfCommandResponseNG cfCommandExecutionResponse = cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
@@ -636,11 +618,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -699,16 +676,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
 
     String name = "name";
     String id = "id";
-    String url = "url";
-    ApplicationSummary applicationSummary = ApplicationSummary.builder()
-                                                .id(id)
-                                                .diskQuota(1)
-                                                .instances(0)
-                                                .memoryLimit(1)
-                                                .name(name)
-                                                .requestedState(STOPPED)
-                                                .runningInstances(0)
-                                                .build();
     doReturn(emptyList()).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
@@ -744,6 +711,19 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     assertThat(cfRequestConfigCaptured.getTrailingLogsDirPath()).isEqualTo("/trailing");
     assertThat(cfRequestConfigArgumentCaptor.getValue().getStrategy()).isNull();
 
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(id);
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 
@@ -773,11 +753,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -818,25 +793,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -846,7 +804,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -880,6 +838,17 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     assertThat(cfRequestConfigCaptured.getTrailingLogsDirPath()).isEqualTo("/trailing");
     assertThat(cfRequestConfigArgumentCaptor.getValue().getStrategy()).isEqualTo("rolling");
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -909,11 +878,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -954,25 +918,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -982,7 +929,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -1010,6 +957,17 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -1038,11 +996,6 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -1084,25 +1037,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -1112,7 +1048,7 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -1140,5 +1076,16 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 }

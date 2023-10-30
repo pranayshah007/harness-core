@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.expressions;
-
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.category.element.UnitTests;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ngmigration.beans.MigExpressionOverrides;
@@ -29,6 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MigratorExpressionUtilsTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();

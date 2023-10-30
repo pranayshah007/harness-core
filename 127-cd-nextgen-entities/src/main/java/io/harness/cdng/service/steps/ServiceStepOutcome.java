@@ -11,8 +11,12 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.k8s.HarnessRelease;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -34,6 +38,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serviceStepOutcome")
 @JsonTypeName("serviceStepOutcome")
 @RecasterAlias("io.harness.cdng.service.steps.ServiceStepOutcome")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT)
 public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   String identifier;
   String name;
@@ -41,6 +47,7 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   String type;
   Map<String, String> tags;
   boolean gitOpsEnabled;
+  HarnessRelease release;
 
   public String getServiceDefinitionType() {
     return type;
@@ -71,6 +78,19 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
         .tags(tags)
         .type(type)
         .gitOpsEnabled(gitOpsEnabled == TRUE)
+        .build();
+  }
+
+  public static ServiceStepOutcome fromServiceStepV2(String scopedIdentifierRef, String name, String type,
+      String description, Map<String, String> tags, Boolean gitOpsEnabled, HarnessRelease release) {
+    return ServiceStepOutcome.builder()
+        .identifier(scopedIdentifierRef)
+        .name(name)
+        .description(description)
+        .tags(tags)
+        .type(type)
+        .gitOpsEnabled(gitOpsEnabled == TRUE)
+        .release(release)
         .build();
   }
 

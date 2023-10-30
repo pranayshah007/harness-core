@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.triggers.webhook.service.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -17,7 +19,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
+import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.ngtriggers.beans.dto.TriggerMappingRequestData;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventProcessingResult;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
@@ -27,11 +34,19 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
 import io.harness.pms.triggers.webhook.helpers.TriggerWebhookConfirmationHelper;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
+import io.harness.product.ci.scm.proto.Action;
+import io.harness.product.ci.scm.proto.ParseWebhookResponse;
+import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
+import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +62,7 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
     try {
       WebhookEventProcessingResult result;
 
@@ -73,6 +89,8 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
       }
 
       saveTriggerExecutionHistoryRecords(responseList);
+    } catch (InvalidRequestException e) {
+      log.warn("Invalid Request Exception while processing webhook event. Please check", e);
     } catch (Exception e) {
       log.error("Exception while processing webhook event. Please check", e);
     }
@@ -98,5 +116,46 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
                    .values(eventHeader.getValuesList().stream().collect(toList()))
                    .build())
         .collect(toList());
+  }
+
+  @Override
+  public void handleEvent(WebhookDTO webhookDTO, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+    if (webhookDTO == null) {
+      return;
+    }
+
+    try {
+      try (NgTriggerAutoLogContext ignore0 = new NgTriggerAutoLogContext("eventId", webhookDTO.getEventId(),
+               webhookDTO.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+        if (webhookDTO.getGitDetails().getEvent().equals(WebhookEventType.PR)
+            && webhookDTO.getGitDetails().getSourceRepoType().equals(SourceRepoType.GITLAB)) {
+          webhookDTO = updateWebhookForGitlabPr(webhookDTO);
+        }
+        processEvent(webhookDTO);
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Exception while processing webhook event", e);
+    }
+  }
+
+  private WebhookDTO updateWebhookForGitlabPr(WebhookDTO webhookDTO) {
+    if (JsonUtils.asMap(webhookDTO.getJsonPayload()) instanceof LinkedHashMap) {
+      if (((LinkedHashMap<?, ?>) JsonUtils.asMap(webhookDTO.getJsonPayload())).get("object_attributes")
+              instanceof LinkedHashMap) {
+        String action =
+            (String) ((LinkedHashMap<?, ?>) ((LinkedHashMap<?, ?>) JsonUtils.asMap(webhookDTO.getJsonPayload()))
+                          .get("object_attributes"))
+                .get("action");
+        if (Objects.equals(action, "update")) {
+          ParseWebhookResponse parseWebhookResponse = webhookDTO.getParsedResponse();
+          PullRequestHook pullRequestHook = parseWebhookResponse.getPr();
+          PullRequestHook newPullRequestHook = pullRequestHook.toBuilder().setAction(Action.UPDATE).build();
+          ParseWebhookResponse newParseWebhookResponse =
+              parseWebhookResponse.toBuilder().setPr(newPullRequestHook).build();
+          return webhookDTO.toBuilder().setParsedResponse(newParseWebhookResponse).build();
+        }
+      }
+    }
+    return webhookDTO;
   }
 }

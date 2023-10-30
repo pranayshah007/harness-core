@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.secrets;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
@@ -39,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class GcpKmsSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {
   @Override

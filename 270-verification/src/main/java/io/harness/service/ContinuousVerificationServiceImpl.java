@@ -53,8 +53,8 @@ import io.harness.time.Timestamp;
 
 import software.wings.alerts.AlertStatus;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
 import software.wings.common.VerificationConstants;
 import software.wings.dl.WingsPersistence;

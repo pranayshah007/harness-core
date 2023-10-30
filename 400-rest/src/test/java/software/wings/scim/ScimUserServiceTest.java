@@ -189,7 +189,7 @@ public class ScimUserServiceTest extends WingsBaseTest {
     UserInvite userInvite = new UserInvite();
     userInvite.setEmail("username@harness.io");
 
-    when(userService.getUserByEmail(anyString(), anyString())).thenReturn(user);
+    when(userService.getUserByEmailForScim(anyString(), anyString())).thenReturn(user);
     when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
 

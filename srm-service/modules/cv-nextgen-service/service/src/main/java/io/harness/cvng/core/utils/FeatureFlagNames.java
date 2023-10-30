@@ -20,7 +20,8 @@ public class FeatureFlagNames {
   public static final String SRM_SLO_ANNOTATIONS = "SRM_SLO_ANNOTATIONS";
 
   public static final String SRM_CODE_ERROR_NOTIFICATIONS = "SRM_CODE_ERROR_NOTIFICATIONS";
+  public static final String CET_SINGLE_NOTIFICATION = "CET_SINGLE_NOTIFICATION";
+  public static final String CET_SAVED_SEARCH_NOTIFICATION = "CET_SAVED_SEARCH_NOTIFICATION";
 
-  public static final String SRM_INTERNAL_CHANGE_SOURCE_CE = "SRM_INTERNAL_CHANGE_SOURCE_CE";
   public static final String SRM_LOG_FEEDBACK_ENABLE_UI = "SRM_LOG_FEEDBACK_ENABLE_UI";
 }

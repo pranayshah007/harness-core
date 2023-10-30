@@ -30,7 +30,6 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptKeys;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -160,7 +159,7 @@ public class InterruptServiceImpl implements InterruptService {
     NodeExecution interruptNodeExecution = nodeExecutionService.getWithFieldsIncluded(
         interrupt.getNodeExecutionId(), NodeProjectionUtils.withAmbianceAndStatus);
     if (StatusUtils.isFinalStatus(interruptNodeExecution.getStatus())) {
-      updatePlanStatus(interruptNodeExecution.getAmbiance().getPlanExecutionId(), nodeExecutionId);
+      updatePlanStatus(interruptNodeExecution.getAmbiance().getPlanExecutionId());
       updateInterruptState(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, false);
       return false;
     }
@@ -257,11 +256,8 @@ public class InterruptServiceImpl implements InterruptService {
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Interrupt.class));
   }
 
-  private void updatePlanStatus(String planExecutionId, String excludingNodeExecutionId) {
-    Status planStatus = planExecutionService.calculateStatusExcluding(planExecutionId, excludingNodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      planExecutionService.updateStatus(planExecutionId, planStatus);
-    }
+  private void updatePlanStatus(String planExecutionId) {
+    planExecutionService.calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
   }
 
   public List<Interrupt> fetchAbortAllPlanLevelInterrupt(String planExecutionId) {

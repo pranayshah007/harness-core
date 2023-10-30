@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.RepairActionCode;
 import io.harness.data.structure.EmptyPredicate;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class FailureStrategyHelper {
   private static final long DAY_MS = 24 * 60 * 60 * 1000;
 

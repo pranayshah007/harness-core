@@ -116,7 +116,9 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
         k8sDeploymentReleaseDetailsList.add(
-            K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO));
+            K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO,
+                cdFeatureFlagHelper.isEnabled(
+                    instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), FeatureName.CDS_EKS_ADD_REGIONAL_PARAM)));
       }
     }
     return DeploymentReleaseDetails.builder()

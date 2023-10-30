@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.service.services.impl;
 
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
@@ -17,6 +18,7 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -33,15 +35,25 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.exception.YamlException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
+import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
@@ -79,10 +91,12 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -118,8 +132,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
   @Mock private TemplateResourceClient templateResourceClient;
   @Mock NGSettingsClient settingsClient;
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock NGFeatureFlagHelperService featureFlagService;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Mock @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -138,6 +153,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("templateResourceClient", templateResourceClient);
     Reflect.on(serviceEntityService).set("overrideV2ValidationHelper", overrideV2ValidationHelper);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
+    Reflect.on(serviceEntityService).set("connectorService", connectorService);
+    Reflect.on(serviceEntityService).set("featureFlagService", featureFlagService);
   }
 
   private Object[][] data() {
@@ -834,7 +851,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     // List down all services accessible from that scope
     // project level
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true, null);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -843,7 +860,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // org level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from org,account scopes
@@ -851,7 +868,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // account level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from acc scope
@@ -863,7 +880,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false, null);
 
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("accountId");
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("orgIdentifier");
@@ -1283,6 +1300,199 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                SERVICE_ID))
         .isInstanceOf(YamlException.class)
         .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service definition field.");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testListRepoWithRemoteServices() {
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier("IDENTIFIER")
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .type(ServiceDefinitionType.NATIVE_HELM)
+                                      .gitOpsEnabled(true)
+                                      .storeType(StoreType.REMOTE)
+                                      .connectorRef("githubRepoConnector")
+                                      .fallBackBranch("feature")
+                                      .repo("githubRepoName")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+
+    RepoListResponseDTO repoListResponseDTO =
+        serviceEntityService.getListOfRepos("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
+    assertThat(repoListResponseDTO).isNotNull();
+    assertThat(repoListResponseDTO.getRepositories().get(0)).isEqualTo("githubRepoName");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testUpdateArtifactoryRegistryUrlIfEmpty() {
+    String serviceYaml = "service:\n"
+        + "  name: arf4\n"
+        + "  identifier: arf4\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "              identifier: s\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: account.harnessImage\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: sfdff\n"
+        + "              type: DockerRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "              identifier: dhjjadnck\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "    type: Kubernetes\n";
+
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId("accountId")
+                                .name("service")
+                                .description("description")
+                                .orgIdentifier("orgIdentifier")
+                                .projectIdentifier("projectIdentifier")
+                                .yaml(serviceYaml)
+                                .build();
+
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        ArtifactoryConnectorDTO.builder().artifactoryServerUrl("https://harness.jfrog.io/harness").build();
+
+    when(connectorService.get(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Optional.of(ConnectorResponseDTO.builder()
+                                    .connector(ConnectorInfoDTO.builder()
+                                                   .connectorConfig(artifactoryConnectorDTO)
+                                                   .connectorType(ConnectorType.ARTIFACTORY)
+                                                   .build())
+                                    .build()));
+
+    service = serviceEntityService.updateArtifactoryRegistryUrlIfEmpty(
+        service, "accountId", "orgIdentifier", "projectIdentifier");
+
+    String updatedYaml = "service:\n"
+        + "  name: arf4\n"
+        + "  identifier: arf4\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "                repositoryUrl: https://harness-docker.jfrog.io\n"
+        + "              identifier: s\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: account.harnessImage\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: sfdff\n"
+        + "              type: DockerRegistry\n"
+        + "            - spec:\n"
+        + "                connectorRef: artifconn1\n"
+        + "                artifactPath: adoptopenjdk/openjdk8\n"
+        + "                tag: <+input>\n"
+        + "                repository: docker\n"
+        + "                repositoryFormat: docker\n"
+        + "                repositoryUrl: https://harness-docker.jfrog.io\n"
+        + "              identifier: dhjjadnck\n"
+        + "              type: ArtifactoryRegistry\n"
+        + "    type: Kubernetes\n";
+
+    assertThat(updatedYaml).isEqualTo(service.getYaml());
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetServicesYamlAndRuntimeInputsV2WithInlineServices() {
+    String svcId1 = "svcId1";
+    String svcId2 = "svcId2";
+
+    String filename = "service/service-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId(ACCOUNT_ID)
+                                       .identifier(svcId1)
+                                       .orgIdentifier(ORG_ID)
+                                       .projectIdentifier(PROJECT_ID)
+                                       .name(svcId1)
+                                       .type(ServiceDefinitionType.NATIVE_HELM)
+                                       .gitOpsEnabled(true)
+                                       .yaml(yaml)
+                                       .build();
+
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId(ACCOUNT_ID)
+                                       .identifier(svcId2)
+                                       .orgIdentifier(ORG_ID)
+                                       .projectIdentifier(PROJECT_ID)
+                                       .name(svcId2)
+                                       .type(ServiceDefinitionType.NATIVE_HELM)
+                                       .gitOpsEnabled(true)
+                                       .yaml(yaml)
+                                       .build();
+
+    // Create operations
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+
+    when(featureFlagService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
+        .thenReturn(false);
+
+    final List<ServiceV2YamlMetadata> serviceV2YamlMetadata = serviceEntityService.getServicesYamlMetadata(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, Arrays.asList(svcId1, svcId2), new HashMap<>(), false);
+
+    ServicesV2YamlMetadataDTO data =
+        ServicesV2YamlMetadataDTO.builder().serviceV2YamlMetadataList(serviceV2YamlMetadata).build();
+
+    assertThat(data).isNotNull();
+    assertThat(data.getServiceV2YamlMetadataList()).hasSize(2);
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(yaml, yaml);
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(svcId1, svcId2);
+
+    String inputSetYaml = readFile("service/service-with-runtime-inputs-res.yaml");
+
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(inputSetYaml, inputSetYaml);
   }
 
   private String readFile(String filename) {

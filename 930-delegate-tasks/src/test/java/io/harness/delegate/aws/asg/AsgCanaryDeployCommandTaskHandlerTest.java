@@ -83,6 +83,7 @@ public class AsgCanaryDeployCommandTaskHandlerTest extends CategoryTest {
     doReturn(AutoScalingGroupContainer.builder().autoScalingGroupName(ASG_NAME_CANARY).build())
         .when(asgTaskHelper)
         .mapToAutoScalingGroupContainer(any());
+    doReturn(ASG_NAME_CANARY).when(asgTaskHelper).getAsgName(any(), any());
   }
 
   @Test

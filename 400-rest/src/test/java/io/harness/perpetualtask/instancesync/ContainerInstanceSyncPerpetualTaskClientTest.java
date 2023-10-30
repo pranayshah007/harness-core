@@ -191,7 +191,7 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                 .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, INFRA_MAPPING_ID)
                 .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, SERVICE_ID)
                 .build(),
-            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil);
+            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil, DelegateTaskKeys.waitId);
   }
 
   @Test

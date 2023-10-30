@@ -260,7 +260,7 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
     });
     if (isNotEmpty(instanceIdsToBeDeleted)) {
       instanceService.delete(instanceIdsToBeDeleted);
-      log.info("Instances to be deleted {}", instanceIdsToBeDeleted.size());
+      log.debug("Instances to be deleted {}", instanceIdsToBeDeleted.size());
     }
   }
 

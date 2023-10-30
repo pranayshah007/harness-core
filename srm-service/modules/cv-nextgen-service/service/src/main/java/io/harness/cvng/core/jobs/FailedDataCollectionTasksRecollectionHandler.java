@@ -37,15 +37,19 @@ public class FailedDataCollectionTasksRecollectionHandler
   @Override
   public void handle(EntityUnavailabilityStatuses entity) {
     long endTime = entity.getEndTime();
-    String sliId =
+    Optional<String> sliId =
         verificationTaskService.getSLIVerificationTaskId(entity.getAccountId(), entity.getEntityIdentifier());
-    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
-    Optional<DataCollectionTask> dataCollectionTaskOptional =
-        Optional.ofNullable(dataCollectionTaskService.getFirstDataCollectionTaskWithStatusAfterStartTime(
-            sliId, DataCollectionExecutionStatus.SUCCESS, Instant.ofEpochSecond(endTime)));
-    if (dataCollectionTaskOptional.isPresent()) {
-      sliDataCollectionTaskService.createRestoreTask(serviceLevelIndicator,
-          Instant.ofEpochSecond(entity.getStartTime()), Instant.ofEpochSecond(entity.getEndTime()));
+
+    if (sliId.isPresent()) {
+      String sliIdentifier = sliId.get();
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliIdentifier);
+      Optional<DataCollectionTask> dataCollectionTaskOptional =
+          Optional.ofNullable(dataCollectionTaskService.getFirstDataCollectionTaskWithStatusAfterStartTime(
+              sliIdentifier, DataCollectionExecutionStatus.SUCCESS, Instant.ofEpochSecond(endTime)));
+      if (dataCollectionTaskOptional.isPresent()) {
+        sliDataCollectionTaskService.createRestoreTask(serviceLevelIndicator,
+            Instant.ofEpochSecond(entity.getStartTime()), Instant.ofEpochSecond(entity.getEndTime()));
+      }
     }
   }
 }

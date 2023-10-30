@@ -16,7 +16,10 @@ import static io.harness.logging.LogLevel.ERROR;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.connector.service.scm.ScmDelegateClient;
@@ -43,9 +46,12 @@ import io.harness.service.ScmServiceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +60,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GIT_CLIENTS})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
@@ -72,6 +80,17 @@ public class ScmFetchFilesHelperNG {
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
     List<GitFile> gitFiles = fetchFilesFromRepo(identifier, useBranch, gitStoreDelegateConfig.getBranch(),
         gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
+    return FetchFilesResult.builder()
+        .files(gitFiles)
+        .commitResult(
+            CommitResult.builder().commitId(useBranch ? "latest" : gitStoreDelegateConfig.getCommitId()).build())
+        .build();
+  }
+
+  public FetchFilesResult fetchFilesAndFoldersContentFromRepoWithScm(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = fetchFilesByFolderFromRepo(gitStoreDelegateConfig, filePathList);
     return FetchFilesResult.builder()
         .files(gitFiles)
         .commitResult(
@@ -134,24 +153,101 @@ public class ScmFetchFilesHelperNG {
     return gitFiles;
   }
 
-  private List<GitFile> fetchAnyFilesFromRepo(
-      boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
-    FileContentBatchResponse fileBatchContentResponse =
-        fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
+  private List<GitFile> fetchFilesByFolderFromRepo(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = new ArrayList<>();
+    FileContentBatchResponse fileBatchContentResponse;
+    List<String> filteredFilePaths = new ArrayList<>();
 
-    List<GitFile> gitFiles =
-        fileBatchContentResponse.getFileBatchContentResponse()
-            .getFileContentsList()
-            .stream()
-            .filter(fileContent -> fileContent.getStatus() == 200)
-            .map(fileContent
-                -> GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build())
-            .collect(Collectors.toList());
+    for (String path : filePathList) {
+      fileBatchContentResponse = getFileContentBatchResponseByFolder(
+          gitStoreDelegateConfig, Collections.singleton(path), gitStoreDelegateConfig.getGitConfigDTO());
+      if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
+        filteredFilePaths.add(path);
+      }
+      gitFiles.addAll(getGitFilesFromResponse(gitStoreDelegateConfig, fileBatchContentResponse, true));
+    }
+    if (isNotEmpty(filteredFilePaths)) {
+      fileBatchContentResponse = fetchFilesByFilePaths(useBranch, gitStoreDelegateConfig.getBranch(),
+          gitStoreDelegateConfig.getCommitId(), filteredFilePaths, gitStoreDelegateConfig.getGitConfigDTO());
+      gitFiles.addAll(getGitFilesFromResponse(gitStoreDelegateConfig, fileBatchContentResponse, false));
+    }
 
     if (isNotEmpty(gitFiles)) {
       gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
     }
     return gitFiles;
+  }
+
+  private List<GitFile> getGitFilesFromResponse(GitStoreDelegateConfig gitStoreDelegateConfig,
+      FileContentBatchResponse fileBatchContentResponse, boolean useBase64) {
+    List<GitFile> gitFiles = new ArrayList<>();
+
+    List<FileContent> fileContents =
+        fileBatchContentResponse.getFileBatchContentResponse()
+            .getFileContentsList()
+            .stream()
+            .filter(fileContent -> {
+              if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
+                throwFailedToFetchFileException(gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH,
+                    gitStoreDelegateConfig.getBranch(), gitStoreDelegateConfig.getCommitId(), fileContent);
+                return false;
+              } else {
+                return true;
+              }
+            })
+            .collect(toList());
+
+    for (FileContent fileContent : fileContents) {
+      gitFiles.add(GitFile.builder()
+                       .fileContent(useBase64 ? new String(
+                                        Base64.getDecoder().decode(fileContent.getContent()), StandardCharsets.UTF_8)
+                                              : fileContent.getContent())
+                       .filePath(fileContent.getPath())
+                       .build());
+    }
+    return gitFiles;
+  }
+
+  private List<GitFile> fetchAnyFilesFromRepo(
+      boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
+    FileContentBatchResponse fileBatchContentResponse =
+        fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
+
+    if (fileBatchContentResponse.getFileBatchContentResponse() == null) {
+      throwFailedToFetchNoConnectivityException(useBranch, branch, commitId);
+    }
+    List<GitFile> gitFiles = new ArrayList<>();
+    List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList();
+
+    for (FileContent fileContent : fileContents) {
+      if (fileContent.getStatus() == 0) {
+        // when there is no response from the git provider
+        // when this happens fileContent will be empty and error will be empty (all fields will have their zero values)
+        throwFailedToFetchNoConnectivityException(useBranch, branch, commitId);
+      }
+      if (fileContent.getStatus() >= 500) {
+        throwFailedToFetchFileException(useBranch, branch, commitId, fileContent.getStatus(), fileContent.getError());
+      }
+      if (fileContent.getStatus() == 200) {
+        GitFile gitFile =
+            GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build();
+        gitFiles.add(gitFile);
+      }
+    }
+
+    if (isNotEmpty(gitFiles)) {
+      gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
+    }
+    return gitFiles;
+  }
+
+  private void throwFailedToFetchNoConnectivityException(boolean useBranch, String branch, String commitId) {
+    String failedToFetchErrorMessage = "Unable to fetch files" + (useBranch ? " for Branch: " : " for CommitId: ")
+        + (useBranch ? branch : commitId) + " due to connectivity issue. Please try again after some time";
+    log.info(failedToFetchErrorMessage);
+    throw new GitClientException(failedToFetchErrorMessage, USER);
   }
 
   private FileContentBatchResponse fetchFilesByFilePaths(
@@ -220,6 +316,13 @@ public class ScmFetchFilesHelperNG {
                                      .append(useBranch ? branch : commitId)
                                      .toString(),
         USER, new NoSuchFileException(fileContent.getPath()));
+  }
+
+  private void throwFailedToFetchFileException(
+      boolean useBranch, String branch, String commitId, int status, String error) {
+    throw new GitClientException("Fetch files " + (useBranch ? " for Branch: " : " for CommitId: ")
+            + (useBranch ? branch : commitId) + " failed with error " + error + " and status code " + status,
+        USER);
   }
 
   private FileContentBatchResponse getFileContentBatchResponseByFolder(

@@ -27,12 +27,11 @@ import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClu
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuilder;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysisActivityBuilder;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
+import io.harness.cvng.autodiscovery.beans.AutoDiscoveryRequestDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DeviationType;
@@ -53,14 +52,12 @@ import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
-import io.harness.cvng.beans.change.HarnessSRMAnalysisEventMetadata;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.Action;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesResourceType;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
-import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.ExecutionLogDTOBuilder;
@@ -276,6 +273,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
@@ -1081,27 +1079,6 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
-  public SRMStepAnalysisActivityBuilder getSRMStepAnalysisActivityBuilder() {
-    return SRMStepAnalysisActivity.builder()
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .projectIdentifier(context.getProjectIdentifier())
-        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
-        .eventTime(clock.instant())
-        .changeSourceIdentifier("changeSourceID")
-        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .type(ChangeSourceType.HARNESS_CD.getActivityType())
-        .stageStepId("stageStepId")
-        .stageId("stageId")
-        .pipelineId("pipelineId")
-        .planExecutionId(generateUuid())
-        .artifactType("artifactType")
-        .artifactTag("artifactTag")
-        .activityName(generateUuid())
-        .activityEndTime(clock.instant())
-        .activityStartTime(clock.instant());
-  }
-
   public SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail() {
     return SRMAnalysisStepExecutionDetail.builder()
         .accountId(context.getAccountId())
@@ -1129,6 +1106,7 @@ public class BuilderFactory {
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .setStageExecutionId(generateUuid())
+        .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
         .addLevels(Level.newBuilder()
                        .setRuntimeId(generateUuid())
                        .setStartTs(clock.millis())
@@ -1331,25 +1309,6 @@ public class BuilderFactory {
                       .build());
   }
 
-  public ChangeEventDTOBuilder harnessSRMAnalysisChangeEventDTOBuilder() {
-    return getChangeEventDTOBuilder()
-        .type(ChangeSourceType.SRM_STEP_ANALYSIS)
-        .metadata(HarnessSRMAnalysisEventMetadata.builder()
-                      .stageStepId("stage")
-                      .planExecutionId("executionId")
-                      .analysisEndTime(Instant.now().plus(2, ChronoUnit.DAYS).toEpochMilli())
-                      .analysisStartTime(Instant.now().toEpochMilli())
-                      .stageStepId("stageStepId")
-                      .stageId("stageId")
-                      .pipelineId("pipelineId")
-                      .planExecutionId("executionId")
-                      .artifactType("artifactType")
-                      .artifactTag("artifactTag")
-                      .analysisStatus(SRMAnalysisStatus.RUNNING)
-                      .analysisDuration(Duration.of(2, ChronoUnit.DAYS))
-                      .build());
-  }
-
   public ChangeEventDTOBuilder harnessCDCurrentGenChangeEventDTOBuilder() {
     return getChangeEventDTOBuilder()
         .type(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
@@ -1478,6 +1437,27 @@ public class BuilderFactory {
         .setExecutionTime(1000l);
   }
 
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilderCE() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("CHAOS_EXPERIMENT")
+        .setPipelineId("test pipeline id")
+        .setPlanExecutionId("test plan execution id")
+        .setStageId("test stage id")
+        .setStageStepId("test stage step id")
+        .setExecutionTime(1000l);
+  }
+
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {
     return ChangeSourceDTO.builder()
         .identifier(generateUuid())
@@ -1506,7 +1486,7 @@ public class BuilderFactory {
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1537,7 +1517,7 @@ public class BuilderFactory {
                                  .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1648,7 +1628,7 @@ public class BuilderFactory {
     return UserJourneyDTO.builder().identifier("userJourney").name("userJourney").build();
   }
 
-  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
+  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTO() {
     return ServiceLevelIndicatorDTO.builder()
         .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
@@ -1855,6 +1835,13 @@ public class BuilderFactory {
         .sensitivity(RuntimeParameter.builder().value("Medium").build())
         .baselineVerificationJobInstanceId(generateUuid())
         .duration(RuntimeParameter.builder().value("15m").build());
+  }
+
+  public AutoDiscoveryRequestDTO getAutoDiscoveryRequestDTO() {
+    return AutoDiscoveryRequestDTO.builder()
+        .agentIdentifier("agentIdentifier")
+        .autoCreateMonitoredService(true)
+        .build();
   }
 
   public static class BuilderFactoryBuilder {
@@ -2249,6 +2236,21 @@ public class BuilderFactory {
                          .description("desc")
                          .name("name")
                          .webhookUrl("webhookUrl")
+                         .build());
+  }
+
+  public CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilderWithChannelId() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .webhookUrl("webhookUrl")
+                         .channelId("channelId")
                          .build());
   }
 }

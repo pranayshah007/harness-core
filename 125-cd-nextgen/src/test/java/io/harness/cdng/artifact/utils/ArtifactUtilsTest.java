@@ -667,8 +667,9 @@ public class ArtifactUtilsTest extends CategoryTest {
             .connectorRef(ParameterField.<String>builder().value("Artifactory").build())
             .repository(ParameterField.<String>builder().value("Repository").build())
             .artifactPath(ParameterField.<String>builder().value("ArtifactPath").build())
-            .tag(ParameterField.<String>builder().value("TAG").build())
-            .artifactDirectory(ParameterField.<String>builder().value("artifactDirectory").build())
+            .artifactPathFilter(ParameterField.createValueField("ArtifactPathFilter"))
+            .artifactDirectory(ParameterField.<String>builder().value("ArtifactDirectory").build())
+            .artifactFilter(ParameterField.createValueField("ArtifactFilter"))
             .repositoryFormat(ParameterField.<String>builder().value("generic").build())
             .build();
 
@@ -696,7 +697,7 @@ public class ArtifactUtilsTest extends CategoryTest {
 
     // Comparing the generated the log
     assertThat(log).isEqualTo(
-        "type: ArtifactoryRegistry, artifactDirectory: artifactDirectory, artifactPath/artifactPathFilter: ArtifactPath, connectorRef: Artifactory\n");
+        "\ntype: ArtifactoryRegistry \nartifactDirectory: ArtifactDirectory \nartifactFilter: ArtifactFilter \nartifactPath: ArtifactPath \nartifactPathFilter: ArtifactPathFilter \nconnectorRef: Artifactory\n");
   }
 
   @Test

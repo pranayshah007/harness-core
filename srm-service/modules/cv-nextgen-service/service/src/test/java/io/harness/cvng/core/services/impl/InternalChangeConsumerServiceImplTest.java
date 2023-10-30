@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
@@ -90,6 +91,51 @@ public class InternalChangeConsumerServiceImplTest extends CvNextGenTestBase {
     assertThat(internalChangeEventMetaData.getInternalChangeEvent().getInternalLinkToEntity().getAction())
         .isEqualTo(DeepLink.Action.REDIRECT_URL);
     assertThat(internalChangeEventMetaData.getUpdatedBy()).isEqualTo("user");
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testProcessMessageCE() throws InterruptedException {
+    InternalChangeEventDTO internalChangeEventDTO = builderFactory.getInternalChangeEventBuilderCE().build();
+    final ArgumentCaptor<ChangeEventDTO> captor = ArgumentCaptor.forClass(ChangeEventDTO.class);
+    internalChangeConsumerService.processMessage(
+        Message.newBuilder()
+            .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                            .setData(internalChangeEventDTO.toByteString())
+                            .build())
+            .build());
+
+    Mockito.verify(changeEventService, times(1)).register(captor.capture());
+    List<ChangeEventDTO> changeEventDTOs = captor.getAllValues();
+    assertThat(changeEventDTOs.size()).isEqualTo(1);
+
+    assertThat(changeEventDTOs.get(0).getAccountId()).isEqualTo(internalChangeEventDTO.getAccountId());
+    assertThat(changeEventDTOs.get(0).getOrgIdentifier()).isEqualTo(internalChangeEventDTO.getOrgIdentifier());
+    assertThat(changeEventDTOs.get(0).getProjectIdentifier()).isEqualTo(internalChangeEventDTO.getProjectIdentifier());
+    assertThat(changeEventDTOs.get(0).getServiceIdentifier()).isEqualTo(internalChangeEventDTO.getServiceIdentifier(0));
+    assertThat(changeEventDTOs.get(0).getEnvIdentifier()).isEqualTo(internalChangeEventDTO.getEnvironmentIdentifier(0));
+    assertThat(changeEventDTOs.get(0).getCategory()).isEqualTo(ChangeCategory.CHAOS_EXPERIMENT);
+    assertThat(changeEventDTOs.get(0).getType()).isEqualTo(ChangeSourceType.HARNESS_CE);
+    assertThat(changeEventDTOs.get(0).getEventTime()).isEqualTo(1000l);
+
+    InternalChangeEventMetaData internalChangeEventMetaData =
+        (InternalChangeEventMetaData) changeEventDTOs.get(0).getMetadata();
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getEventDescriptions().get(0))
+        .isEqualTo("test event detail");
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getChangeEventDetailsLink().getUrl())
+        .isEqualTo("testChangeEventDetailsLink");
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getChangeEventDetailsLink().getAction())
+        .isEqualTo(DeepLink.Action.FETCH_DIFF_DATA);
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getInternalLinkToEntity().getUrl())
+        .isEqualTo("testInternalUrl");
+    assertThat(internalChangeEventMetaData.getInternalChangeEvent().getInternalLinkToEntity().getAction())
+        .isEqualTo(DeepLink.Action.REDIRECT_URL);
+    assertThat(internalChangeEventMetaData.getUpdatedBy()).isEqualTo("user");
+    assertThat(internalChangeEventMetaData.getPipelineId()).isEqualTo("test pipeline id");
+    assertThat(internalChangeEventMetaData.getStageId()).isEqualTo("test stage id");
+    assertThat(internalChangeEventMetaData.getStageStepId()).isEqualTo("test stage step id");
+    assertThat(internalChangeEventMetaData.getPlanExecutionId()).isEqualTo("test plan execution id");
   }
 
   @Test

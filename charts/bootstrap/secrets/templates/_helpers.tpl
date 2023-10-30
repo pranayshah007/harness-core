@@ -56,3 +56,7 @@ root-password: {{ randAlphaNum 10 | quote }}
     SMTP_PASSWORD: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_PASSWORD" "providedValues" (list "global.smtpCreateSecret.SMTP_PASSWORD") "length" 10 "context" $) }}
     SMTP_USE_SSL: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_USE_SSL" "providedValues" (list "global.smtpCreateSecret.SMTP_USE_SSL") "length" 10 "context" $) }}
 {{- end }}
+
+{{- define "harnesssecrets.generateClickhouseSecrets" }}
+    admin-password: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "clickhouse" "key" "admin-password" "providedValues" (list "clickhouse.adminPassword") "length" 10 "context" $) }}
+{{- end }}

@@ -37,6 +37,7 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance.CustomApprovalInstanceKeys;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance.HarnessApprovalInstanceKeys;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.yaml.core.timeout.Timeout;
@@ -95,6 +96,12 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .descSortField(ApprovalInstanceKeys.nextIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
+                 .name("status_type_nextIterations")
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .field(CustomApprovalInstanceKeys.nextIterations)
+                 .build())
+        .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_type_nodeExecutionId")
                  .field(ApprovalInstanceKeys.planExecutionId)
                  .field(ApprovalInstanceKeys.status)
@@ -114,6 +121,12 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                 .field(HarnessApprovalInstanceKeys.isAutoRejectEnabled)
                 .rangeField(ApprovalInstanceKeys.createdAt)
                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("status_type_nextIterations_0")
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .ascSortField("nextIterations.0")
+                 .build())
         .build();
   }
 

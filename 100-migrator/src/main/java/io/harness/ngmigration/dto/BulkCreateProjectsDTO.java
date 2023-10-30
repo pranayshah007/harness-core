@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngmigration.dto;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.utils.CaseFormat;
 
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Data
 public class BulkCreateProjectsDTO {
   private String destinationGatewayUrl;

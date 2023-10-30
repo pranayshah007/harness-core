@@ -1,0 +1,43 @@
+{{- if .Values.global.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "delegate-proxy.name" . }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: delegate-proxy
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /storage
+            pathType: ImplementationSpecific
+    {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+{{- end }}

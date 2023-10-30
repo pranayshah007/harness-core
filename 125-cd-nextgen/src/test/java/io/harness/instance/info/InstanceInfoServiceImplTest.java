@@ -9,6 +9,7 @@ package io.harness.instance.info;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,9 +21,11 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.exception.InvalidRequestException;
@@ -120,10 +123,34 @@ public class InstanceInfoServiceImplTest extends CategoryTest {
     assertThat(serverInstanceInfo.getBlueGreenColor()).isEqualTo(BLUE_GREEN_COLOR);
   }
 
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetDeploymentMetadata() {
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(getDeploymentInfoOutcomeWithCustomMetadata(true));
+
+    CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+        (CustomDeploymentOutcomeMetadata) instanceInfoService.getDeploymentOutcomeMetadata(
+            getAmbiance(), FetchInstanceScriptStep.STEP_TYPE);
+    assertThat(customDeploymentOutcomeMetadata.getInstanceFetchScript()).isEqualTo("script");
+  }
+
   private OptionalSweepingOutput getDeploymentInfoOutcome(boolean found) {
     return OptionalSweepingOutput.builder()
         .found(found)
         .output(DeploymentInfoOutcome.builder().serverInstanceInfoList(getServiceInstanceInfos()).build())
+        .build();
+  }
+
+  private OptionalSweepingOutput getDeploymentInfoOutcomeWithCustomMetadata(boolean found) {
+    return OptionalSweepingOutput.builder()
+        .found(found)
+        .output(DeploymentInfoOutcome.builder()
+                    .serverInstanceInfoList(getServiceInstanceInfos())
+                    .deploymentOutcomeMetadata(
+                        CustomDeploymentOutcomeMetadata.builder().instanceFetchScript("script").build())
+                    .build())
         .build();
   }
 

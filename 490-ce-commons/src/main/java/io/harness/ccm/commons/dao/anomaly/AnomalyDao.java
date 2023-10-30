@@ -49,12 +49,13 @@ public class AnomalyDao {
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public List<Anomalies> fetchAnomalies(@NonNull String accountId, @Nullable Condition condition,
       @NonNull List<OrderField<?>> orderFields, @NonNull Integer offset, @NonNull Integer limit) {
-    SelectFinalStep<AnomaliesRecord> finalStep =
-        dslContext.selectFrom(ANOMALIES)
-            .where(ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())))
-            .orderBy(orderFields)
-            .offset(offset)
-            .limit(limit);
+    SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
+                                                     .where(ANOMALIES.ACCOUNTID.eq(accountId)
+                                                                .and(firstNonNull(condition, DSL.noCondition()))
+                                                                .and(ANOMALIES.NEWENTITY.eq(false)))
+                                                     .orderBy(orderFields)
+                                                     .offset(offset)
+                                                     .limit(limit);
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
@@ -66,7 +67,8 @@ public class AnomalyDao {
     SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
                                                      .where(ANOMALIES.ACCOUNTID.eq(accountId)
                                                                 .and(firstNonNull(condition, DSL.noCondition()))
-                                                                .and(ANOMALIES.ID.in(allowedAnomaliesIds)))
+                                                                .and(ANOMALIES.ID.in(allowedAnomaliesIds))
+                                                                .and(ANOMALIES.NEWENTITY.eq(false)))
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
@@ -79,7 +81,7 @@ public class AnomalyDao {
     Field<?> tableField = SQLConverter.getField(column, ANOMALIES);
     return dslContext.selectDistinct(tableField)
         .from(ANOMALIES)
-        .where(ANOMALIES.ACCOUNTID.eq(accountId))
+        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.NEWENTITY.eq(false)))
         .fetchInto(String.class);
   }
 
@@ -89,7 +91,8 @@ public class AnomalyDao {
     SelectFinalStep<AnomaliesRecord> finalStep = dslContext.selectFrom(ANOMALIES)
                                                      .where(ANOMALIES.ACCOUNTID.eq(accountId)
                                                                 .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
-                                                                .and(firstNonNull(condition, DSL.noCondition())))
+                                                                .and(firstNonNull(condition, DSL.noCondition()))
+                                                                .and(ANOMALIES.NEWENTITY.eq(false)))
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
@@ -104,7 +107,8 @@ public class AnomalyDao {
                                                      .where(ANOMALIES.ACCOUNTID.eq(accountId)
                                                                 .and(ANOMALIES.ANOMALYTIME.eq(toOffsetDateTime(date)))
                                                                 .and(ANOMALIES.NOTIFICATIONSENT.eq(false))
-                                                                .and(firstNonNull(condition, DSL.noCondition())))
+                                                                .and(firstNonNull(condition, DSL.noCondition()))
+                                                                .and(ANOMALIES.NEWENTITY.eq(false)))
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
@@ -125,7 +129,7 @@ public class AnomalyDao {
             .select(DSL.count().as("count"), sum(ANOMALIES.ACTUALCOST).as("actualCost"),
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
-            .where(condition1);
+            .where(condition1.and(ANOMALIES.NEWENTITY.eq(false)));
     log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }
@@ -135,7 +139,7 @@ public class AnomalyDao {
   public void updateAnomalyFeedback(@NonNull String accountId, String anomalyId, AnomalyFeedbackDTO feedback) {
     dslContext.update(ANOMALIES)
         .set(ANOMALIES.FEEDBACK, feedback.getFeedback().toString())
-        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)))
+        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)).and(ANOMALIES.NEWENTITY.eq(false)))
         .execute();
   }
 
@@ -145,7 +149,7 @@ public class AnomalyDao {
       @NonNull String accountId, @NonNull String anomalyId, boolean notificationSentStatus) {
     dslContext.update(ANOMALIES)
         .set(ANOMALIES.NOTIFICATIONSENT, notificationSentStatus)
-        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)))
+        .where(ANOMALIES.ACCOUNTID.eq(accountId).and(ANOMALIES.ID.eq(anomalyId)).and(ANOMALIES.NEWENTITY.eq(false)))
         .execute();
   }
 }

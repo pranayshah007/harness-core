@@ -13,9 +13,17 @@ import static io.harness.rule.OwnerRule.YAGYANSH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidYamlException;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
+import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -87,6 +95,22 @@ public class StrategyUtilsTest extends PmsSdkCoreTestBase {
     assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
 
     assertThat(StrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, false).size()).isEqualTo(1);
+
+    Dependency dependency = Dependency.newBuilder()
+                                .setNodeMetadata(HarnessStruct.newBuilder()
+                                                     .putData(PlanCreatorConstants.NEXT_ID,
+                                                         HarnessValue.newBuilder().setStringValue("nextId").build())
+                                                     .build())
+                                .build();
+    List<AdviserObtainment> adviserObtainmentList =
+        StrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, false, dependency);
+
+    assertThat(adviserObtainmentList.size()).isEqualTo(1);
+    assertThat(adviserObtainmentList.get(0).getType())
+        .isEqualTo(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build());
+    assertThat(adviserObtainmentList.get(0).getParameters())
+        .isEqualTo(ByteString.copyFrom(kryoSerializer.asBytes(
+            NextStageAdviserParameters.builder().nextNodeId("nextId").pipelineRollbackStageId(null).build())));
   }
 
   @Test

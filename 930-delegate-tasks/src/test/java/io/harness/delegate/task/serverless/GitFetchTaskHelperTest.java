@@ -99,7 +99,7 @@ public class GitFetchTaskHelperTest extends CategoryTest {
                                                         .optimizedFilesFetch(true)
                                                         .build();
     List<String> filePaths = new ArrayList<>(Arrays.asList("path1", "path2"));
-    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, "accountId", gitConfigDTO);
+    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, "accountId", gitConfigDTO, false);
     verify(scmFetchFilesHelper).fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
   }
 
@@ -123,7 +123,7 @@ public class GitFetchTaskHelperTest extends CategoryTest {
 
     SshSessionConfig sshSessionConfig = SshSessionConfig.Builder.aSshSessionConfig().withAccountId(accountId).build();
     doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
-    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, false);
     verify(ngGitService).getAuthRequest(gitConfigDTO, sshSessionConfig);
   }
 

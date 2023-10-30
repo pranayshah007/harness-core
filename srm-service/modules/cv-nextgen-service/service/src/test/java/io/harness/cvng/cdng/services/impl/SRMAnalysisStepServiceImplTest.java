@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
@@ -121,11 +120,6 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
         builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
         serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
-    SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
-                                                       .executionNotificationDetailsId(analysisExecutionDetailsId)
-                                                       .build();
-    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
-    activityId = activityService.createActivity(stepAnalysisActivity);
     FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
   }
 
@@ -226,8 +220,14 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   public void testGetSummaryOfStep() {
     SRMAnalysisStepExecutionDetail stepExecutionDetail =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
-    SRMAnalysisStepDetailDTO analysisStepDetailDTO = srmAnalysisStepService.getSRMAnalysisSummary(activityId);
+    SRMAnalysisStepDetailDTO analysisStepDetailDTO =
+        srmAnalysisStepService.getSRMAnalysisSummary(analysisExecutionDetailsId);
 
+    assertThat(analysisStepDetailDTO.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
+    assertThat(analysisStepDetailDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
+    assertThat(analysisStepDetailDTO.getProjectIdentifier())
+        .isEqualTo(builderFactory.getContext().getProjectIdentifier());
+    assertThat(analysisStepDetailDTO.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(analysisStepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(analysisStepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(analysisStepDetailDTO.getServiceIdentifier()).isEqualTo(serviceEnvironmentParams.getServiceIdentifier());
@@ -238,6 +238,8 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(analysisStepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
     assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(analysisStepDetailDTO.getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(analysisStepDetailDTO.getPipelinePath()).isNotEmpty();
   }
 
   @Test
@@ -263,8 +265,11 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
             .getInstanceByUuids(List.of(analysisExecutionDetailsId), SecondaryEventsType.SRM_ANALYSIS_IMPACT);
     assertThat(eventDetailsResponse.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
     assertThat(eventDetailsResponse.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
     SRMAnalysisStepInstanceDetails stepInstanceDetails =
         (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
+    assertThat(stepInstanceDetails.getStepName()).isEqualTo(stepExecutionDetail.getStepName());
     assertThat(stepInstanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(stepInstanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
   }

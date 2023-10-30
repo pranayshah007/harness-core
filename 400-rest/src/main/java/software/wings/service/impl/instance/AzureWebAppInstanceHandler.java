@@ -344,7 +344,7 @@ public class AzureWebAppInstanceHandler extends InstanceHandler implements Insta
     if (isNotEmpty(instanceIdsToBeDeleted)) {
       instanceService.delete(instanceIdsToBeDeleted);
     }
-    log.info("Instances to be deleted {}", getSetKeys(instanceIdsToBeDeleted));
+    log.debug("Instances to be deleted {}", getSetKeys(instanceIdsToBeDeleted));
   }
 
   private void deleteOldInstances(Map<String, Instance> instancesInDbMap) {

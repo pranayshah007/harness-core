@@ -18,6 +18,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -72,6 +73,10 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       decrypt(filterQueryParams);
       Set<String> changedFiles = getChangedFileset(filterQueryParams, filterQueryParams.getScmConnector());
 
+      if (filterQueryParams.getScmConnector() instanceof AzureRepoConnectorDTO) {
+        changedFiles = GitClientHelper.sanitiseFilesForAzureRepo(changedFiles);
+      }
+
       for (String filepath : changedFiles) {
         if (ConditionEvaluator.evaluate(filepath, filterQueryParams.getStandard(), filterQueryParams.getOperator())) {
           return ScmPathFilterEvaluationTaskResponse.builder().matched(true).build();
@@ -97,6 +102,10 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connector;
       secretDecryptionService.decrypt(
           bitbucketConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());
+    } else if (AzureRepoConnectorDTO.class.isAssignableFrom(connector.getClass())) {
+      AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connector;
+      secretDecryptionService.decrypt(
+          azureRepoConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());
     }
   }
 

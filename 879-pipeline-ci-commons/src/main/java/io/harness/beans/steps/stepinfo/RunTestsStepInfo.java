@@ -82,7 +82,7 @@ public class RunTestsStepInfo implements CIStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
   @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
 
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> args;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> args;
   @NotNull
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.TILanguage")

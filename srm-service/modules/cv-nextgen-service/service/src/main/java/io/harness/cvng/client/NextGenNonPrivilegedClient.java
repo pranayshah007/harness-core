@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ProjectAggregateDTO;
+import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;
@@ -21,6 +22,11 @@ import retrofit2.http.Query;
 public interface NextGenNonPrivilegedClient {
   @GET("aggregate/projects")
   Call<ResponseDTO<PageResponse<ProjectAggregateDTO>>> listAccessibleProjects(
+      @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
+      @Query("pageIndex") int page, @Query("pageSize") int size);
+
+  @GET("/projects/list")
+  Call<ResponseDTO<PageResponse<ProjectResponse>>> listProjectsForUser(
       @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
       @Query("pageIndex") int page, @Query("pageSize") int size);
 }

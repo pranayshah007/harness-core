@@ -19,6 +19,7 @@ import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -42,6 +43,10 @@ import java.util.List;
 public class ProvenanceStepGenerator {
   private static final String UNDERSCORE_SEP = "_";
   private static final List<CIStepInfoType> allowedTypesForProvenance = List.of(CIStepInfoType.DOCKER);
+
+  public static List<CIStepInfoType> getAllowedTypesForProvenance() {
+    return allowedTypesForProvenance;
+  }
 
   public void encapsulateBuildAndPushStepsWithStepGroup(
       List<ExecutionWrapperConfig> executionWrapperConfigs, SlsaConfig slsaConfig, Infrastructure.Type infraType) {
@@ -110,11 +115,10 @@ public class ProvenanceStepGenerator {
   }
 
   private JsonNode createStepGroupExecutionWrapper(CIAbstractStepNode stepNode, AttestationV1 attestation) {
-    CIStepInfo stepInfo = (CIStepInfo) stepNode.getStepSpecType();
     StepGroupElementConfig stepGroupElementConfig =
         StepGroupElementConfig.builder()
-            .identifier(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepInfo.getIdentifier())
-            .name(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepInfo.getName())
+            .identifier(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepNode.getIdentifier())
+            .name(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepNode.getName())
             .uuid(generateUuid())
             .when(stepNode.getWhen())
             .skipCondition(stepNode.getSkipCondition())
@@ -155,6 +159,9 @@ public class ProvenanceStepGenerator {
     ProvenanceSource source = null;
     if (ciStepInfo.getNonYamlInfo().getStepInfoType() == CIStepInfoType.DOCKER) {
       source = ProvenanceStepUtils.buildDockerProvenanceSource((DockerStepInfo) ciStepInfo);
+    }
+    if (ciStepInfo.getNonYamlInfo().getStepInfoType() == CIStepInfoType.GCR) {
+      source = ProvenanceStepUtils.buildGcrProvenanceSource((GCRStepInfo) ciStepInfo);
     }
     ProvenanceStepInfo stepInfo =
         ProvenanceStepInfo.builder().uuid(generateUuid()).attestation(attestationV1).source(source).build();

@@ -6,10 +6,14 @@
  */
 
 package io.harness.ngmigration.service.trigger;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.trigger.WebHookTriggerCondition;
 import software.wings.beans.trigger.WebhookSource;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class WebhookFactory {
   private static final WebhookHandler githubHandler = new GithubWebhookHandlerImpl();
   private static final WebhookHandler gitlabHandler = new GitlabWebhookHandlerImpl();

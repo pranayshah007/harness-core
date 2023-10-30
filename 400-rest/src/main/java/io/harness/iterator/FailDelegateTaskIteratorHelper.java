@@ -90,7 +90,11 @@ public class FailDelegateTaskIteratorHelper {
     if (asList(QUEUED, PARKED, ABORTED).contains(delegateTask.getStatus())
         && (delegateTask.getExpiry() < currentTimeMillis())) {
       log.info("Marking following long queued tasks as failed [{}]", delegateTask.getUuid());
-      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, TaskFailureReason.NOT_ASSIGNED);
+      TaskFailureReason taskFailureReason =
+          delegateTask.getStatus().equals(QUEUED) || isEmpty(delegateTask.getDelegateId())
+          ? TaskFailureReason.NOT_ASSIGNED
+          : TaskFailureReason.EXPIRED;
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, taskFailureReason);
     }
   }
 
@@ -120,12 +124,10 @@ public class FailDelegateTaskIteratorHelper {
               .asList();
 
       for (DelegateTask task : tasks) {
-        if (shouldExpireTask(task)) {
-          tasksToExpire.add(task);
-          taskIdsToExpire.add(task.getUuid());
-          delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
-          logValidationFailedErrorsInSelectionLog(task);
-        }
+        tasksToExpire.add(task);
+        taskIdsToExpire.add(task.getUuid());
+        delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
+        logValidationFailedErrorsInSelectionLog(task);
       }
 
       delegateTasks.putAll(tasksToExpire.stream().collect(toMap(DelegateTask::getUuid, identity())));
@@ -133,20 +135,18 @@ public class FailDelegateTaskIteratorHelper {
                              .filter(task -> isNotEmpty(task.getWaitId()))
                              .collect(toMap(DelegateTask::getUuid, DelegateTask::getWaitId)));
     } catch (Exception e1) {
-      log.error("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
+      log.debug("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
       for (String taskId : taskIds) {
         try {
           DelegateTask task =
               persistence.createQuery(DelegateTask.class, excludeAuthority, isDelegateTaskMigrationEnabled)
                   .filter(DelegateTaskKeys.uuid, taskId)
                   .get();
-          if (shouldExpireTask(task)) {
-            taskIdsToExpire.add(taskId);
-            delegateTasks.put(taskId, task);
-            delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
-            if (isNotEmpty(task.getWaitId())) {
-              taskWaitIds.put(taskId, task.getWaitId());
-            }
+          taskIdsToExpire.add(taskId);
+          delegateTasks.put(taskId, task);
+          delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
+          if (isNotEmpty(task.getWaitId())) {
+            taskWaitIds.put(taskId, task.getWaitId());
           }
         } catch (Exception e2) {
           log.error("Could not deserialize task {}. Trying again with only waitId field.", taskId, e2);
@@ -195,10 +195,6 @@ public class FailDelegateTaskIteratorHelper {
         }
       });
     }
-  }
-
-  private boolean shouldExpireTask(DelegateTask task) {
-    return !task.isForceExecute();
   }
 
   @VisibleForTesting

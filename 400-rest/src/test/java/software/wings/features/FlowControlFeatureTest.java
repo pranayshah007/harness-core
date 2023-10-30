@@ -21,9 +21,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.features.api.PremiumFeature;
 import software.wings.features.api.Usage;
 import software.wings.service.intfc.AccountService;

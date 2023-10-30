@@ -243,9 +243,10 @@ public class CfCommandTaskHelperNG {
 
       return artifactResponseBuilder.build();
     } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           format("Failed to download artifact '%s' due to: %s", artifactConfig.getArtifactDetails().getArtifactName(),
-              ExceptionUtils.getMessage(e)),
+              ExceptionUtils.getMessage(sanitizedException)),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw e;
     }
@@ -263,10 +264,11 @@ public class CfCommandTaskHelperNG {
           "Artifact '%s' successfully copied to '%s'", artifactDetails.getArtifactName(), artifactFile.getPath()));
       return artifactFile;
     } catch (IOException exception) {
+      IOException sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
       throw NestedExceptionUtils.hintWithExplanationException(HintException.HINT_FILE_CREATION_ERROR,
           ExplanationException.EXPLANATION_FILE_CREATION_ERROR,
           new FileCopyException(format("Failed to copy artifact file '%s' from input stream to path '%s' due to: %s",
-              artifactDetails.getArtifactName(), artifactFile.getPath(), exception.getMessage())));
+              artifactDetails.getArtifactName(), artifactFile.getPath(), sanitizedException.getMessage())));
     }
   }
 

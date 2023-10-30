@@ -49,7 +49,8 @@ public class RunInfoUtils {
       throw new InvalidRequestException("Pipeline Status in stage when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stageWhenCondition.getValue().getPipelineStatus(), true),
+    return combineExpressions(
+        getStatusExpressionForStage(stageWhenCondition.getValue().getPipelineStatus(), executionMode),
         getGivenRunCondition(stageWhenCondition.getValue().getCondition()));
   }
 
@@ -62,7 +63,7 @@ public class RunInfoUtils {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
+    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus()),
         getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
   }
 
@@ -74,7 +75,7 @@ public class RunInfoUtils {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
     }
 
-    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
+    return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus()),
         getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
   }
 
@@ -107,12 +108,23 @@ public class RunInfoUtils {
     return statusExpression;
   }
 
-  private String getStatusExpression(WhenConditionStatus whenConditionStatus, boolean isStage) {
+  private String getStatusExpression(WhenConditionStatus whenConditionStatus) {
     switch (whenConditionStatus) {
       case SUCCESS:
-        return isStage ? getStatusExpression(PIPELINE_SUCCESS) : getStatusExpression(STAGE_SUCCESS);
+        return getStatusExpression(STAGE_SUCCESS);
       case FAILURE:
-        return isStage ? getStatusExpression(PIPELINE_FAILURE) : getStatusExpression(STAGE_FAILURE);
+        return getStatusExpression(STAGE_FAILURE);
+      default:
+        return getStatusExpression(ALWAYS);
+    }
+  }
+
+  private String getStatusExpressionForStage(WhenConditionStatus whenConditionStatus, ExecutionMode executionMode) {
+    switch (whenConditionStatus) {
+      case SUCCESS:
+        return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_SUCCESS);
+      case FAILURE:
+        return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_FAILURE);
       default:
         return getStatusExpression(ALWAYS);
     }

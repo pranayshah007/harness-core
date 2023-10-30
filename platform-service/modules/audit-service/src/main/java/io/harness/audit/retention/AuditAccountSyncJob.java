@@ -12,11 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.api.AuditService;
 import io.harness.audit.api.AuditSettingsService;
-import io.harness.audit.entities.AuditSettings;
 
 import com.google.inject.Inject;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
@@ -29,8 +27,7 @@ public class AuditAccountSyncJob implements Runnable {
   public void run() {
     try {
       Set<String> accountIdentifiers = auditService.getUniqueAuditedAccounts();
-      Set<String> accountsInDBWithRetentionPeriod =
-          auditSettingsService.fetchAll().stream().map(AuditSettings::getAccountIdentifier).collect(Collectors.toSet());
+      Set<String> accountsInDBWithRetentionPeriod = auditSettingsService.getUniqueAccountsWithAuditRetentionPeriod();
 
       accountIdentifiers.removeAll(accountsInDBWithRetentionPeriod);
       accountIdentifiers.forEach(accountIdentifier -> auditSettingsService.create(accountIdentifier, 24));

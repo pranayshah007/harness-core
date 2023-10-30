@@ -8,12 +8,16 @@
 package io.harness.aws;
 
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.services.codecommit.model.Commit;
 import com.amazonaws.services.codecommit.model.RepositoryMetadata;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
+import com.amazonaws.services.ecr.model.AuthorizationData;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -38,31 +42,43 @@ public interface AwsClient {
 
   String getAmazonEcrAuthToken(AwsConfig awsConfig, String account, String region);
 
-  AWSCredentialsProvider getAssumedCredentialsProvider(
-      AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn, @Nullable String externalId);
+  AuthorizationData getAmazonEcrAuthData(AwsConfig awsConfig, String account, String region);
+
+  AWSCredentialsProvider getAssumedCredentialsProvider(AWSCredentialsProvider credentialsProvider,
+      String crossAccountRoleArn, @Nullable String externalId, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
   AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
-      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region);
+      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
-  Optional<ReportDefinition> getReportDefinition(AWSCredentialsProvider credentialsProvider, String curReportName);
+  Optional<ReportDefinition> getReportDefinition(
+      AWSCredentialsProvider credentialsProvider, String curReportName, CEProxyConfig ceProxyConfig);
 
   AWSCredentialsProvider constructStaticBasicAwsCredentials(@NotNull String accessKey, @NotNull String secretKey);
 
-  List<String> listRolePolicyNames(AWSCredentialsProvider awsCredentialsProvider, @NotNull String roleName);
+  List<String> listRolePolicyNames(
+      AWSCredentialsProvider awsCredentialsProvider, @NotNull String roleName, CEProxyConfig ceProxyConfig);
 
   List<EvaluationResult> simulatePrincipalPolicy(AWSCredentialsProvider credentialsProvider,
       @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns,
-      @NotNull String region);
+      @NotNull String region, CEProxyConfig ceProxyConfig);
 
-  Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
+  Policy getRolePolicy(
+      AWSCredentialsProvider credentialsProvider, String roleName, String policyName, CEProxyConfig ceProxyConfig);
 
-  ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+  ObjectListing getBucket(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
   S3Objects getIterableS3ObjectSummaries(
-      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
-  AWSOrganizationsClient getAWSOrganizationsClient(
-      String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey);
+  AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId, String awsAccessKey,
+      String awsSecretKey, CEProxyConfig ceProxyConfig, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
   Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
+
+  String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName);
+
+  EcrImageDetailConfig listEcrImageTags(
+      AwsInternalConfig awsConfig, String registryId, String region, String imageName, int pageSize, String lastTag);
 }

@@ -6,6 +6,7 @@ category: Search
 source: https://github.com/K-Phoen/backstage-plugin-confluence/tree/main/plugins/search-confluence-backend
 iconUrl: https://seeklogo.com/images/C/confluence-logo-D9B07137C2-seeklogo.com.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/confluence/
 config: |-
   confluence:
     wikiUrl: https://<your-org-name>.atlassian.net/wiki

@@ -90,7 +90,7 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
     try (HIterator<NotifyResponse> notifyResponses = new HIterator(query.fetch())) {
       for (NotifyResponse notifyResponse : notifyResponses) {
         if (notifyResponse.isError()) {
-          log.info("Failed notification response {}", notifyResponse.getUuid());
+          log.debug("Failed notification response {}", notifyResponse.getUuid());
           isError = true;
         }
         if (notifyResponse.getResponseData() != null) {
@@ -136,12 +136,13 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
   @Override
   public ProgressUpdate fetchForProcessingProgressUpdate(Set<String> busyCorrelationIds, long now) {
     Query<ProgressUpdate> query;
-    if (busyCorrelationIds.isEmpty()) {
+    Set<String> busyCorrelationIdsCopy = Set.copyOf(busyCorrelationIds);
+    if (busyCorrelationIdsCopy.isEmpty()) {
       query = hPersistence.createQuery(ProgressUpdate.class, excludeAuthority).order(ProgressUpdateKeys.createdAt);
     } else {
       query = hPersistence.createQuery(ProgressUpdate.class, excludeAuthority)
                   .field(ProgressUpdateKeys.correlationId)
-                  .notIn(busyCorrelationIds)
+                  .notIn(busyCorrelationIdsCopy)
                   .order(ProgressUpdateKeys.createdAt);
     }
 

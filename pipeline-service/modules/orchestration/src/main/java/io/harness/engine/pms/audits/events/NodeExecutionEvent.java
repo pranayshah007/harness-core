@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.pms.audits.events;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.event.Event;
 import io.harness.ng.core.ProjectScope;
@@ -23,6 +25,7 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
@@ -32,14 +35,16 @@ public abstract class NodeExecutionEvent implements Event {
   String projectIdentifier;
   String pipelineIdentifier;
   String planExecutionId;
+  Integer runSequence;
 
   public NodeExecutionEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
+      String pipelineIdentifier, String planExecutionId, Integer runSequence) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.planExecutionId = planExecutionId;
+    this.runSequence = runSequence;
   }
 
   @JsonIgnore

@@ -32,12 +32,14 @@ public class WebhookChannel implements Channel {
   List<String> webHookUrls;
   List<UserGroup> userGroups;
   Map<String, String> templateData;
+  Map<String, String> headers;
   @Override
   public Object toObjectofProtoSchema() {
     return Webhook.newBuilder()
         .addAllUrls(webHookUrls)
         .putAllTemplateData(templateData)
         .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+        .putAllHeaders(headers)
         .build();
   }
 
@@ -52,6 +54,7 @@ public class WebhookChannel implements Channel {
         .webHookUrls(webhookDetails.getUrlsList())
         .templateData(webhookDetails.getTemplateDataMap())
         .userGroups(NotificationUserGroupMapper.toEntity(webhookDetails.getUserGroupList()))
+        .headers(webhookDetails.getHeadersMap())
         .build();
   }
 }

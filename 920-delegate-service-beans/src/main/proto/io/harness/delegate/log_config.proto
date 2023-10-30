@@ -12,6 +12,4 @@ option go_package = "920_delegate_service_beans";
 message LogConfig {
   // log base key for sending logs
   string log_key = 1;
-  // log service token
-  string token = 2;
 }

@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgUserData;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +37,11 @@ import io.harness.rule.Owner;
 
 import software.wings.service.impl.AwsUtils;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
+import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.ScheduledUpdateGroupAction;
+import com.amazonaws.services.ec2.model.ResponseLaunchTemplateData;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -113,5 +123,77 @@ public class AsgTaskHelperTest extends CategoryTest {
 
     AsgSdkManager result = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
     verify(awsUtils).getAwsInternalConfig(any(), any());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void isBaseAsgDeploymentTest() {
+    AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().build();
+    boolean ret = asgTaskHelper.isBaseAsgDeployment(asgInfraConfig);
+    assertThat(ret).isFalse();
+
+    asgInfraConfig = AsgInfraConfig.builder().baseAsgName("test").build();
+    ret = asgTaskHelper.isBaseAsgDeployment(asgInfraConfig);
+    assertThat(ret).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getAsgNameTest() {
+    final String asgName = "testAsg";
+    AsgRollingDeployRequest asgRollingDeployRequest = AsgRollingDeployRequest.builder().asgName(asgName).build();
+    String ret = asgTaskHelper.getAsgName(asgRollingDeployRequest, null);
+    assertEquals(ret, asgName);
+
+    asgRollingDeployRequest = AsgRollingDeployRequest.builder().asgName(null).build();
+    Map<String, List<String>> asgStoreManifestsContent =
+        Map.of(AsgConfiguration, List.of("{ \"autoScalingGroupName\": \"testAsg\" }"));
+    ret = asgTaskHelper.getAsgName(asgRollingDeployRequest, asgStoreManifestsContent);
+    assertEquals(ret, asgName);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getAsgStoreManifestsContentTest() {
+    final String asgName = "testAsg";
+    final String imageId = "test-imageId";
+
+    Map<String, List<String>> asgStoreManifestsContent = Map.of(AsgConfiguration, List.of("AsgConfiguration"),
+        AsgLaunchTemplate, List.of("AsgLaunchTemplate"), AsgScalingPolicy, List.of("AsgScalingPolicy"),
+        AsgScheduledUpdateGroupAction, List.of("AsgScheduledUpdateGroupAction"), AsgUserData, List.of("AsgUserData"));
+
+    AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().baseAsgName(null).build();
+
+    Map<String, List<String>> ret =
+        asgTaskHelper.getAsgStoreManifestsContent(asgInfraConfig, asgStoreManifestsContent, null);
+    assertEquals(ret, asgStoreManifestsContent);
+
+    // base Asg
+    asgInfraConfig = AsgInfraConfig.builder().baseAsgName(asgName).build();
+    AsgSdkManager asgSdkManager = mock(AsgSdkManager.class);
+
+    when(asgSdkManager.getASG(anyString()))
+        .thenReturn(new AutoScalingGroup().withAutoScalingGroupName(asgName).withLaunchTemplate(
+            new LaunchTemplateSpecification().withLaunchTemplateName("test").withVersion("1")));
+    when(asgSdkManager.getLifeCycleHookSpecificationList(anyString())).thenReturn(null);
+
+    when(asgSdkManager.listAllScalingPoliciesOfAsg(anyString()))
+        .thenReturn(List.of(new ScalingPolicy().withAutoScalingGroupName(asgName)));
+    when(asgSdkManager.listAllScheduledActionsOfAsg(anyString()))
+        .thenReturn(List.of(new ScheduledUpdateGroupAction().withAutoScalingGroupName(asgName)));
+
+    when(asgSdkManager.getLaunchTemplateData(anyString(), anyString()))
+        .thenReturn(new ResponseLaunchTemplateData().withImageId(imageId));
+
+    ret = asgTaskHelper.getAsgStoreManifestsContent(asgInfraConfig, asgStoreManifestsContent, asgSdkManager);
+
+    assertThat(ret.get(AsgConfiguration).get(0)).contains(asgName);
+    assertThat(ret.get(AsgScalingPolicy).get(0)).contains(asgName);
+    assertThat(ret.get(AsgScheduledUpdateGroupAction).get(0)).contains(asgName);
+    assertThat(ret.get(AsgLaunchTemplate).get(0)).contains(imageId);
+    assertThat(ret.get(AsgUserData)).isEqualTo(asgStoreManifestsContent.get(AsgUserData));
   }
 }

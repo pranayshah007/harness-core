@@ -13,7 +13,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.Value;
 
 @Getter
 @Setter
@@ -27,11 +26,4 @@ public class ExecutionLimits {
   ExecutionLimitSpec team;
   ExecutionLimitSpec enterprise;
   List<String> overrideConfig;
-  @Value
-  @Builder
-  public static class ExecutionLimitSpec {
-    long defaultTotalExecutionCount;
-    long defaultMacExecutionCount;
-    long dailyMaxBuildsCount;
-  }
 }

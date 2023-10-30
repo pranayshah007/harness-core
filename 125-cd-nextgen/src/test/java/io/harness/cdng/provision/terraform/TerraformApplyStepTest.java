@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_ENCRYPTED_JSON_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
@@ -45,6 +44,8 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -298,6 +299,7 @@ public class TerraformApplyStepTest extends CategoryTest {
                     .commandType(TerraformCommandFlagType.APPLY)
                     .flag(ParameterField.createValueField("-lock-timeout=0s"))
                     .build()));
+    applyStepParameters.getConfiguration().setSkipStateStorage(ParameterField.createValueField(true));
 
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
@@ -342,6 +344,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
   }
 
   @Test
@@ -469,8 +472,17 @@ public class TerraformApplyStepTest extends CategoryTest {
                                                .backendConfigurationFileConfig(backendConfigFileConfig)
                                                .workspace("w1")
                                                .planName("plan")
+                                               .providerCredentialConfig(TerraformAwsProviderCredentialConfig.builder()
+                                                                             .type(TerraformProviderType.AWS)
+                                                                             .connectorRef("connectorRef")
+                                                                             .region("region")
+                                                                             .roleArn("roleArn")
+                                                                             .build())
                                                .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
+    doReturn(TerraformAwsProviderCredentialDelegateInfo.builder().region("region").roleArn("roleArn").build())
+        .when(terraformStepHelper)
+        .getProviderCredentialDelegateInfo(any(), any());
     TaskRequest taskRequest = terraformApplyStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
@@ -481,6 +493,12 @@ public class TerraformApplyStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.getProviderCredentialDelegateInfo()).isNotNull();
+    assertThat(taskParameters.getProviderCredentialDelegateInfo().getType()).isEqualTo(TerraformProviderType.AWS);
+    TerraformAwsProviderCredentialDelegateInfo awsCredentialDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo();
+    assertThat(awsCredentialDelegateInfo.getRoleArn()).isEqualTo("roleArn");
+    assertThat(awsCredentialDelegateInfo.getRegion()).isEqualTo("region");
   }
 
   @Test
@@ -656,6 +674,7 @@ public class TerraformApplyStepTest extends CategoryTest {
                                                .backendConfig("back-content")
                                                .workspace("w1")
                                                .planName("plan")
+                                               .skipStateStorage(false)
                                                .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
@@ -670,6 +689,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformStepHelper).getRevisionsMap(anyList(), any());
     verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+    verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
 
   @Test
@@ -987,7 +1007,6 @@ public class TerraformApplyStepTest extends CategoryTest {
           { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
         });
 
-    when(cdFeatureFlagHelper.isEnabled(any(), eq(CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT))).thenReturn(true);
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
@@ -1099,7 +1118,6 @@ public class TerraformApplyStepTest extends CategoryTest {
           { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
         });
 
-    when(cdFeatureFlagHelper.isEnabled(any(), eq(CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT))).thenReturn(true);
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()

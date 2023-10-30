@@ -16,6 +16,7 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class IdpAuthInterceptor implements Interceptor {
   private final String secret;
 
   @Inject
-  public IdpAuthInterceptor(ServiceTokenGenerator tokenGenerator, String secret) {
+  public IdpAuthInterceptor(ServiceTokenGenerator tokenGenerator, @Named("idpServiceSecret") String secret) {
     this.tokenGenerator = tokenGenerator;
     this.secret = secret;
   }

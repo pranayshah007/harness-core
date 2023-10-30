@@ -14,7 +14,7 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
-import io.harness.idp.scorecard.scores.service.ScoreService;
+import io.harness.idp.scorecard.scores.service.ScoreComputerService;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -32,13 +32,13 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 public class ScoreComputationHandler implements MongoPersistenceIterator.Handler<NamespaceEntity> {
   private PersistenceIteratorFactory persistenceIteratorFactory;
   private MongoTemplate mongoTemplate;
-  private ScoreService scoreService;
+  private ScoreComputerService scoreComputerService;
 
   @Override
   public void handle(NamespaceEntity namespaceEntity) {
     log.info("Scorecard Score Computation for account - {} from iterator started at - {}",
         namespaceEntity.getAccountIdentifier(), System.currentTimeMillis());
-    scoreService.computeScores(
+    scoreComputerService.computeScores(
         namespaceEntity.getAccountIdentifier(), Collections.emptyList(), Collections.emptyList());
     log.info("Scorecard Score Computation for account - {} from iterator is completed at - {}",
         namespaceEntity.getAccountIdentifier(), System.currentTimeMillis());

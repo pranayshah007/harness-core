@@ -49,6 +49,11 @@ public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware
                  .field(CEViewKeys.accountId)
                  .field(CEViewKeys.folderId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_viewType")
+                 .field(CEViewKeys.accountId)
+                 .field(CEViewKeys.viewType)
+                 .build())
         .build();
   }
   @Id String uuid;

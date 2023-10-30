@@ -23,6 +23,7 @@ message UploadCgRequest {
 
 message UploadCgResponse {
   string cg_msg = 1;
+  bool empty_cg = 2;
 }
 
 // Definitions to interact with TI service
@@ -93,6 +94,7 @@ message GetLastSuccCommitInfoResponse {
 message GetChangedFilesPushTriggerRequest {
   string step_id = 1;
   string last_succ_commit = 2;
+  string current_commit = 3;
 }
 
 message GetChangedFilesPushTriggerResponse {

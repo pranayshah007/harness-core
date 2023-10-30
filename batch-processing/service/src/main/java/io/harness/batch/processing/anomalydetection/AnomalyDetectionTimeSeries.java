@@ -34,7 +34,6 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     timeSeries.initialiseTestData(timeSeriesMetaData.getTestStart(), timeSeriesMetaData.getTestEnd(), ChronoUnit.DAYS);
     return timeSeries;
   }
-
   private List<Instant> trainTimePointsList;
   private List<Double> trainDataPointsList;
   private List<Instant> testTimePointsList;
@@ -56,6 +55,13 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
 
   public List<Double> getTrainDataPoints() {
     return trainDataPointsList;
+  }
+  public List<Instant> getTrainTimePointsList() {
+    return trainTimePointsList;
+  }
+
+  public List<Instant> getTestTimePointsList() {
+    return testTimePointsList;
   }
 
   public boolean insert(Instant instant, Double cost) {
@@ -106,9 +112,9 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
   }
 
   public String getHash() {
-    return AnomalyDetectionHelper.generateHash(
-        String.join(",", getAccountId(), getTestTimePointsList().get(0).toString(), getClusterId(), getNamespace(),
-            getWorkloadName(), getGcpProject(), getGcpProduct(), getGcpSKUId(), getAwsAccount(), getAwsService(),
-            getAwsUsageType(), getAzureSubscription(), getAzureResourceGroup(), getAzureMeterCategory()));
+    return AnomalyDetectionHelper.generateHash(String.join(",", getAccountId(),
+        getTestTimePointsList().get(0).toString(), getClusterId(), getNamespace(), getWorkloadName(), getService(),
+        getGcpProject(), getGcpProduct(), getGcpSKUId(), getAwsAccount(), getAwsService(), getAwsUsageType(),
+        getAzureSubscription(), getAzureResourceGroup(), getAzureMeterCategory()));
   }
 }

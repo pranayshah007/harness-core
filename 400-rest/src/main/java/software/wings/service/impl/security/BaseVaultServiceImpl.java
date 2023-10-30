@@ -16,7 +16,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.BaseVaultConfig.BaseVaultConfigKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.settings.SettingVariableTypes.VAULT;
 
 import static java.time.Duration.ofMillis;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -24,7 +23,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedDataParent;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.encryptors.managerproxy.ManagerEncryptorHelper;
 import io.harness.exception.SecretManagementException;
@@ -215,24 +213,8 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
   }
 
   public void renewAppRoleClientToken(BaseVaultConfig baseVaultConfig) {
-    if (accountService.isFeatureFlagEnabled(
-            FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), baseVaultConfig.getAccountId())) {
-      wingsPersistence.updateField(
-          SecretManagerConfig.class, baseVaultConfig.getUuid(), BaseVaultConfigKeys.renewAppRoleToken, false);
-      return;
-    }
-    log.info("Renewing Vault AppRole client token for vault id {}", baseVaultConfig.getUuid());
-    Preconditions.checkNotNull(baseVaultConfig.getAuthToken());
-    BaseVaultConfig decryptedVaultConfig =
-        getBaseVaultConfig(baseVaultConfig.getAccountId(), baseVaultConfig.getUuid());
-    VaultAppRoleLoginResult loginResult = appRoleLogin(decryptedVaultConfig);
-    checkNotNull(loginResult, "Login result during vault appRole login should not be null");
-    checkNotNull(loginResult.getClientToken(), "Client token should not be empty");
-    log.info("Login result is {} {}", loginResult.getLeaseDuration(), loginResult.getPolicies());
-    updateSecretField(baseVaultConfig.getAuthToken(), baseVaultConfig.getAccountId(), baseVaultConfig.getUuid(),
-        loginResult.getClientToken(), TOKEN_SECRET_NAME_SUFFIX, BaseVaultConfigKeys.authToken, VAULT);
-    wingsPersistence.updateField(SecretManagerConfig.class, baseVaultConfig.getUuid(), BaseVaultConfigKeys.renewedAt,
-        System.currentTimeMillis());
+    wingsPersistence.updateField(
+        SecretManagerConfig.class, baseVaultConfig.getUuid(), BaseVaultConfigKeys.renewAppRoleToken, false);
   }
 
   private String saveSecretField(String accountId, String vaultConfigId, String secretValue, String secretNameSuffix,

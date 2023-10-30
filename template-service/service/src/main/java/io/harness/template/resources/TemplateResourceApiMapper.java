@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.resources;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -94,6 +95,7 @@ public class TemplateResourceApiMapper {
     templateResponse.setStoreType(storeTypeEnum);
     templateResponse.setConnectorRef(templateResponseDTO.getConnectorRef());
     templateResponse.setStableTemplate(templateResponseDTO.isStableTemplate());
+    templateResponse.setYamlVersion(templateResponseDTO.getYamlVersion());
     Set<ConstraintViolation<TemplateResponse>> violations = validator.validate(templateResponse);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
@@ -134,6 +136,7 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setStoreType(storeTypeEnum);
     templateMetadataSummaryResponse.setConnectorRef(templateMetadataSummaryResponseDTO.getConnectorRef());
     templateMetadataSummaryResponse.setStableTemplate(templateMetadataSummaryResponseDTO.getStableTemplate());
+    templateMetadataSummaryResponse.yamlVersion(templateMetadataSummaryResponseDTO.getYamlVersion());
     Set<ConstraintViolation<TemplateMetadataSummaryResponseDTO>> violations =
         validator.validate(templateMetadataSummaryResponseDTO);
     if (!violations.isEmpty()) {

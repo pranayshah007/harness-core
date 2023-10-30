@@ -7,6 +7,8 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,13 +19,10 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.Principal;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
@@ -31,7 +30,6 @@ import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -49,15 +47,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.freeze.beans.FreezeEntityType;
-import io.harness.freeze.beans.FreezeStatus;
-import io.harness.freeze.beans.FreezeType;
-import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
-import io.harness.freeze.beans.yaml.FreezeConfig;
-import io.harness.freeze.beans.yaml.FreezeInfoConfig;
-import io.harness.freeze.entity.FreezeConfigEntity;
-import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.notifications.NotificationHelper;
-import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -106,10 +96,8 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -123,6 +111,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -135,7 +124,6 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private CDExpressionResolver expressionResolver;
   @Mock private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
   @Mock private NotificationHelper notificationHelper;
   @Mock private EngineExpressionService engineExpressionService;
@@ -150,6 +138,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Spy @InjectMocks private ServiceStepV3Helper serviceStepV3Helper;
 
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
@@ -175,6 +164,8 @@ public class ServiceStepV3Test extends CategoryTest {
     doNothing()
         .when(serviceCustomSweepingOutputHelper)
         .saveAdditionalServiceFieldsToSweepingOutput(any(NGServiceConfig.class), any(Ambiance.class));
+
+    doReturn(null).when(serviceStepV3Helper).executeFreezePart(any(), any(), any());
   }
   @After
   public void tearDown() throws Exception {
@@ -352,7 +343,6 @@ public class ServiceStepV3Test extends CategoryTest {
     final ServiceEntity serviceEntity = testServiceEntity();
     final Environment environment = testEnvEntity();
 
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     mockService(serviceEntity);
     mockEnv(environment);
@@ -368,7 +358,7 @@ public class ServiceStepV3Test extends CategoryTest {
     assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-    verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
+    verify(serviceStepV3Helper, times(1)).executeFreezePart(any(), captor.capture(), any());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
     assertThat(entityMap.size()).isEqualTo(6);
@@ -385,7 +375,6 @@ public class ServiceStepV3Test extends CategoryTest {
     final ServiceEntity serviceEntity = testOrgServiceEntity();
     final Environment environment = testOrgEnvEntity();
 
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
 
     mockService(serviceEntity);
@@ -402,7 +391,7 @@ public class ServiceStepV3Test extends CategoryTest {
     assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-    verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
+    verify(serviceStepV3Helper, times(1)).executeFreezePart(any(), captor.capture(), any());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
     assertThat(entityMap.size()).isEqualTo(6);
@@ -419,7 +408,6 @@ public class ServiceStepV3Test extends CategoryTest {
     final ServiceEntity serviceEntity = testAccountServiceEntity();
     final Environment environment = testAccountEnvEntity();
 
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     doReturn(false).when(overrideV2ValidationHelper).isOverridesV2Enabled(any(), any(), any());
     mockService(serviceEntity);
     mockEnv(environment);
@@ -435,7 +423,7 @@ public class ServiceStepV3Test extends CategoryTest {
     assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-    verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
+    verify(serviceStepV3Helper, times(1)).executeFreezePart(any(), captor.capture(), any());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
     assertThat(entityMap.size()).isEqualTo(6);
@@ -922,6 +910,62 @@ public class ServiceStepV3Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void testWithReleaseOpt() {
+    StepResponse stepResponse = getStepResponse("Kubernetes", ServiceDefinitionType.KUBERNETES);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    ServiceStepOutcome outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNotNull();
+    assertThat(outcome.getRelease().getName()).isEqualTo("testsvc");
+
+    stepResponse = getStepResponse("Ssh", ServiceDefinitionType.SSH);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNull();
+  }
+
+  private StepResponse getStepResponse(String serviceType, ServiceDefinitionType definitionType) {
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId("accountId")
+                                .orgIdentifier("orgId")
+                                .projectIdentifier("projectId")
+                                .identifier("service-id")
+                                .name("service-name")
+                                .type(definitionType)
+                                .yaml(getServiceYaml(serviceType))
+                                .build();
+
+    Environment environment = testEnvEntity();
+    doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
+        .when(sweepingOutputService)
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
+
+    return step.handleChildrenResponse(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(service.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        Map.of("taskid1", StepResponseNotifyData.builder().nodeUuid("nodeuuid").status(Status.SUCCEEDED).build()));
+  }
+
+  private String getServiceYaml(String serviceType) {
+    return "service:\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      release:\n"
+        + "        name: testsvc\n"
+        + "    type: " + serviceType + "\n";
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testHandleResponse_1() {
@@ -987,96 +1031,6 @@ public class ServiceStepV3Test extends CategoryTest {
         Map.of("taskid1", StepResponseNotifyData.builder().nodeUuid("nodeuuid").status(Status.FAILED).build()));
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void testExecuteFreezePart() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
-    doReturn(freezeSummaryResponseDTOList)
-        .when(freezeEvaluateService)
-        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(
-        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
-        .thenReturn(false);
-    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
-    ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
-    ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(sweepingOutputService, times(1))
-        .consume(any(Ambiance.class), stringCaptor.capture(), captor.capture(), anyString());
-
-    List<ExecutionSweepingOutput> allValues = captor.getAllValues();
-
-    Map<Class, ExecutionSweepingOutput> outputsMap =
-        allValues.stream().collect(Collectors.toMap(ExecutionSweepingOutput::getClass, a -> a));
-    FreezeOutcome freezeOutcome = (FreezeOutcome) outputsMap.get(FreezeOutcome.class);
-    assertThat(freezeOutcome.isFrozen()).isEqualTo(true);
-    assertThat(freezeOutcome.getGlobalFreezeConfigs()).isEqualTo(freezeSummaryResponseDTOList);
-    assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(0);
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void testExecuteFreezePartWithEmptyFreezeList() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Collections.emptyList();
-    doReturn(freezeSummaryResponseDTOList)
-        .when(freezeEvaluateService)
-        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(
-        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
-        .thenReturn(false);
-    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
-    ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
-    ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(sweepingOutputService, times(0))
-        .consume(any(Ambiance.class), stringCaptor.capture(), captor.capture(), anyString());
-    assertThat(childrenExecutableResponse).isNull();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void testExecuteFreezePartIfOverrideFreeze() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
-    doReturn(freezeSummaryResponseDTOList)
-        .when(freezeEvaluateService)
-        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(
-        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
-        .thenReturn(true);
-    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
-    assertThat(childrenExecutableResponse).isEqualTo(null);
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.YOGESH)
-  @Category(UnitTests.class)
-  public void testExecuteFreezePartIfFreezeNotActive() {
-    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
-    doReturn(new LinkedList<>())
-        .when(freezeEvaluateService)
-        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    step.executeFreezePart(buildAmbiance(), entityMap);
-    ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
-    ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(sweepingOutputService, times(0))
-        .consume(any(Ambiance.class), stringCaptor.capture(), captor.capture(), anyString());
   }
 
   private ServiceEntity testServiceEntity() {
@@ -1357,6 +1311,7 @@ public class ServiceStepV3Test extends CategoryTest {
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
                                                .build())
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                          .build())
         .build();
   }
@@ -1377,20 +1332,6 @@ public class ServiceStepV3Test extends CategoryTest {
     doReturn(Optional.ofNullable(serviceOverrides))
         .when(serviceOverrideService)
         .get(anyString(), anyString(), anyString(), anyString(), anyString());
-  }
-
-  private FreezeSummaryResponseDTO createGlobalFreezeResponse() {
-    FreezeConfig freezeConfig = FreezeConfig.builder()
-                                    .freezeInfoConfig(FreezeInfoConfig.builder()
-                                                          .identifier("_GLOBAL_")
-                                                          .name("Global Freeze")
-                                                          .status(FreezeStatus.DISABLED)
-                                                          .build())
-                                    .build();
-    String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
-    FreezeConfigEntity freezeConfigEntity = NGFreezeDtoMapper.toFreezeConfigEntity(
-        "accountId", "orgIdentifier", "projectIdentifier", yaml, FreezeType.GLOBAL);
-    return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 
   private static EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getOverridesConfigsV2MapTestData(

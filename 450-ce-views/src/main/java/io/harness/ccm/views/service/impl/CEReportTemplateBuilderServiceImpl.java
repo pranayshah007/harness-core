@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
@@ -81,6 +84,8 @@ import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuilderService {
   @Inject private CEViewService ceViewService;

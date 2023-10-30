@@ -35,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.GTM)
 @Slf4j
 public class SendProvisionedCICreditsToSegmentHandler extends CreditExpiryIteratorHandler<CICredit> {
-  private static final Duration INTERVAL = ofHours(24);
+  private static final Duration INTERVAL = ofHours(6);
+  private static final Duration TARGET_INTERVAL = ofHours(24);
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
   private static final String ACCOUNT = "Account";
@@ -61,11 +62,11 @@ public class SendProvisionedCICreditsToSegmentHandler extends CreditExpiryIterat
     try {
       telemetryReporter.sendGroupEvent(ciCredit.getAccountIdentifier(), userId, map,
           Collections.singletonMap(ALL, true), TelemetryOption.builder().sendForCommunity(true).build());
-      log.info("Successfully sent ci_build_credits_provisioned telemetry event for account {}",
-          ciCredit.getAccountIdentifier());
+      log.info("Successfully sent ci_build_credits_provisioned telemetry event for account: {} and creditID: {}",
+          ciCredit.getAccountIdentifier(), ciCredit.getUuid());
     } catch (Exception ex) {
-      log.error("Failed to send ci_build_credits_provisioned telemetry event for account {}",
-          ciCredit.getAccountIdentifier(), ex);
+      log.error("Failed to send ci_build_credits_provisioned telemetry event for account: {} and creditID: {}",
+          ciCredit.getAccountIdentifier(), ciCredit.getUuid(), ex);
     }
   }
 

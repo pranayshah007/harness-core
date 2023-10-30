@@ -219,7 +219,8 @@ public class CgInstanceSyncServiceV2 {
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
-    log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
+    log.debug(
+        "Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
     if (!result.getExecutionStatus().isEmpty()
         && !result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = DockerArtifactMetadata.class, name = ArtifactMetadataTypes.DOCKER_ARTIFACT_METADATA)
   , @JsonSubTypes.Type(value = FileArtifactMetadata.class, name = ArtifactMetadataTypes.FILE_ARTIFACT_METADATA),
-      @JsonSubTypes.Type(value = SscaArtifactMetadata.class, name = ArtifactMetadataTypes.SSCA_ARTIFACT_METADATA)
+      @JsonSubTypes.Type(value = SscaArtifactMetadata.class, name = ArtifactMetadataTypes.SSCA_ARTIFACT_METADATA),
+      @JsonSubTypes.Type(value = ProvenanceMetaData.class, name = ArtifactMetadataTypes.PROVENANCE_ARTIFACT_METADATA)
 })
 public interface ArtifactMetadataSpec {}

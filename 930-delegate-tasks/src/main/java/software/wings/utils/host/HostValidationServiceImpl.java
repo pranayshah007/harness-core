@@ -6,19 +6,20 @@
  */
 
 package software.wings.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.noop;
-import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
 
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 import static software.wings.utils.SshHelperUtils.createSshSessionConfig;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck;
@@ -30,7 +31,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshClientManager;
 import io.harness.shell.ssh.exception.SshClientException;
 
@@ -52,8 +52,6 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,6 +61,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -168,24 +167,13 @@ public class HostValidationServiceImpl implements HostValidationService {
                                           .withStatus(ExecutionStatus.SUCCESS.name())
                                           .build();
     try {
-      if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
-        SshClientManager.test(sshSessionConfig);
-      } else {
-        Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);
-        sshSession.disconnect();
-      }
+      SshClientManager.test(sshSessionConfig);
     } catch (SshClientException ex) {
       ErrorCode errorCode = ex.getCode() == null ? UNKNOWN_ERROR : ex.getCode();
       response.setStatus(ExecutionStatus.FAILED.name());
       response.setErrorCode(errorCode.name());
       response.setErrorDescription(errorCode.getDescription());
       log.error("Failed to validate Host: ", ex);
-    } catch (JSchException jschEx) {
-      ErrorCode errorCode = normalizeError(jschEx);
-      response.setStatus(ExecutionStatus.FAILED.name());
-      response.setErrorCode(errorCode.name());
-      response.setErrorDescription(errorCode.getDescription());
-      log.error("Failed to validate Host: ", jschEx);
     }
     return response;
   }

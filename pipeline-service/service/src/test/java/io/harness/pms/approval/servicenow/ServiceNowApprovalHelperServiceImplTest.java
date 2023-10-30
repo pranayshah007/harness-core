@@ -55,9 +55,7 @@ import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
-import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
-import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
@@ -162,12 +160,6 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
         requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof ServiceNowConnectorDTO)
         .isTrue();
     verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
-    verify(waitNotifyEngine)
-        .progressOn("id",
-            ApprovalProgressData.builder()
-                .latestDelegateTaskId("__TASK_ID__")
-                .taskName(ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME)
-                .build());
     verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("id", "__TASK_ID__");
     // since auth object is present, then decrypt-able entity will be ServiceNowAuthCredentialsDTO
     doReturn(ServiceNowConnectorDTO.builder()
@@ -195,12 +187,6 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     assertThatCode(() -> serviceNowApprovalHelperService.handlePollingEvent(null, instance)).doesNotThrowAnyException();
     verify(ngDelegate2TaskExecutor, times(3)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(3)).waitForAllOn(any(), any(), any());
-    verify(waitNotifyEngine, times(3))
-        .progressOn("id",
-            ApprovalProgressData.builder()
-                .latestDelegateTaskId("__TASK_ID__")
-                .taskName(ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME)
-                .build());
     verify(approvalInstanceService, times(3)).updateLatestDelegateTaskId("id", "__TASK_ID__");
     // when task id is empty, progress update shouldn't be called
 

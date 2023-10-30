@@ -14,8 +14,10 @@ import com.google.gson.Gson;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
+@Slf4j
 public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
   @Override
   public Map<String, Object> getParsedValue(
@@ -28,6 +30,8 @@ public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
       JSONObject success = (JSONObject) executions.get("success");
       percentage = success.get("percent");
     }
+    log.info(
+        "Harness Data Source -> Success percent for pipeline - {}, pipeline  link - {}", percentage, ciPipelineUrl);
 
     Map<String, Object> dataPointInfo =
         ValueParserUtils.getDataPointsInfoMap(0, Collections.singletonList(ciPipelineUrl));
@@ -36,6 +40,8 @@ public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
     }
     Map<String, Object> returnMap = new HashMap<>();
     returnMap.put(dataPointIdentifier, dataPointInfo);
+
+    log.info("Harness Data Source -> PipelineSuccessPercentParser returned value {}", returnMap);
     return returnMap;
   }
 }

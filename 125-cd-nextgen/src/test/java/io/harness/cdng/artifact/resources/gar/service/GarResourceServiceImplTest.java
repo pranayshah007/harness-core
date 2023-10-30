@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.gar.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,7 @@ public class GarResourceServiceImplTest extends CategoryTest {
   private static final String repositoryName = "repositoryName";
   private static final String project = "project";
   private static final String version = "version";
+  private static final String version_regex = "versionRegex";
   private static final String pkg = "pkg";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
@@ -268,6 +270,129 @@ public class GarResourceServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, null, repositoryName, project, pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_Empty() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, "", repositoryName, project, pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, INPUT, repositoryName, project, pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_RepositoryName_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, null, project, pkg, version,
+                               version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_RepositoryName_Empty() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, "", project, pkg, version,
+                               version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_RepositoryName_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, INPUT, project, pkg, version,
+                               version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Project_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, null, pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Project_Empty() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, "", pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Project_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, INPUT, pkg,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Package_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, project, null,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Package_Empty() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, project, "",
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Package_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(CONNECTOR_REF, REGION, repositoryName, project, INPUT,
+                               version, version_regex, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+
+  @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild() {
@@ -316,8 +441,8 @@ public class GarResourceServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild_Region_Empty() {
     assertThatThrownBy(()
-                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, null, repositoryName, project,
-                               pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, "", repositoryName, project, pkg,
+                               GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(REGION_MESSAGE);
   }

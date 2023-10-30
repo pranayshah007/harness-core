@@ -9,7 +9,6 @@ package io.harness.batch.processing.cloudevents.aws.ec2.service.tasklet;
 
 import static io.harness.batch.processing.ccm.UtilizationInstanceType.EC2_INSTANCE;
 
-import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -103,7 +102,6 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
               });
             }
           }
-          boolean recommendationSaved = false;
           for (Map.Entry<String, List<EC2InstanceRecommendationInfo>> instanceLevelRecommendation :
               instanceLevelRecommendations.entrySet()) {
             if (!instanceLevelRecommendation.getValue().isEmpty()) {
@@ -127,14 +125,10 @@ public class AWSEC2RecommendationTasklet implements Tasklet {
                 saveRecommendationInTimeScaleDB(ec2Recommendation);
                 ignoreListService.updateEC2RecommendationState(ec2Recommendation.getUuid(), accountId,
                     ec2Recommendation.getAwsAccountId(), ec2Recommendation.getInstanceId());
-                recommendationSaved = true;
               } catch (Exception e) {
                 log.error("Couldn't save recommendation: {}", recommendation, e);
               }
             }
-          }
-          if (!recommendationSaved) {
-            throw new BatchProcessingException("No recommendation could be saved successfully", null);
           }
           List<AWSEC2Details> instances = extractEC2InstanceDetails(ec2RecommendationResponse);
           // We do this in batches because AWS's getMetricData API throws error if the list is too huge

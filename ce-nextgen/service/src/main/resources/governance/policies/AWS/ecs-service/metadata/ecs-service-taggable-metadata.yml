@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: ecs-service-taggable
+cloudProvider: AWS
+resourceType: ecs-service
+description: List all taggable ecs services
+rulesYamlPath: ../ecs-service-taggable.yml

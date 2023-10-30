@@ -6,13 +6,16 @@
  */
 
 package io.harness.gitsync.core.webhook.pushevent;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.GITX_WEBHOOK_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.gitsync.common.WebhookEventConstants.GIT_PUSH_EVENT_CONSUMER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -31,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @OwnedBy(DX)
 @Singleton
@@ -41,10 +45,12 @@ public class GitPushEventStreamConsumer extends RedisTraceConsumer {
 
   @Inject
   public GitPushEventStreamConsumer(@Named(GIT_PUSH_EVENT_STREAM) Consumer redisConsumer,
-      @Named(GIT_PUSH_EVENT_STREAM) MessageListener gitPushEventListener) {
+      @Named(GIT_PUSH_EVENT_STREAM) MessageListener gitPushEventListener,
+      @Named(GITX_WEBHOOK_PUSH_EVENT_STREAM) MessageListener gitXWebhookPushEventListener) {
     this.redisConsumer = redisConsumer;
     messageListenersList = new ArrayList<>();
     messageListenersList.add(gitPushEventListener);
+    messageListenersList.add(gitXWebhookPushEventListener);
   }
 
   @Override

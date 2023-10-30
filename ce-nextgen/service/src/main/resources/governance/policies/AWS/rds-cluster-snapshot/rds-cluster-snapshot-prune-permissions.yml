@@ -1,0 +1,10 @@
+policies:
+  - name: rds-cluster-snapshot-prune-permissions
+    resource: rds-cluster-snapshot
+    filters:
+      - type: cross-account
+        whitelist:
+          - '112233445566'
+    actions:
+      - type: set-permissions
+        remove: matched

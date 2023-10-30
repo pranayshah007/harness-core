@@ -112,7 +112,8 @@ public class ECRUploadStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.type",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.identifier",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.startTs",
-            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.endTs");
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.endTs",
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(buildAndPushECRNode.getEcrStepInfo().getUuid()) // step uuid

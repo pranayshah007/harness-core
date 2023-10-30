@@ -6,6 +6,7 @@ category: CI/CD
 source: https://github.com/backstage/backstage/tree/master/plugins/jenkins
 iconUrl: https://img.icons8.com/color/1600/jenkins.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/jenkins/
 config: |-
   jenkins:
     instances:

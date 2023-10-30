@@ -173,7 +173,8 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       log.info("Resource constraint {} has running units {}", restraint.getUuid(), Joiner.on(", ").join(units));
 
       units.forEach(unit -> {
-        final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit, resourceRestraintRegistry);
+        final RunnableConsumers runnableConsumers =
+            constraint.runnableConsumers(unit, resourceRestraintRegistry, false);
         for (ConsumerId consumerId : runnableConsumers.getConsumerIds()) {
           if (!constraint.consumerUnblocked(unit, consumerId, null, resourceRestraintRegistry)) {
             break;

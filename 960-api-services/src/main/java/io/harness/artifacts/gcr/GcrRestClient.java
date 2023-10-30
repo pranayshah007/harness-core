@@ -24,7 +24,8 @@ import retrofit2.http.Path;
  * Created by brett on 8/2/17
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface GcrRestClient {
   @GET("/v2/{imageName}/tags/list")

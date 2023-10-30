@@ -6,6 +6,8 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
@@ -41,6 +43,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
 
+import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
@@ -62,6 +65,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureProvisionerService;
@@ -86,6 +90,7 @@ import retrofit2.Response;
 @Slf4j
 public class AppMigrationService extends NgMigrationService {
   @Inject private AppService appService;
+  @Inject private AccountService accountService;
   @Inject private HPersistence hPersistence;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceResourceService serviceResourceService;
@@ -243,17 +248,51 @@ public class AppMigrationService extends NgMigrationService {
                                             .accountId(inputDTO.getAccountIdentifier())
                                             .build();
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
+    Account account = accountService.getAccountWithDefaults(application.getAccountId());
 
-    if (EmptyPredicate.isEmpty(application.getDefaults())) {
+    if (isEmpty(application.getDefaults()) && isEmpty(account.getDefaults())) {
       return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
+    } else {
+      List<ImportError> variableMigrationErrors = new ArrayList<>();
+      boolean variableMigrationSuccess =
+          createVariablesForApp(application, inputDTO, migrationContext, ngClient, yamlFile, variableMigrationErrors);
+      variableMigrationSuccess = variableMigrationSuccess
+          && createVariablesForAccount(
+              account, inputDTO, migrationContext, ngClient, yamlFile, variableMigrationErrors);
+
+      return MigrationImportSummaryDTO.builder()
+          .success(variableMigrationSuccess)
+          .errors(variableMigrationErrors)
+          .build();
+    }
+  }
+
+  public boolean createVariablesForAccount(Account account, MigrationInputDTO inputDTO,
+      MigrationContext migrationContext, NGClient ngClient, NGYamlFile yamlFile,
+      List<ImportError> variableMigrationErrors) throws IOException {
+    Map<String, String> defaults = account.getDefaults();
+    return migrateDefaults(inputDTO, migrationContext, ngClient, yamlFile, variableMigrationErrors, defaults, true);
+  }
+
+  public boolean createVariablesForApp(Application application, MigrationInputDTO inputDTO,
+      MigrationContext migrationContext, NGClient ngClient, NGYamlFile yamlFile,
+      List<ImportError> variableMigrationErrors) throws IOException {
+    Map<String, String> defaults = application.getDefaults();
+    return migrateDefaults(inputDTO, migrationContext, ngClient, yamlFile, variableMigrationErrors, defaults, false);
+  }
+
+  private boolean migrateDefaults(MigrationInputDTO inputDTO, MigrationContext migrationContext, NGClient ngClient,
+      NGYamlFile yamlFile, List<ImportError> variableMigrationErrors, Map<String, String> defaults,
+      boolean accountScope) throws IOException {
+    if (isEmpty(defaults)) {
+      return true;
     }
 
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
-
     boolean variableMigrationSuccess = true;
-    List<ImportError> variableMigrationErrors = new ArrayList<>();
-    for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
+
+    for (Map.Entry<String, String> entry : defaults.entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
       Map<String, String> variableSpec =
@@ -262,30 +301,34 @@ public class AppMigrationService extends NgMigrationService {
               .put("fixedValue",
                   (String) MigratorExpressionUtils.render(migrationContext, value, inputDTO.getCustomExpressions()))
               .build();
-      Map<String, Object> variable =
+      ImmutableMap.Builder<String, Object> valuesMapBuilder =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
               .put(YAMLFieldNameConstants.IDENTIFIER,
                   MigratorUtility.generateIdentifier(name, inputDTO.getIdentifierCaseFormat()))
-              .put(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier)
-              .put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier)
               .put(YAMLFieldNameConstants.TYPE, "String")
-              .put(YAMLFieldNameConstants.SPEC, variableSpec)
-              .build();
-      Response<ResponseDTO<ConnectorResponseDTO>> resp = null;
-      resp = ngClient
-                 .createVariable(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
-                     JsonUtils.asTree(Collections.singletonMap("variable", variable)))
-                 .execute();
+              .put(YAMLFieldNameConstants.SPEC, variableSpec);
+
+      if (!accountScope) {
+        valuesMapBuilder.put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier)
+            .put(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier);
+      }
+
+      Map<String, Object> variable = valuesMapBuilder.build();
+
+      Response<ResponseDTO<ConnectorResponseDTO>> resp =
+          ngClient
+              .createVariable(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  JsonUtils.asTree(Collections.singletonMap("variable", variable)))
+              .execute();
       MigrationImportSummaryDTO variableMigrationSummaryDTO = handleResp(yamlFile, resp);
       variableMigrationSuccess = variableMigrationSuccess && variableMigrationSummaryDTO.isSuccess();
       variableMigrationErrors.addAll(variableMigrationSummaryDTO.getErrors());
-      log.info("Application default creation for {} Response details {} {}", name, resp.code(), resp.message());
+      log.info("Default creation for {}, accountScope {}, Response details {} {}", name, accountScope, resp.code(),
+          resp.message());
     }
-    return MigrationImportSummaryDTO.builder()
-        .success(variableMigrationSuccess)
-        .errors(variableMigrationErrors)
-        .build();
+
+    return variableMigrationSuccess;
   }
 
   public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {

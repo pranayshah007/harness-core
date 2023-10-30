@@ -329,6 +329,14 @@ data "archive_file" "ce-azure-billing-gcs" {
     content  = "${file("${path.module}/src/python/requirements.txt")}"
     filename = "requirements.txt"
   }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
 }
 
 data "archive_file" "ce-azure-billing-bq" {
@@ -1129,33 +1137,36 @@ resource "google_cloudfunctions_function" "ce-aws-billing-gcs-function" {
   }
 }
 
-resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
-  name                      = "ce-azure-billing-bq-terraform"
-  description               = "This cloudfunction gets triggered when cloud scheduler sends an event in pubsub topic"
-  entry_point               = "main"
-  available_memory_mb       = 256
-  timeout                   = 540
-  runtime                   = "python38"
-  project                   = "${var.projectId}"
-  region                    = "${var.region}"
-  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
-  source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-bq-archive.name}"
-  max_instances             = 3000
+resource "google_cloudfunctions2_function" "ce-azure-billing-bq-function" {
+  provider = google-beta
+  name = "ce-azure-billing-bq-terraform"
+  location = "${var.region}"
+  project = "${var.projectId}"
+  description = "This cloudfunction gets triggered with an http request to function URI"
 
-  environment_variables = {
-    disabled = "false"
-    enable_for_accounts = ""
-    GCP_PROJECT = "${var.projectId}"
-    AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
-    AZURECOSTCFTOPIC = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
-    COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
-  }
-  event_trigger {
-    event_type = "google.pubsub.topic.publish"
-    resource   = "${google_pubsub_topic.ce-azure-billing-cf-topic.name}"
-    failure_policy {
-      retry = false
+  build_config {
+    runtime = "python38"
+    entry_point = "main"
+    source {
+      storage_source {
+        bucket = "${google_storage_bucket.bucket1.name}"
+        object = "${google_storage_bucket_object.ce-azure-billing-bq-archive.name}"
+      }
     }
+  }
+  service_config {
+    max_instance_count = 3000
+    available_memory   = "256M"
+    timeout_seconds    = 3600
+    environment_variables = {
+      disabled = "false"
+      enable_for_accounts = ""
+      GCP_PROJECT = "${var.projectId}"
+      AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
+      AZURECOSTCFTOPIC = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
+      COSTCATEGORIESUPDATETOPIC = "${google_pubsub_topic.ccm-bigquery-batch-update-topic.name}"
+    }
+    service_account_email = data.google_app_engine_default_service_account.default.email
   }
 }
 

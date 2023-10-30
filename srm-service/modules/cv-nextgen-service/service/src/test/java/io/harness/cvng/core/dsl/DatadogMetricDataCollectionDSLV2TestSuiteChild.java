@@ -11,11 +11,7 @@ import static io.harness.CvNextGenTestBase.getSourceResourceFile;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
@@ -29,7 +25,6 @@ import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.DatadogMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.DatadogServiceImpl;
@@ -61,7 +56,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,8 +67,6 @@ public class DatadogMetricDataCollectionDSLV2TestSuiteChild extends DSLHoverflyC
   @Inject private MetricPackService metricPackService;
   @Inject private DatadogMetricDataCollectionInfoMapper dataCollectionInfoMapper;
   private ExecutorService executorService;
-  FeatureFlagService featureFlagService;
-
   @Before
   public void setup() throws IOException, IllegalAccessException {
     super.before();
@@ -82,11 +74,6 @@ public class DatadogMetricDataCollectionDSLV2TestSuiteChild extends DSLHoverflyC
     executorService = Executors.newFixedThreadPool(10);
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
-    featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_DATADOG_METRICS_FORMULA_SUPPORT.name())))
-        .thenReturn(true);
-    FieldUtils.writeField(dataCollectionInfoMapper, "featureFlagService", featureFlagService, true);
   }
 
   @Test

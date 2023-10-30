@@ -22,6 +22,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(makeFinal = false)
 public class LogStreamingServiceConfiguration {
   private String baseUrl;
+  private long delayToClosePrefixLogStreamInSeconds;
   @ConfigSecret private String serviceToken;
   private ThreadPoolConfig threadPoolConfig;
 }

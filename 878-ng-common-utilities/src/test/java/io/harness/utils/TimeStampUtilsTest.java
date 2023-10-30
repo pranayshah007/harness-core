@@ -37,7 +37,7 @@ public class TimeStampUtilsTest extends CategoryTest {
     Long totalDuration = TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(timestamp, timezone);
 
     // Assert that the total duration is a non-negative value
-    assertThat(totalDuration).isGreaterThan(0);
+    assertThat(totalDuration).isPositive();
   }
 
   @Test
@@ -56,11 +56,13 @@ public class TimeStampUtilsTest extends CategoryTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void testGetTotalDurationWRTCurrentTimeFromTimeStampInvalidZone() {
-    String invalidTimestamp = getTimeStampGreaterCurrentTime(); // Invalid timestamp format
+    String invalidTimestamp = getTimeStampGreaterCurrentTime();
     String timezone = "Invalid";
 
-    // Assert that an IllegalArgumentException is thrown for an invalid date format
-    assertThatThrownBy(() -> TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(invalidTimestamp, timezone));
+    // Assert that an InvalidRequestException is thrown for an invalid timezone
+    assertThatThrownBy(() -> TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(invalidTimestamp, timezone))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Invalid timezone provided [Invalid]");
   }
 
   private String getTimeStampGreaterCurrentTime() {

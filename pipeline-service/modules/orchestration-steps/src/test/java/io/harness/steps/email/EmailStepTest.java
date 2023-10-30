@@ -128,7 +128,7 @@ public class EmailStepTest extends CategoryTest {
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
                             .subject(SUBJECT)
-                            .body(BODY)
+                            .body("<br>" + BODY + "</br>")
                             .notificationId("notificationId")
                             .accountId("accountId")
                             .build();
@@ -179,7 +179,7 @@ public class EmailStepTest extends CategoryTest {
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
                             .subject(SUBJECT)
-                            .body(BODY)
+                            .body("<br>" + BODY + "</br>")
                             .notificationId("notificationId")
                             .accountId("accountId")
                             .build();
@@ -230,7 +230,7 @@ public class EmailStepTest extends CategoryTest {
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
                             .subject(SUBJECT)
-                            .body(BODY)
+                            .body("<br>" + BODY + "</br>")
                             .notificationId("notificationId")
                             .accountId("accountId")
                             .build();
@@ -281,7 +281,7 @@ public class EmailStepTest extends CategoryTest {
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
                             .subject(SUBJECT)
-                            .body(BODY)
+                            .body("<br>" + BODY + "</br>")
                             .notificationId("notificationId")
                             .accountId("accountId")
                             .build();

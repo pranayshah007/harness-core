@@ -16,6 +16,9 @@ import static io.harness.azure.model.AzureConstants.DELETE_APPLICATION_SETTINGS;
 import static io.harness.azure.model.AzureConstants.DELETE_CONNECTION_STRINGS;
 import static io.harness.azure.model.AzureConstants.DELETE_CONTAINER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.DELETE_IMAGE_SETTINGS;
+import static io.harness.azure.model.AzureConstants.DEPLOY_DETAILS_LOG;
+import static io.harness.azure.model.AzureConstants.DEPLOY_LOG;
+import static io.harness.azure.model.AzureConstants.DEPLOY_OPTIONS_LOG;
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.EMPTY_DOCKER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.FAIL_DEPLOYMENT;
@@ -76,7 +79,10 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
@@ -104,6 +110,7 @@ import io.harness.logging.LogCallback;
 import software.wings.utils.ArtifactType;
 
 import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -130,6 +137,8 @@ import reactor.core.publisher.Mono;
 @NoArgsConstructor
 @Slf4j
 @OwnedBy(CDP)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AZURE_WEBAPP})
 public class AzureAppServiceDeploymentService {
   @Inject private AzureWebClient azureWebClient;
   @Inject private SlotSteadyStateChecker slotSteadyStateChecker;
@@ -527,8 +536,14 @@ public class AzureAppServiceDeploymentService {
     try {
       deployLog.saveExecutionLog(START_ARTIFACT_DEPLOY);
       uploadStartupScript(context.getAzureWebClientContext(), slotName, context.getStartupCommand(), deployLog);
-      Mono deployment = deployPackage(context.getAzureWebClientContext(), slotName, context.getArtifactFile(),
-          context.getArtifactType(), deployLog, isWindowsServicePlan);
+      Mono deployment;
+      if (context.isUseNewDeployApi()) {
+        deployment = deployPackage(context, slotName, deployLog);
+      } else {
+        deployment = deployPackage(context.getAzureWebClientContext(), slotName, context.getArtifactFile(),
+            context.getArtifactType(), deployLog, isWindowsServicePlan);
+      }
+
       deployment.block(Duration.ofMinutes(context.getSteadyStateTimeoutInMin()));
     } catch (Exception exception) {
       deployLog.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
@@ -542,6 +557,21 @@ public class AzureAppServiceDeploymentService {
     logCallback.saveExecutionLog(format(UPDATE_STARTUP_COMMAND, context.getAppName(), slotName));
     azureWebClient.updateSlotConfigurationWithAppCommandLineScript(context, slotName, startupCommand);
     logCallback.saveExecutionLog(SUCCESS_UPDATE_STARTUP_COMMAND);
+  }
+
+  private Mono<Void> deployPackage(
+      AzureAppServicePackageDeploymentContext context, String slotName, LogCallback logCallback) {
+    AzureWebClientContext clientContext = context.getAzureWebClientContext();
+    File artifactFile = context.getArtifactFile();
+    DeployOptions options = context.toDeployOptions();
+    logCallback.saveExecutionLog(format(DEPLOY_LOG, context.getArtifactType()));
+    logCallback.saveExecutionLog(
+        format(DEPLOY_DETAILS_LOG, artifactFile.getAbsolutePath(), clientContext.getAppName(), slotName));
+    logCallback.saveExecutionLog(format(DEPLOY_OPTIONS_LOG, context.getDeployType(), options.cleanDeployment()));
+    Mono<Void> deployment = azureWebClient.deployAsync(
+        context.getAzureWebClientContext(), context.getDeployType(), slotName, context.getArtifactFile(), options);
+    logCallback.saveExecutionLog(ARTIFACT_DEPLOY_STARTED);
+    return deployment;
   }
 
   private Mono deployPackage(AzureWebClientContext azureWebClientContext, final String slotName,

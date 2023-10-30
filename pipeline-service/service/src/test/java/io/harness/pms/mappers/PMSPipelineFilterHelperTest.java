@@ -101,7 +101,7 @@ public class PMSPipelineFilterHelperTest extends CategoryTest {
     assertThat(pipelineEntity.getDescription()).isEqualTo("New Dec");
     assertThat(pipelineEntity.getTags()).isEqualTo(Collections.singletonList(NGTag.builder().build()));
     assertThat(pipelineEntity.getStageCount()).isEqualTo(2);
-    assertThat(pipelineEntity.getStageNames()).containsExactly("s11", "s12");
+    assertThat(pipelineEntity.getStageNames()).containsExactly("s1", "s11", "s12");
     assertThat(pipelineEntity.getAllowStageExecutions()).isFalse();
   }
 

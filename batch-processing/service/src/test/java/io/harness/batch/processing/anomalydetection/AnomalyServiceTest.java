@@ -36,11 +36,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnomalyServiceTest extends CategoryTest {
   private static final String LIST_QUERY =
-      "SELECT t0.* FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.anomalytime = '1970-01-01T00:00:00Z'))";
+      "SELECT t0.* FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.anomalytime = '1970-01-01T00:00:00Z') AND (t0.newentity = 'false'))";
   private static final String LIST_K8S_QUERY =
-      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.anomalytime <= '1970-01-01T00:00:00Z') AND (t0.anomalytime >= '1969-12-17T00:00:00Z') AND (t0.clusterid IS NOT NULL)) ORDER BY t0.anomalytime ASC,difference DESC";
+      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.newentity = 'false') AND (t0.anomalytime <= '1970-01-01T00:00:00Z') AND (t0.anomalytime >= '1969-12-17T00:00:00Z') AND (t0.clusterid IS NOT NULL)) ORDER BY t0.anomalytime ASC,difference DESC";
   private static final String OVERVIEW_QUERY =
-      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.anomalytime <= '1970-01-01T00:00:00Z') AND (t0.anomalytime >= '1969-12-17T00:00:00Z')) ORDER BY t0.anomalytime ASC,difference DESC";
+      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.newentity = 'false') AND (t0.anomalytime <= '1970-01-01T00:00:00Z') AND (t0.anomalytime >= '1969-12-17T00:00:00Z')) ORDER BY t0.anomalytime ASC,difference DESC";
   @Mock private AnomalyEntityDao anomalyEntityDao;
   @InjectMocks private AnomalyServiceImpl anomalyService;
 

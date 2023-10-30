@@ -8,20 +8,25 @@
 package io.harness.pms.yaml;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YamlNode.PATH_SEP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.YamlException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class YamlNodeUtils {
@@ -117,7 +122,7 @@ public class YamlNodeUtils {
           - identifier: something
             etc...
       */
-      if (isNotEmpty(arrayElement.getArrayUniqueIdentifier())
+      if (EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())
           && currName.equals(arrayElement.getArrayUniqueIdentifier())) {
         next = arrayElement.getCurrJsonNode();
         break;
@@ -138,7 +143,8 @@ public class YamlNodeUtils {
          */
         for (YamlField field : arrayElement.fields()) {
           // Nodes having identifier to refer uniquely from the array.
-          if (isNotEmpty(field.getNode().getIdentifier()) && currName.equals(field.getNode().getIdentifier())) {
+          if (EmptyPredicate.isNotEmpty(field.getNode().getIdentifier())
+              && currName.equals(field.getNode().getIdentifier())) {
             next = field.getNode().getCurrJsonNode();
             break;
           }
@@ -173,10 +179,12 @@ public class YamlNodeUtils {
   }
 
   /*
-  This method is specifically used currently only for check that the stage idenfier provided in useFromStage
-  field exists or not. To make it more extensible, we will need to modify it.
-   */
-  private YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
+ This method is specifically used currently only for check that the stage idenfier provided in useFromStage
+ field exists or not. To make it more extensible, we will need to modify it.
+  */
+
+  @VisibleForTesting
+  protected YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
     if (yamlNode == null || isEmpty(fieldName)) {
       return null;
     }
@@ -202,21 +210,22 @@ public class YamlNodeUtils {
     return null;
   }
 
-  /*TODO: This method currently works for the cases when we want to check for field name being a stage
-  identifier. But we need to modify it to handle other cases also in future. For e.g. We may need to check
-  the field name as a leaf node's value also.
-   */
-  private YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
+  /*
+  TODO: This method currently works for the cases when we want to check for field name being a stage
+identifier. But we need to modify it to handle other cases also in future. For e.g. We may need to check
+the field name as a leaf node's value also.
+ */
+  @VisibleForTesting
+  protected YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
     if (yamlNode == null || isEmpty(fieldName)) {
       return null;
     }
     for (YamlNode arrayElement : yamlNode.asArray()) {
-      if (isNotEmpty(fieldName) && fieldName.equals(arrayElement.getName())) {
+      if (fieldName.equals(arrayElement.getName())) {
         return arrayElement;
       }
       YamlNode requiredNode = null;
       if (arrayElement.isArray() || arrayElement.isObject()) {
-        // Value -> Array
         requiredNode = findFieldNameInArray(arrayElement, fieldName);
       }
       if (requiredNode != null) {

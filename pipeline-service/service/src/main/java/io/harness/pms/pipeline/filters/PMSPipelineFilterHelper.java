@@ -39,21 +39,33 @@ public class PMSPipelineFilterHelper {
     update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
     update.set(PipelineEntityKeys.allowStageExecutions, pipelineEntity.getAllowStageExecutions());
     update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());
+    update.set(PipelineEntityKeys.yamlHash, pipelineEntity.getYamlHash());
+    return update;
+  }
+
+  public Update getPipelineFilterUpdateOperations(PipelineEntity pipelineEntity) {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.filters, pipelineEntity.getFilters());
+    update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
+    update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
     return update;
   }
 
   public PipelineEntity updateFieldsInDBEntry(
       PipelineEntity entityFromDB, PipelineEntity fieldsToUpdate, long timeOfUpdate) {
-    return entityFromDB.withYaml(fieldsToUpdate.getYaml())
-        .withLastUpdatedAt(timeOfUpdate)
-        .withName(fieldsToUpdate.getName())
-        .withDescription(fieldsToUpdate.getDescription())
-        .withTags(fieldsToUpdate.getTags())
-        .withFilters(fieldsToUpdate.getFilters())
-        .withStageCount(fieldsToUpdate.getStageCount())
-        .withStageNames(fieldsToUpdate.getStageNames())
-        .withAllowStageExecutions(fieldsToUpdate.getAllowStageExecutions())
-        .withVersion(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1);
+    return entityFromDB.toBuilder()
+        .yaml(fieldsToUpdate.getYaml())
+        .lastUpdatedAt(timeOfUpdate)
+        .name(fieldsToUpdate.getName())
+        .description(fieldsToUpdate.getDescription())
+        .tags(fieldsToUpdate.getTags())
+        .filters(fieldsToUpdate.getFilters())
+        .stageCount(fieldsToUpdate.getStageCount())
+        .stageNames(fieldsToUpdate.getStageNames())
+        .allowStageExecutions(fieldsToUpdate.getAllowStageExecutions())
+        .yamlHash(fieldsToUpdate.getYamlHash())
+        .version(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1)
+        .build();
   }
 
   public Update getUpdateOperationsForOnboardingToInline() {
@@ -74,6 +86,14 @@ public class PMSPipelineFilterHelper {
         .is(identifier)
         .and(PipelineEntityKeys.deleted)
         .is(!notDeleted);
+  }
+
+  public Criteria getCriteriaForFind(String uuid, Integer yamlHash) {
+    return Criteria.where(PipelineEntityKeys.uuid).is(uuid).and(PipelineEntityKeys.yamlHash).is(yamlHash);
+  }
+
+  public Criteria getCriteriaForFind(String uuid) {
+    return Criteria.where(PipelineEntityKeys.uuid).is(uuid);
   }
 
   public Criteria getCriteriaForAllPipelinesInProject(

@@ -26,6 +26,7 @@ rules:
       - ingresses
       - validatingwebhookconfigurations
       - virtualservices
+      - destinationrules
     verbs:
       - get
       - list
@@ -38,6 +39,8 @@ rules:
       - ""
     resources:
       - services
+      - namespaces
+      - endpoints
     verbs:
       - get
       - list
@@ -314,8 +317,8 @@ spec:
     spec:
       containers:
       - name: autostopping-controller
-        image: harness/autostopping-controller:1.0.16
-        imagePullPolicy: IfNotPresent
+        image: harness/autostopping-controller:1.1.1
+        imagePullPolicy: Always
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: serving-certs

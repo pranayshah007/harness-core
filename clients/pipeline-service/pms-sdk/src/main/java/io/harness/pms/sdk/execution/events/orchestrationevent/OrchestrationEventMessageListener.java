@@ -21,6 +21,8 @@ import io.harness.pms.sdk.core.execution.events.orchestration.SdkOrchestrationEv
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -33,5 +35,10 @@ public class OrchestrationEventMessageListener
   public OrchestrationEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, SdkOrchestrationEventHandler sdkOrchestrationEventHandler) {
     super(serviceName, OrchestrationEvent.class, sdkOrchestrationEventHandler);
+  }
+
+  @Override
+  protected OrchestrationEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return OrchestrationEvent.parseFrom(message);
   }
 }

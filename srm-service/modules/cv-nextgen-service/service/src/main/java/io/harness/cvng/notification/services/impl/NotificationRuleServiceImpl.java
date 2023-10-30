@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -166,6 +167,22 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
         .pageItemCount(notificationRuleEntitiesPageResponse.getPageItemCount())
         .content(notificationRulePageResponse)
         .build();
+  }
+
+  @Override
+  public NotificationRuleResponse get(ProjectParams projectParams, String identifier) {
+    NotificationRule notificationRule =
+        hPersistence.createQuery(NotificationRule.class)
+            .disableValidation()
+            .filter(NotificationRuleKeys.accountId, projectParams.getAccountIdentifier())
+            .filter(NotificationRuleKeys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(NotificationRuleKeys.projectIdentifier, projectParams.getProjectIdentifier())
+            .filter(NotificationRuleKeys.identifier, identifier)
+            .get();
+    if (Objects.isNull(notificationRule)) {
+      throw new InvalidRequestException(String.format("Notification with identifier %s is not present", identifier));
+    }
+    return notificationRuleEntityToResponse(notificationRule);
   }
 
   @Override

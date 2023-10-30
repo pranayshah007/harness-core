@@ -32,7 +32,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.IDP)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = BackstageCatalogApiEntity.class, name = "Api")
+  @JsonSubTypes.Type(value = BackstageCatalogApiEntity.class, name = "API")
   , @JsonSubTypes.Type(value = BackstageCatalogComponentEntity.class, name = "Component"),
       @JsonSubTypes.Type(value = BackstageCatalogDomainEntity.class, name = "Domain"),
       @JsonSubTypes.Type(value = BackstageCatalogGroupEntity.class, name = "Group"),
@@ -55,17 +55,19 @@ public abstract class BackstageCatalogEntity {
     @JsonIgnore private String identifier;
     @JsonIgnore private String absoluteIdentifier;
     private String name;
+    private String title;
     private String namespace;
     private String description;
     private List<String> tags;
     private String uid;
     @JsonInclude(JsonInclude.Include.NON_EMPTY) private Map<String, String> annotations;
 
-    public void setMetadata(String identifier, String absoluteIdentifier, String name, String description,
+    public void setMetadata(String identifier, String absoluteIdentifier, String name, String title, String description,
         List<String> tags, Map<String, String> annotations) {
       this.identifier = identifier;
       this.absoluteIdentifier = absoluteIdentifier;
       this.name = name;
+      this.title = title;
       this.description = description;
       this.tags = tags;
       this.annotations = annotations;

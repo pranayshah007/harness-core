@@ -1,0 +1,102 @@
+{
+    "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+    "id": "476152",
+    "self": "https://harness.atlassian.net/rest/api/2/issue/476152",
+    "key": "TJI-135040",
+    "names": {
+        "issuetype": "Issue Type",
+        "project": "Project",
+        "priority": "Priority",
+        "status": "Status",
+        "labels": "Labels",
+        "timetracking": "Time tracking",
+        "customfield_0001": "One Line Update"
+    },
+    "schema": {
+        "issuetype": {
+            "type": "issuetype",
+            "system": "issuetype"
+        },
+        "project": {
+            "type": "project",
+            "system": "project"
+        },
+        "priority": {
+            "type": "priority",
+            "system": "priority"
+        },
+        "status": {
+            "type": "status",
+            "system": "status"
+        },
+        "labels": {
+            "type": "array",
+            "items": "string",
+            "system": "labels"
+        },
+        "timetracking": {
+            "type": "timetracking",
+            "system": "timetracking"
+        },
+        "customfield_0001": {
+            "type": "string",
+            "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+            "customId": 10973
+        }
+    },
+    "fields": {
+        "issuetype": {
+            "self": "https://harness.atlassian.net/rest/api/2/issuetype/10101",
+            "id": "10101",
+            "description": "A small, distinct piece of work.",
+            "iconUrl": "https://harness.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10622?size=medium",
+            "name": "Task",
+            "subtask": false,
+            "avatarId": 10622,
+            "hierarchyLevel": 0
+        },
+        "project": {
+            "self": "https://harness.atlassian.net/rest/api/2/project/10204",
+            "id": "10204",
+            "key": "TJI",
+            "name": "Test - JIRA Integration",
+            "projectTypeKey": "software",
+            "simplified": false,
+            "avatarUrls": {
+                "48x48": "https://harness.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10324",
+                "24x24": "https://harness.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10324?size=small",
+                "16x16": "https://harness.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10324?size=xsmall",
+                "32x32": "https://harness.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10324?size=medium"
+            }
+        },
+        "priority": {
+            "self": "https://harness.atlassian.net/rest/api/2/priority/5",
+            "iconUrl": "https://harness.atlassian.net/images/icons/priorities/trivial.svg",
+            "name": "P4",
+            "id": "5"
+        },
+        "status": {
+            "self": "https://harness.atlassian.net/rest/api/2/status/10000",
+            "description": "",
+            "iconUrl": "https://harness.atlassian.net/",
+            "name": "To Do",
+            "id": "10000",
+            "statusCategory": {
+                "self": "https://harness.atlassian.net/rest/api/2/statuscategory/2",
+                "id": 2,
+                "key": "new",
+                "colorName": "blue-gray",
+                "name": "To Do"
+            }
+        },
+        "labels": [
+            "edf"
+        ],
+        "timetracking": {
+            "originalEstimate": "1h",
+            "remainingEstimate": "1h",
+            "originalEstimateSeconds": 3600,
+            "remainingEstimateSeconds": 3600
+        }
+    }
+}

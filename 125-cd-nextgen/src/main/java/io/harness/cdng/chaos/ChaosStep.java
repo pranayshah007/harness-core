@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.chaos;
-
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.chaos.client.beans.ChaosQuery;
 import io.harness.chaos.client.beans.ChaosRerunResponse;
 import io.harness.chaos.client.remote.ChaosHttpClient;
@@ -42,6 +44,8 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_GITOPS})
 @Slf4j
 public class ChaosStep extends AsyncExecutableWithCapabilities {
   public static final StepType STEP_TYPE =
@@ -136,12 +140,6 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
     }
 
     return responseBuilder.status(Status.SUCCEEDED).build();
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    log.info("Abort Called for chaos Step");
   }
 
   private ChaosQuery buildPayload(Ambiance ambiance, String experimentRef) {

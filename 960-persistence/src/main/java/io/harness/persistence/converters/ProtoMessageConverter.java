@@ -10,6 +10,7 @@ package io.harness.persistence.converters;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InternalServerErrorException;
 
 import com.google.inject.Singleton;
 import com.google.protobuf.Message;
@@ -25,8 +26,20 @@ import lombok.SneakyThrows;
 @Singleton
 @OwnedBy(PIPELINE)
 public abstract class ProtoMessageConverter<T extends Message> extends TypeConverter implements SimpleValueConverter {
+  private final JsonFormat.Printer encodePrinter;
+  private final JsonFormat.Parser decodeParser;
+  private final Builder defaultBuilder;
+
   public ProtoMessageConverter(Class<T> entityClass) {
     super(entityClass);
+    this.encodePrinter = JsonFormat.printer().includingDefaultValueFields();
+    this.decodeParser = JsonFormat.parser().ignoringUnknownFields();
+    try {
+      this.defaultBuilder = (Builder) entityClass.getMethod("newBuilder").invoke(null);
+    } catch (Exception e) {
+      throw new InternalServerErrorException(
+          "Not able to initialise default builder for class - " + entityClass.getName(), e);
+    }
   }
 
   @SneakyThrows
@@ -36,7 +49,7 @@ public abstract class ProtoMessageConverter<T extends Message> extends TypeConve
       return null;
     }
     Message message = (Message) value;
-    String entityJson = JsonFormat.printer().includingDefaultValueFields().print(message);
+    String entityJson = encodePrinter.print(message);
     return BasicDBObject.parse(entityJson);
   }
 
@@ -46,9 +59,8 @@ public abstract class ProtoMessageConverter<T extends Message> extends TypeConve
     if (fromDBObject == null) {
       return null;
     }
-    Builder builder = null;
-    builder = (Builder) targetClass.getMethod("newBuilder").invoke(null);
-    JsonFormat.parser().ignoringUnknownFields().merge(fromDBObject.toString(), builder);
+    Builder builder = defaultBuilder.clone();
+    decodeParser.merge(fromDBObject.toString(), builder);
     return (T) builder.build();
   }
 }

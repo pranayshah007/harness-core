@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.dto.PollingInfoForTriggers;
+import io.harness.dto.PollingResponseDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
@@ -24,7 +25,7 @@ import javax.validation.Valid;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
-  String save(@Valid PollingDocument pollingDocument);
+  PollingResponseDTO save(@Valid PollingDocument pollingDocument);
 
   PollingDocument get(String accountId, String pollingDocId);
 
@@ -42,7 +43,7 @@ public interface PollingService {
 
   void updatePolledResponse(String accountId, String pollingDocId, PolledResponse polledResponse);
 
-  String subscribe(PollingItem pollingItem) throws InvalidRequestException;
+  PollingResponseDTO subscribe(PollingItem pollingItem) throws InvalidRequestException;
 
   boolean unsubscribe(PollingItem pollingItem);
 

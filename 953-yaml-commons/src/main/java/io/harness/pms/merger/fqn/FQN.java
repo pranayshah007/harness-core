@@ -216,4 +216,23 @@ public class FQN {
   public FQN getParent() {
     return FQN.builder().fqnList(fqnList.subList(0, fqnList.size() - 1)).build();
   }
+
+  public FQN getFQNCopy() {
+    List<FQNNode> newList = new ArrayList<>(fqnList);
+    return FQN.builder().fqnList(newList).build();
+  }
+
+  public FQN getSiblingFQN(String siblingFieldName) {
+    FQN siblingFqn = getFQNCopy();
+    List<FQNNode> siblingFqnList = siblingFqn.getFqnList();
+    FQNNode currentFQNLastNode = fqnList.get(fqnList.size() - 1);
+    siblingFqnList.set(siblingFqnList.size() - 1,
+        FQNNode.builder()
+            .key(siblingFieldName)
+            .nodeType(currentFQNLastNode.getNodeType())
+            .uuidKey(currentFQNLastNode.getUuidKey())
+            .uuidValue(currentFQNLastNode.getUuidValue())
+            .build());
+    return siblingFqn;
+  }
 }

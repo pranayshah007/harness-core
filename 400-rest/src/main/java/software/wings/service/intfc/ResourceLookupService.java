@@ -6,7 +6,9 @@
  */
 
 package software.wings.service.intfc;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public interface ResourceLookupService {
   /**
    * Creates the.
@@ -57,8 +60,8 @@ public interface ResourceLookupService {
   PageResponse<ResourceLookup> listResourceLookupRecordsWithTags(
       String accountId, String filter, String limit, String offset);
 
-  <T> PageResponse<T> listWithTagFilters(
-      PageRequest<T> request, String filter, EntityType entityType, boolean withTags, boolean hitSecondary);
+  <T> PageResponse<T> listWithTagFilters(PageRequest<T> request, String filter, EntityType entityType, boolean withTags,
+      boolean hitSecondary, boolean addAccountFilterAutomatically);
 
   Map<String, ResourceLookup> getResourceLookupMapWithResourceIds(String accountId, Set<String> resourceIds);
 }

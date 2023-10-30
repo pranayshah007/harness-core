@@ -218,10 +218,12 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   @Override
   public List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String displayName, boolean isGitOps, boolean filterOnArtifact) {
+      String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion) {
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults =
         instanceService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier, projectIdentifier,
-            envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
+            envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact, chartVersion,
+            filterOnChartVersion);
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     aggregationResults.forEach(activeServiceInstanceInfoWithEnvType -> {
       activeServiceInstanceInfoWithEnvTypeList.add(activeServiceInstanceInfoWithEnvType);
@@ -292,10 +294,11 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
 
   @Override
   public List<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps) {
+      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps,
+      boolean isChartVersionCard) {
     AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailsAggregationResults =
-        instanceService.getLastDeployedInstance(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+        instanceService.getLastDeployedInstance(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier,
+            isEnvironmentCard, isGitOps, isChartVersionCard);
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailsList = new ArrayList<>();
     artifactDeploymentDetailsAggregationResults.forEach(
         artifactDeploymentDetails -> { artifactDeploymentDetailsList.add(artifactDeploymentDetails); });
@@ -319,10 +322,12 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   public List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
   getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
-      String clusterIdentifier, String displayName, boolean isGitOps) {
+      String clusterIdentifier, String displayName, String chartVersion, boolean isGitOps,
+      boolean filterOnChartVersion) {
     AggregationResults<InstanceGroupedByPipelineExecution> aggregationResults =
         instanceService.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier, projectIdentifier,
-            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+            filterOnChartVersion);
     List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
         instanceGroupedByPipelineExecutionList = new ArrayList<>();
     aggregationResults.forEach(instanceGroupedByPipelineExecution -> {

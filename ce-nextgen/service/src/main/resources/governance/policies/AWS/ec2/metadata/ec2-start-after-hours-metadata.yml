@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-start-after-hours
+cloudProvider: AWS
+resourceType: ec2
+description: Start ec2 instances tagged with "CustodianOffHours" set to 7 AM (PT) that have been running for less than 1 hour
+rulesYamlPath: ../ec2-start-after-hours.yml

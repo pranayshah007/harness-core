@@ -27,7 +27,10 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
@@ -108,6 +111,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Service
 @OwnedBy(CE)

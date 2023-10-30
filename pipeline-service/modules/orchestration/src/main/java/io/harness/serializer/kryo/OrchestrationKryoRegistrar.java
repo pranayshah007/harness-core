@@ -29,6 +29,7 @@ import io.harness.engine.pms.execution.strategy.plan.PlanExecutionResumeCallback
 import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.resume.EngineWaitRetryCallback;
+import io.harness.engine.pms.resume.EngineWaitRetryCallbackV2;
 import io.harness.engine.progress.EngineProgressCallback;
 import io.harness.serializer.KryoRegistrar;
 
@@ -58,5 +59,6 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(InterruptProcessingFailedException.class, 87019);
     kryo.register(ExpiryInterruptCallback.class, 87020);
     kryo.register(AllInterruptCallback.class, 87021);
+    kryo.register(EngineWaitRetryCallbackV2.class, 870022);
   }
 }

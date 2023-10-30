@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.constants.StageExecutionHandlerConstants.CUSTOM_STAGE;
+
 import static java.util.Arrays.asList;
 
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -51,16 +53,24 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
       columnValueMapping.put("duration", Long.toString(duration));
     }
 
+    if (dbObject.get(StageExecutionInfoKeys.stageType) != null
+        && (CUSTOM_STAGE.equals(dbObject.get(StageExecutionInfoKeys.stageType).toString()))) {
+      columnValueMapping.put("type", "Custom");
+      return columnValueMapping;
+    }
+
     BasicDBObject executionSummaryDetails =
         (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
-    BasicDBObject serviceInfo = (BasicDBObject) executionSummaryDetails.get("serviceInfo");
+    if (executionSummaryDetails != null) {
+      BasicDBObject serviceInfo = (BasicDBObject) executionSummaryDetails.get("serviceInfo");
 
-    if (serviceInfo != null) {
-      boolean gitOpsEnabled = (boolean) serviceInfo.get("gitOpsEnabled");
-      if (gitOpsEnabled) {
-        columnValueMapping.put("type", "GITOPS");
-      } else {
-        columnValueMapping.put("type", "CD");
+      if (serviceInfo != null) {
+        boolean gitOpsEnabled = (boolean) serviceInfo.get("gitOpsEnabled");
+        if (gitOpsEnabled) {
+          columnValueMapping.put("type", "GITOPS");
+        } else {
+          columnValueMapping.put("type", "CD");
+        }
       }
     }
 

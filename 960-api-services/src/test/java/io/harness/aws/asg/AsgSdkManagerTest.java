@@ -174,7 +174,7 @@ public class AsgSdkManagerTest extends CategoryTest {
         .createAutoScalingGroup(any(CreateAutoScalingGroupRequest.class));
 
     CreateAutoScalingGroupResult result =
-        asgSdkManager.createASG(asgName, launchTemplateVersion, createAutoScalingGroupRequest);
+        asgSdkManager.createASG(asgName, asgName, launchTemplateVersion, createAutoScalingGroupRequest);
 
     assertThat(result).isNotNull();
   }

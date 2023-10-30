@@ -10,6 +10,7 @@ package io.harness.cvng.cdng.beans;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
@@ -27,6 +28,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
+@RecasterAlias("io.harness.cvng.cdng.beans.DefaultAndConfiguredMonitoredServiceNode")
 public class DefaultAndConfiguredMonitoredServiceNode {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

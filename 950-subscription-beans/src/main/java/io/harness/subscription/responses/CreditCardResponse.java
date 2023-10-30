@@ -7,7 +7,7 @@
 
 package io.harness.subscription.responses;
 
-import static io.harness.annotations.dev.HarnessTeam.PLG;
+import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.subscription.dto.CreditCardDTO;
@@ -16,7 +16,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
-@OwnedBy(PLG)
+@OwnedBy(GTM)
 @Data
 @Builder
 public class CreditCardResponse {

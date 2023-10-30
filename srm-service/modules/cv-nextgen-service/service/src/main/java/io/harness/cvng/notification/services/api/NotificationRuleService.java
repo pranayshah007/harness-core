@@ -29,6 +29,9 @@ public interface NotificationRuleService {
   void delete(ProjectParams projectParams, List<String> identifiers);
   PageResponse<NotificationRuleResponse> get(
       ProjectParams projectParams, List<String> notificationRuleIdentifiers, Integer pageNumber, Integer pageSize);
+
+  NotificationRuleResponse get(ProjectParams projectParams, String identifier);
+
   List<NotificationRuleRef> getNotificationRuleRefs(ProjectParams projectParams,
       List<NotificationRuleRefDTO> notificationRuleRefDTOS, NotificationRuleType type,
       Instant lastSuccessfullNotificationTime);

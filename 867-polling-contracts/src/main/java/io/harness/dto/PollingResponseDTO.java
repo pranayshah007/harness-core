@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,8 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDC)
 public class PollingResponseDTO {
   byte[] pollingResponse;
+  String pollingDocId;
+  Boolean isExistingPollingDoc;
+  List<String> lastPolled;
+  Long lastPollingUpdate;
 }

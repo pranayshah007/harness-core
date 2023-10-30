@@ -8,6 +8,7 @@
 package io.harness.notification.service;
 
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.BHAVYA;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -77,11 +78,41 @@ public class SlackSenderImplTest extends CategoryTest {
     when(okHttpClient.newCall(any())).thenReturn(call);
 
     NotificationProcessingResponse notificationProcessingResponse =
-        slackSender.send(slackWekbhookUrl, message, notificationId);
+        slackSender.send(slackWekbhookUrl, message, notificationId, null);
 
     verify(okHttpClient, times(2)).newCall(any());
 
     assertTrue(notificationProcessingResponse.getResult().get(0));
     assertFalse(notificationProcessingResponse.getResult().get(1));
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void send_ValidArguments_withDomainFilter() {
+    List<String> slackWebhookUrl =
+        Arrays.asList("http://hooks.slack.com/webhook1", "http://harness.slack.com/webhook2");
+    String message = "test message";
+    String notificationId = "test";
+    Request mockrequest1 = new Request.Builder().url(slackWebhookUrl.get(0)).build();
+    Response responseSuccess = new Response.Builder()
+                                   .code(200)
+                                   .message("success")
+                                   .request(mockrequest1)
+                                   .protocol(Protocol.HTTP_2)
+                                   .body(ResponseBody.create(MediaType.parse("application/json"), "{}"))
+                                   .build();
+
+    Call call = mock(Call.class);
+    when(call.execute()).thenReturn(responseSuccess);
+    when(okHttpClient.newCall(any())).thenReturn(call);
+
+    NotificationProcessingResponse notificationProcessingResponse =
+        slackSender.send(slackWebhookUrl, message, notificationId, Arrays.asList("harness.slack.com"));
+
+    verify(okHttpClient, times(1)).newCall(any());
+
+    assertTrue(notificationProcessingResponse.getResult().get(0));
   }
 }

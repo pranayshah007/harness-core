@@ -396,6 +396,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .sessionTimeout(isNotEmpty(sessionTimeout)
                 ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
                 : SESSION_TIMEOUT)
+        .disableWinRmEnvVarEscaping(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS))
         .build();
   }
 
@@ -429,6 +431,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .sessionTimeout(isNotEmpty(sessionTimeout)
                 ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
                 : SESSION_TIMEOUT)
+        .disableWinRmEnvVarEscaping(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS))
         .build();
   }
 

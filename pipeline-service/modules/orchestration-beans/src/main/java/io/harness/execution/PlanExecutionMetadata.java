@@ -6,6 +6,7 @@
  */
 
 package io.harness.execution;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.StoreIn;
@@ -21,6 +22,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 
@@ -34,6 +36,7 @@ import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Singular;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
@@ -45,7 +48,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 @Data
-@Builder(builderClassName = "Builder")
+@Builder(builderClassName = "Builder", toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "PlanExecutionMetadataKeys")
@@ -74,7 +77,6 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
 
   // Expanded pipeline (after connectors, etc) in json format.
   private String expandedPipelineJson;
-
   private StagesExecutionMetadata stagesExecutionMetadata;
   private Boolean allowStagesExecution;
   private Boolean executionInputConfigured;
@@ -82,10 +84,10 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   @Wither private List<HeaderConfig> triggerHeader;
   @Wither private TriggerPayload triggerPayload;
   private Boolean notifyOnlyUser;
-  @With String notes;
-  RetryStagesMetadata retryStagesMetadata;
-
-  RetryExecutionInfo retryExecutionInfo;
+  @With private String notes;
+  private RetryStagesMetadata retryStagesMetadata;
+  private RetryExecutionInfo retryExecutionInfo;
+  @Singular private List<PostExecutionRollbackInfo> postExecutionRollbackInfos;
 
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 

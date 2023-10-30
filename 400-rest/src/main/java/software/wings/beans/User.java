@@ -28,6 +28,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.user.UserAccountLevelData;
 
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.loginSettings.UserLockoutInfo;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.utm.UtmInfo;

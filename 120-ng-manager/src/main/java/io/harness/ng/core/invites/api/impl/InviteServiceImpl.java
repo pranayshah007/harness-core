@@ -222,6 +222,11 @@ public class InviteServiceImpl implements InviteService {
     }
 
     Optional<Invite> existingInviteOptional = getExistingInvite(invite);
+    if (isScimInvite && existingInviteOptional.isPresent()
+        && FALSE.equals(existingInviteOptional.get().getApproved())) {
+      inviteRepository.delete(existingInviteOptional.get());
+      existingInviteOptional = Optional.empty();
+    }
     if (existingInviteOptional.isPresent()) {
       if (TRUE.equals(existingInviteOptional.get().getApproved())) {
         return InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;

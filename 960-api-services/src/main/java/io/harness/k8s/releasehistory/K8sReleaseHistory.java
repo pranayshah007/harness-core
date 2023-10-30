@@ -45,6 +45,14 @@ public class K8sReleaseHistory implements IK8sReleaseHistory {
   }
 
   @Override
+  public IK8sRelease getLastSuccessfulRelease() {
+    return releaseHistory.stream()
+        .filter(release -> release.getReleaseStatus().equals(IK8sRelease.Status.Succeeded))
+        .max(Comparator.comparing(K8sRelease::getReleaseNumber))
+        .orElse(null);
+  }
+
+  @Override
   public IK8sRelease getLastSuccessfulRelease(int currentReleaseNumber) {
     Optional<K8sRelease> lastSuccessfulReleaseOptional =
         releaseHistory.stream()

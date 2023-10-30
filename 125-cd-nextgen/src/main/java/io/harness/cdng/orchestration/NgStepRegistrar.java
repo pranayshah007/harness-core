@@ -30,6 +30,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
@@ -50,6 +51,7 @@ import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
+import io.harness.cdng.ecs.EcsBasicRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
@@ -58,18 +60,23 @@ import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRunTaskStep;
+import io.harness.cdng.ecs.EcsServiceSetupStep;
+import io.harness.cdng.ecs.EcsUpgradeContainerStep;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
+import io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants;
+import io.harness.cdng.environment.steps.CustomStageEnvironmentStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
 import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
@@ -97,10 +104,20 @@ import io.harness.cdng.k8s.K8sDryRunManifestStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
+import io.harness.cdng.k8s.asyncsteps.K8sApplyStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sBGStageScaleDownStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sBGSwapServicesStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sCanaryDeleteStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sCanaryStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sDeleteStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sScaleStepV2;
+import io.harness.cdng.k8s.ayncsteps.K8sRollingRollbackStepV2;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.pipeline.steps.CombinedRollbackStep;
+import io.harness.cdng.pipeline.steps.CustomStageStep;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
@@ -184,6 +201,7 @@ public class NgStepRegistrar {
     // Add CDNG steps here
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(RevertPRStep.STEP_TYPE, RevertPRStep.class);
+    engineSteps.put(UpdateGitOpsAppStep.STEP_TYPE, UpdateGitOpsAppStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
@@ -262,6 +280,9 @@ public class NgStepRegistrar {
     engineSteps.put(EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE, EcsBlueGreenSwapTargetGroupsStep.class);
     engineSteps.put(EcsBlueGreenRollbackStep.STEP_TYPE, EcsBlueGreenRollbackStep.class);
     engineSteps.put(EcsRunTaskStep.STEP_TYPE, EcsRunTaskStep.class);
+    engineSteps.put(EcsServiceSetupStep.STEP_TYPE, EcsServiceSetupStep.class);
+    engineSteps.put(EcsUpgradeContainerStep.STEP_TYPE, EcsUpgradeContainerStep.class);
+    engineSteps.put(EcsBasicRollbackStep.STEP_TYPE, EcsBasicRollbackStep.class);
 
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);
@@ -292,6 +313,7 @@ public class NgStepRegistrar {
     engineSteps.put(AsgBlueGreenSwapServiceStep.STEP_TYPE, AsgBlueGreenSwapServiceStep.class);
     engineSteps.put(AsgBlueGreenDeployStep.STEP_TYPE, AsgBlueGreenDeployStep.class);
     engineSteps.put(AsgBlueGreenRollbackStep.STEP_TYPE, AsgBlueGreenRollbackStep.class);
+    engineSteps.put(AsgServiceSettingsStep.STEP_TYPE, AsgServiceSettingsStep.class);
 
     // TAS
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
@@ -350,6 +372,23 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkDeployStep.STEP_TYPE, AwsCdkDeployStep.class);
     engineSteps.put(AwsCdkDestroyStep.STEP_TYPE, AwsCdkDestroyStep.class);
     engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
+
+    engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
+    engineSteps.put(io.harness.cdng.pipeline.steps.v1.CustomStageStep.STEP_TYPE,
+        io.harness.cdng.pipeline.steps.v1.CustomStageStep.class);
+    engineSteps.put(CustomStageEnvironmentStepConstants.STEP_TYPE, CustomStageEnvironmentStep.class);
+
+    // K8s ASYNC
+    engineSteps.put(K8sBlueGreenStepV2.STEP_TYPE, K8sBlueGreenStepV2.class);
+    engineSteps.put(K8sBGSwapServicesStepV2.STEP_TYPE, K8sBGSwapServicesStepV2.class);
+    engineSteps.put(K8sScaleStepV2.STEP_TYPE, K8sScaleStepV2.class);
+    engineSteps.put(K8sCanaryStepV2.STEP_TYPE, K8sCanaryStepV2.class);
+    engineSteps.put(K8sCanaryDeleteStepV2.STEP_TYPE, K8sCanaryDeleteStepV2.class);
+    engineSteps.put(K8sRollingRollbackStepV2.STEP_TYPE, K8sRollingRollbackStepV2.class);
+    engineSteps.put(K8sBGStageScaleDownStepV2.STEP_TYPE, K8sBGStageScaleDownStepV2.class);
+
+    engineSteps.put(K8sDeleteStepV2.STEP_TYPE, K8sDeleteStepV2.class);
+    engineSteps.put(K8sApplyStepV2.STEP_TYPE, K8sApplyStepV2.class);
 
     return engineSteps;
   }

@@ -462,7 +462,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       }
     }
 
-    log.info("Instances reported {}", count);
+    log.debug("Instances reported {}", count);
     return count;
   }
 
@@ -497,9 +497,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     int counter = instanceSet.size();
 
     if (isNotEmpty(instanceSet)) {
-      log.info("Instances reported {}, set count {}", counter, instanceSet.size());
+      log.debug("Instances reported {}, set count {}", counter, instanceSet.size());
     } else {
-      log.info("Instances reported {}", counter);
+      log.debug("Instances reported {}", counter);
     }
     return new ArrayList<>(instanceSet);
   }

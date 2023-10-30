@@ -22,5 +22,5 @@ import lombok.experimental.FieldDefaults;
 public class CCMStringFilter {
   CCMField field;
   CCMOperator operator;
-  @Schema(name = "Values", description = "List of all values of the filter.") List<String> values;
+  @Schema(name = "values", description = "List of all values of the filter.") List<String> values;
 }

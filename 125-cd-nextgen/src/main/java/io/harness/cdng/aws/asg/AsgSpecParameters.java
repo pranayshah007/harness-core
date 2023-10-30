@@ -23,6 +23,8 @@ import javax.annotation.Nonnull;
 public interface AsgSpecParameters extends SpecParameters {
   @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
 
+  ParameterField<String> getAsgName();
+
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {

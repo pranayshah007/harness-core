@@ -20,7 +20,8 @@ import retrofit2.http.Header;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 
 public interface GarRestClient {

@@ -1,0 +1,3 @@
+filters: advisor-recommendation, cost, event, instance-view, list-item, marked-for-op, metric, network-interface, offhour, onhour, policy-compliant, reduce, resource-lock, value, vm-extensions
+actions: auto-tag-date, auto-tag-user, delete, lock, logic-app, mark-for-op, notify, poweroff, resize, restart, start, stop, tag, tag-trim, untag, webhook
+customPrompt:

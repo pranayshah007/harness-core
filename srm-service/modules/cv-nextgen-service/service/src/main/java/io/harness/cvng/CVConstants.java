@@ -69,6 +69,8 @@ public interface CVConstants {
   String SET_KEY = "$set";
   int BULK_OPERATION_THRESHOLD = 1000;
 
+  int MONITORED_SERVICES_RISK_COUNT_CALCULATION_LIMIT = 500;
+
   String SLO_PARAM_MESSAGE = "SLO identifier for the entity";
   String USER_JOURNEY_PARAM_MESSAGE = "For filtering on the basis of user journeys' identifiers";
   String MONITORED_SERVICE_PARAM_MESSAGE = "For filtering on the basis of monitored services' identifiers";
@@ -78,7 +80,8 @@ public interface CVConstants {
   String VERIFICATION_TASK_ID = "verificationTaskId";
 
   String ENVIRONMENT = System.getenv("ENV") == null ? "localhost" : System.getenv("ENV");
-  Set<String> LEARNING_ENGINE_TASKS_METRIC_LIST = Collections.unmodifiableSet(
-      Sets.newHashSet("ng_le_deployment_max_queued_time_sec", "ng_le_service_health_max_queued_time_sec",
-          "ng_le_deployment_task_count", "ng_le_service_health_task_count"));
+  Set<String> CUSTOM_METRIC_LIST = Collections.unmodifiableSet(Sets.newHashSet("ng_le_deployment_max_queued_time_sec",
+      "ng_le_service_health_max_queued_time_sec", "ng_le_deployment_task_count", "ng_le_service_health_task_count",
+      "io_harness_cvng_mongodb_connection_pool_max_size", "io_harness_cvng_mongodb_connections_checked_out",
+      "io_harness_cvng_mongodb_connection_pool_size"));
 }

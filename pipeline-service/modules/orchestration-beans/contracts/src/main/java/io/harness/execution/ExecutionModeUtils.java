@@ -9,6 +9,7 @@ package io.harness.execution;
 
 import static io.harness.pms.contracts.execution.ExecutionMode.APPROVAL;
 import static io.harness.pms.contracts.execution.ExecutionMode.ASYNC;
+import static io.harness.pms.contracts.execution.ExecutionMode.ASYNC_CHAIN;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILD;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILDREN;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILD_CHAIN;
@@ -18,8 +19,11 @@ import static io.harness.pms.contracts.execution.ExecutionMode.TASK;
 import static io.harness.pms.contracts.execution.ExecutionMode.TASK_CHAIN;
 import static io.harness.pms.contracts.execution.ExecutionMode.WAIT_STEP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.execution.ExecutionMode;
 
 import java.util.EnumSet;
@@ -28,6 +32,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class ExecutionModeUtils {
   private final Set<ExecutionMode> CHAIN_MODES = EnumSet.of(TASK_CHAIN, CHILD_CHAIN);
 
@@ -36,7 +41,7 @@ public class ExecutionModeUtils {
   private final Set<ExecutionMode> TASK_MODES = EnumSet.of(TASK, TASK_CHAIN);
 
   private final Set<ExecutionMode> LEAF_MODES =
-      EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT, WAIT_STEP);
+      EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT, WAIT_STEP, ASYNC_CHAIN);
 
   public Set<ExecutionMode> chainModes() {
     return CHAIN_MODES;

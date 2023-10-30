@@ -11,6 +11,7 @@ public class GcpConstants {
   // credential type
   public static final String INHERIT_FROM_DELEGATE = "InheritFromDelegate";
   public static final String MANUAL_CONFIG = "ManualConfig";
+  public static final String OIDC_AUTHENTICATION = "OidcAuthentication";
 
   // auth type
   public static final String SECRET_KEY = "SecretKey";

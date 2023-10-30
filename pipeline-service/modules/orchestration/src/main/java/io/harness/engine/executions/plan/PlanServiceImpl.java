@@ -103,6 +103,19 @@ public class PlanServiceImpl implements PlanService {
       return nodeEntity.get().getNode();
     }
 
+    // We have added this code so that in case for some step while plan creation the uuid of planNode is generated
+    // everytime instead of being formed from yaml in such a case while retry the nodeId of the node the nodeId in the
+    // next step handler of the previous step will be different. To handle such a case we are getting node based on
+    // nodeId which will get the node from some previous planId.  Example for InfraStructureStep in
+    // InfrastructurePmsPlanCreator.java
+    List<NodeEntity> nodeEntitiesByNodeId = nodeEntityRepository.findNodeEntityByNodeId(nodeId);
+    if (isNotEmpty(nodeEntitiesByNodeId)) {
+      if (nodeEntitiesByNodeId.size() > 1) {
+        log.warn("Multiple nodes found for nodeId {}", nodeId);
+      }
+      return nodeEntitiesByNodeId.get(0).getNode();
+    }
+
     Plan plan = fetchPlan(planId);
     if (isNotEmpty(plan.getPlanNodes())) {
       return plan.fetchPlanNode(nodeId);

@@ -35,9 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("asgCanaryDeleteStepNode")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode")
 public class AsgCanaryDeleteStepNode extends CdAbstractStepNode {
-  @JsonProperty("type")
-  @NotNull
-  AsgCanaryDeleteStepNode.StepType type = AsgCanaryDeleteStepNode.StepType.AsgCanaryDelete;
+  @JsonProperty("type") @NotNull AsgCanaryDeleteStepNode.StepType type = StepType.AsgCanaryDelete;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   AsgCanaryDeleteStepInfo asgCanaryDeleteStepInfo;

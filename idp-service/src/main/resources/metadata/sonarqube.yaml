@@ -1,0 +1,29 @@
+identifier: sonarqube
+name: SonarQube
+description: Displays code statistics from SonarCloud or SonarQube.
+createdBy: SDA-SE
+category: Quality
+source: https://github.com/backstage/backstage/tree/master/plugins/sonarqube
+iconUrl: https://backstage.io/img/sonarqube-icon.svg
+imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/sonarqube/
+config: |-
+  sonarqube:
+    instances:
+      - name: default
+        baseUrl: https://<sonarqube-base-url>
+        apiKey: ${SONARQUBE_TOKEN}
+environmentVariables:
+  - SONARQUBE_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntitySonarQubeCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntitySonarQubeCard
+        specs:
+          gridProps:
+            md: 6

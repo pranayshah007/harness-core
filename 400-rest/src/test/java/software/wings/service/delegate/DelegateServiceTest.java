@@ -157,13 +157,13 @@ import software.wings.app.DelegateGrpcConfig;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.DelegateScalingGroup;
 import software.wings.beans.DelegateStatus;
 import software.wings.beans.Event.Type;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.TaskType;
+import software.wings.beans.account.AccountStatus;
 import software.wings.cdn.CdnConfig;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.features.api.UsageLimitedFeature;
@@ -2205,12 +2205,24 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void testValidateKubernetesYamlWithoutSize() {
     String accountId = generateUuid();
     DelegateSetupDetails setupDetails =
-        DelegateSetupDetails.builder().delegateConfigurationId("delConfigId").name("name").build();
+        DelegateSetupDetails.builder()
+            .delegateConfigurationId("delConfigId")
+            .name("name")
+            .delegateType("KUBERNETES")
+            .k8sConfigDetails(
+                K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).namespace("harness-delegate-ng").build())
+            .tokenName(TOKEN_NAME)
+            .build();
     when(delegateProfileService.get(accountId, "delConfigId")).thenReturn(DelegateProfile.builder().build());
-
-    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Delegate Size must be provided.");
+    when(delegateNgTokenService.getDelegateToken(accountId, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(accountId)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
+    when(delegateNgTokenService.getDelegateTokenValue(accountId, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
+    assertThat(delegateService.validateKubernetesSetupDetails(accountId, setupDetails).getSize())
+        .isEqualTo(DelegateSize.LAPTOP);
   }
 
   @Test
@@ -2220,44 +2232,50 @@ public class DelegateServiceTest extends WingsBaseTest {
     String accountId = generateUuid();
 
     // K8sConfig is null
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
-                                            .delegateConfigurationId("delConfigId")
-                                            .name("name")
-                                            .size(DelegateSize.LARGE)
-                                            .description("desc")
-                                            .build();
-    when(delegateProfileService.get(accountId, "delConfigId")).thenReturn(DelegateProfile.builder().build());
-
-    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("K8s permission type must be provided.");
-
-    // K8sConfig does not have permission set
-    DelegateSetupDetails setupDetails2 = DelegateSetupDetails.builder()
-                                             .delegateConfigurationId("delConfigId")
-                                             .name("name")
-                                             .size(DelegateSize.LARGE)
-                                             .description("desc")
-                                             .k8sConfigDetails(K8sConfigDetails.builder().build())
-                                             .build();
-
-    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails2))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("K8s permission type must be provided.");
-
-    // K8sConfig does not have namespace set for namespace admin permission
-    DelegateSetupDetails setupDetails3 =
+    DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder()
             .delegateConfigurationId("delConfigId")
             .name("name")
             .size(DelegateSize.LARGE)
             .description("desc")
+            .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build())
+            .delegateType("KUBERNETES")
+            .tokenName(TOKEN_NAME)
+            .build();
+    when(delegateProfileService.get(accountId, "delConfigId")).thenReturn(DelegateProfile.builder().build());
+    when(delegateNgTokenService.getDelegateToken(accountId, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(accountId)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
+    when(delegateNgTokenService.getDelegateTokenValue(accountId, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
+    assertThat(delegateService.validateKubernetesSetupDetails(accountId, setupDetails)
+                   .getK8sConfigDetails()
+                   .getK8sPermissionType())
+        .isEqualTo(CLUSTER_ADMIN);
+
+    // K8sConfig does not have namespace
+    DelegateSetupDetails setupDetails2 =
+        DelegateSetupDetails.builder()
+            .delegateConfigurationId("delConfigId")
+            .name("name")
+            .size(DelegateSize.LARGE)
+            .description("desc")
+            .delegateType("KUBERNETES")
+            .tokenName(TOKEN_NAME)
             .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.NAMESPACE_ADMIN).build())
             .build();
-
-    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails3))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("K8s namespace must be provided for this type of permission.");
+    when(delegateNgTokenService.getDelegateToken(accountId, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(accountId)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
+    when(delegateNgTokenService.getDelegateTokenValue(accountId, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
+    assertThat(
+        delegateService.validateKubernetesSetupDetails(accountId, setupDetails2).getK8sConfigDetails().getNamespace())
+        .isEqualTo("harness-delegate-ng");
   }
 
   @Test

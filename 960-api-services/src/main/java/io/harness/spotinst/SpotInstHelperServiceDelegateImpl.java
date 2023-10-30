@@ -22,6 +22,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.SpotInstRestException;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.SpotInstConstants;
@@ -83,6 +84,32 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
           }
         }
         throw SpotInstErrorHandler.generateException(error);
+      }
+      return response.body();
+    } catch (FailsafeException | IOException ex) {
+      throw new WingsException("Failsafe failure", ex.getCause());
+    }
+  }
+
+  public static <T> T executeRestCallV2(Call<T> restRequest) {
+    RetryPolicy<Response<T>> retryPolicy =
+        new RetryPolicy<Response<T>>()
+            .withBackoff(1, 20, ChronoUnit.SECONDS)
+            .withMaxAttempts(5)
+            .handle(IOException.class)
+            .onRetry(e -> log.warn("Failure #{}. Retrying. Exception {}", e.getAttemptCount(), e.getLastFailure()))
+            .onRetriesExceeded(e -> log.warn("Failed to connect. Max retries exceeded"));
+
+    try {
+      Response<T> response = Failsafe.with(retryPolicy).get(() -> restRequest.clone().execute());
+      if (!response.isSuccessful()) {
+        String error = null;
+        try (ResponseBody responseBody = response.errorBody()) {
+          if (null != responseBody) {
+            error = responseBody.string();
+          }
+        }
+        throw new SpotInstRestException(error);
       }
       return response.body();
     } catch (FailsafeException | IOException ex) {
@@ -197,7 +224,7 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
   public ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload)
       throws Exception {
     String auth = getAuthToken(spotInstToken);
-    SpotInstListElastiGroupsResponse spotInstListElastiGroupsResponse = executeRestCall(
+    SpotInstListElastiGroupsResponse spotInstListElastiGroupsResponse = executeRestCallV2(
         getSpotInstRestClient().createElastiGroup(auth, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
     return spotInstListElastiGroupsResponse.getResponse().getItems().get(0);
   }

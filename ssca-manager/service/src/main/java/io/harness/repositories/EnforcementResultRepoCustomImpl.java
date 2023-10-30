@@ -7,7 +7,7 @@
 
 package io.harness.repositories;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.annotations.dev.HarnessTeam.SSCA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.EnforcementResultEntity;
@@ -23,7 +23,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
-@OwnedBy(PL)
+@OwnedBy(SSCA)
 @AllArgsConstructor(access = AccessLevel.PROTECTED, onConstructor = @__({ @Inject }))
 public class EnforcementResultRepoCustomImpl implements EnforcementResultRepoCustom {
   private final MongoTemplate mongoTemplate;

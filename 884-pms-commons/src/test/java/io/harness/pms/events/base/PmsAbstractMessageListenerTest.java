@@ -36,6 +36,7 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -84,18 +85,14 @@ public class PmsAbstractMessageListenerTest extends PmsCommonsTestBase {
     assertThat(processable).isFalse();
   }
 
+  @SneakyThrows
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestExtractEntity() {
     NoopPmsMessageListener noopListener = new NoopPmsMessageListener("CD", new NoopPmsEventHandler());
-    InterruptEvent event = noopListener.extractEntity(
-        Message.newBuilder()
-            .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                            .putMetadata(PmsEventFrameworkConstants.SERVICE_NAME, "CD")
-                            .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
-                            .build())
-            .build());
+    InterruptEvent event =
+        noopListener.extractEntity(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString());
     assertThat(event).isNotNull();
     assertThat(event.getType()).isEqualTo(InterruptType.ABORT);
   }

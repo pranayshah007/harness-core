@@ -174,6 +174,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
@@ -1082,7 +1083,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .sources(Sources.builder().healthSources(new HashSet<>()).build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(
         () -> monitoredServiceService.update(builderFactory.getContext().getAccountId(), updatingMonitoredService))
@@ -1136,7 +1137,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), existingMonitoredService);
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceService.delete(
@@ -2032,13 +2033,26 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testListServices() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<ServiceResponse> serviceResponses =
+        monitoredServiceService.getUniqueServices(accountId, orgIdentifier, projectIdentifier);
+    assertThat(serviceResponses.size()).isEqualTo(1);
+    assertThat(serviceResponses.get(0).getService().getName()).isEqualTo("Mocked service name");
+    assertThat(serviceResponses.get(0).getService().getIdentifier()).isEqualTo(serviceIdentifier);
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testListEnvironments() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     List<EnvironmentResponse> environmentResponses =
-        monitoredServiceService.listEnvironments(accountId, orgIdentifier, projectIdentifier);
+        monitoredServiceService.getUniqueEnvironments(accountId, orgIdentifier, projectIdentifier);
     assertThat(environmentResponses.size()).isEqualTo(1);
     assertThat(environmentResponses.get(0).getEnvironment().getName()).isEqualTo("Mocked env name");
     assertThat(environmentResponses.get(0).getEnvironment().getIdentifier()).isEqualTo(environmentIdentifier);

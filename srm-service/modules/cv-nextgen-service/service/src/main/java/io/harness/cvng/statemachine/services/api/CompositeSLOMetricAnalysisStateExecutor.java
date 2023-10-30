@@ -43,32 +43,47 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
   @Inject private MetricService metricService;
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
-    String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
-    // here startTime will be the prv Data endTime and endTime will be the current time.
-    String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
-    CompositeServiceLevelObjective compositeServiceLevelObjective =
-        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    LocalDateTime currentLocalDate =
-        LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
-    Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
-                                           .getStartTime(compositeServiceLevelObjective.getZoneOffset());
-    Instant startedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
-    Instant startTime = (startTimeForCurrentRange.isAfter(startedAtTime)) ? startTimeForCurrentRange : startedAtTime;
-    CompositeSLORecord lastSLORecord = compositeSLORecordService.getLatestCompositeSLORecordWithVersion(
-        compositeServiceLevelObjective.getUuid(), startTime, compositeServiceLevelObjective.getVersion());
-    if (lastSLORecord != null) {
-      startTime = Instant.ofEpochSecond(lastSLORecord.getEpochMinute() * 60 + 60);
+    CompositeServiceLevelObjective compositeServiceLevelObjective = null;
+    String sloId = null;
+    try {
+      String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
+      // here startTime will be the prv Data endTime and endTime will be the current time.
+      sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
+      compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
+      LocalDateTime currentLocalDate =
+          LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
+      Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
+                                             .getStartTime(compositeServiceLevelObjective.getZoneOffset());
+      Instant startedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
+      Instant startTime = (startTimeForCurrentRange.isAfter(startedAtTime)) ? startTimeForCurrentRange : startedAtTime;
+      CompositeSLORecord lastSLORecord = compositeSLORecordService.getLatestCompositeSLORecordWithVersion(
+          compositeServiceLevelObjective.getUuid(), startTime, compositeServiceLevelObjective.getVersion());
+      if (lastSLORecord != null) {
+        startTime = Instant.ofEpochSecond(lastSLORecord.getEpochMinute() * 60 + 60);
+      }
+      Instant endTime = clock.instant();
+      if (endTime.isAfter(startTime.plus(12, ChronoUnit.HOURS))) {
+        endTime = startTime.plus(12, ChronoUnit.HOURS);
+      }
+      compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+      try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
+        metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
+            Duration.between(analysisState.getInputs().getStartTime(), clock.instant()));
+      }
+      analysisState.setStatus(AnalysisStatus.SUCCESS);
+    } catch (Exception exception) {
+      if (compositeServiceLevelObjective == null) {
+        analysisState.setStatus(AnalysisStatus.TERMINATED);
+        log.info(
+            "The composite slo with id {} has already been deleted, marking current analysisState to be cleaned up : {}",
+            sloId, analysisState.getWorkerTaskId());
+      } else {
+        log.warn(String.format("Composite SLO Execute for sloId: {} failed with:",
+                     analysisState.getInputs().getVerificationTaskId()),
+            exception);
+        analysisState.setStatus(AnalysisStatus.RETRY);
+      }
     }
-    Instant endTime = clock.instant();
-    if (endTime.isAfter(startTime.plus(12, ChronoUnit.HOURS))) {
-      endTime = startTime.plus(12, ChronoUnit.HOURS);
-    }
-    compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
-    try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
-      metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
-          Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
-    }
-    analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
 
@@ -84,9 +99,8 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     analysisState.setRetryCount(analysisState.getRetryCount() + 1);
     log.info("In composite slo analysis for Inputs {}, cleaning up worker task. Old taskID: {}",
         analysisState.getInputs(), analysisState.getWorkerTaskId());
-    analysisState.setWorkerTaskId(null);
-    execute(analysisState);
-    return analysisState;
+    analysisState.setStatus(AnalysisStatus.RETRY);
+    return execute(analysisState);
   }
 
   @Override
@@ -106,26 +120,18 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
   }
 
   @Override
-  public AnalysisState handleRetry(CompositeSLOMetricAnalysisState analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.FAILED);
-    } else {
-      return handleRerun(analysisState);
-    }
-    return analysisState;
-  }
-
-  @Override
   public void handleFinalStatuses(CompositeSLOMetricAnalysisState analysisState) {
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
-        AnalysisInput.builder()
-            .verificationTaskId(verificationTaskId)
-            .startTime(Instant.now())
-            .endTime(Instant.now())
-            .build());
+    if (compositeServiceLevelObjective != null) {
+      orchestrationService.queueAnalysisWithoutEventPublish(compositeServiceLevelObjective.getAccountId(),
+          AnalysisInput.builder()
+              .verificationTaskId(verificationTaskId)
+              .startTime(Instant.now())
+              .endTime(Instant.now())
+              .build());
+    }
   }
 }

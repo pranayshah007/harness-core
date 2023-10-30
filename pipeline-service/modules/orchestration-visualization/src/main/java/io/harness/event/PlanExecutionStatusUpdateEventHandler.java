@@ -6,9 +6,11 @@
  */
 
 package io.harness.event;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.PlanExecution;
@@ -19,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -26,14 +29,13 @@ public class PlanExecutionStatusUpdateEventHandler {
   @Inject private PlanExecutionService planExecutionService;
   @Inject private GraphGenerationService graphGenerationService;
 
-  public OrchestrationGraph handleEvent(String planExecutionId, OrchestrationGraph orchestrationGraph) {
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+  public OrchestrationGraph handleEvent(PlanExecution planExecution, OrchestrationGraph orchestrationGraph) {
     try {
       if (planExecution.getStatus() == Status.ERRORED) {
         // If plan Execution is ERRORED force generate the graph
         // graph. So that pipeline is failed
         log.info("[PMS_GRAPH]  Got Errored execution regenerating the graph final time");
-        return graphGenerationService.buildOrchestrationGraph(planExecutionId);
+        return graphGenerationService.buildOrchestrationGraph(planExecution.getUuid());
       }
       log.info("[PMS_GRAPH]  Updating Plan Execution with uuid [{}] with status [{}].", planExecution.getUuid(),
           planExecution.getStatus());
@@ -41,8 +43,8 @@ public class PlanExecutionStatusUpdateEventHandler {
         orchestrationGraph = orchestrationGraph.withEndTs(planExecution.getEndTs());
       }
     } catch (Exception e) {
-      log.error(String.format(
-                    "[GRAPH_ERROR] Graph update for PLAN_EXECUTION_UPDATE event failed for plan [%s]", planExecutionId),
+      log.error(String.format("[GRAPH_ERROR] Graph update for PLAN_EXECUTION_UPDATE event failed for plan [%s]",
+                    planExecution.getUuid()),
           e);
       throw e;
     }

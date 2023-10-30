@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.utils;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -158,6 +163,52 @@ public class SCMFilePathEvaluatorOnManagerTest extends CategoryTest {
     when(scmServiceClient.compareCommits(any(), any(), any(), any()))
         .thenReturn(
             CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("file1.txt").build()).build());
+    ScmPathFilterEvaluationTaskResponse response = scmFilePathEvaluatorOnManager.execute(
+        filterRequestData, triggerEventDataCondition, connectorDetails, scmConnector);
+    assertThat(response.isMatched()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testExecuteForAzureRepo() {
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(
+                        TriggerWebhookEvent.builder().sourceRepoType(WebhookSourceRepo.AZURE_REPO.name()).build())
+                    .parseWebhookResponse(ParseWebhookResponse.newBuilder()
+                                              .setPush(PushHook.newBuilder()
+                                                           .setAfter("latestCommit")
+                                                           .setBefore("previousCommit")
+                                                           .setRef("branch")
+                                                           .build())
+                                              .build())
+                    .build())
+
+            .build();
+    TriggerEventDataCondition triggerEventDataCondition =
+        TriggerEventDataCondition.builder().value("file.*\\.txt").operator(ConditionOperator.IN).build();
+    AzureRepoTokenSpecDTO azureRepoTokenSpecDTO =
+        AzureRepoTokenSpecDTO.builder().tokenRef(SecretRefData.builder().identifier("token").build()).build();
+    AzureRepoConnectorDTO scmConnector =
+        AzureRepoConnectorDTO.builder()
+            .url("https://dev.azure.com.com/project/_git/repo.git")
+            .apiAccess(AzureRepoApiAccessDTO.builder().spec(azureRepoTokenSpecDTO).build())
+            .build();
+    when(secretDecryptor.decrypt(any(), any())).thenReturn(azureRepoTokenSpecDTO);
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .identifier("connector")
+            .connectorType(ConnectorType.AZURE_REPO)
+            .connectorConfig(
+                AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.REPO).url("url").build())
+            .executeOnDelegate(false)
+            .build();
+    when(scmServiceClient.compareCommits(any(), any(), any(), any()))
+        .thenReturn(
+            CompareCommitsResponse.newBuilder().addFiles(PRFile.newBuilder().setPath("/file1.txt").build()).build());
     ScmPathFilterEvaluationTaskResponse response = scmFilePathEvaluatorOnManager.execute(
         filterRequestData, triggerEventDataCondition, connectorDetails, scmConnector);
     assertThat(response.isMatched()).isTrue();

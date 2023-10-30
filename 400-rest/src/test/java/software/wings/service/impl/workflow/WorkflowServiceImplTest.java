@@ -54,6 +54,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -793,6 +794,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     Workflow newWorkflow =
         aWorkflow().name(WORKFLOW_NAME).appId(APP_ID).envId(ENV_ID_CHANGED).uuid(WORKFLOW_ID).build();
     when(wingsPersistence.getWithAppId(any(), anyString(), anyString())).thenReturn(oldWorkflow);
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(EnvStateKeys.workflowId, WORKFLOW_ID);
@@ -823,7 +825,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
                            .build()))
             .build();
 
-    when(pipelineService.listPipelines(any()))
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
         .thenReturn(aPageResponse().withResponse(asList(pipeline, pipeline2)).build());
     when(wingsPersistence.createQuery(StateMachine.class)).thenReturn(stateMachineQuery);
     when(wingsPersistence.createQuery(Workflow.class)).thenReturn(workflowQuery);
@@ -860,7 +862,8 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
         aWorkflow().name(WORKFLOW_NAME).appId(APP_ID).envId(ENV_ID_CHANGED).uuid(WORKFLOW_ID).build();
     when(wingsPersistence.getWithAppId(any(), anyString(), anyString())).thenReturn(oldWorkflow);
 
-    when(pipelineService.listPipelines(any())).thenReturn(aPageResponse().withResponse(null).build());
+    when(pipelineService.listPipelines(any(), anyBoolean(), anyString()))
+        .thenReturn(aPageResponse().withResponse(null).build());
     when(wingsPersistence.createQuery(StateMachine.class)).thenReturn(stateMachineQuery);
     when(wingsPersistence.createQuery(Workflow.class)).thenReturn(workflowQuery);
     when(workflowQuery.filter(anyString(), any())).thenReturn(workflowQuery);

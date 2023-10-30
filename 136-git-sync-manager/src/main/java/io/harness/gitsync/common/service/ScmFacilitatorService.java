@@ -34,6 +34,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.ScmUpdateGitCacheRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
@@ -67,6 +68,8 @@ public interface ScmFacilitatorService {
 
   ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
       ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO);
+
+  void updateGitCache(ScmUpdateGitCacheRequestDTO scmUpdateGitCacheRequestDTO);
 
   List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);

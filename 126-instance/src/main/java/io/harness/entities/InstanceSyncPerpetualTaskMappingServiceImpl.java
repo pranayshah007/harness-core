@@ -37,7 +37,8 @@ public class InstanceSyncPerpetualTaskMappingServiceImpl implements InstanceSync
 
   @Override
   public boolean delete(String accountId, String perpetualTaskId) {
-    return instanceSyncPerpetualTaskMappingRepository.deleteByAccountIdAndPerpetualTaskId(accountId, perpetualTaskId);
+    return instanceSyncPerpetualTaskMappingRepository.deleteByAccountIdAndPerpetualTaskId(accountId, perpetualTaskId)
+        > 0;
   }
 
   @Override

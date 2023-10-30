@@ -9,9 +9,15 @@ package io.harness.ssca.beans.provenance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 
 @OwnedBy(HarnessTeam.SSCA)
-@JsonSubTypes({ @JsonSubTypes.Type(value = DockerSourceSpec.class, name = ProvenanceSourceConstants.DOCKER) })
-public interface ProvenanceSourceSpec {}
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = DockerSourceSpec.class, name = ProvenanceSourceConstants.DOCKER)
+  , @JsonSubTypes.Type(value = GcrSourceSpec.class, name = ProvenanceSourceConstants.GCR)
+})
+public interface ProvenanceSourceSpec {
+  ParameterField<String> getConnector();
+}

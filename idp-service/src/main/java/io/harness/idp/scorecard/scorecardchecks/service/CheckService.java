@@ -9,16 +9,16 @@ package io.harness.idp.scorecard.scorecardchecks.service;
 
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
-import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CheckService {
   void createCheck(CheckDetails checkDetails, String accountIdentifier);
   void updateCheck(CheckDetails checkDetails, String accountIdentifier);
-  List<CheckListItem> getChecksByAccountId(
+  Page<CheckEntity> getChecksByAccountId(
       Boolean custom, String accountIdentifier, Pageable pageRequest, String searchTerm);
   List<CheckEntity> getActiveChecks(String accountIdentifier, List<String> checkIdentifiers);
   void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);

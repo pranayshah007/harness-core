@@ -28,6 +28,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -44,6 +45,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -167,6 +170,32 @@ public class AccountResource {
     AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
+  }
+
+  @PUT
+  @Hidden
+  @Path("{accountIdentifier}/harness-support-access")
+  @ApiOperation(value = "Enable/Disable Harness Support Access", nickname = "updateHarnessSupportAccessNG")
+  @Operation(operationId = "updateHarnessSupportAccessNG", summary = "Enable/Disable Harness Support Access",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns an account")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  public RestResponse<Boolean>
+  updateHarnessSupportAccess(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+                                 "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "Boolean value to specify is isHarnessSupportAccessAllowed is enabled/disabled.") @NotNull
+      @Valid Boolean isHarnessSupportAccessAllowed) {
+    if (DeployVariant.isCommunity(deployVersion)) {
+      throw new InvalidRequestException("Operation is not supported");
+    }
+    Boolean response = CGRestUtils.getResponse(
+        accountClient.updateHarnessSupportAccess(accountIdentifier, isHarnessSupportAccessAllowed));
+
+    return new RestResponse(response);
   }
 
   @PUT

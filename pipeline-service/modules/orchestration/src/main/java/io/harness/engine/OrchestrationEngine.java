@@ -69,6 +69,9 @@ public class OrchestrationEngine {
         PmsLevelUtils.buildLevelFromNode(
             runtimeId, node, strategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance)));
     NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(node.getNodeType());
+    if (metadata == null) {
+      metadata = strategy.createMetadata(strategyMetadata);
+    }
     return (T) strategy.runNode(clonedAmbiance, node, metadata, initiateMode);
   }
 

@@ -30,4 +30,8 @@ public enum DayOfWeek {
   public LocalDate getNextDayOfWeek(LocalDate currentDate) {
     return currentDate.with(TemporalAdjusters.nextOrSame(this.getJavaDayOfWeek()));
   }
+
+  public LocalDate getPreviousDayOfWeek(LocalDate currentDate) {
+    return currentDate.with(TemporalAdjusters.previousOrSame(this.getJavaDayOfWeek()));
+  }
 }

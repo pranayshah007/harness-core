@@ -9,6 +9,8 @@ package io.harness.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.YamlUtils;
@@ -32,6 +34,7 @@ public class AsgContentParser {
 
   static {
     defaultMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    mapperWithFailOnUnknownPropertiesFalse.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
   }
 
   static {
@@ -47,7 +50,7 @@ public class AsgContentParser {
 
       return objectMapper.readValue(json, clazz);
     } catch (IOException e) {
-      throw new InvalidRequestException("Cannot parse json with error", e);
+      throw new InvalidRequestException(format("Cannot parse json for class `%s` with error", clazz.getName()), e);
     }
   }
 

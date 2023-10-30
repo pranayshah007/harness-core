@@ -27,8 +27,8 @@ import io.harness.workers.background.AccountLevelEntityProcessController;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;

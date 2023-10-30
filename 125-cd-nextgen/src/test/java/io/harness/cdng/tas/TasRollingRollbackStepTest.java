@@ -142,7 +142,7 @@ public class TasRollingRollbackStepTest extends CDNGTestBase {
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("BasicAppSetup").spec(parameters).build();
     assertThatThrownBy(() -> tasRollingRollbackStep.validateResources(ambiance, stepElementParameters))
-        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {

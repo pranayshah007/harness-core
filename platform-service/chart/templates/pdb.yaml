@@ -7,11 +7,11 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: platform-service
+    matchLabels:
+      {{- include "platform-service.selectorLabels" . | nindent 6 }}

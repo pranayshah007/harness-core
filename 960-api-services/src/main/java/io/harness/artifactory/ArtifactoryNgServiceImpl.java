@@ -64,7 +64,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   public List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
       String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory) {
     if (isNotEmpty(artifactPathFilter)) {
-      return getArtifactListWithPathFilter(
+      return filterArtifactsOnHarnessSide(
           artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions, artifactPath);
     }
     return artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, artifactPath, maxVersions);
@@ -103,7 +103,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     return isNotEmpty(artifactList) ? Optional.ofNullable(artifactList.get(0)) : Optional.empty();
   }
 
-  private List<BuildDetails> getArtifactListWithPathFilter(ArtifactoryConfigRequest artifactoryConfig,
+  private List<BuildDetails> filterArtifactsOnHarnessSide(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactDirectory, String artifactPathRegex, int maxVersions,
       String artifactFilter) {
     final Pattern artifactPathRegexPattern;
@@ -180,10 +180,16 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
 
     if (EmptyPredicate.isEmpty(artifactFilter) && EmptyPredicate.isNotEmpty(artifactPathRegex)) {
       // When user defined fixed directory and regex artifactPath or artifactPathRegex
-
-      List<BuildDetails> builds = getArtifactListWithPathFilter(
-          artifactoryConfig, repositoryName, artifactDirectory, artifactPathRegex, maxVersions, null);
-      build = isNotEmpty(builds) ? builds.get(0) : null;
+      // Backward Compatibility for legacy case
+      List<BuildDetails> buildDetails = filterArtifactsOnArtifactorySide(
+          artifactoryConfig, repositoryName, artifactDirectory, artifactPathRegex, maxVersions);
+      if (isNotEmpty(buildDetails)) {
+        build = buildDetails.get(0);
+      } else {
+        List<BuildDetails> builds = filterArtifactsOnHarnessSide(
+            artifactoryConfig, repositoryName, artifactDirectory, artifactPathRegex, maxVersions, null);
+        build = isNotEmpty(builds) ? builds.get(0) : null;
+      }
 
       if (build == null) {
         throw NestedExceptionUtils.hintWithExplanationException(
@@ -200,7 +206,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     if (EmptyPredicate.isNotEmpty(artifactFilter) && EmptyPredicate.isNotEmpty(artifactPathRegex)) {
       // When user defined artifact filter and regex artifactPath or artifactPathRegex
 
-      List<BuildDetails> builds = getArtifactListWithPathFilter(
+      List<BuildDetails> builds = filterArtifactsOnHarnessSide(
           artifactoryConfig, repositoryName, null, artifactPathRegex, maxVersions, artifactFilter);
       build = isNotEmpty(builds) ? builds.get(0) : null;
 
@@ -235,6 +241,16 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     }
 
     return null;
+  }
+
+  private List<BuildDetails> filterArtifactsOnArtifactorySide(ArtifactoryConfigRequest artifactoryConfig,
+      String repositoryName, String artifactDirectory, String artifactPathFilter, int maxVersions) {
+    String filePath = Paths.get(artifactDirectory, artifactPathFilter).toString();
+
+    List<BuildDetails> buildDetails =
+        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
+
+    return buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
   }
 
   @Override

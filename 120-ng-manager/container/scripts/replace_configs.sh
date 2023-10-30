@@ -291,6 +291,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CANNY_TOKEN" ]]; then
+  export CANNY_TOKEN; yq -i '.cannyApiConfig.token=env(CANNY_TOKEN)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
   yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
@@ -609,3 +613,16 @@ replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value chaosServiceClientConfig.baseUrl "$CHAOS_SERVICE_BASE_URL"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

@@ -52,10 +52,18 @@ public class InstanceGroupedByEnvironmentList {
   @Value
   @Builder
   public static class InstanceGroupedByArtifact {
+    String artifact; // displayName of artifact
+    long lastDeployedAt;
+    @NotNull List<InstanceGroupedByChartVersion> instanceGroupedByChartVersionList;
+  }
+
+  @Value
+  @Builder
+  public static class InstanceGroupedByChartVersion {
     // Passing the instanceKey and infrastructureMappingId to uniquely identity the Instance for rollback.
     String instanceKey;
     String infrastructureMappingId;
-    String artifact; // displayName of artifact
+    String chartVersion;
     Integer count;
     long lastDeployedAt;
     String lastPlanExecutionId;

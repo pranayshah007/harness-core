@@ -6,7 +6,6 @@
  */
 
 package io.harness.distribution.constraint;
-
 import static io.harness.distribution.constraint.Constraint.Strategy.ASAP;
 import static io.harness.distribution.constraint.Constraint.Strategy.FIFO;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
@@ -19,6 +18,9 @@ import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.distribution.constraint.RunnableConsumers.RunnableConsumersBuilder;
 import io.harness.threading.Morpheus;
@@ -29,6 +31,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
@@ -53,6 +56,7 @@ import lombok.Value;
  *
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Value
 @Builder
 public class Constraint {
@@ -145,7 +149,7 @@ public class Constraint {
     }
 
     do {
-      List<Consumer> consumers = registry.loadConsumers(id, unit);
+      List<Consumer> consumers = registry.loadConsumers(id, unit, false);
       final int usedPermits = getUsedPermits(consumers);
       State state = calculateConsumerState(consumers, permits, usedPermits);
 
@@ -182,8 +186,9 @@ public class Constraint {
     return registry.consumerFinished(id, unit, consumerId, null);
   }
 
-  public RunnableConsumers runnableConsumers(ConstraintUnit unit, ConstraintRegistry registry) {
-    final List<Consumer> consumers = registry.loadConsumers(id, unit);
+  public RunnableConsumers runnableConsumers(
+      ConstraintUnit unit, ConstraintRegistry registry, boolean hitSecondaryNode) {
+    final List<Consumer> consumers = registry.loadConsumers(id, unit, hitSecondaryNode);
     int usedPermits = getUsedPermits(consumers);
 
     final RunnableConsumersBuilder builder = RunnableConsumers.builder().usedPermits(usedPermits);
@@ -228,8 +233,8 @@ public class Constraint {
     return consumers.stream()
         .filter(c
             -> isDifferentId(c, consumer) && hasContext(c) && hasContext(consumer)
-                && getReleaseEntityType(c).equals(getReleaseEntityType(consumer))
-                && getReleaseEntityId(c).equals(getReleaseEntityId(consumer)))
+                && Objects.equals(getReleaseEntityType(c), getReleaseEntityType(consumer))
+                && Objects.equals(getReleaseEntityId(c), getReleaseEntityId(consumer)))
         .map(Consumer::getId)
         .collect(Collectors.toList());
   }

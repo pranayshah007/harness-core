@@ -14,9 +14,6 @@ import io.harness.ModuleType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.licensing.accesscontrol.ResourceTypes;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -63,8 +60,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-@CodePulse(
-    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Api(value = "subscriptions")
 @Path("subscriptions")
 @Produces({"application/json"})

@@ -16,56 +16,50 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import io.harness.OrchestrationTestBase;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.OrchestrationTestHelper;
-import io.harness.execution.PlanExecution;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import javax.cache.Cache;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.data.util.CloseableIterator;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
+public class PlanExecutionMonitorServiceImplTest extends CategoryTest {
   @Mock PlanExecutionService planExecutionService;
   @Mock MetricService metricService;
-  @Inject @InjectMocks PlanExecutionMonitorService planExecutionMonitorService;
+
+  @Mock Cache<String, Integer> metricsCache;
+  PlanExecutionMonitorService planExecutionMonitorService;
+
+  @Before
+  public void beforeTest() {
+    MockitoAnnotations.openMocks(this);
+    planExecutionMonitorService =
+        new PlanExecutionMonitorServiceImpl(planExecutionService, metricService, metricsCache);
+  }
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testRegisterActiveExecutionMetrics() {
-    List<PlanExecution> planExecutions = new ArrayList<>();
-    planExecutions.add(PlanExecution.builder()
-                           .uuid("UUID1")
-                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId1"))
-                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD1").build())
-                           .build());
-    planExecutions.add(PlanExecution.builder()
-                           .uuid("UUID2")
-                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId2"))
-                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD2").build())
-                           .build());
-    planExecutions.add(PlanExecution.builder()
-                           .uuid("UUID1")
-                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId3"))
-                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD3").build())
-                           .build());
-    CloseableIterator<PlanExecution> iterator =
-        OrchestrationTestHelper.createCloseableIterator(planExecutions.iterator());
-    doReturn(iterator).when(planExecutionService).fetchPlanExecutionsByStatusFromAnalytics(any(), any());
+    doReturn(true).when(metricsCache).putIfAbsent(any(), any());
+
+    List<ExecutionCountWithAccountResult> result = new LinkedList<>();
+    result.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());
+    result.add(ExecutionCountWithAccountResult.builder().accountId("DEF").count(5).build());
+
+    doReturn(result).when(planExecutionService).aggregateRunningExecutionCountPerAccount();
+
     planExecutionMonitorService.registerActiveExecutionMetrics();
-    verify(metricService, times(3)).recordMetric(anyString(), anyDouble());
+    verify(metricService, times(2)).recordMetric(anyString(), anyDouble());
   }
 }

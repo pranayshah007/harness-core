@@ -79,8 +79,11 @@ func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap
 	if err != nil {
 		return errors.Wrap(err, "failed to upload cg to ti server")
 	}
-
 	log.Infow(resp.CgMsg)
+	if resp.EmptyCg {
+		log.Infow("Skipping call graph upload since no call graph was generated")
+		return nil
+	}
 	log.Infow(fmt.Sprintf("Successfully uploaded callgraph in %s time", time.Since(start)))
 	return nil
 }
@@ -194,7 +197,7 @@ func getTestTime(ctx context.Context, log *zap.SugaredLogger, splitStrategy stri
 
 // selectTests takes a list of files which were changed as input and gets the tests
 // to be run corresponding to that.
-func selectTests(ctx context.Context, files []types.File, runSelected bool, stepID string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+func selectTests(ctx context.Context, files []types.File, runSelected bool, stepID string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 	res := types.SelectTestsResp{}
 	repo, err := external.GetRepo()
 	if err != nil {
@@ -223,7 +226,7 @@ func selectTests(ctx context.Context, files []types.File, runSelected bool, step
 	if err != nil {
 		return res, err
 	}
-	b, err := json.Marshal(&types.SelectTestsReq{SelectAll: !runSelected, Files: files, TiConfig: ticonfig})
+	b, err := json.Marshal(&types.SelectTestsReq{SelectAll: !runSelected, Files: files, TiConfig: ticonfig, Language: "test", TestGlobs: testGlobs})
 	if err != nil {
 		return res, err
 	}
@@ -348,15 +351,16 @@ func getCommitInfo(ctx context.Context, stepID string, log *zap.SugaredLogger) (
 	return commitInfo.LastSuccessfulCommitId, nil
 }
 
-func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommitID, currentCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
 	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
 	if err != nil {
 		return changedFiles, err
 	}
 	defer client.CloseConn()
 	req := &pb.GetChangedFilesPushTriggerRequest{
-		StepId: stepID,
+		StepId:         stepID,
 		LastSuccCommit: lastSuccessfulCommitID,
+		CurrentCommit: currentCommitID,
 	}
 	resp, err := client.Client().GetChangedFilesPushTrigger(ctx, req)
 	if err != nil {

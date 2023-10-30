@@ -74,6 +74,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
               Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(2, ChronoUnit.DAYS);
           connectorCreationTime = startInstant.isBefore(connectorCreationTime) ? startInstant : connectorCreationTime;
           log.info("Getting startTime for ANOMALY_DETECTION_CLOUD: {}", connectorCreationTime);
+        } else if (isSyncBillingReport(batchJobType)) {
+          Instant startInstant = Instant.now().minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+          connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;
         } else {
           Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
           connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;

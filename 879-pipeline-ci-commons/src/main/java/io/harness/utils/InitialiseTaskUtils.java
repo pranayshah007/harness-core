@@ -23,7 +23,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -31,7 +31,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.StepUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.plugin.ContainerStepConstants;
 
@@ -40,7 +39,6 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.LinkedHashMap;
 
 @Singleton
 public class InitialiseTaskUtils {
@@ -99,8 +97,7 @@ public class InitialiseTaskUtils {
   }
 
   public String getLogPrefix(Ambiance ambiance, String lastGroup) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, lastGroup);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, lastGroup);
   }
 
   public void checkIfEverythingIsHealthy(K8sTaskExecutionResponse k8sTaskExecutionResponse) {

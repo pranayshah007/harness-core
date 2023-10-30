@@ -53,4 +53,5 @@ public class AzureKeyVaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO 
   @Schema(description = "Boolean value to indicate if managed identity is used") private Boolean useManagedIdentity;
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;
   @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
+  @Schema(description = "Boolean value to indicate if purge is enabled") private Boolean enablePurge;
 }

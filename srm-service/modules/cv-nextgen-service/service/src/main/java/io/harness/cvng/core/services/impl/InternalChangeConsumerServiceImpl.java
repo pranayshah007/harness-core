@@ -82,6 +82,18 @@ public class InternalChangeConsumerServiceImpl implements InternalChangeConsumer
     if (internalChangeEventDTO.hasField(InternalChangeEventDTO.getDescriptor().findFieldByName("executionEndTime"))) {
       internalChangeEventMetaDataBuilder.eventEndTime(internalChangeEventDTO.getExecutionEndTime());
     }
+    if (internalChangeEventDTO.hasField(InternalChangeEventDTO.getDescriptor().findFieldByName("pipelineId"))) {
+      internalChangeEventMetaDataBuilder.pipelineId(internalChangeEventDTO.getPipelineId());
+    }
+    if (internalChangeEventDTO.hasField(InternalChangeEventDTO.getDescriptor().findFieldByName("stageId"))) {
+      internalChangeEventMetaDataBuilder.stageId(internalChangeEventDTO.getStageId());
+    }
+    if (internalChangeEventDTO.hasField(InternalChangeEventDTO.getDescriptor().findFieldByName("stageStepId"))) {
+      internalChangeEventMetaDataBuilder.stageStepId(internalChangeEventDTO.getStageStepId());
+    }
+    if (internalChangeEventDTO.hasField(InternalChangeEventDTO.getDescriptor().findFieldByName("planExecutionId"))) {
+      internalChangeEventMetaDataBuilder.planExecutionId(internalChangeEventDTO.getPlanExecutionId());
+    }
 
     ChangeEventDTO changeEventDTO =
         ChangeEventDTO.builder()

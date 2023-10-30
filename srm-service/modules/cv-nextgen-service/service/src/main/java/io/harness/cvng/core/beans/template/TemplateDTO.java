@@ -20,5 +20,5 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TemplateDTO {
   @NotNull String templateRef;
-  @NotNull String versionLabel;
+  String versionLabel;
 }

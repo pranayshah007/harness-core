@@ -10,6 +10,7 @@ package io.harness.beans.steps.outcome;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.execution.ProvenanceArtifact;
 import io.harness.beans.execution.PublishedFileArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
 import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
@@ -29,4 +30,5 @@ public class StepArtifacts {
   @Singular List<PublishedFileArtifact> publishedFileArtifacts;
   @Singular List<PublishedImageArtifact> publishedImageArtifacts;
   @Singular List<PublishedSbomArtifact> publishedSbomArtifacts;
+  @Singular List<ProvenanceArtifact> provenanceArtifacts;
 }

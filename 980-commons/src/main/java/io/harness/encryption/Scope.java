@@ -7,6 +7,8 @@
 
 package io.harness.encryption;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 import java.util.Optional;
@@ -34,5 +36,22 @@ public enum Scope {
       return scopeOptional.get();
     }
     throw new IllegalArgumentException("No scope found for string: " + scopeStr);
+  }
+
+  public static Scope of(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (isEmpty(accountIdentifier)) {
+      return Scope.UNKNOWN;
+    }
+    if (isEmpty(orgIdentifier)) {
+      if (isEmpty(projectIdentifier)) {
+        return Scope.ACCOUNT;
+      } else {
+        return Scope.UNKNOWN;
+      }
+    }
+    if (isEmpty(projectIdentifier)) {
+      return Scope.ORG;
+    }
+    return Scope.PROJECT;
   }
 }

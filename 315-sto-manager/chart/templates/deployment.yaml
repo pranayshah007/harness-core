@@ -8,8 +8,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -25,9 +25,14 @@ spec:
       {{- include "sto-manager.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations .Values.global.commonAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.global.commonAnnotations }}
+          {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "sto-manager.selectorLabels" . | nindent 8 }}
@@ -82,25 +87,24 @@ spec:
               containerPort: {{.Values.service.grpcport}}
               protocol: TCP
           env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            - name: STO_SERVICE_GLOBAL_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.stoServiceGlobalToken.name }}
-                  key: {{ .Values.stoServiceGlobalToken.key }}
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
-            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALE_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
-            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "STO_SERVICE_GLOBAL_TOKEN" "defaultKubernetesSecretName" .Values.stoServiceGlobalToken.name "defaultKubernetesSecretKey" .Values.stoServiceGlobalToken.key) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $ "passwordVariableName" "TIMESCALE_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "sto-manager" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET" "defaultKubernetesSecretName" "sto-manager" "defaultKubernetesSecretKey" "VERIFICATION_SERVICE_SECRET") | indent 12 }}
             - name: TIMESCALE_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
             - name: STOMANAGER_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness-sto" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness-sto" ) }}
             - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "pms-harness" ) }}
             - name: NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
           {{- toYaml .Values.probes | nindent 10}}
           {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}

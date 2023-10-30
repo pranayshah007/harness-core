@@ -40,10 +40,10 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.Service;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.event.AccountEntityEvent;
 import software.wings.service.intfc.AccountService;
@@ -106,6 +106,7 @@ public class AccountChangeHandlerTest extends WingsBaseTest {
     FieldUtils.writeField(accountChangeHandler, "accountService", accountService, true);
     FieldUtils.writeField(accountChangeHandler, "salesforceApiCheck", salesforceApiCheck, true);
     FieldUtils.writeField(accountChangeHandler, "utils", utils, true);
+    FieldUtils.writeField(accountChangeHandler, "featureFlagService", featureFlagService, true);
 
     when(accountService.get(anyString())).thenReturn(account);
     when(accountService.getAccountStatus(anyString())).thenReturn(AccountStatus.ACTIVE);

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: list-lambda-with-errors
+cloudProvider: AWS
+resourceType: lambda
+description: List Lambda functions with errors over the last 7 days
+rulesYamlPath: ../list-lambda-with-errors.yml

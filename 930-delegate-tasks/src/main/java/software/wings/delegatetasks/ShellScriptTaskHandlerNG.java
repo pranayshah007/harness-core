@@ -6,7 +6,9 @@
  */
 
 package software.wings.delegatetasks;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -25,12 +27,12 @@ import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 public class ShellScriptTaskHandlerNG {
   public static final String COMMAND_UNIT = "Execute";
@@ -75,7 +77,6 @@ public class ShellScriptTaskHandlerNG {
             .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
             .build();
       } finally {
-        SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
         SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
       }
     }

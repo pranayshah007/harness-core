@@ -17,7 +17,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.google.common.collect.Sets;
@@ -47,7 +47,7 @@ public class OrchestrationEndLabelsResolveHandler implements OrchestrationEndObs
             Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.labels,
                 PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineVersion));
     if (pipelineExecutionSummaryEntity != null
-        && PipelineVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
+        && HarnessYamlVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
       List<NGLabel> resolvedLabels = (List<NGLabel>) pmsEngineExpressionService.resolve(
           ambiance, pipelineExecutionSummaryEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
       Update update = new Update().set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.labels, resolvedLabels);

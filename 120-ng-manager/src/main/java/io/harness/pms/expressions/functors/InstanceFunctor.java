@@ -92,7 +92,7 @@ public class InstanceFunctor implements SdkFunctor {
     List<Level> stepLevelsWithStrategyMetadata =
         ambiance.getLevelsList()
             .stream()
-            .filter(level -> level.hasStrategyMetadata() && level.hasStepType())
+            .filter(level -> AmbianceUtils.hasStrategyMetadata(level) && level.hasStepType())
             .collect(Collectors.toList());
 
     Map<String, Object> strategyObjectMap = StrategyUtils.fetchStrategyObjectMap(

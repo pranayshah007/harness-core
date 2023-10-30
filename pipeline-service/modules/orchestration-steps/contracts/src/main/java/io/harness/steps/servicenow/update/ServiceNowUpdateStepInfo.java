@@ -6,12 +6,14 @@
  */
 
 package io.harness.steps.servicenow.update;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -26,6 +28,8 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
 import io.harness.steps.servicenow.beans.ServiceNowField;
+import io.harness.steps.servicenow.beans.UpdateMultipleTaskNode;
+import io.harness.validation.OneOfField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,6 +46,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -49,6 +54,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.SERVICENOW_UPDATE)
 @TypeAlias("serviceNowUpdateStepInfo")
 @RecasterAlias("io.harness.steps.servicenow.update.ServiceNowUpdateStepInfo")
+@OneOfField(fields = {"ticketNumber", "updateMultiple"})
 public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef, WithDelegateSelector {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -57,7 +63,7 @@ public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef, 
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketType;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketNumber;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> ticketNumber;
 
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
@@ -65,6 +71,8 @@ public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef, 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> templateName;
 
   List<ServiceNowField> fields;
+
+  UpdateMultipleTaskNode updateMultiple;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
@@ -86,6 +94,7 @@ public class ServiceNowUpdateStepInfo implements PMSStepInfo, WithConnectorRef, 
         .connectorRef(connectorRef)
         .ticketType(ticketType)
         .ticketNumber(ticketNumber)
+        .updateMultiple(updateMultiple)
         .fields(ServiceNowStepUtils.processServiceNowFieldsList(fields))
         .delegateSelectors(delegateSelectors)
         .templateName(templateName)

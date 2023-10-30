@@ -12,9 +12,9 @@ import static io.harness.marketplace.gcp.GcpMarketPlaceConstants.DEFAULT_LICENCE
 
 import io.harness.annotations.dev.OwnedBy;
 
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.marketplace.gcp.GCPBillingJobEntity;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.LicenseUtils;

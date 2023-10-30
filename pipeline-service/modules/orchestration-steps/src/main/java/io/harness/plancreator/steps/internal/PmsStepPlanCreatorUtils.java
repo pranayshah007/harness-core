@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.steps.internal;
+
 import static io.harness.plancreator.strategy.StrategyUtils.getPipelineRollbackStageId;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -29,6 +30,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -36,6 +38,7 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
@@ -75,8 +78,13 @@ import lombok.experimental.UtilityClass;
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 public class PmsStepPlanCreatorUtils {
+  // TODO: Remove this method and use the below method directly.
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
+    return getAdviserObtainmentFromMetaData(null, kryoSerializer, currentField, isPipelineStage);
+  }
+  public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
+      Dependency dependency, KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
     final boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
 
     // Adding adviser obtainment list from the failure strategy.
@@ -96,7 +104,7 @@ public class PmsStepPlanCreatorUtils {
       // Always add nextStep adviser at last, as its priority is less than, Do not change the order.
       AdviserObtainment nextStepAdviserObtainment = isPipelineStage
           ? getNextStageAdviser(kryoSerializer, currentField)
-          : getNextStepAdviserObtainment(kryoSerializer, currentField);
+          : getNextStepAdviserObtainment(dependency, kryoSerializer, currentField);
       if (nextStepAdviserObtainment != null) {
         adviserObtainmentList.add(nextStepAdviserObtainment);
       }
@@ -133,19 +141,28 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getNextStepAdviserObtainment(KryoSerializer kryoSerializer, YamlField currentField) {
+  AdviserObtainment getNextStepAdviserObtainment(
+      Dependency dependency, KryoSerializer kryoSerializer, YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
 
-      YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
-      if (siblingField != null && siblingField.getNode().getUuid() != null) {
+      // if nextNodeId is notNull then its coming from the V1 parent. So we will consider it. Else calculate the
+      // nextNodeId from currentField.
+      String nextNodeId = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, dependency);
+      if (EmptyPredicate.isEmpty(nextNodeId)) {
+        YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
+        if (siblingField != null && siblingField.getNode().getUuid() != null) {
+          nextNodeId = siblingField.getNode().getUuid();
+        }
+      }
+      if (EmptyPredicate.isNotEmpty(nextNodeId)) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build())))
             .build();
       }
     }

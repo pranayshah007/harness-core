@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.JiraClientException;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Splitter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,6 +31,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,9 +44,13 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 public class JiraIssueUtilsNG {
+  public final Set<String> FIELDS_TO_BE_SKIPPED_IN_NAMES_MAP =
+      new HashSet<>(Arrays.asList(JiraConstantsNG.PROJECT_KEY, JiraConstantsNG.ISSUE_TYPE_KEY));
+
   public List<String> splitByComma(String value) {
     List<String> values = new ArrayList<>();
     if (isBlank(value)) {
@@ -115,6 +125,29 @@ public class JiraIssueUtilsNG {
 
     fieldKeys.forEach(
         key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key), jiraDeploymentType));
+  }
+
+  public JiraIssueNG toJiraIssueNGWithAllFieldNames(JsonNode node) {
+    JiraIssueNG jiraIssueNG = new JiraIssueNG(node);
+    Map<String, JsonNode> names = JsonNodeUtils.getMap(node, "names");
+    if (EmptyPredicate.isEmpty(names)) {
+      return jiraIssueNG;
+    }
+    names.forEach((key, value) -> addFieldToNameMap(key, value.textValue(), jiraIssueNG.getFieldNameToKeys()));
+    return jiraIssueNG;
+  }
+
+  private void addFieldToNameMap(String key, String name, Map<String, String> fieldNameToKeys) {
+    if (FIELDS_TO_BE_SKIPPED_IN_NAMES_MAP.contains(key) || StringUtils.isBlank(name) || StringUtils.isBlank(key)) {
+      return;
+    }
+    if (JiraConstantsNG.TIME_TRACKING_KEY.equals(key)) {
+      fieldNameToKeys.putIfAbsent(JiraConstantsNG.ORIGINAL_ESTIMATE_NAME, JiraConstantsNG.TIME_TRACKING_KEY);
+      fieldNameToKeys.putIfAbsent(JiraConstantsNG.REMAINING_ESTIMATE_NAME, JiraConstantsNG.TIME_TRACKING_KEY);
+      return;
+    }
+
+    fieldNameToKeys.putIfAbsent(name, key);
   }
 
   private Map<String, String> parseFieldsForCGCalls(

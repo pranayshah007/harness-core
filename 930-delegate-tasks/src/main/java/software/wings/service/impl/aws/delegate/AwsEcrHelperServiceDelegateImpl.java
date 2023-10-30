@@ -6,11 +6,13 @@
  */
 
 package software.wings.service.impl.aws.delegate;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -25,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -42,7 +45,7 @@ public class AwsEcrHelperServiceDelegateImpl
   public String getEcrImageUrl(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String imageName) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
-    return awsEcrApiHelperServiceDelegate.getEcrImageUrl(
+    return awsEcrApiHelperServiceDelegate.getEcrImageUrlForCG(
         AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), null, region, imageName);
   }
 

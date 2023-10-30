@@ -395,7 +395,7 @@ public class AwsInstanceHandler extends InstanceHandler implements InstanceSyncB
                                              .collect(Collectors.toSet());
 
     if (isNotEmpty(instanceIdsToBeDeleted)) {
-      log.info("Instances to be deleted {}", instanceIdsToBeDeleted.size());
+      log.debug("Instances to be deleted {}", instanceIdsToBeDeleted.size());
       instanceService.delete(instanceIdsToBeDeleted);
     }
   }

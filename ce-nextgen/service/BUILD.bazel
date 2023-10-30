@@ -10,6 +10,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "CE"
 
 shared_dependencies = [
+    "@maven//:net_minidev_json_smart",
     "@maven//:io_netty_netty_all",
     "@maven//:io_netty_netty_buffer",
     "@maven//:io_netty_netty_common",

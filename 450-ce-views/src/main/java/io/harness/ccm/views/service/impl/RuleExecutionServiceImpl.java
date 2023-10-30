@@ -290,7 +290,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     Map<String, Integer> result = new HashMap<>();
     AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
     aggregate(
-        newAggregation(matchStage, sortStage, group, projectionStage).withOptions(options), ResourceTypeCount.class)
+        newAggregation(matchStage, group, projectionStage, sortStage).withOptions(options), ResourceTypeCount.class)
         .getMappedResults()
         .forEach(resource -> result.put(resource.getResourceName(), resource.getCount()));
     log.info("result: {}", result);

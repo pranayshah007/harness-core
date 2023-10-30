@@ -8,6 +8,8 @@
 package io.harness.cvng.verificationjob.services.impl;
 
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
+import static io.harness.cvng.beans.activity.ActivityVerificationStatus.ABORTED;
+import static io.harness.cvng.beans.activity.ActivityVerificationStatus.ABORTED_AS_FAILURE;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.IN_PROGRESS;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_FAILED;
 import static io.harness.cvng.beans.activity.ActivityVerificationStatus.VERIFICATION_PASSED;
@@ -28,6 +30,10 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -46,6 +52,7 @@ import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisServ
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
+import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
@@ -54,18 +61,24 @@ import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerificationAbortDTO;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.VerificationManagerService;
+import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo.MetricInfoBuilder;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
@@ -218,6 +231,41 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         verificationJobInstanceService.getEmbeddedCVConfig(cvConfig.getUuid(), verificationJobInstance.getUuid()))
         .isEqualTo(cvConfig);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testProcessVerificationJobInstance_checkNumberOfCVConfigsUsedForCreatingDataCollectionTasks()
+      throws IllegalAccessException {
+    DataCollectionTaskService spiedDtaCollectionTaskService = spy(dataCollectionTaskService);
+    FieldUtils.writeField(
+        verificationJobInstanceService, "dataCollectionTaskService", spiedDtaCollectionTaskService, true);
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
+    verificationJobInstance.setCvConfigMap(null);
+    CustomHealthMetricCVConfig customHealthMetricCVConfig =
+        CustomHealthMetricCVConfig.builder()
+            .metricDefinitions(
+                List.of(CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+                            .metricType(TimeSeriesMetricType.ERROR)
+                            .metricResponseMapping(MetricResponseMapping.builder().build())
+                            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().build())
+                            .sli(SLI.builder().build())
+                            .deploymentVerification(DeploymentVerification.builder().enabled(false).build())
+                            .build()))
+            .queryType(HealthSourceQueryType.SERVICE_BASED)
+            .uuid(generateUuid())
+            .build();
+    AppDynamicsCVConfig appDynamicsCVConfig =
+        (AppDynamicsCVConfig) builderFactory.appDynamicsCVConfigBuilder().uuid(generateUuid()).build();
+    verificationJobInstance.getResolvedJob().setCvConfigs(List.of(customHealthMetricCVConfig, appDynamicsCVConfig));
+    List<String> verificationJobInstanceIds =
+        verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
+    VerificationJobInstance savedVerificationJobInstance =
+        verificationJobInstanceService.get(verificationJobInstanceIds).get(0);
+    verificationJobInstanceService.processVerificationJobInstance(savedVerificationJobInstance);
+    verify(spiedDtaCollectionTaskService, times(1)).createSeqTasks(anyList());
   }
 
   @Test
@@ -602,6 +650,29 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
+  public void testGetDeploymentVerificationStatus_Aborted() {
+    cvConfigService.save(newCVConfig());
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    verificationJobInstance.setVerificationStatus(ABORTED_AS_FAILURE);
+    verificationJobInstance.setExecutionStatus(ExecutionStatus.ABORTED);
+    String verificationJobInstanceId = verificationJobInstance.getUuid();
+    String verificationTaskId =
+        verificationTaskService.getVerificationTaskId(accountId, cvConfigId, verificationJobInstanceId);
+    DeploymentLogAnalysis deploymentLogAnalysis =
+        DeploymentLogAnalysis.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
+            .resultSummary(DeploymentLogAnalysisDTO.ResultSummary.builder().risk(1).build())
+            .build();
+    deploymentLogAnalysisService.save(deploymentLogAnalysis);
+    ActivityVerificationStatus activityVerificationStatus =
+        verificationJobInstanceService.getDeploymentVerificationStatus(verificationJobInstance);
+    assertThat(activityVerificationStatus).isEqualTo(ABORTED_AS_FAILURE);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
   public void testGetDeploymentVerificationStatus_isFailOnNoAnalysisTrue() {
     cvConfigService.save(newCVConfig());
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
@@ -744,6 +815,38 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testAbort_WithSpecifiedVerificationStatus() throws IllegalAccessException {
+    DataCollectionTaskService dataCollectionTaskService = Mockito.mock(DataCollectionTaskService.class);
+    FieldUtils.writeField(verificationJobInstanceService, "dataCollectionTaskService", dataCollectionTaskService, true);
+
+    VerificationJobInstance runningVerificationJobInstance =
+        createVerificationJobInstance("prod", ExecutionStatus.RUNNING, CANARY);
+    VerificationJobInstance failedVerificationJobInstance =
+        createVerificationJobInstance("prod", ExecutionStatus.FAILED, CANARY);
+    hPersistence.save(Lists.newArrayList(runningVerificationJobInstance, failedVerificationJobInstance));
+    List<String> verificationTaskIds = verificationTaskService.maybeGetVerificationTaskIds(
+        Lists.newArrayList(runningVerificationJobInstance.getUuid(), failedVerificationJobInstance.getUuid()));
+
+    verificationJobInstanceService.abort(
+        Lists.newArrayList(runningVerificationJobInstance.getUuid(), failedVerificationJobInstance.getUuid()),
+        VerificationAbortDTO.builder().verificationStatus(VerificationAbortDTO.VerificationStatus.FAILURE).build());
+
+    VerificationJobInstance abortedRunningVJI =
+        hPersistence.get(VerificationJobInstance.class, runningVerificationJobInstance.getUuid());
+    assertThat(abortedRunningVJI.getExecutionStatus()).isEqualTo(ExecutionStatus.ABORTED);
+    assertThat(abortedRunningVJI.getVerificationStatus()).isEqualTo(ABORTED_AS_FAILURE);
+    // Failed JobInstance will remain in failed status
+    VerificationJobInstance abortedFailedVJI =
+        hPersistence.get(VerificationJobInstance.class, failedVerificationJobInstance.getUuid());
+    assertThat(abortedFailedVJI.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(abortedFailedVJI.getVerificationStatus()).isEqualTo(VERIFICATION_PASSED);
+
+    Mockito.verify(dataCollectionTaskService).abortDeploymentDataCollectionTasks(verificationTaskIds);
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetLastSuccessfulTestVerificationJobExecutionId_doesNotExist() {
@@ -841,8 +944,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetDeploymentVerificationJobInstanceSummary_abortedVerificationJobInstance() {
     VerificationJobInstance devVerificationJobInstance =
-        createVerificationJobInstance("dev", ExecutionStatus.ABORTED, CANARY);
-    devVerificationJobInstance.setExecutionStatus(ExecutionStatus.ABORTED);
+        createVerificationJobInstance("dev", ExecutionStatus.ABORTED, CANARY, ABORTED);
     DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
         verificationJobInstanceService.getDeploymentVerificationJobInstanceSummary(
             Lists.newArrayList(devVerificationJobInstance.getUuid()));

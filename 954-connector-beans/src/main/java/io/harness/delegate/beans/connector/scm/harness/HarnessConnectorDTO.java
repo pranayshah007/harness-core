@@ -32,16 +32,19 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -56,7 +59,7 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull HarnessAuthenticationDTO authentication;
-  @Valid HarnessApiAccessDTO apiAccess;
+  @Valid @Wither HarnessApiAccessDTO apiAccess;
   Boolean executeOnDelegate = Boolean.FALSE;
   String gitConnectionUrl;
   @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String apiUrl;

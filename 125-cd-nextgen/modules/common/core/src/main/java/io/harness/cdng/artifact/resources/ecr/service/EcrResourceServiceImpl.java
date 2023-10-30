@@ -58,6 +58,8 @@ public class EcrResourceServiceImpl implements EcrResourceService {
   @Override
   public EcrResponseDTO getBuildDetails(IdentifierRef ecrConnectorRef, String registryId, String imagePath,
       String region, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(
+        MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath), MutablePair.of(NGArtifactConstants.REGION, region));
     AwsConnectorDTO connector = serviceHelper.getAwsConnector(ecrConnectorRef);
     BaseNGAccess baseNGAccess =
         serviceHelper.getBaseNGAccess(ecrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

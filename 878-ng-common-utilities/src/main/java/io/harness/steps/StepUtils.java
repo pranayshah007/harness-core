@@ -6,10 +6,10 @@
  */
 
 package io.harness.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logstreaming.LogStreamingHelper.IS_SIMPLIFY;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.DELEGATE_SELECTORS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
@@ -19,7 +19,10 @@ import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
@@ -52,6 +55,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -87,12 +91,17 @@ import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class StepUtils {
   private StepUtils() {}
 
   public static final String DEFAULT_STEP_TIMEOUT = "10m";
+
+  public static String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
+
+  public static List<String> keysToSkipInLogBaseKey = List.of("spec", "execution", "pipeline", "stages", "steps");
 
   public static Task prepareDelegateTaskInput(
       String accountId, TaskData taskData, Map<String, String> setupAbstractions) {
@@ -115,20 +124,60 @@ public class StepUtils {
 
   @Nonnull
   public static LinkedHashMap<String, String> generateLogAbstractions(Ambiance ambiance, String lastGroup) {
-    LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>();
-    logAbstractions.put("accountId", ambiance.getSetupAbstractionsMap().getOrDefault("accountId", ""));
-    logAbstractions.put("orgId", ambiance.getSetupAbstractionsMap().getOrDefault("orgIdentifier", ""));
-    logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
-    logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
-    logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+    LinkedHashMap<String, String> logAbstractions = populateLogAbstractionsMap(ambiance);
+
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
+
+      StepCategory stepCategory = currentLevel.getStepType().getStepCategory();
+
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
-      logAbstractions.put("level" + i, currentLevel.getIdentifier() + retrySuffix);
+
+      String levelValue = currentLevel.getIdentifier() + retrySuffix;
+
+      if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+        if (keysToSkipInLogBaseKey.contains(levelValue)) {
+          continue;
+        }
+
+        if (stepCategory.equals(StepCategory.FORK) && levelValue.startsWith("parallel")) {
+          continue;
+        }
+      }
+
+      logAbstractions.put("level" + i, levelValue);
+
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
     }
+
+    return logAbstractions;
+  }
+
+  public static LinkedHashMap<String, String> populateLogAbstractionsMap(Ambiance ambiance) {
+    LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>();
+
+    logAbstractions.put("accountId", ambiance.getSetupAbstractionsMap().getOrDefault("accountId", ""));
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put("entityType", "pipeline");
+    } else {
+      logAbstractions.put("orgId", ambiance.getSetupAbstractionsMap().getOrDefault("orgIdentifier", ""));
+      logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
+    }
+
+    logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
+    logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put("planExecutionId", "-" + ambiance.getPlanExecutionId());
+    }
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put(IS_SIMPLIFY, "true");
+    }
+
     return logAbstractions;
   }
 
@@ -453,6 +502,27 @@ public class StepUtils {
       }
     } catch (Exception e) {
       log.error("Error while appending delegate selector to spec params ", e);
+    }
+  }
+
+  public static ParameterField<List<TaskSelectorYaml>> getOriginDelegateSelectors(
+      PlanCreationContext ctx, String origin) {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectors = ParameterField.ofNull();
+    try {
+      delegateSelectors = delegateSelectorsFromFqn(ctx, origin);
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginInDelegateSelectors(delegateSelectors, origin);
+      }
+    } catch (Exception e) {
+      log.error("Error while appending delegate selector to spec params ", e);
+    }
+    return delegateSelectors;
+  }
+
+  private static void setOriginInDelegateSelectors(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String origin) {
+    if (!delegateSelectors.isExpression()) {
+      delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
     }
   }
 

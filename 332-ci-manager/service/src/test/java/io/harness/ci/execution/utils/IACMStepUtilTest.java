@@ -94,7 +94,7 @@ public class IACMStepUtilTest extends CategoryTest {
 
     Map<String, String> envVariables =
         iacmStepsUtils.getIACMEnvVariables("orgIdentifier", "projectIdentfier", "accountId", "id");
-    assertThat(envVariables).hasSize(5);
+    assertThat(envVariables).hasSize(7);
     assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
     ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, "connectorRef", "provisioner");

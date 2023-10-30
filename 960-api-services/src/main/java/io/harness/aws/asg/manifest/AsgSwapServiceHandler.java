@@ -35,8 +35,8 @@ public class AsgSwapServiceHandler extends AsgManifestHandler<PutScalingPolicyRe
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     AsgSwapServiceManifestRequest asgSwapServiceManifestRequest = (AsgSwapServiceManifestRequest) manifestRequest;
     asgSdkManager.info("Swapping target groups & updating tags");
-    swapTargetGroups(asgSwapServiceManifestRequest.getRegion(),
-        asgSwapServiceManifestRequest.getAsgLoadBalancerConfig(), asgSwapServiceManifestRequest.getAwsInternalConfig());
+    swapTargetGroups(asgSwapServiceManifestRequest.getRegion(), asgSwapServiceManifestRequest.getLoadBalancers(),
+        asgSwapServiceManifestRequest.getAwsInternalConfig());
 
     // logic to update tags of asg
     asgSdkManager.info("Updating tags of the autoscaling groups");
@@ -52,25 +52,27 @@ public class AsgSwapServiceHandler extends AsgManifestHandler<PutScalingPolicyRe
   }
 
   public void swapTargetGroups(
-      String region, AsgLoadBalancerConfig asgLoadBalancerConfig, AwsInternalConfig awsInternalConfig) {
+      String region, List<AsgLoadBalancerConfig> lbConfigs, AwsInternalConfig awsInternalConfig) {
     // modify target group of prod listener with stage target group and target group of stage listener with prod
     // target group
 
-    asgSdkManager.info(
-        "Modifying ELB Prod Listener to Forward requests to Target groups associated with new autoscaling group");
-    // modify prod listener rule with stage target group
-    modifyListenerRule(region, asgLoadBalancerConfig.getProdListenerArn(),
-        asgLoadBalancerConfig.getProdListenerRuleArn(), asgLoadBalancerConfig.getStageTargetGroupArnsList(),
-        awsInternalConfig);
-    asgSdkManager.info("Successfully updated Prod Listener %n%n");
+    for (AsgLoadBalancerConfig lbCfg : lbConfigs) {
+      asgSdkManager.info(
+          "Modifying ALB Prod Listener to Forward requests to Target groups associated with new autoscaling group for loadBalancer: %s",
+          lbCfg.getLoadBalancer());
+      // modify prod listener rule with stage target group
+      modifyListenerRule(region, lbCfg.getProdListenerArn(), lbCfg.getProdListenerRuleArn(),
+          lbCfg.getStageTargetGroupArnsList(), awsInternalConfig);
+      asgSdkManager.info("Successfully updated Prod Listener for loadBalancer: %s %n%n", lbCfg.getLoadBalancer());
 
-    asgSdkManager.info(
-        "Modifying ELB Stage Listener to Forward requests to Target groups associated with old autoscaling group");
-    // modify stage listener rule with prod target group
-    modifyListenerRule(region, asgLoadBalancerConfig.getStageListenerArn(),
-        asgLoadBalancerConfig.getStageListenerRuleArn(), asgLoadBalancerConfig.getProdTargetGroupArnsList(),
-        awsInternalConfig);
-    asgSdkManager.info("Successfully updated Stage Listener %n%n");
+      asgSdkManager.info(
+          "Modifying ALB Stage Listener to Forward requests to Target groups associated with old autoscaling group for loadBalancer: %s",
+          lbCfg.getLoadBalancer());
+      // modify stage listener rule with prod target group
+      modifyListenerRule(region, lbCfg.getStageListenerArn(), lbCfg.getStageListenerRuleArn(),
+          lbCfg.getProdTargetGroupArnsList(), awsInternalConfig);
+      asgSdkManager.info("Successfully updated Stage Listener for loadBalancer: %s %n%n", lbCfg.getLoadBalancer());
+    }
   }
 
   public void modifyListenerRule(String region, String listenerArn, String listenerRuleArn,

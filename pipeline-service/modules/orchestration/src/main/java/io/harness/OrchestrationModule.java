@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
@@ -71,8 +72,8 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.execution.expansion.PlanExpansionServiceImpl;
 import io.harness.govern.ServersModule;
-import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.NodeExecutionInfoServiceImpl;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.pms.NoopFeatureFlagServiceImpl;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
@@ -91,7 +92,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.waiter.WaiterConfiguration.PersistenceLayer;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -116,6 +117,7 @@ import javax.cache.expiry.Duration;
 public class OrchestrationModule extends AbstractModule implements ServersModule {
   private static OrchestrationModule instance;
   private final OrchestrationModuleConfig config;
+  private final MetricRegistry threadPoolMetricRegistry;
 
   public static OrchestrationModule getInstance(OrchestrationModuleConfig orchestrationModuleConfig) {
     if (instance == null) {
@@ -124,8 +126,22 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     return instance;
   }
 
+  public static OrchestrationModule getInstance(
+      OrchestrationModuleConfig orchestrationModuleConfig, MetricRegistry threadPoolMetricRegistry) {
+    if (instance == null) {
+      instance = new OrchestrationModule(orchestrationModuleConfig, threadPoolMetricRegistry);
+    }
+    return instance;
+  }
+
   private OrchestrationModule(OrchestrationModuleConfig config) {
     this.config = config;
+    this.threadPoolMetricRegistry = new MetricRegistry();
+  }
+
+  private OrchestrationModule(OrchestrationModuleConfig config, MetricRegistry threadPoolMetricRegistry) {
+    this.config = config;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Override
@@ -163,7 +179,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(NodeExecutionMonitorService.class).to(NodeExecutionMonitorServiceImpl.class).in(Singleton.class);
-    bind(PmsGraphStepDetailsService.class).to(PmsGraphStepDetailsServiceImpl.class);
+    bind(NodeExecutionInfoService.class).to(NodeExecutionInfoServiceImpl.class);
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
     bind(StepExecutionEntityService.class).to(StepExecutionEntityServiceImpl.class);
     bind(ExpressionUsageService.class).to(ExpressionUsageServiceImpl.class).in(Singleton.class);
@@ -214,8 +230,8 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   @Named("EngineExecutorService")
   public ExecutorService engineExecutionServiceThreadPool() {
-    return ThreadPool.create(config.getCorePoolSize(), config.getMaxPoolSize(), config.getIdleTimeInSecs(),
-        TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("EngineExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(config.getCorePoolSize(), config.getMaxPoolSize(),
+        config.getIdleTimeInSecs(), TimeUnit.SECONDS, "EngineExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides
@@ -264,6 +280,16 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
               FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
     }
     return cache;
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsMetricsCache")
+  public Cache<String, Integer> metricsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("pmsMetricsCache", String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Provides

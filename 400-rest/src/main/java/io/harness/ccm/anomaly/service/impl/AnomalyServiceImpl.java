@@ -8,6 +8,7 @@
 package io.harness.ccm.anomaly.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.anomaly.service.AnomalyDataQueryBuilder.addValidAnomaliesFilter;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,6 +48,7 @@ public class AnomalyServiceImpl implements AnomalyService {
     addAccountIdFilter(account, query);
     query.addCondition(
         BinaryCondition.equalTo(AnomalyEntity.AnomaliesDataTableSchema.anomalyTime, date.truncatedTo(ChronoUnit.DAYS)));
+    addValidAnomaliesFilter(query);
     return anomalyEntityDao.list(query.validate().toString());
   }
 
@@ -59,6 +61,7 @@ public class AnomalyServiceImpl implements AnomalyService {
         AnomalyEntity.AnomaliesDataTableSchema.anomalyTime, to.truncatedTo(ChronoUnit.DAYS)));
     query.addCondition(BinaryCondition.greaterThanOrEq(
         AnomalyEntity.AnomaliesDataTableSchema.anomalyTime, from.truncatedTo(ChronoUnit.DAYS)));
+    addValidAnomaliesFilter(query);
     return anomalyEntityDao.list(query.validate().toString());
   }
 

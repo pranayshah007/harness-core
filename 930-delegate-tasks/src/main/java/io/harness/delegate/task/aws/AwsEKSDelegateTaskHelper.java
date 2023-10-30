@@ -6,16 +6,20 @@
  */
 
 package io.harness.delegate.task.aws;
-
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.FAILURE;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.SUCCESS;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
+import static java.lang.String.format;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
@@ -28,6 +32,7 @@ import io.harness.logging.CommandExecutionStatus;
 import software.wings.service.impl.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
+import com.amazonaws.AbortedException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.eks.AmazonEKSClient;
 import com.amazonaws.services.eks.model.ListClustersRequest;
@@ -40,20 +45,24 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class AwsEKSDelegateTaskHelper {
   private static final String LIST_CLUSTERS_FAILURE_MESSAGE_FORMAT = "Failed to list clusters for regions [%s].";
   private static final String LIST_CLUSTERS_REGION_FAILURE_MESSAGE_FORMAT = "%nErrors: %n%s";
+  private static final String LIST_CLUSTERS_INTERRUPTED_MESSAGE =
+      "AWS EKS list clusters request for region [%s] was aborted.";
+  private static final String LIST_CLUSTERS_GENERIC_ERROR_MESSAGE =
+      "Exception in listing AWS EKS clusters using AWS ListClustersRequest for region : %s";
   @Inject private AwsUtils awsUtils;
   public DelegateResponseData getEKSClustersList(AwsTaskParams awsTaskParams) throws AwsEKSException {
     awsUtils.decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
     AwsConnectorDTO awsConnectorDTO = awsTaskParams.getAwsConnector();
 
     AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(awsConnectorDTO, AWS_DEFAULT_REGION);
-    List<String> awsRegions = awsUtils.listAwsRegionsForGivenAccount(awsInternalConfig);
-
+    List<String> awsRegions = getEligibleAwsRegions(awsTaskParams, awsInternalConfig);
     List<AwsEksListClustersResponseDTO> listClusterResponses =
         awsRegions.stream()
             .map(region -> listEKSClustersForGivenRegion(region, awsInternalConfig))
@@ -75,6 +84,15 @@ public class AwsEKSDelegateTaskHelper {
         .build();
   }
 
+  private List<String> getEligibleAwsRegions(AwsTaskParams awsTaskParams, AwsInternalConfig awsInternalConfig) {
+    if (isNotEmpty(awsTaskParams.getRegion())) {
+      // User has provided AWS region, don't use all regions.
+      return List.of(awsTaskParams.getRegion());
+    }
+
+    return awsUtils.listAwsRegionsForGivenAccount(awsInternalConfig);
+  }
+
   private void constructErrorMessageAndThrowException(List<AwsEksListClustersResponseDTO> listClusterResponses) {
     String errorMessage = constructUserFriendlyErrorMessage(listClusterResponses);
     log.error(errorMessage);
@@ -89,13 +107,13 @@ public class AwsEKSDelegateTaskHelper {
                 AwsEksListClustersResponseDTO::getRegion, AwsEksListClustersResponseDTO::getErrorMessage));
     String regionToErrorMessage = regionToErrorMessageMap.entrySet()
                                       .stream()
-                                      .map(e -> String.format("[%s]: %s", e.getKey(), e.getValue()))
+                                      .map(e -> format("[%s]: %s", e.getKey(), e.getValue()))
                                       .collect(Collectors.joining("\n"));
     String regionList =
         listClusterResponses.stream().map(AwsEksListClustersResponseDTO::getRegion).collect(Collectors.joining(", "));
 
-    return String.format(LIST_CLUSTERS_FAILURE_MESSAGE_FORMAT, regionList)
-        + String.format(LIST_CLUSTERS_REGION_FAILURE_MESSAGE_FORMAT, regionToErrorMessage);
+    return format(LIST_CLUSTERS_FAILURE_MESSAGE_FORMAT, regionList)
+        + format(LIST_CLUSTERS_REGION_FAILURE_MESSAGE_FORMAT, regionToErrorMessage);
   }
 
   private AwsEksListClustersResponseDTO listEKSClustersForGivenRegion(
@@ -112,11 +130,20 @@ public class AwsEKSDelegateTaskHelper {
         nextToken = extractClusterNamesFromResponse(region, clusterList, nextToken, listClustersResult);
       } while (nextToken != null);
       return AwsEksListClustersResponseDTO.builder().region(region).clusters(clusterList).status(SUCCESS).build();
+    } catch (AbortedException e) {
+      String errorMessage = format(LIST_CLUSTERS_INTERRUPTED_MESSAGE, region);
+      log.warn(errorMessage, e);
+      throw new AwsEKSException(errorMessage, e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+
+      String errorMessage = format(LIST_CLUSTERS_INTERRUPTED_MESSAGE, region);
+      log.warn(errorMessage, e);
+      throw new AwsEKSException(errorMessage, e);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.warn(
-          String.format("Exception in listing AWS EKS clusters using AWS ListClustersRequest for region : %s", region),
-          sanitizedException);
+      String errorMessage = format(LIST_CLUSTERS_GENERIC_ERROR_MESSAGE, region);
+      log.warn(errorMessage, sanitizedException);
 
       return AwsEksListClustersResponseDTO.builder()
           .region(region)
@@ -130,8 +157,8 @@ public class AwsEKSDelegateTaskHelper {
       String region, List<String> clusterList, String nextToken, ListClustersResult listClustersResult) {
     if (listClustersResult != null) {
       List<String> clusterNames = listClustersResult.getClusters();
-      if (EmptyPredicate.isNotEmpty(clusterNames)) {
-        clusterNames.forEach(clusterName -> clusterList.add(String.format("%s/%s", region, clusterName)));
+      if (isNotEmpty(clusterNames)) {
+        clusterNames.forEach(clusterName -> clusterList.add(format("%s/%s", region, clusterName)));
       }
       nextToken = listClustersResult.getNextToken();
     }

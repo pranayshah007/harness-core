@@ -53,6 +53,7 @@ public class PortalConfig {
   private long optionalDelegateTaskRejectAtLimit;
   private long importantDelegateTaskRejectAtLimit;
   private long criticalDelegateTaskRejectAtLimit;
+  private long parkedDelegateTaskRejectAtLimit;
 
   /**
    * Gets allowed origins.

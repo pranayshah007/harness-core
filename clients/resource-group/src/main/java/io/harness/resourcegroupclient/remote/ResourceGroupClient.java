@@ -14,12 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -40,4 +42,19 @@ public interface ResourceGroupClient {
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(value = NGResourceFilterConstants.PAGE_KEY) int page,
       @Query(value = NGResourceFilterConstants.SIZE_KEY) int size);
+
+  @POST(RESOURCE_GROUP_API)
+  Call<ResponseDTO<ResourceGroupResponse>> createResourceGroup(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body ResourceGroupRequest resourceGroupRequest);
+
+  @PUT(RESOURCE_GROUP_API + "/{identifier}")
+  Call<ResponseDTO<ResourceGroupResponse>> updateResourceGroup(
+      @Path(value = NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body ResourceGroupRequest resourceGroupRequest);
 }

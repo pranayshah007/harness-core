@@ -10,7 +10,10 @@ package io.harness.registrars;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
@@ -31,13 +34,12 @@ import io.harness.steps.barriers.BarrierStep;
 import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
-import io.harness.steps.container.ContainerStep;
 import io.harness.steps.container.InitContainerStep;
 import io.harness.steps.container.execution.RunContainerStep;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
-import io.harness.steps.http.HttpStep;
+import io.harness.steps.http.v1.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
 import io.harness.steps.policy.step.PolicyStep;
@@ -46,13 +48,15 @@ import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
-import io.harness.steps.shellscript.ShellScriptStep;
+import io.harness.steps.shellscript.v1.ShellScriptStep;
 import io.harness.steps.wait.WaitStep;
 
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class OrchestrationStepsModuleStepRegistrar {
@@ -71,8 +75,11 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(JiraCreateStep.STEP_TYPE, JiraCreateStep.class);
     engineSteps.put(JiraUpdateStep.STEP_TYPE, JiraUpdateStep.class);
 
+    engineSteps.put(io.harness.steps.http.HttpStep.STEP_TYPE, io.harness.steps.http.HttpStep.class);
     engineSteps.put(HttpStep.STEP_TYPE, HttpStep.class);
     engineSteps.put(EmailStep.STEP_TYPE, EmailStep.class);
+    engineSteps.put(
+        io.harness.steps.shellscript.ShellScriptStep.STEP_TYPE, io.harness.steps.shellscript.ShellScriptStep.class);
     engineSteps.put(ShellScriptStep.STEP_TYPE, ShellScriptStep.class);
     engineSteps.put(ServiceNowApprovalStep.STEP_TYPE, ServiceNowApprovalStep.class);
     engineSteps.put(ServiceNowCreateStep.STEP_TYPE, ServiceNowCreateStep.class);
@@ -95,7 +102,6 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
     engineSteps.put(GroupStepV1.STEP_TYPE, GroupStepV1.class);
-    engineSteps.put(ContainerStep.STEP_TYPE, ContainerStep.class);
     engineSteps.put(InitContainerStep.STEP_TYPE, InitContainerStep.class);
     engineSteps.put(RunContainerStep.STEP_TYPE, RunContainerStep.class);
     engineSteps.put(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE, CdSscaOrchestrationStep.class);

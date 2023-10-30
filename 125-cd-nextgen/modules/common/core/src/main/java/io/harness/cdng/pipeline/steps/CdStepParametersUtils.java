@@ -67,8 +67,6 @@ public class CdStepParametersUtils {
 
   public StepElementParametersBuilder getStepParameters(
       CdAbstractStepNode stepNode, OnFailRollbackParameters failRollbackParameters) {
-    StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);
-    stepBuilder.rollbackParameters(failRollbackParameters);
-    return stepBuilder;
+    return getStepParameters(stepNode);
   }
 }

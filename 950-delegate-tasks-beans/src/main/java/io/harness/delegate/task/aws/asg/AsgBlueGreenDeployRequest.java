@@ -11,6 +11,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
@@ -31,10 +32,12 @@ public class AsgBlueGreenDeployRequest implements AsgCommandRequest, NestedAnnot
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
-  @NonFinal AsgLoadBalancerConfig asgLoadBalancerConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   String asgName;
   String amiImageId;
   boolean firstDeployment;
   boolean useAlreadyRunningInstances;
+  AsgCapacityConfig asgCapacityConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) List<AsgLoadBalancerConfig> loadBalancers;
 }

@@ -60,6 +60,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -67,7 +69,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -711,34 +715,26 @@ public class GitClientHelper {
   }
 
   public static String getHarnessRepoName(String url) {
-    String repoName = getGitRepo(url);
-    String ownerName = getGitOwner(url, true);
-    String s = ownerName + "/" + repoName;
-    String gitnessGitApiPrefix = "code/git/";
-    String gitnessUiApiPrefix = "ng/account/";
-    String gitApiPrefix = "git/";
-
-    if (s.startsWith(gitnessGitApiPrefix)) {
-      return s.substring(9) + "/+";
-    } else if (s.startsWith(gitnessUiApiPrefix)) {
-      s = s.substring(11);
-      String[] split = s.split("/");
-      StringBuilder finalUrl = new StringBuilder();
-      if ("code".equals(split[1])) {
-        for (int i = 0; i < split.length; i++) {
-          if (i == 1) {
-            continue;
-          }
-          String part = split[i] + "/";
-          finalUrl.append(part);
-        }
-        return String.valueOf(finalUrl.append("+"));
-      }
-      return s.substring(11);
-    } else if (s.startsWith(gitApiPrefix)) {
-      return s.substring(4) + "/+";
+    URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      throw new InvalidRequestException(String.format("Incorrect git url %s", url), e);
     }
-    return s + "/+";
+    String[] segments = parsedUrl.getPath().split("/");
+
+    // Harness repo look like baseUrl/acc/org/proj/repo or baseUrl/code/git/acc/org/proj/repo
+    int length = segments.length;
+    if (length < 4) {
+      throw new InvalidRequestException(String.format("Incorrect git url with missing segments %s", url));
+    }
+    int start = Math.max(length - 4, 0);
+    String[] s = Arrays.copyOfRange(segments, start, length);
+    String preFinalRepoName = String.join("/", s);
+    if (preFinalRepoName.endsWith(".git")) {
+      return preFinalRepoName.substring(0, preFinalRepoName.length() - 4) + "/+";
+    }
+    return preFinalRepoName + "/+";
   }
 
   public static boolean isGitUrlPrivate(String gitUrl) {
@@ -755,5 +751,14 @@ public class GitClientHelper {
     } catch (Exception e) {
       return true; // If the operation fails (due to no authentication), it is a private repository
     }
+  }
+
+  // Azure return the file paths with an extra '/' in the start
+  public static Set<String> sanitiseFilesForAzureRepo(Set<String> changedFiles) {
+    Set<String> sanitisedFiles = new HashSet<>();
+    for (String file : changedFiles) {
+      sanitisedFiles.add(file.substring(1));
+    }
+    return sanitisedFiles;
   }
 }

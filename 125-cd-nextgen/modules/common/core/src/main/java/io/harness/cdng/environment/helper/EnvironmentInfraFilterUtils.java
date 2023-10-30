@@ -123,26 +123,26 @@ public class EnvironmentInfraFilterUtils {
     return filteredEnvs;
   }
 
-  static Set<InfrastructureEntity> processFilterYamlForInfraStructures(
-      FilterYaml filterYaml, Set<InfrastructureEntity> infras) {
+  static List<InfrastructureEntity> processFilterYamlForInfraStructures(
+      FilterYaml filterYaml, List<InfrastructureEntity> infras) {
     if (filterYaml.getType().name().equals(FilterType.all.name())) {
       return infras;
     }
     // filter env that match all tags
-    Set<InfrastructureEntity> filteredInfras = new HashSet<>();
+    List<InfrastructureEntity> filteredInfras = new ArrayList<>();
     if (filterYaml.getType().equals(FilterType.tags)) {
       TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
       filteredInfras = infras.stream()
                            .filter(infra -> FilterTagsUtils.areTagsFilterMatching(infra.getTags(), tagsFilter))
-                           .collect(Collectors.toSet());
+                           .collect(Collectors.toList());
     }
 
     return filteredInfras;
   }
 
-  public static Set<InfrastructureEntity> applyFilteringOnInfras(
-      Iterable<FilterYaml> filterYamls, Set<InfrastructureEntity> infras) {
-    Set<InfrastructureEntity> setOfFilteredInfras = new HashSet<>();
+  public static List<InfrastructureEntity> applyFilteringOnInfras(
+      Iterable<FilterYaml> filterYamls, List<InfrastructureEntity> infras) {
+    List<InfrastructureEntity> setOfFilteredInfras = new ArrayList<>();
 
     for (FilterYaml filterYaml : filterYamls) {
       if (filterYaml.getEntities().contains(Entity.infrastructures)) {

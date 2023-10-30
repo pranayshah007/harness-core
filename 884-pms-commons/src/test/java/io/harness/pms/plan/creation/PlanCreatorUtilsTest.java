@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -66,15 +66,15 @@ public class PlanCreatorUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSupportsField() throws IOException {
     YamlField stageField = getPipelineNode().getField("stages").getNode().asArray().get(0).getField("stage");
-    assertThat(PlanCreatorUtils.supportsField(null, stageField, PipelineVersion.V0)).isFalse();
+    assertThat(PlanCreatorUtils.supportsField(null, stageField, HarnessYamlVersion.V0)).isFalse();
     assertThat(PlanCreatorUtils.supportsField(
-                   ImmutableMap.of("random", ImmutableSet.of("random")), stageField, PipelineVersion.V0))
+                   ImmutableMap.of("random", ImmutableSet.of("random")), stageField, HarnessYamlVersion.V0))
         .isFalse();
     assertThat(PlanCreatorUtils.supportsField(
-                   ImmutableMap.of("stage", ImmutableSet.of("random")), stageField, PipelineVersion.V0))
+                   ImmutableMap.of("stage", ImmutableSet.of("random")), stageField, HarnessYamlVersion.V0))
         .isFalse();
-    assertThat(PlanCreatorUtils.supportsField(
-                   ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")), stageField, PipelineVersion.V0))
+    assertThat(PlanCreatorUtils.supportsField(ImmutableMap.of("stage", ImmutableSet.of("random", "Deployment")),
+                   stageField, HarnessYamlVersion.V0))
         .isTrue();
   }
 

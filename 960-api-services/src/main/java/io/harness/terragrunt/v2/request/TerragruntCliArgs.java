@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -23,4 +24,5 @@ public class TerragruntCliArgs {
   List<String> targets;
   List<String> varFiles;
   String backendConfigFile;
+  Map<String, String> additionalCliArgs;
 }

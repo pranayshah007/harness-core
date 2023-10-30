@@ -25,7 +25,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.creators.BaseCreatorService;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecorator;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -73,7 +73,7 @@ public class FilterCreatorService
     return filterJsonCreators.stream()
         .filter(filterJsonCreator -> {
           Map<String, Set<String>> supportedTypes = filterJsonCreator.getSupportedTypes();
-          return supportsField(supportedTypes, yamlField, PipelineVersion.V0);
+          return supportsField(supportedTypes, yamlField, HarnessYamlVersion.V0);
         })
         .findFirst();
   }

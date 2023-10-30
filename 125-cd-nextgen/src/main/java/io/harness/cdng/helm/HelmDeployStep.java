@@ -23,6 +23,7 @@ import io.harness.cdng.helm.NativeHelmDeployOutcome.NativeHelmDeployOutcomeBuild
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
@@ -32,16 +33,19 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
+import io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.HelmNGException;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG.HelmInstallCommandRequestNGBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -63,6 +67,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -107,7 +112,8 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
   }
 
   @Override
-  public ProgressData handleProgress(Ambiance ambiance, StepBaseParameters stepParameters, ProgressData progressData) {
+  public ProgressData handleProgressTaskChain(
+      Ambiance ambiance, StepBaseParameters stepParameters, ProgressData progressData) {
     if (progressData instanceof HelmDeployProgressData) {
       if (cdFeatureFlagHelper.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)) {
@@ -129,7 +135,7 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
       return null;
     }
 
-    return super.handleProgress(ambiance, stepParameters, progressData);
+    return super.handleProgressTaskChain(ambiance, stepParameters, progressData);
   }
 
   @Override
@@ -199,20 +205,36 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
 
     nativeHelmDeployOutcomeBuilder.containerInfoList(helmInstallCmdResponseNG.getContainerInfoList());
     nativeHelmDeployOutcomeBuilder.releaseName(helmInstallCmdResponseNG.getReleaseName());
+    nativeHelmDeployOutcomeBuilder.podIps(helmInstallCmdResponseNG.getK8sPodList() != null
+            ? helmInstallCmdResponseNG.getK8sPodList().stream().map(K8sPod::getPodIP).collect(Collectors.toList())
+            : null);
     nativeHelmDeployOutcome = nativeHelmDeployOutcomeBuilder.build();
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME,
         nativeHelmDeployOutcome, StepOutcomeGroup.STEP.name());
+    HelmChartInfo helmChartInfo = helmInstallCmdResponseNG.getHelmChartInfo();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = nativeHelmStepHelper.getHelmChartOutcome(helmChartInfo);
 
-    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
-        K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
-            helmInstallCmdResponseNG.getContainerInfoList(), helmInstallCmdResponseNG.getHelmChartInfo(),
-            helmInstallCmdResponseNG.getHelmVersion()));
+    DeploymentInfoOutcome deploymentInfoOutcome =
+        DeploymentInfoOutcome.builder()
+            .serverInstanceInfoList(K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
+                helmInstallCmdResponseNG.getContainerInfoList(), helmChartInfo,
+                helmInstallCmdResponseNG.getHelmVersion()))
+            .deploymentOutcomeMetadata(NativeHelmDeploymentOutcomeMetadata.builder()
+                                           .workloadLabelSelectors(helmInstallCmdResponseNG.getWorkloadLabelSelectors())
+                                           .build())
+            .build();
+    StepOutcome stepOutcome =
+        instanceInfoService.saveDeploymentInfoOutcomeIntoSweepingOutput(ambiance, deploymentInfoOutcome);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(stepOutcome)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME)
                          .outcome(nativeHelmDeployOutcome)
+                         .build())
+        .stepOutcome(StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME)
+                         .outcome(releaseHelmChartOutcome)
                          .build())
         .build();
   }
@@ -263,7 +285,9 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG))
-            .disableFabric8(cdStepHelper.shouldDisableFabric8(AmbianceUtils.getAccountId(ambiance)));
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(AmbianceUtils.getAccountId(ambiance)))
+            .improvedHelmTracking(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

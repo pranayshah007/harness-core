@@ -1,0 +1,44 @@
+{
+  "id": "/subscriptionsSubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/networkInterfaces/NetworkInterfaceId",
+  "name": "NetworkInterfaceId",
+  "type": "Microsoft.Network/networkInterfaces",
+  "location": "westeurope",
+  "etag": "ETag",
+  "properties": {
+    "networkSecurityGroup": {
+      "id": "/subscriptionsSubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/networkSecurityGroups/NetworkSecurityGroupId"
+    },
+    "ipConfigurations": [
+      {
+        "id": "/subscriptionsSubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/networkInterfaces/NetworkInterfaceId/ipConfigurations/ipconfig1",
+        "name": "ipconfig1",
+        "etag": "ETag",
+        "properties": {
+          "privateIPAddress": "172.19.0.4",
+          "privateIPAllocationMethod": "Dynamic",
+          "privateIPAddressVersion": "IPv4",
+          "subnet": {
+            "id": "/subscriptionsSubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/virtualNetworks/VirtualNetworkId/subnets/default"
+          },
+          "primary": true,
+          "publicIPAddress": {
+            "id": "/subscriptionsSubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/publicIPAddresses/PublicIPAddress1"
+          },
+          "provisioningState": "Succeeded"
+        }
+      }
+    ],
+    "tapConfigurations": [],
+    "dnsSettings": {
+      "dnsServers": [],
+      "appliedDnsServers": []
+    },
+    "macAddress": "00-00-00-00-00-00",
+    "enableAcceleratedNetworking": false,
+    "enableIPForwarding": false,
+    "hostedWorkloads": [],
+    "resourceGuid": "ResourceGuid",
+    "provisioningState": "Succeeded"
+  },
+  "resourceGroup": "ResourceGroupId"
+}

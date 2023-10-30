@@ -19,14 +19,17 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.opaclient.model.UserOpaEvaluationContext;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.helpers.CurrentUserHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
@@ -46,8 +49,9 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
   private static final String PIPELINE_ID = "pipelineId";
 
   @Mock private PMSPipelineService pmsPipelineService;
-  @Mock private PMSExecutionService pmsExecutionSummaryService;
+  @Mock private PlanExecutionService planExecutionService;
   @Mock private CurrentUserHelper currentUserHelper;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
   @InjectMocks private PMSOpaServiceImpl pmsOpaService;
 
   @Test
@@ -83,8 +87,10 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testGetPipelineContextFromExecution() throws IOException {
-    when(pmsExecutionSummaryService.getPipelineExecutionSummaryEntity(any(), any(), any(), any(), eq(false)))
-        .thenReturn(PipelineExecutionSummaryEntity.builder().pipelineIdentifier(PIPELINE_ID).build());
+    when(planExecutionService.getWithFieldsIncluded(any(), any()))
+        .thenReturn(PlanExecution.builder()
+                        .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_ID).build())
+                        .build());
     Principal principal = new UserPrincipal("1", "e", "u", "acc");
     PipelineOpaEvaluationContext pipelineOpaEvaluationContext =
         PipelineOpaEvaluationContext.builder()
@@ -95,6 +101,8 @@ public class PMSOpaServiceImplTest extends PipelineServiceTestBase {
     when(currentUserHelper.getPrincipalFromSecurityContext()).thenReturn(principal);
     when(pmsPipelineService.getPipeline(any(), any(), any(), any(), eq(false), eq(false)))
         .thenReturn(Optional.of(PipelineEntity.builder().build()));
+    when(planExecutionMetadataService.getWithFieldsIncludedFromSecondary(any(), any()))
+        .thenReturn(PlanExecutionMetadata.builder().build());
     assertThat(pmsOpaService.getPipelineContextFromExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, ""))
         .isNotNull();
     assertThat(pmsOpaService.getPipelineContextFromExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, ""))

@@ -14,7 +14,9 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StoStageSetupParser implements PipelineInfo {
   private static final String STO_SCAN_STAGE_KEY_IN_YAML = "type: Security";
   public Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
@@ -27,6 +29,8 @@ public class StoStageSetupParser implements PipelineInfo {
     boolean stoCheckForCiPipeline = false;
     if (ciPmsPipelineResponseDTO != null) {
       stoCheckForCiPipeline = ciPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML);
+      log.info("STO check for ci pipeline in StoStageSetupParser - {}, CI Pipeline url - {}", stoCheckForCiPipeline,
+          ciPipelineUrl);
       if (!stoCheckForCiPipeline) {
         errorMessagePipelines.add(ciPipelineUrl);
       }
@@ -35,6 +39,8 @@ public class StoStageSetupParser implements PipelineInfo {
     boolean stoCheckForCdPipeline = false;
     if (cdPmsPipelineResponseDTO != null) {
       stoCheckForCdPipeline = cdPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML);
+      log.info("STO check for cd pipeline in StoStageSetupParser - {}, CD Pipeline url - {}", stoCheckForCdPipeline,
+          cdPipelineUrl);
       if (!stoCheckForCdPipeline) {
         errorMessagePipelines.add(cdPipelineUrl);
       }
@@ -43,6 +49,7 @@ public class StoStageSetupParser implements PipelineInfo {
     Map<String, Object> dataPointInfo =
         ValueParserUtils.getDataPointsInfoMap(stoCheckForCiPipeline && stoCheckForCdPipeline, errorMessagePipelines);
     map.put(dataPointIdentifier, dataPointInfo);
+    log.info("Harness Data Source -> StoStageSetupParser returned value {}", map);
     return map;
   }
 }

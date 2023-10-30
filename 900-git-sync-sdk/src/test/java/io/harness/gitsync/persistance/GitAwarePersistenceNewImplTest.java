@@ -9,14 +9,19 @@ package io.harness.gitsync.persistance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -24,6 +29,7 @@ import io.harness.GitSdkTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SampleBean;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.SampleBeanEntityGitPersistenceHelperServiceImpl;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
@@ -48,6 +54,8 @@ import org.mockito.Mock;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(DX)
@@ -56,6 +64,7 @@ public class GitAwarePersistenceNewImplTest extends GitSdkTestBase {
   @Mock Map<String, GitSdkEntityHandlerInterface> gitPersistenceHelperServiceMap;
   @Mock SCMGitSyncHelper scmGitSyncHelper;
   @Mock io.harness.gitsync.persistance.GitSyncMsvcHelper gitSyncMsvcHelper;
+  @Mock private TransactionTemplate transactionTemplate;
   @Inject MongoTemplate mongoTemplate;
   io.harness.gitsync.persistance.GitAwarePersistenceNewImpl gitAwarePersistence;
   final String projectIdentifier = "proj";
@@ -107,6 +116,25 @@ public class GitAwarePersistenceNewImplTest extends GitSdkTestBase {
       final SampleBean sampleBean_saved_1 = doSave(sampleBean1, false, "branch", true, "ygs");
       assertFindReturnsObject(sampleBean_saved);
       assertFindReturnsObject(sampleBean_saved_1);
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testExists() {
+    final GitEntityInfo newBranch = GitEntityInfo.builder().branch("branch").yamlGitConfigId("ygs").build();
+    try (GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
+      GlobalContextManager.upsertGlobalContextRecord(
+          GitSyncBranchContext.builder()
+              .gitBranchInfo(GitEntityInfo.builder().repoName("repo").branch("branch").build())
+              .gitBranchInfo(newBranch)
+              .build());
+      final SampleBean sampleBean_saved = doSave(sampleBean, false, "branch", true, "ygs");
+      final Criteria criteria = Criteria.where("uuid").is(sampleBean_saved.getUuid());
+      assertThat(
+          gitAwarePersistence.exists(criteria, projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class))
+          .isTrue();
     }
   }
 
@@ -299,5 +327,144 @@ public class GitAwarePersistenceNewImplTest extends GitSdkTestBase {
           projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class, false);
       assertThat(sampleBeans.size()).isEqualTo(2);
     }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testSave_4() {
+    doReturn(new SampleBeanEntityGitPersistenceHelperServiceImpl())
+        .when(gitPersistenceHelperServiceMap)
+        .get(anyString());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    final String objectIdOfYaml = EntityObjectIdUtils.getObjectIdOfYaml(sampleBean);
+    doReturn(ScmCreateFileResponse.builder()
+                 .accountIdentifier("acc")
+                 .objectId(objectIdOfYaml)
+                 .yamlGitConfigId("ygs")
+                 .branch("branch")
+                 .pushToDefaultBranch(false)
+                 .build())
+        .when(scmGitSyncHelper)
+        .pushToGit(any(), anyString(), any(), any());
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    SampleBean sampleBean_saved_1 = gitAwarePersistence.save(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.ADD, SampleBean.class, null);
+    assertThat(sampleBean_saved_1).isNull();
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    sampleBean_saved_1 = gitAwarePersistence.save(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.NONE, SampleBean.class, null);
+    assertThat(sampleBean_saved_1).isNotNull();
+    assertThat(sampleBean_saved_1).isEqualTo(sampleBean);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testSaveGitSyncEnabled() {
+    doReturn(new SampleBeanEntityGitPersistenceHelperServiceImpl())
+        .when(gitPersistenceHelperServiceMap)
+        .get(anyString());
+    final String objectIdOfYaml = EntityObjectIdUtils.getObjectIdOfYaml(sampleBean);
+    doReturn(ScmCreateFileResponse.builder()
+                 .accountIdentifier("acc")
+                 .objectId(objectIdOfYaml)
+                 .yamlGitConfigId("ygs")
+                 .branch("branch")
+                 .pushToDefaultBranch(false)
+                 .build())
+        .when(scmGitSyncHelper)
+        .pushToGit(any(), anyString(), any(), any());
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    SampleBean sampleBean_saved_1 = gitAwarePersistence.save(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.ADD, SampleBean.class, null);
+    assertThat(sampleBean_saved_1).isNotNull();
+    assertThat(sampleBean_saved_1).isEqualTo(sampleBean);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testDelete() {
+    doReturn(new SampleBeanEntityGitPersistenceHelperServiceImpl())
+        .when(gitPersistenceHelperServiceMap)
+        .get(anyString());
+    final String objectIdOfYaml = EntityObjectIdUtils.getObjectIdOfYaml(sampleBean);
+    doReturn(ScmCreateFileResponse.builder()
+                 .accountIdentifier("acc")
+                 .objectId(objectIdOfYaml)
+                 .yamlGitConfigId("ygs")
+                 .branch("branch")
+                 .pushToDefaultBranch(false)
+                 .build())
+        .when(scmGitSyncHelper)
+        .pushToGit(any(), anyString(), any(), any());
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    assertThatThrownBy(()
+                           -> gitAwarePersistence.delete(sampleBean, NGYamlUtils.getYamlString(sampleBean),
+                               ChangeType.ADD, SampleBean.class, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("ChangeType : ADD, is not supported for delete operation");
+    gitAwarePersistence.save(sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.ADD, SampleBean.class, null);
+    gitAwarePersistence.delete(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.DELETE, SampleBean.class, null);
+    verify(scmGitSyncHelper, times(2)).pushToGit(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testDelete_1() {
+    doReturn(new SampleBeanEntityGitPersistenceHelperServiceImpl())
+        .when(gitPersistenceHelperServiceMap)
+        .get(anyString());
+    final String objectIdOfYaml = EntityObjectIdUtils.getObjectIdOfYaml(sampleBean);
+    doReturn(ScmCreateFileResponse.builder()
+                 .accountIdentifier("acc")
+                 .objectId(objectIdOfYaml)
+                 .yamlGitConfigId("ygs")
+                 .branch("branch")
+                 .pushToDefaultBranch(false)
+                 .build())
+        .when(scmGitSyncHelper)
+        .pushToGit(any(), anyString(), any(), any());
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    assertThatThrownBy(() -> gitAwarePersistence.delete(sampleBean, ChangeType.ADD, SampleBean.class))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("ChangeType : ADD, is not supported for delete operation");
+    gitAwarePersistence.save(sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.ADD, SampleBean.class, null);
+    gitAwarePersistence.delete(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.DELETE, SampleBean.class, null);
+    verify(scmGitSyncHelper, times(2)).pushToGit(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCount() {
+    doReturn(new SampleBeanEntityGitPersistenceHelperServiceImpl())
+        .when(gitPersistenceHelperServiceMap)
+        .get(anyString());
+    final String objectIdOfYaml = EntityObjectIdUtils.getObjectIdOfYaml(sampleBean);
+    doReturn(ScmCreateFileResponse.builder()
+                 .accountIdentifier("acc")
+                 .objectId(objectIdOfYaml)
+                 .yamlGitConfigId("ygs")
+                 .branch("branch")
+                 .pushToDefaultBranch(false)
+                 .build())
+        .when(scmGitSyncHelper)
+        .pushToGit(any(), anyString(), any(), any());
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    SampleBean sampleBean_saved_1 = gitAwarePersistence.save(
+        sampleBean, NGYamlUtils.getYamlString(sampleBean), ChangeType.ADD, SampleBean.class, null);
+    assertThat(sampleBean_saved_1).isNotNull();
+    assertThat(sampleBean_saved_1).isEqualTo(sampleBean);
+    Criteria criteria = new Criteria();
+    long count = gitAwarePersistence.count(criteria, null, null, "acc", SampleBean.class);
+    assertThat(count).isEqualTo(1);
   }
 }

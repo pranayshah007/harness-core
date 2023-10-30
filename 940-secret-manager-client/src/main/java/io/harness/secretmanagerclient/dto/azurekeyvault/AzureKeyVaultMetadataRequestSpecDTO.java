@@ -39,4 +39,5 @@ public class AzureKeyVaultMetadataRequestSpecDTO extends SecretManagerMetadataRe
   private Boolean useManagedIdentity;
   private AzureManagedIdentityType azureManagedIdentityType;
   private String managedClientId;
+  private Boolean enablePurge;
 }

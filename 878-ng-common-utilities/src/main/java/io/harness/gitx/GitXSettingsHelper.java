@@ -122,7 +122,8 @@ public class GitXSettingsHelper {
     return StoreType.valueOf(defaultStoreTypeForEntities);
   }
 
-  private String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  @VisibleForTesting
+  String getDefaultConnectorForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     return NGRestUtils
         .getResponse(ngSettingsClient.getSetting(
             GitSyncConstants.DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
@@ -159,7 +160,8 @@ public class GitXSettingsHelper {
     return HarnessStringUtils.removeLeadingAndTrailingSpacesInListOfStrings(listOfRepos);
   }
 
-  private String getDefaultRepoForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  @VisibleForTesting
+  String getDefaultRepoForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
     return NGRestUtils
         .getResponse(ngSettingsClient.getSetting(
             GitSyncConstants.DEFAULT_REPO_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))

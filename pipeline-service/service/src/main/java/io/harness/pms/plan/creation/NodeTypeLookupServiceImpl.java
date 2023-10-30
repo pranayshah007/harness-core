@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.plan.creation;
-
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 
@@ -18,6 +20,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public class NodeTypeLookupServiceImpl implements NodeTypeLookupService {
   @Inject private PmsSdkInstanceService pmsSdkInstanceService;
 
@@ -38,6 +42,9 @@ public class NodeTypeLookupServiceImpl implements NodeTypeLookupService {
         if (supportedNodeTypes.stream().anyMatch(st -> st.equals(nodeType))) {
           if (nodeType.equals(FEATURE_FLAG_SUPPORTED_TYPE)) {
             return "cf";
+          }
+          if (nodeType.equals("Custom")) {
+            return "pms";
           }
           return entry.getKey();
         }

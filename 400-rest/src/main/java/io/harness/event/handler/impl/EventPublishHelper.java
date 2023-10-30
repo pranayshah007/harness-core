@@ -6,7 +6,6 @@
  */
 
 package io.harness.event.handler.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -37,8 +36,11 @@ import static software.wings.beans.security.UserGroup.DEFAULT_NON_PROD_SUPPORT_U
 import static software.wings.beans.security.UserGroup.DEFAULT_PROD_SUPPORT_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroup.DEFAULT_READ_ONLY_USER_GROUP_NAME;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
@@ -57,7 +59,6 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.AccountType;
 import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
@@ -68,6 +69,7 @@ import software.wings.beans.UserInvite;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.access.Whitelist;
 import software.wings.beans.sso.LdapSettings;
@@ -108,6 +110,8 @@ import lombok.extern.slf4j.Slf4j;
  * Publishes event if all the criteria is met. MarketoHandler handles the event and converts it into a marketo campaign.
  * @author rktummala on 11/27/18
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @Singleton
 @Slf4j
@@ -284,7 +288,7 @@ public class EventPublishHelper {
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
       pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
-      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
+      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null, false);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
         return false;

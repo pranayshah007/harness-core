@@ -6,13 +6,15 @@
  */
 
 package io.harness.ngmigration.service.step.ecs;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.generateFileIdentifier;
 import static io.harness.ngmigration.utils.MigratorUtility.getYamlManifestFile;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepNode;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -45,6 +47,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class EcsRunTaskStepMapperImpl extends EcsBaseStepMapper {
   private static final String RUN_TASK_DEFINITION_JSON = "runTaskDefinition.json";

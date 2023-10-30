@@ -76,7 +76,7 @@ public class InfrastructureResourceTest extends CategoryTest {
                                                          .yaml(yaml)
                                                          .build();
 
-    assertThatThrownBy(() -> infrastructureResource.create(ACCOUNT_ID, environmentRequestDTO))
+    assertThatThrownBy(() -> infrastructureResource.create(ACCOUNT_ID, environmentRequestDTO, null))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(entityYamlSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, environmentRequestDTO.getYaml());
@@ -101,7 +101,7 @@ public class InfrastructureResourceTest extends CategoryTest {
                                                          .yaml(yaml)
                                                          .build();
 
-    assertThatThrownBy(() -> infrastructureResource.update(ACCOUNT_ID, environmentRequestDTO))
+    assertThatThrownBy(() -> infrastructureResource.update(ACCOUNT_ID, environmentRequestDTO, null))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(entityYamlSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, environmentRequestDTO.getYaml());

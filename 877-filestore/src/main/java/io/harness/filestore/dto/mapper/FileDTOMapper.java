@@ -31,6 +31,8 @@ public class FileDTOMapper {
           .identifier(fileDto.getIdentifier())
           .parentIdentifier(fileDto.getParentIdentifier())
           .name(fileDto.getName())
+          .description(fileDto.getDescription())
+          .tags(!EmptyPredicate.isEmpty(fileDto.getTags()) ? fileDto.getTags() : Collections.emptyList())
           .path(fileDto.getPath())
           .type(fileDto.getType())
           .build();
@@ -61,6 +63,8 @@ public class FileDTOMapper {
           .projectIdentifier(ngFile.getProjectIdentifier())
           .identifier(ngFile.getIdentifier())
           .name(ngFile.getName())
+          .description(ngFile.getDescription())
+          .tags(ngFile.getTags())
           .path(ngFile.getPath())
           .type(ngFile.getType())
           .parentIdentifier(ngFile.getParentIdentifier())
@@ -96,6 +100,8 @@ public class FileDTOMapper {
       file.setParentIdentifier(fileDto.getParentIdentifier());
       file.setName(fileDto.getName());
       file.setPath(fileDto.getPath());
+      file.setDescription(fileDto.getDescription());
+      file.setTags(!EmptyPredicate.isEmpty(fileDto.getTags()) ? fileDto.getTags() : Collections.emptyList());
       return file;
     }
 

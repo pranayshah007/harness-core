@@ -8,6 +8,7 @@
 package software.wings.service;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.VINICIUS;
@@ -21,6 +22,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -1466,5 +1468,15 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
     governanceConfig.getTimeRangeBasedFreezeConfigs().get(0).setApplicable(false);
     assertThatThrownBy(() -> governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSaveWhenAppFilterHasFilterTypeCustomAndServiceSelectionIsNull() {
+    GovernanceConfig governanceConfig =
+        JsonUtils.readResourceFile("governance/governance_config22.json", GovernanceConfig.class);
+    assertThatCode(() -> governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig))
+        .doesNotThrowAnyException();
   }
 }

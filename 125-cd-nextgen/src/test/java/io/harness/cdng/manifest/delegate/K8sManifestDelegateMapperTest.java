@@ -10,6 +10,7 @@ package io.harness.cdng.manifest.delegate;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.HTTP_HELM_REPO;
+import static io.harness.delegate.beans.connector.ConnectorType.OCI_HELM_REPO;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -35,6 +36,7 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -46,10 +48,15 @@ import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -61,12 +68,16 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
@@ -111,6 +122,7 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
   @Mock private K8sEntityHelper k8sEntityHelper;
 
   @Mock private StoreConfig storeConfig;
+  @Mock private HelmChartService helmChartService;
 
   @InjectMocks K8sManifestDelegateMapper k8sManifestDelegateMapper;
 
@@ -348,6 +360,104 @@ public class K8sManifestDelegateMapperTest extends CategoryTest {
     HelmChartManifestDelegateConfig helmChartDelegateConfig = (HelmChartManifestDelegateConfig) delegateConfig;
     assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isNotNull();
     assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isInstanceOf(HttpHelmStoreDelegateConfig.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestDelegateConfigForHelmChartUsingGenericOciStore() {
+    String connectorRef = "org.oci_helm_connector";
+    String chartName = "chartName";
+    String chartVersion = "chartVersion";
+    OciHelmConnectorDTO ociHelmConnectorDTO =
+        OciHelmConnectorDTO.builder()
+            .auth(OciHelmAuthenticationDTO.builder().authType(OciHelmAuthType.ANONYMOUS).build())
+            .helmRepoUrl("test")
+            .build();
+    HelmChartManifestOutcome manifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .store(OciHelmChartConfig.builder()
+                       .config(ParameterField.createValueField(
+                           OciHelmChartStoreConfigWrapper.builder()
+                               .type(OciHelmChartStoreConfigType.GENERIC)
+                               .spec(OciHelmChartStoreGenericConfig.builder()
+                                         .connectorRef(ParameterField.createValueField(connectorRef))
+                                         .build())
+                               .build()))
+                       .build())
+            .chartName(ParameterField.createValueField(chartName))
+            .chartVersion(ParameterField.createValueField(chartVersion))
+            .build();
+
+    doReturn(ConnectorInfoDTO.builder()
+                 .identifier("oci-helm-connector")
+                 .connectorType(OCI_HELM_REPO)
+                 .connectorConfig(ociHelmConnectorDTO)
+                 .build())
+        .when(cdStepHelper)
+        .getConnector(nullable(String.class), any(Ambiance.class));
+
+    doReturn(K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).infrastructureKey(INFRA_KEY).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    ManifestDelegateConfig delegateConfig =
+        k8sManifestDelegateMapper.getManifestDelegateConfig(manifestOutcome, ambiance);
+    assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
+    assertThat(delegateConfig).isInstanceOf(HelmChartManifestDelegateConfig.class);
+    HelmChartManifestDelegateConfig helmChartDelegateConfig = (HelmChartManifestDelegateConfig) delegateConfig;
+    assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isNotNull();
+    assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isInstanceOf(OciHelmStoreDelegateConfig.class);
+    assertThat(helmChartDelegateConfig.getStoreDelegateConfig().getRepoUrl()).isEqualTo("test");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestDelegateConfigForHelmChartUsingEcrOciStore() {
+    String connectorRef = "org.oci_helm_connector";
+    String chartName = "chartName";
+    String chartVersion = "chartVersion";
+    String region = "region";
+    AwsConnectorDTO awsConnectorConfig =
+        AwsConnectorDTO.builder()
+            .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
+            .build();
+    HelmChartManifestOutcome manifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .store(OciHelmChartConfig.builder()
+                       .config(ParameterField.createValueField(
+                           OciHelmChartStoreConfigWrapper.builder()
+                               .type(OciHelmChartStoreConfigType.ECR)
+                               .spec(OciHelmChartStoreEcrConfig.builder()
+                                         .connectorRef(ParameterField.createValueField(connectorRef))
+                                         .region(ParameterField.createValueField(region))
+                                         .build())
+                               .build()))
+                       .build())
+            .chartName(ParameterField.createValueField(chartName))
+            .chartVersion(ParameterField.createValueField(chartVersion))
+            .build();
+
+    doReturn(ConnectorInfoDTO.builder()
+                 .identifier("oci-helm-connector")
+                 .connectorType(OCI_HELM_REPO)
+                 .connectorConfig(awsConnectorConfig)
+                 .build())
+        .when(cdStepHelper)
+        .getConnector(nullable(String.class), any(Ambiance.class));
+
+    doReturn(K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).infrastructureKey(INFRA_KEY).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    ManifestDelegateConfig delegateConfig =
+        k8sManifestDelegateMapper.getManifestDelegateConfig(manifestOutcome, ambiance);
+    assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
+    assertThat(delegateConfig).isInstanceOf(HelmChartManifestDelegateConfig.class);
+    HelmChartManifestDelegateConfig helmChartDelegateConfig = (HelmChartManifestDelegateConfig) delegateConfig;
+    assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isNotNull();
+    assertThat(helmChartDelegateConfig.getStoreDelegateConfig()).isInstanceOf(OciHelmStoreDelegateConfig.class);
   }
 
   @Test

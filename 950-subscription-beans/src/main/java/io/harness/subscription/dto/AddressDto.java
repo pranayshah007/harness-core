@@ -25,7 +25,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddressDto {
-  private static final String ADDRESS_PART_REGEX = "^[a-zA-Z0-9 \\-.,'&#()@!]+$";
+  private static final String ADDRESS_PART_REGEX = "^[a-zA-Z0-9 \\-.,'&#()@!+]+$";
 
   @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 46) private String line1;
   @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 46) private String line2;

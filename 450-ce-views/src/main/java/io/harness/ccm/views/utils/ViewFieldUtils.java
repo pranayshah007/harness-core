@@ -143,6 +143,8 @@ public class ViewFieldUtils {
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpskuid"), "gcpSkuId");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpskudescription"), "gcpSkuDescription");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpprojectid"), "gcpProjectId");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpinvoicemonth"), "gcpInvoiceMonth");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpcosttype"), "gcpCostType");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "region"), "region");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "zone"), "zone");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpbillingaccountid"), "gcpBillingAccountId");
@@ -150,6 +152,10 @@ public class ViewFieldUtils {
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsblendedrate"), "awsBlendedRate");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsblendedcost"), "awsBlendedCost");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsunblendedrate"), "awsUnblendedRate");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awseffectivecost"), "awsEffectiveCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsamortisedcost"), "awsAmortisedCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsnetamortisedcost"), "awsNetAmortisedCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awslineitemtype"), "awsLineItemType");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsunblendedcost"), "awsUnblendedCost");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsservicecode"), "awsServicecode");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsavailabilityzone"), "awsAvailabilityZone");

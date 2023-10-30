@@ -9,8 +9,11 @@ package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.encryption.Encrypted;
 import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
@@ -30,6 +33,8 @@ import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Data
 @Builder
 @ToString(exclude = "password")
@@ -58,6 +63,7 @@ public class WinRmSessionConfig implements EncryptableSetting {
   private List<WinRmCommandParameter> commandParameters;
 
   @SchemaIgnore private String encryptedPassword;
+  private boolean disableWinRmEnvVarEscaping;
 
   @Override
   public SettingVariableTypes getSettingType() {

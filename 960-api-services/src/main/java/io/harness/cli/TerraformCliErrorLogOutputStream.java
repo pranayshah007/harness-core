@@ -33,11 +33,14 @@ public class TerraformCliErrorLogOutputStream extends ErrorLogOutputStream {
   private static final Predicate<String> cliErrorPredicate =
       logLine -> isNotEmpty(logLine) && !TF_LOG_LINE_PATTERN.matcher(logLine).find();
 
-  public TerraformCliErrorLogOutputStream(LogCallback executionLogCallback) {
+  public TerraformCliErrorLogOutputStream(LogCallback executionLogCallback, boolean skipColorLogs) {
     this.executionLogCallback = executionLogCallback;
+    this.skipColorLogs = skipColorLogs;
   }
   private final LogCallback executionLogCallback;
   private StringBuilder errorLogs;
+
+  private boolean skipColorLogs;
 
   @Override
   protected void processLine(String line) {
@@ -57,7 +60,7 @@ public class TerraformCliErrorLogOutputStream extends ErrorLogOutputStream {
       if (errorLogs == null) {
         errorLogs = new StringBuilder();
       }
-      executionLogCallback.saveExecutionLog(processedLine, LogLevel.ERROR);
+      executionLogCallback.saveExecutionLog(processedLine, LogLevel.ERROR, skipColorLogs);
 
       log.error(processedLine);
       errorLogs.append(' ').append(processedLine);

@@ -62,10 +62,15 @@ public class AnomalyDataQueryBuilder {
     selectQuery.addCondition(BinaryCondition.equalTo(AnomaliesDataTableSchema.accountId, accountId));
   }
 
+  public static void addValidAnomaliesFilter(SelectQuery query) {
+    query.addCondition(BinaryCondition.equalTo(AnomaliesDataTableSchema.newEntity, Boolean.FALSE.toString()));
+  }
+
   public static String formAnomalyFetchQuery(String accountId, QLAnomalyInput input) {
     SelectQuery query = new SelectQuery();
     query.addAllTableColumns(AnomaliesDataTableSchema.table);
     addAccountFilter(query, accountId);
+    addValidAnomaliesFilter(query);
     query.addCondition(BinaryCondition.equalTo(AnomaliesDataTableSchema.id, input.getAnomalyId()));
 
     return query.toString();
@@ -99,6 +104,7 @@ public class AnomalyDataQueryBuilder {
 
     SelectQuery query = new SelectQuery();
     addAccountFilter(query, accountId);
+    addValidAnomaliesFilter(query);
     query.addAllTableColumns(AnomaliesDataTableSchema.table);
     query.addAliasedColumn(new CustomSql(AnomaliesDataTableSchema.actualCost.getColumnNameSQL() + " - "
                                + AnomaliesDataTableSchema.expectedCost.getColumnNameSQL()),
@@ -114,6 +120,7 @@ public class AnomalyDataQueryBuilder {
 
     SelectQuery query = new SelectQuery();
     addAccountFilter(query, accountId);
+    addValidAnomaliesFilter(query);
     query.addAllTableColumns(AnomaliesDataTableSchema.table);
     query.addAliasedColumn(new CustomSql(AnomaliesDataTableSchema.actualCost.getColumnNameSQL() + " - "
                                + AnomaliesDataTableSchema.expectedCost.getColumnNameSQL()),
@@ -319,6 +326,7 @@ public class AnomalyDataQueryBuilder {
     filters = new ArrayList<CloudBillingFilter>(filters);
     SelectQuery query = new SelectQuery();
     addAccountFilter(query, accountId);
+    addValidAnomaliesFilter(query);
     query.addAllTableColumns(AnomaliesDataTableSchema.table);
     query.addAliasedColumn(new CustomSql(AnomaliesDataTableSchema.actualCost.getColumnNameSQL() + " - "
                                + AnomaliesDataTableSchema.expectedCost.getColumnNameSQL()),
@@ -430,6 +438,7 @@ public class AnomalyDataQueryBuilder {
     query.addCondition(
         BinaryCondition.greaterThanOrEq(AnomaliesDataTableSchema.anomalyTime, fromDate.truncatedTo(ChronoUnit.DAYS)));
     addAccountFilter(query, accountId);
+    addValidAnomaliesFilter(query);
     query.addCustomOrdering(new CustomSql("difference"), OrderObject.Dir.DESCENDING);
     return query.validate().toString();
   }

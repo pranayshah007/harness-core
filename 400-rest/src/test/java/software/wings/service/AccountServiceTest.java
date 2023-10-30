@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -109,7 +110,6 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
@@ -123,6 +123,7 @@ import software.wings.beans.SubdomainUrl;
 import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
 import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
 import software.wings.beans.governance.GovernanceConfig;
@@ -1864,6 +1865,18 @@ public class AccountServiceTest extends WingsBaseTest {
     when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(true);
 
     assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testUpdateHarnessSupportAccess() {
+    Account account = saveAccount("Harness");
+    accountService.updateHarnessSupportAccess(account.getUuid(), true);
+    assertFalse(accountService.isHarnessSupportAccessDisabled(account.getUuid()));
+
+    accountService.updateHarnessSupportAccess(account.getUuid(), false);
+    assertTrue(accountService.isHarnessSupportAccessDisabled(account.getUuid()));
   }
 
   @Test

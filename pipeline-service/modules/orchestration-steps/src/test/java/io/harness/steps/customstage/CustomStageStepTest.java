@@ -19,6 +19,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import java.util.concurrent.ExecutorService;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,6 +31,7 @@ import org.mockito.junit.MockitoRule;
 public class CustomStageStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock ExecutorService dashboardExecutorService;
 
   @InjectMocks CustomStageStep customStageStep;
 

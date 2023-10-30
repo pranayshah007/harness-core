@@ -2,7 +2,7 @@
 1. Download [avro-tools-1.9.1.jar](https://repo1.maven.org/maven2/org/apache/avro/avro-tools/1.9.1/avro-tools-1.9.1.jar)
 2. Run below command to auto-generate the avro java files after updating the schema.
 ```shell
-hello@:~/harness/portal:> java -jar ~/Downloads/avro-tools-1.9.1.jar compile schema 280-batch-processing/src/generated/avro/billingData.avsc 280-batch-processing/src/generated/java/
+hello@:~/harness/portal:> java -jar ~/Downloads/avro-tools-1.9.1.jar compile schema batch-processing/service/src/generated/avro/billingData.avsc batch-processing/service/src/generated/java/
 ```
 
 ---

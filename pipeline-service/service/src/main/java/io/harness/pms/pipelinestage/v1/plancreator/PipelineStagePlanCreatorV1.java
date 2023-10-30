@@ -26,7 +26,6 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -34,6 +33,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -43,8 +43,8 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.security.PmsSecurityContextGuardUtils;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -102,13 +102,13 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .build();
   }
 
-  public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
-    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(executionMetadata.getAccountIdentifier(),
-        executionMetadata.getMetadata().getPrincipalInfo(),
-        executionMetadata.getMetadata().getTriggerInfo().getTriggeredBy());
+  public void setSourcePrincipal(PlanCreationContext ctx) {
+    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(
+        ctx.getAccountIdentifier(), ctx.getPrincipalInfo(), ctx.getTriggerInfo().getTriggeredBy());
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     SecurityContextBuilder.setContext(principal);
   }
+
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField stageNode) {
     PipelineStageConfig configNode = null;
@@ -123,7 +123,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
     }
     // Principal is added to fetch Git Entity
-    setSourcePrincipal(ctx.getMetadata());
+    setSourcePrincipal(ctx);
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
         configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false, false, true);
 
@@ -219,9 +219,9 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     YamlField stageYamlField = context.getCurrentField();
     String nextNodeUuid = null;
     if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
+        && context.getDependency().getMetadataMap().containsKey(PlanCreatorConstants.NEXT_ID)) {
       nextNodeUuid = (String) kryoSerializer.asObject(
-          context.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
+          context.getDependency().getMetadataMap().get(PlanCreatorConstants.NEXT_ID).toByteArray());
     }
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
@@ -247,6 +247,6 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

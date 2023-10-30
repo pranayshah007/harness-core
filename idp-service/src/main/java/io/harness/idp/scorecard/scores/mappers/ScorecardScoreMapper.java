@@ -20,7 +20,7 @@ public class ScorecardScoreMapper {
     ScorecardScore scorecardScore = new ScorecardScore();
     scorecardScore.setScore(0);
     if (scoreEntity != null) {
-      scorecardScore.score(scoreEntity.getScore());
+      scorecardScore.setScore(scoreEntity.getScore());
     }
     scorecardScore.setScorecardName(scorecardName);
     scorecardScore.setDescription(scorecardDescription);

@@ -561,8 +561,8 @@ public class Http {
       log.info("###Using proxy Auth");
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
-        if (response == null || response.code() == 407) {
-          log.warn("Proxy authentication failed with 407, proceeding ahead");
+        if (response.request().header("Proxy-Authorization") != null) {
+          return null;
         }
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();

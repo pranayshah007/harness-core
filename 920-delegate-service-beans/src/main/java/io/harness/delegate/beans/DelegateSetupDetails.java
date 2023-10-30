@@ -13,6 +13,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -41,7 +42,7 @@ public class DelegateSetupDetails implements YamlDTO {
 
   private Set<String> tags;
 
-  @NotNull private String delegateType;
+  @Schema(description = "Currently KUBERNETES and HELM_DELEGATE are supported.") @NotNull private String delegateType;
   private String tokenName;
   private Boolean runAsRoot;
 }

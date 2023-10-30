@@ -1,0 +1,8 @@
+policies:
+  - name: ec2-ancient-images-list
+    resource: ami
+    description: |
+      Report all AMIs that are 120+ days or older
+    filters:
+      - type: image-age
+        days: 120

@@ -19,4 +19,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.CI)
 public interface CIAccountDataStatusRepository extends CrudRepository<CIAccountDataStatus, String> {
   List<CIAccountDataStatus> findAllByDeleted(Boolean deleted);
+  List<CIAccountDataStatus> findAllByAccountId(String accountId);
 }

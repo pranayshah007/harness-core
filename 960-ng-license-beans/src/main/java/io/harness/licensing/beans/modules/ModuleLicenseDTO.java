@@ -48,6 +48,8 @@ import lombok.experimental.SuperBuilder;
           @JsonSubTypes.Type(value = ChaosModuleLicenseDTO.class, name = "CHAOS"),
           @JsonSubTypes.Type(value = IACMModuleLicenseDTO.class, name = "IACM"),
           @JsonSubTypes.Type(value = CETModuleLicenseDTO.class, name = "CET"),
+          @JsonSubTypes.Type(value = SEIModuleLicenseDTO.class, name = "SEI"),
+          @JsonSubTypes.Type(value = IDPModuleLicenseDTO.class, name = "IDP"),
     })
 @Schema(name = "ModuleLicense", description = "This contains details of the Module License defined in Harness")
 public abstract class ModuleLicenseDTO {

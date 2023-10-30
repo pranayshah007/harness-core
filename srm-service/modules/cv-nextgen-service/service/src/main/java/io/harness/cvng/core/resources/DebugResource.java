@@ -10,8 +10,10 @@ package io.harness.cvng.core.resources;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
@@ -67,7 +69,7 @@ public class DebugResource {
   @Path("isProjectDeleted")
   @ApiOperation(
       value = "Checks whether Project resources are deleted", nickname = "isProjectResourcesDeleted", hidden = true)
-  public RestResponse<Boolean>
+  public RestResponse<ProjectDeletionResponse>
   isProjectDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams) {
     return new RestResponse<>(debugService.isProjectDeleted(projectParams.getProjectParams()));
   }
@@ -116,6 +118,17 @@ public class DebugResource {
   public RestResponse<Boolean> forceDeleteSLI(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
     return new RestResponse<>(debugService.forceDeleteSLI(projectParams.getProjectParams(), identifiers));
+  }
+
+  @DELETE
+  @Timed
+  @Path("composite-slo")
+  @ApiOperation(value = "Force deletes composite SLOs and associated entities", nickname = "forceDeleteCompositeSLO",
+      hidden = true)
+  public RestResponse<Boolean>
+  forceDeleteCompositeSLO(@NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
+    return new RestResponse<>(debugService.forceDeleteCompositeSLO(projectParams, identifiers));
   }
 
   @GET
@@ -206,5 +219,16 @@ public class DebugResource {
   @ApiOperation(value = "register fake ff event in srm queue", nickname = "register", hidden = true)
   public void register(@Body FakeFeatureFlagSRMProducer.FFEventBody ffEventBody) {
     debugService.registerFFChangeEvent(ffEventBody);
+  }
+
+  @POST
+  @Path("register-srm-analysis-step")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(
+      value = "register srm analysis event for debugging", nickname = "registerSRMAnalysisStep", hidden = true)
+  public RestResponse<Boolean>
+  registerSRMAnalysisStep(@NotNull @Body SRMAnalysisStepExecutionDetail srmAnalysisStepBody) {
+    return new RestResponse<>(debugService.registerSRMAnalysisStep(srmAnalysisStepBody));
   }
 }

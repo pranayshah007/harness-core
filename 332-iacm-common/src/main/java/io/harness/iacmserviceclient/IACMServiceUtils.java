@@ -62,6 +62,14 @@ public class IACMServiceUtils {
     this.iacmServiceConfig = iacmServiceConfig;
   }
 
+  public String getCostEstimationToken() {
+    return this.iacmServiceConfig.getCostEstimationToken();
+  }
+
+  public String getCostEstimationAPIEndpoint() {
+    return this.iacmServiceConfig.getCostEstimationAPIIUrl();
+  }
+
   public Workspace getIACMWorkspaceInfo(String org, String projectId, String accountId, String workspaceID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
 

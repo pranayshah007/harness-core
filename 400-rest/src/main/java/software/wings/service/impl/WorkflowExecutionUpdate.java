@@ -28,6 +28,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.beans.event.cg.CgPipelineCompletePayload;
 import io.harness.beans.event.cg.CgPipelinePausePayload;
@@ -705,7 +706,7 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
   @VisibleForTesting
   public List<NameValuePair> resolveDeploymentTags(ExecutionContext context, String workflowId) {
     String accountId = appService.getAccountIdByAppId(appId);
-    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId);
+    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId, false);
     List<NameValuePair> resolvedTags = new ArrayList<>();
     if (isNotEmpty(harnessTagLinks)) {
       for (HarnessTagLink harnessTagLink : harnessTagLinks) {
@@ -866,12 +867,17 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
 
     // TODO: this is temporary. this should be part of its own callback and with more precise filter
     try {
-      log.info("Update Active Resource constraints");
+      log.debug("Update Active Resource constraints");
       final Set<String> constraintIds =
           resourceConstraintService.updateActiveConstraints(context.getAppId(), workflowExecutionId);
 
-      log.info("Update Blocked Resource constraints");
-      resourceConstraintService.updateBlockedConstraints(constraintIds);
+      log.debug("Update Blocked Resource constraints");
+      if (featureFlagService.isEnabled(
+              FeatureName.CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION, context.getAccountId())) {
+        resourceConstraintService.updateBlockedConstraintsV2(constraintIds, false);
+      } else {
+        resourceConstraintService.updateBlockedConstraints(constraintIds);
+      }
 
     } catch (RuntimeException exception) {
       // Do not block the execution for possible exception in the barrier update

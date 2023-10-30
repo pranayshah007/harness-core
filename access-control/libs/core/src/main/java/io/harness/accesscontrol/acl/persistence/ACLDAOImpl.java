@@ -13,6 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,17 +38,17 @@ public class ACLDAOImpl implements ACLDAO {
   private static final String PATH_DELIMITER = "/";
   private static final String ALL_RESOURCES_IDENTIFIER = "*";
   private static final String INCLUDE_CHILD_SCOPES_IDENTIFIER = "**";
+  public static final String ALL_USERS = "ALL_USERS";
+
+  public static final String ALL_AUTHENTICATED_USERS = "ALL_AUTHENTICATED_USERS";
   private final ACLRepository aclRepository;
   private final Set<String> scopeResourceTypes;
-  private final boolean disableRedundantACLs;
 
   @Inject
-  public ACLDAOImpl(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository, Map<String, ScopeLevel> scopeLevels,
-      @Named("disableRedundantACLs") boolean disableRedundantACLs) {
+  public ACLDAOImpl(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository, Map<String, ScopeLevel> scopeLevels) {
     this.aclRepository = aclRepository;
     this.scopeResourceTypes =
         scopeLevels.values().stream().map(ScopeLevel::getResourceType).collect(Collectors.toSet());
-    this.disableRedundantACLs = disableRedundantACLs;
   }
 
   private String getResourceSelector(String resourceType, String resourceIdentifier) {
@@ -90,6 +91,12 @@ public class ACLDAOImpl implements ACLDAO {
     if (!StringUtils.isEmpty(resourceIdentifier)) {
       queryStrings.add(getAclQueryString(scope, getResourceSelector(resourceType, resourceIdentifier),
           principal.getPrincipalType().name(), principal.getPrincipalIdentifier(), permissionCheck.getPermission()));
+
+      if (PrincipalType.USER.equals(principal.getPrincipalType())
+          && !ALL_USERS.equals(principal.getPrincipalIdentifier())) {
+        queryStrings.add(getAclQueryString(scope, getResourceSelector(resourceType, resourceIdentifier),
+            principal.getPrincipalType().name(), ALL_AUTHENTICATED_USERS, permissionCheck.getPermission()));
+      }
     }
 
     if (isValidPermissionCheckForSameScopeLevel(permissionCheck)) {
@@ -157,9 +164,7 @@ public class ACLDAOImpl implements ACLDAO {
       aclQueryStrings.addAll(queryStrings);
     });
 
-    List<ACL> aclsPresentInDB = disableRedundantACLs
-        ? aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true)
-        : aclRepository.getByAclQueryStringIn(aclQueryStrings);
+    List<ACL> aclsPresentInDB = aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true);
     return aclQueryStringsPerPermission.stream()
         .map(queryStringsForPermission
             -> aclsPresentInDB.stream()

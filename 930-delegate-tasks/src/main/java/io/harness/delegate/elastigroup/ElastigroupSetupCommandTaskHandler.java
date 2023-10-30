@@ -34,6 +34,8 @@ import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.exception.sanitizer.SpotInstRestException;
+import io.harness.exception.sanitizer.SpotInstRestExceptionHandler;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -173,6 +175,13 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
           .elastigroupSetupResult(elastigroupSetupResult)
           .build();
 
+    } catch (SpotInstRestException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      deployLogCallback.saveExecutionLog(sanitizedException.getMessage());
+      Exception handledException = SpotInstRestExceptionHandler.handleException(sanitizedException);
+      deployLogCallback.saveExecutionLog(
+          color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw new ElastigroupNGException(handledException);
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       deployLogCallback.saveExecutionLog(sanitizedException.getMessage());

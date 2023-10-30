@@ -8,8 +8,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -29,6 +29,9 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
       {{- end }}
       labels:
         {{- include "cv-nextgen.selectorLabels" . | nindent 8 }}
@@ -57,19 +60,19 @@ spec:
           securityContext:
               {{- toYaml .Values.securityContext | nindent 12 }}
           env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
-            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALE_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
-            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET" "defaultKubernetesSecretName" "cv-nextgen" "defaultKubernetesSecretKey" "VERIFICATION_SERVICE_SECRET") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $ "passwordVariableName" "TIMESCALE_PASSWORD") | indent 12 }}
             - name: TIMESCALE_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "cvng-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "cvng-harness" ) }}
             - name : NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
             - name: PMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "pms-harness" ) }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

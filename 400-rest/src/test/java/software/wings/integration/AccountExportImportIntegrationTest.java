@@ -19,13 +19,13 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
+import software.wings.beans.account.AccountStatus;
 import software.wings.dl.exportimport.ExportMode;
 import software.wings.dl.exportimport.ImportStatusReport;
 import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;

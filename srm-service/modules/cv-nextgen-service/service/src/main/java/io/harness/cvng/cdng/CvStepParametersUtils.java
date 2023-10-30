@@ -40,8 +40,6 @@ public class CvStepParametersUtils {
   }
   public StepElementParametersBuilder getStepParameters(
       CVNGAbstractStepNode stepNode, OnFailRollbackParameters failRollbackParameters) {
-    StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);
-    stepBuilder.rollbackParameters(failRollbackParameters);
-    return stepBuilder;
+    return getStepParameters(stepNode);
   }
 }

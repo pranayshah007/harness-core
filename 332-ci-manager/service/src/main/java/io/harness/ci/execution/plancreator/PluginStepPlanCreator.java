@@ -12,7 +12,7 @@ import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -35,6 +35,6 @@ public class PluginStepPlanCreator extends CIPMSStepPlanCreatorV2<PluginStepNode
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

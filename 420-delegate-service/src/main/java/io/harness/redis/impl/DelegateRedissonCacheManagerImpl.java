@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonKryoCodec;
 import io.harness.redis.intfc.DelegateRedissonCacheManager;
 
 import com.google.inject.Inject;
@@ -37,6 +36,6 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
   @Override
   public <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions) {
-    return redissonClient.getLocalCachedMap(cacheName, new RedissonKryoCodec(), localCachedMapOptions);
+    return redissonClient.getLocalCachedMap(cacheName, localCachedMapOptions);
   }
 }

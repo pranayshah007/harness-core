@@ -31,9 +31,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters")
 public class AsgCanaryDeployStepParameters extends AsgCanaryDeployBaseStepInfo implements AsgSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AsgCanaryDeployStepParameters(
-      Capacity instanceSelection, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceSelection, delegateSelectors);
+  public AsgCanaryDeployStepParameters(Capacity instanceSelection,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> asgName) {
+    super(instanceSelection, delegateSelectors, asgName);
   }
 
   public List<String> getCommandUnits() {

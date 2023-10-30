@@ -13,13 +13,14 @@ import static io.harness.delegateprofile.DelegateProfileServiceGrpc.DelegateProf
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.DelegateServiceGrpc;
+import io.harness.delegate.ScheduleTaskServiceGrpc;
+import io.harness.delegate.ScheduleTaskServiceGrpc.ScheduleTaskServiceBlockingStub;
 import io.harness.delegatedetails.DelegateDetailsServiceGrpc;
 import io.harness.delegatedetails.DelegateDetailsServiceGrpc.DelegateDetailsServiceBlockingStub;
 import io.harness.delegateprofile.DelegateProfileServiceGrpc;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.auth.ServiceAuthCallCredentials;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.version.VersionInfoManager;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -62,7 +63,7 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
   @Named("delegate-service-channel")
   @Singleton
   @Provides
-  public Channel managerChannel(VersionInfoManager versionInfoManager) throws SSLException {
+  public Channel managerChannel() throws SSLException {
     String authorityToUse = computeAuthority();
     if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)) {
       return NettyChannelBuilder.forTarget(target).overrideAuthority(authorityToUse).usePlaintext().build();
@@ -104,6 +105,13 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
 
   @Provides
   @Singleton
+  ScheduleTaskServiceBlockingStub scheduleTaskServiceBlockingStub(@Named("delegate-service-channel") Channel channel,
+      @Named("st-call-credentials") CallCredentials callCredentials) {
+    return ScheduleTaskServiceGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
+  }
+
+  @Provides
+  @Singleton
   DelegateProfileServiceBlockingStub delegateProfileServiceBlockingStub(
       @Named("delegate-service-channel") Channel channel,
       @Named("dps-call-credentials") CallCredentials callCredentials) {
@@ -123,6 +131,13 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
   @Singleton
   CallCredentials dsCallCredentials() {
     return new ServiceAuthCallCredentials(serviceSecret, new ServiceTokenGenerator(), "delegate-service");
+  }
+
+  @Named("st-call-credentials")
+  @Provides
+  @Singleton
+  CallCredentials stCallCredentials() {
+    return new ServiceAuthCallCredentials(serviceSecret, new ServiceTokenGenerator(), "schedule-task-service");
   }
 
   @Named("dps-call-credentials")

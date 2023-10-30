@@ -107,7 +107,6 @@ public final class RuleSet implements PersistentEntity, UuidAware, CreatedAtAwar
         .cloudProvider(getCloudProvider())
         .tags(getTags())
         .rulesIdentifier(getRulesIdentifier())
-        .isOOTB(getIsOOTB())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())

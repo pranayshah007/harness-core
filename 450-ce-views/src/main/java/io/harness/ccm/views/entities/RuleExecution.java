@@ -113,6 +113,19 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
                  .field(RuleExecutionKeys.executionType)
                  .field(RuleExecutionKeys.lastUpdatedAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_decreasing_lastUpdatedAt_executionType")
+                 .field(RuleExecutionKeys.accountId)
+                 .descSortField(RuleExecutionKeys.lastUpdatedAt)
+                 .ascSortField(RuleExecutionKeys.executionType)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_decreasing_lastUpdatedAt_ruleIdentifier_executionType")
+                 .field(RuleExecutionKeys.accountId)
+                 .descSortField(RuleExecutionKeys.lastUpdatedAt)
+                 .ascSortField(RuleExecutionKeys.ruleIdentifier)
+                 .ascSortField(RuleExecutionKeys.executionType)
+                 .build())
         .build();
   }
 

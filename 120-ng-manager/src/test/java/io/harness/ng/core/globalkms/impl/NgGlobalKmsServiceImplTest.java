@@ -56,6 +56,7 @@ import io.harness.services.NgConnectorManagerClientService;
 
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -92,6 +93,7 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
   static final String CHECK_CONNECTOR_TYPE_AND_CREDENTIALS_MATCH = "checkConnectorTypeAndCredentialsMatch";
   static final String CHECK_CONNECTOR_HAS_ONLY_ACCOUNT_SCOPE_INFO = "checkConnectorHasOnlyAccountScopeInfo";
   static final String GET_GLOBAL_KMS_SECRET_OR_THROW = "getGlobalKmsSecretOrThrow";
+  static final String NO_TASK_ID = "";
 
   @Before
   public void setup() {
@@ -159,7 +161,8 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
                secretDTOV2.getIdentifier()))
           .thenReturn(Optional.of(secretResponseWrapper));
       mockForValidUser();
-      when(ngSecretManagerService.validateNGSecretManager(eq(GLOBAL_ACCOUNT_ID), any())).thenReturn(true);
+      when(ngSecretManagerService.validateNGSecretManager(eq(GLOBAL_ACCOUNT_ID), any()))
+          .thenReturn(Pair.of(NO_TASK_ID, true));
       when(ngSecretService.update(GLOBAL_ACCOUNT_ID, secretDTOV2.getOrgIdentifier(), secretDTOV2.getProjectIdentifier(),
                secretDTOV2.getIdentifier(), secretDTOV2))
           .thenReturn(SecretResponseWrapper.builder().build());
@@ -443,7 +446,7 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
       when(ngSecretService.get(GLOBAL_ACCOUNT_ID, secretDTOV2.getOrgIdentifier(), secretDTOV2.getProjectIdentifier(),
                secretDTOV2.getIdentifier()))
           .thenReturn(Optional.of(getSecretResponseWrapper()));
-      when(ngSecretManagerService.validateNGSecretManager(anyString(), any())).thenReturn(false);
+      when(ngSecretManagerService.validateNGSecretManager(anyString(), any())).thenReturn(Pair.of(NO_TASK_ID, false));
       exceptionRule.expect(InvalidRequestException.class);
       exceptionRule.expectMessage("Failed to validate secret manager");
       globalKmsService.updateGlobalKms(connectorDTO, secretDTOV2);

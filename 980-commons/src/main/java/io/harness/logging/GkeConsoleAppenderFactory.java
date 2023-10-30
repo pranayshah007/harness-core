@@ -7,6 +7,8 @@
 
 package io.harness.logging;
 
+import io.harness.logging.common.CustomJsonLayout;
+
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.contrib.json.classic.JsonLayout;
 import ch.qos.logback.core.Appender;

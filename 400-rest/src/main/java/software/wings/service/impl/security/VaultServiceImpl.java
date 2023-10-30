@@ -28,7 +28,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
@@ -249,8 +248,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
 
     // App Role Token renew FF
-    vaultConfig.setRenewAppRoleToken(
-        !accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId));
+    vaultConfig.setRenewAppRoleToken(false);
 
     return isBlank(vaultConfig.getUuid()) ? saveVaultConfig(accountId, vaultConfig, validateBySavingTestSecret)
                                           : updateVaultConfig(accountId, vaultConfig, true, validateBySavingTestSecret);

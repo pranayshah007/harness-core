@@ -1,0 +1,13 @@
+moduleType: SEI
+clients:
+  - name: sei
+    clientConfig: seiServiceClientConfig
+    secretConfig: nextGenConfig.ngManagerServiceSecret
+features:
+  - name: SEI_MAX_NUMBER_OF_CONTRIBUTORS
+    description: SEI max number of contributors
+    restrictions:
+      ENTERPRISE:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: numberOfContributors
+        clientName: sei

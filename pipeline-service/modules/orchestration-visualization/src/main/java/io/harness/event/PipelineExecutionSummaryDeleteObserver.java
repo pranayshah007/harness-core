@@ -25,10 +25,13 @@ public class PipelineExecutionSummaryDeleteObserver implements PlanExecutionDele
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
-    Set<String> planExecutionIds = planExecutionList.stream().map(PlanExecution::getUuid).collect(Collectors.toSet());
+  public void onPlanExecutionsDelete(
+      List<PlanExecution> planExecutionList, boolean retainPipelineExecutionDetailsAfterDelete) {
+    if (!retainPipelineExecutionDetailsAfterDelete) {
+      Set<String> planExecutionIds = planExecutionList.stream().map(PlanExecution::getUuid).collect(Collectors.toSet());
 
-    // Delete all summary for given planExecutionIds
-    pmsExecutionSummaryService.deleteAllSummaryForGivenPlanExecutionIds(planExecutionIds);
+      // Delete all summary for given planExecutionIds
+      pmsExecutionSummaryService.deleteAllSummaryForGivenPlanExecutionIds(planExecutionIds);
+    }
   }
 }

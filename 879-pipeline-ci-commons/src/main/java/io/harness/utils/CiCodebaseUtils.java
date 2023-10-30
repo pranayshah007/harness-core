@@ -384,7 +384,7 @@ public class CiCodebaseUtils {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    String executionId = ambiance.getMetadata().getExecutionUuid();
+    String executionId = ambiance.getPlanExecutionId();
     return getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

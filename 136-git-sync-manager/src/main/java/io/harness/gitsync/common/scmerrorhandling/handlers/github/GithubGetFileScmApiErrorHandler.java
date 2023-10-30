@@ -25,7 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class GithubGetFileScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String GET_FILE_FAILED = "The requested file<FILEPATH> could not be fetched from Github. ";
+  private static final String GET_FILE_FAILED = "The requested file<FILEPATH> could not be fetched from Github. ";
+  private static final String DEFAULT_ERROR_MESSAGE =
+      "Error while getting requested file<FILEPATH> from repo<REPO> and branch<BRANCH> from Github : ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -44,7 +46,8 @@ public class GithubGetFileScmApiErrorHandler implements ScmApiErrorHandler {
             new ScmBadRequestException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
       default:
         log.error(String.format("Error while getting github file: [%s: %s]", statusCode, errorMessage));
-        throw new ScmUnexpectedException(errorMessage);
+        throw new ScmUnexpectedException(
+            ErrorMessageFormatter.formatMessage(DEFAULT_ERROR_MESSAGE + errorMessage, errorMetadata));
     }
   }
 }

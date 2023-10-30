@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters;
-import io.harness.encryptors.CustomEncryptor;
+import io.harness.encryptors.NgCgManagerCustomEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -39,11 +39,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
+import org.apache.commons.lang3.tuple.Pair;
 
 @ValidateOnExecution
 @OwnedBy(PL)
 @Singleton
-public class NGManagerCustomEncryptor implements CustomEncryptor {
+public class NGManagerCustomEncryptor implements NgCgManagerCustomEncryptor {
   private final NGManagerEncryptorHelper ngManagerEncryptorHelper;
   private static final String SCRIPT = "Script";
   private static final String EXPRESSION_FUNCTOR_TOKEN = "expressionFunctorToken";
@@ -73,6 +74,27 @@ public class NGManagerCustomEncryptor implements CustomEncryptor {
             .build();
     int expressionFunctorToken = Integer.parseInt(getParameter(EXPRESSION_FUNCTOR_TOKEN, params));
     return ngManagerEncryptorHelper.validateCustomSecretManagerSecretReference(
+        accountId, expressionFunctorToken, parameters);
+  }
+
+  @Override
+  public Pair<String, Boolean> validateReferenceWithTaskId(
+      String accountId, Set<EncryptedDataParams> params, EncryptionConfig encryptionConfig) {
+    String script = getParameter(SCRIPT, params);
+    return validateReferenceWithTaskId(accountId, script, params, encryptionConfig);
+  }
+
+  public Pair<String, Boolean> validateReferenceWithTaskId(
+      String accountId, String script, Set<EncryptedDataParams> params, EncryptionConfig encryptionConfig) {
+    addSSHSupportedConfig(encryptionConfig);
+    ValidateCustomSecretManagerSecretReferenceTaskParameters parameters =
+        ValidateCustomSecretManagerSecretReferenceTaskParameters.builder()
+            .encryptedRecord(EncryptedRecordData.builder().parameters(params).build())
+            .encryptionConfig(encryptionConfig)
+            .script(script)
+            .build();
+    int expressionFunctorToken = Integer.parseInt(getParameter(EXPRESSION_FUNCTOR_TOKEN, params));
+    return ngManagerEncryptorHelper.validateCustomSecretManagerSecretReferenceWithTaskId(
         accountId, expressionFunctorToken, parameters);
   }
 

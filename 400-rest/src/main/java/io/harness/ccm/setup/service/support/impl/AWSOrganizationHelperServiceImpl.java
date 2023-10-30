@@ -14,9 +14,12 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.setup.service.support.AwsCredentialHelper;
 import io.harness.ccm.setup.service.support.intfc.AWSOrganizationHelperService;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
@@ -61,6 +64,10 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
             .withExternalId(awsCrossAccountAttributes.getExternalId())
             .withStsClient(awsSecurityTokenService)
             .build();
+    if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
+      log.info("AWSOrganizationsClientBuilder initializing with proxy config");
+      builder.withClientConfiguration(getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
+    }
     builder.withCredentials(credentialsProvider);
     return (AWSOrganizationsClient) builder.build();
   }
@@ -76,5 +83,20 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
       nextToken = listAccountsResult.getNextToken();
     } while (nextToken != null);
     return accountList;
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

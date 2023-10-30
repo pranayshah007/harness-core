@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -172,6 +173,8 @@ public class ServerlessV2PluginInfoProviderHelper {
         (ServerlessAwsLambdaInfrastructureOutcome) infrastructureOutcome;
 
     String awsConnectorRef = serverlessAwsLambdaInfrastructureOutcome.getConnectorRef();
+    String crossAccountRoleArn = null;
+    String externalId = null;
 
     String awsAccessKey = null;
     String awsSecretKey = null;
@@ -201,6 +204,11 @@ public class ServerlessV2PluginInfoProviderHelper {
 
         awsSecretKey = getKey(ambiance, awsManualConfigSpecDTO.getSecretKeyRef());
       }
+
+      if (awsCredentialDTO.getCrossAccountAccess() != null) {
+        crossAccountRoleArn = awsCredentialDTO.getCrossAccountAccess().getCrossAccountRoleArn();
+        externalId = awsCredentialDTO.getCrossAccountAccess().getExternalId();
+      }
     }
 
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
@@ -217,6 +225,14 @@ public class ServerlessV2PluginInfoProviderHelper {
 
     if (awsSecretKey != null) {
       environmentVariablesMap.put("PLUGIN_AWS_SECRET_KEY", awsSecretKey);
+    }
+
+    if (crossAccountRoleArn != null) {
+      environmentVariablesMap.put("PLUGIN_AWS_ROLE_ARN", crossAccountRoleArn);
+    }
+
+    if (externalId != null) {
+      environmentVariablesMap.put("PLUGIN_AWS_STS_EXTERNAL_ID", externalId);
     }
 
     if (region != null) {

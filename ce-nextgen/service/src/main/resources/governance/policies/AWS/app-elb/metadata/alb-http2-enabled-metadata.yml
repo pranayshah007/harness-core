@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: alb-http2-enabled
+cloudProvider: AWS
+resourceType: app-elb
+description: Get list of app-elb where routing.http2.enabled is set to true
+rulesYamlPath: ../alb-http2-enabled.yml

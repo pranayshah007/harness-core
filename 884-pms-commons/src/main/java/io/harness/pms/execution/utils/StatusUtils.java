@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.execution.utils;
+
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_REJECTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
@@ -77,6 +78,9 @@ public class StatusUtils {
   private final EnumSet<Status> ACTIVE_STATUSES = EnumSet.of(RUNNING, INTERVENTION_WAITING, WAIT_STEP_RUNNING,
       APPROVAL_WAITING, RESOURCE_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING, INPUT_WAITING);
 
+  private final EnumSet<Status> ACTIVE_STATUSES_EXCLUDING_WAITING = EnumSet.of(RUNNING, WAIT_STEP_RUNNING,
+      APPROVAL_WAITING, RESOURCE_WAITING, ASYNC_WAITING, TASK_WAITING, TIMED_WAITING, DISCONTINUING);
+
   private final EnumSet<Status> UNPAUSABLE_CHILD_STATUSES =
       EnumSet.of(RUNNING, INTERVENTION_WAITING, WAIT_STEP_RUNNING, APPROVAL_WAITING, ASYNC_WAITING, TASK_WAITING,
           TIMED_WAITING, DISCONTINUING, INPUT_WAITING, QUEUED_LICENSE_LIMIT_REACHED);
@@ -139,6 +143,13 @@ public class StatusUtils {
     return FLOWING_STATUSES;
   }
 
+  // All the statuses which means executions is not running
+  public EnumSet<Status> nonFlowingAndNonFinalStatuses() {
+    EnumSet<Status> statuses = EnumSet.complementOf(FLOWING_STATUSES);
+    statuses.removeAll(FINAL_STATUSES);
+    return statuses;
+  }
+
   public EnumSet<Status> retryableStatuses() {
     return RETRYABLE_STATUSES;
   }
@@ -153,6 +164,10 @@ public class StatusUtils {
 
   public EnumSet<Status> activeStatuses() {
     return ACTIVE_STATUSES;
+  }
+
+  public EnumSet<Status> getActiveStatusesExcludingWaiting() {
+    return ACTIVE_STATUSES_EXCLUDING_WAITING;
   }
 
   public EnumSet<Status> graphUpdateStatuses() {
@@ -205,7 +220,8 @@ public class StatusUtils {
       case FREEZE_FAILED:
         return FINALIZABLE_STATUSES;
       case SUCCEEDED:
-        return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED);
+        return EnumSet.of(INTERVENTION_WAITING, RUNNING, QUEUED, WAIT_STEP_RUNNING, ASYNC_WAITING, APPROVAL_WAITING,
+            RESOURCE_WAITING, INPUT_WAITING);
       case IGNORE_FAILED:
         return EnumSet.of(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED, QUEUED);
       case QUEUED_LICENSE_LIMIT_REACHED: // Final Status and Running is not added to prevent any race condition

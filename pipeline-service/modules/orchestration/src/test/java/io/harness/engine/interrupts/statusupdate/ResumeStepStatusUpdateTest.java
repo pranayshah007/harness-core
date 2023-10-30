@@ -11,7 +11,6 @@ import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
-import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertFalse;
@@ -56,14 +55,12 @@ public class ResumeStepStatusUpdateTest extends OrchestrationTestBase {
                                       .build();
     doReturn(false).when(resumeStepStatusUpdate).resumeParents(nodeExecution);
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(0)).updateStatus(anyString(), any());
+    verify(planExecutionService, times(0)).calculateAndUpdateRunningStatusUnderLock(anyString(), any());
     doReturn(true).when(resumeStepStatusUpdate).resumeParents(nodeExecution);
-    doReturn(SUCCEEDED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(0)).updateStatus(anyString(), any());
-    doReturn(PAUSED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
+    verify(planExecutionService, times(1)).calculateAndUpdateRunningStatusUnderLock(anyString(), any());
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(1)).updateStatus(anyString(), any());
+    verify(planExecutionService, times(2)).calculateAndUpdateRunningStatusUnderLock(anyString(), any());
   }
 
   @Test

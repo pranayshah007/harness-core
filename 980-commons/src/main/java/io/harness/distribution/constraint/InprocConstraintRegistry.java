@@ -49,7 +49,7 @@ public class InprocConstraintRegistry implements ConstraintRegistry {
   }
 
   @Override
-  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit) {
+  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
     return this.consumers.computeIfAbsent(computeKey(id, unit), key -> new ArrayList<>());
   }
 

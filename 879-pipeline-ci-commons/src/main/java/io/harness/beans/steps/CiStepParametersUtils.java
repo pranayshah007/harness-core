@@ -44,9 +44,7 @@ public class CiStepParametersUtils {
 
   public static StepElementParametersBuilder getStepParameters(
       CIAbstractStepNode stepNode, OnFailRollbackParameters failRollbackParameters) {
-    StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);
-    stepBuilder.rollbackParameters(failRollbackParameters);
-    return stepBuilder;
+    return getStepParameters(stepNode);
   }
 
   public void saveCIStepStatusInfo(Ambiance ambiance, StepExecutionStatus status, String stepIdentifier) {

@@ -200,7 +200,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldHaveNextIterations() {
     LdapSettings ldapSettings = createLDAPSSOProvider();
-    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    ldapSettings.setCronExpression("0 0 */1 ? * * *");
     ldapSettings.recalculateNextIterations(SSOSettingsKeys.nextIterations, true, 0);
     assertThat(ldapSettings.getNextIterations()).isNotEmpty();
     assertThat(ldapSettings.getNextIterations().size()).isGreaterThan(1);

@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
           value = RemoveTargetsToVariationTargetMapYaml.class, name = "RemoveTargetsToVariationTargetMap"),
       @JsonSubTypes.Type(value = AddSegmentToVariationTargetMapYaml.class, name = "AddSegmentToVariationTargetMap"),
       @JsonSubTypes.Type(
-          value = RemoveSegmentToVariationTargetMapYaml.class, name = "RemoveSegmentToVariationTargetMap"),
+          value = RemoveSegmentToVariationTargetMapYaml.class, name = "RemoveSegmentsToVariationTargetMap"),
 })
 @OwnedBy(HarnessTeam.CF)
 public interface PatchInstruction {
@@ -53,7 +53,7 @@ public interface PatchInstruction {
     @JsonProperty("AddSegmentToVariationTargetMap")
     ADD_SEGMENT_TO_VARIATION_TARGET_MAP("AddSegmentToVariationTargetMap"),
     @JsonProperty("RemoveSegmentsToVariationTargetMap")
-    REMOVE_SEGMENT_TO_VARIATION_TARGET_MAP("RemoveSegmentToVariationTargetMap");
+    REMOVE_SEGMENT_TO_VARIATION_TARGET_MAP("RemoveSegmentsToVariationTargetMap");
     private final String yamlName;
 
     Type(String yamlName) {

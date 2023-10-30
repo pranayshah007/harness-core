@@ -21,6 +21,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -81,12 +83,18 @@ public class RuntimeInputValuesValidator {
         }
         InputSetValidator inputSetValidator = templateField.getInputSetValidator();
         if (inputSetValidator.getValidatorType() == REGEX) {
-          boolean matchesPattern =
-              NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
-          error = matchesPattern
-              ? ""
-              : String.format("The value provided for [%s: %s] does not match the required regex pattern",
-                  expressionFqn, inputSetFieldValue);
+          try {
+            boolean matchesPattern = NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
+            error = matchesPattern
+                ? ""
+                : String.format("The value provided for [%s: %s] does not match the required regex pattern",
+                    expressionFqn, inputSetFieldValue);
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(
+                String.format("Invalid pattern %s provided in %s", inputSetValidator.getParameters(), expressionFqn),
+                e);
+          }
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           List<String> allowedValues = AllowedValuesHelper.split(inputSetValidator.getParameters());
           List<String> inputFields = AllowedValuesHelper.split(inputSetFieldValue);
@@ -178,8 +186,14 @@ public class RuntimeInputValuesValidator {
 
         InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
         if (inputSetValidator.getValidatorType() == REGEX) {
-          return NGExpressionUtils.matchesPattern(
-              Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+          try {
+            return NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(String.format("Invalid pattern %s provided for validation of value %s",
+                                                  inputSetValidator.getParameters(), objectToValidateFieldValue),
+                e);
+          }
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           String[] allowedValues = inputSetValidator.getParameters().split(", *");
           for (String allowedValue : allowedValues) {
@@ -202,7 +216,8 @@ public class RuntimeInputValuesValidator {
     }
     ParameterField<String> inputSetField;
     try {
-      inputSetField = YamlUtils.read(inputSetValue, new TypeReference<ParameterField<String>>() {});
+      inputSetField = YamlUtils.read(
+          JsonPipelineUtils.writeJsonString(inputSetValue), new TypeReference<ParameterField<String>>() {});
     } catch (IOException e) {
       log.error(String.format("Error mapping input set value %s to ParameterField class", inputSetValue), e);
       return null;

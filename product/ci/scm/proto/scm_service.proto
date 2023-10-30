@@ -44,6 +44,8 @@ enum Action {
   UNPUBLISH = 13;
   PRERELEASE = 14;
   RELEASE = 15;
+  // pull request
+  REVIEWREADY = 16;
 }
 
 // User represents a user account.

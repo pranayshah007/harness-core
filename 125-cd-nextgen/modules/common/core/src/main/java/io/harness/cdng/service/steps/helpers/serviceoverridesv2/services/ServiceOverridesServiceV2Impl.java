@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -13,6 +14,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -26,9 +28,12 @@ import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.setupusage.ServiceOverridesV2SetupUsageHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
@@ -67,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -77,6 +83,7 @@ import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -93,6 +100,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   private final ServiceOverrideValidatorService overrideValidatorService;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
+  @Inject ServiceOverridesV2SetupUsageHelper serviceOverridesV2SetupUsageHelper;
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -115,27 +123,62 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   }
 
   @Override
+  public Optional<NGServiceOverridesEntity> getOverridesContainingYaml(@NonNull String accountId, String orgIdentifier,
+      String projectIdentifier, @NonNull String serviceOverridesIdentifier) {
+    return serviceOverrideRepositoryV2
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndTypeAndYamlExistsAndYamlNotNull(accountId,
+            orgIdentifier, projectIdentifier, serviceOverridesIdentifier, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+  }
+
+  @Override
   public NGServiceOverridesEntity create(@NonNull NGServiceOverridesEntity requestedEntity) {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
 
     Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
-    if (existingEntity.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("Service Override with identifier [%s] already exists", requestedEntity.getIdentifier()));
+    if (existingEntity.isEmpty() && ServiceOverridesType.ENV_SERVICE_OVERRIDE == requestedEntity.getType()) {
+      validateV1OverrideNotExistOrThrow(requestedEntity);
     }
 
-    return Failsafe.with(transactionRetryPolicy)
-        .get(() -> transactionTemplate.execute(status -> saveAndSendOutBoxEvent(requestedEntity)));
+    if (existingEntity.isPresent()) {
+      throw new InvalidRequestException(
+          format("Service Override with identifier [%s] already exists", requestedEntity.getIdentifier()));
+    }
+
+    NGServiceOverridesEntity createdEntity =
+        Failsafe.with(transactionRetryPolicy)
+            .get(() -> transactionTemplate.execute(status -> saveAndSendOutBoxEvent(requestedEntity)));
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestedEntity);
+    serviceOverridesV2SetupUsageHelper.createSetupUsages(createdEntity, referredEntities);
+    return createdEntity;
+  }
+
+  private void validateV1OverrideNotExistOrThrow(@NotNull NGServiceOverridesEntity requestedEntity) {
+    Optional<NGServiceOverridesEntity> existingEntityContainingYaml =
+        getOverridesContainingYaml(requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(),
+            requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+    if (existingEntityContainingYaml.isPresent()) {
+      throw new InvalidRequestException(format(
+          "Service override of version V1 already exist for environment: %s and service: %s already exist please delete or migrate v1 type of overrides and try again",
+          requestedEntity.getEnvironmentRef(), requestedEntity.getServiceRef()));
+    }
   }
 
   @Override
   public NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
@@ -143,20 +186,41 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
+    if (existingEntity.isEmpty() && ServiceOverridesType.ENV_SERVICE_OVERRIDE == requestedEntity.getType()) {
+      validateV1OverrideNotExistOrThrow(requestedEntity);
+    }
+
     if (existingEntity.isPresent()) {
       overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntity.get(), requestedEntity);
       ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO =
           ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntity.get());
 
-      return Failsafe.with(transactionRetryPolicy)
-          .get(
-              ()
-                  -> transactionTemplate.execute(
-                      status -> updateAndSendOutboxEvent(requestedEntity, equalityCriteria, oldOverrideAuditEventDTO)));
+      NGServiceOverridesEntity updateEntity =
+          Failsafe.with(transactionRetryPolicy)
+              .get(()
+                       -> transactionTemplate.execute(status
+                           -> updateAndSendOutboxEvent(requestedEntity, equalityCriteria, oldOverrideAuditEventDTO)));
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestedEntity);
+      serviceOverridesV2SetupUsageHelper.updateSetupUsages(updateEntity, referredEntities);
+      return updateEntity;
     } else {
-      throw new InvalidRequestException(String.format(
+      throw new InvalidRequestException(format(
           "ServiceOverride [%s] under Project[%s], Organization [%s] doesn't exist.", requestedEntity.getIdentifier(),
           requestedEntity.getProjectIdentifier(), requestedEntity.getOrgIdentifier()));
+    }
+  }
+
+  private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(NGServiceOverridesEntity overridesEntity) {
+    try {
+      return serviceOverridesV2SetupUsageHelper.getAllReferredEntities(overridesEntity);
+    } catch (RuntimeException ex) {
+      log.error(
+          format("Exception while retrieving referred entities for overrides: [%s]. ", overridesEntity.getIdentifier()),
+          ex);
+      throw new InternalServerErrorException(
+          String.format(
+              "Exception while retrieving referred entities for overrides: [%s]. ", overridesEntity.getIdentifier())
+          + ex.getMessage());
     }
   }
 
@@ -167,7 +231,11 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       existingEntity = checkIfServiceOverrideExistAndThrow(accountId, orgIdentifier, projectIdentifier, identifier);
     }
 
-    return deleteInternal(accountId, orgIdentifier, projectIdentifier, identifier, existingEntity);
+    boolean deleted = deleteInternal(accountId, orgIdentifier, projectIdentifier, identifier, existingEntity);
+    if (deleted) {
+      serviceOverridesV2SetupUsageHelper.deleteSetupUsages(existingEntity);
+    }
+    return deleted;
   }
 
   @Override
@@ -185,6 +253,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
@@ -192,10 +264,15 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Optional<NGServiceOverridesEntity> existingEntityInDb = get(requestedEntity.getAccountId(),
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
+    if (existingEntityInDb.isEmpty() && ServiceOverridesType.ENV_SERVICE_OVERRIDE == requestedEntity.getType()) {
+      validateV1OverrideNotExistOrThrow(requestedEntity);
+    }
     if (existingEntityInDb.isEmpty()) {
       NGServiceOverridesEntity createdOverrideEntity =
           Failsafe.with(transactionRetryPolicy)
               .get(() -> transactionTemplate.execute(status -> saveAndSendOutBoxEvent(requestedEntity)));
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestedEntity);
+      serviceOverridesV2SetupUsageHelper.createSetupUsages(createdOverrideEntity, referredEntities);
       return new ImmutablePair<>(createdOverrideEntity, true);
     }
 
@@ -211,6 +288,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
                 ()
                     -> transactionTemplate.execute(status
                         -> updateAndSendOutboxEvent(mergedOverrideEntity, equalityCriteria, oldOverrideAuditEventDTO)));
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestedEntity);
+    serviceOverridesV2SetupUsageHelper.updateSetupUsages(updateOverrideEntity, referredEntities);
     return new ImmutablePair<>(updateOverrideEntity, false);
   }
 
@@ -426,7 +505,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   private NGServiceOverridesEntity saveAndSendOutBoxEvent(@NonNull NGServiceOverridesEntity requestedEntity) {
     NGServiceOverridesEntity tempCreateResult = serviceOverrideRepositoryV2.save(requestedEntity);
     if (tempCreateResult == null) {
-      throw new InvalidRequestException(String.format(
+      throw new InvalidRequestException(format(
           "NGServiceOverridesEntity under Project[%s], Organization [%s], Environment [%s] and Service [%s] couldn't be created.",
           requestedEntity.getProjectIdentifier(), requestedEntity.getOrgIdentifier(),
           requestedEntity.getEnvironmentRef(), requestedEntity.getServiceRef()));
@@ -455,7 +534,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     NGServiceOverridesEntity updatedServiceOverride =
         serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);
     if (updatedServiceOverride == null) {
-      throw new InvalidRequestException(String.format(
+      throw new InvalidRequestException(format(
           "ServiceOverride [%s] under Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
           requestedEntity.getIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getOrgIdentifier()));
     }
@@ -564,8 +643,8 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
                 accountId, orgIdentifier, projectIdentifier, identifier);
     if (existingOverrideInDb.isEmpty()) {
       throw new InvalidRequestException(
-          String.format("Service Override with identifier: [%s], projectId: [%s], orgId: [%s] does not exist",
-              identifier, projectIdentifier, orgIdentifier));
+          format("Service Override with identifier: [%s], projectId: [%s], orgId: [%s] does not exist", identifier,
+              projectIdentifier, orgIdentifier));
     }
     return existingOverrideInDb.get();
   }
@@ -579,7 +658,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       DeleteResult deleteResult = serviceOverrideRepositoryV2.delete(equalityCriteria);
       if (!deleteResult.wasAcknowledged() || deleteResult.getDeletedCount() != 1) {
         throw new InvalidRequestException(
-            String.format("Service Override [%s], Project[%s], Organization [%s] couldn't be deleted.", identifier,
+            format("Service Override [%s], Project[%s], Organization [%s] couldn't be deleted.", identifier,
                 projectIdentifier, orgIdentifier));
       }
       try {
@@ -780,7 +859,17 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   private boolean deleteAllInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = getServiceOverrideEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = serviceOverrideRepositoryV2.delete(criteria);
+    if (delete.wasAcknowledged()) {
+      deleteSetupUsages(criteria);
+    }
     return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+  }
+
+  private void deleteSetupUsages(Criteria criteria) {
+    List<NGServiceOverridesEntity> serviceOverridesEntities = findAll(criteria);
+    for (NGServiceOverridesEntity serviceOverridesEntity : serviceOverridesEntities) {
+      serviceOverridesV2SetupUsageHelper.deleteSetupUsages(serviceOverridesEntity);
+    }
   }
 
   @Override
@@ -792,6 +881,9 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Criteria criteria =
         getServiceOverrideEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, environmentRef);
     DeleteResult delete = serviceOverrideRepositoryV2.delete(criteria);
+    if (delete.wasAcknowledged()) {
+      deleteSetupUsages(criteria);
+    }
     return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
   }
 
@@ -805,6 +897,9 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Criteria criteria = getServiceOverrideEqualityCriteriaForInfra(
         accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
     DeleteResult delete = serviceOverrideRepositoryV2.delete(criteria);
+    if (delete.wasAcknowledged()) {
+      deleteSetupUsages(criteria);
+    }
     return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
   }
 
@@ -836,6 +931,9 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
           serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier(), scopedServiceRef);
     }
     DeleteResult delete = serviceOverrideRepositoryV2.delete(criteria);
+    if (delete.wasAcknowledged()) {
+      deleteSetupUsages(criteria);
+    }
     return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
   }
 

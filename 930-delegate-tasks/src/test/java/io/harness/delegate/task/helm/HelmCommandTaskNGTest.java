@@ -59,7 +59,6 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Mock private LogCallback logCallback;
   @Mock private HelmTaskHelperBase helmTaskHelperBase;
   private HelmCommandTaskNG spyHelmCommandTask;
-
   @InjectMocks
   private final HelmCommandTaskNG helmCommandTaskNG = new HelmCommandTaskNG(
       DelegateTaskPackage.builder().delegateId("delegateId").data(TaskData.builder().async(false).build()).build(),

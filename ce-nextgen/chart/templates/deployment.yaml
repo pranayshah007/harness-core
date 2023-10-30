@@ -8,8 +8,8 @@ metadata:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -25,9 +25,14 @@ spec:
       {{- include "nextgen-ce.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.global.commonAnnotations .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.global.commonAnnotations }}
+          {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         app: nextgen-ce
@@ -96,27 +101,25 @@ spec:
           envFrom:
             - configMapRef:
                 name: nextgen-ce
-            - secretRef:
-                name: nextgen-ce
           env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | nindent 12 }}
-            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALEDB_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
-            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "JWT_AUTH_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "JWT_AUTH_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NEXT_GEN_MANAGER_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "NEXT_GEN_MANAGER_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "JWT_IDENTITY_SERVICE_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "JWT_IDENTITY_SERVICE_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "NOTIFICATION_CLIENT_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "NOTIFICATION_CLIENT_SECRET") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "ACCESS_CONTROL_SECRET" "defaultKubernetesSecretName" "nextgen-ce" "defaultKubernetesSecretKey" "ACCESS_CONTROL_SECRET") | indent 12 }}
             - name: EVENTS_MONGO_DB_URL
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "events" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "events" ) }}
             - name: NOTIFICATION_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
             - name: TIMESCALEDB_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             {{- if .Values.global.database.clickhouse.enabled }}
-            - name : CLICKHOUSE_USERNAME
-              value: {{ .Values.clickhouse.username | quote}}
-            - name: CLICKHOUSE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.clickhouse.password.name }}
-                  key: {{ .Values.clickhouse.password.key }}
+            {{- $globalClickhouseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "clickhouse") }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CLICKHOUSE_USERNAME" "defaultValue" .Values.clickhouse.username "extKubernetesSecretCtxs" (list .Values.global.database.clickhouse.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalClickhouseESOSecretIdentifier "secretCtx" .Values.global.database.clickhouse.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CLICKHOUSE_PASSWORD" "defaultKubernetesSecretName" .Values.clickhouse.password.name "defaultKubernetesSecretKey" .Values.clickhouse.password.key "extKubernetesSecretCtxs" (list .Values.global.database.clickhouse.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalClickhouseESOSecretIdentifier "secretCtx" .Values.global.database.clickhouse.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}      
             {{- end }}
           {{- if not .Values.workloadIdentity.enabled }}
           {{- if .Values.lifecycleHooks }}

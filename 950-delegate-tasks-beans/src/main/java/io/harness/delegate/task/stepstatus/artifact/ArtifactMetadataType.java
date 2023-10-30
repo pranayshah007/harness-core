@@ -14,5 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 public enum ArtifactMetadataType {
   DOCKER_ARTIFACT_METADATA,
   FILE_ARTIFACT_METADATA,
-  SSCA_ARTIFACT_METADATA
+  SSCA_ARTIFACT_METADATA,
+  PROVENANCE_ARTIFACT_METADATA,
 }

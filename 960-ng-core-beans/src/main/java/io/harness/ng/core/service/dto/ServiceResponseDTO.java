@@ -49,6 +49,7 @@ public class ServiceResponseDTO {
   @Schema(hidden = true) EntityGitDetails entityGitDetails;
   @Schema(hidden = true) String connectorRef;
   @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
   @Schema(hidden = true) CacheResponseMetadataDTO cacheResponseMetadataDTO;
 
   @JsonIgnore

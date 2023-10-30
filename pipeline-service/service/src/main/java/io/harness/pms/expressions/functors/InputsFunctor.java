@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.LateBindingValue;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -30,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class InputsFunctor implements LateBindingValue {
@@ -45,13 +48,16 @@ public class InputsFunctor implements LateBindingValue {
   public Object bind() {
     YamlNode pipelineNode = new YamlNode(pipelineJsonNodeV1);
     JsonNode versionField = pipelineNode.getField("version").getNode().getCurrJsonNode();
-    if (versionField == null || PipelineVersion.V0.equals(versionField.asText())) {
-      log.warn("InputsFunctor is invoked for the PipelineYaml Version {}.", PipelineVersion.V0);
+    if (versionField == null || HarnessYamlVersion.V0.equals(versionField.asText())) {
+      log.warn("InputsFunctor is invoked for the PipelineYaml Version {}.", HarnessYamlVersion.V0);
       return Collections.emptyMap();
     }
 
     // This is the inputsYamlNode from pipeline yaml. It contains all metadata of the inputs.
-    YamlNode inputsYamlNode = pipelineNode.getField(YAMLFieldNameConstants.INPUTS).getNode();
+    YamlNode inputsYamlNode = pipelineNode.gotoPath("spec/inputs");
+    if (inputsYamlNode == null) {
+      return Collections.emptyMap();
+    }
 
     Map<String, Object> inputsMap = getMergedInputsMap(inputsYamlNode);
     for (Map.Entry<String, Object> entry : inputsMap.entrySet()) {

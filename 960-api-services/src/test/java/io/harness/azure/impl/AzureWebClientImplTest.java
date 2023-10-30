@@ -7,7 +7,12 @@
 
 package io.harness.azure.impl;
 
+import static io.harness.azure.model.AzureConstants.FILE_BLANK_ERROR_MSG;
+import static io.harness.azure.model.AzureConstants.SLOT_NAME_BLANK_VALIDATION_MSG;
+import static io.harness.rule.OwnerRule.ABOSII;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -41,6 +46,8 @@ import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
 import com.azure.resourcemanager.appservice.fluent.WebSiteManagementClient;
 import com.azure.resourcemanager.appservice.implementation.WebSiteManagementClientImpl;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
+import com.azure.resourcemanager.appservice.models.DeployType;
 import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import com.azure.resourcemanager.appservice.models.DeploymentSlots;
 import com.azure.resourcemanager.appservice.models.WebApp;
@@ -48,6 +55,7 @@ import com.azure.resourcemanager.appservice.models.WebAppBasic;
 import com.azure.resourcemanager.appservice.models.WebApps;
 import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
 import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -353,6 +361,104 @@ public class AzureWebClientImplTest extends CategoryTest {
 
     assertThat(slotState).isNotNull();
     assertThat(slotState).isEqualTo(runningSlotState);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployAsync() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final String slotName = "slotName";
+    final DeployType deployType = DeployType.JAR;
+    final File artifactFile = mock(File.class);
+    final DeployOptions deployOptions = new DeployOptions().withCleanDeployment(true);
+
+    DeploymentSlot deploymentSlot = mockDeploymentSlot(slotName);
+    DeploymentSlots deploymentSlots = mockDeploymentSlots(deploymentSlot, null);
+    WebApp webAppMock = mockWebApp("webAppName", deploymentSlots);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
+
+    doReturn(Mono.empty()).when(deploymentSlot).deployAsync(deployType, artifactFile, deployOptions);
+    azureWebClientImpl.deployAsync(azureWebClientContext, deployType, slotName, artifactFile, deployOptions);
+
+    verify(deploymentSlot).deployAsync(deployType, artifactFile, deployOptions);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployAsyncToProd() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final String slotName = "production";
+    final DeployType deployType = DeployType.JAR;
+    final File artifactFile = mock(File.class);
+    final DeployOptions deployOptions = new DeployOptions().withCleanDeployment(true);
+
+    WebApp webAppMock = mockWebApp("webAppName", null);
+    WebApps webAppsMock = mockWebApps(webAppMock, null);
+    doReturn(webAppsMock).when(azure).webApps();
+
+    doReturn(Mono.empty()).when(webAppMock).deployAsync(deployType, artifactFile, deployOptions);
+    azureWebClientImpl.deployAsync(azureWebClientContext, deployType, slotName, artifactFile, deployOptions);
+
+    verify(webAppMock).deployAsync(deployType, artifactFile, deployOptions);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployAsyncBlankSlotName() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final DeployType deployType = DeployType.JAR;
+    final File artifactFile = mock(File.class);
+
+    assertThatThrownBy(() -> azureWebClientImpl.deployAsync(azureWebClientContext, deployType, "", artifactFile, null))
+        .hasStackTraceContaining(SLOT_NAME_BLANK_VALIDATION_MSG);
+    assertThatThrownBy(
+        () -> azureWebClientImpl.deployAsync(azureWebClientContext, deployType, null, artifactFile, null))
+        .hasStackTraceContaining(SLOT_NAME_BLANK_VALIDATION_MSG);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployAsyncNullFile() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final DeployType deployType = DeployType.JAR;
+
+    assertThatThrownBy(() -> azureWebClientImpl.deployAsync(azureWebClientContext, deployType, "prod", null, null))
+        .hasStackTraceContaining(FILE_BLANK_ERROR_MSG);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployToWebAppAsync() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final DeployType deployType = DeployType.JAR;
+    final File artifactFile = mock(File.class);
+    final DeployOptions deployOptions = new DeployOptions().withCleanDeployment(true);
+
+    WebApp webApp = mockWebApp("webAppName", null);
+    WebApps webApps = mockWebApps(webApp, null);
+    doReturn(webApps).when(azure).webApps();
+
+    doReturn(Mono.empty()).when(webApp).deployAsync(deployType, artifactFile, deployOptions);
+    azureWebClientImpl.deployToWebAppAsync(azureWebClientContext, deployType, artifactFile, deployOptions);
+
+    verify(webApp).deployAsync(deployType, artifactFile, deployOptions);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployToWebAppAsyncNullFile() {
+    final AzureWebClientContext azureWebClientContext = buildAzureWebClientContext();
+    final DeployType deployType = DeployType.JAR;
+
+    assertThatThrownBy(() -> azureWebClientImpl.deployToWebAppAsync(azureWebClientContext, deployType, null, null))
+        .hasStackTraceContaining(FILE_BLANK_ERROR_MSG);
   }
 
   public AzureWebClientContext buildAzureWebClientContext() {
