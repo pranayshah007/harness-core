@@ -33,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -61,8 +62,8 @@ public class TasArtifactBundledManifest implements ManifestAttributes, Visitable
   @ApiModelProperty(hidden = true)
   private String uuid;
   @EntityIdentifier String identifier;
-  @Wither ParameterField<String> manifestPath;
-  @Wither ParameterField<String> artifactPath;
+  @Wither @NotNull ParameterField<String> manifestPath;
+  @Wither @NotNull ParameterField<String> artifactPath;
   @Wither CfCliVersionNG cfCliVersion;
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
