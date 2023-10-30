@@ -71,3 +71,25 @@ Create the name of the sentinet image to use
 {{- define "ci-manager.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image .Values.securityImage.image .Values.ci_images.addon.image .Values.ci_images.lite_engine.image .Values.ci_images.git_clone.image .Values.ci_images.kaniko.image .Values.ci_images.kaniko_ecr.image .Values.ci_images.kaniko_gcr.image .Values.ci_images.gcs_upload.image .Values.ci_images.s3_upload.image .Values.ci_images.artifactory_upload.image .Values.ci_images.gcs_cache.image .Values.ci_images.s3_cache.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage CI-Manager Secrets
+USAGE:
+{{- "ci-manager.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "ci-manager.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_SERVICE_GLOBAL_TOKEN: {{ .ctx.Values.secrets.default.LOG_SERVICE_GLOBAL_TOKEN | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "TI_SERVICE_GLOBAL_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+TI_SERVICE_GLOBAL_TOKEN: {{ .ctx.Values.secrets.default.TI_SERVICE_GLOBAL_TOKEN | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

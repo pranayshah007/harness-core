@@ -24,6 +24,8 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.noop.AcquiredNoopLock;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -42,6 +44,7 @@ import org.mockito.MockedStatic;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTestBase {
   @Mock BarrierService barrierService;
+  @Mock PersistentLocker persistentLocker;
   @InjectMocks BarrierPositionHelperEventHandler barrierPositionHelperEventHandler;
 
   @Test
@@ -58,6 +61,7 @@ public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTes
                                .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
                                .build())
             .build();
+    when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(AcquiredNoopLock.builder().build());
     when(barrierService.updatePosition(
              planExecutionId, BarrierPositionType.STEP, "setupId", executionId, "stageId", "stepGroupId", true))
         .thenReturn(List.of());

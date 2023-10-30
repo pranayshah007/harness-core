@@ -49,6 +49,7 @@ import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
+import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
@@ -90,12 +91,14 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Mock private OrganizationInstrumentationHelper instrumentationHelper;
   private OrganizationServiceImpl organizationService;
   @Mock private DefaultUserGroupService defaultUserGroupService;
+  @Mock private ScopeInfoService scopeInfoService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    organizationService = spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate,
-        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, defaultUserGroupService));
+    organizationService =
+        spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate, ngUserService,
+            accessControlClient, scopeAccessHelper, instrumentationHelper, defaultUserGroupService, scopeInfoService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 

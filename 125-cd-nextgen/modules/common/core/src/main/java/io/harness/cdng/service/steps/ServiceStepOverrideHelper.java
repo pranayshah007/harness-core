@@ -7,7 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
-import static io.harness.cdng.manifest.ManifestType.SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.service.steps.constants.ServiceOverrideConstants.overrideMapper;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
@@ -18,12 +18,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.CLUSTER_GLOBAL_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.CLUSTER_SERVICE_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -44,7 +38,6 @@ import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
 import io.harness.cdng.hooks.ServiceHook;
 import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput;
-import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -52,6 +45,7 @@ import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.WebAppSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -76,7 +70,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,11 +85,6 @@ import org.jetbrains.annotations.Nullable;
 @Slf4j
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
-  private static Map<String, String> overrideMapper = Map.of(SERVICE.toString(), "service",
-      ENV_GLOBAL_OVERRIDE.toString(), "Environment override", ENV_SERVICE_OVERRIDE.toString(),
-      "Environment Service override", INFRA_GLOBAL_OVERRIDE.toString(), "Infrastructure override",
-      INFRA_SERVICE_OVERRIDE.toString(), "Infrastructure Service override", CLUSTER_GLOBAL_OVERRIDE.toString(),
-      "Cluster override", CLUSTER_SERVICE_OVERRIDE.toString(), "Cluster Service override");
 
   // This is for overrides V1 design (& ServiceStepV3 where service config is present)
   public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
@@ -184,10 +172,11 @@ public class ServiceStepOverrideHelper {
 
     checkCrossLocationDuplicateManifestIdentifiers(
         svcManifests, envGlobalManifests, svcIdentifier, envIdentifier, ENVIRONMENT_GLOBAL_OVERRIDES);
-    validateAllowedManifestTypesInOverrides(envGlobalManifests, ENVIRONMENT_GLOBAL_OVERRIDES);
+    ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+        envGlobalManifests, ENVIRONMENT_GLOBAL_OVERRIDES);
     checkCrossLocationDuplicateManifestIdentifiers(
         svcManifests, svcOverrideManifests, svcIdentifier, envIdentifier, SERVICE_OVERRIDES);
-    validateAllowedManifestTypesInOverrides(svcOverrideManifests, SERVICE_OVERRIDES);
+    ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(svcOverrideManifests, SERVICE_OVERRIDES);
 
     checkCrossLocationDuplicateManifestIdentifiers(
         svcOverrideManifests, envGlobalManifests, svcIdentifier, envIdentifier, SERVICE_OVERRIDES);
@@ -205,7 +194,7 @@ public class ServiceStepOverrideHelper {
           manifestsMapGroupByType.entrySet()) {
         checkDuplicateIdentifiersAndThrow(
             overrideManifestEntry.getValue(), existingUniqueIdentifier, overrideManifestEntry.getKey().toString());
-        validateAllowedManifestTypesInOverrides(
+        ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
             overrideManifestEntry.getValue(), overrideManifestEntry.getKey().toString());
       }
     }
@@ -271,26 +260,6 @@ public class ServiceStepOverrideHelper {
     return environmentGlobalOverride == null || environmentGlobalOverride.getManifests() == null
         ? Collections.emptyList()
         : environmentGlobalOverride.getManifests();
-  }
-
-  private static void validateAllowedManifestTypesInOverrides(
-      List<ManifestConfigWrapper> svcOverrideManifests, String overrideLocation) {
-    if (isEmpty(svcOverrideManifests)) {
-      return;
-    }
-    Set<String> unsupportedManifestTypesUsed =
-        svcOverrideManifests.stream()
-            .map(ManifestConfigWrapper::getManifest)
-            .filter(Objects::nonNull)
-            .map(ManifestConfig::getType)
-            .map(ManifestConfigType::getDisplayName)
-            .filter(type -> !SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES.contains(type))
-            .collect(Collectors.toSet());
-    if (isNotEmpty(unsupportedManifestTypesUsed)) {
-      throw new InvalidRequestException(format("Unsupported Manifest Types: [%s] found for %s",
-          unsupportedManifestTypesUsed.stream().map(Object::toString).collect(Collectors.joining(",")),
-          isNull(overrideMapper.get(overrideLocation)) ? overrideLocation : overrideMapper.get(overrideLocation)));
-    }
   }
 
   private static void checkCrossLocationDuplicateManifestIdentifiers(List<ManifestConfigWrapper> manifestsA,

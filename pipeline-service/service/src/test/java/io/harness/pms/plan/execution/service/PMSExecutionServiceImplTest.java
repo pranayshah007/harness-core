@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.interrupts.InterruptType.ABORT_ALL;
+import static io.harness.rule.OwnerRule.AYUSHI_TIWARI;
 import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -222,7 +223,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form1.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
     PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO1 =
         PipelineExecutionFilterPropertiesDTO.builder()
             .triggerTypes(Collections.singletonList(TriggerType.WEBHOOK))
@@ -231,12 +232,12 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form2.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
     Criteria form3 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
         null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
     assertThat(form3.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test
@@ -261,11 +262,11 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         "FILTER_IDENTIFIER", null, null, null, null, false, !PIPELINE_DELETED, true);
     assertThat(form3.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = AYUSHI_TIWARI)
   @Category(UnitTests.class)
   public void testFormCriteriaForParentInfoCriteria() {
     doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
@@ -276,7 +277,9 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         Criteria.where(PlanExecutionSummaryKeys.isChildPipeline).is(false));
 
     List<Boolean> inChildList =
-        (List<Boolean>) ((Document) form.getCriteriaObject().get(PlanExecutionSummaryKeys.isChildPipeline)).get("$in");
+        (List<Boolean>) ((Document) ((Document) ((BasicDBList) form.getCriteriaObject().get("$and")).get(0))
+                             .get(PlanExecutionSummaryKeys.isChildPipeline))
+            .get("$in");
     assertThat(inChildList.size()).isEqualTo(2);
     assertThat(inChildList.get(0)).isNull();
     assertThat(inChildList.get(1)).isEqualTo(false);
@@ -322,7 +325,9 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
 
     criteria.andOperator(searchCriteria);
 
-    assertThat(form.getCriteriaObject().get("$and")).isEqualTo(criteria.getCriteriaObject().get("$and"));
+    assertThat(((Document) ((BasicDBList) form.getCriteriaObject().get("$and")).get(0)).size()).isEqualTo(3);
+    assertThat(searchCriteria.getCriteriaObject().toString())
+        .isEqualTo("Document{{$or=[Document{{modules=[pms]}}, Document{{modules=Document{{$in=[cd]}}}}]}}");
   }
 
   @Test

@@ -27,4 +27,6 @@ public interface CreditService {
   void setCreditStatusExpired(Credit entity);
 
   CreditDTO updateCredit(String accountIdentifier, CreditDTO creditDTO);
+
+  void deleteCredit(String creditId, String accountIdentifier);
 }

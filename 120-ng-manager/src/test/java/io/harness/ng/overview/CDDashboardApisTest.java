@@ -11,11 +11,13 @@ import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.INVALID_CHANGE_RATE;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,6 +30,7 @@ import io.harness.ng.core.dashboard.EnvironmentDeploymentsInfo;
 import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
+import io.harness.ng.core.dashboard.ServiceDeployments;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
 import io.harness.ng.overview.dto.Deployment;
@@ -1081,5 +1084,227 @@ public class CDDashboardApisTest extends CategoryTest {
                                                       .build();
 
     assertThat(expectedResult).isEqualTo(dashboardExecutionStatusInfo);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetDeploymentActiveFailedRunningInfoAll() {
+    String deploymentsFetchQuery =
+        "select id,name,pipelineidentifier,startts,endTs,status,planexecutionid,moduleinfo_branch_name,source_branch,moduleinfo_branch_commit_message,moduleinfo_branch_commit_id,moduleinfo_event,moduleinfo_repository,trigger_type,moduleinfo_author_id,author_avatar,orgidentifier,projectidentifier from pipeline_execution_summary_cd where id in ( select distinct pipeline_execution_summary_cd_id from service_infra_info where accountid='acc' and service_id='account.serviceID') and startts>='1619626802000' and startts<='1622564032000' order by startts desc";
+    String serviceTagQuery =
+        "select service_name,service_id,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from service_infra_info where pipeline_execution_summary_cd_id in (select distinct pipeline_execution_summary_cd_id from service_infra_info where accountid='acc' and service_id='account.serviceID') and service_name is not null and service_id='account.serviceID';";
+    List<String> objectIdListFailure = Arrays.asList("11", "12", "13", "14", "15", "16", "17", "18");
+    List<String> namePipelineListFailure =
+        Arrays.asList("name1", "name2", "name3", "name4", "name5", "name1", "name2", "name3");
+    List<String> identifier = Arrays.asList("name1", "name2", "name3", "name4", "name5", "name1", "name2", "name3");
+    List<String> planExecutionList =
+        Arrays.asList("planId1", "planId2", "planId3", "planId4", "planId5", "planId1", "planId2", "planId3");
+    List<String> orgIdentifierList = Arrays.asList("org1", "org2", "org1", "org1", "org3", "org2", "org3", "org2");
+    List<String> projectIdentifierList =
+        Arrays.asList("project1", "project2", "project1", "project1", "project3", "project2", "project3", "project2");
+    List<Long> startTsFailure = Arrays.asList(1619626802000L, 1619885951000L, 1619885925000L, 1619799469000L,
+        1619885815000L, 1619972127000L, 1619799299000L, 1619885632000L);
+    List<Long> endTsFailure = Arrays.asList(1622218802000L, 1622564351000L, 1622564325000L, 1622391469000L,
+        1622564215000L, 1622650527000L, 1622391299000L, 1622564032000L);
+    List<String> deploymentStatusFailure = Arrays.asList(failedStatusList.get(0), failedStatusList.get(1),
+        pendingStatusList.get(0), activeStatusList.get(0), activeStatusList.get(1), failedStatusList.get(2),
+        pendingStatusList.get(1), failedStatusList.get(0));
+
+    // CI
+    List<GitInfo> gitInfoList = Arrays.asList(GitInfo.builder().build(), GitInfo.builder().build(),
+        GitInfo.builder().build(), GitInfo.builder().build(), GitInfo.builder().build(), GitInfo.builder().build(),
+        GitInfo.builder().build(), GitInfo.builder().build());
+
+    List<String> triggerTypeList =
+        Arrays.asList("Manual", "Webhook", "Manual", "Webhook", "Manual", "Manual", "Webhook", "Manual");
+
+    List<AuthorInfo> authorInfoList = Arrays.asList(AuthorInfo.builder().build(), AuthorInfo.builder().build(),
+        AuthorInfo.builder().build(), AuthorInfo.builder().build(), AuthorInfo.builder().build(),
+        AuthorInfo.builder().build(), AuthorInfo.builder().build(), AuthorInfo.builder().build());
+
+    DeploymentStatusInfoList deploymentStatusInfoList = DeploymentStatusInfoList.builder()
+                                                            .objectIdList(objectIdListFailure)
+                                                            .startTs(startTsFailure)
+                                                            .namePipelineList(namePipelineListFailure)
+                                                            .endTs(endTsFailure)
+                                                            .pipelineIdentifierList(identifier)
+                                                            .planExecutionIdList(planExecutionList)
+                                                            .deploymentStatus(deploymentStatusFailure)
+                                                            .gitInfoList(gitInfoList)
+                                                            .author(authorInfoList)
+                                                            .triggerType(triggerTypeList)
+                                                            .orgIdentifierList(orgIdentifierList)
+                                                            .projectIdentifierList(projectIdentifierList)
+                                                            .build();
+    doReturn(deploymentStatusInfoList)
+        .when(cdOverviewDashboardServiceImpl)
+        .queryCalculatorDeploymentInfo(deploymentsFetchQuery);
+
+    HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapFailure = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapFailure = new HashMap<>();
+    serviceTagMapFailure.put("11",
+        Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
+            ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag(null).build()));
+
+    serviceTagMapFailure.put(
+        "13", List.of(ServiceDeploymentInfo.builder().serviceName("serviceF3").serviceTag("tagF3").build()));
+
+    serviceTagMapFailure.put("15",
+        Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
+            ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag("tagF2").build()));
+
+    pipelineToEnvMapFailure.put("11",
+        Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build(),
+            EnvironmentDeploymentsInfo.builder().envId("2").envName("b").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "13", List.of(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "15", List.of(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    doReturn(new MutablePair<>(serviceTagMapFailure, pipelineToEnvMapFailure))
+        .when(cdOverviewDashboardServiceImpl)
+        .queryCalculatorServiceTagMag(serviceTagQuery);
+    ServiceDeployments serviceDeployments = cdOverviewDashboardServiceImpl.getAllDeploymentsByServiceId(
+        "acc", null, null, "account.serviceID", 1619626802000L, 1622564032000L);
+
+    verify(cdOverviewDashboardServiceImpl).queryCalculatorDeploymentInfo(deploymentsFetchQuery);
+    verify(cdOverviewDashboardServiceImpl).queryCalculatorServiceTagMag(serviceTagQuery);
+    List<ServiceDeployments.OrgDeployments> orgDeploymentsList = new ArrayList<>();
+
+    List<ExecutionStatusInfo> list1 = new ArrayList<>();
+    list1.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name1")
+                  .pipelineIdentifier("name1")
+                  .planExecutionId("planId1")
+                  .startTs(1619626802000L)
+                  .endTs(1622218802000L)
+                  .status(failedStatusList.get(0))
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(0))
+                  .author(authorInfoList.get(0))
+                  .serviceInfoList(serviceTagMapFailure.get("11"))
+                  .environmentInfoList(pipelineToEnvMapFailure.get("11"))
+                  .orgIdentifier("org1")
+                  .projectIdentifier("project1")
+                  .build());
+    list1.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name3")
+                  .pipelineIdentifier("name3")
+                  .planExecutionId("planId3")
+                  .startTs(1619885925000L)
+                  .endTs(1622564325000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(2))
+                  .author(authorInfoList.get(0))
+                  .status(pendingStatusList.get(0))
+                  .serviceInfoList(serviceTagMapFailure.get("13"))
+                  .environmentInfoList(pipelineToEnvMapFailure.get("13"))
+                  .orgIdentifier("org1")
+                  .projectIdentifier("project1")
+                  .build());
+    list1.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name4")
+                  .pipelineIdentifier("name4")
+                  .planExecutionId("planId4")
+                  .startTs(1619799469000L)
+                  .endTs(1622391469000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(3))
+                  .author(authorInfoList.get(0))
+                  .status(activeStatusList.get(0))
+                  .orgIdentifier("org1")
+                  .projectIdentifier("project1")
+                  .build());
+    ServiceDeployments.ProjectDeployments projectDeployments1 =
+        ServiceDeployments.ProjectDeployments.builder().projectIdentifier("project1").deployments(list1).build();
+    orgDeploymentsList.add(ServiceDeployments.OrgDeployments.builder()
+                               .projectDeploymentsList(List.of(projectDeployments1))
+                               .orgIdentifier("org1")
+                               .build());
+    List<ExecutionStatusInfo> list2 = new ArrayList<>();
+    list2.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name2")
+                  .pipelineIdentifier("name2")
+                  .planExecutionId("planId2")
+                  .startTs(1619885951000L)
+                  .endTs(1622564351000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(1))
+                  .author(authorInfoList.get(0))
+                  .status(failedStatusList.get(1))
+                  .orgIdentifier("org2")
+                  .projectIdentifier("project2")
+                  .build());
+    list2.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name1")
+                  .pipelineIdentifier("name1")
+                  .planExecutionId("planId1")
+                  .startTs(1619972127000L)
+                  .endTs(1622650527000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(0))
+                  .author(authorInfoList.get(0))
+                  .status(failedStatusList.get(2))
+                  .orgIdentifier("org2")
+                  .projectIdentifier("project2")
+                  .build());
+    list2.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name3")
+                  .pipelineIdentifier("name3")
+                  .planExecutionId("planId3")
+                  .startTs(1619885632000L)
+                  .endTs(1622564032000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(2))
+                  .author(authorInfoList.get(0))
+                  .status(failedStatusList.get(0))
+                  .orgIdentifier("org2")
+                  .projectIdentifier("project2")
+                  .build());
+    ServiceDeployments.ProjectDeployments projectDeployments2 =
+        ServiceDeployments.ProjectDeployments.builder().projectIdentifier("project2").deployments(list2).build();
+    orgDeploymentsList.add(ServiceDeployments.OrgDeployments.builder()
+                               .projectDeploymentsList(List.of(projectDeployments2))
+                               .orgIdentifier("org2")
+                               .build());
+    List<ExecutionStatusInfo> list3 = new ArrayList<>();
+    list3.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name5")
+                  .pipelineIdentifier("name5")
+                  .planExecutionId("planId5")
+                  .startTs(1619885815000L)
+                  .endTs(1622564215000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(4))
+                  .author(authorInfoList.get(0))
+                  .status(activeStatusList.get(1))
+                  .serviceInfoList(serviceTagMapFailure.get("15"))
+                  .environmentInfoList(pipelineToEnvMapFailure.get("15"))
+                  .orgIdentifier("org3")
+                  .projectIdentifier("project3")
+                  .build());
+    list3.add(ExecutionStatusInfo.builder()
+                  .pipelineName("name2")
+                  .pipelineIdentifier("name2")
+                  .planExecutionId("planId2")
+                  .startTs(1619799299000L)
+                  .endTs(1622391299000L)
+                  .gitInfo(gitInfoList.get(0))
+                  .triggerType(triggerTypeList.get(1))
+                  .author(authorInfoList.get(0))
+                  .status(pendingStatusList.get(1))
+                  .orgIdentifier("org3")
+                  .projectIdentifier("project3")
+                  .build());
+    ServiceDeployments.ProjectDeployments projectDeployments3 =
+        ServiceDeployments.ProjectDeployments.builder().projectIdentifier("project3").deployments(list3).build();
+    orgDeploymentsList.add(ServiceDeployments.OrgDeployments.builder()
+                               .projectDeploymentsList(List.of(projectDeployments3))
+                               .orgIdentifier("org3")
+                               .build());
+
+    ServiceDeployments reqServiceDeployments =
+        ServiceDeployments.builder().orgDeploymentsList(orgDeploymentsList).build();
+    assertThat(serviceDeployments).isEqualTo(reqServiceDeployments);
   }
 }

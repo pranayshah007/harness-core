@@ -15,11 +15,14 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERR
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_VARIABLES_PATTERN_REGEX;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.ENV_GIT_BRANCH_EXPRESSION;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.SERVICE_GIT_BRANCH_EXPRESSION;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -761,8 +764,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private Optional<ServiceEntity> getServiceEntityWithYaml(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
-    String gitBranch = stepParameters.getServiceGitBranch() != null ? stepParameters.getServiceGitBranch() : null;
-    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+    String serviceGitBranch = getServiceGitBranch(stepParameters);
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(serviceGitBranch)) {
       return serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     }
@@ -770,11 +773,33 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private Optional<Environment> getEnvironmentWithYaml(
       String accountId, String orgIdentifier, String projectIdentifier, ServiceStepV3Parameters stepParameters) {
-    String envGitBranch = stepParameters.getEnvGitBranch();
+    String envGitBranch = getEnvGitBranch(stepParameters);
     try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(envGitBranch)) {
       return environmentService.get(
           accountId, orgIdentifier, projectIdentifier, stepParameters.getEnvRef().getValue(), false);
     }
+  }
+
+  private String getEnvGitBranch(ServiceStepV3Parameters stepParameters) {
+    String envGitBranch;
+    if (isBlank(stepParameters.getEnvGitBranch())
+        || ENV_GIT_BRANCH_EXPRESSION.equals(stepParameters.getEnvGitBranch())) {
+      envGitBranch = null;
+    } else {
+      envGitBranch = stepParameters.getEnvGitBranch();
+    }
+    return envGitBranch;
+  }
+
+  private String getServiceGitBranch(ServiceStepV3Parameters stepParameters) {
+    String serviceGitBranch;
+    if (isBlank(stepParameters.getServiceGitBranch())
+        || SERVICE_GIT_BRANCH_EXPRESSION.equals(stepParameters.getServiceGitBranch())) {
+      serviceGitBranch = null;
+    } else {
+      serviceGitBranch = stepParameters.getServiceGitBranch();
+    }
+    return serviceGitBranch;
   }
 
   private NGServiceConfig getNgServiceConfig(
