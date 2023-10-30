@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.repositories;
+package io.harness.template.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -75,7 +75,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitSyncSdkService gitSyncSdkService;
   private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject @Named("template-mongodb") public MongoTemplate mongoTemplate;
-  @Inject @Named("primary") private MongoTemplate primaryDb;
 
   private final TemplateGitXService templateGitXService;
   OutboxService outboxService;

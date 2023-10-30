@@ -32,9 +32,9 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
-import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.repositories.NGTemplateRepository;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 
 import java.io.IOException;

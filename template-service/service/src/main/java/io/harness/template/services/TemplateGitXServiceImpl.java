@@ -26,8 +26,8 @@ import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.repositories.NGTemplateRepository;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.repositories.NGTemplateRepository;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.utils.TemplateUtils;
 

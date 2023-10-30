@@ -44,7 +44,7 @@ mongo:
 templateClient:
   mongo:
     type: MONGODB
-    uri: mongodb://localhost:27017/template-harness
+    uri: mongodb://localhost:27017/template
     connectTimeout: 30000
     serverSelectionTimeout: 90000
     socketTimeout: 360000

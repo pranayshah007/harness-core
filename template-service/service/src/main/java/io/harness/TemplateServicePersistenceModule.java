@@ -27,7 +27,7 @@ public class TemplateServicePersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
     return new Class<?>[] {
-        TemplatePersistenceConfig.class, GitSyncablePersistenceConfig.class, SpringPersistenceConfig.class};
+        SpringPersistenceConfig.class, GitSyncablePersistenceConfig.class, TemplatePersistenceConfig.class};
   }
 
   @Provides
