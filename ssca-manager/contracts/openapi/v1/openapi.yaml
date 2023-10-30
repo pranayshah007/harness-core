@@ -360,9 +360,9 @@ paths:
           name: sort
           schema:
             enum:
-              - name
-              - supplier
-            default: name
+              - package_name
+              - package_supplier
+            default: package_name
       security:
         - x-api-key: []
       requestBody:
@@ -401,9 +401,9 @@ paths:
           name: sort
           schema:
             enum:
-              - name
-              - type
-            default: name
+              - env_name
+              - env_type
+            default: env_name
       security:
         - x-api-key: []
       requestBody:
@@ -1003,12 +1003,6 @@ components:
           type: integer
         enforcement_id:
           type: string
-        orchestration_id:
-          type: string
-        build_pipeline_id:
-          type: string
-        build_pipeline_execution_id:
-          type: string
       required:
         - id
         - name
@@ -1037,8 +1031,6 @@ components:
         build_pipeline_id:
           type: string
         build_pipeline_execution_id:
-          type: string
-        orchestration_id:
           type: string
       required:
         - id

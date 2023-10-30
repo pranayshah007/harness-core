@@ -7,6 +7,10 @@
 
 package io.harness.ssca.api;
 
+import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
+import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryKeys;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -14,22 +18,17 @@ public class ArtifactApiUtils {
   public static String getSortFieldMapping(String field) {
     switch (field) {
       case "name":
-        break;
+        return ArtifactEntityKeys.name;
       case "updated":
-        field = "lastUpdatedAt";
-        break;
+        return ArtifactEntityKeys.lastUpdatedAt;
       case "env_name":
-        field = "envName";
-        break;
+        return CdInstanceSummaryKeys.envName;
       case "env_type":
-        field = "envType";
-        break;
+        return CdInstanceSummaryKeys.envType;
       case "package_name":
-        field = "packagename";
-        break;
+        return NormalizedSBOMEntityKeys.packageName.toLowerCase();
       case "package_supplier":
-        field = "packageoriginatorname";
-        break;
+        return NormalizedSBOMEntityKeys.packageOriginatorName.toLowerCase();
       default:
         log.info(String.format("Mapping not found for field: %s", field));
     }
