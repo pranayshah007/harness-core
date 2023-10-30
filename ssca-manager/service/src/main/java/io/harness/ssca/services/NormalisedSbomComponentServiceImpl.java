@@ -73,8 +73,8 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
       Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageManager() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageManager).regex(pattern);
     }
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getSupplier())) {
-      Pattern pattern = Pattern.compile("[.]*" + filterBody.getSupplier() + "[.]*");
+    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getPackageSupplier())) {
+      Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageSupplier() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageOriginatorName).regex(pattern);
     }
 

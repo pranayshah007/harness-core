@@ -293,7 +293,8 @@ paths:
           schema:
             enum:
               - name
-              - lastUpdateAt
+              - updated
+            default: name
       security:
         - x-api-key: []
       requestBody:
@@ -326,7 +327,8 @@ paths:
           schema:
             enum:
               - name
-              - lastUpdatedAt
+              - updated
+            default: name
       security:
         - x-api-key: []
   '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/components':
@@ -358,8 +360,9 @@ paths:
           name: sort
           schema:
             enum:
-              - packageName
-              - packageOriginatorName
+              - name
+              - supplier
+            default: name
       security:
         - x-api-key: []
       requestBody:
@@ -398,8 +401,9 @@ paths:
           name: sort
           schema:
             enum:
-              - envName
-              - envType
+              - name
+              - type
+            default: name
       security:
         - x-api-key: []
       requestBody:
@@ -974,13 +978,11 @@ components:
       type: object
       x-examples: {}
       properties:
-        artifact_id:
+        id:
           type: string
-        artifact_name:
+        name:
           type: string
         tag:
-          type: string
-        sbom_url:
           type: string
         components_count:
           type: integer
@@ -1002,8 +1004,8 @@ components:
         enforcement_id:
           type: string
       required:
-        - artifact_id
-        - artifact_name
+        - id
+        - name
         - tag
     ArtifactDetailResponse:
       title: ArtifactDetailResponse
@@ -1012,9 +1014,9 @@ components:
       x-stoplight:
         id: 763c316659901
       properties:
-        artifact_id:
+        id:
           type: string
-        artifact_name:
+        name:
           type: string
         tag:
           type: string
@@ -1031,8 +1033,8 @@ components:
         build_pipeline_execution_id:
           type: string
       required:
-        - artifact_id
-        - artifact_name
+        - id
+        - name
         - tag
     ArtifactComponentViewRequestBody:
       title: ArtifactComponentViewRequestBody
@@ -1056,7 +1058,7 @@ components:
               type: string
             value:
               type: string
-        supplier:
+        package_supplier:
           type: string
         package_manager:
           type: string
@@ -1085,17 +1087,17 @@ components:
         id: zawboqxxfhyx9
       type: object
       properties:
-        name:
+        package_name:
           type: string
-        version:
+        package_version:
           type: string
-        supplier:
+        package_supplier:
           type: string
         package_manager:
           type: string
         purl:
           type: string
-        license:
+        package_license:
           type: string
     ArtifactDeploymentViewResponse:
       title: ArtifactDeploymentViewResponse
@@ -1103,11 +1105,11 @@ components:
         id: qswwua8jf012s
       type: object
       properties:
-        id:
+        env_id:
           type: string
-        name:
+        env_name:
           type: string
-        type:
+        env_type:
           type: string
           enum:
             - PROD
