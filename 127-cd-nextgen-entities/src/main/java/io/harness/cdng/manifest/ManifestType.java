@@ -60,6 +60,7 @@ public interface ManifestType {
   String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
   String EcsRunTaskRequestDefinition = "EcsRunTaskRequestDefinition";
   String TAS_MANIFEST = "TasManifest";
+  String TAS_ARTIFACT_BUNDLED_MANIFEST = "TasArtifactBundledManifest";
   String TAS_VARS = "TasVars";
   String TAS_AUTOSCALER = "TasAutoScaler";
   String AsgLaunchTemplate = "AsgLaunchTemplate";
