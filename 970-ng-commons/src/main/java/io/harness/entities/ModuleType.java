@@ -42,7 +42,7 @@ public enum ModuleType {
   @JsonProperty("CORE") CORE("Core", INTERNAL, ONBOARDED),
   @JsonProperty("PMS") PMS("Pipelines", INTERNAL, ONBOARDED),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
-  @JsonProperty("SSCA") SSCA("Ssca", INTERNAL, ONBOARDED),
+  @JsonProperty("SSCA") SSCA("Ssca", INTERNAL, ONBOARDING_IN_PROGRESS),
 
   // Internal modules which have not been onboarded yet
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
