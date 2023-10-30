@@ -10,7 +10,9 @@ package io.harness.resourcegroup.resourceclient.organization;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
-import static io.harness.resourcegroup.beans.ValidatorType.*;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
