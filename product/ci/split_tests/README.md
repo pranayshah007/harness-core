@@ -2,14 +2,6 @@
 
 This tool splits a test suite into groups of near equal units based on lines of code, test times (based on previous tests timings), etc. This is necessary for running the tests in parallel. As the execution time of test files might vary drastically, you will not get the best split by simply dividing them into even groups.
 
-## Compatibility
-
-This tool was adatped from https://github.com/leonid-shevtsov/split_tests with several customizations for Harness so we're unable to use it as a module dependency.
-
-This tool was written for Ruby and CircleCI, but it can be used with any file-based test suite on any CI.
-
-It is written in Golang, released as a binary, and has no external dependencies.
-
 ### Using a JUnit report
 
 ```
@@ -63,10 +55,4 @@ Options:
 
 ## Compilation
 
-This tool is written in Go and uses Go modules.
-
-- Install Go
-- Checkout the code
-- `make`
-
-With bazel: `bazel build //product/ci/split_tests/...`
+`bazel build //product/ci/split_tests/...`
