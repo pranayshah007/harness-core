@@ -37,7 +37,7 @@ public class BitbucketMeanTimeToMergeParser implements DataPointParser {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
-    data = (Map<String, Object>) data.get(inputValue);
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);

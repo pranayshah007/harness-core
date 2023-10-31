@@ -29,6 +29,7 @@ public class PagerDutyNoOfIncidentsInLastThirtyDaysParser implements DataPointPa
     log.info(
         "Parser for is eNoOfIncidentsInLastThirtyDaysParser is invoked data - {}, data point - {}, input values - {}",
         data, dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
       return constructDataPointInfo(dataFetchDTO, null, errorMessage);

@@ -31,17 +31,16 @@ public class JiraIssuesCountParser implements DataPointParser {
     if (inputValues.size() != 1) {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
-    String inputValue = inputValues.get(0).getValue();
-    Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
-    if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
-      String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+    if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
+      String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(
           constructDataPointInfo(dataFetchDTO, null, isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
       return dataPointData;
     }
 
-    double value = (double) CommonUtils.findObjectByName(inputValueData, "total");
+    double value = (double) CommonUtils.findObjectByName(data, "total");
     dataPointData.putAll(constructDataPointInfo(dataFetchDTO, value, null));
     return dataPointData;
   }

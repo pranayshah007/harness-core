@@ -34,8 +34,7 @@ public class GithubAlertsCountParser implements DataPointParser {
       }
       return constructDataPointInfo(dataFetchDTO, ((List<?>) data.get(DSL_RESPONSE)).size(), null);
     }
-    String inputValue = inputValues.get(0).getValue();
-    data = (Map<String, Object>) data.get(inputValue);
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);

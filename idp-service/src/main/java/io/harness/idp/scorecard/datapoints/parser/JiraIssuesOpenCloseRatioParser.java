@@ -32,18 +32,16 @@ public class JiraIssuesOpenCloseRatioParser implements DataPointParser {
     if (inputValues.size() != 1) {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
-    String inputValue = inputValues.get(0).getValue();
-    Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
-    if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
-      String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+    if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
+      String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(
           constructDataPointInfo(dataFetchDTO, null, isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
       return dataPointData;
     }
 
-    List<Map<String, Object>> issues =
-        (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "issues");
+    List<Map<String, Object>> issues = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "issues");
     if (isEmpty(issues)) {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, NO_ISSUES_FOUND));
       return dataPointData;

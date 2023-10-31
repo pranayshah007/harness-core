@@ -33,21 +33,21 @@ public class GitlabIsBranchProtectedParser implements DataPointParser {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
-    Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
-    if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
-      String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+    if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
+      String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(constructDataPointInfo(
           dataFetchDTO, false, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
-    if (CommonUtils.findObjectByName(inputValueData, "branchRules") == null) {
+    if (CommonUtils.findObjectByName(data, "branchRules") == null) {
       dataPointData.putAll(constructDataPointInfo(dataFetchDTO, false, INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
-    List<Map<String, Object>> nodes = (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "nodes");
+    List<Map<String, Object>> nodes = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "nodes");
     boolean isDefault = inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED);
     boolean value = false;
     for (Map<String, Object> node : nodes) {
