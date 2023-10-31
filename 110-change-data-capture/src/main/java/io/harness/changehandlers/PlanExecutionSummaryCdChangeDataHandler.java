@@ -90,9 +90,13 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
           DBObject triggeredByObject = (DBObject) executionTriggerInfoObject.get("triggeredBy");
           if (executionTriggerInfoObject.get("triggerType") != null) {
             if (TriggerType.MANUAL.toString().equals(executionTriggerInfoObject.get("triggerType").toString())) {
-              columnValueMapping.put("triggered_by_id", triggeredByObject.get("uuid").toString());
+              if (triggeredByObject.get("uuid") != null) {
+                columnValueMapping.put("triggered_by_id", triggeredByObject.get("uuid").toString());
+              }
             } else {
-              columnValueMapping.put("triggered_by_id", triggeredByObject.get("identifier").toString());
+              if (triggeredByObject.get("identifier") != null) {
+                columnValueMapping.put("triggered_by_id", triggeredByObject.get("identifier").toString());
+              }
             }
           }
         }
@@ -187,9 +191,15 @@ public class PlanExecutionSummaryCdChangeDataHandler extends AbstractChangeDataH
       }
       DBObject author = (DBObject) (ciExecutionInfo.get("author"));
       if (author != null) {
-        columnValueMapping.put("moduleInfo_author_id", author.get("id").toString());
-        columnValueMapping.put("author_name", author.get("name").toString());
-        columnValueMapping.put("author_avatar", author.get("avatar").toString());
+        if (author.get("id") != null) {
+          columnValueMapping.put("moduleInfo_author_id", author.get("id").toString());
+        }
+        if (author.get("name") != null) {
+          columnValueMapping.put("author_name", author.get("name").toString());
+        }
+        if (author.get("avatar") != null) {
+          columnValueMapping.put("author_avatar", author.get("avatar").toString());
+        }
       }
       if (ciExecutionInfo.get("event") != null) {
         columnValueMapping.put("moduleInfo_event", ciExecutionInfo.get("event").toString());

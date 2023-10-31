@@ -100,12 +100,18 @@ public class PipelineExecutionSummaryChangeEventHandler extends DebeziumAbstract
       if (ciExecutionInfo != null) {
         JsonNode author = ciExecutionInfo.get(PipelineExecutionSummaryKeys.author);
         if (author != null) {
-          executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_ID,
-              author.get(PipelineExecutionSummaryKeys.commitId).toString());
-          executionRecord.set(
-              Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_NAME, author.get(PipelineExecutionSummaryKeys.name).toString());
-          executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_AVATAR,
-              author.get(PipelineExecutionSummaryKeys.avatar).toString());
+          if (author.get(PipelineExecutionSummaryKeys.commitId) != null) {
+            executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_ID,
+                author.get(PipelineExecutionSummaryKeys.commitId).toString());
+          }
+          if (author.get(PipelineExecutionSummaryKeys.name) != null) {
+            executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_NAME,
+                author.get(PipelineExecutionSummaryKeys.name).toString());
+          }
+          if (author.get(PipelineExecutionSummaryKeys.avatar) != null) {
+            executionRecord.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_AVATAR,
+                author.get(PipelineExecutionSummaryKeys.avatar).toString());
+          }
         }
       }
     }
