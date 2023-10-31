@@ -263,6 +263,18 @@ public class AmbianceUtils {
     return stageLevel;
   }
 
+  public Optional<Level> getNearestStepGroupLevelWithStrategyFromAmbiance(Ambiance ambiance) {
+    for (int index = ambiance.getLevelsCount() - 1; index > 0; index--) {
+      Level level = ambiance.getLevelsList().get(index);
+      Level nextLevel = ambiance.getLevelsList().get(index - 1);
+      if (level.getStepType().getType().equals("STEP_GROUP")
+          && nextLevel.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        return Optional.of(level);
+      }
+    }
+    return Optional.empty();
+  }
+
   public static boolean isRetry(Ambiance ambiance) {
     Level level = Objects.requireNonNull(obtainCurrentLevel(ambiance));
     return level.getRetryIndex() != 0;
