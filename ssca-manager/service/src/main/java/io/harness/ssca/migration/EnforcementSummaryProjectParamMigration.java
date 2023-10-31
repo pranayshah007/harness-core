@@ -33,7 +33,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @OwnedBy(HarnessTeam.SSCA)
 public class EnforcementSummaryProjectParamMigration implements NGMigration {
   @Inject MongoTemplate mongoTemplate;
-  private final int BULK_SIZE = 20;
+  private final int BATCH_SIZE = 100;
 
   @Override
   public void migrate() {
@@ -42,18 +42,16 @@ public class EnforcementSummaryProjectParamMigration implements NGMigration {
     Query query = new Query(criteria);
     FindIterable<Document> iterable =
         mongoTemplate.getCollection(mongoTemplate.getCollectionName(EnforcementSummaryEntity.class))
-            .find(query.getQueryObject());
+            .find(query.getQueryObject())
+            .batchSize(BATCH_SIZE);
 
     List<EnforcementSummaryEntity> entityToBeUpdated = new ArrayList<>();
     for (Document document : iterable) {
       try {
         EnforcementSummaryEntity summaryEntity =
             mongoTemplate.getConverter().read(EnforcementSummaryEntity.class, document);
-
-        if (entityToBeUpdated.size() < BULK_SIZE) {
-          entityToBeUpdated.add(summaryEntity);
-        } else {
-          entityToBeUpdated.add(summaryEntity);
+        entityToBeUpdated.add(summaryEntity);
+        if (entityToBeUpdated.size() == BATCH_SIZE) {
           bulkUpdate(entityToBeUpdated);
           entityToBeUpdated = new ArrayList<>();
         }
