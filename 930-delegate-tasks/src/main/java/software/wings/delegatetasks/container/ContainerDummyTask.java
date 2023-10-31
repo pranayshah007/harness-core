@@ -8,12 +8,13 @@
 package software.wings.delegatetasks.container;
 
 import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+
+import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -31,7 +32,7 @@ public class ContainerDummyTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(Object[] parameters) {
-    return DelegateStringResponseData.builder().build();
+    return ContainerSyncResponse.builder().build();
   }
 
   @Override
