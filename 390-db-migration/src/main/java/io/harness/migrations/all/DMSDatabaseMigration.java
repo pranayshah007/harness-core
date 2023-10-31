@@ -24,7 +24,6 @@ import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
 import com.mongodb.BulkWriteOperation;
-import com.mongodb.DBCollection;
 import dev.morphia.Morphia;
 import dev.morphia.query.Query;
 import java.util.Arrays;
@@ -88,16 +87,12 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
           continue;
         }
         if (toggleOnlyCollection.contains(collection)) {
-          if (checkIndexCount(collection)) {
-            if (collection.equals(DELEGATE_TASK)) {
-              toggleFlag("delegateTask", true);
-            } else {
-              toggleFlag(getClassForCollectionName(collection).getCanonicalName(), true);
-            }
-            if (!postToggleCorrectness(collectionClass)) {
-              throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
-            }
+          if (collection.equals(DELEGATE_TASK)) {
+            toggleFlag("delegateTask", true);
           } else {
+            toggleFlag(getClassForCollectionName(collection).getCanonicalName(), true);
+          }
+          if (!postToggleCorrectness(collectionClass)) {
             throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
           }
         } else {
@@ -214,9 +209,8 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
     log.info("documents in new db and old db {}, {} for collection {}", documentsInNewDB, insertCount, collection);
     boolean insertSuccessful = documentsInNewDB == insertCount;
-    boolean isIndexCountSame = checkIndexCount(collection);
 
-    if (!insertSuccessful || !isIndexCountSame) {
+    if (!insertSuccessful) {
       return false;
     }
     // Check that data is coming from old DB
@@ -229,15 +223,5 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
 
   Class<?> getClassForCollectionName(String collectionName) {
     return morphia.getMapper().getClassFromCollection(collectionName);
-  }
-
-  private boolean checkIndexCount(String collection) {
-    final DBCollection newCollection = persistence.getCollection(dmsStore, collection);
-    final DBCollection oldCollection = persistence.getCollection(harnessStore, collection);
-
-    log.info("Value of new index and old are {}, {} for collection {}", newCollection.getIndexInfo().size(),
-        oldCollection.getIndexInfo().size(), collection);
-
-    return newCollection.getIndexInfo().size() == oldCollection.getIndexInfo().size();
   }
 }
