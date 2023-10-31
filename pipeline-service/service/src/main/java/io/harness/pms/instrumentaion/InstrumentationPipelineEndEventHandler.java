@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.execution.NodeExecution;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
@@ -87,78 +88,86 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
 
   @Override
   public void onEnd(Ambiance ambiance, Status endStatus) {
-    String planExecutionId = ambiance.getPlanExecutionId();
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    AccountDTO accountDTO = accountService.getAccount(accountId);
-    String accountName = accountDTO.getName();
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    Set<String> allSdkSteps = sdkStepHelper.getAllStepVisibleInUI();
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      String planExecutionId = ambiance.getPlanExecutionId();
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      AccountDTO accountDTO = accountService.getAccount(accountId);
+      String accountName = accountDTO.getName();
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      Set<String> allSdkSteps = sdkStepHelper.getAllStepVisibleInUI();
 
-    List<String> stepTypes = new LinkedList<>();
-    List<String> failedSteps = new LinkedList<>();
-    List<String> failedStepTypes = new LinkedList<>();
+      List<String> stepTypes = new LinkedList<>();
+      List<String> failedSteps = new LinkedList<>();
+      List<String> failedStepTypes = new LinkedList<>();
 
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchAllStepNodeExecutions(
-             planExecutionId, NodeProjectionUtils.fieldsForInstrumentationHandler)) {
-      while (iterator.hasNext()) {
-        NodeExecution currentNodeExecution = iterator.next();
+      try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchAllStepNodeExecutions(
+               planExecutionId, NodeProjectionUtils.fieldsForInstrumentationHandler)) {
+        while (iterator.hasNext()) {
+          NodeExecution currentNodeExecution = iterator.next();
 
-        String currentStepType = currentNodeExecution.getStepType().getType();
-        if (allSdkSteps.contains(currentStepType)) {
-          stepTypes.add(currentStepType);
-          // If step is in broken status then only add to results
-          if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
-            // Add step identifier
-            failedSteps.add(currentNodeExecution.getIdentifier());
-            failedStepTypes.add(currentStepType);
+          String currentStepType = currentNodeExecution.getStepType().getType();
+          if (allSdkSteps.contains(currentStepType)) {
+            stepTypes.add(currentStepType);
+            // If step is in broken status then only add to results
+            if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
+              // Add step identifier
+              failedSteps.add(currentNodeExecution.getIdentifier());
+              failedStepTypes.add(currentStepType);
+            }
           }
         }
       }
+
+      // TODO(Projection)
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+          pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
+
+      List<NotificationRules> notificationRulesList =
+          notificationInstrumentationHelper.getNotificationRules(planExecutionId, ambiance);
+
+      Set<String> executedModules =
+          OrchestrationObserverUtils.getExecutedModulesInPipeline(pipelineExecutionSummaryEntity);
+
+      HashMap<String, Object> propertiesMap = new HashMap<>();
+      propertiesMap.put(ACCOUNT_NAME, accountName);
+      propertiesMap.put(PROJECT_IDENTIFIER, projectId);
+      propertiesMap.put(ORG_IDENTIFIER, orgId);
+      propertiesMap.put(PLAN_EXECUTION_ID, planExecutionId);
+      propertiesMap.put(STAGE_TYPES, executedModules);
+      // step types
+      propertiesMap.put(TRIGGER_TYPE, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggerType());
+      propertiesMap.put(STATUS, pipelineExecutionSummaryEntity.getStatus());
+      propertiesMap.put(LEVEL, StepCategory.PIPELINE);
+      propertiesMap.put(IS_RERUN, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getIsRerun());
+      propertiesMap.put(STAGE_COUNT, pipelineExecutionSummaryEntity.getLayoutNodeMap().size());
+      propertiesMap.put(STEP_TYPES, new HashSet<>(stepTypes));
+      propertiesMap.put(FAILED_STEPS, failedSteps);
+      propertiesMap.put(FAILED_STEP_TYPES, failedStepTypes);
+      propertiesMap.put(STEP_COUNT, stepTypes.size());
+      propertiesMap.put(EXECUTION_TIME, getExecutionTimeInSeconds(pipelineExecutionSummaryEntity));
+      propertiesMap.put(NOTIFICATION_RULES_COUNT, notificationRulesList.size());
+      propertiesMap.put(FAILURE_TYPES,
+          PipelineInstrumentationUtils.getFailureTypesFromPipelineExecutionSummary(pipelineExecutionSummaryEntity));
+      propertiesMap.put(ERROR_MESSAGES,
+          PipelineInstrumentationUtils.getErrorMessagesFromPipelineExecutionSummary(pipelineExecutionSummaryEntity));
+      propertiesMap.put(
+          EXCEPTION_MESSAGE, PipelineInstrumentationUtils.extractExceptionMessage(pipelineExecutionSummaryEntity));
+      propertiesMap.put(
+          NOTIFICATION_METHODS, notificationInstrumentationHelper.getNotificationMethodTypes(notificationRulesList));
+      String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
+      log.info("Sending telemetry event");
+      telemetryReporter.sendTrackEvent(PIPELINE_EXECUTION, identity, accountId, propertiesMap,
+          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
+          TelemetryOption.builder().sendForCommunity(false).build());
+      log.info("Sent telemetry event");
+
+      sendNotificationEvents(notificationRulesList, ambiance, accountId, accountName);
+    } catch (Exception exception) {
+      log.error(String.format("Exception occurred while sending telemetry event for planExecutionId: %s",
+                    ambiance.getPlanExecutionId()),
+          exception);
     }
-
-    // TODO(Projection)
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
-        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
-
-    List<NotificationRules> notificationRulesList =
-        notificationInstrumentationHelper.getNotificationRules(planExecutionId, ambiance);
-
-    Set<String> executedModules =
-        OrchestrationObserverUtils.getExecutedModulesInPipeline(pipelineExecutionSummaryEntity);
-
-    HashMap<String, Object> propertiesMap = new HashMap<>();
-    propertiesMap.put(ACCOUNT_NAME, accountName);
-    propertiesMap.put(PROJECT_IDENTIFIER, projectId);
-    propertiesMap.put(ORG_IDENTIFIER, orgId);
-    propertiesMap.put(PLAN_EXECUTION_ID, planExecutionId);
-    propertiesMap.put(STAGE_TYPES, executedModules);
-    // step types
-    propertiesMap.put(TRIGGER_TYPE, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggerType());
-    propertiesMap.put(STATUS, pipelineExecutionSummaryEntity.getStatus());
-    propertiesMap.put(LEVEL, StepCategory.PIPELINE);
-    propertiesMap.put(IS_RERUN, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getIsRerun());
-    propertiesMap.put(STAGE_COUNT, pipelineExecutionSummaryEntity.getLayoutNodeMap().size());
-    propertiesMap.put(STEP_TYPES, new HashSet<>(stepTypes));
-    propertiesMap.put(FAILED_STEPS, failedSteps);
-    propertiesMap.put(FAILED_STEP_TYPES, failedStepTypes);
-    propertiesMap.put(STEP_COUNT, stepTypes.size());
-    propertiesMap.put(EXECUTION_TIME, getExecutionTimeInSeconds(pipelineExecutionSummaryEntity));
-    propertiesMap.put(NOTIFICATION_RULES_COUNT, notificationRulesList.size());
-    propertiesMap.put(FAILURE_TYPES,
-        PipelineInstrumentationUtils.getFailureTypesFromPipelineExecutionSummary(pipelineExecutionSummaryEntity));
-    propertiesMap.put(ERROR_MESSAGES,
-        PipelineInstrumentationUtils.getErrorMessagesFromPipelineExecutionSummary(pipelineExecutionSummaryEntity));
-    propertiesMap.put(
-        EXCEPTION_MESSAGE, PipelineInstrumentationUtils.extractExceptionMessage(pipelineExecutionSummaryEntity));
-    propertiesMap.put(
-        NOTIFICATION_METHODS, notificationInstrumentationHelper.getNotificationMethodTypes(notificationRulesList));
-    String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
-    telemetryReporter.sendTrackEvent(PIPELINE_EXECUTION, identity, accountId, propertiesMap,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
-        TelemetryOption.builder().sendForCommunity(false).build());
-
-    sendNotificationEvents(notificationRulesList, ambiance, accountId, accountName);
   }
 
   // TODO: Handle forStages case in PipelineEvents
