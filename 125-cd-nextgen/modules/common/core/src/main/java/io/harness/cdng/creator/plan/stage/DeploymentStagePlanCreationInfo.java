@@ -64,7 +64,7 @@ public class DeploymentStagePlanCreationInfo implements PersistentEntity, UuidAw
   @NotNull private String pipelineIdentifier;
   @NotNull private String stageName;
   @NotNull private String stageIdentifier;
-  private ServiceDefinitionType deploymentType;
+  @NotNull private ServiceDefinitionType deploymentType;
 
   @NotNull private DeploymentStageType stageType;
   @JsonTypeInfo(use = NAME, property = "stageType", include = EXTERNAL_PROPERTY, visible = true)
