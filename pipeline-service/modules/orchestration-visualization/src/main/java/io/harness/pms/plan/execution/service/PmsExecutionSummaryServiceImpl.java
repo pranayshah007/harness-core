@@ -19,6 +19,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionErrorInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanService;
@@ -26,10 +27,14 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.governance.GovernanceMetadata;
+import io.harness.governance.PolicyMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.ExecutionStatus;
@@ -349,7 +354,24 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.abortedBy,
           abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecution.getUuid()));
     }
+
     if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
+      if (planExecution.getGovernanceMetadata().getDeny() == true) {
+        GovernanceMetadata governanceMetadata = planExecution.getGovernanceMetadata();
+        // Find all deny messages list
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Pipeline failure due to following policy failures: ");
+        for (PolicyMetadata policyMetadata : governanceMetadata.getDetails(0).getPolicyMetadataList()) {
+          for (String denymsgs : policyMetadata.getDenyMessagesList()) {
+            stringBuilder.append("\n");
+            stringBuilder.append(denymsgs);
+          }
+        }
+
+        FailureInfoDTO failureInfoDTO = FailureInfoDTO.builder().message(stringBuilder.toString()).build();
+        summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.failureInfo, failureInfoDTO);
+      }
       summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
     }
     return summaryEntityUpdate;

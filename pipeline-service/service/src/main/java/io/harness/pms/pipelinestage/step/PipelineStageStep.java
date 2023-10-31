@@ -16,6 +16,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -40,6 +41,7 @@ import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -59,6 +61,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
@@ -192,11 +198,31 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
           new PipelineStageOutcome(pipelineStageHelper.resolveOutputVariables(stepParameters.getOutputs().getValue()));
     }
 
+    String planExecutionId = pipelineStageSweepingOutput.getChildExecutionId();
+
     PipelineStageResponseData pipelineStageResponseData =
-        (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
+        (PipelineStageResponseData) responseDataMap.get(planExecutionId);
+
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(ambiance.getSetupAbstractions().get("accountId"),
+            ambiance.getSetupAbstractions().get("orgIdentifier"),
+            ambiance.getSetupAbstractions().get("projectIdentifier"), planExecutionId, false);
+
+    FailureInfo failureInfo;
+
+    if (nodeExecution == null && pipelineStageResponseData.getStatus().equals(Status.ERRORED)) {
+      failureInfo = FailureInfo.newBuilder()
+                        .setErrorMessage(pipelineExecutionSummaryEntity.getFailureInfo().getMessage())
+                        .build();
+    } else if (nodeExecution == null) {
+      failureInfo = FailureInfo.newBuilder().build();
+    } else {
+      failureInfo = nodeExecution.getFailureInfo();
+    }
+
     return StepResponse.builder()
         .status(pipelineStageResponseData.getStatus())
-        .failureInfo(nodeExecution != null ? nodeExecution.getFailureInfo() : FailureInfo.newBuilder().build())
+        .failureInfo(failureInfo)
         .stepOutcome(
             StepResponse.StepOutcome.builder().name(OutputExpressionConstants.OUTPUT).outcome(resolvedOutcome).build())
         .build();
