@@ -10,6 +10,11 @@ package io.harness.vm;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.ci.pod.EnvVariableEnum.PLUGIN_OIDC_TOKEN_ID;
+import static io.harness.delegate.beans.ci.pod.EnvVariableEnum.PLUGIN_POOL_ID;
+import static io.harness.delegate.beans.ci.pod.EnvVariableEnum.PLUGIN_PROJECT_NUMBER;
+import static io.harness.delegate.beans.ci.pod.EnvVariableEnum.PLUGIN_PROVIDER_ID;
+import static io.harness.delegate.beans.ci.pod.EnvVariableEnum.PLUGIN_SERVICE_ACCOUNT_EMAIL;
 import static io.harness.vm.CIVMConstants.JUNIT_REPORT_KIND;
 import static io.harness.vm.CIVMConstants.RUNTEST_STEP_KIND;
 import static io.harness.vm.CIVMConstants.RUN_STEP_KIND;
@@ -20,6 +25,7 @@ import io.harness.connector.ImageCredentials;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
@@ -228,8 +234,19 @@ public class VmExecuteStepUtils {
         env.put(entry.getKey(), secret);
         secrets.add(secret);
       }
-    }
 
+      // Map OIDC config to plugin env variables
+      List<EnvVariableEnum> keyList = Arrays.asList(PLUGIN_POOL_ID, PLUGIN_PROJECT_NUMBER, PLUGIN_PROVIDER_ID,
+          PLUGIN_SERVICE_ACCOUNT_EMAIL, PLUGIN_OIDC_TOKEN_ID);
+
+      Map<EnvVariableEnum, String> envToSecretsMap = pluginStep.getConnector().getEnvToSecretsMap();
+
+      for (EnvVariableEnum key : keyList) {
+        if (envToSecretsMap.containsKey(key)) {
+          env.put(key.name(), envToSecretsMap.get(key));
+        }
+      }
+    }
     ExecuteStepRequest.ImageAuth imageAuth = getImageAuth(pluginStep.getImage(), pluginStep.getImageConnector());
     if (imageAuth != null) {
       configBuilder.imageAuth(imageAuth);
