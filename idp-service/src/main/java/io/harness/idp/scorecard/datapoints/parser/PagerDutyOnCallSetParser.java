@@ -12,8 +12,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +26,12 @@ public class PagerDutyOnCallSetParser implements DataPointParser {
 
   private static final String ERROR_MESSAGE_IF_NO_ON_CALL_IS_SET = "On call is not set on PagerDuty for the entity";
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
-    log.info("Parser for is on call set is invoked data - {}, data point - {}, input values - {}", data, dataPoint,
-        inputValues);
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    log.info("Parser for is on call set is invoked data - {}, data point - {}, input values - {}", data,
+        dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+      return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
 
     List onCalls = new ArrayList<>();
@@ -41,8 +40,8 @@ public class PagerDutyOnCallSetParser implements DataPointParser {
     }
 
     if (!onCalls.isEmpty()) {
-      return constructDataPointInfoWithoutInputValue(true, null);
+      return constructDataPointInfo(dataFetchDTO, true, null);
     }
-    return constructDataPointInfoWithoutInputValue(false, ERROR_MESSAGE_IF_NO_ON_CALL_IS_SET);
+    return constructDataPointInfo(dataFetchDTO, false, ERROR_MESSAGE_IF_NO_ON_CALL_IS_SET);
   }
 }

@@ -13,22 +13,19 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
-import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GithubWorkflowsCountParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+      return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
     double count = (double) CommonUtils.findObjectByName(data, "total_count");
-    return constructDataPointInfoWithoutInputValue(count, null);
+    return constructDataPointInfo(dataFetchDTO, count, null);
   }
 }

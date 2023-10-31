@@ -16,8 +16,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.mappers.DataPointMapper;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.DataPoint;
-import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
 @OwnedBy(HarnessTeam.IDP)
@@ -79,24 +78,26 @@ public class DataPointServiceImpl implements DataPointService {
   }
 
   @Override
-  public Map<String, List<Pair<DataPointEntity, List<InputValue>>>> getDslDataPointsInfo(String accountIdentifier,
-      String dataSourceIdentifier, List<Pair<String, List<InputValue>>> dataPointIdsAndInputValues) {
-    Set<String> identifiers = dataPointIdsAndInputValues.stream().map(Pair::getFirst).collect(Collectors.toSet());
+  public Map<String, List<DataFetchDTO>> getDslDataPointsInfo(
+      String accountIdentifier, String dataSourceIdentifier, List<DataFetchDTO> dataFetchDTOS) {
+    Set<String> identifiers = dataFetchDTOS.stream()
+                                  .map(dataFetchDTO -> dataFetchDTO.getDataPoint().getIdentifier())
+                                  .collect(Collectors.toSet());
     List<DataPointEntity> dataPoints =
         dataPointsRepository.findByAccountIdentifierInAndDataSourceIdentifierAndIdentifierIn(
             addGlobalAccountIdentifierAlong(accountIdentifier), dataSourceIdentifier, new ArrayList<>(identifiers));
     Map<String, DataPointEntity> dataPointsMap =
         dataPoints.stream().collect(Collectors.toMap(DataPointEntity::getIdentifier, Function.identity()));
 
-    Map<String, List<Pair<DataPointEntity, List<InputValue>>>> dslDataPointsInfo = new HashMap<>();
-    for (Pair<String, List<InputValue>> dataPointIdAndInputValues : dataPointIdsAndInputValues) {
-      String dataPointIdentifier = dataPointIdAndInputValues.getFirst();
-      List<InputValue> inputValues = dataPointIdAndInputValues.getSecond();
+    Map<String, List<DataFetchDTO>> dslDataPointsInfo = new HashMap<>();
+    for (DataFetchDTO dataFetchDTO : dataFetchDTOS) {
+      String dataPointIdentifier = dataFetchDTO.getDataPoint().getIdentifier();
       DataPointEntity dataPoint = dataPointsMap.get(dataPointIdentifier);
+      dataFetchDTO.setDataPoint(dataPoint);
       if (!dslDataPointsInfo.containsKey(dataPoint.getDataSourceLocationIdentifier())) {
         dslDataPointsInfo.put(dataPoint.getDataSourceLocationIdentifier(), new ArrayList<>());
       }
-      dslDataPointsInfo.get(dataPoint.getDataSourceLocationIdentifier()).add(new Pair<>(dataPoint, inputValues));
+      dslDataPointsInfo.get(dataPoint.getDataSourceLocationIdentifier()).add(dataFetchDTO);
     }
     return dslDataPointsInfo;
   }

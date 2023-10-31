@@ -12,10 +12,8 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,17 +25,17 @@ public class PagerDutyIsEscalationPolicySetParser implements DataPointParser {
   private static final String ERROR_MESSAGE_IF_NO_ESCALATION_POLICY_IS_SET =
       "Escalation policy is not set on PagerDuty for the entity";
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     log.info("Parser for is escalation policy set is invoked data - {}, data point - {}, input values - {}", data,
-        dataPoint, inputValues);
+        dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+      return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
 
     if (CommonUtils.findObjectByName(data, ESCALATION_POLICY_RESPONSE_KEY) != null) {
-      return constructDataPointInfoWithoutInputValue(true, null);
+      return constructDataPointInfo(dataFetchDTO, true, null);
     }
-    return constructDataPointInfoWithoutInputValue(false, ERROR_MESSAGE_IF_NO_ESCALATION_POLICY_IS_SET);
+    return constructDataPointInfo(dataFetchDTO, false, ERROR_MESSAGE_IF_NO_ESCALATION_POLICY_IS_SET);
   }
 }

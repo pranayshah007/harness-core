@@ -16,7 +16,7 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.NO_ISSUES
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
@@ -26,11 +26,11 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.IDP)
 public class JiraIssuesOpenCloseRatioParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointData = new HashMap<>();
+    List<InputValue> inputValues = dataFetchDTO.getInputValues();
     if (inputValues.size() != 1) {
-      dataPointData.putAll(constructDataPointInfoWithoutInputValue(null, INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
     Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
@@ -38,14 +38,14 @@ public class JiraIssuesOpenCloseRatioParser implements DataPointParser {
     if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(
-          constructDataPointInfo(inputValue, null, isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
+          constructDataPointInfo(dataFetchDTO, null, isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
       return dataPointData;
     }
 
     List<Map<String, Object>> issues =
         (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "issues");
     if (isEmpty(issues)) {
-      dataPointData.putAll(constructDataPointInfo(inputValue, null, NO_ISSUES_FOUND));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, NO_ISSUES_FOUND));
       return dataPointData;
     }
 
@@ -67,7 +67,7 @@ public class JiraIssuesOpenCloseRatioParser implements DataPointParser {
     } else {
       value = openIssues / closedIssues;
     }
-    dataPointData.putAll(constructDataPointInfo(inputValue, value, null));
+    dataPointData.putAll(constructDataPointInfo(dataFetchDTO, value, null));
     return dataPointData;
   }
 }

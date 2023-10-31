@@ -15,7 +15,7 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_F
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
@@ -25,11 +25,11 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.IDP)
 public class GithubFileExistsParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    List<InputValue> inputValues = dataFetchDTO.getInputValues();
     Map<String, Object> dataPointData = new HashMap<>();
     if (inputValues.size() != 1) {
-      dataPointData.putAll(constructDataPointInfoWithoutInputValue(null, INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
     data = (Map<String, Object>) data.get(inputValue);
@@ -37,12 +37,12 @@ public class GithubFileExistsParser implements DataPointParser {
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(
-          constructDataPointInfo(inputValue, false, !isEmpty(errorMessage) ? errorMessage : INVALID_FILE_NAME_ERROR));
+          constructDataPointInfo(dataFetchDTO, false, !isEmpty(errorMessage) ? errorMessage : INVALID_FILE_NAME_ERROR));
       return dataPointData;
     }
 
     if (CommonUtils.findObjectByName(data, "object") == null) {
-      dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, false, INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
@@ -58,7 +58,7 @@ public class GithubFileExistsParser implements DataPointParser {
         break;
       }
     }
-    dataPointData.putAll(constructDataPointInfo(inputValue, isPresent, null));
+    dataPointData.putAll(constructDataPointInfo(dataFetchDTO, isPresent, null));
     return dataPointData;
   }
 }

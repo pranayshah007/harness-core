@@ -8,6 +8,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "c318da62-7bbd-40d5-b838-c90d5250fa3f",
         "data_source_identifier": "github",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
@@ -35,6 +36,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "3960758a-922d-4a57-8206-cd67a51681ec",
         "data_source_identifier": "catalog",
         "data_point_identifier": "pagerdutyAnnotationExists",
         "operator": "==",
@@ -55,6 +57,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "d7dabd82-5e87-4812-aa7f-b116b3853d58",
         "data_source_identifier": "github",
         "data_point_identifier": "isBranchProtected",
         "conditional_input_value": "\"refs/\"",
@@ -82,6 +85,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "84da9ae2-3be5-4e64-bc87-ecabde1cb97e",
         "data_source_identifier": "catalog",
         "data_point_identifier": "techDocsAnnotationExists",
         "operator": "==",
@@ -102,6 +106,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "7451322a-b8f3-4ace-8004-a14109bb903c",
         "data_source_identifier": "catalog",
         "data_point_identifier": "specOwnerExists",
         "operator": "==",
@@ -122,6 +127,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "a476c2e3-73c0-48a6-84b7-71159fefe853",
         "data_source_identifier": "github",
         "data_point_identifier": "isFileExists",
         "conditional_input_value": "\".gitleaks.toml\"",
@@ -149,6 +155,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "b8e7571c-fbb0-4ff9-bd83-8f318de288e7",
         "data_source_identifier": "harness",
         "data_point_identifier": "stoStageAdded",
         "operator": "==",
@@ -169,6 +176,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "89b8d8e9-3039-44c7-8e55-7ec418e78189",
         "data_source_identifier": "harness",
         "data_point_identifier": "isPolicyEvaluationSuccessful",
         "operator": "==",
@@ -189,6 +197,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "75b89b87-cbe3-4c92-8d59-5268a96259e4",
         "data_source_identifier": "harness",
         "data_point_identifier": "PercentageOfCIPipelinePassingInPastSevenDays",
         "operator": ">",
@@ -209,6 +218,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "0318dbf6-4890-4e47-ac15-10423ea7b155",
         "data_source_identifier": "harness",
         "data_point_identifier": "noTestsFailingInCiPipeline",
         "operator": "==",
@@ -229,6 +239,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "4e7cec95-98c6-4d8e-b0a1-694489a3d12f",
         "data_source_identifier": "pagerduty",
         "data_point_identifier": "isOnCallSet",
         "operator": "==",
@@ -249,6 +260,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "5d9fe176-c150-4ac7-9b67-2fc8c720ac03",
         "data_source_identifier": "pagerduty",
         "data_point_identifier": "isEscalationPolicySet",
         "operator": "==",
@@ -269,6 +281,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "790ac20a-1e5b-4659-86e8-8d20829b45dc",
         "data_source_identifier": "pagerduty",
         "data_point_identifier": "noOfIncidentsInLastThirtyDays",
         "operator": "<",
@@ -289,6 +302,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "1a235921-6408-49f4-8653-420aa8d5bc38",
         "data_source_identifier": "pagerduty",
         "data_point_identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
         "operator": "<",
@@ -309,6 +323,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "ddbcde02-026a-4ad1-a8af-af751e941dc5",
         "data_source_identifier": "kubernetes",
         "data_point_identifier": "replicas",
         "operator": ">",
@@ -329,6 +344,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "5a2a7d7d-d41b-4f98-984b-f0290a181ce8",
         "data_source_identifier": "kubernetes",
         "data_point_identifier": "daysSinceLastDeployed",
         "operator": "<=",
@@ -349,6 +365,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "2a97f5fb-3be6-48a4-a0b1-b2638400c4fe",
         "data_source_identifier": "bitbucket",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
@@ -376,6 +393,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "0fb81262-83b2-420b-971e-a0574be41fc8",
         "data_source_identifier": "jira",
         "data_point_identifier": "meanTimeToResolve",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d\"",
@@ -403,6 +421,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "68611489-d8ab-4e13-8fee-68956893095b",
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done\"",
@@ -430,6 +449,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "e623e506-0b0a-4b64-a06b-e61b57d186a3",
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
@@ -457,6 +477,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "f63502de-a890-4b90-967c-d7c0e74dccff",
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesOpenCloseRatio",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND created >= -90d\"",
@@ -484,6 +505,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "9444bcaf-62b0-474d-86bc-cb6e0058a73c",
         "data_source_identifier": "gitlab",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
@@ -511,6 +533,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "17ff0d2b-e58d-427c-a062-bacfea372d77",
         "data_source_identifier": "gitlab",
         "data_point_identifier": "isBranchProtected",
         "conditional_input_value": "\"refs/\"",
@@ -538,6 +561,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "0692a62d-d9f7-4c76-b5a2-d6a94001fa76",
         "data_source_identifier": "gitlab",
         "data_point_identifier": "isFileExists",
         "conditional_input_value": "\".gitleaks.toml\"",
@@ -565,6 +589,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "8f783dc6-8410-4b05-a1d3-fc2784ff0f98",
         "data_source_identifier": "github",
         "data_point_identifier": "workflowsCount",
         "operator": ">",
@@ -585,6 +610,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "e155c3aa-ad1f-4d35-b01d-dfcff12800fc",
         "data_source_identifier": "github",
         "data_point_identifier": "openDependabotAlerts",
         "conditional_input_value": "critical",
@@ -612,6 +638,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "885b99e0-3456-499a-8aff-45f11c885a7f",
         "data_source_identifier": "github",
         "data_point_identifier": "openDependabotAlerts",
         "conditional_input_value": "high",
@@ -639,6 +666,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "b90d69d8-cd9c-4893-8128-c7e97eade60c",
         "data_source_identifier": "github",
         "data_point_identifier": "openCodeScanningAlerts",
         "conditional_input_value": "critical",
@@ -666,6 +694,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "619d9a18-e905-4fde-8dc9-a46c6051663d",
         "data_source_identifier": "github",
         "data_point_identifier": "openCodeScanningAlerts",
         "conditional_input_value": "high",
@@ -693,6 +722,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "c264abbd-247e-4054-a9b5-3d2d7e253ebe",
         "data_source_identifier": "github",
         "data_point_identifier": "openSecretScanningAlerts",
         "operator": "<",
@@ -713,6 +743,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "a437712d-cb9e-4e17-8236-f93188f669c1",
         "data_source_identifier": "github",
         "data_point_identifier": "openPullRequestsByAccount",
         "conditional_input_value": "\"app/dependabot\"",
@@ -740,6 +771,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "9d695f27-2593-47b1-ae91-b41b6e99cf5d",
         "data_source_identifier": "github",
         "data_point_identifier": "fileContents",
         "input_values":  [
@@ -774,6 +806,7 @@
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
+        "identifier": "71fb9c48-6348-49a6-bc8f-efb301664614",
         "data_source_identifier": "github",
         "data_point_identifier": "fileContains",
         "input_values":  [
@@ -798,5 +831,40 @@
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Webpack config file contains MiniCssExtract plugin"
+  },
+  {
+    "id": "653f7106bd565b10cd6ab12d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__4e29122c-e546-44cb-806c-0ba23fd2ffa4",
+    "name": "Node version is 16",
+    "description": "Node version is 16",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "identifier": "ce5d11bc-91e3-4756-8d7a-3505cc503303",
+        "data_source_identifier": "github",
+        "data_point_identifier": "fileContents",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\"package.json\""
+          },
+          {
+            "key": "branchName",
+            "value": "develop"
+          },
+          {
+            "key": "pattern",
+            "value": "\"\"node\": \"(.*)\"\""
+          }
+        ],
+        "operator": "=~",
+        "value": "\".*16.*\""
+      }
+    ],
+    "expression": "github.github_file_contents.\"package.json\".develop.\"\"node\": \"(.*)\"\" =~ \".*16.*\"",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Node version is not 16"
   }
 ]

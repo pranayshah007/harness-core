@@ -68,15 +68,11 @@ public class CheckDetailsMapper {
   }
 
   String getExpression(Rule rule, String dpValueSuffix, boolean getLhsOnly) {
-    StringBuilder expressionBuilder =
-        new StringBuilder(rule.getDataSourceIdentifier()).append(DOT_SEPARATOR).append(rule.getDataPointIdentifier());
-
-    for (InputValue inputValue : rule.getInputValues()) {
-      if (StringUtils.isNotBlank(inputValue.getValue())) {
-        expressionBuilder.append(DOT_SEPARATOR);
-        expressionBuilder.append(inputValue.getValue());
-      }
-    }
+    StringBuilder expressionBuilder = new StringBuilder(rule.getDataSourceIdentifier())
+                                          .append(DOT_SEPARATOR)
+                                          .append("\"")
+                                          .append(rule.getIdentifier())
+                                          .append("\"");
 
     if (StringUtils.isNotBlank(dpValueSuffix)) {
       expressionBuilder.append(DOT_SEPARATOR);

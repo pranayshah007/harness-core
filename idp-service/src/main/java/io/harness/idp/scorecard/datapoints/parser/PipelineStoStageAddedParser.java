@@ -9,16 +9,14 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
-import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
 public class PipelineStoStageAddedParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> strings) {
-    return data.get(dataPoint.getIdentifier());
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    return data.get(dataFetchDTO.getDataPoint().getIdentifier());
   }
 }

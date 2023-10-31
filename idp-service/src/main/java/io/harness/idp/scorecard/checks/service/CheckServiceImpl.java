@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -86,6 +87,8 @@ public class CheckServiceImpl implements CheckService {
   @Override
   public void createCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      generateRuleIdentifiers(checkDetails);
+
       // TODO: To be removed once UI starts sending input values in the new format.
       copyInputValues(checkDetails, accountIdentifier);
 
@@ -99,6 +102,8 @@ public class CheckServiceImpl implements CheckService {
   @Override
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      validateRules(checkDetails);
+
       // TODO: To be removed once UI starts sending input values in the new format.
       copyInputValues(checkDetails, accountIdentifier);
 
@@ -269,6 +274,20 @@ public class CheckServiceImpl implements CheckService {
         inputValue.setValue(rule.getConditionalInputValue());
         rule.setInputValues(Collections.singletonList(inputValue));
       }
+    }
+  }
+
+  private void validateRules(CheckDetails checkDetails) {
+    for (Rule rule : checkDetails.getRules()) {
+      if (rule.getIdentifier().isBlank()) {
+        throw new InvalidRequestException("Rule identifier cannot be empty");
+      }
+    }
+  }
+
+  private void generateRuleIdentifiers(CheckDetails checkDetails) {
+    for (Rule rule : checkDetails.getRules()) {
+      rule.setIdentifier(UUID.randomUUID().toString());
     }
   }
 }

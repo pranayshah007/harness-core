@@ -17,7 +17,7 @@ import io.harness.expression.common.ExpressionMode;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,14 +30,14 @@ public abstract class KubernetesExpressionParser implements DataPointParser {
   public static final String WORKLOAD_PREFIX = "workload";
 
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointResponse = new HashMap<>();
     if (!data.containsKey(DSL_RESPONSE) && data.containsKey(ERROR_MESSAGE_KEY)) {
       dataPointResponse.put(DATA_POINT_VALUE_KEY, null);
       dataPointResponse.put(ERROR_MESSAGE_KEY, data.get(ERROR_MESSAGE_KEY));
       return dataPointResponse;
     }
-    return parseKubernetesDataPoint(data, dataPoint);
+    return parseKubernetesDataPoint(data, dataFetchDTO.getDataPoint());
   }
 
   private Object parseKubernetesDataPoint(Map<String, Object> data, DataPointEntity dataPoint) {

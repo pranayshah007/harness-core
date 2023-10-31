@@ -13,8 +13,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import com.google.gson.internal.LinkedTreeMap;
 import java.time.Duration;
@@ -31,13 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements DataPointParser {
   private static final String INCIDENTS_RESPONSE_KEY = "incidents";
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     log.info(
         "Parser for AvgResolvedTimeForLastTenResolvedIncidentsInHours is invoked data - {}, data point - {}, input values - {}",
-        data, dataPoint, inputValues);
+        data, dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+      return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
 
     List<LinkedTreeMap> incidents = new ArrayList<>();
@@ -61,11 +60,11 @@ public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements Data
     }
 
     if (noOfIncidentsForCalculation == 0) {
-      return constructDataPointInfoWithoutInputValue(0, null);
+      return constructDataPointInfo(dataFetchDTO, 0, null);
     }
     log.info("AvgResolvedTimeForLastTenResolvedIncidentsInHours - {}", sumOfResolvedTime / noOfIncidentsForCalculation);
 
-    return constructDataPointInfoWithoutInputValue(sumOfResolvedTime / noOfIncidentsForCalculation, null);
+    return constructDataPointInfo(dataFetchDTO, sumOfResolvedTime / noOfIncidentsForCalculation, null);
   }
 
   private long getDifferenceBetweenTimeInHours(String createdAtTime, String resolvedTime) {

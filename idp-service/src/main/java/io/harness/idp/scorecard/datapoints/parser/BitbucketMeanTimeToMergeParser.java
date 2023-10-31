@@ -19,7 +19,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.DateUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
@@ -30,26 +30,26 @@ import java.util.Map;
 public class BitbucketMeanTimeToMergeParser implements DataPointParser {
   private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
   @Override
-  public Object parseDataPoint(
-      Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointData = new HashMap<>();
+    List<InputValue> inputValues = dataFetchDTO.getInputValues();
     if (inputValues.size() != 1) {
-      dataPointData.putAll(constructDataPointInfoWithoutInputValue(null, INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
     data = (Map<String, Object>) data.get(inputValue);
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
-      dataPointData.putAll(
-          constructDataPointInfo(inputValue, null, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(
+          dataFetchDTO, null, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
     List<Map<String, Object>> values = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "values");
     if (isEmpty(values)) {
       dataPointData.putAll(
-          constructDataPointInfo(inputValue, null, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
+          constructDataPointInfo(dataFetchDTO, null, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
       return dataPointData;
     }
 
@@ -64,7 +64,7 @@ public class BitbucketMeanTimeToMergeParser implements DataPointParser {
 
     double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
     long value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
-    dataPointData.putAll(constructDataPointInfo(inputValue, value, null));
+    dataPointData.putAll(constructDataPointInfo(dataFetchDTO, value, null));
     return dataPointData;
   }
 }

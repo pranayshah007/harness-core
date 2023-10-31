@@ -14,7 +14,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
@@ -23,39 +23,12 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataPointParser {
-  Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, List<InputValue> inputValues);
+  Object parseDataPoint(Map<String, Object> data, DataFetchDTO inputValues);
 
-  default Map<String, Object> constructDataPointInfo(String inputValue, Object value, String errorMessage) {
+  default Map<String, Object> constructDataPointInfo(DataFetchDTO dataFetchDTO, Object value, String errorMessage) {
     Map<String, Object> data = new HashMap<>();
     data.put(DATA_POINT_VALUE_KEY, value);
     data.put(ERROR_MESSAGE_KEY, errorMessage);
-    if (inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
-      return Map.of(DEFAULT_BRANCH_KEY, data);
-    } else if (inputValue.startsWith("\"")) {
-      inputValue = inputValue.replaceFirst("\"", "");
-      inputValue = inputValue.substring(0, inputValue.length() - 1);
-      return Map.of(inputValue, data);
-    } else {
-      return Map.of(inputValue, data);
-    }
-  }
-
-  default Map<String, Object> constructDataPointInfo(List<InputValue> inputValues, Object value, String errorMessage) {
-    Map<String, Object> data = new HashMap<>();
-    data.put(DATA_POINT_VALUE_KEY, value);
-    data.put(ERROR_MESSAGE_KEY, errorMessage);
-
-    for (int i = inputValues.size() - 1; i >= 0; i--) {
-      data = Map.of(inputValues.get(i).getValue().replace("\"", ""), data);
-    }
-
-    return data;
-  }
-
-  default Map<String, Object> constructDataPointInfoWithoutInputValue(Object value, String errorMessage) {
-    Map<String, Object> data = new HashMap<>();
-    data.put(DATA_POINT_VALUE_KEY, value);
-    data.put(ERROR_MESSAGE_KEY, errorMessage);
-    return data;
+    return Map.of(dataFetchDTO.getRuleIdentifier(), data);
   }
 }

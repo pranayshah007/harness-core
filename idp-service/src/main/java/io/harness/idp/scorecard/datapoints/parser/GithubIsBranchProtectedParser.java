@@ -12,12 +12,11 @@ import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_ADMIN_PERMISSION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_FILE_NAME_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.util.HashMap;
@@ -27,26 +26,27 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.IDP)
 public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointData = new HashMap<>();
 
+    List<InputValue> inputValues = dataFetchDTO.getInputValues();
     if (inputValues.size() != 1) {
-      dataPointData.putAll(constructDataPointInfoWithoutInputValue(null, INVALID_BRANCH_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_BRANCH_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
     data = (Map<String, Object>) data.get(inputValue);
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
-      dataPointData.putAll(
-          constructDataPointInfo(inputValue, false, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(
+          dataFetchDTO, false, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
     Map<String, Object> ref;
     if (CommonUtils.findObjectByName(data, "defaultBranchRef") == null
         && CommonUtils.findObjectByName(data, "ref") == null) {
-      dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, false, INVALID_BRANCH_NAME_ERROR));
       return dataPointData;
     }
 
@@ -65,7 +65,7 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
     } else {
       errorMessage = GITHUB_ADMIN_PERMISSION_ERROR;
     }
-    dataPointData.putAll(constructDataPointInfo(inputValue, value, errorMessage));
+    dataPointData.putAll(constructDataPointInfo(dataFetchDTO, value, errorMessage));
     return dataPointData;
   }
 }

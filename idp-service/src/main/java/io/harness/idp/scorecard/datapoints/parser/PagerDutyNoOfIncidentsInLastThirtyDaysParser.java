@@ -12,8 +12,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import com.google.gson.internal.LinkedTreeMap;
 import java.util.ArrayList;
@@ -26,13 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PagerDutyNoOfIncidentsInLastThirtyDaysParser implements DataPointParser {
   private static final String INCIDENTS_RESPONSE_KEY = "incidents";
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     log.info(
         "Parser for is eNoOfIncidentsInLastThirtyDaysParser is invoked data - {}, data point - {}, input values - {}",
-        data, dataPoint, inputValues);
+        data, dataFetchDTO.getDataPoint(), dataFetchDTO.getInputValues());
     String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
     if (!isEmpty(errorMessage)) {
-      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+      return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
 
     List<LinkedTreeMap> incidents = new ArrayList<>();
@@ -44,6 +43,6 @@ public class PagerDutyNoOfIncidentsInLastThirtyDaysParser implements DataPointPa
       incidents = (ArrayList) CommonUtils.findObjectByName(data, INCIDENTS_RESPONSE_KEY);
     }
 
-    return constructDataPointInfoWithoutInputValue(incidents.size(), null);
+    return constructDataPointInfo(dataFetchDTO, incidents.size(), null);
   }
 }

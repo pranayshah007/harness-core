@@ -2466,6 +2466,10 @@ components:
       type: object
       x-internal: true
       properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: e3xw4o7mbekr2
         data_source_identifier:
           type: string
           x-stoplight:
