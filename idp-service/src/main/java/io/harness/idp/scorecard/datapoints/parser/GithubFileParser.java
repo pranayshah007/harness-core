@@ -9,10 +9,12 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_CONDITIONAL_INPUT;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_FILE_NAME_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_PATTERN;
 import static io.harness.idp.scorecard.datapoints.constants.Inputs.PATTERN;
 
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.constants.DataPoints;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
@@ -29,20 +31,20 @@ public abstract class GithubFileParser implements DataPointParser {
     Map<String, Object> dataPointData = new HashMap<>();
     List<InputValue> inputValues = dataFetchDTO.getInputValues();
     if (inputValues.size() != 3) {
-      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, DataPoints.INVALID_CONDITIONAL_INPUT));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_CONDITIONAL_INPUT));
     }
 
     data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
-      dataPointData.putAll(constructDataPointInfo(
-          dataFetchDTO, null, !isEmpty(errorMessage) ? errorMessage : DataPoints.INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(
+          constructDataPointInfo(dataFetchDTO, null, !isEmpty(errorMessage) ? errorMessage : INVALID_FILE_NAME_ERROR));
       return dataPointData;
     }
 
     if (CommonUtils.findObjectByName(data, "object") == null) {
-      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, DataPoints.INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
       return dataPointData;
     }
 
@@ -50,7 +52,7 @@ public abstract class GithubFileParser implements DataPointParser {
     Optional<InputValue> patternOpt =
         inputValues.stream().filter(inputValue -> inputValue.getKey().equals(PATTERN)).findFirst();
     if (patternOpt.isEmpty()) {
-      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, DataPoints.INVALID_PATTERN));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_PATTERN));
       return dataPointData;
     }
 
@@ -64,7 +66,7 @@ public abstract class GithubFileParser implements DataPointParser {
     Object value = this.parseRegex(matcher);
     String errorMessage = null;
     if (value == null || value == Boolean.FALSE) {
-      errorMessage = DataPoints.INVALID_PATTERN;
+      errorMessage = INVALID_PATTERN;
     }
     dataPointData.putAll(constructDataPointInfo(dataFetchDTO, value, errorMessage));
 

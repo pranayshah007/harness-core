@@ -7,9 +7,22 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTAINS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTENTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_CODE_SCANNING_ALERTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_DEPENDABOT_ALERTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_PULL_REQUESTS_BY_ACCOUNT;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_SECRET_SCANNING_ALERTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.WORKFLOWS_COUNT;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.WORKFLOW_SUCCESS_RATE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.constants.DataPoints;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -30,28 +43,28 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
-      case DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE:
+      case PULL_REQUEST_MEAN_TIME_TO_MERGE:
         return githubMeanTimeToMergeParser;
-      case DataPoints.IS_BRANCH_PROTECTED:
+      case IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;
-      case DataPoints.IS_FILE_EXISTS:
+      case IS_FILE_EXISTS:
         return githubFileExistsParser;
-      case DataPoints.FILE_CONTENTS:
+      case FILE_CONTENTS:
         return githubFileContentsParser;
-      case DataPoints.FILE_CONTAINS:
+      case FILE_CONTAINS:
         return githubFileContainsParser;
-      case DataPoints.WORKFLOWS_COUNT:
+      case WORKFLOWS_COUNT:
         return githubWorkflowsCountParser;
-      case DataPoints.WORKFLOW_SUCCESS_RATE:
+      case WORKFLOW_SUCCESS_RATE:
         return githubWorkflowSuccessRateParser;
-      case DataPoints.MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS:
-      case DataPoints.MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS:
+      case MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS:
+      case MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS:
         return githubMeanTimeToCompleteWorkflowRunsParser;
-      case DataPoints.OPEN_DEPENDABOT_ALERTS:
-      case DataPoints.OPEN_CODE_SCANNING_ALERTS:
-      case DataPoints.OPEN_SECRET_SCANNING_ALERTS:
+      case OPEN_DEPENDABOT_ALERTS:
+      case OPEN_CODE_SCANNING_ALERTS:
+      case OPEN_SECRET_SCANNING_ALERTS:
         return githubAlertsCountParser;
-      case DataPoints.OPEN_PULL_REQUESTS_BY_ACCOUNT:
+      case OPEN_PULL_REQUESTS_BY_ACCOUNT:
         return githubPullRequestsCountParser;
       // Add more cases for other parsers
       default:

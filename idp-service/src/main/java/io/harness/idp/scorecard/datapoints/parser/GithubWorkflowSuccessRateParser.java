@@ -9,11 +9,12 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_CONDITIONAL_INPUT;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_FILE_NAME_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
-import io.harness.idp.scorecard.datapoints.constants.DataPoints;
 import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
@@ -28,7 +29,7 @@ public class GithubWorkflowSuccessRateParser implements DataPointParser {
     Map<String, Object> dataPointData = new HashMap<>();
     List<InputValue> inputValues = dataFetchDTO.getInputValues();
     if (inputValues.size() != 1) {
-      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, DataPoints.INVALID_FILE_NAME_ERROR));
+      dataPointData.putAll(constructDataPointInfo(dataFetchDTO, null, INVALID_FILE_NAME_ERROR));
     }
     String inputValue = inputValues.get(0).getValue();
     data = (Map<String, Object>) data.get(inputValue);
@@ -36,7 +37,7 @@ public class GithubWorkflowSuccessRateParser implements DataPointParser {
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       dataPointData.putAll(constructDataPointInfo(
-          dataFetchDTO, null, !isEmpty(errorMessage) ? errorMessage : DataPoints.INVALID_CONDITIONAL_INPUT));
+          dataFetchDTO, null, !isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
       return dataPointData;
     }
 

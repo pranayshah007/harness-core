@@ -7,8 +7,6 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 

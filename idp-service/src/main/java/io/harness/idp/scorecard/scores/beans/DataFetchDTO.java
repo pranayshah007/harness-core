@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.scores.beans;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.spec.server.idp.v1.model.InputValue;
 
@@ -16,6 +18,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.IDP)
 public class DataFetchDTO {
   String ruleIdentifier;
   DataPointEntity dataPoint;
