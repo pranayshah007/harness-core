@@ -347,6 +347,7 @@ public class AwsClientImpl implements AwsClient {
 
   public AmazonS3Client getAmazonS3Client(AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
     if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      log.info("AmazonS3Client client initializing with proxy config");
       return (AmazonS3Client) AmazonS3ClientBuilder.standard()
           .withClientConfiguration(getClientConfiguration(ceProxyConfig))
           .withRegion(DEFAULT_REGION)
@@ -388,6 +389,7 @@ public class AwsClientImpl implements AwsClient {
   protected AmazonIdentityManagement getAwsIAMClient(
       AWSCredentialsProvider credentialsProvider, Regions region, CEProxyConfig ceProxyConfig) {
     if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      log.info("AmazonIdentityManagement client initializing with proxy config");
       return AmazonIdentityManagementClientBuilder.standard()
           .withCredentials(credentialsProvider)
           .withRegion(region)
@@ -405,6 +407,7 @@ public class AwsClientImpl implements AwsClient {
     AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
         AWSCostAndUsageReportClientBuilder.standard().withRegion(DEFAULT_REGION).withCredentials(credentialsProvider);
     if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      log.info("AWSCostAndUsageReport client initializing with proxy config");
       awsCostAndUsageReportClientBuilder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
     }
     return awsCostAndUsageReportClientBuilder.build();
@@ -526,6 +529,7 @@ public class AwsClientImpl implements AwsClient {
             .build();
     builder.withCredentials(credentialsProvider);
     if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      log.info("AWSOrganizationsClient client initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
     }
     return (AWSOrganizationsClient) builder.build();
