@@ -122,7 +122,7 @@ public class K8STaskRunner {
       final V1Volume delegateConfigVolume) {
     return new K8SJob(getJobName(taskId), HARNESS_DELEGATE_NG)
         .addContainer(
-            "delegate-task", runtime.getUses(), runtime.getResource().getMemory(), runtime.getResource().getCpu())
+            "delegate-task", runtime.getUses(), runtime.getCompute().getMemory(), runtime.getCompute().getCpu())
         .addVolume(taskPackageVolume, TASK_INPUT_MNT_PATH) // FixMe: Volume should be property of container, not job
         .addVolume(delegateConfigVolume, DELEGATE_CONFIG_MNT_PATH)
         .addEnvVar("ACCOUNT_ID",
@@ -139,10 +139,10 @@ public class K8STaskRunner {
       final var secretFilename = UUID.randomUUID().toString();
       if (secret.getConfig().hasBinaryData()) {
         k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getBinaryData().toByteArray())
-            .putDataItem(secretFilename + ".bin", secret.getSecrets().getBinaryData().toByteArray());
+            .putDataItem(secretFilename + ".bin", secret.getEncryptedRecord().getBinaryData().toByteArray());
       } else {
         k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getProtoData().toByteArray())
-            .putDataItem(secretFilename + ".bin", secret.getSecrets().getProtoData().toByteArray());
+            .putDataItem(secretFilename + ".bin", secret.getEncryptedRecord().getProtoData().toByteArray());
       }
     }
     return k8sSecret.create(coreApi);

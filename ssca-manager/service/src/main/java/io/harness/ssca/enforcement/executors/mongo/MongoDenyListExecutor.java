@@ -46,10 +46,12 @@ public class MongoDenyListExecutor implements IRuleExecutor<DenyList> {
       Query query = mongoInterpreter.interpretRules(denyListItem, engine.getArtifact().getOrchestrationId(), null);
       log.info(String.format("Query is: %s", query));
       List<NormalizedSBOMComponentEntity> violatedComponents = sbomComponentRepo.findAllByQuery(query);
-
-      result.addAll(enforcementResultService.getEnforcementResults(violatedComponents,
-          ViolationType.DENYLIST_VIOLATION.getViolation(), enforcementResultService.getViolationDetails(denyListItem),
-          engine.getArtifact(), engine.getEnforcementId()));
+      for (NormalizedSBOMComponentEntity component : violatedComponents) {
+        result.add(
+            enforcementResultService.getEnforcementResults(component, ViolationType.DENYLIST_VIOLATION.getViolation(),
+                enforcementResultService.getViolationDetails(component, denyListItem), engine.getArtifact(),
+                engine.getEnforcementId()));
+      }
     }
 
     enforcementResultRepo.saveAll(result);

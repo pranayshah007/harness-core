@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -57,6 +59,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -197,8 +200,9 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
                       : null)
               .build();
 
-      StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-          ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(response.getK8sPodList(), null));
+      StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+          K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+              response.getK8sPodList(), response.getHelmChartInfo()));
 
       stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
                          .stepOutcome(stepOutcome)

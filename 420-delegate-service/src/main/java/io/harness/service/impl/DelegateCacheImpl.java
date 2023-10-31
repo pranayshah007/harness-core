@@ -169,6 +169,20 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+  private LoadingCache<String, Long> parkedDelegateTasksCountCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(1, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Long>() {
+            @Override
+            public Long load(@NotNull String accountId) {
+              return persistence.createQuery(DelegateTask.class, true)
+                  .filter(DelegateTaskKeys.accountId, accountId)
+                  .filter(DelegateTaskKeys.status, DelegateTask.Status.PARKED)
+                  .count();
+            }
+          });
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -282,6 +296,16 @@ public class DelegateCacheImpl implements DelegateCache {
       return 0;
     }
     throw new InvalidArgumentsException("Unsupported delegate task rank " + rank);
+  }
+
+  @Override
+  public long getParkedTasksCount(String accountId) {
+    try {
+      return parkedDelegateTasksCountCache.get(accountId);
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to get count of optional delegate tasks from cache based on accountId.");
+      return 0;
+    }
   }
 
   @Override

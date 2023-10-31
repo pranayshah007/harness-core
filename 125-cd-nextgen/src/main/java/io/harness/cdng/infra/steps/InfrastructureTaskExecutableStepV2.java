@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Red;
@@ -63,6 +64,8 @@ import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -102,6 +105,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
@@ -112,6 +116,7 @@ import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -153,6 +158,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
   @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -175,6 +181,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     boolean skipInstances = ParameterFieldHelper.getBooleanParameterFieldValue(stepParameters.getSkipInstances());
 
     validateResources(ambiance, infraSpec);
+    publishRuntimeSecretUsage(ambiance, infraSpec);
     setInfraIdentifierAndName(infraSpec, infrastructureConfig);
     resolver.updateExpressions(ambiance, infraSpec);
 
@@ -332,6 +339,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, spec);
     }
     validateInfrastructure(spec, ambiance, logCallback);
+    publishRuntimeSecretUsage(ambiance, spec);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
@@ -358,6 +366,20 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
         StepCategory.STAGE.name());
 
     publishOutput(spec, ambiance);
+  }
+
+  private void publishRuntimeSecretUsage(Ambiance ambiance, Infrastructure infraSpec) {
+    Set<VisitedSecretReference> secretReferences =
+        infraSpec == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, infraSpec);
+
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
   }
 
   private void publishOutput(Infrastructure infrastructure, Ambiance ambiance) {

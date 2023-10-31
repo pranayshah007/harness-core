@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: stop-after-hours
+cloudProvider: AWS
+resourceType: ec2
+description: Stops ec2 instances tagged with "CustodianOffHours" at 7 PM (PT) that have been running for at least 1 hour
+rulesYamlPath: ../stop-after-hours.yml

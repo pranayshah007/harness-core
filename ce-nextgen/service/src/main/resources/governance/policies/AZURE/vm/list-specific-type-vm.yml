@@ -1,0 +1,7 @@
+policies:
+  - name: list-specific-type-vm
+    resource: azure.vm
+    filters:
+      - type: value
+        key: 'properties.hardwareProfile.vmSize'
+        value: Standard_DS1_v2

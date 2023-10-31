@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.api;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 
@@ -20,7 +19,10 @@ import static java.util.Calendar.getInstance;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigrationAsyncTracker;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.summary.BaseSummary;
@@ -69,6 +71,7 @@ import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.entity.ContentType;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(CDC)
 @Slf4j
 @Path("/")

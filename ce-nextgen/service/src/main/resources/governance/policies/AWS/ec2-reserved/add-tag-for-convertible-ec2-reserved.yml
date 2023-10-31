@@ -1,0 +1,12 @@
+policies:
+  - name: add-tag-for-convertible-ec2-reserved
+    resource: ec2-reserved
+    filters:
+      - type: value
+        key: OfferingClass
+        value: convertible
+        op: eq
+    actions:
+      - type: tag
+        tags:
+          Convertible: true

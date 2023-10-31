@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-old-instances-list
+cloudProvider: AWS
+resourceType: ec2
+description: List all EC2s where instance age is more than 60 days
+rulesYamlPath: ../ec2-old-instances-list.yml

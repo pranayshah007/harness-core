@@ -69,6 +69,7 @@ public class RoleChangeConsumerTest extends AggregatorTestBase {
   private RoleChangeConsumer roleChangeConsumer;
   private ResourceGroupService resourceGroupService;
   private UserGroupService userGroupService;
+  @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   @Before
   public void setup() {
@@ -86,7 +87,7 @@ public class RoleChangeConsumerTest extends AggregatorTestBase {
         .thenReturn(Optional.of(RoleDBOMapper.fromDBO(role)));
     resourceGroup = buildResourceGroup(scopeIdentifier);
     aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
-        new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     roleChangeConsumer = new RoleChangeConsumer(aclRepository, roleAssignmentRepository, aclGeneratorService);
     when(resourceGroupService.get(
              resourceGroup.getIdentifier(), resourceGroup.getScopeIdentifier(), ManagedFilter.NO_FILTER))

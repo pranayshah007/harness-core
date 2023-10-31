@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-bucket-version-enabled-list
+cloudProvider: AWS
+resourceType: s3
+description: List buckets where versioning is enabled
+rulesYamlPath: ../s3-bucket-version-enabled-list.yml

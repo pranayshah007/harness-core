@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.api;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.configuration.DeployMode;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
@@ -26,6 +28,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Api("version")
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)

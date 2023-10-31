@@ -108,6 +108,7 @@ public class Project implements PersistentEntity, NGAccountAccess, UniqueIdAware
   String accountIdentifier;
 
   String uniqueId;
+  String parentId;
   @EntityIdentifier(allowBlank = false) String identifier;
   @EntityIdentifier(allowBlank = false) String orgIdentifier;
 

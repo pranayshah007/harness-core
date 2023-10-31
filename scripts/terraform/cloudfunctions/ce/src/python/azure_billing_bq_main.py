@@ -877,6 +877,8 @@ def setAvailableColumns(jsonData):
         azure_column_mapping["azureInstanceId"] = "resourceid"
     elif "instanceid" in columns:
         azure_column_mapping["azureInstanceId"] = "instanceid"
+    elif "instancename" in columns:
+        azure_column_mapping["azureInstanceId"] = "instancename"
     else:
         raise Exception("No mapping found for azureInstanceId column")
 

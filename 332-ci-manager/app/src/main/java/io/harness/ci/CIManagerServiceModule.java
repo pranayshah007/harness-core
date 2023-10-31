@@ -184,6 +184,17 @@ public class CIManagerServiceModule extends AbstractModule {
     return apiUrl;
   }
 
+  @Provides
+  @Singleton
+  @Named("harnessCodeGitBaseUrl")
+  String getHarnessCodeGitBaseUrl() {
+    String gitUrl = ciManagerConfiguration.getHarnessCodeGitUrl();
+    if (gitUrl.endsWith("/")) {
+      return gitUrl.substring(0, gitUrl.length() - 1);
+    }
+    return gitUrl;
+  }
+
   private DelegateCallbackToken getDelegateCallbackToken(
       DelegateServiceGrpcClient delegateServiceClient, CIManagerConfiguration appConfig) {
     log.info("Generating Delegate callback token");
@@ -363,6 +374,15 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("resourceCleanupExecutor"))
+        .toInstance(
+            new ScheduledThreadPoolExecutor(ciManagerConfiguration.getAsyncResourceCleanupPool().getCorePoolSize(),
+                new ThreadFactoryBuilder()
+                    .setNameFormat("Resource-Cleanup-Thread-%d")
+                    .setPriority(Thread.NORM_PRIORITY)
+                    .build()));
 
     install(new CIExecutionServiceModule(
         ciManagerConfiguration.getCiExecutionServiceConfig(), ciManagerConfiguration.getShouldConfigureWithPMS()));

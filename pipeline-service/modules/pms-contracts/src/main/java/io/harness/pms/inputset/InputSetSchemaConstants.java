@@ -38,4 +38,5 @@ public class InputSetSchemaConstants {
       "List of Expressions that need to be replaced for running selected Stages. Empty if the full Pipeline is being run or no expressions need to be replaced";
   public static final String INPUT_SET_COUNT_MESSAGE =
       "Tells whether there are any Input Sets for this Pipeline or not.";
+  public static final String INPUT_SET_ID_WITH_PIPELINE_ID = "InputSet Identifier prefixed with Pipeline Identifier.";
 }

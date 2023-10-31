@@ -113,9 +113,9 @@ public class ServiceNowCreateStepVariableCreatorTest extends CategoryTest {
     List<YamlProperties> properties = variablesForParentNodeV2.getYamlExtraProperties()
                                           .get("-sAzEwZxQ6akzAzTfrdQyw") // uuid for step node
                                           .getPropertiesList();
-    assertThat(outputProperties).hasSize(4);
+    assertThat(outputProperties).hasSize(5);
     assertThat(properties).hasSize(5);
-    assertThat(outputProperties).hasSize(4);
+    assertThat(outputProperties).hasSize(5);
     assertThat(properties).hasSize(5);
     assertYamlProperties(outputProperties.get(0),
         "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.ticketUrl",

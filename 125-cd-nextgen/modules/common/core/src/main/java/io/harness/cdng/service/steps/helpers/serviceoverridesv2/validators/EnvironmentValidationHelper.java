@@ -35,6 +35,14 @@ import org.apache.commons.lang3.StringUtils;
 public class EnvironmentValidationHelper {
   @Inject private EnvironmentService environmentService;
 
+  /***
+   *
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param environmentRef
+   * @return Returns only environment metadata, This should not be used if environment yaml is required
+   */
   @NonNull
   public Environment checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotEmpty String environmentRef) {
@@ -44,13 +52,15 @@ public class EnvironmentValidationHelper {
     String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
 
     if (envRefSplit == null || envRefSplit.length == 1) {
-      environment = environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
+      environment =
+          environmentService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
     } else {
       // env ref for org/account level entity
       IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
           environmentRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.ENVIRONMENT);
-      environment = environmentService.get(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
+      environment =
+          environmentService.getMetadata(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
     }
 
     if (environment.isEmpty()) {

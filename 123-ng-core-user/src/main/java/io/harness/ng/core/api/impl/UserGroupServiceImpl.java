@@ -390,7 +390,17 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO) {
+    return list(userGroupFilterDTO, Pageable.unpaged()).getContent();
+  }
+
+  @Override
+  public Page<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO, Pageable pageable) {
     validateFilter(userGroupFilterDTO);
+    Criteria criteria = createCriteriaWithFilterDTOWithInheritedUG(userGroupFilterDTO);
+    return userGroupRepository.findAll(criteria, pageable);
+  }
+
+  private Criteria createCriteriaWithFilterDTOWithInheritedUG(UserGroupFilterDTO userGroupFilterDTO) {
     Criteria criteria = createUserGroupFilterCriteria(userGroupFilterDTO.getAccountIdentifier(),
         userGroupFilterDTO.getOrgIdentifier(), userGroupFilterDTO.getProjectIdentifier(),
         userGroupFilterDTO.getSearchTerm(), userGroupFilterDTO.getFilterType());
@@ -403,7 +413,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (isNotEmpty(userGroupFilterDTO.getUserIdentifierFilter())) {
       criteria.and(UserGroupKeys.users).in(userGroupFilterDTO.getUserIdentifierFilter());
     }
-    return userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
+    return criteria;
   }
 
   public PageResponse<UserMetadataDTO> listUsersInUserGroup(

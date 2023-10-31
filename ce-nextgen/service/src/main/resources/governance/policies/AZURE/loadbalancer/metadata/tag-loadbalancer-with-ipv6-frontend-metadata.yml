@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: tag-loadbalancer-with-ipv6-frontend
+cloudProvider: AZURE
+resourceType: azure.loadbalancer
+description: Add 'IPv6' tag with value true for all load balancers with an ipv6 frontend public IP
+rulesYamlPath: ../tag-loadbalancer-with-ipv6-frontend.yml

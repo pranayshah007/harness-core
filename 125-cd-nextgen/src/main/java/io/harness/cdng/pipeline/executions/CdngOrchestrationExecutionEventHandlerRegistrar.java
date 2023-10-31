@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.pipeline.executions;
-
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.ORCHESTRATION_END;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.gitrestraint.services.GitopsStepFinishHandler;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class CdngOrchestrationExecutionEventHandlerRegistrar {

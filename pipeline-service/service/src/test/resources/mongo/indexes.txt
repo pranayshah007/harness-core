@@ -33,6 +33,8 @@ expressionUsage {"name": "accountId_orgId_projectId_pipelineId", "unique": true}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
+graphUpdateInfo {"name": "unique_planExecutionId_stepCategory_nodeExecutionId", "unique": true} {"planExecutionId": 1, "executionSummaryUpdateInfo.stepCategory": 1, "nodeExecutionId": 1}
+graphUpdateInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 inputSetsPMS {"name": "accountId_organizationId_projectId_repo_branch_WithCollationIdx", "background": true, "collation": {"locale": "en", "strength": 2}} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "yamlGitConfigRef": 1, "branch": 1, "lastUpdatedAt": -1}
 inputSetsPMS {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 inputSetsPMS {"name": "createdAt_1", "background": true} {"createdAt": 1}

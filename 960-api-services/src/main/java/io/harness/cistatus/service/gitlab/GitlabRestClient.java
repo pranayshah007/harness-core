@@ -6,7 +6,9 @@
  */
 
 package io.harness.cistatus.service.gitlab;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cistatus.StatusCreationResponse;
 
 import retrofit2.Call;
@@ -16,6 +18,7 @@ import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 public interface GitlabRestClient {
   @POST("v4/projects/{id}/statuses/{sha}/")
   Call<StatusCreationResponse> createStatus(@Header("Authorization") String authorization, @Path("id") String id,

@@ -75,7 +75,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   }
 
   @Override
-  protected void handleEventWithContext(NodeResumeEvent event) {
+  public void handleEventWithContext(NodeResumeEvent event) {
     ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
     Map<String, ResponseData> response = new HashMap<>();
     // Todo: Remove this after the deployment in first jan 23
@@ -121,7 +121,8 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
         ByteString passThroughBytes = chainDetailsProto.getPassThroughData();
         if (event.getExecutionMode() == ExecutionMode.CHILD_CHAIN) {
           chainDetailsBuilder.passThroughBytes(passThroughBytes);
-        } else if (event.getExecutionMode() == ExecutionMode.TASK_CHAIN) {
+        } else if (event.getExecutionMode() == ExecutionMode.TASK_CHAIN
+            || event.getExecutionMode() == ExecutionMode.ASYNC_CHAIN) {
           chainDetailsBuilder.passThroughData(
               RecastOrchestrationUtils.fromBytes(passThroughBytes.toByteArray(), PassThroughData.class));
         }

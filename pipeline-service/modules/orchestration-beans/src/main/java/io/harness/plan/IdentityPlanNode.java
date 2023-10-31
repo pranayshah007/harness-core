@@ -43,7 +43,7 @@ public class IdentityPlanNode implements Node {
   boolean isSkipExpressionChain;
   String whenCondition;
   String skipCondition;
-  @Builder.Default SkipType skipGraphType = SkipType.NOOP;
+  @With @Builder.Default SkipType skipGraphType = SkipType.NOOP;
   String stageFqn;
   StepType stepType;
   // todo: use list of execution IDs in retry failed pipeline as well
@@ -143,6 +143,14 @@ public class IdentityPlanNode implements Node {
         .whenCondition(node.getWhenCondition())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
+  }
+
+  public static IdentityPlanNode mapPlanNodeToIdentityNodeWithSkipAsTrue(String newUuid, Node node,
+      String nodeIdentifier, String nodeName, StepType stepType, String originalNodeExecutionUuid) {
+    IdentityPlanNode identityPlanNode =
+        mapPlanNodeToIdentityNode(newUuid, node, nodeIdentifier, nodeName, stepType, originalNodeExecutionUuid);
+
+    return identityPlanNode.withSkipGraphType(SkipType.SKIP_NODE);
   }
 
   public void convertToListOfOGNodeExecIds(String nodeExecId) {

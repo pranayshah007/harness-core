@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -102,7 +103,7 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProvider implements CDPluginI
 
   public Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, true);
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, false);
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {

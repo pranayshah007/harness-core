@@ -32,8 +32,8 @@ public class AddTagsForServicesAndEnvsMigration implements Migration {
 
   @Override
   public void migrate() {
-    try (HIterator<Account> accounts =
-             new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+    try (HIterator<Account> accounts = new HIterator<>(
+             wingsPersistence.createAnalyticsQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
       while (accounts.hasNext()) {
         final Account account = accounts.next();
 

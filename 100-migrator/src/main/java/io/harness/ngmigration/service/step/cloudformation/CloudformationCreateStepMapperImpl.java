@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.service.step.cloudformation;
-
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepConfiguration;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
@@ -38,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class CloudformationCreateStepMapperImpl extends BaseCloudformationProvisionerMapper {
   @Override

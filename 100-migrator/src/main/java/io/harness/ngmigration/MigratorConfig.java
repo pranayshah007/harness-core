@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static com.google.common.collect.ImmutableMap.of;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import software.wings.app.MainConfiguration;
@@ -24,6 +26,7 @@ import io.dropwizard.bundles.assets.AssetsConfiguration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Singleton

@@ -31,6 +31,7 @@ import io.harness.marketplace.gcp.procurement.pubsub.ProcurementPubsubMessage;
 import io.harness.mongo.index.migrator.AggregateResult;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.oidc.entities.OidcJwks;
 
 import software.wings.api.ARMStateExecutionData;
 import software.wings.api.AmiStepExecutionSummary;
@@ -785,6 +786,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(NotificationReceiverInfo.class);
     set.add(NotificationRulesStatus.class);
     set.add(OauthSettings.class);
+    set.add(OidcJwks.class);
     set.add(PcfInfrastructureMapping.class);
     set.add(PcfServiceSpecification.class);
     set.add(Permit.class);

@@ -56,7 +56,7 @@ public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("packagelicense") List<String> packageLicense;
   @Field("packagesourceinfo") String packageSourceInfo;
   @Field("packageversion") String packageVersion;
-  @Field("packagesuppliername") String packageSupplierName;
+  @Field("packagesuppliername") @Deprecated String packageSupplierName;
   @Field("packageoriginatorname") String packageOriginatorName;
   @Field("originatortype") String originatorType;
   @Field("packagetype") String packageType;

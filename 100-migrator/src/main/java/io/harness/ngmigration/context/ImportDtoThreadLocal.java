@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngmigration.context;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.dto.ImportDTO;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @UtilityClass
 public class ImportDtoThreadLocal {
   public static final ThreadLocal<ImportDTO> importDto = new ThreadLocal<>();

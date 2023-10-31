@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.resolver;
 
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +61,21 @@ public class RefObjectUtilsTest extends CategoryTest {
                        .setProducerId("__PRODUCER_ID__")
                        .setKey("key")
                        .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
+                       .build());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetSweepingOutputRefObjectWithGroupName() {
+    String name = "name";
+    String groupName = "groupName";
+    assertThat(RefObjectUtils.getSweepingOutputRefObjectUsingGroup(name, groupName))
+        .isEqualTo(RefObject.newBuilder()
+                       .setName(name)
+                       .setKey(name)
+                       .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
+                       .setGroupName(groupName)
                        .build());
   }
 }

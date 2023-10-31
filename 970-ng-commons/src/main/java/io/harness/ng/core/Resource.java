@@ -28,5 +28,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class Resource {
   @NotEmpty String type;
   @NotEmpty String identifier;
+  String uniqueId;
   Map<String, String> labels;
 }

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.monitoredservice.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.ngmigration.beans.MigrationContext;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.Collections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MonitoredServiceEntityToMonitoredServiceMapper {
   @Inject HealthSourceGeneratorFactory healthSourceGeneratorFactory;
 

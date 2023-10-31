@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.TaskExecutionStage;
+import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -74,11 +76,15 @@ public class DelegateGrpcClientWrapper {
   }
 
   public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTaskV2(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
+    return delegateServiceGrpcClient.submitAsyncTaskV2(delegateTaskRequest, delegateCallbackTokenSupplier.get(),
+        holdFor, delegateTaskRequest.isSelectionLogsTrackingEnabled());
   }
 
   public boolean isTaskTypeSupported(AccountId accountId, TaskType taskType) {
     return delegateServiceGrpcClient.isTaskTypeSupported(accountId, taskType);
+  }
+
+  public TaskExecutionStage cancelV2Task(AccountId accountId, TaskId taskId) {
+    return delegateServiceGrpcClient.cancelTaskV2(accountId, taskId);
   }
 }

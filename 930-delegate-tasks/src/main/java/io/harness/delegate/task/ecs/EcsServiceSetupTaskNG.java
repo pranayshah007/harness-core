@@ -18,8 +18,10 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -31,6 +33,8 @@ import org.jose4j.lang.JoseException;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class EcsServiceSetupTaskNG extends AbstractDelegateRunnableTask {
+  @Inject private EcsDelegateTaskHelper ecsDelegateTaskHelper;
+
   public EcsServiceSetupTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -45,7 +49,8 @@ public class EcsServiceSetupTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
-    return null;
+    EcsCommandRequest ecsCommandRequest = (EcsCommandRequest) parameters;
+    return ecsDelegateTaskHelper.getEcsCommandResponse(ecsCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

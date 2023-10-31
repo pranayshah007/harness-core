@@ -2087,6 +2087,7 @@ public class ViewsQueryBuilder {
     boolean shouldIncludeCostTargetCaseStatement;
     switch (operator) {
       case EQUALS:
+      case SEARCH:
       case IN:
         if (Objects.nonNull(unallocatedCost) && unallocatedCost.getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME
             && selectedCostTargets.contains(unallocatedCost.getLabel())) {

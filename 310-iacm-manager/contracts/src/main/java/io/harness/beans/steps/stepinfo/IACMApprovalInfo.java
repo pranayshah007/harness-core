@@ -8,6 +8,7 @@
 package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
 import io.harness.annotation.RecasterAlias;
@@ -44,6 +45,7 @@ public class IACMApprovalInfo extends IACMStepInfo {
   private ParameterField<Map<String, String>> envVariables;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> autoApprove;
 
   @Override
   public TypeInfo getNonYamlInfo() {
@@ -52,13 +54,19 @@ public class IACMApprovalInfo extends IACMStepInfo {
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
-      "privileged", "imagePullPolicy", "env", "image"})
+      "privileged", "imagePullPolicy", "env", "image", "autoApprove"})
   public IACMApprovalInfo(String identifier, String name, Integer retry,
-      ParameterField<Map<String, String>> envVariables, ParameterField<String> image) {
+      ParameterField<Map<String, String>> envVariables, ParameterField<String> image,
+      ParameterField<Boolean> autoApprove) {
     super.identifier = identifier;
     super.name = name;
     super.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
     this.envVariables = envVariables;
     this.image = image;
+    if (autoApprove == null || autoApprove.getValue() == null) {
+      this.autoApprove = ParameterField.createValueField(false);
+    } else {
+      this.autoApprove = autoApprove;
+    }
   }
 }

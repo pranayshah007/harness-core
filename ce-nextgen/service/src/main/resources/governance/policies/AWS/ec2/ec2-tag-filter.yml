@@ -1,0 +1,15 @@
+policies:
+  - name: ec2-tag-filter
+    resource: ec2
+    description: |
+      List EC2 not having either of cecid or  cisco:operations:purpose tags
+    filters:
+      - or:
+          - type: value
+            key: tag:Name
+            op: ne
+            value: 'cecid'
+          - type: value
+            key: tag:Name
+            op: ne
+            value: 'cisco:operations:purpose'

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.monitoredservice.healthsource;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
@@ -17,6 +19,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.GraphNode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public abstract class HealthSourceGenerator {
   public abstract HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode, MigrationContext migrationContext);
 

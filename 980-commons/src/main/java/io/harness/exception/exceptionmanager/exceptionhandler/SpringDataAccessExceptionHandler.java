@@ -6,9 +6,11 @@
  */
 
 package io.harness.exception.exceptionmanager.exceptionhandler;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.WingsException;
 
@@ -17,6 +19,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class SpringDataAccessExceptionHandler implements ExceptionHandler {

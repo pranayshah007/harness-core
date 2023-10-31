@@ -44,8 +44,8 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
 
   @Override
   public Optional<DeploymentSummary> fetchNthRecordFromNow(
-      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
-    Criteria criteria = getCriteria(instanceSyncKey, infrastructureMappingDTO);
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment) {
+    Criteria criteria = getCriteria(instanceSyncKey, infrastructureMappingDTO, isRollbackDeployment);
     Query query = getQuery(criteria);
     query.skip((long) N - 1);
     query.limit(1);
@@ -55,7 +55,7 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
   @Override
   public Optional<DeploymentSummary> fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId) {
-    Criteria criteria = getCriteria(instanceSyncKey, infrastructureMappingDTO);
+    Criteria criteria = getCriteria(instanceSyncKey, infrastructureMappingDTO, null);
     criteria.and(DeploymentSummaryKeys.pipelineExecutionId).ne(pipelineExecutionId);
     Query query = getQuery(criteria);
     query.limit(1);
@@ -95,7 +95,8 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
   }
 
   @NotNull
-  private Criteria getCriteria(String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
+  private Criteria getCriteria(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment) {
     if (infrastructureMappingDTO == null) {
       throw new InvalidArgumentsException("InfrastructureMappingDTO is null for instanceKey: {}" + instanceSyncKey);
     }
@@ -111,6 +112,9 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
     }
     if (EmptyPredicate.isNotEmpty(infrastructureMappingDTO.getProjectIdentifier())) {
       criteria.and(DeploymentSummaryKeys.projectIdentifier).is(infrastructureMappingDTO.getProjectIdentifier());
+    }
+    if (isRollbackDeployment != null) {
+      criteria.and(DeploymentSummaryKeys.isRollbackDeployment).is(isRollbackDeployment);
     }
 
     criteria.and(DeploymentSummaryKeys.infrastructureMappingId).is(infrastructureMappingDTO.getId());

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-subnet-group-list-unused
+cloudProvider: AWS
+resourceType: rds-subnet-group
+description: List all launch rds subnet groups that are not in use but exist
+rulesYamlPath: ../rds-subnet-group-list-unused.yml

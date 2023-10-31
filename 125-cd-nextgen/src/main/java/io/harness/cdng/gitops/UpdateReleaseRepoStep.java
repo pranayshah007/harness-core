@@ -78,6 +78,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
@@ -237,7 +238,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
 
   @Override
   public AsyncChainExecutableResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepParameters, StepInputPackage inputPackage,
+      StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     try {
       NGLogCallback logCallback = getLogCallback(ambiance, false);
@@ -265,7 +266,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
     return calculateStepResponse(ambiance, ngGitOpsResponse);
   }

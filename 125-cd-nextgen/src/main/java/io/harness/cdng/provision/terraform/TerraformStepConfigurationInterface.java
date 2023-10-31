@@ -28,4 +28,6 @@ public interface TerraformStepConfigurationInterface {
   void setCliOptions(List<TerraformCliOptionFlag> cliOptionFlags);
   void setEncryptOutputSecretManager(TerraformEncryptOutput terraformEncryptOutput);
   TerraformEncryptOutput getEncryptOutputSecretManager();
+  ParameterField<Boolean> getSkipStateStorage();
+  void setSkipStateStorage(ParameterField<Boolean> skipStateStorage);
 }

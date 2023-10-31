@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +42,8 @@ public class YamlInputUtils {
     JsonNode yamlJsonNode = YamlUtils.readAsJsonNode(yaml);
     // should pick hardcoded values from some constants, need to change it
 
-    inputsJsonNode = getInputsNode(yamlJsonNode);
+    JsonNode inputsParentNode = getInputsParentNode(yamlJsonNode);
+    inputsJsonNode = (ObjectNode) JsonFieldUtils.get(inputsParentNode, YamlSchemaFieldConstants.INPUTS);
     if (inputsJsonNode == null) {
       return inputDetails;
     }
@@ -48,24 +51,28 @@ public class YamlInputUtils {
     Iterator<String> inputNames = inputsJsonNode.fieldNames();
     for (Iterator<String> it = inputNames; it.hasNext();) {
       String inputName = it.next();
-      inputDetails.add(buildInputJsonNode(inputsJsonNode.get(inputName), inputName));
+      inputDetails.add(buildInputJsonNode(JsonFieldUtils.get(inputsJsonNode, inputName), inputName));
     }
 
     return inputDetails;
   }
 
-  public String prepareYamlInputExpression(InputDetails inputDetails) {
-    return "<+inputs." + inputDetails.getName() + ">";
-  }
-
-  public Map<String, InputDetails> prepareYamlInputExpressionToYamlInputMap(List<InputDetails> inputDetailsList) {
-    Map<String, InputDetails> yamlInputMap = new HashMap<>();
-    inputDetailsList.forEach(inputDetails -> yamlInputMap.put(prepareYamlInputExpression(inputDetails), inputDetails));
+  public Map<Set<String>, InputDetails> prepareYamlInputExpressionToYamlInputMap(List<InputDetails> inputDetailsList) {
+    Map<Set<String>, InputDetails> yamlInputMap = new LinkedHashMap<>();
+    inputDetailsList.forEach(inputDetails -> {
+      Set<String> possibleExpressions = new HashSet<>();
+      possibleExpressions.add("<+inputs." + inputDetails.getName() + ">");
+      possibleExpressions.add("<+inputs.get(\\\"" + inputDetails.getName() + "\\\")>");
+      yamlInputMap.put(possibleExpressions, inputDetails);
+    });
     return yamlInputMap;
   }
 
   public Map<String, List<FQN>> parseFQNsForAllInputsInYaml(
-      Map<FQN, Object> fqnToValueMap, Set<String> inputExpressionsList) {
+      Map<FQN, Object> fqnToValueMap, Set<Set<String>> inputExpressionsList) {
+    Set<String> allInputExpressions = new HashSet<>();
+    inputExpressionsList.forEach(allInputExpressions::addAll);
+
     Map<String, List<FQN>> FQNListForEachInput = new HashMap<>();
     fqnToValueMap.forEach((fqn, v) -> {
       String value = v.toString();
@@ -76,7 +83,7 @@ public class YamlInputUtils {
       if (value.charAt(value.length() - 1) == '"') {
         value = value.substring(0, value.length() - 1);
       }
-      if (inputExpressionsList.contains(value)) {
+      if (allInputExpressions.contains(value)) {
         if (!FQNListForEachInput.containsKey(fqn)) {
           FQNListForEachInput.put(value, new ArrayList<>());
         }
@@ -88,7 +95,7 @@ public class YamlInputUtils {
 
   private InputDetails buildInputJsonNode(JsonNode inputNode, String inputName) {
     InputDetailsBuilder builder =
-        InputDetails.builder().name(inputName).type(SchemaInputType.valueOf(inputNode.get("type").asText()));
+        InputDetails.builder().name(inputName).type(SchemaInputType.getYamlInputType(inputNode.get("type").asText()));
     if (inputNode.get("description") != null) {
       builder.description(inputNode.get("description").asText());
     }
@@ -101,14 +108,10 @@ public class YamlInputUtils {
     return builder.build();
   }
 
-  private ObjectNode getInputsNode(JsonNode rootJsonNode) {
-    JsonNode firstNode = JsonFieldUtils.get(rootJsonNode, YamlSchemaFieldConstants.PIPELINE);
-    if (firstNode == null) {
-      firstNode = JsonFieldUtils.get(rootJsonNode, YamlSchemaFieldConstants.TEMPLATE);
+  private JsonNode getInputsParentNode(JsonNode yamlJsonNode) {
+    if (JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.VERSION) != null) {
+      return JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.SPEC);
     }
-    if (firstNode != null && JsonFieldUtils.isPresent(firstNode, YamlSchemaFieldConstants.INPUTS)) {
-      return (ObjectNode) JsonFieldUtils.get(firstNode, YamlSchemaFieldConstants.INPUTS);
-    }
-    return null;
+    return JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.PIPELINE);
   }
 }

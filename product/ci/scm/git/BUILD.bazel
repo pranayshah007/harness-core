@@ -36,6 +36,7 @@ go_test(
         "gitlab_test.go",
     ],
     data = [
+        "testdata/branch.json",
         "testdata/branches.json",
         "testdata/branches_with_default.json",
         "testdata/commit.json",

@@ -123,6 +123,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -169,6 +170,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private StageExecutionHelper stageExecutionHelper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService sweepingOutputService;

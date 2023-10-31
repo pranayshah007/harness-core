@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.importer;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.service.DiscoveryService;
@@ -18,6 +20,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class AppImportService implements ImportService {
   @Inject DiscoveryService discoveryService;

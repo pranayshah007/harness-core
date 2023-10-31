@@ -934,6 +934,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     doReturn(null).when(endNodeExecutionHelper).handleStepResponsePreAdviser(ambiance, stepResponseProto);
     executionStrategy.handleStepResponseInternal(ambiance, stepResponseProto);
     verify(adviseHelper, times(0)).queueAdvisingEvent(any(), any(), any());
+    verify(planExecutionService, times(0)).calculateAndUpdateRunningStatusUnderLock(any(), any());
   }
 
   @Test
@@ -957,6 +958,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         .handleStepResponsePreAdviser(ambiance, stepResponseProto);
     executionStrategy.handleStepResponseInternal(ambiance, stepResponseProto);
     verify(adviseHelper, times(1)).queueAdvisingEvent(any(), any(), any());
+    verify(planExecutionService, times(1)).calculateAndUpdateRunningStatusUnderLock(any(), any());
   }
 
   @Test

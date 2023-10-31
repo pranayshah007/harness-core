@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.ecs;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.EcsStepFunctor;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public abstract class EcsBaseStepMapper extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(

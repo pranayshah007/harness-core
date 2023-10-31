@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -90,4 +91,5 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
 
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
+  @Nullable Long lastModifiedPolledResponseTime;
 }

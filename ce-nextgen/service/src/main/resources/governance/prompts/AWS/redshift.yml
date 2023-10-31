@@ -1,0 +1,3 @@
+filters: config-compliance, consecutive-aws-backups, consecutive-snapshots, default-vpc, event, finding, json-diff, kms-key, list-item, logging, marked-for-op, metrics, network-location, offhour, onhour, ops-item, param, reduce, security-group, subnet, value
+actions: auto-tag-user, copy-related-tag, delete, enable-vpc-routing, invoke-lambda, invoke-sfn, mark-for-op, modify-security-groups, notify, pause, post-finding, post-item, put-metric, remove-tag, resume, retention, set-attributes, set-logging, set-public-access, snapshot, tag, tag-trim, webhook
+customPrompt:

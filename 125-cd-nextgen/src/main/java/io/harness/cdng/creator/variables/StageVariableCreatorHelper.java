@@ -84,8 +84,8 @@ public class StageVariableCreatorHelper {
     List<NGVariable> envVariables = new ArrayList<>();
     if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
       // scoped environment ref provided here
-      Optional<Environment> optionalEnvironment =
-          environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
+      Optional<Environment> optionalEnvironment = environmentService.get(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false, true, false);
       if (optionalEnvironment.isPresent()) {
         if (overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
           // add all env global overrides

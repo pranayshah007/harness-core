@@ -6,10 +6,13 @@
  */
 
 package io.harness.pms.sdk.execution.events;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkEventFrameworkConstants {
   public static final String PT_INTERRUPT_CONSUMER = "INTERRUPT_CONSUMER";

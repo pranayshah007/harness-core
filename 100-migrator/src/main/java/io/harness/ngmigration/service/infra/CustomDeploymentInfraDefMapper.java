@@ -27,6 +27,7 @@ import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Variable;
@@ -96,11 +97,26 @@ public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
     }
 
     return CustomDeploymentInfrastructure.builder()
-        .customDeploymentRef(StepTemplateRef.builder()
-                                 .templateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail))
-                                 .versionLabel("__STABLE__")
-                                 .build())
+        .customDeploymentRef(getCustomDeploymentRef(ngEntityDetail, migratedEntities, infrastructureDefinition))
         .variables(variables)
         .build();
+  }
+
+  private StepTemplateRef getCustomDeploymentRef(NgEntityDetail ngEntityDetail,
+      Map<CgEntityId, NGYamlFile> migratedEntities, InfrastructureDefinition infrastructureDefinition) {
+    NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder()
+                                                     .id(infrastructureDefinition.getDeploymentTypeTemplateId())
+                                                     .type(NGMigrationEntityType.TEMPLATE)
+                                                     .build());
+    if (ngYamlFile != null && ngYamlFile.getYaml() != null) {
+      NGTemplateConfig templateConfig = (NGTemplateConfig) ngYamlFile.getYaml();
+      String templateVersion = templateConfig.getTemplateInfoConfig().getVersionLabel();
+      return StepTemplateRef.builder()
+          .templateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail))
+          .versionLabel(templateVersion)
+          .build();
+    }
+
+    return StepTemplateRef.builder().templateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail)).build();
   }
 }

@@ -7,11 +7,11 @@
 
 package io.harness.executionInfra;
 
-import io.harness.beans.DelegateTask;
-import io.harness.delegate.core.beans.ExecutionInfraInfo;
+import java.util.Map;
 
 public interface ExecutionInfrastructureService {
-  String addExecutionInfrastructure(DelegateTask task, String delegateId, ExecutionInfraInfo location);
-  ExecutionInfraLocation getExecutionInfrastructure(String id);
-  void deleteExecutionInfrastructure(String executionInfraUuid);
+  String createExecutionInfra(String taskId, Map<String, String> stepTaskIds, String runnerType);
+  boolean updateDelegateInfo(String infraRefId, String delegateId, String delegateName);
+  ExecutionInfraLocation getExecutionInfra(String id);
+  boolean deleteExecutionInfrastructure(String executionInfraUuid);
 }

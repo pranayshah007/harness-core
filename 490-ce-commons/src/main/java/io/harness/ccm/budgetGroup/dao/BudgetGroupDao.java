@@ -67,6 +67,8 @@ public class BudgetGroupDao {
     }
     if (budgetGroup.getAlertThresholds() != null) {
       updateOperations.set(BudgetGroupKeys.alertThresholds, budgetGroup.getAlertThresholds());
+    } else {
+      updateOperations.unset(BudgetGroupKeys.alertThresholds);
     }
     if (budgetGroup.getChildEntities() != null) {
       updateOperations.set(BudgetGroupKeys.childEntities, budgetGroup.getChildEntities());

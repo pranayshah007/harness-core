@@ -114,13 +114,13 @@ public class TerraformClientImplTest extends CategoryTest {
     verifyCliCommandRequest(cliCommandRequest, format("echo \"no\" | %s", command), command);
   }
 
-  private void verifyCliCommandRequest(CliCommandRequest cliCommandRequest, String command, String command1) {
+  private void verifyCliCommandRequest(CliCommandRequest cliCommandRequest, String command, String loggingCommand) {
     assertThat(cliCommandRequest.getCommand()).isEqualTo(command);
     assertThat(cliCommandRequest.getTimeoutInMillis()).isEqualTo(DEFAULT_TERRAFORM_COMMAND_TIMEOUT);
     assertThat(cliCommandRequest.getEnvVariables()).isEmpty();
     assertThat(cliCommandRequest.getDirectory()).isEqualTo(SCRIPT_FILES_DIRECTORY);
     assertThat(cliCommandRequest.getLogCallback()).isEqualTo(logCallback);
-    assertThat(cliCommandRequest.getLoggingCommand()).isEqualTo(command1);
+    assertThat(cliCommandRequest.getLoggingCommand()).isEqualTo(loggingCommand);
     assertThat((LogCallback) on(cliCommandRequest.getLogOutputStream()).get("logCallback")).isEqualTo(logCallback);
     assertThat((LogCallback) on(cliCommandRequest.getErrorLogOutputStream()).get("executionLogCallback"))
         .isEqualTo(logCallback);
@@ -523,7 +523,16 @@ public class TerraformClientImplTest extends CategoryTest {
     assertThat(actualResponse).isEqualTo(cliResponse);
     verify(cliHelper).executeCliCommand(captor.capture());
     CliCommandRequest cliCommandRequest = captor.getValue();
-    verifyCliCommandRequest(cliCommandRequest, command, command);
+    assertThat(cliCommandRequest.getCommand()).isEqualTo(command);
+    assertThat(cliCommandRequest.getTimeoutInMillis()).isEqualTo(DEFAULT_TERRAFORM_COMMAND_TIMEOUT);
+    assertThat(cliCommandRequest.getEnvVariables()).isEmpty();
+    assertThat(cliCommandRequest.getDirectory()).isEqualTo(SCRIPT_FILES_DIRECTORY);
+    assertThat(cliCommandRequest.getLogCallback()).isEqualTo(logCallback);
+    assertThat(cliCommandRequest.getLoggingCommand()).isEqualTo(command);
+    assertThat(cliCommandRequest.getLogOutputStream()).isEqualTo(planJsonLogOutputStream);
+    assertThat((LogCallback) on(cliCommandRequest.getErrorLogOutputStream()).get("executionLogCallback"))
+        .isEqualTo(logCallback);
+    assertThat((boolean) on(cliCommandRequest.getErrorLogOutputStream()).get("skipColorLogs")).isEqualTo(true);
   }
 
   @Test
@@ -590,7 +599,7 @@ public class TerraformClientImplTest extends CategoryTest {
     assertThat(cliCommandRequest.getDirectory()).isEqualTo(SCRIPT_FILES_DIRECTORY);
     assertThat(cliCommandRequest.getLogCallback()).isEqualTo(logCallback);
     assertThat(cliCommandRequest.getLoggingCommand()).contains("terraform");
-    assertThat((LogCallback) on(cliCommandRequest.getLogOutputStream()).get("logCallback")).isEqualTo(logCallback);
+    assertThat(cliCommandRequest.getLogOutputStream()).isEqualTo(planJsonLogOutputStream);
     assertThat((LogCallback) on(cliCommandRequest.getErrorLogOutputStream()).get("executionLogCallback"))
         .isEqualTo(logCallback);
     assertThat((boolean) on(cliCommandRequest.getErrorLogOutputStream()).get("skipColorLogs")).isEqualTo(true);
@@ -623,7 +632,7 @@ public class TerraformClientImplTest extends CategoryTest {
     assertThat(cliCommandRequest.getDirectory()).isEqualTo(SCRIPT_FILES_DIRECTORY);
     assertThat(cliCommandRequest.getLogCallback()).isEqualTo(logCallback);
     assertThat(cliCommandRequest.getLoggingCommand()).contains("terraform");
-    assertThat((LogCallback) on(cliCommandRequest.getLogOutputStream()).get("logCallback")).isEqualTo(logCallback);
+    assertThat(cliCommandRequest.getLogOutputStream()).isEqualTo(planJsonLogOutputStream);
     assertThat((LogCallback) on(cliCommandRequest.getErrorLogOutputStream()).get("executionLogCallback"))
         .isEqualTo(logCallback);
     assertThat((boolean) on(cliCommandRequest.getErrorLogOutputStream()).get("skipColorLogs")).isEqualTo(true);

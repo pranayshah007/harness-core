@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.ReleaseMetadataFactory;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.ReleaseHelmChartOutcome;
@@ -84,6 +85,7 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private ReleaseMetadataFactory releaseMetadataFactory;
 
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
@@ -151,6 +153,9 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       canaryRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+    if (cdStepHelper.shouldPassReleaseMetadata(accountId)) {
+      canaryRequestBuilder.releaseMetadata(releaseMetadataFactory.createReleaseMetadata(infrastructure, ambiance));
     }
     Map<String, String> k8sCommandFlag =
         k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags(), ambiance);

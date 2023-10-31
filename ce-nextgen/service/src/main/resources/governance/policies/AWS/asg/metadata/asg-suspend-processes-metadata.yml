@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: asg-suspend-processes
+cloudProvider: AWS
+resourceType: asg
+description: Suspend asg processes and instances if a tag named SuspendTag is present on the ASG
+rulesYamlPath: ../asg-suspend-processes.yml

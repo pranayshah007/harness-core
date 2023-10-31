@@ -12,7 +12,6 @@ import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogAnalysisState;
-import io.harness.cvng.statemachine.entities.ServiceGuardTrendAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 
 import java.util.Arrays;
@@ -31,11 +30,9 @@ public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecut
 
   @Override
   public AnalysisState handleTransition(ServiceGuardLogAnalysisState serviceGuardLogAnalysisState) {
+    // SRM-15938: We've removed service guard trend analysis
     serviceGuardLogAnalysisState.setStatus(AnalysisStatus.SUCCESS);
-    ServiceGuardTrendAnalysisState serviceGuardTrendAnalysisState = ServiceGuardTrendAnalysisState.builder().build();
-    serviceGuardTrendAnalysisState.setInputs(serviceGuardLogAnalysisState.getInputs());
-    serviceGuardTrendAnalysisState.setStatus(AnalysisStatus.CREATED);
-    return serviceGuardTrendAnalysisState;
+    return serviceGuardLogAnalysisState;
   }
 
   @Override

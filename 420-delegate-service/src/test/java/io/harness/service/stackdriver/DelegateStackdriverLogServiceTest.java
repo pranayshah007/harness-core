@@ -62,7 +62,7 @@ public class DelegateStackdriverLogServiceTest {
   @Category(UnitTests.class)
   public void testFetchDelegateLogs() {
     InfraDownloadService downloadService = mock(InfraDownloadService.class);
-    AccessTokenBean tokenBean = AccessTokenBean.builder().build();
+    AccessTokenBean tokenBean = new AccessTokenBean("projectId", "token", 0);
     when(downloadService.getStackdriverLoggingToken()).thenReturn(tokenBean);
     DelegateStackdriverLogService delegateStackdriverLogService =
         new DelegateStackdriverLogServiceImpl(downloadService);

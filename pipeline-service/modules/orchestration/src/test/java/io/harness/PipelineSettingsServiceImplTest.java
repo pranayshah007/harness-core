@@ -151,7 +151,7 @@ public class PipelineSettingsServiceImplTest extends OrchestrationTestBase {
     doReturn(planExecutionRestrictionConfig).when(orchestrationRestrictionConfiguration).getPlanExecutionRestriction();
     doReturn(100L)
         .when(planExecutionService)
-        .countRunningExecutionsForGivenPipelineInAccount("ACCOUNT_ID", "PIPELINE_IDENTIFIER");
+        .countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses("ACCOUNT_ID", "PIPELINE_IDENTIFIER");
 
     PlanExecutionSettingResponse planExecutionSettingResponse =
         pipelineSettingsService.shouldQueuePlanExecution("ACCOUNT_ID", "PIPELINE_IDENTIFIER");
@@ -213,7 +213,7 @@ public class PipelineSettingsServiceImplTest extends OrchestrationTestBase {
     doReturn(planExecutionRestrictionConfig).when(orchestrationRestrictionConfiguration).getPlanExecutionRestriction();
     doReturn(100L)
         .when(planExecutionService)
-        .countRunningExecutionsForGivenPipelineInAccount("ACCOUNT_ID", "PIPELINE_IDENTIFIER");
+        .countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses("ACCOUNT_ID", "PIPELINE_IDENTIFIER");
 
     PlanExecutionSettingResponse planExecutionSettingResponse =
         pipelineSettingsService.shouldQueuePlanExecution("ACCOUNT_ID", "PIPELINE_IDENTIFIER");

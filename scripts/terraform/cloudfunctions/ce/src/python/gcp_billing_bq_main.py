@@ -260,7 +260,10 @@ def compute_sync_interval(jsonData):
         WHERE DATE(_PARTITIONTIME) >= DATE('%s')
     """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
            last_synced_export_date)
-    if jsonData["deployMode"] == "ONPREM":
+
+    if jsonData.get("dataSourceId") == "cross_region_copy":
+        imclient = client
+    elif jsonData["deployMode"] == "ONPREM":
         # Uses Google ADC
         imclient = bigquery.Client(project=PROJECTID)
     else:
@@ -1394,7 +1397,7 @@ def alter_unified_table(jsonData):
         ADD COLUMN IF NOT EXISTS gcpProjectNumber STRING, \
         ADD COLUMN IF NOT EXISTS gcpProjectName STRING, \
         ADD COLUMN IF NOT EXISTS gcpPrice STRUCT<effective_price NUMERIC, tier_start_amount NUMERIC, unit STRING, pricing_unit_quantity NUMERIC>, \
-        ADD COLUMN IF NOT EXISTS gcpUsage STRUCT<amount FLOAT64, unit STRING, amount_in_pricing_unit FLOAT64, pricing_unit STRING>, \
+        ADD COLUMN IF NOT EXISTS gcpUsage STRUCT<amount FLOAT64, unit STRING, amount_in_pricing_units FLOAT64, pricing_unit STRING>, \
         ADD COLUMN IF NOT EXISTS gcpCredits ARRAY<STRUCT<name STRING, amount FLOAT64, full_name STRING, id STRING, type STRING>>;" % ds
 
     try:

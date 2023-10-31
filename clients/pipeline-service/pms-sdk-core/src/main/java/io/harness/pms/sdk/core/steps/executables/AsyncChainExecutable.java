@@ -13,6 +13,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.sdk.core.steps.Step;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -33,7 +34,7 @@ import java.util.Map;
  * based on which we spawn the child. If you set the chain end flag to true in the response we will straight away call
  * finalize execution else we will call executeNextChild.
  *
- * executeNextChild : This is the the repetitive link which is repetitively called until the chainEnd boolean is set in
+ * executeNextChild : This is the repetitive link which is repetitively called until the chainEnd boolean is set in
  * the response.
  *
  * finalizeExecution : This is where the step concludes and responds with step response.
@@ -45,10 +46,10 @@ public interface AsyncChainExecutable<T extends StepParameters> extends Step<T> 
   AsyncChainExecutableResponse startChainLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
 
   AsyncChainExecutableResponse executeNextLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage,
-      ThrowingSupplier<ResponseData> responseSupplier) throws Exception;
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier) throws Exception;
 
-  StepResponse finalizeExecution(
-      Ambiance ambiance, T stepParameters, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
+  StepResponse finalizeExecution(Ambiance ambiance, T stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
 
   default void handleAbort(
       Ambiance ambiance, T stepParameters, AsyncChainExecutableResponse executableResponse, boolean userMarked) {

@@ -27,6 +27,7 @@ public class EcsUpgradeContainerResponse implements EcsCommandResponse {
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
   EcsBasicDeployData deployData;
+  String infrastructureKey;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

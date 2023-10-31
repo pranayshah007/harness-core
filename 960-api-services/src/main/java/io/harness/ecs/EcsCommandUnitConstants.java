@@ -50,6 +50,12 @@ public enum EcsCommandUnitConstants {
       return "Run Task";
     }
   },
+  serviceSetup {
+    @Override
+    public String toString() {
+      return "Service Setup";
+    }
+  },
   upgradeContainer {
     @Override
     public String toString() {

@@ -95,3 +95,26 @@ Create the name of the s3 image to use
 {{- define "sto-manager.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image .Values.securityImage.image .Values.addOnImage.image .Values.leImage.image .Values.s3UploadImage.image) "global" .Values.global ) }}
 {{- end -}}
+
+
+{{/*
+Manage STO Manager Secrets
+USAGE:
+{{- "sto-manager.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "sto-manager.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+VERIFICATION_SERVICE_SECRET: {{ .ctx.Values.secrets.default.VERIFICATION_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

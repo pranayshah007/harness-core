@@ -379,7 +379,7 @@ public class AccountServiceImpl implements AccountService {
       }
 
       publishAccountChangeEvent(account);
-      // TODO {karan} uncomment this when NG is enabled globally for new accounts
+      // TODO: uncomment this when NG is enabled globally for new accounts
       // publishAccountChangeEventViaEventFramework(account.getUuid(), EventsFrameworkMetadataConstants.CREATE_ACTION);
 
       log.info("Successfully created account.");
@@ -2513,5 +2513,13 @@ public class AccountServiceImpl implements AccountService {
 
     log.info("Failed to update account trust level to {} for accountId = {} ", trustLevel, accountId);
     return false;
+  }
+
+  @Override
+  public List<Account> listAccountsMarkedForDeletion(int limit) {
+    return wingsPersistence.createQuery(Account.class)
+        .filter(AccountKeys.accountStatusKey, MARKED_FOR_DELETION)
+        .limit(limit)
+        .asList();
   }
 }

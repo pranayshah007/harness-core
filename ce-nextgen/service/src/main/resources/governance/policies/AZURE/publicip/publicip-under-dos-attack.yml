@@ -1,0 +1,10 @@
+policies:
+  - name: publicip-under-dos-attack
+    resource: azure.publicip
+    filters:
+      - type: metric
+        metric: IfUnderDDoSAttack
+        op: gt
+        aggregation: maximum
+        threshold: 0
+        timeframe: 72

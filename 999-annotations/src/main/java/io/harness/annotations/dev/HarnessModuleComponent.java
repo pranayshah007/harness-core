@@ -7,6 +7,8 @@
 
 package io.harness.annotations.dev;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_K8S})
 public enum HarnessModuleComponent {
   CDS_AMI_ASG,
   CDS_APPROVALS,
@@ -35,5 +37,6 @@ public enum HarnessModuleComponent {
   CI_PLG_LICENSING,
   CDS_GIT_CLIENTS,
   CDS_AZURE_WEBAPP,
-  CCM_PERSPECTIVE
+  CCM_PERSPECTIVE,
+  DEBEZIUM
 }

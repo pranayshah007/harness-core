@@ -89,7 +89,6 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
-  @Inject private StageTimeoutUtils stageTimeoutUtils;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(

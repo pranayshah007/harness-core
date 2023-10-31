@@ -26,10 +26,10 @@ public class PageResponseUtils {
     return PageUtils.getPageRequest(new PageRequest(page, limit, Arrays.asList(sortOrder)));
   }
 
-  public static <T> Response getPagedResponse(Page<T> entities, Integer page, Integer limit) {
+  public static <T> Response getPagedResponse(Page<T> entities) {
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, entities.getTotalElements(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, entities.getTotalElements(), entities.getNumber(), entities.getSize());
     return responseBuilderWithLinks.entity(entities.getContent()).build();
   }
 }

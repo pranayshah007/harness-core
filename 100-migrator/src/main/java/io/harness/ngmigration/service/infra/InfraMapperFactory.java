@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.infra;
-
 import static software.wings.api.DeploymentType.AMI;
 import static software.wings.api.DeploymentType.AWS_LAMBDA;
 import static software.wings.api.DeploymentType.AZURE_WEBAPP;
@@ -18,8 +17,11 @@ import static software.wings.api.DeploymentType.PCF;
 import static software.wings.api.DeploymentType.SSH;
 import static software.wings.api.DeploymentType.WINRM;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.api.DeploymentType;
 import software.wings.infra.InfrastructureDefinition;
@@ -27,6 +29,7 @@ import software.wings.infra.InfrastructureDefinition;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class InfraMapperFactory {
   private static final UnsupportedInfraDefMapper unsupportedInfraDefMapper = new UnsupportedInfraDefMapper();

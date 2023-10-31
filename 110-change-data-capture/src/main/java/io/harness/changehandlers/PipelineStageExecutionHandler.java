@@ -6,6 +6,9 @@
  */
 
 package io.harness.changehandlers;
+
+import static io.harness.changehandlers.constants.StageExecutionHandlerConstants.CUSTOM_STAGE;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -45,7 +48,7 @@ public class PipelineStageExecutionHandler extends AbstractChangeDataHandler {
     }
 
     if (dbObject.get(StageExecutionEntityKeys.stageType) != null) {
-      if ("CUSTOM_STAGE".equals(dbObject.get(StageExecutionEntityKeys.stageType).toString())) {
+      if (CUSTOM_STAGE.equals(dbObject.get(StageExecutionEntityKeys.stageType).toString())) {
         columnValueMapping.put("type", "Custom");
       } else {
         columnValueMapping.put("type", dbObject.get(StageExecutionEntityKeys.stageType).toString());

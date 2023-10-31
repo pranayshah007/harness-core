@@ -19,10 +19,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponseDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
 import lombok.experimental.UtilityClass;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -107,6 +112,41 @@ public class InfrastructureMapper {
         .yaml(infrastructureEntity.getYaml())
         .type(infrastructureEntity.getType())
         .deploymentType(infrastructureEntity.getDeploymentType())
+        .entityGitDetails(getEntityGitDetails(infrastructureEntity))
+        .storeType(infrastructureEntity.getStoreType())
+        .connectorRef(infrastructureEntity.getConnectorRef())
+        .cacheResponseMetadataDTO(getCacheResponse(infrastructureEntity))
+        .build();
+  }
+
+  private EntityGitDetails getEntityGitDetails(InfrastructureEntity infrastructureEntity) {
+    if (infrastructureEntity.getStoreType() == StoreType.REMOTE) {
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(infrastructureEntity);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
+    }
+    return null; // Default if storeType is not remote
+  }
+
+  private CacheResponseMetadataDTO getCacheResponse(InfrastructureEntity infrastructureEntity) {
+    if (infrastructureEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+
+      if (cacheResponse != null) {
+        return createCacheResponseMetadataDTO(cacheResponse);
+      }
+    }
+
+    return null;
+  }
+
+  private CacheResponseMetadataDTO createCacheResponseMetadataDTO(CacheResponse cacheResponse) {
+    return CacheResponseMetadataDTO.builder()
+        .cacheState(cacheResponse.getCacheState())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .isSyncEnabled(cacheResponse.isSyncEnabled())
         .build();
   }
 }

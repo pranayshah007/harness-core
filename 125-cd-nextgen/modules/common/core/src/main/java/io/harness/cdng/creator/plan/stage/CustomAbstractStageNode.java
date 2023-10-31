@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.creator.plan.stage;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.yaml.ParameterField;
@@ -21,6 +23,8 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 public abstract class CustomAbstractStageNode extends AbstractStageNode {
   @NotNull

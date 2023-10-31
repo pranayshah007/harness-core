@@ -16,7 +16,6 @@ import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
-import static io.harness.helpers.GlobalSecretManagerUtils.parse;
 
 import static com.google.datastore.v1.client.DatastoreHelper.getProjectIdFromComputeEngine;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -189,7 +188,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
       if (secretVersionName != null) {
         AccessSecretVersionResponse response = gcpSecretsManagerClient.accessSecretVersion(secretVersionName);
         String payload = response.getPayload().getData().toStringUtf8();
-        return getValueByJsonPath(parse(payload), key).toCharArray();
+        return getValueByJsonPath(payload, key).toCharArray();
       }
     } catch (IOException e) {
       throw new SecretManagementClientException(

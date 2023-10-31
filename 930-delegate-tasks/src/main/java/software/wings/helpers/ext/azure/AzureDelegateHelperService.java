@@ -313,7 +313,7 @@ public class AzureDelegateHelperService {
           .body()
           .getTags();
     } catch (Exception e) {
-      log.error("Error occurred while getting repositories from subscriptionId/registryName/repositoryName :"
+      log.warn("Error occurred while getting repositories from subscriptionId/registryName/repositoryName :"
               + subscriptionId + "/" + registryName + "/" + repositoryName,
           e);
       throw NestedExceptionUtils.hintWithExplanationException(
@@ -334,7 +334,7 @@ public class AzureDelegateHelperService {
           .body()
           .getTags();
     } catch (Exception e) {
-      log.error("Error occurred while getting Tags for Repository :" + registryHostName + "/" + repositoryName, e);
+      log.warn("Error occurred while getting Tags for Repository :" + registryHostName + "/" + repositoryName, e);
       throw NestedExceptionUtils.hintWithExplanationException(
           "Failed to retrieve repository tags " + ExceptionUtils.getMessage(e),
           "Check if the permissions are scoped for the authenticated user", e);

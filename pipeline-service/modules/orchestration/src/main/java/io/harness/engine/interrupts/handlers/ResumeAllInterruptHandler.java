@@ -9,7 +9,7 @@ package io.harness.engine.interrupts.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.CollectionUtils.isPresent;
-import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY;
+import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY_NG;
 import static io.harness.eraro.ErrorCode.RESUME_ALL_ALREADY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.interrupts.Interrupt.State.DISCARDED;
@@ -59,7 +59,7 @@ public class ResumeAllInterruptHandler implements InterruptHandler {
 
     // Check if ABORT_ALL present on plan level
     if (isPresent(interrupts, presentInterrupt -> presentInterrupt.getType() == InterruptType.ABORT_ALL)) {
-      throw new InvalidRequestException("Execution already has ABORT_ALL interrupt", ABORT_ALL_ALREADY, USER);
+      throw new InvalidRequestException("Execution already has ABORT_ALL interrupt", ABORT_ALL_ALREADY_NG, USER);
     }
 
     // Check if RESUME_ALL present on plan level

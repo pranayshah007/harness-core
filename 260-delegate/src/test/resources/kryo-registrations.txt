@@ -1657,7 +1657,7 @@
 25002:io.harness.delegate.beans.ci.DockerInfraInfo
 25003:io.harness.delegate.beans.ci.VmInfraInfo
 25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
-25005:io.harness.delegate.InitializeExecutionInfraResponse
+25005:io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO
@@ -2730,6 +2730,8 @@
 9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
 9800016:io.harness.licensing.beans.modules.SEIModuleLicenseDTO
 9800017:io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig
+9800020:io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo
+9800021:io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2874,3 +2876,4 @@
 20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
 20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
+20001002:io.harness.delegate.task.k8s.ReleaseMetadata

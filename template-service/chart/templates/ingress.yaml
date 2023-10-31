@@ -90,6 +90,13 @@ spec:
                   number: {{ $.Values.service.port }}
             path: /(v1/orgs/.+/projects/.+/templates.*)
             pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: template-service
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/template-schema.*)
+            pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:

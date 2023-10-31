@@ -6,15 +6,17 @@
  */
 
 package io.harness.engine.pms.data;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.ExecutionSweepingOutputInstance;
 import io.harness.data.ExecutionSweepingOutputInstance.ExecutionSweepingOutputKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -53,6 +55,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
@@ -67,7 +70,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
       // It is not an expression-like ref-object.
       return resolveUsingRuntimeId(ambiance, refObject);
     }
-
+    // TODO(sahil): Add implementation for groupName in refObject for expression-like ref name
     String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
     ExecutionSweepingOutputInstance sweepingOutputInstance =
         getInstanceUsingFullyQualifiedName(ambiance, fullyQualifiedName);
@@ -87,6 +90,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
   @Override
   public String resolveUsingLevelRuntimeIdx(String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject) {
     String name = refObject.getName();
+    // We can't filter by groupName provided in rejObject via this utility
     ExecutionSweepingOutputInstance instance = getInstance(planExecutionId, levelRuntimeIdx, refObject);
     if (instance == null) {
       throw new SweepingOutputException(format("Could not resolve sweeping output with name '%s'", name));
@@ -97,8 +101,9 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
 
   private String resolveUsingRuntimeId(Ambiance ambiance, RefObject refObject) {
     String name = refObject.getName();
-    ExecutionSweepingOutputInstance instance =
-        getInstance(ambiance.getPlanExecutionId(), ResolverUtils.prepareLevelRuntimeIdIndices(ambiance), refObject);
+    String groupName = refObject.getGroupName();
+    ExecutionSweepingOutputInstance instance = getInstance(ambiance.getPlanExecutionId(),
+        ResolverUtils.prepareLevelRuntimeIdIndicesUsingGroupName(ambiance, groupName), refObject);
     if (instance == null) {
       throw new SweepingOutputException(format("Could not resolve sweeping output with name '%s'", name));
     }
@@ -155,6 +160,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
       // It is not an expression-like ref-object.
       return resolveOptionalUsingRuntimeId(ambiance, refObject);
     }
+    // TODO(sahil): Add implementation for groupName in refObject for expression-like ref name
     String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
     RawOptionalSweepingOutput rawOptionalSweepingOutput =
         resolveOptionalUsingFullyQualifiedName(ambiance, fullyQualifiedName);
@@ -207,8 +213,9 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
   }
 
   private RawOptionalSweepingOutput resolveOptionalUsingRuntimeId(Ambiance ambiance, RefObject refObject) {
-    ExecutionSweepingOutputInstance instance =
-        getInstance(ambiance.getPlanExecutionId(), ResolverUtils.prepareLevelRuntimeIdIndices(ambiance), refObject);
+    String groupName = refObject.getGroupName();
+    ExecutionSweepingOutputInstance instance = getInstance(ambiance.getPlanExecutionId(),
+        ResolverUtils.prepareLevelRuntimeIdIndicesUsingGroupName(ambiance, groupName), refObject);
     if (instance == null) {
       return RawOptionalSweepingOutput.builder().found(false).build();
     }

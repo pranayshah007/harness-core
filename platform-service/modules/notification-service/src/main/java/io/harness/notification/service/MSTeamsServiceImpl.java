@@ -165,6 +165,8 @@ public class MSTeamsServiceImpl implements ChannelService {
           templateId, notificationId);
     }
     String message = messageOpt.get();
+    List<String> microsoftTeamsWebhookUrlDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
     if (notificationSettingsService.checkIfWebhookIsSecret(microsoftTeamsWebhookUrls)) {
       DelegateTaskRequest delegateTaskRequest =
@@ -175,7 +177,7 @@ public class MSTeamsServiceImpl implements ChannelService {
                                   .notificationId(notificationId)
                                   .message(message)
                                   .microsoftTeamsWebhookUrls(microsoftTeamsWebhookUrls)
-                                  .accountId(accountId)
+                                  .microsoftTeamsWebhookUrlDomainAllowlist(microsoftTeamsWebhookUrlDomainAllowlist)
                                   .build())
               .taskSetupAbstractions(abstractionMap)
               .expressionFunctorToken(expressionFunctorToken)
@@ -185,7 +187,8 @@ public class MSTeamsServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
-      processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId, accountId);
+      processingResponse = microsoftTeamsSender.send(
+          microsoftTeamsWebhookUrls, message, notificationId, microsoftTeamsWebhookUrlDomainAllowlist);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"

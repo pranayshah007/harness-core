@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.lambda;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -22,6 +24,7 @@ import software.wings.sm.states.AwsLambdaRollback;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class LambdaRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {

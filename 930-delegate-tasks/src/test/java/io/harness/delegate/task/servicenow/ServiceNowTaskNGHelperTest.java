@@ -10,6 +10,7 @@ package io.harness.delegate.task.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.INVALID_SERVICE_NOW_CREDENTIALS;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.NOT_FOUND;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.RESULT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
@@ -898,6 +899,135 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
           .isInstanceOf(ServiceNowException.class)
           .hasMessage(
               "Error occurred while fetching serviceNow standard template fields: InvalidRequestException: no data found");
+    }
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testCreateStandardChangeRequestTemplate() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    Call mockCall2 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString())).thenReturn(mockCall2);
+
+    Call mockCall3 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createTicketUsingStandardTemplate(anyString(), anyString(), eq(null)))
+        .thenReturn(mockCall3);
+
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode(CHANGE_REQUEST_TEMPLATE_NAME)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap(RESULT, responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    when(mockCall2.clone()).thenReturn(mockCall2);
+    when(mockCall3.clone()).thenReturn(mockCall3);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    doReturn(
+        Response.success(JsonUtils.asTree(Collections.singletonMap(RESULT,
+            ImmutableMap.of("template",
+                "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps")))))
+        .when(mockCall2)
+        .execute();
+
+    List<String> list = new ArrayList<>();
+    list.add("hello1");
+    list.add("hello2");
+    ImmutableMap<String, JsonNode> jsonNodeImmutableMap =
+        ImmutableMap.of("number", JsonUtils.asTree(ImmutableMap.of("display_value", "1234567")), "upon_reject",
+            JsonUtils.asTree(ImmutableMap.of("display_value", "delete the ticket")), "__meta",
+            JsonUtils.asTree(ImmutableMap.of("ignoredFields", JsonUtils.asTree(list))));
+
+    JsonNode successResponse3 = JsonUtils.asTree(Collections.singletonMap("result", jsonNodeImmutableMap));
+
+    Response<JsonNode> jsonNodeResponse3 = Response.success(successResponse3);
+    doReturn(jsonNodeResponse3).when(mockCall3).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.CREATE_TICKET_USING_STANDARD_TEMPLATE)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .ticketType("change_request")
+              .useServiceNowTemplate(true)
+              .fields(null)
+              .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getTicket().getNumber()).isEqualTo("1234567");
+      assertThat(response.getTicket().getFields()).hasSize(3);
+      assertThat(response.getTicket().getFields()).containsKeys("number", "upon_reject", "ignoredFields");
+      assertThat(response.getTicket().getFields().get("ignoredFields").getDisplayValue()).isEqualTo("hello1, hello2");
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testCreateStandardChangeRequestTemplateWithoutIgnoreFields() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    Call mockCall2 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString())).thenReturn(mockCall2);
+
+    Call mockCall3 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createTicketUsingStandardTemplate(anyString(), anyString(), eq(null)))
+        .thenReturn(mockCall3);
+
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode(CHANGE_REQUEST_TEMPLATE_NAME)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    when(mockCall2.clone()).thenReturn(mockCall2);
+    when(mockCall3.clone()).thenReturn(mockCall3);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    doReturn(
+        Response.success(JsonUtils.asTree(Collections.singletonMap("result",
+            ImmutableMap.of("template",
+                "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps")))))
+        .when(mockCall2)
+        .execute();
+
+    List<String> list = new ArrayList<>();
+    list.add("hello1");
+    list.add("hello2");
+    ImmutableMap<String, JsonNode> jsonNodeImmutableMap =
+        ImmutableMap.of("number", JsonUtils.asTree(ImmutableMap.of("display_value", "1234567")), "upon_reject",
+            JsonUtils.asTree(ImmutableMap.of("display_value", "delete the ticket")));
+
+    JsonNode successResponse3 = JsonUtils.asTree(Collections.singletonMap("result", jsonNodeImmutableMap));
+
+    Response<JsonNode> jsonNodeResponse3 = Response.success(successResponse3);
+    doReturn(jsonNodeResponse3).when(mockCall3).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.CREATE_TICKET_USING_STANDARD_TEMPLATE)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .ticketType("change_request")
+              .useServiceNowTemplate(true)
+              .fields(null)
+              .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getTicket().getNumber()).isEqualTo("1234567");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      assertThat(response.getTicket().getFields()).containsKeys("number", "upon_reject");
     }
   }
 

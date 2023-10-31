@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ngmigration.beans.StepOutput;
 
@@ -14,6 +16,7 @@ import software.wings.beans.Workflow;
 
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class AsgAmiStepFunctor extends StepExpressionFunctor {
   private final StepOutput stepOutput;
   private final Workflow workflow;

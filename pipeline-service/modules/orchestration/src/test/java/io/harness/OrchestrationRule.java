@@ -175,13 +175,6 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
 
       @Provides
       @Singleton
-      @Named("useNewNodeEntityConfiguration")
-      public Boolean getUseNewNodeEntityConfiguration() {
-        return true;
-      }
-
-      @Provides
-      @Singleton
       @Named("publishAdviserEventForCustomAdvisers")
       public Boolean getPublishAdviserEventForCustomAdvisers() {
         return true;

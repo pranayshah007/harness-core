@@ -1,0 +1,15 @@
+policies:
+  - name: ec2-attributes
+    resource: ec2
+    description: |
+      List EC2 with below attributes
+    filters:
+      - and:
+          - type: instance-attribute
+            attribute: instanceType
+            key: 'Value'
+            value: p3.8xlarge
+          - type: value
+            key: tag:Name
+            op: regex
+            value: '.*blah-blah.*'

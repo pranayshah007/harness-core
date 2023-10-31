@@ -57,6 +57,10 @@ public class EmailMessageGenerator {
       templateString = addGcpSkuInfo(templateString, anomalyEntity);
       templateString = addAwsAccountInfo(templateString, anomalyEntity);
       templateString = addAwsServiceInfo(templateString, anomalyEntity);
+      templateString = addAwsUsageType(templateString, anomalyEntity);
+      templateString = addAzureSubscription(templateString, anomalyEntity);
+      templateString = addAzureResourceGroup(templateString, anomalyEntity);
+      templateString = addAzureMeterCategory(templateString, anomalyEntity);
       templateString = String.format(ANOMALY_LIST_ITEM_FORMAT, templateString);
       templateString =
           replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency, CommunicationMedium.EMAIL));
@@ -192,6 +196,61 @@ public class EmailMessageGenerator {
     }
     return templateString;
   }
+  private String addAwsUsageType(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAwsUsageType())) {
+      if (anomaly.getEntityType().equals(EntityType.AWS_USAGE_TYPE)) {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "UsageType", "${AWS_USAGE_TYPE_URL}",
+                "${" + AnomalyEntityKeys.awsUsageType + "}");
+      } else {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT, "UsageType", "${" + AnomalyEntityKeys.awsUsageType + "}");
+      }
+    }
+    return templateString;
+  }
+  private String addAzureSubscription(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureSubscription())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_SUBSCRIPTION)) {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "Subscription", "${AZURE_SUBSCRIPTION_URL}",
+                "${" + AnomalyEntityKeys.azureSubscription + "}");
+      } else {
+        templateString = templateString
+            + String.format(
+                ANOMALY_DETAILS_ITEM_FORMAT, "Subscription", "${" + AnomalyEntityKeys.azureSubscription + "}");
+      }
+    }
+    return templateString;
+  }
+  private String addAzureResourceGroup(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureResourceGroup())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_RESOURCE_GROUP)) {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "ResourceGroup", "${AZURE_RESOURCE_GROUP_URL}",
+                "${" + AnomalyEntityKeys.azureResourceGroup + "}");
+      } else {
+        templateString = templateString
+            + String.format(
+                ANOMALY_DETAILS_ITEM_FORMAT, "ResourceGroup", "${" + AnomalyEntityKeys.azureResourceGroup + "}");
+      }
+    }
+    return templateString;
+  }
+  private String addAzureMeterCategory(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getAzureMeterCategory())) {
+      if (anomaly.getEntityType().equals(EntityType.AZURE_METER_CATEGORY)) {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "MeterCategory", "${AZURE_METER_CATEGORY_URL}",
+                "${" + AnomalyEntityKeys.azureMeterCategory + "}");
+      } else {
+        templateString = templateString
+            + String.format(
+                ANOMALY_DETAILS_ITEM_FORMAT, "MeterCategory", "${" + AnomalyEntityKeys.azureMeterCategory + "}");
+      }
+    }
+    return templateString;
+  }
 
   private AnomalyEntity convertToAnomalyEntity(AnomalyData anomaly) {
     return AnomalyEntity.builder()
@@ -204,6 +263,9 @@ public class EmailMessageGenerator {
         .gcpProject(anomaly.getEntity().getGcpProjectId())
         .gcpSKUDescription(anomaly.getEntity().getGcpSKUDescription())
         .gcpSKUId(anomaly.getEntity().getGcpSKUId())
+        .azureSubscription(anomaly.getEntity().getAzureSubscriptionGuid())
+        .azureResourceGroup(anomaly.getEntity().getAzureResourceGroup())
+        .azureMeterCategory(anomaly.getEntity().getAzureMeterCategory())
         .clusterId(anomaly.getEntity().getClusterId())
         .clusterName(anomaly.getEntity().getClusterName())
         .workloadName(anomaly.getEntity().getWorkloadName())

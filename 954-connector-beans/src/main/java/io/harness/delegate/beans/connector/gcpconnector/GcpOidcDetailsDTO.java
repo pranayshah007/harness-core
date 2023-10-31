@@ -29,4 +29,5 @@ public class GcpOidcDetailsDTO implements GcpCredentialSpecDTO {
   @ApiModelProperty(dataType = "string") @NotEmpty String workloadPoolId;
   @ApiModelProperty(dataType = "string") @NotEmpty String providerId;
   @ApiModelProperty(dataType = "string") @NotEmpty String gcpProjectId;
+  @ApiModelProperty(dataType = "string") @NotEmpty String serviceAccountEmail;
 }

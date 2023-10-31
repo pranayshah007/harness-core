@@ -9,6 +9,8 @@ package io.harness.delegate.beans.executioncapability;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+
 import java.time.Duration;
 import lombok.Builder;
 import lombok.Value;
@@ -19,6 +21,10 @@ public class LiteEngineConnectionCapability implements ExecutionCapability {
   private final CapabilityType capabilityType = CapabilityType.LITE_ENGINE;
 
   private String ip;
+  private String namespace;
+  private String podName;
+  private ConnectorDetails k8sConnectorDetails;
+
   private int port;
   private boolean isLocal;
 

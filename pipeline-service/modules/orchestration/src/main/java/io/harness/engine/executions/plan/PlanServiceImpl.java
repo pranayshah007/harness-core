@@ -26,7 +26,6 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,7 +48,6 @@ public class PlanServiceImpl implements PlanService {
   @Inject private PlanRepository planRepository;
   @Inject private NodeEntityRepository nodeEntityRepository;
   @Inject private TransactionHelper transactionHelper;
-  @Inject @Named("useNewNodeEntityConfiguration") private Boolean useNewNodeEntityConfiguration;
 
   @Override
   public Plan fetchPlan(String planId) {
@@ -69,9 +67,7 @@ public class PlanServiceImpl implements PlanService {
   public List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId) {
     List<Node> nodes = new ArrayList<>();
     nodeEntityRepository
-        .saveAll(identityNodes.stream()
-                     .map(o -> NodeEntity.fromNode(o, planId, useNewNodeEntityConfiguration))
-                     .collect(Collectors.toList()))
+        .saveAll(identityNodes.stream().map(o -> NodeEntity.fromNode(o, planId)).collect(Collectors.toList()))
         .iterator()
         .forEachRemaining(nodeEntity -> nodes.add(nodeEntity.getNode()));
     return nodes;
@@ -81,10 +77,7 @@ public class PlanServiceImpl implements PlanService {
   public Plan save(Plan plan) {
     return transactionHelper.performTransaction(() -> {
       List<NodeEntity> nodeEntities =
-          plan.getPlanNodes()
-              .stream()
-              .map(pn -> NodeEntity.fromNode(pn, plan.getUuid(), useNewNodeEntityConfiguration))
-              .collect(Collectors.toList());
+          plan.getPlanNodes().stream().map(pn -> NodeEntity.fromNode(pn, plan.getUuid())).collect(Collectors.toList());
       nodeEntityRepository.saveAll(nodeEntities);
       if (!planRepository.existsById(plan.getUuid())) {
         return planRepository.save(plan.withPlanNodes(new ArrayList<>()));

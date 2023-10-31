@@ -100,6 +100,7 @@ public class Organization implements PersistentEntity, NGAccountAccess, UniqueId
   String accountIdentifier;
 
   String uniqueId;
+  String parentId;
   @EntityIdentifier(allowBlank = false) @FdIndex String identifier;
 
   @NGEntityName String name;

@@ -30,6 +30,7 @@ public class ExplanationException extends WingsException {
   public static String EXPLANATION_AWS_AM_ROLE_CHECK =
       "IAM role on delegate ec2 doesn't exist or doesn't have required permissions to describe regions.";
   public static String EXPLANATION_LITE_ENGINE_CHECK = "Delegate is not able to connect to the created build farm";
+  public static String EXPLANATION_DELEGATE_CHECK = "Check if delegate is connected and installed";
   public static String EXPLANATION_AWS_CLIENT_UNKNOWN_ISSUE = "Seems to encounter unknown AWS client issue";
   public static String EXPLANATION_UNEXPECTED_ERROR = "Unexpected error while handling task";
   public static String IMAGE_TAG_METADATA_NOT_FOUND =

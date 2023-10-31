@@ -6,15 +6,17 @@
  */
 
 package io.harness.delegate.task.aws;
-
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.IRSA;
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsAuthType.ACCESS_KEY_AND_SECRET_KEY;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.AwsAccessKeyCredential;
 import io.harness.aws.AwsConfig;
 import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
@@ -53,6 +55,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.DX)
 @Singleton
 public class AwsNgConfigMapper {

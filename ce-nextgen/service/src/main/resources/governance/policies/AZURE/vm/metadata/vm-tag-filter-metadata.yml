@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: vm-tag-filter
+cloudProvider: AZURE
+resourceType: azure.vm
+description: List virtual machines with a particular tag
+rulesYamlPath: ../vm-tag-filter.yml

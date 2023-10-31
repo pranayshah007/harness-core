@@ -8,6 +8,8 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_CONDITIONAL_INPUT;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.NO_ISSUES_FOUND;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,15 +28,17 @@ public class JiraIssuesOpenCloseRatioParser implements DataPointParser {
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
     Map<String, Object> dataPointData = new HashMap<>();
     for (String inputValue : inputValues) {
-      if (!data.containsKey(inputValue)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, null));
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
+        String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+        dataPointData.putAll(
+            constructDataPointInfo(inputValue, null, isEmpty(errorMessage) ? errorMessage : INVALID_CONDITIONAL_INPUT));
         continue;
       }
-      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
       List<Map<String, Object>> issues =
           (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "issues");
       if (isEmpty(issues)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, NO_ISSUES_FOUND));
+        dataPointData.putAll(constructDataPointInfo(inputValue, null, NO_ISSUES_FOUND));
         continue;
       }
       int openIssues = 0;

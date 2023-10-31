@@ -76,6 +76,7 @@ import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
 
 import software.wings.beans.LogColor;
 
+import com.google.common.base.Charsets;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -86,6 +87,7 @@ import com.google.inject.Singleton;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,9 +134,13 @@ public class ElastigroupCommandTaskNGHelper {
     removeUnsupportedFieldsForCreatingNewGroup(elastiGroupConfigMap);
     updateName(elastiGroupConfigMap, newElastiGroupName);
     updateInitialCapacity(elastiGroupConfigMap);
+    String startupScript = elastigroupSetupCommandRequest.getStartupScript();
+    if (isNotEmpty(elastigroupSetupCommandRequest.getDecodedStartupScript())) {
+      startupScript = Base64.getEncoder().encodeToString(
+          elastigroupSetupCommandRequest.getDecodedStartupScript().getBytes(Charsets.UTF_8));
+    }
     updateWithLoadBalancerAndImageConfig(loadBalancerConfig, elastiGroupConfigMap,
-        elastigroupSetupCommandRequest.getImage(), elastigroupSetupCommandRequest.getStartupScript(),
-        elastigroupSetupCommandRequest.isBlueGreen());
+        elastigroupSetupCommandRequest.getImage(), startupScript, elastigroupSetupCommandRequest.isBlueGreen());
     Gson gson = new Gson();
     return gson.toJson(jsonConfigMap);
   }

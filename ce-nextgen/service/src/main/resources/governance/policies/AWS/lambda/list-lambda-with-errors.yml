@@ -1,0 +1,10 @@
+policies:
+  - name: list-lambda-with-errors
+    resource: lambda
+    filters:
+      - type: metrics
+        name: Errors
+        days: 7
+        statistics: Sum
+        op: greater-than
+        value: 0

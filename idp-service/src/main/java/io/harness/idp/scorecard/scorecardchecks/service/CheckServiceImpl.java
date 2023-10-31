@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -28,24 +30,33 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent;
+import io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardCreateEvent;
 import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -54,28 +65,46 @@ public class CheckServiceImpl implements CheckService {
   private final NGSettingsClient settingsClient;
   private final EntitySetupUsageClient entitySetupUsageClient;
   private final DataPointService dataPointService;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private final OutboxService outboxService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   @Inject
   public CheckServiceImpl(CheckRepository checkRepository, NGSettingsClient settingsClient,
-      EntitySetupUsageClient entitySetupUsageClient, DataPointService dataPointService) {
+      EntitySetupUsageClient entitySetupUsageClient, DataPointService dataPointService,
+      TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.checkRepository = checkRepository;
     this.settingsClient = settingsClient;
     this.entitySetupUsageClient = entitySetupUsageClient;
     this.dataPointService = dataPointService;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override
   public void createCheck(CheckDetails checkDetails, String accountIdentifier) {
-    validateCheckSaveRequest(checkDetails, accountIdentifier);
-    checkRepository.save(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      validateCheckSaveRequest(checkDetails, accountIdentifier);
+      CheckEntity savedCheckEntity = checkRepository.save(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
+      outboxService.save(new CheckCreateEvent(accountIdentifier, CheckDetailsMapper.toDTO(savedCheckEntity)));
+      return true;
+    }));
   }
 
   @Override
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
-    validateCheckSaveRequest(checkDetails, accountIdentifier);
-    CheckEntity checkEntity = checkRepository.update(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
-    if (checkEntity == null) {
-      throw new InvalidRequestException("Default checks cannot be updated");
-    }
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      validateCheckSaveRequest(checkDetails, accountIdentifier);
+      CheckEntity oldCheckEntity =
+          checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, checkDetails.getIdentifier());
+      CheckEntity updatedCheckEntity =
+          checkRepository.update(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
+      if (updatedCheckEntity == null) {
+        throw new InvalidRequestException("Default checks cannot be updated");
+      }
+      outboxService.save(new CheckUpdateEvent(
+          accountIdentifier, CheckDetailsMapper.toDTO(updatedCheckEntity), CheckDetailsMapper.toDTO(oldCheckEntity)));
+      return true;
+    }));
   }
 
   @Override
@@ -113,19 +142,25 @@ public class CheckServiceImpl implements CheckService {
 
   @Override
   public void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete) {
-    if (forceDelete && !isForceDeleteSettingEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(
-          format("Parameter forceDelete cannot be true. Force deletion of check is not enabled for this account [%s]",
-              accountIdentifier));
-    }
-    if (!forceDelete) {
-      validateCheckUsage(accountIdentifier, identifier);
-    }
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      if (forceDelete && !isForceDeleteSettingEnabled(accountIdentifier)) {
+        throw new InvalidRequestException(
+            format("Parameter forceDelete cannot be true. Force deletion of check is not enabled for this account [%s]",
+                accountIdentifier));
+      }
+      if (!forceDelete) {
+        validateCheckUsage(accountIdentifier, identifier);
+      }
 
-    UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
-    if (updateResult.getModifiedCount() == 0) {
-      throw new InvalidRequestException("Default checks cannot be deleted");
-    }
+      CheckEntity oldCheckEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+      outboxService.save(new CheckDeleteEvent(accountIdentifier, CheckDetailsMapper.toDTO(oldCheckEntity)));
+
+      UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
+      if (updateResult.getModifiedCount() == 0) {
+        throw new InvalidRequestException("Default checks cannot be deleted");
+      }
+      return true;
+    }));
   }
 
   private void validateCheckUsage(String accountIdentifier, String checkIdentifier) {

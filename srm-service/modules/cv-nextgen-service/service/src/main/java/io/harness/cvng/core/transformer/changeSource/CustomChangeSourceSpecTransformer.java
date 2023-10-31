@@ -35,6 +35,7 @@ public class CustomChangeSourceSpecTransformer
         .name(changeSourceDTO.getName())
         .enabled(changeSourceDTO.isEnabled())
         .type(changeSourceDTO.getType())
+        .authorizationToken(((CustomChangeSourceSpec) changeSourceDTO.getSpec()).getAuthorizationToken())
         .build();
   }
 
@@ -45,6 +46,7 @@ public class CustomChangeSourceSpecTransformer
         .type(changeSource.getType().getChangeCategory())
         .webhookUrl(getWebhookUrl(changeSource))
         .webhookCurlCommand(getWebhookCurlCommand(changeSource))
+        .authorizationToken(changeSource.getAuthorizationToken())
         .build();
   }
 

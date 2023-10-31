@@ -31,8 +31,10 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -92,5 +94,31 @@ public class AdminCreditResource {
   getCredits(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(creditService.getCredits(accountIdentifier));
+  }
+
+  @PUT
+  @Path("{accountIdentifier}")
+  @ApiOperation(value = "Enables Harness Support user to update an existing Credit for a customer account",
+      nickname = "adminUpdatesCustomerCredit")
+  @Operation(operationId = "adminUpdatesCustomerCredit", summary = "Admin level update credit for a customer account")
+  @InternalApi
+  public ResponseDTO<CreditDTO>
+  updateCredit(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @Valid CreditDTO creditDTO) {
+    return ResponseDTO.newResponse(creditService.updateCredit(accountIdentifier, creditDTO));
+  }
+
+  @DELETE
+  @Path("{creditId}")
+  @ApiOperation(value = "Enables Harness Support User to delete an existing Credit for a customer account",
+      nickname = "adminDeleteCustomerCredit")
+  @Operation(operationId = "adminDeleteCustomerCredit", summary = "Admin level delete credit for a customer account")
+  @InternalApi
+  public ResponseDTO<Void>
+  deleteCredit(@PathParam("creditId") String creditId,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    creditService.deleteCredit(creditId, accountIdentifier);
+    return ResponseDTO.newResponse();
   }
 }

@@ -56,6 +56,7 @@ public class ConnectionStringsStep implements SyncExecutable<ConnectionStringsPa
     logCallback.saveExecutionLog("Processing connection strings...");
     StoreConfigWrapper storeConfig = stepParameters.getConnectionStrings().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
+    azureHelperService.publishSecretRuntimeUsage(ambiance, storeConfig);
     logCallback.saveExecutionLog("Processed connection strings");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)

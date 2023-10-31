@@ -12,6 +12,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 
@@ -33,9 +34,13 @@ public interface IK8sRelease {
   List<KubernetesResourceId> getResourceIds();
   String getReleaseColor();
   IK8sRelease setReleaseData(@NotNull List<KubernetesResource> resources, boolean isPruningEnabled);
+  IK8sRelease setReleaseMetadata(ReleaseMetadata releaseMetadata);
+  ReleaseMetadata getReleaseMetadata();
   IK8sRelease updateReleaseStatus(@NotNull Status status);
   String getBgEnvironment();
   String getManifestHash();
   void setBgEnvironment(@NotNull String bgEnvironment);
   void setManifestHash(@NotNull String manifestHash);
+  void setHelmChartInfo(@NotNull HelmChartInfoDTO helmChartInfo);
+  HelmChartInfoDTO getHelmChartInfo();
 }

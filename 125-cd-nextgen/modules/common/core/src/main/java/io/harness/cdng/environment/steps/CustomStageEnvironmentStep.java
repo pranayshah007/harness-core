@@ -7,9 +7,10 @@
 
 package io.harness.cdng.environment.steps;
 
+import static io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants.ENVIRONMENT_STEP_COMMAND_UNIT;
+import static io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants.OVERRIDES_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.executions.steps.ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -29,6 +30,7 @@ import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -44,7 +46,6 @@ import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -63,11 +64,13 @@ import io.harness.utils.IdentifierRefHelper;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,9 +92,6 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private ServiceStepV3Helper serviceStepV3Helper;
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
-  private static final String ENVIRONMENT_COMMAND_UNIT = "Environment Step";
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(CUSTOM_STAGE_ENVIRONMENT.getName()).setStepCategory(StepCategory.STEP).build();
 
   @Override
   public Class<CustomStageEnvironmentStepParameters> getStepParametersClass() {
@@ -108,8 +108,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       Optional<Environment> environment =
           getEnvironment(ambiance, parameters, accountId, orgIdentifier, projectIdentifier);
 
-      final NGLogCallback logCallback =
-          new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
+      final NGLogCallback environmentStepLogCallback = getLogCallback(ambiance, true, ENVIRONMENT_STEP_COMMAND_UNIT);
+      final NGLogCallback overrideLogCallback = getLogCallback(ambiance, true, OVERRIDES_COMMAND_UNIT);
 
       boolean isOverridesV2enabled =
           overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
@@ -117,7 +117,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       ServiceStepV3Parameters serviceStepV3Parameters = EnvironmentMapper.toServiceStepV3Parameters(parameters);
 
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
-          getMergedOverrideV2Configs(accountId, orgIdentifier, projectIdentifier, environment, logCallback,
+          getMergedOverrideV2Configs(accountId, orgIdentifier, projectIdentifier, environment, overrideLogCallback,
               isOverridesV2enabled, serviceStepV3Parameters);
 
       NGEnvironmentConfig ngEnvironmentConfig =
@@ -136,8 +136,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
         serviceStepV3Helper.resolve(ambiance, parameters.getInfraId());
       }
 
-      serviceStepV3Helper.processServiceAndEnvironmentVariables(
-          ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
+      serviceStepV3Helper.processServiceAndEnvironmentVariables(ambiance, null, environmentStepLogCallback,
+          environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
       final String scopedEnvironmentRef =
           IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, environment.get().getOrgIdentifier(),
@@ -149,10 +149,26 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       saveNonVariableOverridesToSweepingOutput(
           ambiance, scopedEnvironmentRef, isOverridesV2enabled, mergedOverrideV2Configs, ngEnvironmentConfig);
 
+      Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
+      entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(AmbianceUtils.getOrgIdentifier(ambiance)));
+      entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
+      entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
+      entityMap.put(FreezeEntityType.ENVIRONMENT,
+          Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.get().getAccountId(),
+              environment.get().getOrgIdentifier(), environment.get().getProjectIdentifier(),
+              environment.get().getIdentifier())));
+      entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
+
+      ChildrenExecutableResponse childrenExecutableResponse = serviceStepV3Helper.executeFreezePart(
+          ambiance, entityMap, List.of(ENVIRONMENT_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT));
+      if (childrenExecutableResponse != null) {
+        return childrenExecutableResponse;
+      }
+
       return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
-              StepUtils.generateLogAbstractions(ambiance), List.of(ENVIRONMENT_COMMAND_UNIT))))
-          .addAllUnits(List.of(ENVIRONMENT_COMMAND_UNIT))
+          .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance),
+              List.of(ENVIRONMENT_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))))
+          .addAllUnits(List.of(ENVIRONMENT_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))
           .addAllChildren(parameters.getChildrenNodeIds()
                               .stream()
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
@@ -199,10 +215,18 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
     long environmentStepStartTs = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
 
-    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+    final EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutputExpressionConstants.ENVIRONMENT));
 
-    final NGLogCallback logCallback =
-        new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, false);
+    StepResponse stepResponse =
+        serviceStepV3Helper.handleFreezeResponse(ambiance, environmentOutcome, OutcomeExpressionConstants.ENVIRONMENT);
+    if (stepResponse != null) {
+      return stepResponse;
+    }
+
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+
+    final NGLogCallback logCallback = getLogCallback(ambiance, false, ENVIRONMENT_STEP_COMMAND_UNIT);
 
     UnitProgress environmentStepUnitProgress = null;
 
@@ -212,7 +236,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
           CommandExecutionStatus.FAILURE);
       environmentStepUnitProgress = UnitProgress.newBuilder()
                                         .setStatus(UnitStatus.FAILURE)
-                                        .setUnitName(ENVIRONMENT_COMMAND_UNIT)
+                                        .setUnitName(ENVIRONMENT_STEP_COMMAND_UNIT)
                                         .setStartTime(environmentStepStartTs)
                                         .setEndTime(System.currentTimeMillis())
                                         .build();
@@ -221,14 +245,11 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
           logCallback, "Completed environment step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       environmentStepUnitProgress = UnitProgress.newBuilder()
                                         .setStatus(UnitStatus.SUCCESS)
-                                        .setUnitName(ENVIRONMENT_COMMAND_UNIT)
+                                        .setUnitName(ENVIRONMENT_STEP_COMMAND_UNIT)
                                         .setStartTime(environmentStepStartTs)
                                         .setEndTime(System.currentTimeMillis())
                                         .build();
     }
-
-    final EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) sweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutputExpressionConstants.ENVIRONMENT));
 
     stepOutcomes.add(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.ENVIRONMENT)
@@ -241,20 +262,30 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
     serviceStepV3Helper.addConfigFilesOutputToStepOutcome(ambiance, stepOutcomes);
 
     stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
-    serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
-    return stepResponse.toBuilder().unitProgressList(List.of(environmentStepUnitProgress)).build();
+
+    serviceStepsHelper.saveEnvironmentExecutionDataToStageInfo(ambiance, stepResponse);
+
+    UnitProgress overridesUnit = UnitProgress.newBuilder()
+                                     .setStatus(UnitStatus.SUCCESS)
+                                     .setUnitName(OVERRIDES_COMMAND_UNIT)
+                                     .setStartTime(environmentStepStartTs)
+                                     .setEndTime(System.currentTimeMillis())
+                                     .build();
+
+    return stepResponse.toBuilder().unitProgressList(List.of(environmentStepUnitProgress, overridesUnit)).build();
   }
 
   private EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedOverrideV2Configs(String accountId,
-      String orgIdentifier, String projectIdentifier, Optional<Environment> environment, NGLogCallback logCallback,
-      boolean isOverridesV2enabled, ServiceStepV3Parameters serviceStepV3Parameters) {
+      String orgIdentifier, String projectIdentifier, Optional<Environment> environment,
+      NGLogCallback overrideLogCallback, boolean isOverridesV2enabled,
+      ServiceStepV3Parameters serviceStepV3Parameters) {
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
         new EnumMap<>(ServiceOverridesType.class);
 
     if (isOverridesV2enabled) {
       try {
-        mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(
-            accountId, orgIdentifier, projectIdentifier, serviceStepV3Parameters, environment.get(), logCallback);
+        mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(accountId,
+            orgIdentifier, projectIdentifier, serviceStepV3Parameters, environment.get(), overrideLogCallback);
       } catch (IOException e) {
         throw new InvalidRequestException("An error occurred while resolving overrides", e);
       }
@@ -286,5 +317,9 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       serviceStepV3Helper.setYamlInEnvironment(environment.get());
     }
     return environment;
+  }
+
+  public NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnit, shouldOpenStream);
   }
 }

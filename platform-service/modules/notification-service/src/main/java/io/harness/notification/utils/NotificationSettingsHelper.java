@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationSettingsHelper {
   @Inject private NGSettingsClient ngSettingsClient;
 
-  private List<String> getTargetAllowlistFromSettings(String settingIdentifier, String accountIdentifier) {
+  public List<String> getTargetAllowlistFromSettings(String settingIdentifier, String accountIdentifier) {
     SettingValueResponseDTO settingValueResponseDTO;
     try {
       settingValueResponseDTO =

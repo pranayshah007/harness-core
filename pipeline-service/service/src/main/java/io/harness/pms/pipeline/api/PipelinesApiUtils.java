@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.pipeline.api;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
@@ -85,6 +87,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.bson.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelinesApiUtils {
   public static GitDetails getGitDetails(EntityGitDetails entityGitDetails) {
@@ -636,11 +639,11 @@ public class PipelinesApiUtils {
 
   private static YamlInputType getYamlInputType(SchemaInputType schemaInputType) {
     switch (schemaInputType) {
-      case String:
+      case STRING:
         return YamlInputType.STRING;
-      case Boolean:
+      case BOOLEAN:
         return YamlInputType.BOOLEAN;
-      case Integer:
+      case INTEGER:
         return YamlInputType.INTEGER;
       default:
         return YamlInputType.OBJECT;

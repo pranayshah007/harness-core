@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: release-unattached-eips
+cloudProvider: AWS
+resourceType: elastic-ip
+description: Release elastic IPs that are not associated with any instances
+rulesYamlPath: ../release-unattached-eips.yml

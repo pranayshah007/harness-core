@@ -698,7 +698,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     cache.put(key, licenses);
   }
 
-  private void evictCache(String accountIdentifier, ModuleType moduleType) {
+  protected void evictCache(String accountIdentifier, ModuleType moduleType) {
     String key = generateCacheKey(accountIdentifier, moduleType);
     cache.remove(key);
   }
@@ -726,10 +726,10 @@ public class DefaultLicenseServiceImpl implements LicenseService {
                              .build());
     } catch (EventsFrameworkDownException ex) {
       log.error("Failed to send event to events framework for account: {} on entity: {} with action: {}",
-          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, CREATE_ACTION, ex);
+          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, action, ex);
     } catch (Exception ex) {
       log.error("Failure to send event to events framework for account: {} on entity: {} with action: {}",
-          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, CREATE_ACTION, ex);
+          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, action, ex);
     }
   }
 }

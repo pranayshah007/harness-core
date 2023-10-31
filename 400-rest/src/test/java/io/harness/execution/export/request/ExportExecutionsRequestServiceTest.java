@@ -7,20 +7,24 @@
 
 package io.harness.execution.export.request;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GARVIT;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ExportExecutionsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.export.request.ExportExecutionsRequest.ExportExecutionsRequestKeys;
 import io.harness.execution.export.request.ExportExecutionsRequest.OutputFormat;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -31,10 +35,12 @@ import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private ExportExecutionsRequestService exportExecutionsRequestService;
   @Inject private HPersistence persistence;
+  @Mock private FeatureFlagService ffService;
 
   @Test
   @Owner(developers = GARVIT)
@@ -115,7 +121,6 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
 
   @Test
   @Owner(developers = GARVIT)
-
   @Category(UnitTests.class)
   public void testPrepareLimitChecks() {
     saveWorkflowExecution();
@@ -129,6 +134,28 @@ public class ExportExecutionsRequestServiceTest extends WingsBaseTest {
     assertThat(limitChecks.getQueuedRequests().getValue()).isEqualTo(1);
     assertThat(limitChecks.getExecutionCount()).isNotNull();
     assertThat(limitChecks.getExecutionCount().getValue()).isEqualTo(1);
+    assertThat(limitChecks.getExecutionCount().getLimit()).isEqualTo(1000);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldLimitSetToFiveOnPrepareLimitChecksWhenFFEnabled() {
+    when(ffService.isEnabled(FeatureName.CDS_CG_REDUCED_EXPORT_LOG_LIMIT, RequestTestUtils.ACCOUNT_ID))
+        .thenReturn(true);
+
+    saveWorkflowExecution();
+    ExportExecutionsRequest request = RequestTestUtils.prepareExportExecutionsRequest();
+    persistence.save(request);
+
+    ExportExecutionsRequestLimitChecks limitChecks = exportExecutionsRequestService.prepareLimitChecks(
+        RequestTestUtils.ACCOUNT_ID, persistence.createQuery(WorkflowExecution.class));
+    assertThat(limitChecks).isNotNull();
+    assertThat(limitChecks.getQueuedRequests()).isNotNull();
+    assertThat(limitChecks.getQueuedRequests().getValue()).isEqualTo(1);
+    assertThat(limitChecks.getExecutionCount()).isNotNull();
+    assertThat(limitChecks.getExecutionCount().getValue()).isEqualTo(1);
+    assertThat(limitChecks.getExecutionCount().getLimit()).isEqualTo(5);
   }
 
   @Test

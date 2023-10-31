@@ -43,7 +43,7 @@ public class DeploymentSummaryServiceImpl implements DeploymentSummaryService {
   public Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(
       int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
     Optional<DeploymentSummary> deploymentSummaryOptional =
-        deploymentSummaryRepository.fetchNthRecordFromNow(N, instanceSyncKey, infrastructureMappingDTO);
+        deploymentSummaryRepository.fetchNthRecordFromNow(N, instanceSyncKey, infrastructureMappingDTO, null);
     return deploymentSummaryOptional.map(DeploymentSummaryMapper::toDTO);
   }
 
@@ -60,5 +60,13 @@ public class DeploymentSummaryServiceImpl implements DeploymentSummaryService {
   public Optional<DeploymentSummaryDTO> getLatestByInstanceKey(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
     return getNthDeploymentSummaryFromNow(1, instanceSyncKey, infrastructureMappingDTO);
+  }
+
+  @Override
+  public Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment) {
+    Optional<DeploymentSummary> deploymentSummaryOptional = deploymentSummaryRepository.fetchNthRecordFromNow(
+        N, instanceSyncKey, infrastructureMappingDTO, isRollbackDeployment);
+    return deploymentSummaryOptional.map(DeploymentSummaryMapper::toDTO);
   }
 }

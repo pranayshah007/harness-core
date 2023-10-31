@@ -146,7 +146,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
             any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), eq(logCallback), anyBoolean(), eq(null));
     doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
-    doReturn(release).when(releaseHandler).createRelease(any(), anyInt());
+    doReturn(release).when(releaseHandler).createRelease(any(), anyInt(), any());
     doReturn(release).when(release).setReleaseData(anyList(), anyBoolean());
     doReturn(1).when(releaseHistory).getAndIncrementLastReleaseNumber();
     k8sCanaryHandlerConfig = k8sCanaryRequestHandler.getK8sCanaryHandlerConfig();

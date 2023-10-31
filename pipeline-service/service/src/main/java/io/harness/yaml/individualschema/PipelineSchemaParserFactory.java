@@ -10,6 +10,7 @@ package io.harness.yaml.individualschema;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InternalServerErrorException;
+import io.harness.utils.PipelineVersionConstants;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +19,19 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineSchemaParserFactory {
   @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
-  public final String PIPELINE_VERSION_V0 = "v0";
+  @Inject PipelineSchemaParserV1 pipelineSchemaParserV1;
 
   public SchemaParserInterface getPipelineSchemaParser(String version) {
-    switch (version) {
-      case PIPELINE_VERSION_V0:
-        pipelineSchemaParserV0.initParser();
-        return pipelineSchemaParserV0;
-      default:
-        throw new InternalServerErrorException("Pipeline schema parser not available for version: " + version);
+    AbstractStaticSchemaParser schemaParserInterface = null;
+    if (PipelineVersionConstants.PIPELINE_VERSION_V0.getValue().equals(version)) {
+      schemaParserInterface = pipelineSchemaParserV0;
+    } else if (PipelineVersionConstants.PIPELINE_VERSION_V1.getValue().equals(version)) {
+      schemaParserInterface = pipelineSchemaParserV1;
+    } else {
+      throw new InternalServerErrorException("Pipeline schema parser not available for version: " + version);
     }
+
+    schemaParserInterface.initParser();
+    return schemaParserInterface;
   }
 }

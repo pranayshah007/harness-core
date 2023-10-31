@@ -6,6 +6,7 @@
  */
 
 package software.wings.delegatetasks;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -281,9 +282,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
         if (parameters.isSyncGitCloneAndCopyToDestDir()) {
-          gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, workingDir, logCallback);
+          gitClient.cloneRepoAndCopyToDestDir(
+              gitOperationContext, workingDir, logCallback, parameters.isHardResetForGitRef());
         } else {
-          gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+          gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext, parameters.isHardResetForGitRef());
           copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
         }
 

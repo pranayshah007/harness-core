@@ -31,8 +31,7 @@ public class AddExecutableResponseRequestProcessor implements SdkResponseProcess
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     AddExecutableResponseRequest request = event.getAddExecutableResponseRequest();
-    if (request.getExecutableResponse().hasAsync()
-        && request.getExecutableResponse().getAsync().getStatus() != Status.NO_OP) {
+    if (updateNodeExecutionStatus(request)) {
       // As override set is empty, this will prevent any race condition as mongo will handle it using
       // StatusUtils.nodeAllowedStartSet()
       NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
@@ -53,5 +52,16 @@ public class AddExecutableResponseRequestProcessor implements SdkResponseProcess
       nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),
           ops -> ops.addToSet(NodeExecutionKeys.executableResponses, request.getExecutableResponse()));
     }
+  }
+
+  private boolean updateNodeExecutionStatus(AddExecutableResponseRequest request) {
+    if (request.getExecutableResponse().hasAsync()
+        && request.getExecutableResponse().getAsync().getStatus() != Status.NO_OP) {
+      return true;
+    } else if (request.getExecutableResponse().hasAsyncChain()
+        && request.getExecutableResponse().getAsyncChain().getStatus() != Status.NO_OP) {
+      return true;
+    }
+    return false;
   }
 }

@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.jira.JiraIssueUtilsNG;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.servicenow.ServiceNowUtils;
 import io.harness.steps.approval.ApprovalUtils;
@@ -46,6 +47,7 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.shellscript.ShellType;
+import io.harness.yaml.core.timeout.Timeout;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -118,6 +120,7 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
     assertThat(serviceNowApprovalInstanceDetailsDTO.getTicket().getTicketFields()).isNull();
     assertThat(serviceNowApprovalInstanceDetailsDTO.getLatestDelegateTaskId()).isNull();
     assertThat(serviceNowApprovalInstanceDetailsDTO.getDelegateTaskName()).isNull();
+    assertThat(serviceNowApprovalInstanceDetailsDTO.getRetryInterval().getTimeoutInMillis()).isEqualTo(60000);
 
     approvalInstanceResponseDTO = approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
         buildApprovalInstance(ApprovalType.JIRA_APPROVAL), false);
@@ -133,7 +136,7 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
     assertThat(jiraApprovalInstanceDetailsDTO.getIssue().getTicketFields()).isNull();
     assertThat(jiraApprovalInstanceDetailsDTO.getLatestDelegateTaskId()).isNull();
     assertThat(jiraApprovalInstanceDetailsDTO.getDelegateTaskName()).isNull();
-
+    assertThat(jiraApprovalInstanceDetailsDTO.getRetryInterval().getTimeoutInMillis()).isEqualTo(60000);
     approvalInstanceResponseDTO = approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
         buildApprovalInstance(ApprovalType.CUSTOM_APPROVAL), false);
     assertThat(approvalInstanceResponseDTO.getType()).isEqualTo(ApprovalType.CUSTOM_APPROVAL);
@@ -143,7 +146,7 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
         (CustomApprovalInstanceDetailsDTO) approvalInstanceResponseDTO.getDetails();
     assertThat(customApprovalInstanceDetailsDTO.getLatestDelegateTaskId()).isNull();
     assertThat(customApprovalInstanceDetailsDTO.getDelegateTaskName()).isNull();
-
+    assertThat(customApprovalInstanceDetailsDTO.getRetryInterval().getTimeoutInMillis()).isEqualTo(60000);
     approvalInstanceResponseDTO = approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
         buildApprovalInstance(ApprovalType.HARNESS_APPROVAL), false);
     assertThat(approvalInstanceResponseDTO.getType()).isEqualTo(ApprovalType.HARNESS_APPROVAL);
@@ -294,13 +297,15 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
     ApprovalInstance approvalInstance;
     switch (approvalType) {
       case JIRA_APPROVAL:
-        JiraApprovalInstance jiraApprovalInstance = JiraApprovalInstance.builder()
-                                                        .approvalCriteria(CriteriaSpecWrapperDTO.builder().build())
-                                                        .rejectionCriteria(CriteriaSpecWrapperDTO.builder().build())
-                                                        .issueKey(ISSUE_KEY)
-                                                        .latestDelegateTaskId(TASK_ID)
-                                                        .connectorRef(CONNECTOR_IDENTIFIER)
-                                                        .build();
+        JiraApprovalInstance jiraApprovalInstance =
+            JiraApprovalInstance.builder()
+                .approvalCriteria(CriteriaSpecWrapperDTO.builder().build())
+                .rejectionCriteria(CriteriaSpecWrapperDTO.builder().build())
+                .issueKey(ISSUE_KEY)
+                .latestDelegateTaskId(TASK_ID)
+                .connectorRef(CONNECTOR_IDENTIFIER)
+                .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+                .build();
         jiraApprovalInstance.setId(INSTANCE_ID);
         jiraApprovalInstance.setType(ApprovalType.JIRA_APPROVAL);
         approvalInstance = jiraApprovalInstance;
@@ -313,6 +318,7 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
                 .ticketNumber(ISSUE_KEY)
                 .ticketType(SNOW_TICKET_TYPE)
                 .changeWindow(ServiceNowChangeWindowSpecDTO.builder().build())
+                .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
                 .latestDelegateTaskId(TASK_ID)
                 .connectorRef(CONNECTOR_IDENTIFIER)
                 .build();
@@ -321,12 +327,14 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
         approvalInstance = serviceNowApprovalInstance;
         break;
       case CUSTOM_APPROVAL:
-        CustomApprovalInstance customApprovalInstance = CustomApprovalInstance.builder()
-                                                            .approvalCriteria(CriteriaSpecWrapperDTO.builder().build())
-                                                            .rejectionCriteria(CriteriaSpecWrapperDTO.builder().build())
-                                                            .latestDelegateTaskId(TASK_ID)
-                                                            .shellType(ShellType.Bash)
-                                                            .build();
+        CustomApprovalInstance customApprovalInstance =
+            CustomApprovalInstance.builder()
+                .approvalCriteria(CriteriaSpecWrapperDTO.builder().build())
+                .rejectionCriteria(CriteriaSpecWrapperDTO.builder().build())
+                .latestDelegateTaskId(TASK_ID)
+                .shellType(ShellType.Bash)
+                .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+                .build();
         customApprovalInstance.setId(INSTANCE_ID);
         customApprovalInstance.setType(ApprovalType.CUSTOM_APPROVAL);
         approvalInstance = customApprovalInstance;

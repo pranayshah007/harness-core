@@ -15,9 +15,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
@@ -93,7 +93,8 @@ public class StrategyConfigPlanCreatorTest extends PmsSdkCoreTestBase {
             .currentField(approvalStageYamlField.getNode().getField("strategy"))
             .globalContext("metadata",
                 PlanCreationContextValue.newBuilder()
-                    .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build())
+                    .setExecutionContext(
+                        PlanExecutionContext.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build())
                     .build())
             .build();
     StrategyConfig strategyConfig = StrategyConfig.builder().build();

@@ -184,11 +184,11 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
   @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
   @JsonProperty("webhookEventHsqsDequeueConfig") private HsqsDequeueConfig webhookEventHsqsDequeueConfig;
-  @JsonProperty("useNewNodeEntityConfiguration") private Boolean useNewNodeEntityConfiguration;
   @JsonProperty("graphConsumerSleepIntervalMs") private Integer graphConsumerSleepIntervalMs;
   @JsonProperty("asyncFilterCreationConsumerSleepIntervalMs")
   private Integer asyncFilterCreationConsumerSleepIntervalMs;
   @JsonProperty("publishAdviserEventForCustomAdvisers") private Boolean publishAdviserEventForCustomAdvisers;
+  @JsonProperty(value = "disableCustomStageInPipelineService") private Boolean disableCustomStageInPipelineService;
   private boolean useQueueServiceForWebhookTriggers;
 
   private String managerServiceSecret;

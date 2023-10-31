@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.infra.steps;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
 
@@ -16,8 +15,11 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.execution.InfraExecutionSummaryDetails;
 import io.harness.cdng.execution.InfraExecutionSummaryDetails.InfraExecutionSummaryDetailsBuilder;
@@ -48,10 +50,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @Slf4j
@@ -145,6 +150,16 @@ public class InfrastructureStepHelper {
       }
     }
   }
+  public <T> void validateExpression(Map<String, ParameterField<T>> fieldNameValueMap) {
+    for (Map.Entry<String, ParameterField<T>> entry : fieldNameValueMap.entrySet()) {
+      String fieldName = entry.getKey();
+      ParameterField<T> parameter = entry.getValue();
+      if (unresolvedExpression(parameter)) {
+        throw new InvalidRequestException(
+            format("Unresolved Expression : [%s], for field [%s]", parameter.getExpressionValue(), fieldName));
+      }
+    }
+  }
 
   private <T> boolean unresolvedExpression(ParameterField<T> input) {
     return !ParameterField.isNull(input) && input.isExpression();
@@ -167,7 +182,7 @@ public class InfrastructureStepHelper {
   }
 
   public void saveInfraExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder()
             .infraExecutionSummary(createInfraExecutionSummaryDetailsFromStepResponse(stepResponse))
             .build());

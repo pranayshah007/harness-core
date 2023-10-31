@@ -66,6 +66,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
@@ -197,7 +198,8 @@ public class InfrastructureResource {
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "view");
 
     Optional<InfrastructureEntity> infraEntity =
-        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
+        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier,
+            GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
 
     if (infraEntity.isPresent()) {
       if (isEmpty(infraEntity.get().getYaml())) {

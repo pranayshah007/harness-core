@@ -12,17 +12,16 @@ metadata:
   {{- end }}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
-  GITOPS_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   CACHE_BACKEND: "REDIS"
   DEPLOY_MODE: KUBERNETES_ONPREM
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
   NG_MANAGER_TARGET: ng-manager:13002
   NG_MANAGER_AUTHORITY: ng-manager:13002
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   GRPC_SERVER_PORT: "9979"
   SHOULD_CONFIGURE_WITH_PMS: "true"
@@ -34,11 +33,10 @@ data:
   PMS_AUTHORITY:  pipeline-service:12011
   MEMORY: '{{ .Values.java.memory }}'
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
-  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   MOCK_ACCESS_CONTROL_SERVICE: "false"
   ACCESS_CONTROL_ENABLED: "true"
@@ -65,14 +63,8 @@ data:
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
   WEBHOOK_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/ng/api/'
   MONGO_TRANSACTIONS_ALLOWED: "false"
-  {{ $length := len .Values.global.license.ng }}
-  {{- if gt $length 0}}
-  ENABLE_SMP_LICENSING: 'true'
-  SMP_LICENSE: '{{ .Values.global.license.ng }}'
-  {{- end}}
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
-  OPA_SERVER_SECRET: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
   OPA_CONNECTIVITY_ENABLED: 'true'
   {{- end }}
   NOTIFICATION_BASE_URL: http://platform-service:9005/api/

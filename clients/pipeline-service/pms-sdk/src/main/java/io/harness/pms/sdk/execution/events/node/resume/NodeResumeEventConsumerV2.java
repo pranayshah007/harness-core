@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.sdk.execution.events.node.resume;
-
 import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_NODE_RESUME_CONSUMER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.pms.events.base.PmsAbstractRedisConsumer;
 import io.harness.queue.QueueController;
@@ -19,6 +21,7 @@ import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class NodeResumeEventConsumerV2 extends PmsAbstractRedisConsumer<NodeResumeEventMessageListener> {
   @Inject
   public NodeResumeEventConsumerV2(@Named(SDK_NODE_RESUME_CONSUMER) Consumer redisConsumer,

@@ -62,6 +62,10 @@ import io.harness.cvng.analysis.services.impl.TimeSeriesAnalysisServiceImpl;
 import io.harness.cvng.analysis.services.impl.TimeSeriesAnomalousPatternsServiceImpl;
 import io.harness.cvng.analysis.services.impl.TrendAnalysisServiceImpl;
 import io.harness.cvng.analysis.services.impl.VerificationJobInstanceAnalysisServiceImpl;
+import io.harness.cvng.autodiscovery.services.AutoDiscoveryClient;
+import io.harness.cvng.autodiscovery.services.AutoDiscoveryService;
+import io.harness.cvng.autodiscovery.services.impl.AutoDiscoveryClientImpl;
+import io.harness.cvng.autodiscovery.services.impl.AutoDiscoveryServiceImpl;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -182,6 +186,7 @@ import io.harness.cvng.core.services.api.demo.CVNGDemoPerpetualTaskService;
 import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
+import io.harness.cvng.core.services.api.monitoredService.ErrorTrackingNotificationService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -270,6 +275,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.CDNGChangeSourceDemo
 import io.harness.cvng.core.services.impl.demo.changesource.KubernetesChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.ErrorTrackingNotificationServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
@@ -483,6 +489,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
+import io.harness.servicediscovery.client.remote.ServiceDiscoveryClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
@@ -569,6 +576,8 @@ public class CVServiceModule extends AbstractModule {
         AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
     install(new OpaClientModule(verificationConfiguration.getOpaClientConfig(),
         verificationConfiguration.getPolicyManagerSecret(), CV_NEXT_GEN.getServiceId()));
+    install(new ServiceDiscoveryClientModule(verificationConfiguration.getServiceDiscoveryServiceClientConfig(),
+        verificationConfiguration.getServiceDiscoveryServiceSecret(), CV_NEXT_GEN.getServiceId()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
@@ -1020,6 +1029,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(ErrorTrackingNotificationService.class).to(ErrorTrackingNotificationServiceImpl.class);
     bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
@@ -1046,6 +1056,8 @@ public class CVServiceModule extends AbstractModule {
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
     bind(AnnotationService.class).to(AnnotationServiceImpl.class);
+    bind(AutoDiscoveryService.class).to(AutoDiscoveryServiceImpl.class);
+    bind(AutoDiscoveryClient.class).to(AutoDiscoveryClientImpl.class);
     install(new PipelineRemoteClientModule(
         ServiceHttpClientConfig.builder()
             .baseUrl(verificationConfiguration.getPipelineServiceClientConfig().getBaseUrl())

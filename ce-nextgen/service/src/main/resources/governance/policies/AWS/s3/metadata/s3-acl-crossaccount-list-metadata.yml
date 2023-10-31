@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-acl-crossaccount-list
+cloudProvider: AWS
+resourceType: s3
+description: Filters cross-account access to S3 buckets
+rulesYamlPath: ../s3-acl-crossaccount-list.yml

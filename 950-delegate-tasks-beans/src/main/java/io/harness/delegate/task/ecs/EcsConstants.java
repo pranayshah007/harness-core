@@ -6,7 +6,11 @@
  */
 
 package io.harness.delegate.task.ecs;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 public class EcsConstants {
   public static final String RESIZE_NEW_FIRST = "ResizeNewFirst";
   public static final String DOWNSIZE_OLD_FIRST = "DownsizeOldFirst";

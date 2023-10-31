@@ -25,7 +25,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.interrupts.Interrupt;
@@ -40,6 +39,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
@@ -60,7 +60,6 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.tasks.ResponseData;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +90,7 @@ public class PipelineStageStepTest extends CategoryTest {
   String projectId = "projectId";
   String ordId = "orgId";
   Map<String, String> setup = new HashMap<>();
+
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -264,7 +264,7 @@ public class PipelineStageStepTest extends CategoryTest {
     doReturn(Optional.of(NodeExecution.builder().ambiance(ambiance).build()))
         .when(nodeExecutionService)
         .getPipelineNodeExecutionWithProjections(
-            output.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
+            output.getChildExecutionId(), NodeProjectionUtils.WithAmbianceAndFailureInfo);
 
     stepResponse = pipelineStageStep.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
 

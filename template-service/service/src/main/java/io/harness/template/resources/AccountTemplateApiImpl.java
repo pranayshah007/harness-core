@@ -6,12 +6,14 @@
  */
 
 package io.harness.template.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.template.v1.AccountTemplateApi;
 import io.harness.spec.server.template.v1.model.GitCreateDetails;
@@ -29,6 +31,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth

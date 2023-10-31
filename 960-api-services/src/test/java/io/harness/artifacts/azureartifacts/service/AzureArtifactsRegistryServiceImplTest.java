@@ -8,6 +8,7 @@
 package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.VINIT_KUMAR;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -17,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
@@ -39,6 +41,7 @@ import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackages;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsRestClient;
@@ -176,7 +179,160 @@ public class AzureArtifactsRegistryServiceImplTest extends CategoryTest {
         .isInstanceOf(InvalidArtifactServerException.class)
         .hasMessageContaining("Failed to download azure artifact");
   }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithFeedList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
 
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+    doThrow(new HintException("Failed to get the Azure Feeds list."))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(any(), any());
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", mavenPackageName, "abc", feed, "project"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Could not fetch feeds");
+  }
+
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithEmptyFeedList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    List<AzureArtifactsFeed> emptyFeeds = Collections.emptyList();
+    doReturn(emptyFeeds).when(azureArtifactsRegistryServiceImpl1).listFeeds(azureArtifactsInternalConfig1, "myProject");
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", "abc", "1.0.0", "testFeed", "myProject"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Feeds not found");
+  }
+
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithNullFeedID() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+
+    doReturn(Collections.singletonList(azureArtifactsFeed))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(azureArtifactsInternalConfig1, "myProject");
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", "abc", "1.0.0", "myFeed", "myProject"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Feed [myFeed] not found in feeds");
+  }
+
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithPackageList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+
+    doReturn(Collections.singletonList(azureArtifactsFeed))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(azureArtifactsInternalConfig1, "project");
+
+    doThrow(new HintException("Failed to get the Azure Packages list."))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listPackages(any(), any(), any(), any());
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", mavenPackageName, "abc", feed, "project"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Could not fetch packages");
+  }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithEmptyPackageList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+
+    doReturn(Collections.singletonList(azureArtifactsFeed))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(azureArtifactsInternalConfig1, "myProject");
+
+    List<AzureArtifactsPackage> emptyPackages = Collections.emptyList();
+    doReturn(emptyPackages)
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listPackages(azureArtifactsInternalConfig1, "myProject", "testFeed", "maven");
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", "abc", "1.0.0", "testFeed", "myProject"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Packages not found");
+  }
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithNullPackageID() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+    AzureArtifactsFeeds azureArtifactsFeeds = new AzureArtifactsFeeds();
+    azureArtifactsFeeds.setValue(Collections.singletonList(azureArtifactsFeed));
+
+    AzureArtifactsPackage azureArtifactsPackage = new AzureArtifactsPackage();
+    azureArtifactsPackage.setName(mavenPackageName);
+    azureArtifactsPackage.setProtocolType("protocol");
+    AzureArtifactsPackages azureArtifactsPackages = new AzureArtifactsPackages();
+    azureArtifactsPackages.setValue(Collections.singletonList(azureArtifactsPackage));
+
+    doReturn(Collections.singletonList(azureArtifactsFeed))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(azureArtifactsInternalConfig1, "myProject");
+
+    doReturn(Collections.singletonList(azureArtifactsPackage))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listPackages(azureArtifactsInternalConfig1, "myProject", "testFeed", "maven");
+
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", "abc", "1.0.0", "testFeed", "myProject"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get versions. Package [abc] not found in Packages");
+  }
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)

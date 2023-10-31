@@ -21,6 +21,7 @@ import static io.harness.delegate.beans.ci.pod.CICommonConstants.HARNESS_LE_DELE
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.HARNESS_LE_DELEGATE_TI_URL;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
+import static io.harness.delegate.task.citasks.cik8handler.helper.SecretVolumesHelper.HARNESS_SHARED_CERTS_PATH;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -121,6 +122,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private static final String HARNESS_ADDITIONAL_CERTS_DIR = "HARNESS_ADDITIONAL_CERTS_DIR";
   private static final String HARNESS_ADDITIONAL_CERTS_PATH_LIST = "HARNESS_ADDITIONAL_CERTS_LIST";
   private static final String LITE_ENGINE_CERTS_DIR = "/harness-certs/";
+  private static final String HARNESS_SHARED_CERTS_PATH_ENV = "HARNESS_SHARED_CERTS_PATH";
 
   @Override
   public Type getType() {
@@ -175,7 +177,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         V1Pod pod = podSpecBuilder.createSpec(podParams).build();
         updatePodWithDelegateVolumes(coreV1Api, namespace, pod);
 
-        log.info("Creating pod with spec: {}", pod);
+        try {
+          log.info("Creating pod with spec: {}", EncodingUtils.convertToBase64String(pod));
+        } catch (Exception e) {
+          log.error("Could not serialize class V1Pod", e);
+        }
+
         cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, pod, namespace);
         Watch<CoreV1Event> watch =
             k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName, logStreamingTaskClient);
@@ -380,6 +387,11 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
           }
         }
       } else {
+        // Add env variable pointing to the shared certs directory
+        V1EnvVar sharedCertVar =
+            new V1EnvVarBuilder().withName(HARNESS_SHARED_CERTS_PATH_ENV).withValue(HARNESS_SHARED_CERTS_PATH).build();
+        c.addEnvItem(sharedCertVar);
+
         containerVolumeMounts.forEach(c::addVolumeMountsItem);
       }
     }

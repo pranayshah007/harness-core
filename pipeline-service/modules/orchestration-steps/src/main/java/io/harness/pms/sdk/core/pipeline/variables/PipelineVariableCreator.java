@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.sdk.core.pipeline.variables;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
@@ -36,6 +38,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInfoConfig> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(

@@ -29,7 +29,7 @@ public class AsgCanaryDeployRequest implements AsgCommandRequest, NestedAnnotati
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
   Integer unitValue;
   String unitType;
   String serviceNameSuffix;

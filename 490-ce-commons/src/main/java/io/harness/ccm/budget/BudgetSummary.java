@@ -29,9 +29,9 @@ public class BudgetSummary {
   @GraphQLNonNull int timeLeft;
   @GraphQLNonNull String timeUnit;
   @GraphQLNonNull String timeScope;
-  @GraphQLNonNull List<Double> actualCostAlerts;
-  @GraphQLNonNull List<Double> forecastCostAlerts;
-  @GraphQLNonNull AlertThreshold[] alertThresholds;
+  List<Double> actualCostAlerts;
+  List<Double> forecastCostAlerts;
+  AlertThreshold[] alertThresholds;
   @GraphQLNonNull BudgetPeriod period;
   BudgetType type;
   Double growthRate;

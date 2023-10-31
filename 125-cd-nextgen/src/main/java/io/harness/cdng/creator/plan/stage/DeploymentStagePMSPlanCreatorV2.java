@@ -94,6 +94,7 @@ import io.harness.rbac.CDNGRbacUtility;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
@@ -219,8 +220,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .stepParameters(stageParameters.build())
             .stepType(getStepType(stageNode))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunConditionForStage(
-                stageNode.getWhen(), ctx.getGlobalContext().get("metadata").getMetadata().getExecutionMode()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen(), ctx.getExecutionMode()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -817,7 +817,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       String projectId = ctx.getProjectIdentifier();
       String pipelineId = ctx.getPipelineIdentifier();
       if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
-              accessControlClient, CDNGRbacUtility.constructPrincipalFromPlanCreationContextValue(ctx.getMetadata()))) {
+              accessControlClient, CDNGRbacUtility.getExecutionPrincipalInfo(ctx))) {
         return;
       }
 
@@ -841,8 +841,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     parentInfo.putData(PlanCreatorConstants.STAGE_ID,
         HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, stageNode)).build());
     if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      String strategyId = stageNode.getUuid();
       parentInfo.putData(
-          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(stageNode.getUuid()).build());
+          PlanCreatorConstants.NEAREST_STRATEGY_ID, HarnessValue.newBuilder().setStringValue(strategyId).build());
+      parentInfo.putData(PlanCreatorConstants.ALL_STRATEGY_IDS,
+          PlanCreatorUtilsCommon.appendToParentInfoList(PlanCreatorConstants.ALL_STRATEGY_IDS, strategyId, ctx));
       parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
           HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STAGE).build());
     }

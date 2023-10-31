@@ -24,6 +24,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStepPMSFilterJsonCreatorV2;
+import io.harness.filters.WithExtraValidations;
 import io.harness.filters.WithFileRefs;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -63,6 +64,10 @@ public class CDPMSStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreato
       Map<String, ParameterField<List<String>>> fileRefs =
           ((WithFileRefs) yamlField.getStepSpecType()).extractFileRefs();
       result.addAll(getAllFileReferredEntities(filterCreationContext, fileRefs));
+    }
+
+    if (WithExtraValidations.class.isAssignableFrom(yamlField.getStepSpecType().getClass())) {
+      ((WithExtraValidations) yamlField.getStepSpecType()).validateFields(yamlField.getName());
     }
 
     response.setReferredEntities(result);

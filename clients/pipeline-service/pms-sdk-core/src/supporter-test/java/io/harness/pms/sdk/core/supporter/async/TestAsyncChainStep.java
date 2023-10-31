@@ -18,11 +18,14 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.AsyncChainExecutable;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import com.google.protobuf.ByteString;
 import lombok.Getter;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -62,18 +65,20 @@ public class TestAsyncChainStep implements AsyncChainExecutable<TestStepParamete
 
   @Override
   public AsyncChainExecutableResponse executeNextLink(Ambiance ambiance, TestStepParameters stepParameters,
-      StepInputPackage inputPackage, ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
+      throws Exception {
     String resumeId = generateUuid();
     return AsyncChainExecutableResponse.newBuilder()
         .setCallbackId(resumeId)
         .setTimeout(timeout)
         .setChainEnd(true)
+        .setPassThroughData(ByteString.copyFrom(RecastOrchestrationUtils.toBytes(passThroughData)))
         .build();
   }
 
   @Override
   public StepResponse finalizeExecution(Ambiance ambiance, TestStepParameters stepParameters,
-      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 }

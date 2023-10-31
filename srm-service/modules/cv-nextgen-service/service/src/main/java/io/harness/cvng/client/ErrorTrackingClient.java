@@ -6,6 +6,7 @@
  */
 package io.harness.cvng.client;
 
+import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.ErrorTrackingEventType;
@@ -21,5 +22,18 @@ public interface ErrorTrackingClient {
       @Query("accountId") String accountId, @Query("projectId") String projectIdentifier,
       @Query("serviceId") String serviceIdentifier, @Query("environmentId") String environmentIdentifier,
       @Query("eventStatus") List<ErrorTrackingEventStatus> eventStatus,
-      @Query("eventTypes") List<ErrorTrackingEventType> eventTypes, @Query("notificationId") String notificationId);
+      @Query("eventTypes") List<ErrorTrackingEventType> eventTypes, @Query("notificationId") String notificationId,
+      @Query("threshold") Integer threshold);
+
+  @GET("dashboard/notificationSavedFilterEvents")
+  Call<ErrorTrackingNotificationData> getNotificationSavedFilterData(@Query("orgId") String orgIdentifier,
+      @Query("accountId") String accountId, @Query("projectId") String projectIdentifier,
+      @Query("serviceId") String serviceIdentifier, @Query("environmentId") String environmentIdentifier,
+      @Query("filterId") Long filterId, @Query("threshold") Integer threshold,
+      @Query("notificationId") String notificationId);
+
+  @GET("dashboard/notificationNewEvents")
+  Call<List<ErrorTrackingHitSummary>> getNotificationNewEvents(@Query("orgId") String orgIdentifier,
+      @Query("accountId") String accountId, @Query("projectId") String projectIdentifier,
+      @Query("serviceId") String serviceIdentifier, @Query("environmentId") String environmentIdentifier);
 }

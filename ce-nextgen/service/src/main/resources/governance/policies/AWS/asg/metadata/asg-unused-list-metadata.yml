@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: asg-unused-list
+cloudProvider: AWS
+resourceType: asg
+description: List any unused ASG
+rulesYamlPath: ../asg-unused-list.yml

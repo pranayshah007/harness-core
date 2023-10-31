@@ -6,6 +6,7 @@
  */
 
 package io.harness.event;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
@@ -68,7 +69,6 @@ public class GraphStatusUpdateHelper {
     String nodeExecutionId = nodeExecution.getUuid();
     try {
       if (orchestrationGraph.getRootNodeIds().isEmpty()) {
-        log.info("[PMS_GRAPH]  Setting rootNodeId: [{}] for plan [{}]", nodeExecutionId, planExecutionId);
         orchestrationGraph.getRootNodeIds().add(nodeExecutionId);
       }
 

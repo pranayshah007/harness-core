@@ -558,6 +558,10 @@ if [[ "" != "$DELEGATE_DOCKER_IMAGE" ]]; then
   export DELEGATE_DOCKER_IMAGE; yq -i '.portal.delegateDockerImage=env(DELEGATE_DOCKER_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IMPORTANT_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
+  export IMPORTANT_DELEGATE_TASK_REJECT_AT_LIMIT; yq -i '.portal.importantDelegateTaskRejectAtLimit=env(IMPORTANT_DELEGATE_TASK_REJECT_AT_LIMIT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
   export OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT; yq -i '.portal.optionalDelegateTaskRejectAtLimit=env(OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT)' $CONFIG_FILE
 fi
@@ -1264,3 +1268,5 @@ replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_U
 replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
 replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
 replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"
+
+replace_key_value maxAccountsToDeleteInParallel "$MAX_ACCOUNTS_TO_DELETE_IN_PARALLEL"

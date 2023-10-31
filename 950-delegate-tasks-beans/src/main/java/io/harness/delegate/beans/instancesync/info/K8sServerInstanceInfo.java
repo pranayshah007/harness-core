@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.beans.instancesync.info;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sContainer;
@@ -22,6 +24,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @JsonTypeName("K8sServerInstanceInfo")
 @Data
 @Builder

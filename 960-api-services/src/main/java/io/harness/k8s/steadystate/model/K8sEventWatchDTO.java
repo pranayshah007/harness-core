@@ -14,6 +14,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.KubernetesResourceId;
 
 import io.kubernetes.client.openapi.ApiClient;
+import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -30,4 +31,5 @@ public class K8sEventWatchDTO {
   List<KubernetesResourceId> resourceIds;
   String workingDirectory;
   boolean isErrorFrameworkEnabled;
+  OffsetDateTime startTime;
 }

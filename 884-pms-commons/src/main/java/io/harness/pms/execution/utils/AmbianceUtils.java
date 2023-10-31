@@ -451,6 +451,21 @@ public class AmbianceUtils {
     return String.join(".", fqnList);
   }
 
+  /**
+   * This method is used to find the combined index of the given node.
+   * For example: if a strategy is defined at stage, stepGroup and then step level.
+   * This would return a string which would be a concat of current iteration of stage, step group and step level.
+   * @param levels
+   * @return
+   */
+  public String getCombinedIndexes(@NotNull List<Level> levels) {
+    List<String> fqnList = new ArrayList<>();
+    List<Level> levelsWithStrategy = levels.stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
+    return levelsWithStrategy.stream()
+        .map(level -> String.valueOf(AmbianceUtils.getCurrentIteration(level)))
+        .collect(Collectors.joining("."));
+  }
+
   public boolean isRollbackModeExecution(Ambiance ambiance) {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
@@ -544,5 +559,13 @@ public class AmbianceUtils {
       contextMap.put(
           EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledJsonSupportFeatureFlag));
     }
+  }
+
+  public boolean checkIfFeatureFlagEnabled(Ambiance ambiance, String featureFlagName) {
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null) {
+      Map<String, Boolean> stringMap = ambiance.getMetadata().getFeatureFlagToValueMapMap();
+      return stringMap.containsKey(featureFlagName) && Boolean.TRUE.equals(stringMap.get(featureFlagName));
+    }
+    return false;
   }
 }

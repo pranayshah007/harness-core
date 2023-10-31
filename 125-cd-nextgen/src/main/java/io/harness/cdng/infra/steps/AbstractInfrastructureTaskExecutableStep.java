@@ -789,12 +789,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           "Infrastructure Name: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraName()
               + " , Identifier: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraIdentifier());
     }
-
+    Map<String, ParameterField<String>> fieldNameValueMap = new HashMap<>();
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8sDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            k8sDirectInfrastructure.getConnectorRef(), k8sDirectInfrastructure.getNamespace());
+        fieldNameValueMap.put("connectorRef", k8sDirectInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("namespace", k8sDirectInfrastructure.getNamespace());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
 
         if (k8sDirectInfrastructure.getNamespace() != null
             && isNotEmpty(k8sDirectInfrastructure.getNamespace().getValue())) {
@@ -813,8 +815,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sGcpInfrastructure.getConnectorRef(),
-            k8sGcpInfrastructure.getNamespace(), k8sGcpInfrastructure.getCluster());
+        fieldNameValueMap.put("connectorRef", k8sGcpInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("namespace", k8sGcpInfrastructure.getNamespace());
+        fieldNameValueMap.put("cluster", k8sGcpInfrastructure.getCluster());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
 
         if (k8sGcpInfrastructure.getNamespace() != null && isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(
@@ -824,25 +829,37 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
             (ServerlessAwsLambdaInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(serverlessAwsLambdaInfrastructure.getConnectorRef(),
-            serverlessAwsLambdaInfrastructure.getRegion(), serverlessAwsLambdaInfrastructure.getStage());
+        fieldNameValueMap.put("connectorRef", serverlessAwsLambdaInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", serverlessAwsLambdaInfrastructure.getRegion());
+        fieldNameValueMap.put("stage", serverlessAwsLambdaInfrastructure.getStage());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.ELASTIGROUP:
         ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("connectorRef", elastigroupInfrastructure.getConnectorRef());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.ASG:
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
+        fieldNameValueMap.put("connectorRef", asgInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", asgInfrastructure.getRegion());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.KUBERNETES_AZURE:
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sAzureInfrastructure.getConnectorRef(),
-            k8sAzureInfrastructure.getNamespace(), k8sAzureInfrastructure.getCluster(),
-            k8sAzureInfrastructure.getSubscriptionId(), k8sAzureInfrastructure.getResourceGroup());
+        fieldNameValueMap.put("connectorRef", k8sAzureInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("Namespace", k8sAzureInfrastructure.getNamespace());
+        fieldNameValueMap.put("cluster", k8sAzureInfrastructure.getCluster());
+        fieldNameValueMap.put("subscriptionId", k8sAzureInfrastructure.getSubscriptionId());
+        fieldNameValueMap.put("resourceGroup", k8sAzureInfrastructure.getResourceGroup());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
 
         if (k8sAzureInfrastructure.getNamespace() != null
             && isNotEmpty(k8sAzureInfrastructure.getNamespace().getValue())) {
@@ -853,69 +870,107 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(sshWinRmAzureInfrastructure.getConnectorRef(),
-            sshWinRmAzureInfrastructure.getSubscriptionId(), sshWinRmAzureInfrastructure.getResourceGroup(),
-            sshWinRmAzureInfrastructure.getCredentialsRef());
+        fieldNameValueMap.put("connectorRef", sshWinRmAzureInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("subscriptionId", sshWinRmAzureInfrastructure.getSubscriptionId());
+        fieldNameValueMap.put("resourceGroup", sshWinRmAzureInfrastructure.getResourceGroup());
+        fieldNameValueMap.put("credentialsRef", sshWinRmAzureInfrastructure.getCredentialsRef());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(pdcInfrastructure.getCredentialsRef());
+        fieldNameValueMap.put("connectorRef", pdcInfrastructure.getConnectorRef());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         infrastructureStepHelper.requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
         break;
+
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
-            sshWinRmAwsInfrastructure.getHostConnectionType());
+        fieldNameValueMap.put("connectorRef", sshWinRmAwsInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("credentialsRef", sshWinRmAwsInfrastructure.getCredentialsRef());
+        fieldNameValueMap.put("region", sshWinRmAwsInfrastructure.getRegion());
+        fieldNameValueMap.put("connectionType", sshWinRmAwsInfrastructure.getHostConnectionType());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        fieldNameValueMap.put("connectorRef", azureWebAppInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("subscriptionId", azureWebAppInfrastructure.getSubscriptionId());
+        fieldNameValueMap.put("resourceGroup", azureWebAppInfrastructure.getResourceGroup());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
 
       case InfrastructureKind.ECS:
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
+        fieldNameValueMap.put("connectorRef", ecsInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", ecsInfrastructure.getRegion());
+        fieldNameValueMap.put("cluster", ecsInfrastructure.getCluster());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
+
       case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
         GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
-            googleFunctionsInfrastructure.getRegion(), googleFunctionsInfrastructure.getProject());
+        fieldNameValueMap.put("connectorRef", googleFunctionsInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", googleFunctionsInfrastructure.getRegion());
+        fieldNameValueMap.put("project", googleFunctionsInfrastructure.getProject());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
+
       case InfrastructureKind.TAS:
         TanzuApplicationServiceInfrastructure tasInfrastructure =
             (TanzuApplicationServiceInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
+        fieldNameValueMap.put("connectorRef", tasInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("organization", tasInfrastructure.getOrganization());
+        fieldNameValueMap.put("space", tasInfrastructure.getSpace());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
+
       case InfrastructureKind.AWS_SAM:
         AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
+        fieldNameValueMap.put("connectorRef", awsSamInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", awsSamInfrastructure.getRegion());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
+
       case InfrastructureKind.AWS_LAMBDA:
         AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
+        fieldNameValueMap.put("connectorRef", awsLambdaInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("region", awsLambdaInfrastructure.getRegion());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
         break;
+
       case InfrastructureKind.KUBERNETES_AWS:
         K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sAwsInfrastructure.getConnectorRef(),
-            k8sAwsInfrastructure.getNamespace(), k8sAwsInfrastructure.getCluster());
+        fieldNameValueMap.put("connectorRef", k8sAwsInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("namespace", k8sAwsInfrastructure.getNamespace());
+        fieldNameValueMap.put("cluster", k8sAwsInfrastructure.getCluster());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
 
         if (k8sAwsInfrastructure.getNamespace() != null && isNotEmpty(k8sAwsInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(
               logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
         }
         break;
+
       case InfrastructureKind.KUBERNETES_RANCHER:
         K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
-            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
+        fieldNameValueMap.put("connectorRef", rancherInfrastructure.getConnectorRef());
+        fieldNameValueMap.put("namespace", rancherInfrastructure.getNamespace());
+        fieldNameValueMap.put("cluster", rancherInfrastructure.getCluster());
+
+        infrastructureStepHelper.validateExpression(fieldNameValueMap);
+
         if (ParameterField.isNotNull(rancherInfrastructure.getNamespace())
             && isNotEmpty(rancherInfrastructure.getNamespace().getValue())) {
           saveExecutionLog(

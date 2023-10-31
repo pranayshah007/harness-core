@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.notification;
+
 import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -294,7 +295,7 @@ public class NotificationHelper {
     String nodeIdentifier = "";
     String stepIdentifier = "";
     String stageIdentifier = "";
-    String stepName = "";
+    String nodeName = "";
     String stageName = "";
     String imageStatus = PipelineNotificationUtils.getStatusForImage(planExecution.getStatus());
     String themeColor = PipelineNotificationUtils.getThemeColor(planExecution.getStatus());
@@ -314,11 +315,11 @@ public class NotificationHelper {
       if (pipelineEventType.isStepLevelEvent()) {
         stepIdentifier = nodeIdentifier;
         Optional<Level> stageOptional = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
-        stepName = nodeExecution.getName();
         if (stageOptional.isPresent()) {
           stageIdentifier = stageOptional.get().getIdentifier();
         }
       }
+      nodeName = nodeExecution.getName();
       if (pipelineEventType.isStageLevelEvent()) {
         stageIdentifier = nodeIdentifier;
         stageName = nodeExecution.getName();
@@ -341,7 +342,8 @@ public class NotificationHelper {
     templateData.put("EVENT_TYPE", pipelineEventType.getDisplayName());
     templateData.put("PIPELINE", pipelineId);
     templateData.put("PIPELINE_STEP", nodeIdentifier);
-    templateData.put("PIPELINE_STEP_NAME", stepName);
+    // This env variable is for all nodes not just step
+    templateData.put("PIPELINE_STEP_NAME", nodeName);
     templateData.put("START_TS_SECS", String.valueOf(startTs));
     templateData.put("END_TS_SECS", String.valueOf(endTs));
     templateData.put("START_DATE", startDate);
@@ -362,7 +364,7 @@ public class NotificationHelper {
     webhookNotificationEvent.executionUrl(executionUrl);
     webhookNotificationEvent.tag(pipelineExecutionSummaryEntity.getTags());
     webhookNotificationEvent.pipelineName(pipelineName);
-    webhookNotificationEvent.stepName(stepName);
+    webhookNotificationEvent.stepName(nodeName);
     webhookNotificationEvent.stageName(stageName);
     if (null != nodeExecution && null != nodeExecution.getFailureInfo()
         && EmptyPredicate.isNotEmpty(nodeExecution.getFailureInfo().toString())) {

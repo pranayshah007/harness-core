@@ -36,6 +36,10 @@ public interface InfrastructureEntityService {
   Optional<InfrastructureEntity> get(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
 
+  Optional<InfrastructureEntity> get(@NotEmpty String accountId, String orgIdentifier, String projectIdentifier,
+      @NotEmpty String environmentIdentifier, @NotEmpty String infraIdentifier, boolean loadFromCache,
+      boolean loadFromFallbackBranch);
+
   InfrastructureEntity update(@NotNull InfrastructureEntity requestInfra);
 
   InfrastructureEntity upsert(@NotNull InfrastructureEntity requestInfra, UpsertOptions upsertOptions);

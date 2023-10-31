@@ -6,7 +6,9 @@
  */
 
 package io.harness.service.instancestats;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.models.InstanceStats;
 import io.harness.models.InstanceStatsIterator;
@@ -17,6 +19,7 @@ import com.google.inject.Inject;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceStatsServiceImpl implements InstanceStatsService {
   private InstanceStatsRepository instanceStatsRepository;

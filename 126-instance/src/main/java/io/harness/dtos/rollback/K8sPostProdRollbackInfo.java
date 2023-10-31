@@ -7,9 +7,29 @@
 
 package io.harness.dtos.rollback;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class K8sPostProdRollbackInfo implements PostProdRollbackSwimLaneInfo {}
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
+@OwnedBy(HarnessTeam.CDP)
+public class K8sPostProdRollbackInfo implements PostProdRollbackSwimLaneInfo {
+  private final String lastPipelineExecutionName;
+  private final String lastPipelineExecutionId;
+  private final long lastDeployedAt;
+  private final String envName;
+  private final String envIdentifier;
+  private final String infraName;
+  private final String infraIdentifier;
+  private final String currentArtifactDisplayName;
+  private final String currentArtifactId;
+  private final String previousArtifactDisplayName;
+  private final String previousArtifactId;
+}

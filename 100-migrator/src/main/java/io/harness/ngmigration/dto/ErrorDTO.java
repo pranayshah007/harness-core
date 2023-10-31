@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngmigration.dto;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
@@ -24,6 +26,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(CDC)
 @Getter
 @Setter

@@ -6,12 +6,15 @@
  */
 
 package io.harness.ngmigration.service.step.arm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.pms.yaml.ParameterField;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public abstract class BaseAzureARMProvisionerMapper extends StepMapper {
   ParameterField<String> getProvisionerIdentifier() {

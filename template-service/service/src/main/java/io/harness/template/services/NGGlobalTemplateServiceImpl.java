@@ -307,6 +307,11 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
         versionLabel, !deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
   }
 
+  public Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      boolean notDeleted, boolean getMetadataOnly, Pageable pageable) {
+    return ngGlobalTemplateRepository.findAllGlobalTemplateAndDeletedNot(notDeleted, getMetadataOnly, pageable);
+  }
+
   /*
   Read the list contains newly added filePath
   Get the Git content and call create method.

@@ -6,12 +6,14 @@
  */
 
 package io.harness.engine.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
@@ -34,6 +36,8 @@ import org.apache.commons.jexl3.JexlEngine;
  * want to resolve fully qualified expressions, startNodeExecution should be null. OOtherwise, it should be the node
  * execution from where we want to start expression evaluation. It supports step parameters and outcomes in expressions.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @Builder

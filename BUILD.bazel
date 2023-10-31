@@ -136,6 +136,32 @@ java_library(
     exports = ["@maven//:org_projectlombok_lombok"],
 )
 
+java_plugin(
+    name = "mapstruct_plugin",
+    generates_api = True,
+    processor_class = "org.mapstruct.ap.MappingProcessor",
+    deps = [
+        "@maven//:org_mapstruct_mapstruct_processor",
+        "@maven//:org_projectlombok_lombok_mapstruct_binding",
+    ],
+)
+
+java_library(
+    name = "mapstruct",
+    exported_plugins = [
+        ":mapstruct_plugin",
+    ],
+    neverlink = True,
+    visibility = ["//visibility:public"],
+    exports = [
+        "@maven//:org_mapstruct_mapstruct",
+        "@maven//:org_mapstruct_mapstruct_processor",
+    ],
+    runtime_deps = [
+        "@maven//:org_mapstruct_mapstruct",
+    ],
+)
+
 filegroup(
     name = "git",
     srcs = glob(

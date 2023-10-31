@@ -162,6 +162,7 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
 import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
@@ -519,5 +520,6 @@ public class K8sNgTaskRegister implements KryoRegistrar {
 
     kryo.register(LinkedHashSet.class, 100030);
     kryo.register(TaskNGDataException.class, 543440);
+    kryo.register(ReleaseMetadata.class, 20001002);
   }
 }

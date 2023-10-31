@@ -6,14 +6,16 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
@@ -31,6 +33,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.NgMigrationService;
 
+import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.TriggerConditionType;
@@ -40,6 +43,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.TriggerService;
 
 import com.google.inject.Inject;
@@ -52,10 +56,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class TriggerMigrationService extends NgMigrationService {
   @Inject TriggerService triggerService;
+  @Inject private ArtifactStreamService artifactStreamService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -99,10 +105,11 @@ public class TriggerMigrationService extends NgMigrationService {
         && TriggerConditionType.NEW_ARTIFACT.equals(trigger.getCondition().getConditionType())) {
       ArtifactTriggerCondition condition = (ArtifactTriggerCondition) trigger.getCondition();
       if (StringUtils.isNotBlank(condition.getArtifactStreamId())) {
-        children.add(CgEntityId.builder()
-                         .id(condition.getArtifactStreamId())
-                         .type(NGMigrationEntityType.ARTIFACT_STREAM)
-                         .build());
+        ArtifactStream artifactStream = artifactStreamService.get(condition.getArtifactStreamId());
+        if (artifactStream != null) {
+          children.add(
+              CgEntityId.builder().id(artifactStream.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
+        }
       }
     }
 

@@ -26,11 +26,13 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 
 import software.wings.beans.delegation.TerraformProvisionParameters;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import lombok.NonNull;
 
 @OwnedBy(CDP)
 public interface TerraformBaseHelper {
@@ -62,15 +64,16 @@ public interface TerraformBaseHelper {
       GitBaseRequest gitBaseRequestForConfigFile, Map<String, String> commitIdForConfigFilesMap);
 
   String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
-      String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
-      String scriptPath, String workingDir);
+      String workspace, String currentStateFileId, LogCallback logCallback, String scriptPath, String workingDir,
+      boolean skipStateStorage);
 
   String fetchConfigFileAndPrepareScriptDir(ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig,
-      String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir);
+      String accountId, String workspace, String currentStateFileId, LogCallback logCallback, String baseDir,
+      boolean skipStateStorage);
 
   String fetchS3ConfigFilesAndPrepareScriptDir(S3StoreTFDelegateConfig s3StoreTFDelegateConfig,
       TerraformTaskNGParameters terraformTaskNGParameters, String baseDir,
-      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback);
+      Map<String, Map<String, String>> keyVersionMap, LogCallback logCallback, boolean skipStateStorage);
 
   void fetchConfigFileAndCloneLocally(GitBaseRequest gitBaseRequestForConfigFile, LogCallback logCallback);
 
@@ -114,4 +117,8 @@ public interface TerraformBaseHelper {
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
 
   TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters);
+
+  Map<String, String> getAwsAuthEnvVariables(TerraformTaskNGParameters taskParameters);
+
+  @NonNull ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters);
 }

@@ -141,7 +141,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
       returnedConfig.setProxy(pluginProxyHostDetails);
 
-      outboxService.save(new AppConfigCreateEvent(accountIdentifier, appConfig));
+      if (ConfigType.PLUGIN.equals(configType)) {
+        outboxService.save(new AppConfigCreateEvent(accountIdentifier, appConfig));
+      }
       return returnedConfig;
     }));
   }
@@ -163,8 +165,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
-      outboxService.save(new AppConfigUpdateEvent(accountIdentifier, appConfig, oldAppConfig));
-
+      if (ConfigType.PLUGIN.equals(configType)) {
+        outboxService.save(new AppConfigUpdateEvent(accountIdentifier, appConfig, oldAppConfig));
+      }
       if (updatedData == null) {
         throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getConfigId(), accountIdentifier));
       }

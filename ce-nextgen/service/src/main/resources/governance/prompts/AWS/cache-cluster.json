@@ -1,0 +1,60 @@
+{
+  "CacheClusterId": "CacheClusterId",
+  "ClientDownloadLandingPage": "https://console.aws.amazon.com/elasticache/home#client-download:",
+  "CacheNodeType": "cache.m5.large",
+  "Engine": "redis",
+  "EngineVersion": "5.0.6",
+  "CacheClusterStatus": "available",
+  "NumCacheNodes": 1,
+  "PreferredAvailabilityZone": "us-east-1d",
+  "CacheClusterCreateTime": "2020-12-12T08:46:16.065000+00:00",
+  "PreferredMaintenanceWindow": "sun:02:00-sun:04:30",
+  "PendingModifiedValues": {},
+  "CacheSecurityGroups": [],
+  "CacheParameterGroup": {
+    "CacheParameterGroupName": "CacheParameterGroupName",
+    "ParameterApplyStatus": "in-sync",
+    "CacheNodeIdsToReboot": []
+  },
+  "CacheSubnetGroupName": "CacheSubnetGroupName",
+  "AutoMinorVersionUpgrade": true,
+  "SecurityGroups": [
+    {
+      "SecurityGroupId": "SecurityGroupId",
+      "Status": "active"
+    }
+  ],
+  "ReplicationGroupId": "ReplicationGroupId",
+  "SnapshotRetentionLimit": 0,
+  "SnapshotWindow": "05:00-06:00",
+  "AuthTokenEnabled": false,
+  "TransitEncryptionEnabled": false,
+  "AtRestEncryptionEnabled": true,
+  "ARN": "arn:aws:elasticache:us-east-1:AccountId:cluster:CacheParameterGroupName",
+  "ReplicationGroupLogDeliveryEnabled": false,
+  "LogDeliveryConfigurations": [],
+  "NetworkType": "ipv4",
+  "IpDiscovery": "ipv4",
+  "Tags": [
+    {
+      "Key": "creator",
+      "Value": "terraform"
+    },
+    {
+      "Key": "environment",
+      "Value": "EnvironmentName"
+    },
+    {
+      "Key": "stack",
+      "Value": "StackName"
+    },
+    {
+      "Key": "namespace",
+      "Value": "namespace"
+    },
+    {
+      "Key": "datacenter",
+      "Value": "aws"
+    }
+  ]
+}

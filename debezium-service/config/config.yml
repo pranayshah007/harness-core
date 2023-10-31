@@ -107,6 +107,20 @@ debeziumConfigs:
     field.exclude.list: ${FIELD_EXCLUDE_LIST_APPLICATIONS:-harness.applications.keywords}
     heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_APPLICATIONS:-10000}
     mongodb.connection.string: ${MONGODB_CONNECTION_STRING_APPLICATIONS:-mongodb://localhost:27017}
+  - isEnabled: ${IS_ENABLED_SSCA:-false}
+    name: ${DEBEZIUM_NAME_SSCA:-ssca} # unique for each debezium config
+    mongodb.name: ${MONGODB_NAME_SSCA:-sscaMongo} # unique for each debezium config
+    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_SSCA:-false}
+    database.include.list: ${DATABASE_INCLUDE_LIST_SSCA:-ng-harness}
+    collection.include.list: ${COLLECTION_INCLUDE_LIST_SSCA:-ng-harness.instanceNG}
+    redisStreamSize: ${REDIS_STREAM_SIZE_SSCA:-10000}
+    snapshot.mode: ${SNAPSHOT_MODE_SSCA:-never}
+    max.queue.size: ${MAX_QUEUE_SIZE_SSCA:-8192}
+    max.batch.size: ${MAX_BATCH_SIZE_SSCA:-2048}
+    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES_SSCA:-1000000000}
+    poll.interval.ms: ${POLL_INTERVAL_MS_SSCA:-3000}
+    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_SSCA:-10000}
+    mongodb.connection.string: ${MONGODB_CONNECTION_STRING_SSCA:-mongodb://localhost:27017}
 
 eventsFramework:
   redis:

@@ -10,6 +10,8 @@ package io.harness.yaml.individualschema;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 
+import java.util.Arrays;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +25,8 @@ public class InputFieldMetadata {
   String parentNodeType; // eg: JiraCreate, custom etc.
   FQN fqn;
 
+  private static List<String> baseNodeGroups = Arrays.asList("stage", "stages", "step", "steps");
+
   // Uses current field fqn to calculate fqn from parent node for a sibling field (from same step)
   public String getFqnForSiblingField(String fieldName) {
     String fqnFromParentNode = getFqnFromParentNode();
@@ -32,10 +36,12 @@ public class InputFieldMetadata {
   public static String getFqnStartingFromParentNode(FQN fqn) {
     String fqnFromParentNode = "";
     for (FQNNode fqnNode : fqn.getFqnList()) {
-      if (fqnNode.getKey().equals("stage") || fqnNode.getKey().equals("step")) {
+      if (baseNodeGroups.contains(fqnNode.getKey())) {
         fqnFromParentNode = fqnNode.getKey();
       } else {
-        fqnFromParentNode += "." + fqnNode.getKey();
+        if (fqnNode.getKey() != null) {
+          fqnFromParentNode += "." + fqnNode.getKey();
+        }
       }
     }
     return fqnFromParentNode;

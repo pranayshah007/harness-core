@@ -329,7 +329,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
             .connectorRef(getConnectorRef(context, approvalParams.getSnowConnectorId()))
             .delegateSelectors(null)
             .ticketNumber(ParameterField.createValueField(approvalParams.getIssueNumber()))
-            .ticketType(ParameterField.createValueField(approvalParams.getTicketType().getDisplayName()))
+            .ticketType(ParameterField.createValueField(approvalParams.getTicketType().name().toLowerCase()))
             .changeWindow(changeWindow)
             .approvalCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getApproval()))
             .rejectionCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getRejection()))

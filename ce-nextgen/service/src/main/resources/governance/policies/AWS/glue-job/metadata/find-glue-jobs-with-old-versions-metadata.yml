@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: find-glue-jobs-with-old-versions
+cloudProvider: AWS
+resourceType: glue-job
+description: List glue jobs with version 2.0 or less, default version is 2.0
+rulesYamlPath: ../find-glue-jobs-with-old-versions.yml

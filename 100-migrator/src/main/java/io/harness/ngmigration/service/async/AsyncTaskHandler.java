@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.async;
-
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigrationAsyncTracker;
 import io.harness.beans.MigrationAsyncTracker.MigrationAsyncTrackerKeys;
 import io.harness.beans.MigrationAsyncTrackerStatus;
@@ -34,6 +36,7 @@ import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public abstract class AsyncTaskHandler {

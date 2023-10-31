@@ -20,6 +20,7 @@ import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.service.intfc.DelegateSetupService;
@@ -154,6 +155,9 @@ public class DelegateNgTokenInternalResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Delegate Token name") @QueryParam("delegateTokenName") String delegateTokenName) {
+    if (!delegateTokenService.doesDelegateTokenExist(accountIdentifier, delegateTokenName)) {
+      throw new InvalidRequestException("No such delegate token exists.");
+    }
     return new RestResponse<>(delegateSetupService.listDelegateGroupDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName));
   }

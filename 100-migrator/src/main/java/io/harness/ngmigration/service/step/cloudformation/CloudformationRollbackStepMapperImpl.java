@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.cloudformation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepConfiguration;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
@@ -26,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class CloudformationRollbackStepMapperImpl extends BaseCloudformationProvisionerMapper {
   @Override

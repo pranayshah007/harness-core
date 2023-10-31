@@ -136,6 +136,8 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
   public void testDelegateUpsertAuditEvent() throws Exception {
     DelegateSetupDetails delegateSetupDetails =
         DelegateSetupDetails.builder().tags(Set.of("tag1")).identifier("_iden2").delegateType(KUBERNETES).build();
+    DelegateSetupDetails delegateSetupDetailsOld =
+        DelegateSetupDetails.builder().tags(Set.of("tag2")).identifier("_iden3").delegateType(KUBERNETES).build();
 
     DelegateUpsertEvent delegateUpsertEvent =
         DelegateUpsertEvent.builder()
@@ -146,6 +148,7 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
                                       .tokenName(delegateSetupDetails.getTokenName())
                                       .tags(delegateSetupDetails.getTags())
                                       .build())
+            .delegateSetupDetailsOld(delegateSetupDetailsOld)
             .build();
     OutboxEvent outboxEvent = OutboxEvent.builder()
                                   .id(randomAlphabetic(10))
@@ -164,5 +167,6 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertEquals(Action.UPSERT, auditEntry.getAction());
     assertEquals(auditEntry.getNewYaml(), NGYamlUtils.getYamlString(delegateSetupDetails));
+    assertEquals(auditEntry.getOldYaml(), NGYamlUtils.getYamlString(delegateSetupDetailsOld));
   }
 }

@@ -1,23 +1,23 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ssca-manager-v1-apis
+  name: ssca-manager-apis
   namespace: {{ .Release.Namespace }}
   labels:
     {{- if .Values.global.commonLabels }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-      {{- end }}
+    {{- end }}
   annotations:
     {{- if .Values.ingress.annotations }}
       {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
-      {{- end }}
-      {{- if .Values.global.commonAnnotations }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
-      {{- end }}
-      {{- if .Values.global.ingress.objects.annotations }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
       {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
-      {{- end }}
-      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:

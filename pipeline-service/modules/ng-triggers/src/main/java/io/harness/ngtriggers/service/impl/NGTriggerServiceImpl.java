@@ -300,12 +300,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (!ngTriggerEntity.getEnabled()
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
-        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS, null);
       } else if (isWebhookGitPollingEnabled(ngTriggerEntity)
           && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
               == WEBHOOK_POLLING_UNSUBSCRIBE
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
-        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS, null);
       } else {
         if (isUpdate) {
           executePollingUnSubscription(ngTriggerEntity, pollingItemBytes);
@@ -321,17 +321,28 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
-          updatePollingRegistrationStatus(
-              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.PENDING);
+          updateTriggerStatus(responseDTO, ngTriggerEntity, pollingDocument);
         }
       }
     } catch (Exception exception) {
       log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
                     TriggerHelper.getTriggerRef(ngTriggerEntity)),
           exception);
-      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED, null);
       throw new InvalidRequestException(exception.getMessage());
     }
+  }
+  private void updateTriggerStatus(
+      ResponseDTO<PollingResponseDTO> responseDTO, NGTriggerEntity ngTriggerEntity, PollingDocument pollingDocument) {
+    StatusResult statusResult = StatusResult.PENDING;
+    ResponseDTO<PollingResponseDTO> pollingResponseDTO = null;
+    if (responseDTO != null && responseDTO.getData().getIsExistingPollingDoc()
+        && isNotEmpty(responseDTO.getData().getLastPolled())) {
+      statusResult = StatusResult.SUCCESS;
+      pollingResponseDTO = responseDTO;
+    }
+    updatePollingRegistrationStatus(
+        ngTriggerEntity, Collections.singletonList(pollingDocument), statusResult, pollingResponseDTO);
   }
 
   public void executePollingSubscriptionChanges(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
@@ -354,20 +365,20 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (shouldSubscribe) {
         List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.PENDING);
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.PENDING, null);
       } else if (unsubscribeSuccess) {
         // no subscription done, check if unsubscription worked.
-        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS, null);
       } else {
         // unsubscription failed for at least one of the polling items.
-        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED, null);
       }
 
     } catch (Exception exception) {
       log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
                     TriggerHelper.getTriggerRef(ngTriggerEntity)),
           exception);
-      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED, null);
       throw new InvalidRequestException(exception.getMessage());
     }
   }
@@ -442,11 +453,20 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         && ngTriggerEntity.getTriggerStatus().getValidationStatus().getStatusResult() != StatusResult.SUCCESS;
   }
 
-  private void updatePollingRegistrationStatus(
-      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
+  private void updatePollingRegistrationStatus(NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments,
+      StatusResult statusResult, ResponseDTO<PollingResponseDTO> responseDTO) {
     Criteria criteria = getTriggerEqualityCriteriaWithoutDbVersion(ngTriggerEntity, false);
 
     stampPollingStatusInfo(ngTriggerEntity, pollingDocuments, statusResult);
+    if (responseDTO != null && statusResult.equals(StatusResult.SUCCESS)) {
+      TriggerStatus status = ngTriggerEntity.getTriggerStatus();
+      status.setPollingSubscriptionStatus(PollingSubscriptionStatus.builder()
+                                              .statusResult(StatusResult.SUCCESS)
+                                              .lastPolled(responseDTO.getData().getLastPolled())
+                                              .lastPollingUpdate(responseDTO.getData().getLastPollingUpdate())
+                                              .build());
+      ngTriggerEntity.setTriggerStatus(status);
+    }
     NGTriggerEntity updatedEntity = ngTriggerRepository.updateValidationStatusAndMetadata(criteria, ngTriggerEntity);
 
     if (updatedEntity == null) {
@@ -922,6 +942,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidArgumentsException("Name can not be empty");
     }
 
+    if (triggerDetails.getNgTriggerConfigV2().getInputSetRefs() != null) {
+      for (String inputSetRef : triggerDetails.getNgTriggerConfigV2().getInputSetRefs()) {
+        if (TriggerHelper.isBranchExpr(inputSetRef)) {
+          throw new InvalidArgumentsException("InputSetRef cannot be an expression");
+        }
+      }
+    }
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {

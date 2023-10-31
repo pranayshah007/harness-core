@@ -199,7 +199,7 @@ public class ServiceGuardLogAnalysisStateExecutorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTransition() {
     AnalysisState state = serviceGuardLogAnalysisStateExecutor.handleTransition(logAnalysisState);
-    assertThat(state.getStatus().name()).isEqualTo(AnalysisStatus.CREATED.name());
+    assertThat(state.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
   }
 
   @Test

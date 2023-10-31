@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.validation.capabilitycheck;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
@@ -14,8 +13,11 @@ import static software.wings.utils.SshDelegateHelperUtils.populateBuilderWithCre
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse.CapabilityResponseBuilder;
@@ -41,6 +43,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)

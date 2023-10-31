@@ -317,18 +317,16 @@ public class K8sManifestDelegateMapper {
   private OciHelmStoreDelegateConfig getOciHelmStoreDelegateConfig(Ambiance ambiance,
       HelmChartManifestOutcome helmChartManifestOutcome, ConnectorInfoDTO ociConnectorDTO,
       OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper, String basePath) {
-    String repoName;
+    String repoName = getRepoName(ambiance, ociConnectorDTO.getIdentifier(), helmChartManifestOutcome);
     String region = null;
     String registryId = null;
     String repoUrl = null;
     switch (ociHelmChartStoreConfigWrapper.getType()) {
       case GENERIC:
-        repoName = getRepoName(ambiance, ociConnectorDTO.getIdentifier(), helmChartManifestOutcome);
         repoUrl = ((OciHelmConnectorDTO) ociConnectorDTO.getConnectorConfig()).getHelmRepoUrl();
         break;
 
       case ECR:
-        repoName = getParameterFieldValue(helmChartManifestOutcome.getChartName());
         OciHelmChartStoreEcrConfig ociHelmChartStoreEcrConfig =
             (OciHelmChartStoreEcrConfig) ociHelmChartStoreConfigWrapper.getSpec();
         region = getParameterFieldValue(ociHelmChartStoreEcrConfig.getRegion());
@@ -346,7 +344,9 @@ public class K8sManifestDelegateMapper {
         .ociHelmConnector(ociConnectorDTO.getConnectorConfig() instanceof OciHelmConnectorDTO
                 ? (OciHelmConnectorDTO) ociConnectorDTO.getConnectorConfig()
                 : null)
-        .connectorConfigDTO(ociConnectorDTO.getConnectorConfig())
+        .awsConnectorDTO(ociConnectorDTO.getConnectorConfig() instanceof AwsConnectorDTO
+                ? (AwsConnectorDTO) ociConnectorDTO.getConnectorConfig()
+                : null)
         .encryptedDataDetails(
             k8sEntityHelper.getEncryptionDataDetails(ociConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
         .helmOciEnabled(true)

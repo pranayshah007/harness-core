@@ -17,7 +17,7 @@ import io.harness.CreditType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.credit.beans.credits.CICreditDTO;
+import io.harness.credit.CreditUtils;
 import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.utils.CreditStatus;
@@ -44,8 +44,6 @@ public class ProvisionMonthlyCICreditsHandler implements Handler<CIModuleLicense
   private static final Duration TARGET_INTERVAL = ofHours(8);
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
-  private static final int FREE_CREDITS_QUANTITY = 2000;
-  private static final String GMT_TIMEZONE = "GMT";
 
   @Inject private final PersistenceIteratorFactory persistenceIteratorFactory;
   protected final MorphiaPersistenceProvider<CIModuleLicense> persistenceProvider;
@@ -92,7 +90,7 @@ public class ProvisionMonthlyCICreditsHandler implements Handler<CIModuleLicense
   public void handle(CIModuleLicense ciModuleLicense) {
     if (isFirstDayOfTheMonth() && !isCreditAlreadyProvisionedForCurrentMonth(ciModuleLicense)) {
       try {
-        CreditDTO creditDTO = buildCreditDTO(ciModuleLicense);
+        CreditDTO creditDTO = CreditUtils.buildCreditDTO(ciModuleLicense.getAccountIdentifier());
         creditService.purchaseCredit(ciModuleLicense.getAccountIdentifier(), creditDTO);
         log.info("Successfully provisioned monthly free CI build credits for account: "
             + ciModuleLicense.getAccountIdentifier());
@@ -124,28 +122,5 @@ public class ProvisionMonthlyCICreditsHandler implements Handler<CIModuleLicense
 
   private boolean isFirstDayOfTheMonth() {
     return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1;
-  }
-
-  private CreditDTO buildCreditDTO(CIModuleLicense ciModuleLicense) {
-    return CICreditDTO.builder()
-        .accountIdentifier(ciModuleLicense.getAccountIdentifier())
-        .creditStatus(CreditStatus.ACTIVE)
-        .quantity(FREE_CREDITS_QUANTITY)
-        .purchaseTime(System.currentTimeMillis())
-        .expiryTime(getStartOfNextMonth().getTimeInMillis())
-        .creditType(CreditType.FREE)
-        .moduleType(ModuleType.CI)
-        .build();
-  }
-
-  private static Calendar getStartOfNextMonth() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.MONTH, 1);
-    calendar.set(Calendar.DAY_OF_MONTH, 1);
-    calendar.set(Calendar.AM_PM, Calendar.AM);
-    calendar.set(Calendar.HOUR, 0);
-    calendar.set(Calendar.MINUTE, 0);
-    calendar.set(Calendar.SECOND, 0);
-    return calendar;
   }
 }

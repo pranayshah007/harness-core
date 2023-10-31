@@ -6,12 +6,14 @@
  */
 
 package io.harness.steps.common;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanService;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import net.jodah.failsafe.Failsafe;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 // Its a syncObserver to delete metadata for given nodeExecutions
 public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteObserver {

@@ -587,7 +587,9 @@ public class JiraClient {
           .filter(t -> t.getTo().getName().equalsIgnoreCase(transitionToStatus) && t.getName().equals(transitionName))
           .findFirst()
           .map(JiraIssueTransitionNG::getId)
-          .orElseThrow(() -> new JiraClientException(String.format("Invalid transition name: %s", transitionName)));
+          .orElseThrow(()
+                           -> new JiraClientException(String.format(
+                               "Invalid transition [%s] to status %s", transitionName, transitionToStatus)));
     } else {
       // If transitionName is not given, find first transition with the toStatus, else throw error.
       return transitions.getTransitions()

@@ -6,14 +6,16 @@
  */
 
 package software.wings.delegatetasks;
-
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.command.CommandExecutionResultMapper;
@@ -43,6 +45,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @BreakDependencyOn("software.wings.service.intfc.security.EncryptionService")
