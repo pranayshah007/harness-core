@@ -76,25 +76,19 @@ spec:
         - envFrom:
             - configMapRef:
                 name: migrator-config
-            {{- if .Values.global.smtpCreateSecret.enabled }}
-            - secretRef:
-                name: smtp-secret
-            {{- end }}
-            {{- if .Values.global.secrets.app.external.enabled }}
-            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
-            - secretRef:
-                name: migrator-external-secret
-            {{- end }}
-            {{- end }}
           env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
-            {{- include "migrator.mongoEnv" . | nindent 12 }}
-            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALEDB_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
-            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }}
+            {{- include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 12 }}
+            {{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CG_LICENSE" "overrideEnvName" "LICENSE_INFO" "providedSecretValues" (list "global.license.cg") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN") | indent 12 }}
+            {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET" "defaultKubernetesSecretName" "migrator" "defaultKubernetesSecretKey" "VERIFICATION_SERVICE_SECRET") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
+            {{- include "migrator.mongoEnv" $ | nindent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" $) | indent 12 }}
             - name: MONGO_URI
-              value: {{ include "migrator.mongoConnection" . }}
+              value: {{ include "migrator.mongoConnection" $ }}
             - name: TIMESCALEDB_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}            
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}            
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

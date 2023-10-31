@@ -7,8 +7,14 @@
 
 package io.harness.cdng.pipeline.steps;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.ENV_GIT_BRANCH;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.ENV_GIT_BRANCH_EXPRESSION;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.SERVICE_GIT_BRANCH;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.SERVICE_GIT_BRANCH_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -34,6 +40,7 @@ import lombok.experimental.UtilityClass;
 public class MultiDeploymentSpawnerUtils {
   private static final String SERVICE_REF = "serviceRef";
   private static final String SERVICE_INPUTS = "serviceInputs";
+
   private static final String USE_FROM_STAGE = "useFromStage";
 
   private static final String ENVIRONMENT_REF = "environmentRef";
@@ -64,6 +71,9 @@ public class MultiDeploymentSpawnerUtils {
   Map<String, String> getMapFromServiceYaml(ServiceYamlV2 service) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
     matrixMetadataMap.put(SERVICE_REF, service.getServiceRef().getValue());
+    if (isNotBlank(service.getGitBranch())) {
+      matrixMetadataMap.put(SERVICE_GIT_BRANCH, service.getGitBranch());
+    }
     if (!ParameterField.isBlank(service.getServiceInputs())
         && EmptyPredicate.isNotEmpty(service.getServiceInputs().getValue())) {
       matrixMetadataMap.put(SERVICE_INPUTS, JsonUtils.asJson(service.getServiceInputs().getValue()));
@@ -83,6 +93,9 @@ public class MultiDeploymentSpawnerUtils {
     Map<String, String> matrixMetadataMap = new HashMap<>();
     matrixMetadataMap.put(ENVIRONMENT_REF,
         EnvironmentStepsUtils.getEnvironmentRef(environmentYamlV2.getEnvironmentRef().getValue(), envGroupScope));
+    if (isNotBlank(environmentYamlV2.getGitBranch())) {
+      matrixMetadataMap.put(ENV_GIT_BRANCH, environmentYamlV2.getGitBranch());
+    }
     if (!ParameterField.isBlank(environmentYamlV2.getEnvironmentInputs())
         && EmptyPredicate.isNotEmpty(environmentYamlV2.getEnvironmentInputs().getValue())) {
       matrixMetadataMap.put(ENVIRONMENT_INPUTS, JsonUtils.asJson(environmentYamlV2.getEnvironmentInputs().getValue()));
@@ -200,6 +213,7 @@ public class MultiDeploymentSpawnerUtils {
         .uuid(UUIDGenerator.generateUuid())
         .serviceRef(ParameterField.createExpressionField(true, SERVICE_REF_EXPRESSION, null, true))
         .serviceInputs(ParameterField.createExpressionField(true, SERVICE_INPUTS_EXPRESSION, null, false))
+        .gitBranch(SERVICE_GIT_BRANCH_EXPRESSION)
         .build();
   }
 
@@ -216,6 +230,7 @@ public class MultiDeploymentSpawnerUtils {
             ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false))
         .gitOpsClusters(ParameterField.createExpressionField(true, GIT_OPS_CLUSTERS_EXPRESSION, null, false))
         .infrastructureDefinition(ParameterField.createValueField(infraStructureDefinitionYaml))
+        .gitBranch(ENV_GIT_BRANCH_EXPRESSION)
         .build();
   }
 

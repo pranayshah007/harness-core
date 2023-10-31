@@ -194,6 +194,8 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.secretusage.SecretRuntimeUsageServiceImpl;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
@@ -516,6 +518,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(ContainerStepV2PluginProvider.class).to(ContainerStepV2PluginProviderImpl.class);
+    bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));

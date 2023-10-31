@@ -176,6 +176,7 @@ import io.harness.ng.core.DefaultOrganizationModule;
 import io.harness.ng.core.DelegateServiceModule;
 import io.harness.ng.core.InviteModule;
 import io.harness.ng.core.NGAggregateModule;
+import io.harness.ng.core.ScopeInfoModule;
 import io.harness.ng.core.SecretManagementModule;
 import io.harness.ng.core.agent.client.AgentNgManagerCgManagerClientModule;
 import io.harness.ng.core.api.ApiKeyService;
@@ -233,6 +234,7 @@ import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
 import io.harness.ng.core.impl.ProjectServiceImpl;
+import io.harness.ng.core.impl.ScopeInfoServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
@@ -253,6 +255,7 @@ import io.harness.ng.core.refresh.service.EntityRefreshServiceImpl;
 import io.harness.ng.core.schema.YamlBaseUrlService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.smtp.NgSMTPSettingsHttpClientModule;
 import io.harness.ng.core.smtp.SmtpNgService;
 import io.harness.ng.core.smtp.SmtpNgServiceImpl;
@@ -813,6 +816,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(JooqModule.getInstance());
     install(new DefaultOrganizationModule());
+    install(new ScopeInfoModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
     install(NGModule.getInstance());
@@ -907,6 +911,7 @@ public class NextGenModule extends AbstractModule {
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(ManagerRegistrars.springConverters)
+            .addAll(NextGenRegistrars.springConvertors)
             .build();
       }
 
@@ -923,6 +928,7 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new NGLdapModule(appConfig));
+    install(new NGOidcModule(appConfig));
     install(new NgVariableModule(appConfig));
     install(new NGIpAllowlistModule(appConfig));
     install(new NGFavoriteModule(appConfig));
@@ -1023,6 +1029,7 @@ public class NextGenModule extends AbstractModule {
     bind(WebhookService.class).to(WebhookServiceImpl.class);
     bind(WebhookEventProcessingService.class).to(WebhookEventProcessingServiceImpl.class);
     bind(NGHostValidationService.class).to(NGHostValidationServiceImpl.class);
+    bind(ScopeInfoService.class).to(ScopeInfoServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(USER_ENTITY + ENTITY_CRUD))
         .to(UserEntityCrudStreamListener.class);

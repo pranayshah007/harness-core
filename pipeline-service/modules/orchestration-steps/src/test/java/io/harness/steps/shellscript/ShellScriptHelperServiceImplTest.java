@@ -67,6 +67,7 @@ import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.shellscript.v1.ShellTypeV1;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import java.io.IOException;
@@ -516,6 +517,18 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(taskParams.getOutputVars()).isEqualTo(taskOutputVars);
     assertThat(taskParams.getEnvironmentVariables()).isEqualTo(taskEnvVariables);
 
+    // onDelegate parameter field null/empty cases
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(null);
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isTrue();
+
+    stepParameters.setOnDelegate(ParameterField.createValueField(null));
+    stepParameters.setExecutionTarget(ExecutionTarget.builder().build());
+    shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
+    assertThat(stepParameters.onDelegate.getValue()).isFalse();
+    stepParameters.setOnDelegate(ParameterField.createValueField(true));
+
     // negative cases for output alias configuration
     stepParameters.setOutputAlias(OutputAlias.builder().build());
     assertThatThrownBy(
@@ -685,7 +698,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertEquals(ShellScriptHelperService.getShellScriptStepParameters(
                      StepElementParameters.builder()
                          .spec(io.harness.steps.shellscript.v1.ShellScriptStepParameters.infoBuilder()
-                                   .shell(io.harness.steps.shellscript.v1.ShellType.PowerShell)
+                                   .shell(ShellTypeV1.PowerShell)
                                    .build())
                          .build()),
         ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build());

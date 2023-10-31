@@ -33,6 +33,7 @@ type StorageClient interface {
 // BucketHandle denotes the required methods on GCS storage buckets.
 type BucketHandle interface {
 	Object(name string) ObjectHandle
+	SignedURL(bucket string, opts *storage.SignedURLOptions) (string, error)
 }
 
 // ObjectHandle denotes the required methods on GCS storage bucket objects.

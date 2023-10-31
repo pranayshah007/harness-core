@@ -88,6 +88,19 @@ public class BusinessMappingDao {
     return hPersistence.delete(query);
   }
 
+  public long count(String accountId) {
+    return hPersistence.createQuery(BusinessMapping.class)
+        .field(BusinessMappingKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<BusinessMapping> query =
+        hPersistence.createQuery(BusinessMapping.class).field(BusinessMappingKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
+
   public BusinessMapping get(String uuid, String accountId) {
     return hPersistence.createQuery(BusinessMapping.class, excludeValidate)
         .filter(BusinessMappingKeys.uuid, uuid)

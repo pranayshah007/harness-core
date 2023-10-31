@@ -10,21 +10,35 @@ package io.harness.engine.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.observers.SecretObserverInfo;
+import io.harness.engine.observers.SecretResolutionObserver;
 import io.harness.engine.utils.FunctorUtils;
 import io.harness.expression.functors.ExpressionFunctor;
+import io.harness.observer.Subject;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 import lombok.Value;
 
 @OwnedBy(CDC)
 @Value
 public class SecretFunctor implements ExpressionFunctor {
-  long expressionFunctorToken;
+  Ambiance ambiance;
+  Subject<SecretResolutionObserver> secretsRuntimeUsagesSubject;
 
-  public SecretFunctor(long expressionFunctorToken) {
-    this.expressionFunctorToken = expressionFunctorToken;
+  public SecretFunctor(Ambiance ambiance, Subject<SecretResolutionObserver> secretsRuntimeUsagesSubject) {
+    this.ambiance = ambiance;
+    this.secretsRuntimeUsagesSubject = secretsRuntimeUsagesSubject;
   }
 
   public Object getValue(String secretIdentifier) {
-    return FunctorUtils.getSecretExpression(expressionFunctorToken, secretIdentifier);
+    if (EmptyPredicate.isNotEmpty(secretIdentifier) && ambiance != null
+        && AmbianceUtils.shouldEnableSecretsObserver(ambiance)) {
+      secretsRuntimeUsagesSubject.fireInform(SecretResolutionObserver::onSecretsRuntimeUsage,
+          SecretObserverInfo.builder().secretIdentifier(secretIdentifier).ambiance(ambiance).build());
+    }
+
+    return FunctorUtils.getSecretExpression(ambiance.getExpressionFunctorToken(), secretIdentifier);
   }
 }

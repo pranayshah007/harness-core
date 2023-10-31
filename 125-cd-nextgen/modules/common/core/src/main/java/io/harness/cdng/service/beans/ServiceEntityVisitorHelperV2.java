@@ -22,6 +22,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.ScmException;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -78,6 +81,10 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
     SetupMetadata setupMetadata = getSetupMetadata(contextMap);
     try (NgManagerSourcePrincipalGuard ignore = new NgManagerSourcePrincipalGuard(setupMetadata)) {
       return addReferenceInternal(object, accountIdentifier, orgIdentifier, projectIdentifier, contextMap);
+    } catch (ExplanationException | HintException | ScmException ex) {
+      // Todo : @Tathagat iteratively improve on this exception handling
+      log.error("Exception while adding references in ServiceEntityVisitorHelperV2", ex);
+      throw ex;
     } catch (Exception ex) {
       log.error("Exception while adding references in ServiceEntityVisitorHelperV2", ex);
       return new HashSet<>();

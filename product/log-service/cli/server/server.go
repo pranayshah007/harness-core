@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/signal"
 
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
+
 	"github.com/harness/harness-core/commons/go/lib/secret"
 	"github.com/harness/harness-core/product/platform/client"
 
@@ -164,11 +166,15 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
+	gcsClient, err := gcputils.NewGCSClient(context.Background(), nil, nil, gcputils.WithGCSCredentialsFile(config.S3.CredentialsPath))
+	if err != nil {
+		return err
+	}
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient),
+		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient, gcsClient),
 	}
 
 	// trap the os signal to gracefully shutdown the

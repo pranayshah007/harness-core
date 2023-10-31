@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -37,6 +38,19 @@ public class InitiateNodeHelper {
                                                      .build();
     InitiateNodeEvent event =
         InitiateNodeEvent.newBuilder().setAmbiance(ambiance).setNodeId(nodeId).setRuntimeId(runtimeId).build();
+    return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
+  }
+
+  public String publishEvent(Ambiance ambiance, InitiateMode initiateMode) {
+    ImmutableMap<String, String> eventMetadata =
+        ImmutableMap.<String, String>builder()
+            .put("eventType", "TRIGGER_NODE")
+            .put("newNodeId", Objects.requireNonNull(AmbianceUtils.obtainCurrentSetupId(ambiance)))
+            .put("newRuntimeId", Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance)))
+            .putAll(AmbianceUtils.logContextMap(ambiance))
+            .build();
+    InitiateNodeEvent event =
+        InitiateNodeEvent.newBuilder().setAmbiance(ambiance).setInitiateMode(initiateMode).build();
     return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
   }
 

@@ -13,11 +13,11 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.inject.Singleton;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
+@Singleton
 public class OidcIdTokenUtility {
   /**
    * This function generates the OIDC ID token using the given header, payload and private key.

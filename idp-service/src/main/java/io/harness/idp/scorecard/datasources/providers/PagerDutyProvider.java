@@ -19,35 +19,38 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-public class PagerDutyProvider extends DataSourceProvider {
+public class PagerDutyProvider extends HttpDataSourceProvider {
   private static final String PAGERDUTY_ANNOTATION = "pagerduty.com/service-id";
   private static final String TARGET_URL_EXPRESSION_KEY = "appConfig.proxy.\"/pagerduty\".target";
 
   private static final String AUTH_TOKEN_EXPRESSION_KEY = "appConfig.proxy.\"/pagerduty\".headers.Authorization";
   protected PagerDutyProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
-      ConfigReader configReader) {
+      ConfigReader configReader, DataSourceRepository dataSourceRepository) {
     super(PAGERDUTY_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
     this.configReader = configReader;
   }
   final ConfigReader configReader;
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
@@ -64,8 +67,8 @@ public class PagerDutyProvider extends DataSourceProvider {
 
     log.info("Pager duty target url fetched from configs - {}", targetUrl);
 
-    return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, Collections.emptyMap(),
-        prepareUrlReplaceablePairs(pagerDutyServiceId, targetUrl));
+    return processOut(accountIdentifier, PAGERDUTY_IDENTIFIER, entity, replaceableHeaders, Collections.emptyMap(),
+        prepareUrlReplaceablePairs(pagerDutyServiceId, targetUrl), dataPointsAndInputValues);
   }
 
   @Override

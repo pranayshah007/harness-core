@@ -86,8 +86,6 @@ import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
 import io.harness.steps.customstage.CustomStagePlanCreator;
 import io.harness.steps.customstage.CustomStageVariableCreator;
-import io.harness.steps.customstage.v1.CustomStageFilterCreatorV1;
-import io.harness.steps.customstage.v1.CustomStagePlanCreatorV1;
 import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
@@ -151,7 +149,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ServiceNowCreateStepPlanCreator());
     planCreators.add(new ServiceNowUpdateStepPlanCreator());
     planCreators.add(new ServiceNowImportSetStepPlanCreator());
-    planCreators.add(new CustomStagePlanCreatorV1());
     planCreators.add(new CustomApprovalStepPlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
@@ -188,7 +185,6 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new EmptyFilterJsonCreator(STAGE, ImmutableSet.of(PIPELINE_ROLLBACK_STAGE)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
-    filterJsonCreators.add(new CustomStageFilterCreatorV1());
 
     if (!disableCustomStageInPipelineService) {
       filterJsonCreators.add(new CustomStageFilterCreator());

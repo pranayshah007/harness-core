@@ -20,4 +20,8 @@ public interface CostEventService {
 
   List<CostEventData> getEventsForWorkload(
       String accountId, String clusterId, String instanceId, String costEventType, long startTimeMillis);
+
+  Long count(String accountId);
+
+  boolean deleteAllForAccount(String accountId);
 }

@@ -253,27 +253,15 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
       return Optional.empty();
     }
 
-    if (getMetadataOnly) {
+    if (getMetadataOnly || !StoreType.REMOTE.equals(savedEntity.getStoreType())) {
       return Optional.of(savedEntity);
     }
 
-    if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
-      if (loadFromFallbackBranch) {
-        savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
-      } else {
-        savedEntity = fetchRemoteEntity(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
-      }
-    }
-
-    return Optional.of(savedEntity);
+    return Optional.of(getRemoteEnvironmentWithYaml(savedEntity, loadFromCache, loadFromFallbackBranch));
   }
 
   @Override
-  public Environment getRemoteEntityWithYaml(
+  public Environment getRemoteEnvironmentWithYaml(
       @NonNull Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch) {
     try {
       String branchName = gitAwareEntityHelper.getWorkingBranch(environment.getRepo());

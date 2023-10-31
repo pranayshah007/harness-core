@@ -21,22 +21,26 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
+import io.harness.idp.scorecard.common.beans.DataSourceConfig;
+import io.harness.idp.scorecard.common.beans.HttpConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -46,9 +50,10 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
   private static final String ERROR_MESSAGE_FOR_INVALID_SERVICE_ID = "PagerDuty service id provided is invalid";
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
+      DataSourceLocationEntity dataSourceLocationEntity,
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
+      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
 
@@ -62,6 +67,8 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
     }
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
+    HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
+    apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
 
     String serviceId = possibleReplaceableUrlPairs.get(PAGERDUTY_SERVICE_ID);
     if (serviceId == null) {
@@ -69,7 +76,7 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
       return inputValueData;
     }
 
-    apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
+    apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
 
     apiRequestDetails.setUrl(apiUrl);
 
@@ -92,7 +99,8 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

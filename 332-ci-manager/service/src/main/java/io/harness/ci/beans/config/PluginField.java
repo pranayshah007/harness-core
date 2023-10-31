@@ -29,6 +29,7 @@ public enum PluginField {
   PROVENANCE("provenanceTag"),
   PROVENANCE_GCR("provenanceGcrTag"),
   SLSA_VERIFICATION("slsaVerificationTag"),
+  SLSA_VERIFICATION_GCR("slsaVerificationGcrTag"),
   UNKNOWN("unknown");
 
   public final String label;

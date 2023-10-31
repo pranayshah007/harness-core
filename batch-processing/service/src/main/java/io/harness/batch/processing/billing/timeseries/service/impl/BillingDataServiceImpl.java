@@ -89,8 +89,13 @@ public class BillingDataServiceImpl {
   private static final String READER_QUERY =
       "SELECT * FROM %s WHERE ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' ORDER BY accountid, clusterid, instanceid OFFSET %s LIMIT %s;";
 
-  static final String ECS_SERVICE_LAST_DAY_COST =
+  private static final String ECS_SERVICE_LAST_DAY_COST =
       "SELECT SUM(CPUBILLINGAMOUNT), SUM(MEMORYBILLINGAMOUNT) FROM BILLING_DATA WHERE INSTANCETYPE IN ('ECS_TASK_FARGATE', 'ECS_TASK_EC2') AND ACCOUNTID = ? AND CLUSTERID = ? AND CLOUDSERVICENAME = ? AND STARTTIME = (SELECT MAX(STARTTIME) FROM BILLING_DATA WHERE INSTANCETYPE IN ('ECS_TASK_FARGATE', 'ECS_TASK_EC2') AND ACCOUNTID = ? AND CLUSTERID = ? AND CLOUDSERVICENAME = ? AND STARTTIME >= ?)";
+
+  private static final String BILLING_DATA_RECORDS_COUNT =
+      "SELECT COUNT(*) AS TOTALCOUNT FROM %s WHERE ACCOUNTID = '%s'";
+
+  private static final String BILLING_DATA_RECORDS_DELETE = "DELETE FROM %s WHERE ACCOUNTID = '%s'";
 
   public static final String DAILY_BILLING_DATA_TABLE = "BILLING_DATA";
   public static final String HOURLY_BILLING_DATA_TABLE = "BILLING_DATA_HOURLY";
@@ -580,6 +585,34 @@ public class BillingDataServiceImpl {
   public boolean purgeOldBillingData() {
     log.info("Purging old {} data !!", BILLING_DATA_PURGE_QUERY);
     return executeQuery(BILLING_DATA_PURGE_QUERY);
+  }
+
+  public Long getTimescaleBillingDataCount(String accountId, String tableName) {
+    ResultSet resultSet = null;
+    int retryCount = 0;
+    Long recordsCount = 0L;
+    String query = String.format(BILLING_DATA_RECORDS_COUNT, tableName, accountId);
+    log.info("Timescale Formatted query : " + query);
+    while (retryCount < SELECT_MAX_RETRY_COUNT) {
+      retryCount++;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           Statement statement = connection.createStatement()) {
+        resultSet = statement.executeQuery(query);
+        if (null != resultSet && resultSet.next()) {
+          recordsCount = resultSet.getLong("TOTALCOUNT");
+          return recordsCount;
+        }
+      } catch (SQLException e) {
+        log.error("Error while fetching billing Data data : " + e);
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return recordsCount;
+  }
+
+  public boolean deleteTimescaleBillingData(String accountId, String tableName) {
+    return executeQuery(String.format(BILLING_DATA_RECORDS_DELETE, tableName, accountId));
   }
 
   private boolean executeQuery(String query) {

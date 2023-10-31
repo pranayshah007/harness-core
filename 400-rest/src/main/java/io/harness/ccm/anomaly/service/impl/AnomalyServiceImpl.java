@@ -101,6 +101,16 @@ public class AnomalyServiceImpl implements AnomalyService {
   }
 
   @Override
+  public boolean deleteAllForAccount(String accountId) {
+    return anomalyEntityDao.deleteAllForAccount(accountId);
+  }
+
+  @Override
+  public Long count(String accountId) {
+    return anomalyEntityDao.count(accountId);
+  }
+
+  @Override
   public void insert(List<? extends AnomalyEntity> anomalies) {
     anomalyEntityDao.insert(anomalies);
   }

@@ -202,7 +202,7 @@ public class WorkflowImportService implements ImportService {
       if (resp.code() >= 200 && resp.code() < 300) {
         return;
       }
-      log.info("The Yaml of the generated data was - {}", NGYamlUtils.getYamlString(pipelineConfig));
+      log.info("The Yaml of the generated data was - \n{}", NGYamlUtils.getYamlString(pipelineConfig));
       Map<String, Object> error = null;
       error = JsonUtils.asObject(
           resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});

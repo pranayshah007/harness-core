@@ -41,6 +41,7 @@ import io.harness.serializer.SecretManagerClientRegistrars;
 import io.harness.serializer.WaitEngineRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.serializer.common.CommonsRegistrars;
+import io.harness.serializer.kryo.CIBeansKryoRegistrar;
 import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.CIBeansMorphiaRegistrar;
@@ -82,6 +83,7 @@ public class IACMBeansRegistrars {
           .add(IACMBeansKryoRegistrar.class)
           .add(CIContractsKryoRegistrar.class)
           .add(NotificationBeansKryoRegistrar.class)
+          .add(CIBeansKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

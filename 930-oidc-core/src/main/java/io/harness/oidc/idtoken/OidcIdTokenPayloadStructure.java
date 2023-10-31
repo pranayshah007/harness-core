@@ -26,7 +26,7 @@ public class OidcIdTokenPayloadStructure {
 
   @JsonProperty(OidcIdTokenConstants.EXPIRY) private Long exp;
 
-  @JsonProperty(OidcIdTokenConstants.ISSUED_AT) private String iat;
+  @JsonProperty(OidcIdTokenConstants.ISSUED_AT) private Long iat;
 
-  @JsonProperty(OidcIdTokenConstants.ACCOUNT_ID) private String account_id;
+  @JsonProperty(OidcIdTokenConstants.ACCOUNT_ID) private String accountId;
 }

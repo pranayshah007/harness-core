@@ -635,7 +635,7 @@ public class ContainerStepInitHelper {
   private Optional<CIExecutionImages> fetchCiExecutionImagesInternal(
       String accountIdentifier, StageInfraDetails.Type infraType) throws IOException {
     final Response<ResponseDTO<CIExecutionImages>> response =
-        ciServiceResourceClient.getCustomersExecutionConfig(infraType, true, accountIdentifier).execute();
+        ciServiceResourceClient.getCustomersExecutionConfig(infraType, false, accountIdentifier).execute();
     if (response.isSuccessful()) {
       if (response.body() != null) {
         CIExecutionImages data = response.body().getData();

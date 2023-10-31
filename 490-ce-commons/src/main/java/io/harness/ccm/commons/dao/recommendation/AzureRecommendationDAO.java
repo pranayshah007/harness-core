@@ -197,6 +197,19 @@ public class AzureRecommendationDAO {
         .execute();
   }
 
+  public long count(String accountId) {
+    return hPersistence.createQuery(AzureRecommendation.class)
+        .field(AzureRecommendationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<AzureRecommendation> query =
+        hPersistence.createQuery(AzureRecommendation.class).field(AzureRecommendationKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
+
   private Condition getAzureVmCondition(List<RecommendationAzureVmId> azureVmIds) {
     RecommendationAzureVmId azureVmId = azureVmIds.get(0);
     Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(azureVmId.getSubscriptionId())

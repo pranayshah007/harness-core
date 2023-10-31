@@ -13,4 +13,8 @@ public interface PricingProfileDao {
   boolean create(PricingProfile pricingProfile);
 
   PricingProfile fetchPricingProfile(String accountId);
+
+  long count(String accountId);
+
+  boolean deleteAllForAccount(String accountId);
 }

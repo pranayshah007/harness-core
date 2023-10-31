@@ -13,7 +13,7 @@ import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 import static io.harness.idp.common.JacksonUtils.convert;
-import static io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper.constructExpressionFromRules;
+import static io.harness.idp.scorecard.checks.mappers.CheckDetailsMapper.constructExpressionFromRules;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,20 +22,21 @@ import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
+import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
-import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
-import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
-import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
-import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scores.beans.ScorecardAndChecks;
+import io.harness.idp.scorecard.scores.entity.ScoreEntity;
 import io.harness.idp.scorecard.scores.logging.ScoreComputationLogContext;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.logging.AutoLogContext;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
+import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 
@@ -87,7 +88,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       return;
     }
 
-    Map<String, Map<String, Set<String>>> providerDataPointValues = getProviderDataPointValues(scorecardsAndChecks);
+    Map<String, List<Pair<String, List<InputValue>>>> providerDataPointValues =
+        getProviderDataPointValues(scorecardsAndChecks);
     String configs = configReader.fetchAllConfigs(accountIdentifier);
 
     CountDownLatch latch = new CountDownLatch(entities.size());
@@ -181,7 +183,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   private Map<String, Map<String, Object>> fetch(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Map<String, Set<String>>> providerDataPoints, String configs) {
+      Map<String, List<Pair<String, List<InputValue>>>> providerDataPoints, String configs) {
     try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
                                       .accountIdentifier(accountIdentifier)
                                       .threadName(Thread.currentThread().getName())
@@ -346,9 +348,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     });
   }
 
-  private Map<String, Map<String, Set<String>>> getProviderDataPointValues(
+  private Map<String, List<Pair<String, List<InputValue>>>> getProviderDataPointValues(
       List<ScorecardAndChecks> scorecardsAndChecks) {
-    Map<String, Map<String, Set<String>>> providerDataPointValues = new HashMap<>();
+    Map<String, List<Pair<String, List<InputValue>>>> providerDataPointValues = new HashMap<>();
 
     for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
       List<CheckEntity> checks = scorecardAndChecks.getChecks();
@@ -361,14 +363,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
         }
         for (Rule rule : check.getRules()) {
           String dataSourceIdentifier = rule.getDataSourceIdentifier();
-          Map<String, Set<String>> dataPointIdentifiersAndInputValues =
-              providerDataPointValues.getOrDefault(dataSourceIdentifier, new HashMap<>());
-          Set<String> inputValues =
-              dataPointIdentifiersAndInputValues.getOrDefault(rule.getDataPointIdentifier(), new HashSet<>());
-          if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
-            inputValues.add(rule.getConditionalInputValue());
-          }
-          dataPointIdentifiersAndInputValues.put(rule.getDataPointIdentifier(), inputValues);
+          List<Pair<String, List<InputValue>>> dataPointIdentifiersAndInputValues =
+              providerDataPointValues.getOrDefault(dataSourceIdentifier, new ArrayList<>());
+          dataPointIdentifiersAndInputValues.add(new Pair<>(rule.getDataPointIdentifier(), rule.getInputValues()));
           providerDataPointValues.put(dataSourceIdentifier, dataPointIdentifiersAndInputValues);
         }
       }

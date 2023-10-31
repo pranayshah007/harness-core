@@ -87,6 +87,7 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
                  .field(RuleEnforcementId.orgIdentifier)
                  .field(RuleEnforcementId.projectIdentifier)
                  .build())
+        .add(CompoundMongoIndex.builder().name("account").field(RuleEnforcementId.accountId).build())
         .add(SortCompoundMongoIndex.builder()
                  .name("sort1")
                  .field(RuleEnforcementId.name)

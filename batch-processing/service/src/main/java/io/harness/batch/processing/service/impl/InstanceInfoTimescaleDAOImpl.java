@@ -40,6 +40,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.jooq.DeleteConditionStep;
@@ -47,6 +48,7 @@ import org.jooq.InsertSetStep;
 import org.jooq.Record;
 import org.jooq.Table;
 import org.jooq.UpdateSetMoreStep;
+import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -116,6 +118,48 @@ public class InstanceInfoTimescaleDAOImpl implements InstanceInfoTimescaleDAO {
     DeleteConditionStep<WorkloadInfoRecord> workloadInfoRecordDeleteConditionStep = getWorkloadInfoRecordDeleteSql();
     log.info("Workload info delete sql {}", workloadInfoRecordDeleteConditionStep.getSQL());
     workloadInfoRecordDeleteConditionStep.execute();
+  }
+
+  public Long countNodeInfoForAccount(@NonNull String accountId) {
+    return dslContext.select(DSL.count().as("count"))
+        .from(NODE_INFO)
+        .where(NODE_INFO.ACCOUNTID.eq(accountId))
+        .fetchInto(Long.class)
+        .get(0);
+  }
+
+  public Long countPodInfoForAccount(@NonNull String accountId) {
+    return dslContext.select(DSL.count().as("count"))
+        .from(POD_INFO)
+        .where(POD_INFO.ACCOUNTID.eq(accountId))
+        .fetchInto(Long.class)
+        .get(0);
+  }
+
+  public Long countWorkloadInfoForAccount(@NonNull String accountId) {
+    return dslContext.select(DSL.count().as("count"))
+        .from(WORKLOAD_INFO)
+        .where(WORKLOAD_INFO.ACCOUNTID.eq(accountId))
+        .fetchInto(Long.class)
+        .get(0);
+  }
+
+  @Override
+  public boolean deleteNodeInfoForAccount(String accountId) {
+    dslContext.deleteFrom(NODE_INFO).where(NODE_INFO.ACCOUNTID.eq(accountId)).execute();
+    return true;
+  }
+
+  @Override
+  public boolean deletePodInfoForAccount(String accountId) {
+    dslContext.deleteFrom(POD_INFO).where(POD_INFO.ACCOUNTID.eq(accountId)).execute();
+    return true;
+  }
+
+  @Override
+  public boolean deleteWorkloadInfoForAccount(String accountId) {
+    dslContext.deleteFrom(WORKLOAD_INFO).where(WORKLOAD_INFO.ACCOUNTID.eq(accountId)).execute();
+    return true;
   }
 
   private DeleteConditionStep<WorkloadInfoRecord> getWorkloadInfoRecordDeleteSql() {

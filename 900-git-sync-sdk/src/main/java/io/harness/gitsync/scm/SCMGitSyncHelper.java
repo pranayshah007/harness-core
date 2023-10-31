@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.scm;
+
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -326,11 +327,13 @@ public class SCMGitSyncHelper {
     final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
 
-    if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {
-      log.error("Git SDK getBatchFiles Failure: {}", getBatchFilesResponse);
-      scmErrorHandler.processAndThrowException(getBatchFilesResponse.getStatusCode(),
-          getScmErrorDetailsFromGitProtoResponse(getBatchFilesResponse.getError()), ScmGitMetaData.builder().build());
-    }
+    getBatchFilesResponse.getGetFileResponseMapMap().forEach((key, getBatchFileResponse) -> {
+      if (isFailureResponse(getBatchFileResponse.getStatusCode())) {
+        log.error("Git SDK getBatchFiles Failure: {}", getBatchFileResponse);
+        scmErrorHandler.processAndThrowException(getBatchFileResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(getBatchFileResponse.getError()), ScmGitMetaData.builder().build());
+      }
+    });
 
     return prepareScmGetBatchFilesResponse(getBatchFilesResponse);
   }

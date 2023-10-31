@@ -67,7 +67,7 @@ public class ShellScriptStepPlanCreator implements PartialPlanCreator<YamlField>
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     final boolean isStepInsideRollback = PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency());
-    ShellScriptStepNode stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNode.class);
+    ShellScriptStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     PlanNodeBuilder builder =
         PlanNode.builder()

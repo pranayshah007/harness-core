@@ -109,4 +109,31 @@ public class LastReceivedPublishedMessageDao {
     }
     return null;
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(LastReceivedPublishedMessage.class)
+        .field(LastReceivedPublishedMessageKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<LastReceivedPublishedMessage> query = hPersistence.createQuery(LastReceivedPublishedMessage.class)
+                                                    .field(LastReceivedPublishedMessageKeys.accountId)
+                                                    .equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public long countLatestClusterInfo(String accountId) {
+    return hPersistence.createQuery(LatestClusterInfo.class)
+        .field(LatestClusterInfoKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllLatestClusterInfoForAccount(String accountId) {
+    Query<LatestClusterInfo> query =
+        hPersistence.createQuery(LatestClusterInfo.class).field(LatestClusterInfoKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

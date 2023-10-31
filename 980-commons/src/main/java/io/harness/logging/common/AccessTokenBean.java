@@ -7,13 +7,11 @@
 
 package io.harness.logging.common;
 
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
 public class AccessTokenBean {
-  private String projectId;
-  private String tokenValue;
-  private long expirationTimeMillis;
+  private final String projectId;
+  private final String tokenValue;
+  private final long expirationTimeMillis;
 }

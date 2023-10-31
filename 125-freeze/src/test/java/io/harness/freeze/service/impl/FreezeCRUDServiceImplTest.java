@@ -13,6 +13,8 @@ import static io.harness.rule.OwnerRule.SOURABH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.encryption.Scope;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.freeze.beans.FreezeStatus;
@@ -37,6 +40,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.FreezeConfigRepository;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,6 +55,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class FreezeCRUDServiceImplTest extends CategoryTest {
@@ -61,6 +67,7 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Mock private OutboxService outboxService;
   @Mock private TransactionTemplate transactionTemplate;
   @InjectMocks private FreezeCRUDServiceImpl freezeCRUDService;
+  @Mock private NgExpressionHelper ngExpressionHelper;
 
   static final String ACCOUNT_ID = "accountId";
   static final String ORG_ID = "orgId";
@@ -96,7 +103,7 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
       + "  windows:\n"
       + "    - timeZone: Asia/Calcutta\n"
       + "      startTime: 2023-04-27 02:48 PM\n"
-      + "      duration: 30m\n"
+      + "      duration: 1d\n"
       + "      recurrence:\n"
       + "        type: Daily";
 
@@ -117,10 +124,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
       + "  description: \"\"\n"
       + "  windows:\n"
       + "    - timeZone: Asia/Calcutta\n"
-      + "      startTime: 2023-04-27 02:48 PM\n"
-      + "      duration: 30m\n"
-      + "      recurrence:\n"
-      + "        type: Daily";
+      + "      startTime: 2026-04-27 02:48 PM\n"
+      + "      duration: 30m\n";
 
   static final String GLOBAL_FREEZE_YAML = "freeze:\n"
       + "  identifier: _GLOBAL_\n"
@@ -160,6 +165,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
       + "      recurrence:\n"
       + "        type: Daily\n";
   static final Map<String, String> EMPTY_MAP = new HashMap<>();
+
+  static final String BASE_URL = "baseUrl";
   static final List<FreezeSummaryResponseDTO> manualFreezeList = Arrays.asList(FreezeSummaryResponseDTO.builder()
                                                                                    .freezeScope(Scope.PROJECT)
                                                                                    .identifier(MANUAL_FREEZE_1)
@@ -370,23 +377,28 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void test_createFreezeConfig() {
-    Optional<FreezeConfigEntity> freezeConfig = Optional.of(FreezeConfigEntity.builder()
-                                                                .status(FreezeStatus.ENABLED)
-                                                                .accountId(ACCOUNT_ID)
-                                                                .orgIdentifier(ORG_ID)
-                                                                .identifier(MANUAL_FREEZE_1)
-                                                                .freezeScope(Scope.ORG)
-                                                                .yaml(FREEZE_YAML_1)
-                                                                .build());
-
-    when(transactionTemplate.execute(any())).thenReturn(null);
+  public void test_createFreezeConfig() throws IOException {
+    doReturn(BASE_URL).when(ngExpressionHelper).getBaseUrl(ACCOUNT_ID);
+    FreezeConfigEntity freezeConfig = FreezeConfigEntity.builder()
+                                          .status(FreezeStatus.ENABLED)
+                                          .accountId(ACCOUNT_ID)
+                                          .orgIdentifier(ORG_ID)
+                                          .identifier(MANUAL_FREEZE_1)
+                                          .freezeScope(Scope.ORG)
+                                          .yaml(FREEZE_YAML_1)
+                                          .build();
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(freezeConfigRepository.save(any())).thenReturn(freezeConfig);
     when(freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              any(), any(), any(), any()))
         .thenReturn(Optional.ofNullable(null));
 
     FreezeResponseDTO freezeResponseDTO = freezeCRUDService.createFreezeConfig(FREEZE_YAML_1, ACCOUNT_ID, ORG_ID, null);
+    verify(notificationHelper)
+        .sendNotification(FREEZE_YAML_1, false, true, true, null, ACCOUNT_ID, null, BASE_URL, false);
 
     assertThat(freezeResponseDTO.getName()).isEqualTo(MANUAL_FREEZE_1);
     assertThat(freezeResponseDTO.getIdentifier()).isEqualTo(MANUAL_FREEZE_1);
@@ -397,7 +409,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void test_manageGlobalFreezeConfig() {
+  public void test_manageGlobalFreezeConfig() throws IOException {
+    doReturn(BASE_URL).when(ngExpressionHelper).getBaseUrl(ACCOUNT_ID);
     Optional<FreezeConfigEntity> freezeConfig = Optional.of(FreezeConfigEntity.builder()
                                                                 .status(FreezeStatus.DISABLED)
                                                                 .accountId(ACCOUNT_ID)
@@ -409,7 +422,10 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
                                                                 .yaml(GLOBAL_FREEZE_YAML)
                                                                 .build());
 
-    when(transactionTemplate.execute(any())).thenReturn(freezeConfig.get());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              any(), any(), any(), any()))
         .thenReturn(freezeConfig);
@@ -417,6 +433,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
     when(outboxService.save(any())).thenReturn(null);
     FreezeResponseDTO freezeResponseDTO =
         freezeCRUDService.manageGlobalFreezeConfig(GLOBAL_FREEZE_YAML, ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    verify(notificationHelper, times(0))
+        .sendNotification(any(), anyBoolean(), anyBoolean(), anyBoolean(), any(), any(), any(), any(), anyBoolean());
 
     assertThat(freezeResponseDTO.getName()).isEqualTo(GLOBAL_FREEZE_NAME);
     assertThat(freezeResponseDTO.getIdentifier()).isEqualTo(GLOBAL);
@@ -426,7 +444,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void test_updateFreezeConfig() {
+  public void test_updateFreezeConfig() throws IOException {
+    doReturn(BASE_URL).when(ngExpressionHelper).getBaseUrl(ACCOUNT_ID);
     Optional<FreezeConfigEntity> freezeConfig = Optional.of(FreezeConfigEntity.builder()
                                                                 .status(FreezeStatus.ENABLED)
                                                                 .accountId(ACCOUNT_ID)
@@ -445,11 +464,15 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
     freezeConfigEntity.setName(MANUAL_FREEZE_2);
     freezeConfigEntity.setYaml(FREEZE_YAML_2);
     when(freezeConfigRepository.save(any())).thenReturn(freezeConfigEntity);
-    when(transactionTemplate.execute(any())).thenReturn(freezeConfigEntity);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(outboxService.save(any())).thenReturn(null);
     FreezeResponseDTO freezeResponseDTO =
         freezeCRUDService.updateFreezeConfig(FREEZE_YAML_2, ACCOUNT_ID, ORG_ID, null, MANUAL_FREEZE_1);
-
+    verify(notificationHelper)
+        .sendNotification(FREEZE_YAML_2, false, false, true, null, ACCOUNT_ID, null, BASE_URL, false);
     assertThat(freezeResponseDTO.getName()).isEqualTo(MANUAL_FREEZE_2);
     assertThat(freezeResponseDTO.getIdentifier()).isEqualTo(MANUAL_FREEZE_1);
     assertThat(freezeResponseDTO.getYaml()).isEqualTo(FREEZE_YAML_2);
@@ -575,7 +598,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void test_updateActiveStatus() {
+  public void test_updateActiveStatus() throws IOException {
+    doReturn(BASE_URL).when(ngExpressionHelper).getBaseUrl(ACCOUNT_ID);
     List<String> freezeIdentifiers = Arrays.asList(MANUAL_FREEZE_1);
 
     Optional<FreezeConfigEntity> freezeConfig = Optional.of(FreezeConfigEntity.builder()
@@ -594,12 +618,17 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
 
     FreezeConfigEntity freezeConfigEntity = freezeConfig.get();
     freezeConfigEntity.setStatus(FreezeStatus.ENABLED);
-    when(transactionTemplate.execute(any())).thenReturn(freezeConfigEntity);
     when(outboxService.save(any())).thenReturn(null);
-
+    when(freezeConfigRepository.save(any())).thenReturn(freezeConfigEntity);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     FreezeResponseWrapperDTO freezeResponseWrapperDTO =
         freezeCRUDService.updateActiveStatus(FreezeStatus.ENABLED, ACCOUNT_ID, ORG_ID, PROJECT_ID, freezeIdentifiers);
-
+    verify(notificationHelper)
+        .sendNotification(
+            any(), eq(false), eq(true), eq(true), eq(null), eq(ACCOUNT_ID), eq(null), eq(BASE_URL), eq(false));
     assertThat(freezeResponseWrapperDTO.getNoOfFailed()).isEqualTo(0);
     assertThat(freezeResponseWrapperDTO.getNoOfSuccess()).isEqualTo(1);
     FreezeResponseDTO freezeResponseDTO = freezeResponseWrapperDTO.getSuccessfulFreezeResponseDTOList().get(0);
@@ -611,7 +640,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void test_updateActiveStatusForFailure() {
+  public void test_updateActiveStatusForFailure() throws IOException {
+    doReturn(BASE_URL).when(ngExpressionHelper).getBaseUrl(ACCOUNT_ID);
     List<String> freezeIdentifiers = Arrays.asList(MANUAL_FREEZE_1);
 
     when(freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
@@ -620,6 +650,8 @@ public class FreezeCRUDServiceImplTest extends CategoryTest {
 
     FreezeResponseWrapperDTO freezeResponseWrapperDTO =
         freezeCRUDService.updateActiveStatus(FreezeStatus.ENABLED, ACCOUNT_ID, ORG_ID, PROJECT_ID, freezeIdentifiers);
+    verify(notificationHelper, times(0))
+        .sendNotification(any(), anyBoolean(), anyBoolean(), anyBoolean(), any(), any(), any(), any(), anyBoolean());
 
     assertThat(freezeResponseWrapperDTO.getNoOfFailed()).isEqualTo(1);
     assertThat(freezeResponseWrapperDTO.getNoOfSuccess()).isEqualTo(0);

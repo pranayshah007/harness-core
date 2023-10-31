@@ -95,6 +95,7 @@ done
 #  KEYS="${KEYS} ${ticketId}"
 #fi
 #Updating all the Jira tickets with the Release Build Number
+
 if [ "${PURPOSE}" = "saas" ]
 then
     FIELD_ID="customfield_10644"
@@ -119,7 +120,7 @@ do
       components=`echo "$jira_response" | jq --raw-output '.fields.components[0].name'`
       echo $components
       exclude_pipeline_component="Pipeline"
-      exclude_templatelibrary_component="Templates Library"
+      exclude_templatelibrary_component="Template Library"
       exclude_pipelinenotification_component="Pipeline Notifications"
       exclude_expressionengine_component="Expression Engine"
       if [[ "$components" == *"$exclude_pipeline_component"*  || "$components" == *"$exclude_templatelibrary_component"* || "$components" == *"$exclude_pipelinenotification_component"* || "$components" == *"$exclude_expressionengine_component"*  ]];

@@ -15,9 +15,9 @@ import (
 	"reflect"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 // Resolve looks through all fields of any given struct. We try to resolve fields

@@ -10,6 +10,7 @@ package io.harness.ssca.services;
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
 import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
@@ -19,6 +20,7 @@ import io.harness.ssca.transformers.NormalisedSbomComponentTransformer;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import javax.ws.rs.NotFoundException;
@@ -73,11 +75,30 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
       Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageManager() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageManager).regex(pattern);
     }
-    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getSupplier())) {
-      Pattern pattern = Pattern.compile("[.]*" + filterBody.getSupplier() + "[.]*");
+    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getPackageSupplier())) {
+      Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageSupplier() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageOriginatorName).regex(pattern);
     }
 
     return sbomComponentRepo.findAll(criteria, pageable);
+  }
+
+  public List<String> getOrchestrationIds(String accountId, String orgIdentifier, String projectIdentifier,
+      ArtifactListingRequestBodyLicenseFilter licenseFilter) {
+    Criteria criteria = Criteria.where(NormalizedSBOMEntityKeys.accountId)
+                            .is(accountId)
+                            .and(NormalizedSBOMEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(NormalizedSBOMEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
+
+    if (Objects.nonNull(licenseFilter)) {
+      if (ArtifactListingRequestBodyLicenseFilter.OperatorEnum.EQUALS.equals(licenseFilter.getOperator())) {
+        criteria.and(NormalizedSBOMEntityKeys.packageLicense).is(licenseFilter.getValue());
+      }
+    }
+    return sbomComponentRepo.findAll(criteria, Pageable.unpaged())
+        .map(NormalizedSBOMComponentEntity::getOrchestrationId)
+        .toList();
   }
 }

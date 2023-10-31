@@ -379,6 +379,10 @@ public class K8sRecommendationDAO {
     InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
         nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
     try {
+      if (instanceData == null || instanceData.getMetaData() == null) {
+        log.warn("Error fetching instanceData/metadata. Returning default value.");
+        return defaultK8sServiceProvider();
+      }
       Map<String, String> metaData = instanceData.getMetaData();
       String region = metaData.get(InstanceMetaDataConstants.REGION);
       String instanceFamily = metaData.get(InstanceMetaDataConstants.INSTANCE_FAMILY);
@@ -698,5 +702,77 @@ public class K8sRecommendationDAO {
     return TimescaleUtils.retryRun(()
                                        -> dslContext.fetchCount(CE_RECOMMENDATIONS,
                                            CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId).and(nonNullCondition)));
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public Long countNodePoolAggregatedForAccount(@NonNull String accountId) {
+    return dslContext.select(DSL.count().as("count"))
+        .from(NODE_POOL_AGGREGATED)
+        .where(NODE_POOL_AGGREGATED.ACCOUNTID.eq(accountId))
+        .fetchInto(Long.class)
+        .get(0);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public boolean deleteAllNodePoolAggregatedForAccount(@NonNull String accountId) {
+    dslContext.deleteFrom(NODE_POOL_AGGREGATED).where(NODE_POOL_AGGREGATED.ACCOUNTID.eq(accountId)).execute();
+    return true;
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public Long countRecommendationsForAccount(@NonNull String accountId) {
+    return dslContext.select(DSL.count().as("count"))
+        .from(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId))
+        .fetchInto(Long.class)
+        .get(0);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public boolean deleteAllRecommendationsForAccount(@NonNull String accountId) {
+    dslContext.deleteFrom(CE_RECOMMENDATIONS).where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)).execute();
+    return true;
+  }
+
+  public long countNodeRecommendations(String accountId) {
+    return hPersistence.createQuery(K8sNodeRecommendation.class)
+        .field(K8sNodeRecommendationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllNodeRecommendationsForAccount(String accountId) {
+    Query<K8sNodeRecommendation> query = hPersistence.createQuery(K8sNodeRecommendation.class)
+                                             .field(K8sNodeRecommendationKeys.accountId)
+                                             .equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public long countWorkloadRecommendations(String accountId) {
+    return hPersistence.createQuery(K8sWorkloadRecommendation.class)
+        .field(K8sWorkloadRecommendationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllWorkloadRecommendationsForAccount(String accountId) {
+    Query<K8sWorkloadRecommendation> query = hPersistence.createQuery(K8sWorkloadRecommendation.class)
+                                                 .field(K8sWorkloadRecommendationKeys.accountId)
+                                                 .equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public long countPartialHistograms(String accountId) {
+    return hPersistence.createQuery(PartialRecommendationHistogram.class)
+        .field(PartialRecommendationHistogramKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllPartialHistogramsForAccount(String accountId) {
+    Query<PartialRecommendationHistogram> query = hPersistence.createQuery(PartialRecommendationHistogram.class)
+                                                      .field(PartialRecommendationHistogramKeys.accountId)
+                                                      .equal(accountId);
+    return hPersistence.delete(query);
   }
 }

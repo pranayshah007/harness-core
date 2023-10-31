@@ -1,2 +1,3 @@
 DOCKER_FILE_PATH: /harness/harness-core/platform-service/build/container/Dockerfile-platform-service-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/platform-service/chart
+VERSION_FILE: harness-core/980-commons/src/main/resources-filtered/versionInfo.yaml

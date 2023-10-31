@@ -28,6 +28,7 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount;
 import io.harness.ccm.commons.entities.billing.CloudBillingTransferRun;
+import io.harness.ccm.commons.entities.datadeletion.DataDeletionRecord;
 import io.harness.ccm.commons.entities.ec2.recommendation.EC2Recommendation;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
@@ -97,6 +98,9 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
 
     // msp
     set.add(ManagedAccount.class);
+
+    // data deletion
+    set.add(DataDeletionRecord.class);
   }
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {

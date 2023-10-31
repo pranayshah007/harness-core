@@ -201,4 +201,13 @@ public class RuleSetDAO {
         throw new InvalidRequestException("Operator not supported not supported for time fields");
     }
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(RuleSet.class).field(RuleSetId.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<RuleSet> query = hPersistence.createQuery(RuleSet.class).field(RuleSetId.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }
