@@ -71,6 +71,8 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.IDP)
 public class CheckServiceImplTest extends CategoryTest {
   private static final String DEVELOP_BRANCH = "develop";
+  private static final String RULE_IDENTIFIER1 = "rule1";
+  private static final String RULE_IDENTIFIER2 = "rule2";
   private CheckServiceImpl checkServiceImpl;
   @Mock CheckRepository checkRepository;
   @Mock NGSettingsClient settingsClient;
@@ -313,6 +315,7 @@ public class CheckServiceImplTest extends CategoryTest {
   private CheckDetails getCheckDetails(String conditionalInput) {
     List<Rule> rules = new ArrayList<>();
     Rule rule = new Rule();
+    rule.setIdentifier(RULE_IDENTIFIER1);
     rule.setDataSourceIdentifier(DATA_SOURCE_ID);
     rule.setDataPointIdentifier(DATA_POINT_ID);
     rule.setOperator("==");
@@ -336,18 +339,28 @@ public class CheckServiceImplTest extends CategoryTest {
   }
 
   private Page<CheckEntity> getPageCheckEntity(Boolean custom) {
+    Rule rule1 = new Rule();
+    rule1.setIdentifier(RULE_IDENTIFIER1);
+    rule1.setDataSourceIdentifier(GITHUB_IDENTIFIER);
+    rule1.setDataPointIdentifier(IS_BRANCH_PROTECTED);
     List<CheckEntity> entities = new ArrayList<>();
     CheckEntity customCheck = CheckEntity.builder()
                                   .identifier(GITHUB_CHECK_ID)
                                   .name(GITHUB_CHECK_NAME)
                                   .accountIdentifier(ACCOUNT_ID)
+                                  .rules(List.of(rule1))
                                   .isCustom(true)
                                   .build();
+    Rule rule2 = new Rule();
+    rule1.setIdentifier(RULE_IDENTIFIER2);
+    rule2.setDataSourceIdentifier(CATALOG_IDENTIFIER);
+    rule2.setDataPointIdentifier(CATALOG_TECH_DOCS);
     CheckEntity defaultCheck = CheckEntity.builder()
                                    .identifier(CATALOG_CHECK_ID)
                                    .name(CATALOG_CHECK_NAME)
                                    .accountIdentifier(ACCOUNT_ID)
                                    .isCustom(false)
+                                   .rules(List.of(rule2))
                                    .build();
     if (custom == null) {
       entities.add(customCheck);
@@ -361,6 +374,7 @@ public class CheckServiceImplTest extends CategoryTest {
 
   private List<CheckEntity> getCheckEntities() {
     Rule rule1 = new Rule();
+    rule1.setIdentifier(RULE_IDENTIFIER1);
     rule1.setDataSourceIdentifier(GITHUB_IDENTIFIER);
     rule1.setDataPointIdentifier(IS_BRANCH_PROTECTED);
     CheckEntity entity1 = CheckEntity.builder()
@@ -371,6 +385,7 @@ public class CheckServiceImplTest extends CategoryTest {
                               .isCustom(true)
                               .build();
     Rule rule2 = new Rule();
+    rule1.setIdentifier(RULE_IDENTIFIER2);
     rule2.setDataSourceIdentifier(CATALOG_IDENTIFIER);
     rule2.setDataPointIdentifier(CATALOG_TECH_DOCS);
     CheckEntity entity2 = CheckEntity.builder()
