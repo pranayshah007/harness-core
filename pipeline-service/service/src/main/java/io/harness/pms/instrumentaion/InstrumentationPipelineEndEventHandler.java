@@ -36,8 +36,10 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.notification.bean.NotificationRules;
@@ -46,6 +48,7 @@ import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -137,7 +140,7 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
       propertiesMap.put(STAGE_TYPES, executedModules);
       // step types
       propertiesMap.put(TRIGGER_TYPE, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggerType());
-      propertiesMap.put(STATUS, pipelineExecutionSummaryEntity.getStatus());
+      propertiesMap.put(STATUS, ExecutionStatus.getExecutionStatus(endStatus));
       propertiesMap.put(LEVEL, StepCategory.PIPELINE);
       propertiesMap.put(IS_RERUN, pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getIsRerun());
       propertiesMap.put(STAGE_COUNT, pipelineExecutionSummaryEntity.getLayoutNodeMap().size());
@@ -156,11 +159,9 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
       propertiesMap.put(
           NOTIFICATION_METHODS, notificationInstrumentationHelper.getNotificationMethodTypes(notificationRulesList));
       String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
-      log.info("Sending telemetry event");
       telemetryReporter.sendTrackEvent(PIPELINE_EXECUTION, identity, accountId, propertiesMap,
           Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
           TelemetryOption.builder().sendForCommunity(false).build());
-      log.info("Sent telemetry event");
 
       sendNotificationEvents(notificationRulesList, ambiance, accountId, accountName);
     } catch (Exception exception) {
@@ -186,7 +187,8 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
   }
 
   private Long getExecutionTimeInSeconds(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
-    return (pipelineExecutionSummaryEntity.getEndTs() - pipelineExecutionSummaryEntity.getStartTs()) / 1000;
+    // Using System.currentTimeMillis because endTs might not be populated
+    return (System.currentTimeMillis() - pipelineExecutionSummaryEntity.getStartTs()) / 1000;
   }
 
   @Override
