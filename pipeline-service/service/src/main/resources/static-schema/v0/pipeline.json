@@ -13526,6 +13526,10 @@
               },
               "description" : {
                 "desc" : "This is the description for ServiceNowCreateStepInfo"
+              },
+              "createType" : {
+                "type" : "string",
+                "enum" : [ "Normal", "Form", "Standard" ]
               }
             }
           },
