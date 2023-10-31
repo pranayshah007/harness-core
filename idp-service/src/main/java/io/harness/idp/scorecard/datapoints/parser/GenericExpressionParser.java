@@ -47,6 +47,6 @@ public class GenericExpressionParser implements DataPointParser {
       dataPointResponse.put(ERROR_MESSAGE_KEY, "Datapoint extraction expression evaluation failed");
     }
     dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
-    return dataPointResponse;
+    return Map.of(dataFetchDTO.getRuleIdentifier(), dataPointResponse);
   }
 }
