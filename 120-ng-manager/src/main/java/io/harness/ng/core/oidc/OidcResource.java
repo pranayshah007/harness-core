@@ -81,7 +81,7 @@ public class OidcResource {
   OidcConfigurationUtility oidcConfigurationUtility;
 
   @GET
-  @Path("{accountId}/.wellknown/openid-configuration")
+  @Path("{accountId}/.well-known/openid-configuration")
   @ApiOperation(value = "Gets the openid configuration for Harness", nickname = "getHarnessOpenIdConfig")
   @Operation(operationId = "getHarnessOpenIdConfig", summary = "Get the openid configuration for Harness",
       responses =
@@ -112,7 +112,7 @@ public class OidcResource {
   }
 
   @GET
-  @Path("{accountId}/.well-known/jwks")
+  @Path("{accountId}/.wellknown/jwks")
   @ApiOperation(value = "Gets the openid configuration for Harness", nickname = "getHarnessOpenIdJwks")
   @Operation(operationId = "getHarnessOpenIdConfig", summary = "Get the openid configuration for Harness",
       responses =
