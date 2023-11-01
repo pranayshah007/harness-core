@@ -27,6 +27,7 @@ public class GithubAlertsCountParser implements DataPointParser {
   public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     Map<String, Object> dataPointData = new HashMap<>();
     List<InputValue> inputValues = dataFetchDTO.getInputValues();
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
     if (inputValues.size() != 1) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
       if (!isEmpty(errorMessage)) {
@@ -34,7 +35,6 @@ public class GithubAlertsCountParser implements DataPointParser {
       }
       return constructDataPointInfo(dataFetchDTO, ((List<?>) data.get(DSL_RESPONSE)).size(), null);
     }
-    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
 
     if (isEmpty(data) || !isEmpty((String) data.get(ERROR_MESSAGE_KEY))) {
       String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);

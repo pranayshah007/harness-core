@@ -25,6 +25,7 @@ public class GithubWorkflowsCountParser implements DataPointParser {
     if (!isEmpty(errorMessage)) {
       return constructDataPointInfo(dataFetchDTO, null, errorMessage);
     }
+    data = (Map<String, Object>) data.get(dataFetchDTO.getRuleIdentifier());
     double count = (double) CommonUtils.findObjectByName(data, "total_count");
     return constructDataPointInfo(dataFetchDTO, count, null);
   }
