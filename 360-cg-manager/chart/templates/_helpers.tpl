@@ -121,8 +121,9 @@ Create the name of the delegate upgrader image to use
 {{- if .Values.global.saml.autoaccept }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.SAMLAutoAccept }}
 {{- end }}
-{{- $length := len .Values.global.license.ng }}
-{{- if gt $length 0}}
+{{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
+{{- $ngLicenseENV := include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "NG_LICENSE" "overrideEnvName" "SMP_LICENSE" "providedSecretValues" (list "global.license.ng") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator)))}}
+{{- if $ngLicenseENV }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.LICENSE }}
 {{- end }}
 {{- if .Values.global.ng.enabled }}

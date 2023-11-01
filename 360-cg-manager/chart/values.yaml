@@ -82,6 +82,7 @@ global:
         - secretName: ""
           keys:
             CG_LICENSE: ""
+            NG_LICENSE: ""
       secretManagement: 
         externalSecretsOperator:
           - secretStore:
@@ -89,6 +90,9 @@ global:
               kind: ""
             remoteKeys:
               CG_LICENSE:
+                name: ""
+                property: ""
+              NG_LICENSE:
                 name: ""
                 property: ""
   cd:
