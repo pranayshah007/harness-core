@@ -32315,7 +32315,11 @@
                   }
                 },
                 "execution_target" : {
-                  "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+                  "oneOf" : [ {
+                    "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+                  }, {
+                    "type" : "string"
+                  } ]
                 },
                 "include_infra_selectors" : {
                   "oneOf" : [ {

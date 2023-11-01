@@ -9,6 +9,7 @@ package io.harness.steps.shellscript;
 
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.CodePulse;
@@ -46,7 +47,7 @@ public class ShellScriptBaseStepInfo {
   String uuid;
   @NotNull ShellType shell;
   @NotNull ShellScriptSourceWrapper source;
-  ParameterField<ExecutionTarget> executionTarget;
+  @YamlSchemaTypes({runtimeEmptyStringAllowed}) ParameterField<ExecutionTarget> executionTarget;
   @NotNull
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})

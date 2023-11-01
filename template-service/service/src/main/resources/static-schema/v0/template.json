@@ -31610,8 +31610,12 @@
                     } ]
                   }
                 },
-                "executionTarget" : {
-                  "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+                "execution_target" : {
+                  "oneOf" : [ {
+                    "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+                  }, {
+                    "type" : "string"
+                  } ]
                 },
                 "includeInfraSelectors" : {
                   "oneOf" : [ {
@@ -31682,8 +31686,12 @@
                   } ]
                 }
               },
-              "executionTarget" : {
-                "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+              "execution_target" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
+                }, {
+                  "type" : "string"
+                } ]
               },
               "metadata" : {
                 "type" : "string"
