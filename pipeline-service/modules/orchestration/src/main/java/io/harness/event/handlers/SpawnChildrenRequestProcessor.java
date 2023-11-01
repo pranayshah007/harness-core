@@ -26,6 +26,7 @@ import io.harness.engine.observers.BarrierExpandObserver;
 import io.harness.engine.observers.BarrierExpandRequest;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
@@ -114,21 +115,18 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           ConcurrentChildInstance.builder().childrenNodeExecutionIds(childrenIds).cursor(maxConcurrency).build(),
           nodeExecutionId);
 
+      List<Ambiance> ambianceList = new ArrayList<>();
       for (Child child : filteredChildren) {
         String uuid = childrenIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
         callbackIds.add(uuid);
-
-        // If the current child count is less than maxConcurrency then create and start the nodeExecution
+        NodeExecution nodeExecution = orchestrationEngine.initiateNode(
+            ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         if (shouldCreateAndStart(maxConcurrency, currentChild)) {
-          initiateNodeHelper.publishEvent(
-              ambiance, child.getChildNodeId(), uuid, strategyMetadata, InitiateMode.CREATE_AND_START);
-        } else {
-          // IF the current child count is greater than maxConcurrency then only create the nodeExecution
-          orchestrationEngine.initiateNode(
-              ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
+          if (nodeExecution != null) {
+            ambianceList.add(nodeExecution.getAmbiance());
+          }
         }
-
         // We should register MaxConcurrentChildCallback only when we will use max concurrency.
         // If there is no need to have concurrency, we should avoid adding callbacks.
         if (filteredChildren.size() > maxConcurrency) {
@@ -145,6 +143,10 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
               waitInstanceId);
         }
         currentChild++;
+      }
+
+      for (Ambiance ambianceentry : ambianceList) {
+        initiateNodeHelper.publishEvent(ambianceentry, InitiateMode.START);
       }
 
       if (callbackIds.isEmpty()) {

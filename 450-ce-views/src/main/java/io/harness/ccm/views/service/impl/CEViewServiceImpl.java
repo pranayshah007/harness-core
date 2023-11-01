@@ -18,6 +18,7 @@ import static io.harness.ccm.views.entities.ViewIdOperator.IN;
 import static io.harness.ccm.views.entities.ViewIdOperator.NOT_IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -75,7 +76,6 @@ import io.harness.exception.InvalidRequestException;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -604,7 +604,7 @@ public class CEViewServiceImpl implements CEViewService {
       List<CEView> ceViewList = ceViewDao.findByAccountIdAndBusinessMapping(accountId, businessMappingUuid);
       LinkedPerspectivesBuilder perspectiveListMessageBuilder =
           LinkedPerspectives.builder().costCategoryId(businessMappingUuid);
-      if (!Lists.isNullOrEmpty(ceViewList)) {
+      if (!isEmpty(ceViewList)) {
         perspectiveListMessageBuilder.perspectiveIdAndName(
             ceViewList.stream().collect(Collectors.toMap(CEView::getUuid, CEView::getName)));
       }

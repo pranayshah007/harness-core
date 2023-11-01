@@ -30,6 +30,7 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -49,7 +50,6 @@ import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
@@ -283,7 +283,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
     List<ResourceRestraintInstance> instances =
         resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
-            instance.getResourceRestraintId(), instance.getResourceUnit(), Lists.newArrayList(ACTIVE));
+            instance.getResourceRestraintId(), instance.getResourceUnit(), ListUtils.newArrayList(ACTIVE));
 
     assertThat(instances).isNotEmpty();
     assertThat(instances.size()).isEqualTo(1);

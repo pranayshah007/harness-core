@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTAINS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.FILE_CONTENTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS;
@@ -36,6 +38,8 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
   private GithubMeanTimeToCompleteWorkflowRunsParser githubMeanTimeToCompleteWorkflowRunsParser;
   private GithubAlertsCountParser githubAlertsCountParser;
   private GithubPullRequestsCountParser githubPullRequestsCountParser;
+  private GithubFileContentsParser githubFileContentsParser;
+  private GithubFileContainsParser githubFileContainsParser;
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
@@ -45,6 +49,10 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
         return githubIsBranchProtectedParser;
       case IS_FILE_EXISTS:
         return githubFileExistsParser;
+      case FILE_CONTENTS:
+        return githubFileContentsParser;
+      case FILE_CONTAINS:
+        return githubFileContainsParser;
       case WORKFLOWS_COUNT:
         return githubWorkflowsCountParser;
       case WORKFLOW_SUCCESS_RATE:

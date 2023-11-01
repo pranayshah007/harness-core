@@ -61,27 +61,12 @@ public class ServiceDependency implements PersistentEntity, UuidAware, AccountAc
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("list_all_edges_idx")
-                 .unique(false)
-                 .field(ServiceDependencyKeys.accountId)
-                 .field(ServiceDependencyKeys.orgIdentifier)
-                 .field(ServiceDependencyKeys.projectIdentifier)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("list_dependent_svc_idx")
                  .unique(false)
                  .field(ServiceDependencyKeys.accountId)
                  .field(ServiceDependencyKeys.orgIdentifier)
                  .field(ServiceDependencyKeys.projectIdentifier)
                  .field(ServiceDependencyKeys.toMonitoredServiceIdentifier)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("list_dependencies_idx")
-                 .unique(false)
-                 .field(ServiceDependencyKeys.accountId)
-                 .field(ServiceDependencyKeys.orgIdentifier)
-                 .field(ServiceDependencyKeys.projectIdentifier)
-                 .field(ServiceDependencyKeys.fromMonitoredServiceIdentifier)
                  .build())
         .build();
   }
@@ -95,6 +80,7 @@ public class ServiceDependency implements PersistentEntity, UuidAware, AccountAc
   ServiceDependencyMetadata serviceDependencyMetadata;
   private long lastUpdatedAt;
   private long createdAt;
+  private String agentIdentifier;
 
   @Data
   @Builder

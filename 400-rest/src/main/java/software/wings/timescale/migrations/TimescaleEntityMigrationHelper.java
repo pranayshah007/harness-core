@@ -6,12 +6,13 @@
  */
 
 package software.wings.timescale.migrations;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,7 +27,7 @@ public class TimescaleEntityMigrationHelper {
 
   public static void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       preparedStatement.setArray(index, array);
     } else {

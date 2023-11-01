@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/harness/harness-core/product/log-service/cli/server",
     visibility = ["//visibility:public"],
     deps = [
+        "//commons/go/lib/gcputils",
         "//commons/go/lib/secret",
         "//product/log-service/cache",
         "//product/log-service/cache/memory",

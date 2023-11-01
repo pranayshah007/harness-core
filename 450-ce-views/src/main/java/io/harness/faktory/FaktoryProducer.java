@@ -16,4 +16,13 @@ public class FaktoryProducer {
     client.push(job);
     return job.getJid();
   }
+
+  public static String push(String jobType, String jobQueue, Object[] jsonPayload, Integer retryCount)
+      throws IOException {
+    FaktoryClient client = new FaktoryClient();
+    FaktoryJob job =
+        new FaktoryJob(JobType.of(jobType), JobQueue.of(jobQueue), jsonPayload, JobRetryCount.of(retryCount));
+    client.push(job);
+    return job.getJid();
+  }
 }

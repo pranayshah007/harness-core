@@ -520,6 +520,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(480, "K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2");
     taskTypeOrdinalMapping.put(481, "HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2");
     taskTypeOrdinalMapping.put(482, "ECR_HELM_API_LIST_TAGS_TASK_V2");
+    taskTypeOrdinalMapping.put(483, "TERRAFORM_TASK_NG_V8");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

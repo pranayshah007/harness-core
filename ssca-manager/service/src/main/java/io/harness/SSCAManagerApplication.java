@@ -26,6 +26,10 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.migration.MigrationProvider;
+import io.harness.migration.NGMigrationSdkInitHelper;
+import io.harness.migration.NGMigrationSdkModule;
+import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
@@ -39,6 +43,7 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.ssca.migration.SSCAMigrationProvider;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -147,6 +152,7 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
       }
     });
     modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new MetricsModule());
     CacheModule cacheModule = new CacheModule(sscaManagerConfiguration.getCacheConfig());
     modules.add(cacheModule);
@@ -164,6 +170,7 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     registerCorsFilter(sscaManagerConfiguration, environment);
     registerSscaEvents(sscaManagerConfiguration, injector);
     registerManagedBeans(environment, injector);
+    registerMigrations(injector);
     MaintenanceController.forceMaintenance(false);
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
@@ -255,6 +262,20 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
 
   private void registerManagedBeans(Environment environment, Injector injector) {
     createConsumerThreadsToListenToEvents(environment, injector);
+  }
+
+  private void registerMigrations(Injector injector) {
+    NGMigrationConfiguration config = getMigrationSdkConfiguration();
+    NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private NGMigrationConfiguration getMigrationSdkConfiguration() {
+    return NGMigrationConfiguration.builder()
+        .microservice(Microservice.SSCA)
+        .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
+          { add(SSCAMigrationProvider.class); } // Add all migration provider classes here
+        })
+        .build();
   }
 
   private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {

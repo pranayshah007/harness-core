@@ -14,4 +14,8 @@ import java.util.List;
 public interface PublishedMessageDao {
   List<PublishedMessage> fetchPublishedMessage(
       String accountId, String messageType, Long startTime, Long endTime, int batchSize);
+
+  long count(String accountId);
+
+  boolean deleteAllForAccount(String accountId);
 }

@@ -9,7 +9,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
+
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
@@ -20,7 +24,8 @@ import (
 )
 
 const (
-	filePathSuffix = "logs.zip"
+	filePathSuffix  = "logs.zip"
+	harnessDownload = "harness-download"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -196,7 +201,7 @@ func HandleInternalDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
-func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config) http.HandlerFunc {
+func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -216,6 +221,17 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				Errorln("api: cannot generate the download url")
 			WriteNotFound(w, err)
 			return
+		}
+		if cfg.S3.ReverseProxyEnabled {
+			link, err = GetSignedURL(link, zipPrefix, cfg, gcsClient)
+			if err != nil {
+				logger.FromRequest(r).
+					WithError(err).
+					WithField(usePrefixParam, prefix).
+					Errorln("api: cannot Sign the download url")
+				WriteNotFound(w, err)
+				return
+			}
 		}
 
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
@@ -295,4 +311,24 @@ func HandleExists(store store.Store) http.HandlerFunc {
 
 		io.WriteString(w, fmt.Sprintf("%t", exists))
 	}
+}
+
+// GetSignedURL return a signed gcs object url
+func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.GCS) (string, error) {
+	link, err := gcsClient.SignURL(cfg.S3.Bucket, zipPrefix, cfg.S3.CustomHost, cfg.CacheTTL)
+	if err != nil {
+		return "", err
+	}
+	//parse and unescape only the link before harness-download otherwise it will corrupt the signed link
+	lstring := strings.Split(link, harnessDownload)
+
+	if len(lstring) < 2 {
+		return "", fmt.Errorf("cannot parse Unescaped Signed url for url %s", link)
+	}
+	link, err = url.PathUnescape(lstring[0])
+	if err != nil {
+		return "", err
+	}
+	link = link + harnessDownload + lstring[1]
+	return link, nil
 }

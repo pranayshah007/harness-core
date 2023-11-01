@@ -354,7 +354,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
       return clickHouseViewsBillingService
           .getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregationFunction, Collections.emptyList(), true, 100,
               null,
-              viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false, false),
+              viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, true, true),
               perspectiveTimeSeriesHelper.getTimePeriod(groupBy), null, null, null, false)
           .getStats();
     } else {
@@ -362,7 +362,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
           .fetch(viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction,
                      Collections.emptyList(), true, 100, null,
                      viewsQueryHelper.buildQueryParams(
-                         accountId, true, false, false, false, timeOffsetInDays, false, false)),
+                         accountId, true, false, false, false, timeOffsetInDays, true, true)),
               perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
           .getStats();
     }

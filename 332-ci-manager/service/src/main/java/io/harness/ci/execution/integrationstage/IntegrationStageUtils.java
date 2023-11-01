@@ -126,7 +126,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -165,7 +164,7 @@ public class IntegrationStageUtils {
     } catch (Exception ex) {
       String errorMessage = "Failed to deserialize ExecutionWrapperConfig step node";
       Throwable throwable = ex.getCause();
-      if (throwable != null && Strings.isNotBlank(throwable.getMessage())) {
+      if (throwable != null && isNotEmpty(throwable.getMessage())) {
         errorMessage = throwable.getMessage();
       }
       throw new CIStageExecutionException(errorMessage, ex);
@@ -697,6 +696,7 @@ public class IntegrationStageUtils {
         return ManualExecutionSource.builder().prNumber(numberString).build();
       }
     }
+
     return null;
   }
 

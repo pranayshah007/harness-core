@@ -8,6 +8,7 @@
 package io.harness.ng.core.refresh.helper;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.NAMANG;
 
@@ -117,7 +118,7 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
         ngFeatureFlagHelperService, connectorService));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
-        serviceOverridesServiceV2, overrideV2ValidationHelper));
+        serviceOverridesServiceV2, overrideV2ValidationHelper, null));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
         serviceOverridesServiceV2, serviceEntityService, accountClient, settingsClient,
@@ -157,7 +158,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
     doReturn("infrastructureDefinitions:\n"
         + "  - identifier: \"infra2\"\n")
         .when(infrastructureEntityService)
@@ -206,6 +209,23 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
         CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
     assertThat(validationResponse).isNotNull();
     assertThat(validationResponse.isValid()).isFalse();
+    assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testValidateInputsForPipelineYamlWithServiceRuntimeAndServiceInputsNotPresent() {
+    doNothing()
+        .when(environmentRefreshHelper)
+        .validateEnvironmentInputs(
+            any(YamlNode.class), any(EntityRefreshContext.class), any(InputsValidationResponse.class));
+    String pipelineYmlWithService = readFile("pipeline-with-svc-runtime-serviceInputs-not-present.yaml");
+
+    InputsValidationResponse validationResponse =
+        CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
+    assertThat(validationResponse).isNotNull();
+    assertThat(validationResponse.isValid()).isTrue();
     assertThat(validationResponse.getChildrenErrorNodes()).isNullOrEmpty();
   }
 
@@ -315,7 +335,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
 
     InputsValidationResponse validationResponse =
         CDInputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
@@ -333,7 +355,9 @@ public class CDInputsValidationHelperTest extends NgManagerTestBase {
 
     when(serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "serverless", false))
         .thenReturn(Optional.of(ServiceEntity.builder().yaml(serviceYaml).build()));
-    doReturn(null).when(environmentService).createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv");
+    doReturn(null)
+        .when(environmentService)
+        .createEnvironmentInputsYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", null);
     doReturn("infrastructureDefinitions:\n"
         + "- identifier: \"IDENTIFIER\"")
         .when(infrastructureEntityService)

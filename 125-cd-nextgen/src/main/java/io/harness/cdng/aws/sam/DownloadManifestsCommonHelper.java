@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 
 import static java.lang.String.format;
@@ -21,7 +22,9 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -34,6 +37,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -72,7 +76,16 @@ public class DownloadManifestsCommonHelper {
   public GitCloneStepInfo getGitCloneStepInfoFromManifestOutcome(ManifestOutcome gitManifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) gitManifestOutcome.getStore();
 
-    Build build = new Build(BuildType.BRANCH, BranchBuildSpec.builder().branch(gitStoreConfig.getBranch()).build());
+    Build build;
+
+    if (FetchType.COMMIT.equals(gitStoreConfig.getGitFetchType())) {
+      build =
+          new Build(BuildType.COMMIT_SHA, CommitShaBuildSpec.builder().commitSha(gitStoreConfig.getCommitId()).build());
+    } else if (FetchType.BRANCH.equals(gitStoreConfig.getGitFetchType())) {
+      build = new Build(BuildType.BRANCH, BranchBuildSpec.builder().branch(gitStoreConfig.getBranch()).build());
+    } else {
+      throw new InvalidRequestException(format("%s git fetch type is not supported", gitStoreConfig.getGitFetchType()));
+    }
 
     return GitCloneStepInfo.builder()
         .cloneDirectory(ParameterField.<String>builder().value(gitManifestOutcome.getIdentifier()).build())

@@ -214,6 +214,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .providerCredentialDelegateInfo(
                 helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance))
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+            .skipStateStorage(ParameterFieldHelper.getBooleanParameterFieldValue(
+                stepParameters.getConfiguration().getSkipStateStorage()))
             .build();
 
     TaskData taskData =
@@ -282,6 +284,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                 helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .useOptimizedTfPlan(true)
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+            .skipStateStorage(inheritOutput.isSkipStateStorage())
             .build();
 
     TaskData taskData =
@@ -365,12 +368,15 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
         : terraformTaskNGResponse.getUnitProgressData().getUnitProgresses();
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
-      helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance, null);
       addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      helper.saveRollbackDestroyConfigInline(stepParameters, terraformTaskNGResponse, ambiance, null);
+      if (!ParameterFieldHelper.getBooleanParameterFieldValue(
+              stepParameters.getConfiguration().getSkipStateStorage())) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys = helper.getRevisionsMap(stepParameters.getConfiguration().getSpec().getVarFiles(),
@@ -390,12 +396,17 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
         : terraformTaskNGResponse.getUnitProgressData().getUnitProgresses();
     stepResponseBuilder.unitProgressList(unitProgresses);
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
-      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
       addStepOutcome(ambiance, stepResponseBuilder, terraformTaskNGResponse.getOutputs(), stepParameters);
-      helper.updateParentEntityIdAndVersion(
-          helper.generateFullIdentifier(
-              ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
-          terraformTaskNGResponse.getStateFileId());
+      helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
+      TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(
+          ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), APPLY.name(),
+          ambiance);
+      if (!inheritOutput.isSkipStateStorage()) {
+        helper.updateParentEntityIdAndVersion(
+            helper.generateFullIdentifier(
+                ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
+            terraformTaskNGResponse.getStateFileId());
+      }
     }
 
     Map<String, String> outputKeys =
@@ -406,8 +417,6 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
   private void addStepOutcome(Ambiance ambiance, StepResponseBuilder stepResponseBuilder, String outputs,
       TerraformApplyStepParameters stepParameters) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-
     TerraformApplyOutcome terraformApplyOutcome;
     if (stepParameters.getConfiguration().getEncryptOutputSecretManager() != null
         && !ParameterField.isBlank(

@@ -138,46 +138,25 @@ spec:
             protocol: "TCP"
           {{- include "harnesscommon.monitoring.containerPort" . | nindent 10 }}
           env:
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_CONFIG_REDIS_USERNAME" "passwordVariableName" "EVENTS_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_CONFIG_REDIS_USERNAME" "passwordVariableName" "EVENTS_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $ "userVariableName" "MONGODB_USER" "passwordVariableName" "MONGODB_PASSWORD") | indent 12 }}
             {{- if .Values.global.database.mongo.installed }}
-            - name: MONGODB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.mongoSecrets.userName.name }}
-                  key: {{ .Values.mongoSecrets.userName.key }}
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.mongoSecrets.password.name }}
-                  key: {{ .Values.mongoSecrets.password.key }}
             - name: MONGODB_CONNECTION_PROTOCOL
               value: "mongodb://"
               {{- else }}
-            - name: MONGODB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.database.mongo.secretName }}
-                  key: {{ .Values.global.database.mongo.userKey }}
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.database.mongo.secretName }}
-                  key: {{ .Values.global.database.mongo.passwordKey }}
             - name: MONGODB_CONNECTION_PROTOCOL
-              value: '{{ .Values.global.database.mongo.protocol}}://'
+              value: '{{ printf "%s://" (default .Values.global.database.mongo.protocol .Values.mongo.protocol) }}'
               {{- end }}
             - name: MONGODB_HOSTS
               value: {{ include "access-control.mongohosts" . }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "accesscontrol" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "accesscontrol" "ctx" $) }}
             - name: OFFSET_STORAGE_FILE_FILENAME
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "accesscontrol" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "accesscontrol" "ctx" $) }}
             - name: MONGODB_CONNECTION_URL
               value: {{ include "access-control.mongoConnectionUrl" (dict "database" "accesscontrol" "context" $) }}
-            - name: IDENTITY_SERVICE_SECRET
-              value: 'HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU='
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -187,9 +166,8 @@ spec:
               {{- if .Values.extraEnvVarsCM }}
               name: {{ include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVarsCM "context" $) }}
               {{- end }}
+          {{- if .Values.extraEnvVarsSecret }}
           - secretRef:
-              name: access-control
-              {{- if .Values.extraEnvVarsSecret }}
               name: {{ include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVarsSecret "context" $) }}
             {{- end }}
           {{- if .Values.extraVolumeMounts }}

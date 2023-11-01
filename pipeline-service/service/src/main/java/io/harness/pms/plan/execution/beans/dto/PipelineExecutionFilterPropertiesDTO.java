@@ -50,6 +50,7 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
   private org.bson.Document moduleProperties;
   private List<TriggerType> triggerTypes;
   private List<String> triggerIdentifiers;
+  private ExecutionModeFilter executionModeFilter;
   @Override
   public FilterType getFilterType() {
     return FilterType.PIPELINEEXECUTION;
@@ -59,7 +60,7 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
   public PipelineExecutionFilterPropertiesDTO(Map<String, String> tags, Map<String, String> labels,
       FilterType filterType, List<NGTag> pipelineTags, List<NGLabel> pipelineLabels, List<ExecutionStatus> status,
       String pipelineName, TimeRange timeRange, Document moduleProperties, List<TriggerType> triggerTypes,
-      List<String> triggerIdentifiers) {
+      List<String> triggerIdentifiers, ExecutionModeFilter executionModeFilter) {
     super(tags, labels, filterType);
     this.pipelineTags = pipelineTags;
     this.pipelineLabels = pipelineLabels;
@@ -69,5 +70,6 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
     this.moduleProperties = moduleProperties;
     this.triggerTypes = triggerTypes;
     this.triggerIdentifiers = triggerIdentifiers;
+    this.executionModeFilter = executionModeFilter;
   }
 }

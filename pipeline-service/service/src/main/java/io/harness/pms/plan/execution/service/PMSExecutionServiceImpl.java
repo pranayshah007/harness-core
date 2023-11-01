@@ -9,6 +9,8 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
+import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
@@ -35,6 +37,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -42,7 +45,6 @@ import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
@@ -54,7 +56,6 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
-import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.helpers.YamlExpressionResolveHelper;
@@ -73,6 +74,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionModeFilter;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -158,26 +160,32 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       pmsPipelineServiceHelper.setPermittedPipelines(
           accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
-    // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
-    if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.isChildPipeline).in(null, false);
-    }
+
     if (EmptyPredicate.isNotEmpty(statusList)) {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }
-
+    // This condition is being used by some customers so we are not removing it at the moment.
+    // showAllExecution will be handled by the ExecutionModeFilter once this condition has been removed.
     if (!showAllExecutions) {
       criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
     }
-    criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
-      populatePipelineFilterUsingIdentifierANDOperator(filterCriteria, accountId, orgId, projectId, filterIdentifier);
+      populatePipelineFilterUsingIdentifierANDOperator(
+          filterCriteria, accountId, orgId, projectId, filterIdentifier, EmptyPredicate.isNotEmpty(pipelineIdentifier));
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
-      populatePipelineFilterANDOperator(filterCriteria, filterProperties);
+      populatePipelineFilterANDOperator(
+          filterCriteria, filterProperties, EmptyPredicate.isNotEmpty(pipelineIdentifier));
+    } else {
+      // If filterIdentifier and filterCriteria both are null then we need default behaviour.
+      // So instead of duplicating the logic here, we are calling the same flow with filterCriteria with default
+      // executionMode value
+      populatePipelineFilterANDOperator(filterCriteria,
+          PipelineExecutionFilterPropertiesDTO.builder().executionModeFilter(ExecutionModeFilter.DEFAULT).build(),
+          EmptyPredicate.isNotEmpty(pipelineIdentifier));
     }
 
     if (myDeployments) {
@@ -338,10 +346,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
-      populatePipelineFilterUsingIdentifierOROperator(
-          filterCriteria, accountId, orgId, projectId, filterIdentifier, filterCriteriaList);
+      populatePipelineFilterUsingIdentifierOROperator(filterCriteria, accountId, orgId, projectId, filterIdentifier,
+          filterCriteriaList, EmptyPredicate.isNotEmpty(pipelineIdentifier));
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
-      populatePipelineFilterOROperator(filterCriteria, filterProperties, filterCriteriaList);
+      populatePipelineFilterOROperator(
+          filterCriteria, filterProperties, filterCriteriaList, EmptyPredicate.isNotEmpty(pipelineIdentifier));
     }
 
     List<Criteria> criteriaList = new LinkedList<>();
@@ -378,31 +387,34 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
-    populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(
-        criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, ModuleInfoOperators.AND, null);
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier,
+      boolean isPipelineIdentifierPresent) {
+    populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(criteria, accountIdentifier, orgIdentifier,
+        projectIdentifier, filterIdentifier, ModuleInfoOperators.AND, null, isPipelineIdentifierPresent);
   }
 
   private void populatePipelineFilterUsingIdentifierOROperator(Criteria criteria, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier, List<Criteria> criteriaList) {
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier, List<Criteria> criteriaList,
+      boolean isPipelineIdentifierPresent) {
     populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(criteria, accountIdentifier, orgIdentifier,
-        projectIdentifier, filterIdentifier, ModuleInfoOperators.OR, criteriaList);
+        projectIdentifier, filterIdentifier, ModuleInfoOperators.OR, criteriaList, isPipelineIdentifierPresent);
   }
 
   private void populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(Criteria criteria,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier,
-      ModuleInfoOperators operatorOnModules, List<Criteria> criteriaList) {
+      ModuleInfoOperators operatorOnModules, List<Criteria> criteriaList, boolean isPipelineIdentifierPresent) {
     FilterDTO pipelineFilterDTO = this.filterService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINEEXECUTION);
     if (pipelineFilterDTO == null) {
       throw new InvalidRequestException("Could not find a pipeline filter with the identifier ");
     }
     if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
-      this.populatePipelineFilterOROperator(
-          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), criteriaList);
+      this.populatePipelineFilterOROperator(criteria,
+          (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), criteriaList,
+          isPipelineIdentifierPresent);
     } else {
-      this.populatePipelineFilterANDOperator(
-          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
+      this.populatePipelineFilterANDOperator(criteria,
+          (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), isPipelineIdentifierPresent);
     }
   }
 
@@ -410,7 +422,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   // criteria.
   private void populatePipelineFilterParametrisedOperatorOnModules(Criteria criteria,
       @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, ModuleInfoOperators operatorOnModules,
-      List<Criteria> criteriaList) {
+      List<Criteria> criteriaList, boolean isPipelineIdentifierPresent) {
     if (pipelineFilter.getTimeRange() != null) {
       TimeRange timeRange = pipelineFilter.getTimeRange();
       // Apply filter to criteria if StartTime and EndTime both are not null.
@@ -428,6 +440,18 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getStatus())) {
       criteria.and(PlanExecutionSummaryKeys.status).in(pipelineFilter.getStatus());
+    }
+
+    if (ExecutionModeFilter.ROLLBACK == pipelineFilter.getExecutionModeFilter()) {
+      criteria.and(PlanExecutionSummaryKeys.executionMode).in(POST_EXECUTION_ROLLBACK, PIPELINE_ROLLBACK);
+    } else if (ExecutionModeFilter.DEFAULT == pipelineFilter.getExecutionModeFilter()) {
+      criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
+      if (!isPipelineIdentifierPresent) {
+        // To show non-child execution. First or condition is added for older execution which do not have
+        // parentStageInfo
+        criteria.and(PlanExecutionSummaryKeys.isChildPipeline).in(null, false);
+      }
+      criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
     }
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineName())) {
@@ -469,14 +493,17 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
   }
 
-  private void populatePipelineFilterANDOperator(
-      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
-    populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.AND, null);
+  private void populatePipelineFilterANDOperator(Criteria criteria,
+      @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, boolean isPipelineIdentifierPresent) {
+    populatePipelineFilterParametrisedOperatorOnModules(
+        criteria, pipelineFilter, ModuleInfoOperators.AND, null, isPipelineIdentifierPresent);
   }
 
-  private void populatePipelineFilterOROperator(
-      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
-    populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
+  private void populatePipelineFilterOROperator(Criteria criteria,
+      @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList,
+      boolean isPipelineIdentifierPresent) {
+    populatePipelineFilterParametrisedOperatorOnModules(
+        criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList, isPipelineIdentifierPresent);
   }
 
   private void addPipelineLabelsCriteria(List<Criteria> criteriaList, List<NGLabel> pipelineLabels) {
@@ -505,8 +532,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
 
       // InputSet yaml used during execution
-      String yaml = executionSummaryEntity.getInputSetYaml();
-      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+      String yaml =
+          resolveExpressionsInYaml(executionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
 
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
@@ -537,32 +564,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     throw new InvalidRequestException(
         "Invalid request : pipeline execution with planExecutionId " + planExecutionId + " has been deleted");
-  }
-
-  private String getLatestTemplate(
-      String accountId, String orgId, String projectId, PipelineExecutionSummaryEntity executionSummaryEntity) {
-    EntityGitDetails entityGitDetails = executionSummaryEntity.getEntityGitDetails();
-    // latestTemplate is templateYaml for the pipeline in the current branch with the latest changes
-    String latestTemplate;
-    if (entityGitDetails != null) {
-      // will come here if the pipeline was remote
-      GitSyncBranchContext gitSyncBranchContext = GitSyncBranchContext.builder()
-                                                      .gitBranchInfo(GitEntityInfo.builder()
-                                                                         .branch(entityGitDetails.getBranch())
-                                                                         .repoName(entityGitDetails.getRepoName())
-                                                                         .build())
-                                                      .build();
-      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-        latestTemplate = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId,
-            executionSummaryEntity.getPipelineIdentifier(), entityGitDetails.getBranch(),
-            entityGitDetails.getRepoIdentifier(), null);
-      }
-    } else {
-      // will come here if the pipeline was INLINE
-      latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
-    }
-    return latestTemplate;
   }
 
   @Override
@@ -751,8 +752,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
     String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
-    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
-    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    String inputSetYaml = resolveExpressionsInYaml(
+        pipelineExecutionSummaryEntity, resolveExpressions, planExecutionId, resolveExpressionsType);
     if (EmptyPredicate.isEmpty(pipelineTemplate)) {
       return "";
     }
@@ -760,8 +761,18 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
   }
 
-  private String resolveExpressionsInYaml(
-      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+  private String resolveExpressionsInYaml(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity,
+      boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    String yaml = pipelineExecutionSummaryEntity.getResolvedUserInputSetYaml();
+    if (yaml != null && !ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS.equals(resolveExpressionsType)) {
+      /* since `resolvedUserInputSetYaml` contains the resolved input set using
+        `ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS`, we can return it immediately. */
+      return yaml;
+    }
+    // Otherwise we need to fetch the raw inputSetYaml from PlanExecutionMetadata
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
+    yaml = planExecutionMetadata.getInputSetYaml();
     if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
       yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
           yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);

@@ -223,7 +223,6 @@ import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
-import io.fabric8.utils.CountingMap;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -459,17 +458,16 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
       PageRequest<InfrastructureDefinition> pageRequest, String appId, String envId) {
     PageResponse<InfrastructureDefinition> infrastructureDefinitionPageResponse = list(pageRequest);
     List<InfrastructureMapping> infrastructureMappings = infrastructureMappingService.listInfraMappings(appId, envId);
-    CountingMap infraDefinitionIdMappingCount = new CountingMap();
+    HashMap<String, Integer> infraDefinitionIdMappingCount = new HashMap<>();
     infrastructureMappings.forEach(infrastructureMapping
-        -> infraDefinitionIdMappingCount.increment(infrastructureMapping.getInfrastructureDefinitionId()));
+        -> infraDefinitionIdMappingCount.merge(infrastructureMapping.getInfrastructureDefinitionId(), 1, Integer::sum));
     List<InfraDefinitionDetail> infraDefinitionDetailList =
         infrastructureDefinitionPageResponse.getResponse()
             .stream()
             .map(infrastructureDefinition
                 -> InfraDefinitionDetail.builder()
                        .infrastructureDefinition(infrastructureDefinition)
-                       .countDerivedInfraMappings(
-                           infraDefinitionIdMappingCount.count(infrastructureDefinition.getUuid()))
+                       .countDerivedInfraMappings(infraDefinitionIdMappingCount.get(infrastructureDefinition.getUuid()))
                        .build())
             .collect(Collectors.toList());
     return PageResponseBuilder.aPageResponse().withResponse(infraDefinitionDetailList).build();

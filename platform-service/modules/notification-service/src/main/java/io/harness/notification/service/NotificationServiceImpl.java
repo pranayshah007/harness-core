@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ng.beans.PageRequest;
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.Notification.NotificationKeys;
@@ -116,5 +117,11 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void deleteByAccountIdentifier(String accountIdentifier) {
     notificationRepository.deleteByAccountIdentifier(accountIdentifier);
+  }
+
+  @Override
+  public boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest) {
+    //@TODO: implementation
+    return false;
   }
 }

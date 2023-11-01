@@ -81,6 +81,9 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
         if (StringUtils.isNotBlank(azureInfra.getHostConnectionAttrs())) {
           connectorIds.add(azureInfra.getHostConnectionAttrs());
         }
+        if (StringUtils.isNotBlank(azureInfra.getWinRmConnectionAttributes())) {
+          connectorIds.add(azureInfra.getWinRmConnectionAttributes());
+        }
         break;
       case PHYSICAL_DATA_CENTER:
         if (DeploymentType.WINRM.equals(infrastructureDefinition.getDeploymentType())) {
@@ -145,10 +148,11 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
     NgEntityDetail connectorDetail =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(azureInfra.getCloudProviderId()).build())
             .getNgEntityDetail();
+    String connectionRef = isNotEmpty(azureInfra.getHostConnectionAttrs()) ? azureInfra.getHostConnectionAttrs()
+                                                                           : azureInfra.getWinRmConnectionAttributes();
     return SshWinRmAzureInfrastructure.builder()
         .credentialsRef(ParameterField.createValueField(
-            MigratorUtility.getSecretRef(migratedEntities, azureInfra.getHostConnectionAttrs(), CONNECTOR)
-                .toSecretRefStringValue()))
+            MigratorUtility.getSecretRef(migratedEntities, connectionRef, CONNECTOR).toSecretRefStringValue()))
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
         .subscriptionId(ParameterField.createValueField(azureInfra.getSubscriptionId()))
         .resourceGroup(ParameterField.createValueField(azureInfra.getResourceGroup()))

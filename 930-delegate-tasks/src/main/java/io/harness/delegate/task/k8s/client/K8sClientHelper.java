@@ -53,6 +53,7 @@ public class K8sClientHelper {
         .resourceIds(steadyStateDTO.getResourceIds())
         .workingDirectory(steadyStateDTO.getK8sDelegateTaskParams().getWorkingDirectory())
         .isErrorFrameworkEnabled(steadyStateDTO.isErrorFrameworkEnabled())
+        .startTime(steadyStateDTO.getStartTime())
         .build();
   }
 

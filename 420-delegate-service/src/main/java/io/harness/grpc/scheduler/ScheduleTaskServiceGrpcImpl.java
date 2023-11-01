@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.stream.Collectors.toMap;
 
 import io.harness.beans.DelegateTask;
-import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.Execution;
 import io.harness.delegate.K8sInfraSpec;
 import io.harness.delegate.LogConfig;
@@ -166,8 +165,6 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,
       final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String taskId,
       final List<ExecutionCapability> capabilities) {
-    final var setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
-
     final var task =
         DelegateTask.builder()
             .uuid(taskId)
@@ -177,8 +174,6 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
             .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
             .waitId(taskId)
             .accountId(schedulingConfig.getAccountId())
-            .setupAbstractions(setupAbstractions)
-            .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
             .executionCapabilities(capabilities)
             .selectionLogsTrackingEnabled(schedulingConfig.getSelectionTrackingLogEnabled())
             .taskData(taskData)

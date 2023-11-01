@@ -150,6 +150,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                            .build();
 
     String stageId = params.getStageRuntimeId();
+
     SetupVmRequest.Config config = SetupVmRequest.Config.builder()
                                        .envs(env)
                                        .secrets(secrets)
@@ -161,6 +162,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                                       .indirectUpload(params.isLogSvcIndirectUpload())
                                                       .build())
                                        .tiConfig(tiConfig)
+                                       .tty(params.isTty())
                                        .volumes(getVolumes(params.getVolToMountPath()))
                                        .build();
 

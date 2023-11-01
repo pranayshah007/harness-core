@@ -9,6 +9,7 @@ package io.harness.delegate.authenticator;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_AGENT_MTLS_AUTHORITY;
@@ -46,6 +47,10 @@ import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
 
 import software.wings.beans.Account;
+import software.wings.beans.account.AccountStatus;
+import software.wings.exception.AccountNotFoundException;
+import software.wings.helpers.ext.account.DeleteAccountHelper;
+import software.wings.service.intfc.AccountService;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -84,7 +89,12 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
-  @Inject private DelegateSecretManager delegateSecretManager;
+  @Inject private io.harness.delegate.authenticator.DelegateSecretManager delegateSecretManager;
+
+  @Inject private AccountService accountService;
+  @Inject private DeleteAccountHelper deleteAccountHelper;
+
+  private static final String UNAUTHORIZED = "Unauthorized";
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -161,6 +171,21 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     if (!decryptedWithTokenFromCache && !decryptedWithActiveTokenFromDB) {
       decryptWithAccountKey(accountId, encryptedJWT);
+    }
+
+    // If we are reaching here that means, we have successfully decrypted jwt.
+    // If account is deleted or not present in database, fail auth and delete delegate data.
+    try {
+      String accountStatus = accountService.getAccountStatus(accountId);
+      if (AccountStatus.DELETED.equals(accountStatus)) {
+        log.debug("account {} does not exist", accountId);
+        deleteAccountHelper.deleteDataForDeletedAccount(accountId);
+        throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
+      }
+    } catch (AccountNotFoundException exception) {
+      log.debug("account {} does not exist", accountId, exception);
+      deleteAccountHelper.deleteDataForDeletedAccount(accountId);
+      throw new InvalidRequestException(UNAUTHORIZED, ACCOUNT_DOES_NOT_EXIST, null);
     }
 
     try {

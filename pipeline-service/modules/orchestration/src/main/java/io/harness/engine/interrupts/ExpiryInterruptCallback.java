@@ -44,15 +44,17 @@ public class ExpiryInterruptCallback implements OldNotifyCallback {
   InterruptConfig interruptConfig;
   InterruptType interruptType;
   Boolean expireAndEndExecution;
+  Map<String, String> metadata;
 
   @Builder
   public ExpiryInterruptCallback(String nodeExecutionId, String interruptId, InterruptConfig interruptConfig,
-      InterruptType interruptType, Boolean expireAndEndExecution) {
+      InterruptType interruptType, Boolean expireAndEndExecution, Map<String, String> metadata) {
     this.nodeExecutionId = nodeExecutionId;
     this.interruptId = interruptId;
     this.interruptConfig = interruptConfig;
     this.interruptType = interruptType;
     this.expireAndEndExecution = expireAndEndExecution;
+    this.metadata = metadata;
   }
 
   @Override
@@ -77,7 +79,7 @@ public class ExpiryInterruptCallback implements OldNotifyCallback {
         nodeExecutionId, Set.of(NodeExecutionKeys.uuid, NodeExecutionKeys.ambiance, NodeExecutionKeys.unitProgresses));
     if (expireAndEndExecution) {
       expiryHelper.expireDiscontinuedInstanceAndEndAllNodesExecution(
-          nodeExecution, interruptConfig, interruptId, interruptType);
+          nodeExecution, interruptConfig, interruptId, interruptType, metadata);
     } else {
       expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, interruptType);
     }

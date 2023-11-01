@@ -42,6 +42,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   private IdpCommonService idpCommonService;
   private BackstageEnvVariableService backstageEnvVariableService;
 
+  @Deprecated(forRemoval = true)
   @Override
   public Response createBackstageEnvVariable(@Valid BackstageEnvVariableRequest body, String harnessAccount) {
     idpCommonService.checkUserAuthorization();
@@ -76,6 +77,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
         .build();
   }
 
+  @Deprecated(forRemoval = true)
   @Override
   public Response deleteBackstageEnvVariable(String backstageEnvVariable, String harnessAccount) {
     idpCommonService.checkUserAuthorization();
@@ -152,6 +154,7 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 
+  @Deprecated(forRemoval = true)
   @Override
   public Response updateBackstageEnvVariable(
       String backstageEnvVariableId, @Valid BackstageEnvVariableRequest request, String harnessAccount) {

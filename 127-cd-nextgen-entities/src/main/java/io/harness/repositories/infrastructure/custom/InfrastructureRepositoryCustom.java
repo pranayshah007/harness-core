@@ -48,5 +48,8 @@ public interface InfrastructureRepositoryCustom {
 
   Optional<InfrastructureEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
-      String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch);
+      String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
+
+  InfrastructureEntity getRemoteInfrastructureWithYaml(
+      InfrastructureEntity infrastructure, boolean loadFromCache, boolean loadFromFallbackBranch);
 }

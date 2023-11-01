@@ -10,9 +10,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
+import lombok.Builder;
 import lombok.Value;
 
 @Value
+@Builder
 @OwnedBy(HarnessTeam.SSCA)
 public class BuildMetadata {
   private String image;

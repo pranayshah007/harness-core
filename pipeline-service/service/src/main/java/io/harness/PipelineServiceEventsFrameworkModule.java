@@ -92,6 +92,9 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(EventsFrameworkConstants.ASYNC_FILTER_CREATION))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Producer.class)
@@ -171,6 +174,11 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.ASYNC_FILTER_CREATION, PIPELINE_SERVICE.getServiceId(),
               redissonClient, EventsFrameworkConstants.ASYNC_FILTER_CREATION_EVENTS_STREAM_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.FILTER_CREATION_EVENTS_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_ACTIVITY, redissonClient,
+              EventsFrameworkConstants.ENTITY_ACTIVITY_MAX_TOPIC_SIZE, PIPELINE_SERVICE.getServiceId(),
+              redisConfig.getEnvNamespace()));
       if (shouldUseEventsFrameworkSnapshotDebezium) {
         RedisConfig redisConfigSnapshot = this.eventsFrameworkSnapshotConfiguration.getRedisConfig();
         RedissonClient redissonClientSnapshot = RedissonClientFactory.getClient(redisConfigSnapshot);

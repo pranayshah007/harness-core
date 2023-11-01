@@ -7,9 +7,11 @@
 
 package io.harness.migrations.timescaledb.data;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
+import io.harness.data.structure.ListUtils;
 import io.harness.migrations.TimeScaleDBDataMigration;
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.DBUtils;
@@ -25,7 +27,6 @@ import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -168,7 +169,8 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
 
     } else {
       insertPreparedStatement.setString(13, null);
-      insertArrayData(10, dbConnection, insertPreparedStatement, Lists.newArrayList(workflowExecution.getWorkflowId()));
+      insertArrayData(
+          10, dbConnection, insertPreparedStatement, ListUtils.newArrayList(workflowExecution.getWorkflowId()));
     }
 
     insertArrayData(12, dbConnection, insertPreparedStatement, workflowExecution.getEnvIds());
@@ -207,7 +209,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
 
   private void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       preparedStatement.setArray(index, array);
     } else {
@@ -216,7 +218,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
   }
 
   private List<String> getEnvTypes(WorkflowExecution workflowExecution) {
-    if (!Lists.isNullOrEmpty(workflowExecution.getEnvironments())) {
+    if (!isEmpty(workflowExecution.getEnvironments())) {
       return workflowExecution.getEnvironments()
           .stream()
           .map(envSummary -> envSummary.getEnvironmentType().name())

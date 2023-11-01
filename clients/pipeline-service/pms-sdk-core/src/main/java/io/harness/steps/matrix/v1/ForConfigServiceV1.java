@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -25,7 +26,6 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +76,7 @@ public class ForConfigServiceV1 implements StrategyConfigServiceV1 {
       for (int i = 0; i < forConfig.getIterations().getValue(); i++) {
         JsonNode clonedNode = StrategyUtils.replaceExpressions(
             JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, forConfig.getIterations().getValue(), null);
-        StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
+        StrategyUtils.modifyJsonNode(clonedNode, ListUtils.newArrayList(String.valueOf(i)));
         jsonNodes.add(clonedNode);
       }
     }

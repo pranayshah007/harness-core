@@ -92,7 +92,17 @@ func ParseWebhook(ctx context.Context, in *pb.ParseWebhookRequest,
 				Comment: comment,
 			},
 		}, nil
-
+	case *scm.PullRequestCommentHook:
+		comment, pullReqCommentHookErr := converter.ConvertPullRequestCommentHook(event)
+		if pullReqCommentHookErr != nil {
+			return nil, pullReqCommentHookErr
+		}
+		log.Infow("Successfully parsed pr comment", "elapsed_time_ms", utils.TimeSince(start))
+		return &pb.ParseWebhookResponse{
+			Hook: &pb.ParseWebhookResponse_Comment{
+				Comment: comment,
+			},
+		}, nil
 	case *scm.BranchHook:
 		branch, branchHookErr := converter.ConvertBranchHook(event)
 		if branchHookErr != nil {

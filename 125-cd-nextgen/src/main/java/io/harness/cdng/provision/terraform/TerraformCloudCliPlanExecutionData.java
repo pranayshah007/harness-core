@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -53,6 +54,8 @@ public class TerraformCloudCliPlanExecutionData {
   @NotNull TerraformPlanCommand command;
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
 
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipStateStorage;
+
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
     TerraformPlanExecutionDataParametersBuilder builder =
@@ -73,9 +76,10 @@ public class TerraformCloudCliPlanExecutionData {
         }
       });
     }
-    builder.varFiles(varFiles);
-    builder.isTerraformCloudCli(ParameterField.createValueField(true));
-    builder.cliOptionFlags(commandFlags);
+    builder.varFiles(varFiles)
+        .isTerraformCloudCli(ParameterField.createValueField(true))
+        .cliOptionFlags(commandFlags)
+        .skipStateStorage(skipStateStorage);
     return builder.build();
   }
 

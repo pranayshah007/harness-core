@@ -95,12 +95,12 @@ public abstract class DataCollectionTask
   }
   @Id private String uuid;
   @NonNull private String accountId;
-  @FdIndex private String verificationTaskId;
+  private String verificationTaskId;
   @FdIndex private String dataCollectionWorkerId;
   private Type type;
   @Getter(AccessLevel.NONE) @Builder.Default private boolean queueAnalysis = true;
   private String nextTaskId;
-  @FdIndex @NonNull private DataCollectionExecutionStatus status;
+  @NonNull private DataCollectionExecutionStatus status;
 
   private Instant lastPickedAt;
   private Instant firstPickedAt;

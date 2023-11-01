@@ -99,4 +99,9 @@ public interface VerificationManagerClient {
   @POST(VerificationConstants.LEARNING_METRIC_EXP_URL + VerificationConstants.UPDATE_MISMATCH)
   Call<RestResponse<Boolean>> updateMismatchStatusInExperiment(
       @Query("stateExecutionId") String stateExecutionId, @Query("analysisMinute") Integer analysisMinute);
+
+  @POST("account/validate-delegate-token")
+  Call<RestResponse<Boolean>> authenticateDelegateRequest(@Query("accountId") String accountId,
+      @Query("delegateToken") String delegateToken, @Query("delegateId") String delegateId,
+      @Query("delegateTokenName") String delegateTokenName, @Query("agentMtlsAuthority") String agentMtlsAuthority);
 }

@@ -68,7 +68,7 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .newYaml(getYamlStringForCatalogConnector(catalogConnectorCreateEvent.getNewCatalogConnectorEntity()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -87,7 +87,7 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .newYaml(getYamlStringForCatalogConnector(catalogConnectorUpdateEvent.getNewCatalogConnectorEntity()))
             .oldYaml(getYamlStringForCatalogConnector(catalogConnectorUpdateEvent.getOldCatalogConnectorEntity()))
             .timestamp(outboxEvent.getCreatedAt())

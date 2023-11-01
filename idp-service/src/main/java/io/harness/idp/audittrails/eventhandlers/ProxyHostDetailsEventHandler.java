@@ -74,7 +74,7 @@ public class ProxyHostDetailsEventHandler implements OutboxEventHandler {
 
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.IDP)
                                 .newYaml(getYamlStringForProxyHost(proxyHostCreateEvent.getNewProxyHostDetail()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -92,7 +92,7 @@ public class ProxyHostDetailsEventHandler implements OutboxEventHandler {
 
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.IDP)
                                 .newYaml(getYamlStringForProxyHost(proxyHostUpdateEvent.getNewProxyHostDetail()))
                                 .oldYaml(getYamlStringForProxyHost(proxyHostUpdateEvent.getOldProxyHostDetail()))
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -111,7 +111,7 @@ public class ProxyHostDetailsEventHandler implements OutboxEventHandler {
 
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.IDP)
                                 .oldYaml(getYamlStringForProxyHost(proxyHostDeleteEvent.getOldProxyHostDetail()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

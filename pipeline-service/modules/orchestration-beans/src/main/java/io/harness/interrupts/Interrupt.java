@@ -48,7 +48,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(CDC)
 @Value
-@Builder
+@Builder(toBuilder = true)
 @StoreIn(DbAliases.PMS)
 @Entity(value = "interrupts", noClassnameStored = true)
 @Document(value = "interrupts")

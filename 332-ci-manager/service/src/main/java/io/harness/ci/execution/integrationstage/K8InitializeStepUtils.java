@@ -92,7 +92,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -171,7 +170,7 @@ public class K8InitializeStepUtils {
       OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
       String stepGroupIdOfParent) {
     CIAbstractStepNode stepNode = IntegrationStageUtils.getStepNode(executionWrapper);
-    if (Strings.isNotBlank(stepGroupIdOfParent)) {
+    if (isNotEmpty(stepGroupIdOfParent)) {
       stepNode.setIdentifier(stepGroupIdOfParent + "_" + stepNode.getIdentifier());
     }
 
@@ -778,7 +777,7 @@ public class K8InitializeStepUtils {
 
     // For parallel steps, as they don't have uuid field
     for (ExecutionWrapperConfig step : steps) {
-      if (Strings.isNullOrBlank(step.getUuid())) {
+      if (isEmpty(step.getUuid())) {
         Integer request = getExecutionWrapperRequestWithStrategy(step, strategy, accountId, resource);
         executionWrapperRequest = Math.max(executionWrapperRequest, request);
       }
@@ -854,7 +853,7 @@ public class K8InitializeStepUtils {
   public Map<String, List<ExecutionWrapperConfig>> getUUIDStepsMap(List<ExecutionWrapperConfig> steps) {
     Map<String, List<ExecutionWrapperConfig>> map = new HashMap<>();
     for (ExecutionWrapperConfig step : steps) {
-      if (Strings.isNotBlank(step.getUuid())) {
+      if (isNotEmpty(step.getUuid())) {
         if (!map.containsKey(step.getUuid())) {
           map.put(step.getUuid(), new ArrayList<>());
         }
@@ -1146,7 +1145,7 @@ public class K8InitializeStepUtils {
     if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
         && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       String stepIdentifier = stepElement.getIdentifier();
-      if (Strings.isNotBlank(stepGroupIdOfParent)) {
+      if (isNotEmpty(stepGroupIdOfParent)) {
         stepIdentifier = stepGroupIdOfParent + "_" + stepIdentifier;
       }
 

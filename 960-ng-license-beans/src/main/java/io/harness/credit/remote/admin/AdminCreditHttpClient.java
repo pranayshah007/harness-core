@@ -13,10 +13,13 @@ import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import java.util.List;
+import javax.ws.rs.QueryParam;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -30,4 +33,12 @@ public interface AdminCreditHttpClient {
 
   @GET(ADMIN_CREDIT_API + "/{accountIdentifier}")
   Call<ResponseDTO<List<CreditDTO>>> getAccountCredit(@Path("accountIdentifier") String accountIdentifier);
+
+  @PUT(ADMIN_CREDIT_API + "/{accountIdentifier}")
+  Call<ResponseDTO<CreditDTO>> updateAccountCredit(
+      @Path("accountIdentifier") String accountIdentifier, @Body CreditDTO creditDTO);
+
+  @DELETE(ADMIN_CREDIT_API + "/{creditId}")
+  Call<ResponseDTO<Void>> deleteAccountCredit(
+      @Path("creditId") String creditId, @QueryParam("{accountIdentifier}") String accountIdentifier);
 }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -169,4 +170,7 @@ public interface BambooService {
   @SuppressWarnings("squid:S00107")
   Pair<String, InputStream> downloadArtifacts(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       List<String> artifactPaths, String planKey, String buildNo);
+
+  List<ArtifactFileMetadata> getArtifactFileMetadataList(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, String planKey, String buildNumber, List<String> artifactPathRegex);
 }

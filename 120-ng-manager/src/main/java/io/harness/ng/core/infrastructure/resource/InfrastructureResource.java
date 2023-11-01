@@ -427,8 +427,8 @@ public class InfrastructureResource {
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "list");
 
-    Criteria criteria = InfrastructureFilterHelper.createListCriteria(
-        accountId, orgIdentifier, projectIdentifier, envIdentifier, searchTerm, infraIdentifiers, deploymentType);
+    Criteria criteria = InfrastructureFilterHelper.createListCriteria(accountId, orgIdentifier, projectIdentifier,
+        envIdentifier, searchTerm, infraIdentifiers, deploymentType, repoName);
     Pageable pageRequest;
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, InfrastructureEntityKeys.createdAt));
@@ -541,6 +541,34 @@ public class InfrastructureResource {
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList =
         infrastructureEntityService.createInfrastructureYamlMetadata(accountId, orgIdentifier, projectIdentifier,
             environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers());
+    return ResponseDTO.newResponse(
+        InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
+  }
+
+  @POST
+  @Path("v2/infrastructure-yaml-metadata")
+  @ApiOperation(value = "This api returns infrastructure YAML and runtime input YAML",
+      nickname = "getInfrastructureYamlAndRuntimeInputsV2")
+  @Hidden
+  public ResponseDTO<InfrastructureYamlMetadataDTO>
+  getInfrastructureYamlAndRuntimeInputsV2(@Parameter(description = INFRASTRUCTURE_YAML_METADATA_INPUT_PARAM_MESSAGE)
+                                          @Valid @NotNull InfrastructureYamlMetadataApiInput infrastructureYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info for the Base entity")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache") @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    List<InfrastructureYamlMetadata> infrastructureYamlMetadataList =
+        infrastructureEntityService.createInfrastructureYamlMetadata(accountId, orgIdentifier, projectIdentifier,
+            environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers(),
+            GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache));
     return ResponseDTO.newResponse(
         InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
   }

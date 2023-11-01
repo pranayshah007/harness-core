@@ -44,6 +44,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
@@ -90,7 +91,6 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -688,9 +688,9 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
         : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId()).toDTO();
 
     if (yamlGitConfig != null) {
-      final String gitConnectorId = Strings.emptyIfNull(yamlGitConfig.getGitConnectorId());
-      final String branchName = Strings.emptyIfNull(yamlGitConfig.getBranchName());
-      final String repositoryName = Strings.nullIfEmpty(yamlGitConfig.getRepositoryName());
+      final String gitConnectorId = HarnessStringUtils.emptyIfNull(yamlGitConfig.getGitConnectorId());
+      final String branchName = HarnessStringUtils.emptyIfNull(yamlGitConfig.getBranchName());
+      final String repositoryName = HarnessStringUtils.nullIfEmpty(yamlGitConfig.getRepositoryName());
       failedUpdateOperations.set(GitSyncErrorKeys.gitConnectorId, gitConnectorId);
       failedUpdateOperations.set(GitSyncErrorKeys.branchName, branchName);
       failedUpdateOperations.set(GitSyncErrorKeys.yamlGitConfigId, yamlGitConfig.getUuid());

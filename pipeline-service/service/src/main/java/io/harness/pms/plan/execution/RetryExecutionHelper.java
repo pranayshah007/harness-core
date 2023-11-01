@@ -195,8 +195,8 @@ public class RetryExecutionHelper {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     // if pipeline is having templates we need to use resolved yaml
     if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
-      templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
-          accountId, orgIdentifier, projectIdentifier, updatedPipeline, loadFromCache);
+      templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(accountId, orgIdentifier,
+          projectIdentifier, updatedPipeline, loadFromCache, optionalPipelineEntity.get().getHarnessVersion());
       if (templateMergeResponseDTO != null) {
         updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
             ? templateMergeResponseDTO.getMergedPipelineYaml()

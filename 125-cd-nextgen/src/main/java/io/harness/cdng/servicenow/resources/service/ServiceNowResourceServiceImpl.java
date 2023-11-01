@@ -27,6 +27,7 @@ import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -63,7 +64,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.util.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Lists;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,7 +82,7 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
   private static final String CHANGE_REQUEST = "CHANGE_REQUEST";
 
   private static final List<String> DEFAULT_READ_ONLY_STANDARD_TEMPLATE_FIELDS =
-      Lists.newArrayList("description", "backout_plan", "test_plan", "implementation_plan");
+      ListUtils.newArrayList("description", "backout_plan", "test_plan", "implementation_plan");
 
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;

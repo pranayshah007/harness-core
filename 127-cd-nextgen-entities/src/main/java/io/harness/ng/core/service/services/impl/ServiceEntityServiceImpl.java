@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.services.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -47,9 +48,12 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
@@ -124,9 +128,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -228,8 +234,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
+    } catch (ExplanationException | HintException | ScmException ex) {
+      log.error(String.format("Error error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
+      throw ex;
     } catch (Exception ex) {
-      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      log.error(String.format("Unexpected error while saving service: [%s]", serviceEntity.getIdentifier()), ex);
       throw new InvalidRequestException(
           String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
     }
@@ -892,14 +901,16 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private List<ServiceV2YamlMetadata> getServicesYamlMetadataInternal(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
       boolean loadFromCache) {
-    List<ServiceV2YamlMetadata> yamlMetadata = new ArrayList<>();
-
+    // Using SynchronousQueue to avoid ConcurrentModification Issues.
+    Queue<ServiceV2YamlMetadata> yamlMetadataQueue = new ConcurrentLinkedQueue<>();
     // Get all service entities
     List<ServiceEntity> serviceEntities =
         getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
 
-    for (int i = 0; i < serviceEntities.size(); i += REMOTE_SERVICE_BATCH_SIZE) {
-      List<ServiceEntity> batch = getBatch(serviceEntities, i);
+    // Sorting List so that git calls are made parallelly at the earliest.
+    List<ServiceEntity> sortedServiceEntities = sortByStoreType(serviceEntities);
+    for (int i = 0; i < sortedServiceEntities.size(); i += REMOTE_SERVICE_BATCH_SIZE) {
+      List<ServiceEntity> batch = getBatch(sortedServiceEntities, i);
 
       List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
 
@@ -912,14 +923,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branchInfo)) {
               ServiceEntity temp = serviceRepository.getRemoteServiceWithYaml(serviceEntity, loadFromCache, false);
-              yamlMetadata.add(createServiceV2YamlMetadata(temp));
+              yamlMetadataQueue.add(createServiceV2YamlMetadata(temp));
             }
           }, executorService);
 
           batchFutures.add(future);
         } else {
           // For inline services, process YAML immediately
-          yamlMetadata.add(createServiceV2YamlMetadata(serviceEntity));
+          yamlMetadataQueue.add(createServiceV2YamlMetadata(serviceEntity));
         }
       }
 
@@ -928,7 +939,34 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       allOf.join();
     }
 
-    return yamlMetadata;
+    return fetchResponsesInListFromQueue(yamlMetadataQueue);
+  }
+
+  private List<ServiceEntity> sortByStoreType(List<ServiceEntity> serviceEntities) {
+    List<ServiceEntity> sortedInfrastructureEntities = new ArrayList<>();
+    for (ServiceEntity service : serviceEntities) {
+      if (StoreType.REMOTE.equals(service.getStoreType())) {
+        sortedInfrastructureEntities.add(service);
+      }
+    }
+
+    for (ServiceEntity service : serviceEntities) {
+      // StoreType can be null.
+      if (!StoreType.REMOTE.equals(service.getStoreType())) {
+        sortedInfrastructureEntities.add(service);
+      }
+    }
+    return sortedInfrastructureEntities;
+  }
+
+  private static List<ServiceV2YamlMetadata> fetchResponsesInListFromQueue(
+      Queue<ServiceV2YamlMetadata> envInputYamlAndServiceOverridesQueue) {
+    List<ServiceV2YamlMetadata> envInputYamlAndServiceOverridesList = new ArrayList<>();
+    while (!envInputYamlAndServiceOverridesQueue.isEmpty()) {
+      ServiceV2YamlMetadata element = envInputYamlAndServiceOverridesQueue.poll();
+      envInputYamlAndServiceOverridesList.add(element);
+    }
+    return envInputYamlAndServiceOverridesList;
   }
 
   private static List<ServiceEntity> getBatch(List<ServiceEntity> remoteServiceEntities, int i) {

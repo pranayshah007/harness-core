@@ -134,4 +134,20 @@ public class BillingDataPipelineRecordDaoImpl implements BillingDataPipelineReco
 
     return hPersistence.delete(query);
   }
+
+  @Override
+  public long count(String accountId) {
+    return hPersistence.createQuery(BillingDataPipelineRecord.class)
+        .field(BillingDataPipelineRecordKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  @Override
+  public boolean deleteAllForAccount(String accountId) {
+    Query<BillingDataPipelineRecord> query = hPersistence.createQuery(BillingDataPipelineRecord.class)
+                                                 .field(BillingDataPipelineRecordKeys.accountId)
+                                                 .equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

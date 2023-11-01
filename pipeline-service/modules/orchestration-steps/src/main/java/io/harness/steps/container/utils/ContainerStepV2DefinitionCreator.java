@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.container.utils;
+
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils.getKubernetesStandardPodName;
 
 import io.harness.annotations.dev.CodePulse;
@@ -20,6 +22,7 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.grpc.utils.StringValueUtils;
@@ -33,7 +36,6 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +60,7 @@ public class ContainerStepV2DefinitionCreator {
         if (!response.getShouldSkip()) {
           StepInfoProto stepInfo = response.getStepInfo();
           String stepIdentifier = stepInfo.getIdentifier();
-          if (Strings.isNotBlank(stepGroupIdentifier)) {
+          if (isNotEmpty(stepGroupIdentifier)) {
             stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
           }
           String identifier = getKubernetesStandardPodName(stepInfo.getIdentifier());
@@ -68,6 +70,7 @@ public class ContainerStepV2DefinitionCreator {
                                                            .stream()
                                                            .map(SecretNgVariableUtils::getSecretNgVariable)
                                                            .collect(Collectors.toList());
+          String connectorIdentifier = pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef();
           containerDefinitionInfos.add(
               ContainerDefinitionInfo.builder()
                   .name(containerName)
@@ -80,7 +83,7 @@ public class ContainerStepV2DefinitionCreator {
                       ContainerImageDetails.builder()
                           .imageDetails(
                               ImageDetailsUtils.getImageDetails(pluginDetails.getImageDetails().getImageInformation()))
-                          .connectorIdentifier(pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef())
+                          .connectorIdentifier(EmptyPredicate.isEmpty(connectorIdentifier) ? null : connectorIdentifier)
                           .build())
                   .isHarnessManagedImage(
                       !pluginDetails.hasIsHarnessManaged() || pluginDetails.getIsHarnessManaged().getValue())

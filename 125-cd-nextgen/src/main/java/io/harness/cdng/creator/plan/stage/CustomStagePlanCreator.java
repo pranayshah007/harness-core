@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.plan.stage;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
@@ -34,9 +35,12 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -51,6 +55,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.SdkCoreStepUtils;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -64,6 +69,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
@@ -104,7 +110,7 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepOutcomeGroup.STAGE.name())
@@ -147,6 +153,8 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                 DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                     .toBuilder()
                     .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                    .putDependencyMetadata(executionField.getNode().getUuid(),
+                        Dependency.newBuilder().setParentInfo(generateParentInfo(ctx, field)).build())
                     .build())
             .build());
 
@@ -154,15 +162,16 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     String specNextNodeUuid = executionFieldUuid;
 
     EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
-    boolean envNodeExists =
-        finalEnvironmentYamlV2 != null && ParameterField.isNotNull(finalEnvironmentYamlV2.getEnvironmentRef());
+    boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null
+        && !(StringUtils.EMPTY).equals(finalEnvironmentYamlV2.getEnvironmentRef().getValue());
 
     String envNodeUuid;
     // Adding Env & Infra nodes
     if (envNodeExists) {
       String infraNodeUuid = null;
       if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())
-          || ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())) {
+          || (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())
+              && isNotEmpty(finalEnvironmentYamlV2.getInfrastructureDefinitions().getValue()))) {
         infraNodeUuid = addInfraNode(planCreationResponseMap, finalEnvironmentYamlV2, specField, ctx);
       }
       String envNextNodeUuid = EmptyPredicate.isNotEmpty(infraNodeUuid) ? infraNodeUuid : executionFieldUuid;
@@ -269,6 +278,27 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     stageBuilder.tags(CollectionUtils.emptyIfNull(stageNode.getTags()));
 
     return stageBuilder;
+  }
+
+  private HarnessStruct generateParentInfo(PlanCreationContext ctx, CustomStageNode stageNode) {
+    YamlField field = ctx.getCurrentField();
+    HarnessStruct.Builder parentInfo = HarnessStruct.newBuilder();
+    parentInfo.putData(PlanCreatorConstants.STAGE_ID,
+        HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, stageNode)).build());
+    if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      String strategyId = stageNode.getUuid();
+      parentInfo.putData(
+          PlanCreatorConstants.NEAREST_STRATEGY_ID, HarnessValue.newBuilder().setStringValue(strategyId).build());
+      parentInfo.putData(PlanCreatorConstants.ALL_STRATEGY_IDS,
+          PlanCreatorUtilsCommon.appendToParentInfoList(PlanCreatorConstants.ALL_STRATEGY_IDS, strategyId, ctx));
+      parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
+          HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STAGE).build());
+    }
+    return parentInfo.build();
+  }
+
+  private String getFinalPlanNodeId(PlanCreationContext ctx, CustomStageNode stageNode) {
+    return StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
   }
 
   @Override

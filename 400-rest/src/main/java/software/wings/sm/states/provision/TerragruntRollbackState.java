@@ -9,6 +9,7 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CDS_TF_TG_HARD_RESET_GIT_REF;
 import static io.harness.beans.FeatureName.TG_USE_AUTO_APPROVE_FLAG;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_STATE;
 import static io.harness.exception.WingsException.USER;
@@ -210,6 +211,7 @@ public class TerragruntRollbackState extends TerragruntProvisionState {
               .workspace(workspace)
               .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
               .delegateTag(configParameter.getDelegateTag())
+              .hardResetForGitRef(featureFlagService.isEnabled(CDS_TF_TG_HARD_RESET_GIT_REF, context.getAccountId()))
               .build();
 
       return createAndRunTask(activityId, executionContext, parameters, configParameter.getDelegateTag());

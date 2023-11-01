@@ -110,8 +110,8 @@ public class NgDeploymentFreezeActivationHandler implements MongoPersistenceIter
         }
       }
       String baseUrl = ngExpressionHelper.getBaseUrl(entity.getAccountId());
-      notificationHelper.sendNotification(entity.getYaml(), false, true, null, entity.getAccountId(), null, baseUrl,
-          entity.getType() == FreezeType.GLOBAL);
+      notificationHelper.sendNotification(entity.getYaml(), false, true, false, null, entity.getAccountId(), null,
+          baseUrl, entity.getType() == FreezeType.GLOBAL);
     } catch (Exception e) {
       log.error(
           String.format("Unable to send notifications for freeze with identifier - %s", entity.getIdentifier()), e);

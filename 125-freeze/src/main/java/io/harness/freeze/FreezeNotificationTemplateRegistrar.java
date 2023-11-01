@@ -40,7 +40,9 @@ public class FreezeNotificationTemplateRegistrar implements Runnable {
           new ArrayList<>(Arrays.asList(PredefinedTemplate.FREEZE_EMAIL_ALERT, PredefinedTemplate.FREEZE_SLACK_ALERT,
               PredefinedTemplate.FREEZE_MSTEAMS_ALERT, PredefinedTemplate.FREEZE_PD_ALERT,
               PredefinedTemplate.PIPELINE_REJECTED_PD_ALERT, PredefinedTemplate.PIPELINE_REJECTED_EMAIL_ALERT,
-              PredefinedTemplate.PIPELINE_REJECTED_SLACK_ALERT, PredefinedTemplate.PIPELINE_REJECTED_MSTEAMS_ALERT));
+              PredefinedTemplate.PIPELINE_REJECTED_SLACK_ALERT, PredefinedTemplate.PIPELINE_REJECTED_MSTEAMS_ALERT,
+              PredefinedTemplate.FREEZE_ENABLED_PD_ALERT, PredefinedTemplate.FREEZE_ENABLED_SLACK_ALERT,
+              PredefinedTemplate.FREEZE_ENABLED_MSTEAMS_ALERT, PredefinedTemplate.FREEZE_ENABLED_EMAIL_ALERT));
       while (true) {
         List<PredefinedTemplate> unprocessedTemplate = new ArrayList<>();
         for (PredefinedTemplate template : templates) {

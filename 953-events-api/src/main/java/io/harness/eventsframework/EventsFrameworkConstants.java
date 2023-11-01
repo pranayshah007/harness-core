@@ -37,6 +37,7 @@ public final class EventsFrameworkConstants {
   public static final String GITX_WEBHOOK_PUSH_EVENT_STREAM = "gitx_webhook_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
+  public static final String NG_GITX_WEBHOOK_PUSH_EVENT = "NGGitXWebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
   public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GITX_WEBHOOK_EVENT = "GitXWebhookEvent";
@@ -254,4 +255,9 @@ public final class EventsFrameworkConstants {
   public static final int CG_GENERAL_EVENT_TOPIC_SIZE = 100000;
   public static final int CG_GENERAL_EVENT_BATCH_SIZE = 50;
   public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofMinutes(10);
+
+  public static final String IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT = "idp_module_license_usage_capture";
+  public static final int IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_MAX_TOPIC_SIZE = 100000;
+  public static final Duration IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
+  public static final int IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_BATCH_SIZE = 1;
 }

@@ -11,6 +11,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
+        "input_values": [
+          {
+            "key": "branchName",
+            "value": "\"refs/\""
+          }
+        ],
         "operator": "<",
         "value": "48"
       }
@@ -52,6 +58,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "isBranchProtected",
         "conditional_input_value": "\"refs/\"",
+        "input_values":  [
+          {
+            "key": "branchName",
+            "value": "\"refs/\""
+          }
+        ],
         "operator": "==",
         "value": "true"
       }
@@ -113,6 +125,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "isFileExists",
         "conditional_input_value": "\".gitleaks.toml\"",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\".gitleaks.toml\""
+          }
+        ],
         "operator": "==",
         "value": "true"
       }
@@ -334,6 +352,12 @@
         "data_source_identifier": "bitbucket",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
+        "input_values":  [
+          {
+            "key": "branchName",
+            "value": "\"refs/\""
+          }
+        ],
         "operator": "<",
         "value": "48"
       }
@@ -355,6 +379,12 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "meanTimeToResolve",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d\"",
+        "input_values":  [
+          {
+            "key": "jql",
+            "value": "\"issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d\""
+          }
+        ],
         "operator": "<",
         "value": "48"
       }
@@ -376,6 +406,12 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done\"",
+        "input_values":  [
+          {
+            "key": "jql",
+            "value": "\"issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done\""
+          }
+        ],
         "operator": "<",
         "value": "5"
       }
@@ -397,6 +433,12 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
+        "input_values":  [
+          {
+            "key": "jql",
+            "value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\""
+          }
+        ],
         "operator": ">",
         "value": "5"
       }
@@ -418,6 +460,12 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesOpenCloseRatio",
         "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND created >= -90d\"",
+        "input_values":  [
+          {
+            "key": "jql",
+            "value": "\"issuetype = Bug AND priority in (P0,P1) AND created >= -90d\""
+          }
+        ],
         "operator": "<",
         "value": "3"
       }
@@ -439,6 +487,12 @@
         "data_source_identifier": "gitlab",
         "data_point_identifier": "meanTimeToMerge",
         "conditional_input_value": "\"refs/\"",
+        "input_values":  [
+          {
+            "key": "branchName",
+            "value": "\"refs/\""
+          }
+        ],
         "operator": "<",
         "value": "48"
       }
@@ -460,6 +514,12 @@
         "data_source_identifier": "gitlab",
         "data_point_identifier": "isBranchProtected",
         "conditional_input_value": "\"refs/\"",
+        "input_values":  [
+          {
+            "key": "branchName",
+            "value": "\"refs/\""
+          }
+        ],
         "operator": "==",
         "value": "true"
       }
@@ -481,6 +541,12 @@
         "data_source_identifier": "gitlab",
         "data_point_identifier": "isFileExists",
         "conditional_input_value": "\".gitleaks.toml\"",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\".gitleaks.toml\""
+          }
+        ],
         "operator": "==",
         "value": "true"
       }
@@ -522,6 +588,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "openDependabotAlerts",
         "conditional_input_value": "critical",
+        "input_values":  [
+          {
+            "key": "severityType",
+            "value": "critical"
+          }
+        ],
         "operator": "<",
         "value": "3"
       }
@@ -543,6 +615,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "openDependabotAlerts",
         "conditional_input_value": "high",
+        "input_values":  [
+          {
+            "key": "severityType",
+            "value": "high"
+          }
+        ],
         "operator": "<",
         "value": "5"
       }
@@ -564,6 +642,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "openCodeScanningAlerts",
         "conditional_input_value": "critical",
+        "input_values":  [
+          {
+            "key": "severityType",
+            "value": "critical"
+          }
+        ],
         "operator": "<",
         "value": "3"
       }
@@ -585,6 +669,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "openCodeScanningAlerts",
         "conditional_input_value": "high",
+        "input_values":  [
+          {
+            "key": "severityType",
+            "value": "high"
+          }
+        ],
         "operator": "<",
         "value": "5"
       }
@@ -626,6 +716,12 @@
         "data_source_identifier": "github",
         "data_point_identifier": "openPullRequestsByAccount",
         "conditional_input_value": "\"app/dependabot\"",
+        "input_values":  [
+          {
+            "key": "accountName",
+            "value": "\"app/dependabot\""
+          }
+        ],
         "operator": "<",
         "value": "5"
       }
@@ -634,5 +730,73 @@
     "tags": ["Software quality"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Number of open pull requests raised by Dependabot is more than 5."
+  },
+  {
+    "id": "653782c2900e5b0d79195308",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__0dfa7236-0341-4b05-ac23-141cde6fc89d",
+    "name": "Java version is 17",
+    "description": "Java version is 17",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "fileContents",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\"bazelrc\""
+          },
+          {
+            "key": "branchName",
+            "value": "develop"
+          },
+          {
+            "key": "pattern",
+            "value": "\"^build --java_language_version=(\\d+)\""
+          }
+        ],
+        "operator": "==",
+        "value": "17"
+      }
+    ],
+    "expression": "github.github_file_contents.\"bazelrc\".develop.\"^build --java_language_version=(\\d+)\" == 17",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Java version is not 17"
+  },
+  {
+    "id": "6537ca43af2121ac13f0e39b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__7ca38db5-fe42-4ef3-ac93-f15b28e0aaba",
+    "name": "MiniCssExtract plugin exists",
+    "description": "Webpack config file contains MiniCssExtract plugin",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "fileContains",
+        "input_values":  [
+          {
+            "key": "filePath",
+            "value": "\"webpack.prod.js\""
+          },
+          {
+            "key": "branchName",
+            "value": "develop"
+          },
+          {
+            "key": "pattern",
+            "value": "\"require\\('mini-css-extract-plugin'\\)\""
+          }
+        ],
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "github.github_file_contents.\"webpack.prod.js\".develop.\"require\\('mini-css-extract-plugin'\\)\" == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Webpack config file contains MiniCssExtract plugin"
   }
 ]

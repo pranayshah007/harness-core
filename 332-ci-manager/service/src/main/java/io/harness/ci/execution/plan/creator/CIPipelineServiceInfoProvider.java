@@ -268,12 +268,11 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
 
-    StepInfo actionStepInfo =
-        StepInfo.newBuilder()
-            .setName("Github Action plugin")
-            .setType(StepSpecTypeConstants.ACTION)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
-            .build();
+    StepInfo actionStepInfo = StepInfo.newBuilder()
+                                  .setName("Github Action plugin")
+                                  .setType(StepSpecTypeConstants.ACTION)
+                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                  .build();
 
     StepInfo bitriseStepInfo = StepInfo.newBuilder()
                                    .setName("Bitrise plugin")

@@ -24,14 +24,17 @@ import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.StepUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 
@@ -59,6 +62,9 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   CodeBase codeBase;
   TriggerPayload triggerPayload;
   Boolean cloneManually;
+  // Have to keep delegateSelectors for pipeline separately to handle expression cases where origin is unknown
+  ParameterField<List<TaskSelectorYaml>> pipelineDelegateSelectors;
+
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
     if (stageNode == null) {
@@ -80,6 +86,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         .enableCloneRepo(integrationStageConfig.getCloneCodebase())
         .stepIdentifiers(stepIdentifiers)
         .caching(getCaching(stageNode))
+        .pipelineDelegateSelectors(StepUtils.getOriginDelegateSelectors(ctx, YAMLFieldNameConstants.PIPELINE))
         .build();
   }
 

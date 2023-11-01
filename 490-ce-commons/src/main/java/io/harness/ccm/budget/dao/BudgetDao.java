@@ -261,4 +261,13 @@ public class BudgetDao {
                       .in(budgetIds);
     return persistence.delete(query);
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(Budget.class).field(BudgetKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<Budget> query = persistence.createQuery(Budget.class).field(BudgetKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

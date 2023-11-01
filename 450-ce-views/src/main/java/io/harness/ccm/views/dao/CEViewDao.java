@@ -248,4 +248,13 @@ public class CEViewDao {
         .in(uuids)
         .asList();
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

@@ -12,6 +12,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -169,6 +170,12 @@ public class VmRunTestStepSerializer {
     runTestStepBuilder.testGlobs(RunTimeInputHandler.resolveStringParameter(
         "testGlobs", stepName, identifier, runTestsStepInfo.getTestGlobs(), false));
 
+    boolean runAsUserContainerLess =
+        runAsUserContainerLess(runTestsStepInfo, AmbianceUtils.getAccountId(ambiance), image);
+    if (runAsUserContainerLess) {
+      runTestStepBuilder.runAsUser(runTestsStepInfo.getRunAsUser().getValue().toString());
+    }
+
     if (runTestsStepInfo.getReports().getValue() != null) {
       if (runTestsStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) runTestsStepInfo.getReports().getValue().getSpec();
@@ -179,5 +186,14 @@ public class VmRunTestStepSerializer {
     }
 
     return runTestStepBuilder.build();
+  }
+
+  public boolean runAsUserContainerLess(RunTestsStepInfo runTestsStepInfo, String accountId, String image) {
+    boolean flag = featureFlagService.isEnabled(FeatureName.CI_VM_CONTAINERLESS_RUN_ASUSER, accountId);
+    if (flag && runTestsStepInfo.getRunAsUser() != null && runTestsStepInfo.getRunAsUser().getValue() != null
+        && StringUtils.isEmpty(image)) {
+      return true;
+    }
+    return false;
   }
 }
