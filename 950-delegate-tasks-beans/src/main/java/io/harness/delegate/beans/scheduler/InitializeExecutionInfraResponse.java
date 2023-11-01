@@ -5,11 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-<<<<<<<< HEAD:950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/scheduler/InitializeExecutionInfraResponse.java
 package io.harness.delegate.beans.scheduler;
-========
-package io.harness.delegate.beans;
->>>>>>>> 94fed9e9570 (feat: [CDS-79217]: Fixed ExecuteTask task):950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/InitializeExecutionInfraResponse.java
 
 import io.harness.delegate.beans.DelegateResponseData;
 

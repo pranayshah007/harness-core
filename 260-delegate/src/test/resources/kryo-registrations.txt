@@ -1638,7 +1638,7 @@
 21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
-21008:io.harness.deegate.beans.connector.spotconnector.SpotTaskType
+21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
 21009:io.harness.delegate.beans.connector.spotconnector.SpotValidationParams
 21010:io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse
 21011:io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters

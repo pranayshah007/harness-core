@@ -108,8 +108,8 @@ public class InitKubernetesInfraContainerStep
             .build();
 
     return ExecutionInfrastructure.newBuilder()
-        .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).setToken(logToken).build())
-        .setK8Infraspec(k8sInfraSpec)
+        .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
+        .setK8S(k8sInfraSpec)
         .build();
   }
 

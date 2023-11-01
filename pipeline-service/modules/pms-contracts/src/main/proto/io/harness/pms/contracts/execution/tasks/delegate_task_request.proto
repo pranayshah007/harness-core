@@ -10,7 +10,7 @@ package io.harness.pms.contracts.execution.tasks;
 option java_multiple_files = true;
 
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_service.proto";
-import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task_apis.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/schedule_task.proto";
 
 message DelegateTaskRequest {
   repeated string units = 7;

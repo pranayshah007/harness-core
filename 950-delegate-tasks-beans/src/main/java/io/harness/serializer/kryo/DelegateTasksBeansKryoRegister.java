@@ -380,7 +380,6 @@ import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
 import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
-import io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.beans.serverless.Parameter;
