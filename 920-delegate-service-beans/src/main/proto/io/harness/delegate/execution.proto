@@ -14,7 +14,9 @@ message Execution {
   ExecutionInput input = 1;  // Input data to tasks
   string infra_ref_id = 2;   // execution infra reference id created by calling SetupExecutionInfrastructureRequest
   string step_log_key = 3;
+  string step_id = 4;
 }
+
 message ExecutionInput {
   bytes data = 1;  // binary task data input. The same data will be directly passed to task container
 }

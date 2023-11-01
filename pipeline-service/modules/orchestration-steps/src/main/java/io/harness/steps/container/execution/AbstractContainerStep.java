@@ -11,6 +11,7 @@ package io.harness.steps.container.execution;
 import static io.harness.beans.FeatureName.CDS_USE_DELEGATE_BIJOU_API_CONTAINER_STEPS;
 import static io.harness.plancreator.NGCommonUtilPlanCreationConstants.STEP_GROUP;
 import static io.harness.plancreator.steps.pluginstep.KubernetesInfraOutcome.KUBERNETES_INFRA_OUTCOME;
+import static io.harness.steps.TaskRequestsUtils.SHELL_SCRIPT_TASK_IDENTIFIER;
 import static io.harness.steps.TaskRequestsUtils.prepareExecuteTaskRequest;
 
 import static java.util.Collections.singletonList;
@@ -41,8 +42,8 @@ import io.harness.plancreator.steps.pluginstep.KubernetesInfraOutcome;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
@@ -141,8 +142,9 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
       }
       KubernetesInfraOutcome k8sInfra = (KubernetesInfraOutcome) optionalOutcome.getOutcome();
       String queueExecuteTaskId = taskExecutor.queueExecuteTask(
-          prepareExecuteTaskRequest(ambiance, getTaskData(ambiance), referenceFalseKryoSerializer, timeout,
-              TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors, Scope.PROJECT, k8sInfra.getInfraRefId()),
+          prepareExecuteTaskRequest(ambiance, SHELL_SCRIPT_TASK_IDENTIFIER, getTaskData(ambiance),
+              referenceFalseKryoSerializer, timeout, TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors,
+              Scope.PROJECT, k8sInfra.getInfraRefId()),
           Duration.ofSeconds(0));
 
       return AsyncExecutableResponse.newBuilder()

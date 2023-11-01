@@ -17,8 +17,11 @@ import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.delegate.ScheduleTaskRequest;
+import io.harness.delegate.ScheduleTaskResponse;
+import io.harness.delegate.ScheduleTaskServiceGrpc.ScheduleTaskServiceBlockingStub;
 import io.harness.delegate.SchedulingConfig;
 import io.harness.delegate.SetupExecutionInfrastructureRequest;
+import io.harness.delegate.SetupExecutionInfrastructureResponse;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
 import io.harness.delegate.TaskId;
@@ -34,7 +37,6 @@ import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.tasks.ResponseData;
-import io.harness.tasks.SubmitTaskResponseData;
 
 import com.google.inject.Inject;
 import com.google.protobuf.util.Timestamps;
@@ -50,6 +52,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @Slf4j
 public class NgDelegate2TaskExecutor implements TaskExecutor {
   @Inject private DelegateServiceBlockingStub delegateServiceBlockingStub;
+  @Inject private ScheduleTaskServiceBlockingStub scheduleTaskServiceBlockingStub;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private Supplier<DelegateCallbackToken> tokenSupplier;
@@ -76,12 +79,13 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
       throw new InvalidRequestException(check.getMessage());
     }
 
-    SubmitTaskResponse submitTaskResponse =
-        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::initTask,
+    SetupExecutionInfrastructureResponse setupExecutionInfrastructureResponse =
+        PmsGrpcClientUtils.retryAndProcessException(scheduleTaskServiceBlockingStub::initTask,
             buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getInitRequest()));
-    delegateAsyncService.setupTimeoutForTask(submitTaskResponse.getTaskId().getId(),
-        Timestamps.toMillis(submitTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
-    return submitTaskResponse.getTaskId().getId();
+    //    delegateAsyncService.setupTimeoutForTask(setupExecutionInfrastructureResponse.getTaskId().getId(),
+    //        Timestamps.toMillis(setupExecutionInfrastructureResponse.getTotalExpiry()), currentTimeMillis() +
+    //        holdFor.toMillis());
+    return setupExecutionInfrastructureResponse.getTaskId().getId();
   }
 
   @Override
@@ -91,12 +95,12 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
       throw new InvalidRequestException(check.getMessage());
     }
 
-    SubmitTaskResponse submitTaskResponse =
-        PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::executeTask,
+    ScheduleTaskResponse scheduleTaskResponse =
+        PmsGrpcClientUtils.retryAndProcessException(scheduleTaskServiceBlockingStub::executeTask,
             buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getExecuteRequest()));
-    delegateAsyncService.setupTimeoutForTask(submitTaskResponse.getTaskId().getId(),
-        Timestamps.toMillis(submitTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
-    return submitTaskResponse.getTaskId().getId();
+    //    delegateAsyncService.setupTimeoutForTask(scheduleTaskResponse.getTaskId().getId(),
+    //        Timestamps.toMillis(scheduleTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
+    return scheduleTaskResponse.getTaskId().getId();
   }
 
   @Override

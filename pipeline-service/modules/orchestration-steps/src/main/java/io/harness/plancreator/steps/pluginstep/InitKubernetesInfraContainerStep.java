@@ -8,13 +8,14 @@
 package io.harness.plancreator.steps.pluginstep;
 
 import static io.harness.plancreator.steps.pluginstep.KubernetesInfraOutcome.KUBERNETES_INFRA_OUTCOME;
+import static io.harness.steps.TaskRequestsUtils.SHELL_SCRIPT_TASK_IDENTIFIER;
 
 import io.harness.beans.FeatureName;
 import io.harness.delegate.ComputingResource;
-import io.harness.delegate.ContainerSpec;
 import io.harness.delegate.ExecutionInfrastructure;
 import io.harness.delegate.K8sInfraSpec;
 import io.harness.delegate.LogConfig;
+import io.harness.delegate.StepSpec;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.InitializeExecutionInfraResponse;
 import io.harness.encryption.Scope;
@@ -88,25 +89,18 @@ public class InitKubernetesInfraContainerStep
 
   private ExecutionInfrastructure buildExecutionInfrastructure(
       Ambiance ambiance, StepElementParameters stepElementParameters) {
-    // get from stepElementParameters >> shell script task params
-    String cpu = "100m";
-    String memory = "100Mi";
-    String image = "imijailovic/shell-task-ng-linux-amd64:3.0";
-    // List<Long> ports = List.of(20002L);
-
-    // need to check
-    String logKey = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
-    String logToken = "logToken";
-
+    // iterate over the steps and populate step specs
     K8sInfraSpec k8sInfraSpec =
         K8sInfraSpec.newBuilder()
-            .addAllTasks(List.of(ContainerSpec.newBuilder()
-                                     .setImage(image)
-                                     //.addAllPort(ports)
-                                     .setResource(ComputingResource.newBuilder().setCpu(cpu).setMemory(memory).build())
-                                     .build()))
+            .addAllSteps(List.of(
+                StepSpec.newBuilder()
+                    .setImage("imijailovic/shell-task-ng-linux-amd64:3.0")
+                    .setStepId(SHELL_SCRIPT_TASK_IDENTIFIER)
+                    .setComputeResource(ComputingResource.newBuilder().setCpu("100m").setMemory("100Mi").build())
+                    .build()))
             .build();
 
+    String logKey = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
     return ExecutionInfrastructure.newBuilder()
         .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
         .setK8S(k8sInfraSpec)

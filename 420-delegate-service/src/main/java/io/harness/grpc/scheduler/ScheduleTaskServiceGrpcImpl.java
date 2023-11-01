@@ -7,8 +7,10 @@
 
 package io.harness.grpc.scheduler;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 
 import io.harness.beans.DelegateTask;
@@ -31,6 +33,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
+import io.harness.executionInfra.ExecutionInfraLocation;
 import io.harness.executionInfra.ExecutionInfrastructureService;
 import io.harness.grpc.scheduler.mapper.K8sInfraMapper;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
@@ -160,7 +164,7 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   }
 
   private ScheduleTaskResponse sendExecuteTask(final Execution execution, final SchedulingConfig config) {
-    final var taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
+    final var taskId = getTaskId(execution.getStepId(), execution.getInfraRefId());
     final var taskData = execution.getInput().getData().toByteArray();
     final var capabilities = mapSelectorCapability(config);
     capabilities.add(mapInfraCapability(execution.getInfraRefId()));
@@ -169,6 +173,16 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
         execution.getStepLogKey(), taskId, capabilities, null);
 
     return ScheduleTaskResponse.newBuilder().setTaskId(TaskId.newBuilder().setId(taskId).build()).build();
+  }
+
+  private String getTaskId(String stepId, String infraId) {
+    ExecutionInfraLocation executionInfra = infraService.getExecutionInfra(infraId);
+    String taskId = executionInfra.getStepTaskIds().get(stepId);
+    if (isEmpty(taskId)) {
+      throw new InvalidRequestException(format("Not found task id for stepId: %s, infraId: %s", stepId, infraId));
+    }
+
+    return taskId;
   }
 
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,

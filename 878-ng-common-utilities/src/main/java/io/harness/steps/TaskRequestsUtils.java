@@ -71,6 +71,7 @@ import org.apache.commons.collections4.ListUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class TaskRequestsUtils {
+  public static final String SHELL_SCRIPT_TASK_IDENTIFIER = "shellStepIdentifier";
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
       String stageId) {
@@ -276,7 +277,6 @@ public class TaskRequestsUtils {
   public static TaskRequest prepareInitTaskRequest(Ambiance ambiance, ExecutionInfrastructure executionInfrastructure,
       long timeout, TaskCategory taskCategory, boolean withLogs, List<TaskSelector> selectors, Scope taskScope) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
-    Map<String, String> setupAbstractionsMap = StepUtils.buildAbstractions(ambiance, taskScope);
 
     LinkedHashMap<String, String> logAbstractionMap =
         withLogs ? StepUtils.generateLogAbstractions(ambiance) : new LinkedHashMap<>();
@@ -284,7 +284,6 @@ public class TaskRequestsUtils {
     SchedulingConfig schedulingConfig =
         SchedulingConfig.newBuilder()
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
-            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
             .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
             .setAccountId(accountId)
             .setExecutionTimeout(Duration.newBuilder().setSeconds(timeout / 1000).build())
@@ -314,18 +313,16 @@ public class TaskRequestsUtils {
         .build();
   }
 
-  public static TaskRequest prepareExecuteTaskRequest(Ambiance ambiance, TaskData taskData,
+  public static TaskRequest prepareExecuteTaskRequest(Ambiance ambiance, String stepId, TaskData taskData,
       KryoSerializer referenceFalseKryoSerializer, long timeout, TaskCategory taskCategory, boolean withLogs,
       List<TaskSelector> selectors, Scope taskScope, String infraRefId) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
     LinkedHashMap<String, String> logAbstractionMap =
         withLogs ? StepUtils.generateLogAbstractions(ambiance) : new LinkedHashMap<>();
 
-    Map<String, String> setupAbstractionsMap = StepUtils.buildAbstractions(ambiance, taskScope);
     SchedulingConfig schedulingConfig =
         SchedulingConfig.newBuilder()
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
-            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
             .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
             .setAccountId(accountId)
             .setExecutionTimeout(Duration.newBuilder().setSeconds(timeout / 1000).build())
@@ -335,7 +332,8 @@ public class TaskRequestsUtils {
     DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder().accountId(accountId).data(taskData).build();
     byte[] taskPackageBytes = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskPackage);
     ExecutionInput executionInput = ExecutionInput.newBuilder().setData(ByteString.copyFrom(taskPackageBytes)).build();
-    Execution execution = Execution.newBuilder().setInfraRefId(infraRefId).setInput(executionInput).build();
+    Execution execution =
+        Execution.newBuilder().setInfraRefId(infraRefId).setStepId(stepId).setInput(executionInput).build();
 
     ScheduleTaskRequest scheduleTaskRequest =
         ScheduleTaskRequest.newBuilder().setExecution(execution).setConfig(schedulingConfig).build();
@@ -350,9 +348,7 @@ public class TaskRequestsUtils {
             .setType(Type.EXECUTE)
             .build();
 
-    return TaskRequest
-        .newBuilder()
-
+    return TaskRequest.newBuilder()
         .setUseReferenceFalseKryoSerializer(true)
         .setDelegateTaskRequest(delegateTaskRequest)
         .setTaskCategory(taskCategory)
