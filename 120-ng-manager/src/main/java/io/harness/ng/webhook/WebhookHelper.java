@@ -182,7 +182,7 @@ public class WebhookHelper {
 
   public List<Producer> getProducerListForEvent(WebhookDTO webhookDTO) {
     List<Producer> producers = new ArrayList<>();
-    if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails() && PUSH == webhookDTO.getGitDetails().getEvent()) {
+    if (isGitPushEvent(webhookDTO)) {
       //      For push based events, we first process the event on gitx and then start the trigger execution
       //      The triggers are processed in the GitXWebhookTriggerHelper
       producers.add(gitPushEventProducer);
@@ -233,5 +233,10 @@ public class WebhookHelper {
                       .toString());
       }
     }
+  }
+
+  private boolean isGitPushEvent(WebhookDTO webhookDTO) {
+    return webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()
+        && PUSH == webhookDTO.getGitDetails().getEvent();
   }
 }

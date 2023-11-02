@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
@@ -50,22 +51,19 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
     try (ResponseTimeRecorder ignore2 = new ResponseTimeRecorder("GitXWebhookCacheUpdateRunnable BG Task");
          GitXWebhookCacheUpdateLogContext context =
              new GitXWebhookCacheUpdateLogContext(gitXCacheUpdateRunnableRequestDTO)) {
-      log.info(String.format("In the account %s, updating the git cache for the event %s.",
-          gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
-          gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
+      String accountIdentifier = gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier();
+      log.info(String.format(
+          "In the account %s, updating the git cache for the event %s.", accountIdentifier, eventIdentifier));
       scmFacilitatorService.updateGitCache(buildScmUpdateGitCacheRequestDTO(gitXCacheUpdateRunnableRequestDTO));
-      gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.SUCCESSFUL).build());
+      updateEventStatusAndStartTriggerExecution(accountIdentifier, eventIdentifier, GitXWebhookEventStatus.SUCCESSFUL,
+          gitXCacheUpdateRunnableRequestDTO.getWebhookDTO());
       log.info(String.format("In the account %s, successfully updated the git cache for the event %s",
-          gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
-          gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
+          accountIdentifier, eventIdentifier));
     } catch (Exception exception) {
       log.error("Faced exception while submitting background task for updating the git cache for event: {} ",
           eventIdentifier, exception);
-      gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
-    } finally {
-      gitXWebhookTriggerHelper.startTriggerExecution(gitXCacheUpdateRunnableRequestDTO.getWebhookDTO());
+      updateEventStatusAndStartTriggerExecution(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
+          eventIdentifier, GitXWebhookEventStatus.FAILED, gitXCacheUpdateRunnableRequestDTO.getWebhookDTO());
     }
   }
 
@@ -104,5 +102,17 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
       GitXCacheUpdateRunnableRequestDTO gitXCacheUpdateRunnableRequestDTO, String modifiedFilePath) {
     return gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier() + "/"
         + gitXCacheUpdateRunnableRequestDTO.getEventIdentifier() + "/" + modifiedFilePath;
+  }
+
+  private void updateEventStatusAndStartTriggerExecution(String accountIdentifier, String eventIdentifier,
+      GitXWebhookEventStatus gitXWebhookEventStatus, WebhookDTO webhookDTO) {
+    try {
+      gitXWebhookEventService.updateEvent(accountIdentifier, eventIdentifier,
+          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(gitXWebhookEventStatus).build());
+    } catch (Exception ex) {
+      log.error("Exception occurred while changing the state of the event {} to {}", webhookDTO.getEventId(),
+          gitXWebhookEventStatus.name(), ex);
+    }
+    gitXWebhookTriggerHelper.startTriggerExecution(webhookDTO);
   }
 }
