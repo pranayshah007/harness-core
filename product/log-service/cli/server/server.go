@@ -267,9 +267,10 @@ func StartProfiler(config *config.Config) error {
 			Warnln("Could not find hostName")
 	}
 	cfg := profiler.Config{
-		Service:        fmt.Sprintf("%s.%s", config.Profiler.ServiceName, config.Profiler.Environment),
-		ServiceVersion: hostName,
+		Service: fmt.Sprintf("%s.%s", config.Profiler.ServiceName, config.Profiler.Environment),
+		// ServiceVersion: hostName,
 	}
-	logrus.Infoln("Started profiler")
+	logrus.
+		Infoln("Started profiler for %s on Environment %s on hostname %s", config.Profiler.ServiceName, config.Profiler.Environment, hostName)
 	return profiler.Start(cfg)
 }
