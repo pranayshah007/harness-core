@@ -320,7 +320,15 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   public void rejectPreviousExecutions(
       @NotNull String approvalInstanceId, @NotNull EmbeddedUser user, boolean unauthorized, Ambiance ambiance) {
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
-    String pipelineUrl = pmsEngineExpressionService.renderExpression(ambiance, "<+pipeline.executionUrl>", true);
+
+    String pipelineUrl;
+    try {
+      pipelineUrl = pmsEngineExpressionService.renderExpression(ambiance, "<+pipeline.executionUrl>", true);
+    } catch (Exception e) {
+      pipelineUrl = "a future execution";
+      log.error("Failed the evaluate expression: <+pipeline.executionUrl>. " + e.getMessage());
+    }
+
     if (unauthorized) {
       logCallback.saveExecutionLog(String.format(
           "Unable to auto reject previous execution with approval id %s as the user does not have the access to reject this execution",
