@@ -29,8 +29,10 @@ import software.wings.helpers.ext.ecs.response.EcsServiceSetupResponse;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.utils.EcsConvention;
 
+import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.CreateServiceRequest;
 import com.amazonaws.services.ecs.model.CreateServiceResult;
+import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.Service;
 import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.amazonaws.services.ecs.model.UpdateServiceRequest;
@@ -39,6 +41,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -172,6 +175,18 @@ public class EcsSetupCommandHandler extends EcsCommandTaskHandler {
     CreateServiceRequest createServiceRequest = ecsSetupCommandTaskHelper.getCreateServiceRequest(cloudProviderSetting,
         encryptedDataDetails, setupParams, taskDefinition, setupParams.getTaskFamily(), executionLogCallback, log,
         commandExecutionDataBuilder, isMultipleLoadBalancersFeatureFlagActive);
+
+    List<Cluster> clusters = awsHelperService
+                                 .describeClusters(setupParams.getRegion(), (AwsConfig) cloudProviderSetting.getValue(),
+                                     encryptedDataDetails, new DescribeClustersRequest().withClusters(name))
+                                 .getClusters();
+
+    if (CollectionUtils.isNotEmpty(clusters)) {
+      Cluster cluster = clusters.get(0);
+      if (CollectionUtils.isNotEmpty(cluster.getDefaultCapacityProviderStrategy())) {
+        createServiceRequest.setLaunchType(setupParams.getLaunchType());
+      }
+    }
 
     if (existingServiceMetadataSnapshot.isPresent()) {
       Service service = existingServiceMetadataSnapshot.get();
