@@ -67,6 +67,7 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
         processQueuedEvent(gitXWebhookEvent, webhookDTO);
       } catch (Exception exception) {
         log.error("Exception occurred while processing the event {}", webhookDTO.getEventId(), exception);
+        markEventFailed(webhookDTO);
         throw exception;
       }
     }
@@ -111,11 +112,11 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
         log.error(String.format("Connector not found for event %s in the account %s.",
                       gitXWebhookEvent.getEventIdentifier(), gitXWebhookEvent.getAccountIdentifier()),
             connectorNotFoundException);
-        markEventFailed(gitXWebhookEvent, webhookDTO);
+        markEventFailed(webhookDTO);
       } catch (Exception exception) {
         log.error(
             "Exception occurred while processing the event {} ", gitXWebhookEvent.getEventIdentifier(), exception);
-        markEventFailed(gitXWebhookEvent, webhookDTO);
+        markEventFailed(webhookDTO);
       }
     }
   }
@@ -196,8 +197,13 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
 
   private void updateEventStatusAndStartTriggerExecution(String accountIdentifier, String eventIdentifier,
       GitXWebhookEventStatus gitXWebhookEventStatus, WebhookDTO webhookDTO) {
-    gitXWebhookEventService.updateEvent(accountIdentifier, eventIdentifier,
-        GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(gitXWebhookEventStatus).build());
+    try {
+      gitXWebhookEventService.updateEvent(accountIdentifier, eventIdentifier,
+          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(gitXWebhookEventStatus).build());
+    } catch (Exception ex) {
+      log.error("Exception occurred while changing the state of the event {} to {}", webhookDTO.getEventId(),
+          gitXWebhookEventStatus.name(), ex);
+    }
     gitXWebhookTriggerHelper.startTriggerExecution(webhookDTO);
   }
 
@@ -210,13 +216,8 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
             .build());
   }
 
-  private void markEventFailed(GitXWebhookEvent gitXWebhookEvent, WebhookDTO webhookDTO) {
-    try {
-      updateEventStatusAndStartTriggerExecution(gitXWebhookEvent.getAccountIdentifier(),
-          gitXWebhookEvent.getEventIdentifier(), GitXWebhookEventStatus.FAILED, webhookDTO);
-    } catch (Exception ex) {
-      log.error("Exception occurred while changing the state of the event {} to Failed",
-          gitXWebhookEvent.getEventIdentifier(), ex);
-    }
+  private void markEventFailed(WebhookDTO webhookDTO) {
+    updateEventStatusAndStartTriggerExecution(
+        webhookDTO.getAccountId(), webhookDTO.getEventId(), GitXWebhookEventStatus.FAILED, webhookDTO);
   }
 }
