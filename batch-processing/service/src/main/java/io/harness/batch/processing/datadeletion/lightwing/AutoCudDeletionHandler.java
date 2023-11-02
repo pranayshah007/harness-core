@@ -9,13 +9,10 @@ package io.harness.batch.processing.datadeletion.lightwing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.entities.datadeletion.DataDeletionBucket.AUTOCUD_DELETION;
-import static io.harness.ccm.commons.entities.datadeletion.DataDeletionStatus.COMPLETE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.datadeletion.DataDeletionHandler;
 import io.harness.ccm.commons.entities.datadeletion.DataDeletionRecord;
-import io.harness.ccm.commons.entities.datadeletion.DataDeletionStatus;
-import io.harness.faktory.FaktoryProducer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -33,6 +30,8 @@ public class AutoCudDeletionHandler extends DataDeletionHandler {
 
   @Override
   public void executeSteps(DataDeletionRecord dataDeletionRecord) {
+    log.warn("AUTOCUD_DELETION is disabled");
+    /*
     try {
       String accountId = dataDeletionRecord.getAccountId();
       DataDeletionStatus status = dataDeletionRecord.getAutoCudStatus();
@@ -49,5 +48,6 @@ public class AutoCudDeletionHandler extends DataDeletionHandler {
     } catch (Exception e) {
       log.error("Encountered an error in AutoCudDeletionHandler", e);
     }
+    */
   }
 }

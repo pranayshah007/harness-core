@@ -9,13 +9,10 @@ package io.harness.batch.processing.datadeletion.lightwing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.entities.datadeletion.DataDeletionBucket.AUTOSTOPPING_DELETION;
-import static io.harness.ccm.commons.entities.datadeletion.DataDeletionStatus.COMPLETE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.datadeletion.DataDeletionHandler;
 import io.harness.ccm.commons.entities.datadeletion.DataDeletionRecord;
-import io.harness.ccm.commons.entities.datadeletion.DataDeletionStatus;
-import io.harness.faktory.FaktoryProducer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -33,6 +30,8 @@ public class AutoStoppingDeletionHandler extends DataDeletionHandler {
 
   @Override
   public void executeSteps(DataDeletionRecord dataDeletionRecord) {
+    log.warn("AUTOSTOPPING_DELETION is disabled");
+    /*
     try {
       String accountId = dataDeletionRecord.getAccountId();
       DataDeletionStatus status = dataDeletionRecord.getAutoStoppingStatus();
@@ -50,5 +49,6 @@ public class AutoStoppingDeletionHandler extends DataDeletionHandler {
     } catch (Exception e) {
       log.error("Encountered an error in AutoStoppingDeletionHandler", e);
     }
+     */
   }
 }

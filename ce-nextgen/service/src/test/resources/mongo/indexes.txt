@@ -31,6 +31,7 @@ ceView {"name": "accountId_folderId", "background": true} {"accountId": 1, "fold
 ceView {"name": "accountId_viewType", "background": true} {"accountId": 1, "viewType": 1}
 ceViewFolder {"name": "accountId", "background": true} {"accountId": 1}
 clusterRecords {"name": "accountId_k8sBaseConnectorRefIdentifier", "unique": true} {"accountId": 1, "k8sBaseConnectorRefIdentifier": 1}
+dataDeletionRecords {"name": "unique_accountId", "unique": true} {"accountId": 1}
 ec2Recommendation {"name": "unique_accountId_awsAccountId_instanceId", "unique": true} {"accountId": 1, "awsAccountId": 1, "instanceId": 1}
 ecsPartialRecommendationHistogram {"name": "unique_accountId_clusterId_serviceArn_date", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1, "date": 1}
 ecsService {"name": "accountId_serviceArn", "background": true} {"accountId": 1, "serviceArn": 1}
