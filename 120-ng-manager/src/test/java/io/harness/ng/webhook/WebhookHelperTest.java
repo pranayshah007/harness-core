@@ -152,6 +152,7 @@ public class WebhookHelperTest extends CategoryTest {
     assertThat(webhookHelper.getProducerListForEvent(webhookDTO)).isEqualTo(producers);
 
     producers.remove(gitPrEventProducer);
+    producers.remove(webhookEventProducer);
     webhookDTO = WebhookDTO.newBuilder()
                      .setParsedResponse(ParseWebhookResponse.newBuilder().build())
                      .setGitDetails(GitDetails.newBuilder().setEvent(WebhookEventType.PUSH).build())
@@ -168,6 +169,7 @@ public class WebhookHelperTest extends CategoryTest {
     assertThat(webhookHelper.getProducerListForEvent(webhookDTO)).isEqualTo(producers);
 
     producers.remove(gitPushEventProducer);
+    producers.add(webhookEventProducer);
     webhookDTO = WebhookDTO.newBuilder()
                      .setParsedResponse(ParseWebhookResponse.newBuilder().build())
                      .setGitDetails(GitDetails.newBuilder().setEvent(WebhookEventType.CREATE_BRANCH).build())

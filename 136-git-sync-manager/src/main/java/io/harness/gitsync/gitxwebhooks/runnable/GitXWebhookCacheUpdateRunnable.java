@@ -19,6 +19,7 @@ import io.harness.gitsync.common.dtos.ScmUpdateGitCacheRequestDTO;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateRunnableRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
+import io.harness.gitsync.gitxwebhooks.helper.GitXWebhookTriggerHelper;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookCacheUpdateLogContext;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.logging.ResponseTimeRecorder;
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GitXWebhookCacheUpdateRunnable implements Runnable {
   @Inject private ScmFacilitatorService scmFacilitatorService;
   @Inject private GitXWebhookEventService gitXWebhookEventService;
+  @Inject private GitXWebhookTriggerHelper gitXWebhookTriggerHelper;
   private GitXCacheUpdateRunnableRequestDTO gitXCacheUpdateRunnableRequestDTO;
   private String eventIdentifier;
 
@@ -62,6 +64,8 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
           eventIdentifier, exception);
       gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
           GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
+    } finally {
+      gitXWebhookTriggerHelper.startTriggerExecution(gitXCacheUpdateRunnableRequestDTO.getWebhookDTO());
     }
   }
 

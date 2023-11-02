@@ -182,19 +182,22 @@ public class WebhookHelper {
 
   public List<Producer> getProducerListForEvent(WebhookDTO webhookDTO) {
     List<Producer> producers = new ArrayList<>();
-    producers.add(webhookEventProducer);
+    if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails() && PUSH == webhookDTO.getGitDetails().getEvent()) {
+      //      For push based events, we first process the event on gitx and then start the trigger execution
+      //      The triggers are processed in the GitXWebhookTriggerHelper
+      producers.add(gitPushEventProducer);
+    } else {
+      producers.add(webhookEventProducer);
+      if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()) {
+        if (PR == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitPrEventProducer);
+        } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
+            || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitBranchHookEventProducer);
+        }
 
-    if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()) {
-      if (PUSH == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitPushEventProducer);
-      } else if (PR == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitPrEventProducer);
-      } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
-          || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitBranchHookEventProducer);
+        // Here we can add more logic if need to add more event topics.
       }
-
-      // Here we can add more logic if need to add more event topics.
     }
 
     return producers;
