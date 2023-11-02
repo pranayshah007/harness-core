@@ -103,8 +103,8 @@ public class AdminAccountResourceTest extends CategoryTest {
     List<Account> updatedAccounts = Arrays.asList(updatedAccount);
     AccountSummary accountSummary = mock(AccountSummary.class);
     List<AccountSummary> updatedAccountSummaries = Arrays.asList(accountSummary);
-    when(adminAccountService.getUpdatedAccounts(anyLong())).thenReturn(updatedAccounts);
-    when(adminAccountService.getAccountSummariesByAccountIds(any())).thenReturn(updatedAccountSummaries);
+    when(adminAccountService.getAccountsUpdatedSinceTimestamp(anyLong())).thenReturn(updatedAccounts);
+    when(adminAccountService.getAccountSummaries(any())).thenReturn(updatedAccountSummaries);
     when(adminLicenseHttpClient.createAccountLicense(any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
     when(adminLicenseHttpClient.updateModuleLicense(any(), any(), any())).thenReturn(adminLicenseCreateAndUpdateCall);
     when(adminLicenseHttpClient.deleteModuleLicense(any(), any())).thenReturn(adminLicenseDeleteCall);
@@ -197,10 +197,10 @@ public class AdminAccountResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetRecentUpdatedAccount() {
     RestResponse<List<AccountSummary>> response = RESOURCES.client()
-            .target("/admin/accounts/get-recent-updates-account")
+            .target("/admin/accounts/recently-updated-accounts")
             .request()
             .get(new GenericType<RestResponse<List<AccountSummary>>>() {});
-    verify(adminAccountService).getUpdatedAccounts(anyLong());
-    verify(adminAccountService).getAccountSummariesByAccountIds(any());
+    verify(adminAccountService).getAccountsUpdatedSinceTimestamp(anyLong());
+    verify(adminAccountService).getAccountSummaries(any());
   }
 }
