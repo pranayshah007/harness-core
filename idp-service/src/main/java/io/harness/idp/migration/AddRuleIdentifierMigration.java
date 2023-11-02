@@ -12,12 +12,9 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
-import io.harness.spec.server.idp.v1.model.InputDetails;
-import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import com.google.inject.Inject;
@@ -38,9 +35,8 @@ public class AddRuleIdentifierMigration implements NGMigration {
   @Override
   public void migrate() {
     log.info("Starting the migration for adding rule identifier field in checks collection.");
-    Query<CheckEntity> checkEntityQuery = persistence.createQuery(CheckEntity.class, excludeAuthority)
-                                              .filter(CheckEntity.CheckKeys.isCustom, true)
-                                              .filter(CheckEntity.CheckKeys.isDeleted, false);
+    Query<CheckEntity> checkEntityQuery =
+        persistence.createQuery(CheckEntity.class, excludeAuthority).filter(CheckEntity.CheckKeys.isCustom, true);
     try (HIterator<CheckEntity> checks = new HIterator<>(checkEntityQuery.fetch())) {
       while (checks.hasNext()) {
         migrateCheck(checks.next());
