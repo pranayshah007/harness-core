@@ -285,6 +285,7 @@ public class VmInitializeTaskParamsBuilder {
         .serviceDependencies(getServiceDependencies(ambiance, integrationStageConfig))
         .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
         .infraInfo(infraInfo)
+        .tty(featureFlagService.isEnabled(FeatureName.CI_ENABLE_TTY_LOGS, accountID))
         .build();
   }
 
@@ -700,6 +701,9 @@ public class VmInitializeTaskParamsBuilder {
       }
     }
 
+    // If the tty logs feature flag is enabled
+    boolean enableTTY = featureFlagService.isEnabled(FeatureName.CI_ENABLE_TTY_LOGS, params.getAccountID());
+
     SetupVmRequest.Config config = SetupVmRequest.Config.builder()
                                        .envs(env)
                                        .secrets(secrets)
@@ -711,6 +715,7 @@ public class VmInitializeTaskParamsBuilder {
                                                       .indirectUpload(params.isLogSvcIndirectUpload())
                                                       .build())
                                        .tiConfig(getTIConfig(params, env))
+                                       .tty(enableTTY)
                                        .volumes(getVolumes(params.getVolToMountPath()))
                                        .build();
     return SetupVmRequest.builder()

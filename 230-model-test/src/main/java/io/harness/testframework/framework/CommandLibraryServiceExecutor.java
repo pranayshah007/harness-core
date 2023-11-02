@@ -13,13 +13,13 @@ import static io.harness.testframework.framework.utils.ExecutorUtils.addGCVMOpti
 import static io.harness.testframework.framework.utils.ExecutorUtils.addJacocoAgentVM;
 import static io.harness.testframework.framework.utils.ExecutorUtils.addJar;
 
-import static io.fabric8.utils.Strings.join;
 import static io.restassured.config.HttpClientConfig.httpClientConfig;
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.project.Alpn;
 import io.harness.resource.Project;
@@ -84,7 +84,7 @@ public class CommandLibraryServiceExecutor {
         addJacocoAgentVM(jar, command);
         addJar(jar, command);
         addConfig(config, command);
-        log.info(join(command, " "));
+        log.info(HarnessStringUtils.join(" ", command));
 
         startServiceProcess(rootDirectory, command);
 

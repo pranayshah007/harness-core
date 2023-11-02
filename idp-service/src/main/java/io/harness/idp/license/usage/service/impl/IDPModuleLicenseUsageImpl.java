@@ -55,14 +55,14 @@ public class IDPModuleLicenseUsageImpl implements IDPModuleLicenseUsage {
   @Inject ActiveDevelopersDailyCountRepository activeDevelopersDailyCountRepository;
 
   private static final List<Pattern> URL_PATHS_PATTERN_FOR_LICENSE_USAGE_CAPTURE = List.of(
-      Pattern.compile("v1/status-info*"), Pattern.compile("v1/onboarding*"), Pattern.compile("v1/plugins-info*"),
-      Pattern.compile("v1/plugin-toggle*"), Pattern.compile("v1/app-config*"), Pattern.compile("v1/plugin/request*"),
-      Pattern.compile("v1/merged-plugins-config*"), Pattern.compile("v1/configuration-entities*"),
-      Pattern.compile("v1/auth-info*"), Pattern.compile("v1/scorecards*"), Pattern.compile("v1/scores*"),
-      Pattern.compile("v1/checks*"), Pattern.compile("v1/data-sources*"), Pattern.compile("v1/layout*"),
-      Pattern.compile("v1/backstage-permissions*"), Pattern.compile("v1/connector-info*"),
-      Pattern.compile("v1/allow-list*"), Pattern.compile("v1/entity-facets*"),
-      Pattern.compile("v1/backstage-env-variables/batch*"));
+      Pattern.compile("v1/status-info.*"), Pattern.compile("v1/onboarding.*"), Pattern.compile("v1/plugins-info.*"),
+      Pattern.compile("v1/plugin-toggle.*"), Pattern.compile("v1/app-config.*"), Pattern.compile("v1/plugin/request.*"),
+      Pattern.compile("v1/merged-plugins-config.*"), Pattern.compile("v1/configuration-entities.*"),
+      Pattern.compile("v1/auth-info.*"), Pattern.compile("v1/scorecards.*"), Pattern.compile("v1/scores.*"),
+      Pattern.compile("v1/checks.*"), Pattern.compile("v1/data-sources.*"), Pattern.compile("v1/layout.*"),
+      Pattern.compile("v1/backstage-permissions.*"), Pattern.compile("v1/connector-info.*"),
+      Pattern.compile("v1/allow-list.*"), Pattern.compile("v1/entity-facets.*"),
+      Pattern.compile("v1/backstage-env-variables/batch.*"));
 
   @Override
   public boolean checkIfUrlPathCapturesLicenseUsage(String urlPath) {

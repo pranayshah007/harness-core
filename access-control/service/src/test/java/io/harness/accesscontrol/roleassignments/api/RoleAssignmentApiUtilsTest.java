@@ -36,7 +36,6 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.accesscontrol.v1.model.Principal;
 import io.harness.spec.server.accesscontrol.v1.model.RoleAssignment;
@@ -282,15 +281,14 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
             .lastModifiedAt(null);
 
     io.harness.accesscontrol.roleassignments.RoleAssignment roleAssignmentParam = roleAssignmentBuilder.build();
-    io.harness.accesscontrol.roleassignments.RoleAssignment expectedRoleAssigment = roleAssignmentBuilder.build();
+    io.harness.accesscontrol.roleassignments.RoleAssignment expectedRoleAssignment =
+        roleAssignmentBuilder.principalScopeLevel(ACCOUNT).build();
 
     Scope scope = fromParams(harnessProjectScopeParams);
-    exceptionRule.expect(InvalidRequestException.class);
-    exceptionRule.expectMessage(
-        "Cannot create role assignment for given Service Account. Principal should be of same scope as of role assignment.");
-
     io.harness.accesscontrol.roleassignments.RoleAssignment resultRoleAssignment =
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(roleAssignmentParam, scope);
+    assertThat(resultRoleAssignment).isEqualToComparingFieldByField(expectedRoleAssignment);
+    assertThat(resultRoleAssignment.getPrincipalScopeLevel()).isEqualTo(ACCOUNT);
   }
 
   @Test

@@ -27,6 +27,8 @@ import (
 const authHeader = "X-Harness-Token"
 const authAPIKeyHeader = "x-api-key"
 const routingIDparam = "routingId"
+const regexp1 = "runSequence:[\\d+]"
+const regexp2 = `\w+\/pipeline\/\w+\/[1-9]\d*\/`
 
 // TokenGenerationMiddleware is middleware to ensure that the incoming request is allowed to
 // invoke token-generation endpoints.
@@ -269,7 +271,7 @@ func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 				return
 			}
 
-			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", unescapedUrl)
+			containRunSequence, err := regexp.MatchString(regexp1, unescapedUrl)
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
@@ -280,7 +282,10 @@ func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 				return
 			}
 
-			if containRunSequence {
+			regex := regexp.MustCompile(regexp2)
+            containRunSequenceForSimplifiedLogBaseKey := regex.MatchString(unescapedUrl)
+
+			if containRunSequence || containRunSequenceForSimplifiedLogBaseKey {
 				logger.WithContext(context.Background(), logger.FromRequest(r))
 				logger.FromRequest(r).
 					WithField("url", r.URL.String()).

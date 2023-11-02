@@ -190,4 +190,68 @@ public class K8SInstanceSyncV2DeploymentHelperCgTest extends CategoryTest {
     assertThat(cgDeploymentReleaseDetails.get(0).getInfraMappingType()).isEqualTo("K8s");
     assertThat(cgDeploymentReleaseDetails.get(0).getInfraMappingId()).isEqualTo("infraMappingId");
   }
+
+  @Test
+  @Owner(developers = OwnerRule.BUHA)
+  @Category(UnitTests.class)
+  public void mergeSameReleaseIdentifiersWhenExistingIdentifierWorkloadIsNull() {
+    // existing identifier with container service name set to null -> HELM_STEADY_STATE_CHECK_1_16 is enabled
+    Set<CgReleaseIdentifiers> existingIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                              .releaseName("releaseName")
+                                                                              .clusterName("clusterName")
+                                                                              .namespace("namespace1")
+                                                                              .containerServiceName(null)
+                                                                              .isHelmDeployment(true)
+                                                                              .build());
+    // new identifier with container service name have value -> HELM_STEADY_STATE_CHECK_1_16 is disabled
+    Set<CgReleaseIdentifiers> newIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                         .releaseName("releaseName")
+                                                                         .clusterName("clusterName")
+                                                                         .namespace("namespace1")
+                                                                         .containerServiceName("workload-name")
+                                                                         .isHelmDeployment(true)
+                                                                         .build());
+    Set<CgReleaseIdentifiers> result =
+        k8SInstanceSyncV2DeploymentHelperCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
+    assertThat(result).isNotNull();
+    assertThat(result.size()).isEqualTo(1);
+    CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) result.stream().iterator().next();
+    assertThat(cgK8sReleaseIdentifier.getReleaseName()).isEqualTo("releaseName");
+    assertThat(cgK8sReleaseIdentifier.getNamespace()).isEqualTo("namespace1");
+    assertThat(cgK8sReleaseIdentifier.getClusterName()).isEqualTo("clusterName");
+    assertThat(cgK8sReleaseIdentifier.isHelmDeployment()).isTrue();
+    assertThat(cgK8sReleaseIdentifier.getContainerServiceName()).isEqualTo("workload-name");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.BUHA)
+  @Category(UnitTests.class)
+  public void mergeSameReleaseIdentifiersNewIdentifierWorkloadIsNull() {
+    // existing identifier with container service name have value -> HELM_STEADY_STATE_CHECK_1_16 is disabled
+    Set<CgReleaseIdentifiers> existingIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                              .releaseName("releaseName")
+                                                                              .clusterName("clusterName")
+                                                                              .namespace("namespace1")
+                                                                              .containerServiceName("workload-name")
+                                                                              .isHelmDeployment(true)
+                                                                              .build());
+    // new identifier with container service name null -> HELM_STEADY_STATE_CHECK_1_16 is enabled
+    Set<CgReleaseIdentifiers> newIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                         .releaseName("releaseName")
+                                                                         .clusterName("clusterName")
+                                                                         .namespace("namespace1")
+                                                                         .containerServiceName(null)
+                                                                         .isHelmDeployment(true)
+                                                                         .build());
+    Set<CgReleaseIdentifiers> result =
+        k8SInstanceSyncV2DeploymentHelperCg.mergeReleaseIdentifiers(existingIdentifiers, newIdentifiers);
+    assertThat(result).isNotNull();
+    assertThat(result.size()).isEqualTo(1);
+    CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) result.stream().iterator().next();
+    assertThat(cgK8sReleaseIdentifier.getReleaseName()).isEqualTo("releaseName");
+    assertThat(cgK8sReleaseIdentifier.getNamespace()).isEqualTo("namespace1");
+    assertThat(cgK8sReleaseIdentifier.getClusterName()).isEqualTo("clusterName");
+    assertThat(cgK8sReleaseIdentifier.isHelmDeployment()).isTrue();
+    assertThat(cgK8sReleaseIdentifier.getContainerServiceName()).isNull();
+  }
 }

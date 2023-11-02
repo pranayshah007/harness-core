@@ -103,7 +103,7 @@ public class MergeHelper {
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(String originalYaml,
       String inputSetPipelineCompYaml, boolean appendInputSetValidator, boolean isAtExecutionTime) {
     YamlConfig originalYamlConfig = new YamlConfig(originalYaml);
-    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
+    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml == null ? "" : inputSetPipelineCompYaml);
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
         originalYamlConfig, inputSetConfig, appendInputSetValidator, isAtExecutionTime);
   }

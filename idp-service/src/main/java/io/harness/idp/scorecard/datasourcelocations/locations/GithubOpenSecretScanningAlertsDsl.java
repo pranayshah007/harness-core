@@ -28,6 +28,7 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
@@ -35,9 +36,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
+import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
@@ -46,44 +47,49 @@ public class GithubOpenSecretScanningAlertsDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
-      throws NoSuchAlgorithmException, KeyManagementException {
+      DataSourceLocationEntity dataSourceLocationEntity,
+      List<Pair<DataPointEntity, List<InputValue>>> dataPointsAndInputValues, Map<String, String> replaceableHeaders,
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
+      DataSourceConfig dataSourceConfig) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
     apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
     Map<String, Object> data = new HashMap<>();
 
-    if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
-        || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
-        || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
-      data.put(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR);
-      return data;
-    }
+    for (Pair<DataPointEntity, List<InputValue>> dataPointAndInputValues : dataPointsAndInputValues) {
+      DataPointEntity dataPoint = dataPointAndInputValues.getFirst();
 
-    Map<String, String> replaceablePairs = new HashMap<>();
-    replaceablePairs.putAll(possibleReplaceableUrlPairs);
-    replaceablePairs.putAll(possibleReplaceableRequestBodyPairs);
-    String url = constructUrl(httpConfig.getTarget(), apiRequestDetails.getUrl(), replaceablePairs);
-    apiRequestDetails.setUrl(url);
-    DslClient dslClient =
-        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
-    Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-    if (response.getStatus() == 200) {
-      data.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), List.class));
-    } else if (response.getStatus() == 500) {
-      data.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
-    } else {
-      data.put(ERROR_MESSAGE_KEY,
-          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
+      if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
+          || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
+          || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
+        data.put(dataPoint.getIdentifier(), Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        return data;
+      }
+
+      Map<String, String> replaceablePairs = new HashMap<>();
+      replaceablePairs.putAll(possibleReplaceableUrlPairs);
+      replaceablePairs.putAll(possibleReplaceableRequestBodyPairs);
+      String url = constructUrl(httpConfig.getTarget(), apiRequestDetails.getUrl(), replaceablePairs);
+      apiRequestDetails.setUrl(url);
+      DslClient dslClient =
+          dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
+      Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
+      if (response.getStatus() == 200) {
+        data.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), List.class));
+      } else if (response.getStatus() == 500) {
+        data.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
+      } else {
+        data.put(ERROR_MESSAGE_KEY,
+            GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
+      }
     }
     return data;
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

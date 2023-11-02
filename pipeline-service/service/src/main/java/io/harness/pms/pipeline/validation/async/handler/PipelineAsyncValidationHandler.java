@@ -26,8 +26,8 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.template.service.PipelineRefreshService;
 
-import io.fabric8.utils.Pair;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -83,8 +83,8 @@ public class PipelineAsyncValidationHandler implements Runnable {
     Pair<ValidationResult, TemplateMergeResponseDTO> templateValidation =
         validateTemplatesAndUpdateResult(pipelineEntity);
     ValidationResult templateValidationResult =
-        templateValidation.getFirst().withValidateTemplateReconcileResponseDTO(validateTemplateReconcileResponseDTO);
-    TemplateMergeResponseDTO templateMergeResponse = templateValidation.getSecond();
+        templateValidation.getKey().withValidateTemplateReconcileResponseDTO(validateTemplateReconcileResponseDTO);
+    TemplateMergeResponseDTO templateMergeResponse = templateValidation.getValue();
     if (!templateValidationResult.getTemplateValidationResponse().isValidYaml()) {
       return;
     }
@@ -107,7 +107,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
                   TemplateValidationResponseDTO.builder().validYaml(false).exceptionMessage(ex.getMessage()).build())
               .build();
       validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, templateValidationResult);
-      return new Pair<>(templateValidationResult, templateMergeResponse);
+      return Pair.of(templateValidationResult, templateMergeResponse);
     }
 
     templateValidationResult =
@@ -117,7 +117,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
     validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.IN_PROGRESS, templateValidationResult);
     // Add Template Module Info temporarily to Pipeline Entity
     pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponse));
-    return new Pair<>(templateValidationResult, templateMergeResponse);
+    return Pair.of(templateValidationResult, templateMergeResponse);
   }
 
   void evaluatePoliciesAndUpdateResult(PipelineEntity pipelineEntity, TemplateMergeResponseDTO templateMergeResponse,

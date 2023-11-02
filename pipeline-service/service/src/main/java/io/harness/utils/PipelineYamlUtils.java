@@ -21,7 +21,7 @@ import lombok.experimental.UtilityClass;
 public class PipelineYamlUtils {
   public JsonNode getStagesNodeFromRootNode(JsonNode rootNode, String pipelineVersion) {
     if (HarnessYamlVersion.isV1(pipelineVersion)) {
-      return rootNode.get(YAMLFieldNameConstants.STAGES);
+      return rootNode.get(YAMLFieldNameConstants.SPEC).get(YAMLFieldNameConstants.STAGES);
     }
     return rootNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES);
   }

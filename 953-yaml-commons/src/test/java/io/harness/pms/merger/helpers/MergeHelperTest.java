@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
@@ -18,6 +19,7 @@ import static io.harness.rule.OwnerRule.SRIDHAR;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -69,6 +71,19 @@ public class MergeHelperTest extends CategoryTest {
     String mergedYaml = readFile(mergedYamlFile);
 
     assertThat(resYaml).isEqualTo(mergedYaml);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testMergeInputSetIntoPipelineullIputSetYaml() {
+    String filename = "pipeline-extensive.yml";
+    String yaml = readFile(filename);
+    try {
+      mergeRuntimeInputValuesIntoOriginalYaml(yaml, null, false);
+    } catch (Exception e) {
+      fail("Should not have thrown any exception");
+    }
   }
 
   @Test

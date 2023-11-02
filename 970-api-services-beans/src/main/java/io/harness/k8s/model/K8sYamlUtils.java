@@ -50,6 +50,11 @@ public class K8sYamlUtils {
     return mapper.loadAs(io, cls);
   }
 
+  public static <T> T yamlLoadAs(String spec, Class<T> clazz) {
+    org.yaml.snakeyaml.Yaml yaml = createYamlWithCustomConstructor();
+    return yaml.loadAs(spec, clazz);
+  }
+
   public static org.yaml.snakeyaml.Yaml createYamlWithCustomConstructor() {
     LoaderOptions loaderOptions = new LoaderOptions();
     loaderOptions.setCodePointLimit(customLoadSize());

@@ -17,6 +17,7 @@ import io.harness.persistence.HPersistence;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -78,5 +79,17 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
       resourceMap.put(ecsService.getServiceArn(), ecsService);
     }
     return resourceMap;
+  }
+
+  @Override
+  public long count(String accountId) {
+    return hPersistence.createQuery(ECSService.class).field(ECSServiceKeys.accountId).equal(accountId).count();
+  }
+
+  @Override
+  public boolean deleteAllForAccount(String accountId) {
+    Query<ECSService> query =
+        hPersistence.createQuery(ECSService.class).field(ECSServiceKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
   }
 }

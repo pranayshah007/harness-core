@@ -29,6 +29,7 @@ import io.harness.artifactory.service.ArtifactoryRegistryService;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -42,7 +43,6 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -244,7 +244,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
                                                               .artifactoryConnectorDTO(artifactoryConnectorDTO)
                                                               .build();
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(ListUtils.newArrayList(buildDetailsInternal))
         .when(artifactoryRegistryService)
         .getBuilds(artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name());
 
@@ -301,7 +301,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(ListUtils.newArrayList(buildDetailsInternal))
         .when(artifactoryNgService)
         .getArtifactList(artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath,
             MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
@@ -330,7 +330,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
                                                                      .artifactPathFilter(".*?")
                                                                      .build();
 
-    doReturn(Lists.newArrayList(BUILD_DETAILS))
+    doReturn(ListUtils.newArrayList(BUILD_DETAILS))
         .when(artifactoryNgService)
         .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), "filter",
             MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), "/");
@@ -362,7 +362,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
-    doReturn(Lists.newArrayList(BUILD_DETAILS))
+    doReturn(ListUtils.newArrayList(BUILD_DETAILS))
         .when(artifactoryNgService)
         .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), filePath,
             MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
@@ -394,7 +394,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
-    doReturn(Lists.newArrayList(BUILD_DETAILS))
+    doReturn(ListUtils.newArrayList(BUILD_DETAILS))
         .when(artifactoryNgService)
         .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), filePath,
             MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);

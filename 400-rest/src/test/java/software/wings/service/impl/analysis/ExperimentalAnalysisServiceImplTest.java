@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -29,7 +30,6 @@ import software.wings.sm.StateType;
 import software.wings.sm.states.NewRelicState;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +51,10 @@ public class ExperimentalAnalysisServiceImplTest extends WingsBaseTest {
   private String expName = "ts";
   private String groupName = "default";
 
-  private List<String> hosts = Lists.newArrayList("host1", "host2");
-  private List<String> transactions = Lists.newArrayList("/getdata", "/postdata", "/process");
-  private List<String> metrics = Lists.newArrayList("requestsPerMinute", "averageResponseTime", "error", "apdexScore");
+  private List<String> hosts = ListUtils.newArrayList("host1", "host2");
+  private List<String> transactions = ListUtils.newArrayList("/getdata", "/postdata", "/process");
+  private List<String> metrics =
+      ListUtils.newArrayList("requestsPerMinute", "averageResponseTime", "error", "apdexScore");
 
   private ExperimentalMetricAnalysisRecord getExperimentalRecord(List<Integer> riskValues) {
     ExperimentalMetricAnalysisRecord analysisRecord = ExperimentalMetricAnalysisRecord.builder()
@@ -122,9 +123,9 @@ public class ExperimentalAnalysisServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetExperimentalMetricAnalysisSummary_WithoutMismatchData() {
     when(experimentalMetricAnalysisRecordService.getLastAnalysisRecord(anyString(), anyString()))
-        .thenReturn(getExperimentalRecord(Lists.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+        .thenReturn(getExperimentalRecord(ListUtils.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
     when(timeSeriesMLAnalysisRecordService.getLastAnalysisRecord(anyString()))
-        .thenReturn(getAnalysisRecord(Lists.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+        .thenReturn(getAnalysisRecord(ListUtils.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
 
     assertThatThrownBy(
         () -> experimentalAnalysisService.getExperimentalMetricAnalysisSummary(stateExecutionId, stateType, expName))
@@ -136,9 +137,9 @@ public class ExperimentalAnalysisServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetExperimentalMetricAnalysisSummary_WithMismatchData() {
     when(experimentalMetricAnalysisRecordService.getLastAnalysisRecord(anyString(), anyString()))
-        .thenReturn(getExperimentalRecord(Lists.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)));
+        .thenReturn(getExperimentalRecord(ListUtils.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)));
     when(timeSeriesMLAnalysisRecordService.getLastAnalysisRecord(anyString()))
-        .thenReturn(getAnalysisRecord(Lists.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+        .thenReturn(getAnalysisRecord(ListUtils.newArrayList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
 
     ExperimentalMetricRecord record =
         experimentalAnalysisService.getExperimentalMetricAnalysisSummary(stateExecutionId, stateType, expName);

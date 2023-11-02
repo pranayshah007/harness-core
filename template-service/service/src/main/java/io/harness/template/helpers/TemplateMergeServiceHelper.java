@@ -329,49 +329,84 @@ public class TemplateMergeServiceHelper {
   private MergeTemplateInputsInObject getMergeTemplateInputsInObject(String currentYamlVersion,
       TemplateEntity templateEntity, Map<String, Object> resMap, Map<String, Object> resMapWithTemplateRef,
       Set<String> idsValuesSet, Map<String, Integer> idsSuffixMap) {
-    String processedYamlVersion = currentYamlVersion;
     // If current yaml version is v0 then we can directly return the resMap
     if (templateEntity == null || !HarnessYamlVersion.isV1(currentYamlVersion)) {
       return MergeTemplateInputsInObject.builder()
           .resMap(resMap)
-          .processedYamlVersion(processedYamlVersion)
+          .processedYamlVersion(currentYamlVersion)
           .resMapWithOpaResponse(resMapWithTemplateRef)
           .build();
     }
     // Preprocess the yaml to add ids in the step and stage nodes
     resMap = templatePreprocessorHelper.preProcessResMap(templateEntity, resMap, idsValuesSet, idsSuffixMap);
+    if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
+      return getMergedYamlForPipelineTemplate(resMap, resMapWithTemplateRef, templateEntity);
+    } else if (templateEntity.getTemplateEntityType() == TemplateEntityType.STEPGROUP_TEMPLATE) {
+      return getMergedYamlForStepGroupTemplate(resMap, resMapWithTemplateRef, templateEntity);
+    } else {
+      return getMergedYamlForStageAndStepTemplates(resMap, resMapWithTemplateRef, templateEntity);
+    }
+  }
+
+  MergeTemplateInputsInObject getMergedYamlForStepGroupTemplate(
+      Map<String, Object> resMap, Map<String, Object> resMapWithTemplateRef, TemplateEntity templateEntity) {
+    // for step group template, in case of v0, we need to remove `type: template` from yaml and append template entity
+    // root name amd for v1, we need to add `type: group`, and put steps node inside spec, and remove the steps node
+    // directly added from template
+    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      resMap.put(
+          YAMLFieldNameConstants.SPEC, Map.of(YAMLFieldNameConstants.STEPS, resMap.get(YAMLFieldNameConstants.STEPS)));
+      resMap.remove(YAMLFieldNameConstants.STEPS);
+      return MergeTemplateInputsInObject.builder()
+          .resMap(resMap)
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V1)
+          .build();
+    } else {
+      resMap.remove(YAMLFieldNameConstants.TYPE); // remove `type: template`
+      return MergeTemplateInputsInObject.builder()
+          .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V0)
+          .build();
+    }
+  }
+
+  MergeTemplateInputsInObject getMergedYamlForPipelineTemplate(
+      Map<String, Object> resMap, Map<String, Object> resMapWithTemplateRef, TemplateEntity templateEntity) {
     // if current yaml version is v1 and template is of type pipeline, we need to merge yamls differently for v0 and v1
     // templates
-    if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
-      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(getMergedPipelineYamlV1(resMap))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V1)
-            .build();
-      } else {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V0)
-            .build();
-      }
+    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      return MergeTemplateInputsInObject.builder()
+          .resMap(getMergedPipelineYamlV1(resMap))
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V1)
+          .build();
     } else {
-      // if template is of any other type then in case of v1, resMap can be returned directly but for v0 templates,
-      // template entity root name needs to be appended
-      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(resMap)
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(processedYamlVersion)
-            .build();
-      } else {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V0)
-            .build();
-      }
+      return MergeTemplateInputsInObject.builder()
+          .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V0)
+          .build();
+    }
+  }
+
+  MergeTemplateInputsInObject getMergedYamlForStageAndStepTemplates(
+      Map<String, Object> resMap, Map<String, Object> resMapWithTemplateRef, TemplateEntity templateEntity) {
+    // if template is of stage/step type then in case of v1, resMap can be returned directly but for v0 templates,
+    // template entity root name needs to be appended
+    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      return MergeTemplateInputsInObject.builder()
+          .resMap(resMap)
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V1)
+          .build();
+    } else {
+      return MergeTemplateInputsInObject.builder()
+          .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .processedYamlVersion(HarnessYamlVersion.V0)
+          .build();
     }
   }
 

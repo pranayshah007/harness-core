@@ -47,5 +47,6 @@ public interface EnvironmentRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 
-  Environment getRemoteEntityWithYaml(Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch);
+  Environment getRemoteEnvironmentWithYaml(
+      Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch);
 }

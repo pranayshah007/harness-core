@@ -9,7 +9,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
+	"errors"
+
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
@@ -21,6 +26,8 @@ import (
 
 const (
 	filePathSuffix = "logs.zip"
+	maxItemsToDownload = 1500
+	harnessDownload = "harness-download"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -196,7 +203,7 @@ func HandleInternalDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
-func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config) http.HandlerFunc {
+func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -217,8 +224,20 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			WriteNotFound(w, err)
 			return
 		}
+		if cfg.S3.ReverseProxyEnabled {
+			link, err = GetSignedURL(link, zipPrefix, cfg, gcsClient)
+			if err != nil {
+				logger.FromRequest(r).
+					WithError(err).
+					WithField(usePrefixParam, prefix).
+					Errorln("api: cannot Sign the download url")
+				WriteNotFound(w, err)
+				return
+			}
+		}
 
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
+
 		if err != nil || len(out) == 0 {
 			logger.FromRequest(r).
 				WithError(err).
@@ -227,6 +246,16 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			WriteNotFound(w, fmt.Errorf("cannot list files for prefix"))
 			return
 		}
+
+		if len(out) > maxItemsToDownload {
+		    err := errors.New("Amount of data is too large to download")
+        	logger.FromRequest(r).
+        	    WithError(err).
+        	    WithField(usePrefixParam, prefix).
+        	    Errorln("api: Download failed! Amount of data is too large")
+        	WriteInternalError(w, fmt.Errorf("Prefix Key Exceeds Maximum Download Limit"))
+        	return
+        }
 
 		// creates a cache in status queued
 		logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Adding request to queued state for further processing")
@@ -295,4 +324,24 @@ func HandleExists(store store.Store) http.HandlerFunc {
 
 		io.WriteString(w, fmt.Sprintf("%t", exists))
 	}
+}
+
+// GetSignedURL return a signed gcs object url
+func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.GCS) (string, error) {
+	link, err := gcsClient.SignURL(cfg.S3.Bucket, zipPrefix, cfg.S3.CustomHost, cfg.CacheTTL)
+	if err != nil {
+		return "", err
+	}
+	//parse and unescape only the link before harness-download otherwise it will corrupt the signed link
+	lstring := strings.Split(link, harnessDownload)
+
+	if len(lstring) < 2 {
+		return "", fmt.Errorf("cannot parse Unescaped Signed url for url %s", link)
+	}
+	link, err = url.PathUnescape(lstring[0])
+	if err != nil {
+		return "", err
+	}
+	link = link + harnessDownload + lstring[1]
+	return link, nil
 }

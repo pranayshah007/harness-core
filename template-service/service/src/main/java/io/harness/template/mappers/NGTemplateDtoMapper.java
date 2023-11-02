@@ -250,7 +250,7 @@ public class NGTemplateDtoMapper {
         .description(requestInfoDTO.getDescription())
         .templateScope(ScopeHelper.getScope(orgId, projectId, accountId))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
-        .childType(fetchChildTypeFromTemplateSpec(templateNode.get(YAMLFieldNameConstants.SPEC), templateEntityType))
+        .childType(fetchChildTypeFromTemplateSpec(templateNode, templateEntityType))
         .build();
   }
 
@@ -259,9 +259,9 @@ public class NGTemplateDtoMapper {
       return null;
     }
     if (templateEntityType == TemplateEntityType.STEPGROUP_TEMPLATE) {
-      return JsonNodeUtils.getString(specNode, NGTemplateConstants.STAGE_TYPE);
+      return JsonNodeUtils.getString(specNode, YAMLFieldNameConstants.STAGE);
     }
-    return JsonNodeUtils.getString(specNode, NGTemplateConstants.TYPE);
+    return JsonNodeUtils.getString(specNode.get(YAMLFieldNameConstants.SPEC), NGTemplateConstants.TYPE);
   }
 
   public FilterParamsDTO prepareFilterParamsDTO(String searchTerm, String filterIdentifier,

@@ -59,4 +59,18 @@ public class CloudBillingTransferRunDao {
         .filter(CloudBillingTransferRunKeys.state, state)
         .asList();
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CloudBillingTransferRun.class)
+        .field(CloudBillingTransferRunKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CloudBillingTransferRun> query = persistence.createQuery(CloudBillingTransferRun.class)
+                                               .field(CloudBillingTransferRunKeys.accountId)
+                                               .equal(accountId);
+    return persistence.delete(query);
+  }
 }

@@ -42,6 +42,9 @@ public class TemplatePreProcessorHelper {
         return resMap;
       }
     } else {
+      if (templateEntity.getTemplateEntityType() == TemplateEntityType.STEPGROUP_TEMPLATE) {
+        resMap.put(YAMLFieldNameConstants.TYPE, new TextNode(YAMLFieldNameConstants.GROUP));
+      }
       // Special handling is required here because we need to set identifier for v0 templates and id for v1 templates
       if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
         resMap = preProcessResMapInternal(resMap, HarnessYamlVersion.V1, idsValuesSet, idsSuffixMap, yamlPreProcessor);

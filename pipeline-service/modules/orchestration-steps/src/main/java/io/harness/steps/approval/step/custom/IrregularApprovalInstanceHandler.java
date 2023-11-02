@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.custom;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.steps.approval.step.beans.ApprovalType.CUSTOM_APPROVAL;
 
@@ -37,6 +38,7 @@ import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInst
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -91,12 +93,13 @@ public class IrregularApprovalInstanceHandler implements MongoPersistenceIterato
             .targetInterval(ofSeconds(iteratorConfig.getTargetIntervalInSeconds()))
             .acceptableNoAlertDelay(ofSeconds(iteratorConfig.getTargetIntervalInSeconds() * 2))
             .handler(this)
-            .filterExpander(query
-                -> query.addCriteria(
-                    Criteria.where(ApprovalInstanceKeys.status)
-                        .is(ApprovalStatus.WAITING)
-                        .and(ApprovalInstanceKeys.type)
-                        .in(CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)))
+            .filterExpander(query -> {
+              query.addCriteria(Criteria.where(ApprovalInstanceKeys.status)
+                                    .is(ApprovalStatus.WAITING)
+                                    .and(ApprovalInstanceKeys.type)
+                                    .in(CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL));
+              query.with(Sort.by(Sort.Direction.ASC, "nextIterations.0"));
+            })
             .schedulingType(SchedulingType.IRREGULAR)
             .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
             .redistribute(true));

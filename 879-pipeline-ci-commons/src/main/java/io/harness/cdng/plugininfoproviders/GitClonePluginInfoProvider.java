@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
+
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
@@ -86,7 +87,8 @@ public class GitClonePluginInfoProvider implements PluginInfoProvider {
             .setImageDetails(
                 ImageDetails.newBuilder()
                     .setImageInformation(ImageDetailsUtils.getImageDetails(
-                        containerDefinitionInfo.getContainerImageDetails().getImageDetails()))
+                        containerDefinitionInfo.getContainerImageDetails().getImageDetails(),
+                        containerDefinitionInfo.getImagePullPolicy()))
                     .setConnectorDetails(
                         ConnectorDetails.newBuilder()
                             .setConnectorRef(emptyIfNull(

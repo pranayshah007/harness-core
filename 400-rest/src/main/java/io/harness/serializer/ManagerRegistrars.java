@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.serializer.morphia.CECommonsMorphiaRegistrar;
 import io.harness.morphia.CgOrchestrationBeansMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateAgentKryoRegister;
@@ -108,6 +109,7 @@ public class ManagerRegistrars {
           .add(EventEntitiesMorphiaRegister.class)
           .add(NgPersistenceMorphiaRegistrar.class)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(OidcRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

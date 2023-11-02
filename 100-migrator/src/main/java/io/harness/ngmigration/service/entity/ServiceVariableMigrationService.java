@@ -6,6 +6,10 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
+import static io.harness.ngmigration.dto.Flag.SEQUENTIAL_CREATION;
+import static io.harness.ngmigration.utils.MigratorUtility.isEnabled;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
@@ -201,6 +205,10 @@ public class ServiceVariableMigrationService extends NgMigrationService {
     if (!reused) {
       files.add(yamlFile);
       migratedEntities.putIfAbsent(entityId, yamlFile);
+    }
+
+    if (isEnabled(SEQUENTIAL_CREATION)) {
+      files.add(yamlFile);
     }
     return YamlGenerationDetails.builder().yamlFileList(files).build();
   }

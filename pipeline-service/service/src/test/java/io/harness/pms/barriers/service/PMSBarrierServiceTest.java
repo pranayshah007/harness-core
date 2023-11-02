@@ -21,6 +21,7 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.exception.InvalidRequestException;
@@ -42,7 +43,6 @@ import io.harness.steps.barriers.service.BarrierService;
 import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTracker;
 
-import io.fabric8.utils.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -101,8 +101,8 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
                         StageDetail.builder().name(planNode.getName()).identifier(planNode.getIdentifier()).build()))
                     .build())
             .positionInfo(BarrierPositionInfo.builder()
-                              .barrierPositionList(
-                                  Lists.newArrayList(BarrierPosition.builder().stepRuntimeId(nodeRuntimeId).build()))
+                              .barrierPositionList(ListUtils.newArrayList(
+                                  BarrierPosition.builder().stepRuntimeId(nodeRuntimeId).build()))
                               .build())
             .build();
 
@@ -110,7 +110,7 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
         .thenReturn(stageNode);
 
     when(barrierService.findByStageIdentifierAndPlanExecutionIdAnsStateIn(anyString(), anyString(), anySet()))
-        .thenReturn(Lists.newArrayList(instance1));
+        .thenReturn(ListUtils.newArrayList(instance1));
 
     when(nodeExecutionService.get(nodeRuntimeId)).thenThrow(new InvalidRequestException("Exception"));
 
@@ -160,17 +160,17 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
                            .stages(Sets.newSet(
                                StageDetail.builder().name("stage-name").identifier("stage-identifier").build()))
                            .build())
-            .positionInfo(
-                BarrierPositionInfo.builder()
-                    .barrierPositionList(Lists.newArrayList(BarrierPosition.builder().stepSetupId(planNodeId).build()))
-                    .build())
+            .positionInfo(BarrierPositionInfo.builder()
+                              .barrierPositionList(
+                                  ListUtils.newArrayList(BarrierPosition.builder().stepSetupId(planNodeId).build()))
+                              .build())
             .build();
 
     when(barrierService.findByPlanNodeIdAndPlanExecutionId(planNodeId, ambiance.getPlanExecutionId()))
         .thenReturn(instance1);
     when(nodeExecutionService.getByPlanNodeUuid(planNodeId, ambiance.getPlanExecutionId())).thenReturn(nodeExecution);
     when(timeoutInstanceRepository.findAllById(nodeExecution.getTimeoutInstanceIds()))
-        .thenReturn(Lists.newArrayList(timeoutInstance));
+        .thenReturn(ListUtils.newArrayList(timeoutInstance));
 
     BarrierExecutionInfo barrierExecutionInfo =
         pmsBarrierService.getBarrierExecutionInfo(planNodeId, ambiance.getPlanExecutionId());

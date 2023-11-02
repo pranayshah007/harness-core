@@ -41,6 +41,7 @@ public class CIVmInitializeTaskParams
   @NotNull private String logStreamUrl;
   @NotNull private String logSvcToken;
   @NotNull private boolean logSvcIndirectUpload;
+  @NotNull private boolean tty;
 
   @NotNull private String tiUrl;
   @NotNull private String tiSvcToken;

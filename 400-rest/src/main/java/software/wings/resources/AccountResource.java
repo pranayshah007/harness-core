@@ -747,6 +747,45 @@ public class AccountResource {
     }
   }
 
+  @PUT
+  @Path("{accountId}/ng/credit")
+  public RestResponse<CreditDTO> updateNgCredit(@PathParam("accountId") String accountId,
+      @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
+    validateAccountExistence(clientAccountId);
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.updateAccountCredit(clientAccountId, creditDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to update credit").build()))
+          .build();
+    }
+  }
+
+  @DELETE
+  @Path("{accountId}/ng/credit/{creditId}")
+  public RestResponse<Void> deleteNgCredit(@PathParam("accountId") String accountId,
+      @PathParam("creditId") String creditId, @QueryParam("clientAccountId") @NotNull String clientAccountId) {
+    validateAccountExistence(clientAccountId);
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminCreditHttpClient.deleteAccountCredit(creditId, clientAccountId)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to delete credit").build()))
+          .build();
+    }
+  }
+
   @POST
   @Path("{accountId}/smp/licenses/generate")
   @Hidden
@@ -764,26 +803,6 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to generate smp license").build()))
-          .build();
-    }
-  }
-
-  @PUT
-  @Path("{accountId}/ng/credit")
-  public RestResponse<CreditDTO> updateNgCredit(@PathParam("accountId") String accountId,
-      @QueryParam("clientAccountId") @NotNull String clientAccountId, @Body CreditDTO creditDTO) {
-    validateAccountExistence(clientAccountId);
-    User existingUser = UserThreadLocal.get();
-    if (existingUser == null) {
-      throw new InvalidRequestException("Invalid User");
-    }
-
-    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
-      return new RestResponse<>(getResponse(adminCreditHttpClient.updateAccountCredit(clientAccountId, creditDTO)));
-    } else {
-      return RestResponse.Builder.aRestResponse()
-          .withResponseMessages(
-              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to update credit").build()))
           .build();
     }
   }

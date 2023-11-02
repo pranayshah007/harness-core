@@ -32,6 +32,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectValidator;
@@ -47,7 +48,6 @@ import io.harness.rule.Owner;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -205,13 +205,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void listServiceAccountDTO() {
-    doReturn(Lists.newArrayList(ServiceAccount.builder()
-                                    .name(name)
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(ListUtils.newArrayList(ServiceAccount.builder()
+                                        .name(name)
+                                        .identifier(identifier)
+                                        .accountIdentifier(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build()))
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier);
@@ -224,13 +224,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = RAJ)
   @Category(UnitTests.class)
   public void listServiceAccountDTOWithIdentifiers() {
-    doReturn(Lists.newArrayList(ServiceAccount.builder()
-                                    .name(name)
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(ListUtils.newArrayList(ServiceAccount.builder()
+                                        .name(name)
+                                        .identifier(identifier)
+                                        .accountIdentifier(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build()))
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierIsIn(
             accountIdentifier, orgIdentifier, projectIdentifier, Collections.singletonList(identifier));
@@ -243,13 +243,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void listAggregateServiceAccounts() throws IOException {
-    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
-                                                   .name(name)
-                                                   .identifier(identifier)
-                                                   .accountIdentifier(accountIdentifier)
-                                                   .orgIdentifier(orgIdentifier)
-                                                   .projectIdentifier(projectIdentifier)
-                                                   .build())))
+    doReturn(new PageImpl<>(ListUtils.newArrayList(ServiceAccount.builder()
+                                                       .name(name)
+                                                       .identifier(identifier)
+                                                       .accountIdentifier(accountIdentifier)
+                                                       .orgIdentifier(orgIdentifier)
+                                                       .projectIdentifier(projectIdentifier)
+                                                       .build())))
         .when(serviceAccountRepository)
         .findAll(any(), any());
     when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(true);
@@ -280,13 +280,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void listAggregateServiceAccountsWithPermitted() throws IOException {
-    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
-                                                   .name(name)
-                                                   .identifier(identifier)
-                                                   .accountIdentifier(accountIdentifier)
-                                                   .orgIdentifier(orgIdentifier)
-                                                   .projectIdentifier(projectIdentifier)
-                                                   .build())))
+    doReturn(new PageImpl<>(ListUtils.newArrayList(ServiceAccount.builder()
+                                                       .name(name)
+                                                       .identifier(identifier)
+                                                       .accountIdentifier(accountIdentifier)
+                                                       .orgIdentifier(orgIdentifier)
+                                                       .projectIdentifier(projectIdentifier)
+                                                       .build())))
         .when(serviceAccountRepository)
         .findAll(any(), any());
     when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(false);
@@ -335,13 +335,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void listAggregateServiceAccountsWithNonePermitted() throws IOException {
-    doReturn(new PageImpl<>(Lists.newArrayList(ServiceAccount.builder()
-                                                   .name(name)
-                                                   .identifier(identifier)
-                                                   .accountIdentifier(accountIdentifier)
-                                                   .orgIdentifier(orgIdentifier)
-                                                   .projectIdentifier(projectIdentifier)
-                                                   .build())))
+    doReturn(new PageImpl<>(ListUtils.newArrayList(ServiceAccount.builder()
+                                                       .name(name)
+                                                       .identifier(identifier)
+                                                       .accountIdentifier(accountIdentifier)
+                                                       .orgIdentifier(orgIdentifier)
+                                                       .projectIdentifier(projectIdentifier)
+                                                       .build())))
         .when(serviceAccountRepository)
         .findAll(any(), any());
     when(accessControlClient.hasAccess(any(), any(), anyString())).thenReturn(false);

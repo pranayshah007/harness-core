@@ -22,6 +22,8 @@ import static io.harness.rule.OwnerRule.XIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -136,5 +138,32 @@ public class CreditServiceImplTest extends CategoryTest {
     when(creditObjectConverter.toDTO(UPDATE_CREDIT)).thenReturn(TO_BE_UPDATE_CI_CREDIT_DTO);
     CreditDTO updatedCreditDTO = creditService.updateCredit(ACCOUNT_IDENTIFIER, TO_BE_UPDATE_CI_CREDIT_DTO);
     assertThat(updatedCreditDTO).isNull();
+  }
+  @Test
+  @Owner(developers = XIN)
+  @Category(UnitTests.class)
+  public void testDeleteCredit() {
+    when(creditRepository.findById(any())).thenReturn(Optional.of(DEFAULT_CREDIT));
+    creditService.deleteCredit(DEFAULT_ID, ACCOUNT_IDENTIFIER);
+    verify(creditRepository, times(1)).findById(DEFAULT_ID);
+  }
+
+  @Test(expected = NotFoundException.class)
+  @Owner(developers = XIN)
+  @Category(UnitTests.class)
+  public void testDeleteCreditWithWrongCreditId() {
+    when(creditRepository.findById(any())).thenReturn(Optional.empty());
+    creditService.deleteCredit(DEFAULT_ID, ACCOUNT_IDENTIFIER);
+    verify(creditRepository, times(1)).findById(DEFAULT_ID);
+    verify(creditService, times(0)).deleteCredit(DEFAULT_ID, ACCOUNT_IDENTIFIER);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = XIN)
+  @Category(UnitTests.class)
+  public void testDeleteCreditDoesNotBelongToAccount() {
+    when(creditRepository.findById(any())).thenReturn(Optional.of(DEFAULT_CREDIT));
+    creditService.deleteCredit(DEFAULT_ID, MISMATCH_ACCOUNT_IDENTIFIER);
+    verify(creditRepository, times(1)).findById(DEFAULT_ID);
   }
 }

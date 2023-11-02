@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -23,7 +24,6 @@ import software.wings.service.impl.newrelic.NewRelicMetricValueDefinition;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import io.fabric8.utils.Lists;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -43,13 +43,13 @@ public class NewRelicMetricAnalysisRecordTest extends WingsBaseTest {
         NewRelicMetricAnalysis.builder()
             .metricName(generateUuid())
             .riskLevel(RiskLevel.HIGH)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(10.0).build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(10.0).build()))
             .build();
     NewRelicMetricAnalysis txn2 =
         NewRelicMetricAnalysis.builder()
             .metricName(generateUuid())
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(15.0).build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(15.0).build()))
             .build();
 
     assertThat(txn1.compareTo(txn2)).isLessThan(0);
@@ -63,7 +63,7 @@ public class NewRelicMetricAnalysisRecordTest extends WingsBaseTest {
         NewRelicMetricAnalysis.builder()
             .metricName(generateUuid())
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(10.0).build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder().testValue(10.0).build()))
             .build();
     NewRelicMetricAnalysis txn2 =
         NewRelicMetricAnalysis.builder().metricName(generateUuid()).riskLevel(RiskLevel.MEDIUM).build();
@@ -93,15 +93,15 @@ public class NewRelicMetricAnalysisRecordTest extends WingsBaseTest {
         NewRelicMetricAnalysis.builder()
             .metricName("txn1")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(
-                Lists.newArrayList(NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
+            .metricValues(ListUtils.newArrayList(
+                NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
             .build();
     NewRelicMetricAnalysis txn2 =
         NewRelicMetricAnalysis.builder()
             .metricName("txn2")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(
-                Lists.newArrayList(NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
+            .metricValues(ListUtils.newArrayList(
+                NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
             .build();
 
     assertThat(txn1.compareTo(txn2)).isLessThan(0);
@@ -116,17 +116,17 @@ public class NewRelicMetricAnalysisRecordTest extends WingsBaseTest {
         NewRelicMetricAnalysis.builder()
             .metricName("txn1")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(
-                Lists.newArrayList(NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
+            .metricValues(ListUtils.newArrayList(
+                NewRelicMetricAnalysisValue.builder().name(generateUuid()).testValue(10.0).build()))
             .build();
     NewRelicMetricAnalysis txn2 =
         NewRelicMetricAnalysis.builder()
             .metricName("txn2")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder()
-                                                 .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
-                                                 .testValue(10.0)
-                                                 .build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder()
+                                                     .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
+                                                     .testValue(10.0)
+                                                     .build()))
             .build();
 
     assertThat(txn1.compareTo(txn2)).isGreaterThan(0);
@@ -141,19 +141,19 @@ public class NewRelicMetricAnalysisRecordTest extends WingsBaseTest {
         NewRelicMetricAnalysis.builder()
             .metricName("txn1")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder()
-                                                 .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
-                                                 .testValue(15.0)
-                                                 .build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder()
+                                                     .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
+                                                     .testValue(15.0)
+                                                     .build()))
             .build();
     NewRelicMetricAnalysis txn2 =
         NewRelicMetricAnalysis.builder()
             .metricName("txn2")
             .riskLevel(RiskLevel.MEDIUM)
-            .metricValues(Lists.newArrayList(NewRelicMetricAnalysisValue.builder()
-                                                 .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
-                                                 .testValue(10.0)
-                                                 .build()))
+            .metricValues(ListUtils.newArrayList(NewRelicMetricAnalysisValue.builder()
+                                                     .name(NewRelicMetricValueDefinition.REQUSET_PER_MINUTE)
+                                                     .testValue(10.0)
+                                                     .build()))
             .build();
 
     assertThat(txn1.compareTo(txn2)).isLessThan(0);

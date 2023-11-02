@@ -96,4 +96,13 @@ public class CEClusterDao {
                HPersistence.upsertReturnNewOptions))
         != null;
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(CECluster.class).field(CEClusterKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CECluster> query = hPersistence.createQuery(CECluster.class).field(CEClusterKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

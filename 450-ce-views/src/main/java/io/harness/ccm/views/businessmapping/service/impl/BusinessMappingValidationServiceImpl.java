@@ -28,7 +28,6 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -77,7 +76,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
 
   private void validateSharedBucketsInNestedBusinessMapping(final BusinessMapping businessMapping) {
     if (isBusinessMappingPresentInCostBuckets(businessMapping.getCostTargets())
-        && !Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+        && !isEmpty(businessMapping.getSharedCosts())) {
       throw new InvalidRequestException("Shared cost is not supported in nested cost category");
     }
   }
@@ -145,9 +144,9 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
     final ViewField viewField = viewCondition.getViewField();
     if (viewField.getIdentifier() == BUSINESS_MAPPING) {
       final BusinessMapping businessMapping = businessMappingDao.get(viewField.getFieldId());
-      if (!Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
+      if (!isEmpty(businessMapping.getCostTargets())) {
         validateCyclicDependency(businessMapping.getCostTargets(), nestedBusinessMappingDepth + 1);
-        if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+        if (!isEmpty(businessMapping.getSharedCosts())) {
           throw new InvalidRequestException("Not supported nested cost category which has shared bucket in it");
         }
       }
@@ -159,7 +158,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   }
 
   private void validateCostBuckets(final BusinessMapping businessMapping) {
-    if (Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
+    if (isEmpty(businessMapping.getCostTargets())) {
       throw new InvalidRequestException("At least 1 cost bucket must exist");
     }
     if (businessMapping.getCostTargets().size() > MAX_COST_BUCKETS_LIMIT) {
@@ -181,7 +180,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   }
 
   private void validateSharedBuckets(final BusinessMapping businessMapping) {
-    if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+    if (!isEmpty(businessMapping.getSharedCosts())) {
       if (businessMapping.getSharedCosts().size() > MAX_SHARED_BUCKETS_LIMIT) {
         throw new InvalidRequestException(String.format("Max shared buckets limit is %s", MAX_SHARED_BUCKETS_LIMIT));
       }
@@ -211,7 +210,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   }
 
   private void validateRules(final List<ViewRule> rules, final String bucketName, final boolean areSharedCostRules) {
-    if (Lists.isNullOrEmpty(rules)) {
+    if (isEmpty(rules)) {
       throw new InvalidRequestException(String.format("Rules must exist for bucket %s", bucketName));
     }
     for (final ViewRule viewRule : rules) {
@@ -221,7 +220,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
 
   private void validateViewConditions(
       final List<ViewCondition> viewConditions, final String bucketName, final boolean areSharedCostViewConditions) {
-    if (Lists.isNullOrEmpty(viewConditions)) {
+    if (isEmpty(viewConditions)) {
       throw new InvalidRequestException(String.format("Conditions must exist for bucket %s", bucketName));
     }
     for (final ViewCondition viewCondition : viewConditions) {
@@ -266,7 +265,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   }
 
   private void validateSharedCostSplits(final SharedCost sharedCost, final Set<String> costBucketNames) {
-    if (Lists.isNullOrEmpty(sharedCost.getSplits())) {
+    if (isEmpty(sharedCost.getSplits())) {
       throw new InvalidRequestException(
           String.format("Splits must exist for shared cost bucket %s", sharedCost.getName()));
     }

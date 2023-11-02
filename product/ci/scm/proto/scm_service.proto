@@ -681,6 +681,7 @@ enum HarnessWebhookEvent {
   HARNESS_TAG_CREATED = 6;
   HARNESS_TAG_DELETED = 7;
   HARNESS_TAG_UPDATED = 8;
+  HARNESS_PULLREQ_COMMENT_CREATED = 9;
 }
 
 message GithubWebhookEvents {

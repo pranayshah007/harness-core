@@ -11,6 +11,7 @@ import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathPa
 import static io.harness.cvng.core.services.CVNextGenConstants.DOWNTIME_PROJECT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,16 +29,22 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -57,7 +64,7 @@ import retrofit2.http.Body;
 @Produces("application/json")
 @ExposeInternalException
 @NextGenManagerAuth
-/*@Tag(name = "Downtime", description = "This contains APIs related to CRUD operations of Downtime")
+@Tag(name = "Downtime", description = "This contains APIs related to CRUD operations of Downtime")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -77,8 +84,11 @@ import retrofit2.http.Body;
       ,
           @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
               schema = @Schema(implementation = ErrorDTO.class))
-    })*/
+    })
 @OwnedBy(HarnessTeam.CV)
+@Timed
+@ExceptionMetered
+@ResponseMetered
 public class DowntimeProjectLevelResource {
   public static final String DOWNTIME = "DOWNTIME";
   public static final String EDIT_PERMISSION = "chi_downtime_edit";
@@ -89,8 +99,6 @@ public class DowntimeProjectLevelResource {
 
   @POST
   @Consumes("application/json")
-  @Timed
-  @ExceptionMetered
   @ApiOperation(value = "saves downtime", nickname = "saveDowntime")
   /*  @Operation(operationId = "saveDowntime", summary = "Saves Downtime",
         responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Gets the saved Downtime") })*/
@@ -102,8 +110,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @GET
-  @Timed
-  @ExceptionMetered
   @Path(RESOURCE_IDENTIFIER_PATH)
   @ApiOperation(value = "get downtime data", nickname = "getDowntime")
   /*  @Operation(operationId = "getDowntime", summary = "Get Downtime data",
@@ -116,8 +122,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @GET
-  @Timed
-  @ExceptionMetered
   @Path("/monitored-services/{identifier}")
   @ApiOperation(value = "get associated Monitored Services", nickname = "getAssociatedMonitoredServices")
   /*  @Operation(operationId = "getAssociatedMonitoredServices", summary = "Get Downtime Associated Monitored
@@ -134,8 +138,6 @@ public class DowntimeProjectLevelResource {
 
   @PUT
   @Consumes("application/json")
-  @Timed
-  @ExceptionMetered
   @Path(RESOURCE_IDENTIFIER_PATH)
   @ApiOperation(value = "update downtime data", nickname = "updateDowntimeData")
   /*  @Operation(operationId = "updateDowntimeData", summary = "Update Downtime data",
@@ -149,8 +151,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @DELETE
-  @Timed
-  @ExceptionMetered
   @Path(RESOURCE_IDENTIFIER_PATH)
   @ApiOperation(value = "delete downtime data", nickname = "deleteDowntimeData")
   /*  @Operation(operationId = "deleteDowntimeData", summary = "Delete Downtime data",
@@ -164,8 +164,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @GET
-  @Timed
-  @ExceptionMetered
   @Path("/list")
   @ApiOperation(value = "list downtime data", nickname = "listDowntimes")
   /*  @Operation(operationId = "listDowntimes", summary = "List Downtime data",
@@ -179,8 +177,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @GET
-  @Timed
-  @ExceptionMetered
   @Path("/history")
   @ApiOperation(value = "Get downtime history data", nickname = "getHistory")
   /*  @Operation(operationId = "getHistory", summary = "Get downtime history data",
@@ -194,8 +190,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @PUT
-  @Timed
-  @ExceptionMetered
   @Path("/flag/{identifier}")
   @ApiOperation(value = "Enables disables downtime", nickname = "enablesDisablesDowntime")
   /*  @Operation(operationId = "enableDisableDowntime", summary = "Enables or Disables Downtime",
@@ -210,8 +204,6 @@ public class DowntimeProjectLevelResource {
   }
 
   @GET
-  @Timed
-  @ExceptionMetered
   @Path("monitored-services")
   @ApiOperation(value = "get all monitored services associated with the downtime",
       nickname = "getDowntimeAssociatedMonitoredServices")

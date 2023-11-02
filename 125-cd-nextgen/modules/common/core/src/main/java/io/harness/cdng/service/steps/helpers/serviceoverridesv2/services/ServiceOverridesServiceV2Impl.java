@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -83,7 +84,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.opensaml.xmlsec.signature.P;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -134,6 +134,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   public NGServiceOverridesEntity create(@NonNull NGServiceOverridesEntity requestedEntity) {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
 
     Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
@@ -171,6 +175,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   public NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
@@ -245,6 +253,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       throws IOException {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
+    if (requestedEntity.getSpec() != null) {
+      ServiceOverrideValidatorService.validateAllowedManifestTypesInOverrides(
+          requestedEntity.getSpec().getManifests(), requestedEntity.getType().toString());
+    }
     modifyRequestedServiceOverride(requestedEntity);
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),

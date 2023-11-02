@@ -8,6 +8,7 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -45,7 +46,6 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -328,7 +328,7 @@ public class GovernanceRuleExecutionResource {
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
     List<RecommendationItemDTO> recommendationsDTO =
         recommendationsOverviewQueryV2.recommendations(filter, env).getItems();
-    if (Lists.isNullOrEmpty(recommendationsDTO)) {
+    if (isEmpty(recommendationsDTO)) {
       return ResponseDTO.newResponse(OverviewExecutionCostDetails.builder().build());
     }
     List<String> recommendationsIds = recommendationsDTO.stream()
