@@ -503,11 +503,13 @@ public class AuthenticationManager {
       if (user.isTwoFactorAuthenticationEnabled()) {
         return generate2faJWTToken(user);
       } else {
-        List<String> accountIds = user.getAccountIds();
-
+        String accountId = userService.getClaimsFromJWTToken(jwtSecret, JWT_CATEGORY.SSO_REDIRECT, ACCOUNT_ID);
+        if (accountId == null) {
+          accountId = getAccountId(user, null);
+        }
         User loggedInUser = authService.generateBearerTokenForUser(user);
-        authService.auditLogin(accountIds, loggedInUser);
-        authService.auditLoginToNg(accountIds, loggedInUser);
+        authService.auditLogin(Collections.singletonList(accountId), loggedInUser);
+        authService.auditLoginToNg(Collections.singletonList(accountId), loggedInUser);
         return loggedInUser;
       }
     } catch (Exception e) {

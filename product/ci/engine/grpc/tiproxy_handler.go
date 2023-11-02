@@ -223,9 +223,6 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string
 	}
 	msg := fmt.Sprintf("Size of Test nodes: %d, Test relations: %d, Vis Relations %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations))
 	h.log.Infow(msg)
-	if isCgEmpty(cg) {
-		return nil, msg, true, nil
-	}
 
 	cgMap := cg.ToStringMap()
 	cgSer, err := avro.NewCgphSerialzer(cgSchemaType, false)
