@@ -326,7 +326,6 @@ mongo:
                 name: ""
                 property: ""
   notification:
-    tmpl:
     enabled: false
     database: "notifications"
     protocol: ""
