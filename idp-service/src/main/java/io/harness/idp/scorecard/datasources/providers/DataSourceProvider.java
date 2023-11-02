@@ -102,7 +102,7 @@ public abstract class DataSourceProvider {
           dataSourceLocationEntity, dataToFetchForDsl, replaceableHeaders, possibleReplaceableRequestBodyPairs,
           possibleReplaceableUrlPairs, config);
       log.info("Response for DSL in Process out - dsl Identifier - {} dataToFetchWithInputValues - {} Response - {} ",
-          dslIdentifier, dataToFetchByDsl, response);
+          dslIdentifier, dataToFetchForDsl, response);
 
       parseResponseAgainstDataPoint(dataToFetchForDsl, response, aggregatedData);
     }

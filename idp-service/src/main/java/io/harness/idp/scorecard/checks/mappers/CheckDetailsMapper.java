@@ -21,10 +21,12 @@ import io.harness.spec.server.idp.v1.model.Rule;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
+@Slf4j
 public class CheckDetailsMapper {
   public CheckDetails toDTO(CheckEntity checkEntity) {
     CheckDetails checkDetails = new CheckDetails();
@@ -84,6 +86,8 @@ public class CheckDetailsMapper {
       expressionBuilder.append(rule.getValue());
     }
 
-    return expressionBuilder.toString();
+    String expression = expressionBuilder.toString();
+    log.info("Constructed expression: {}", expression);
+    return expression;
   }
 }
