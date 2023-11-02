@@ -40,6 +40,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.ScopeInfo;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
@@ -223,6 +224,7 @@ import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
 import io.harness.runnable.InstanceAccountInfoRunnable;
+import io.harness.scope.remote.ScopeInfoClient;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -471,7 +473,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
-    registerScopeInfoFilter(environment, injector);
+    registerScopeInfoFilter(appConfig, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -666,8 +668,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   public void registerIterators(NgIteratorsConfig ngIteratorsConfig, Injector injector) {
-    injector.getInstance(NGVaultSecretManagerRenewalHandler.class)
-        .registerIterators(ngIteratorsConfig.getNgVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
+//    injector.getInstance(NGVaultSecretManagerRenewalHandler.class)
+//        .registerIterators(ngIteratorsConfig.getNgVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
     injector.getInstance(WebhookEventProcessingService.class)
         .registerIterators(ngIteratorsConfig.getWebhookEventProcessingServiceIteratorConfig().getThreadPoolSize());
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
@@ -682,7 +684,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
         .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
-    injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
+    // injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
     injector.getInstance(ProvisionMonthlyCICreditsHandler.class).registerIterators(2);
   }
@@ -981,8 +983,17 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
   }
 
-  private void registerScopeInfoFilter(Environment environment, Injector injector) {
-    environment.jersey().register(injector.getInstance(ScopeInfoFilter.class));
+  private void registerScopeInfoFilter(NextGenConfiguration configuration, Environment environment, Injector injector) {
+    Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate =
+        (getAuthenticationExemptedRequestsPredicate().negate())
+            .and((getAuthFilterPredicate(InternalApi.class)).negate());
+    Map<String, String> serviceToSecretMapping = new HashMap<>();
+    serviceToSecretMapping.put(BEARER.getServiceId(), configuration.getNextGenConfig().getJwtAuthSecret());
+    serviceToSecretMapping.put(
+        IDENTITY_SERVICE.getServiceId(), configuration.getNextGenConfig().getJwtIdentityServiceSecret());
+    serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNextGenConfig().getNgManagerServiceSecret());
+
+    environment.jersey().register(new ScopeInfoFilter(predicate, null, serviceToSecretMapping, injector.getInstance(Key.get(ScopeInfo.class)), injector.getInstance(Key.get(ScopeInfoClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {

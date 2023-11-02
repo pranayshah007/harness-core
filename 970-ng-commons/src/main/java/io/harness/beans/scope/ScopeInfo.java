@@ -12,13 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import javax.enterprise.context.RequestScoped;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.ScopeLevel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -26,6 +26,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @RequestScoped
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)

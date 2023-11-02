@@ -5,15 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.scopeinfoclient;
+package io.harness.scope;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.scopeinfoclient.remote.ScopeInfoClient;
-import io.harness.scopeinfoclient.remote.ScopeInfoClientHttpFactory;
+import io.harness.scope.remote.ScopeInfoClient;
+import io.harness.scope.remote.ScopeInfoClientHttpFactory;
 import io.harness.security.ServiceTokenGenerator;
 
 import com.google.inject.AbstractModule;

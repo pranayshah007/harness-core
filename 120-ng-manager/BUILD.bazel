@@ -90,7 +90,6 @@ shared_dependencies = [
     "//clients/pipeline-service/pms-client:module",
     "//clients/servicediscovery:module",
     "//clients/ngsettings:module",
-    "//clients/scope:module",
     "//product/ci/scm/proto:ciscm_java_proto",
     "@maven//:net_rcarz_jira_client",
     "@maven//:aopalliance_aopalliance",
