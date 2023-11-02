@@ -132,7 +132,7 @@ public class InfrastructureEntitySetupUsageHelper {
   }
 
   private EntityDetailProtoDTO buildInfraDefRefBasedEntityDetailProtoDTO(@NonNull InfrastructureEntity entity) {
-    Optional<Environment> environment = environmentService.get(entity.getAccountId(), entity.getOrgIdentifier(),
+    Optional<Environment> environment = environmentService.getMetadata(entity.getAccountId(), entity.getOrgIdentifier(),
         entity.getProjectIdentifier(), entity.getEnvIdentifier(), false);
     return EntityDetailProtoDTO.newBuilder()
         .setInfraDefRef(createInfraDefinitionReferenceProtoDTO(entity.getAccountId(), entity.getOrgIdentifier(),

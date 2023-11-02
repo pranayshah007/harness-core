@@ -83,7 +83,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     mocks = MockitoAnnotations.openMocks(this);
     doReturn(Optional.of(Environment.builder().name(ENV_NAME).build()))
         .when(environmentService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .getMetadata(anyString(), anyString(), anyString(), anyString(), anyBoolean());
   }
 
   @After
