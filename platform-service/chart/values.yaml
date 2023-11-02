@@ -24,7 +24,7 @@ global:
             SMTP_HOST: ""
             SMTP_PORT: ""
             SMTP_USE_SSL: ""
-      secretManagement: 
+      secretManagement:
         externalSecretsOperator:
           - secretStore:
               name: ""
@@ -45,7 +45,6 @@ global:
               SMTP_USE_SSL:
                 name: ""
                 property: ""
-
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -78,7 +77,7 @@ global:
             keys:
               MONGO_USER: ""
               MONGO_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -116,7 +115,7 @@ global:
             keys:
               REDIS_USERNAME: ""
               REDIS_PASSWORD: ""
-        secretManagement: 
+        secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
@@ -128,7 +127,6 @@ global:
                 REDIS_PASSWORD:
                   name: ""
                   property: ""
-
   ingress:
     # -- create ingress objects
     enabled: false
@@ -143,7 +141,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -154,7 +152,6 @@ global:
     virtualService:
       gateways:
       hosts:
-
 redis:
   protocol: ""
   hosts: []
@@ -165,7 +162,7 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -177,7 +174,6 @@ redis:
             REDIS_PASSWORD:
               name: ""
               property: ""
-
 mongo:
   protocol: ""
   hosts: []
@@ -188,7 +184,7 @@ mongo:
         keys:
           MONGO_USER: ""
           MONGO_PASSWORD: ""
-    secretManagement: 
+    secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
@@ -200,20 +196,17 @@ mongo:
             MONGO_PASSWORD:
               name: ""
               property: ""
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 image:
-  registry: docker.io
-  repository: harness/platform-service-signed
+  registry: us.gcr.io
+  repository: platform-205701/platform-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80000"
+  tag: "1.2.0"
   digest: ""
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -222,7 +215,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -230,15 +222,11 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 appLogLevel: INFO
-
 java:
   memory: "3072m"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -247,58 +235,45 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 service:
   annotations: {}
   type: ClusterIP
   port: 9005
-
 resources:
   limits:
     memory: 8192Mi
   requests:
     cpu: 0.5
     memory: 512Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 imagePullSecrets: {}
-
 additionalConfigs: {}
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -313,7 +288,6 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
