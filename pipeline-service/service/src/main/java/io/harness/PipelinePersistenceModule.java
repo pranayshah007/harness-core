@@ -14,7 +14,6 @@ import io.harness.gitsync.persistance.GitSyncablePersistenceConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationChannelPersistenceConfig;
 import io.harness.pms.outbox.PipelineOutboxPersistenceConfig;
-import io.harness.pms.template.TemplatePersistenceConfig;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceConfig;

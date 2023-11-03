@@ -14,13 +14,10 @@ import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.springdata.HMongoTemplate;
-import io.harness.template.repositories.NGGlobalTemplateRepository;
-import io.harness.template.repositories.NGTemplateRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientURI;

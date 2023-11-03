@@ -8,7 +8,6 @@
 package io.harness.pms.template;
 
 import io.harness.mongo.MongoConfig;
-import io.harness.remote.client.ServiceHttpClientConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
