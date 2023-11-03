@@ -29,6 +29,7 @@ import lombok.Setter;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = EmailNotificationRequestDTO.class, name = "EMAIL")
   , @JsonSubTypes.Type(value = MSTeamNotificationRequestDTO.class, name = "MSTEAMS"),
+      @JsonSubTypes.Type(value = SlackNotificationRequestDTO.class, name = "SLACK"),
       @JsonSubTypes.Type(value = WebhookNotificationRequestDTO.class, name = "WEBHOOK")
 })
 @JsonIgnoreProperties(ignoreUnknown = true)

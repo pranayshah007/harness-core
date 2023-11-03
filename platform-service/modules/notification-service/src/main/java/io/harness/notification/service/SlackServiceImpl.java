@@ -20,6 +20,8 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.SlackTaskParams;
@@ -30,6 +32,7 @@ import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
+import io.harness.notification.remote.dto.SlackNotificationRequestDTO;
 import io.harness.notification.remote.dto.SlackSettingDTO;
 import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.notification.service.api.ChannelService;
@@ -50,7 +53,6 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.text.StrSubstitutor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -121,7 +123,31 @@ public class SlackServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendNotification(NotificationRequestDTO notificationRequestDTO) {
-    throw new NotImplementedException();
+    SlackNotificationRequestDTO slackNotificationRequestDTO = (SlackNotificationRequestDTO) notificationRequestDTO;
+    String webhookUrl = slackNotificationRequestDTO.getWebhookUrl();
+    if (Objects.isNull(stripToNull(slackNotificationRequestDTO.getAccountId()))) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", slackNotificationRequestDTO.getNotificationId()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+    if (Objects.isNull(stripToNull(webhookUrl))) {
+      throw new NotificationException(String.format("Malformed webhook Url encountered while processing request %s",
+                                          slackNotificationRequestDTO.getNotificationId()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+    notificationSettingsHelper.validateRecipient(webhookUrl, slackNotificationRequestDTO.getAccountId(),
+        SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+
+    NotificationTaskResponse taskResponse =
+        sendInSync(Collections.singletonList(webhookUrl), slackNotificationRequestDTO.getMessage(),
+            slackNotificationRequestDTO.getNotificationId(), slackNotificationRequestDTO.getAccountId());
+    if (taskResponse.getProcessingResponse() == null || taskResponse.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(taskResponse.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to process Slack request. %s", taskResponse.getErrorMessage()), DEFAULT_ERROR_CODE,
+          USER);
+    }
+    return taskResponse;
   }
 
   private NotificationProcessingResponse send(List<String> slackWebhookUrls, String templateId,
@@ -163,6 +189,44 @@ public class SlackServiceImpl implements ChannelService {
             : "Notification request {} sent",
         notificationId);
     return processingResponse;
+  }
+
+  private NotificationTaskResponse sendInSync(
+      List<String> slackWebhookUrls, String message, String notificationId, String accountId) {
+    List<String> validDomains = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
+    NotificationTaskResponse notificationTaskResponse = null;
+    NotificationProcessingResponse processingResponse = null;
+    if (notificationSettingsService.checkIfWebhookIsSecret(slackWebhookUrls)) {
+      DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                    .accountId(accountId)
+                                                    .taskType("NOTIFY_SLACK")
+                                                    .taskParameters(SlackTaskParams.builder()
+                                                                        .notificationId(notificationId)
+                                                                        .message(message)
+                                                                        .slackWebhookUrls(slackWebhookUrls)
+                                                                        .slackWebhookUrlDomainAllowlist(validDomains)
+                                                                        .build())
+                                                    .taskSetupAbstractions(Collections.emptyMap())
+                                                    .expressionFunctorToken(0)
+                                                    .executionTimeout(Duration.ofMinutes(1L))
+                                                    .build();
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      if (responseData instanceof ErrorNotifyResponseData) {
+        throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
+            ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
+      } else {
+        notificationTaskResponse = (NotificationTaskResponse) responseData;
+      }
+    } else {
+      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId, validDomains);
+      notificationTaskResponse = NotificationTaskResponse.builder().processingResponse(processingResponse).build();
+    }
+    log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
+            ? "Failed to send notification for request {}"
+            : "Notification request {} sent",
+        notificationId);
+    return notificationTaskResponse;
   }
 
   private List<String> getRecipients(NotificationRequest notificationRequest) {
