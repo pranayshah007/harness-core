@@ -41,6 +41,7 @@ import org.apache.commons.collections.CollectionUtils;
 public class DelegateVersionService {
   public static final String DEFAULT_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   public static final String DEFAULT_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
+  public static final String HARNESS_IMAGE_TAG = "harness/delegate";
 
   private static final String IMMUTABLE_DELEGATE_DOCKER_IMAGE = "IMMUTABLE_DELEGATE_DOCKER_IMAGE";
   private static final String UPGRADER_DOCKER_IMAGE = "UPGRADER_DOCKER_IMAGE";
@@ -90,6 +91,29 @@ public class DelegateVersionService {
   public String getImmutableDelegateImageTag(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+      return versionOverride.getVersion();
+    }
+
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return fetchImmutableDelegateImageOnPrem();
+    }
+
+    final String ringImage = delegateRingService.getDelegateImageTag(accountId);
+    if (isNotBlank(ringImage)) {
+      return ringImage;
+    }
+    throw new IllegalStateException("No immutable delegate image tag found in ring");
+  }
+
+  /**
+   * Retruns latest harness override if available otherwise returns ring version
+   * @param accountId
+   * @return
+   */
+  public String getLatestImmutableDelegateImageTag(final String accountId) {
+    final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
+    if (versionOverride != null && isNotBlank(versionOverride.getVersion())
+        && HARNESS_IMAGE_TAG.equals(versionOverride.getVersion())) {
       return versionOverride.getVersion();
     }
 
@@ -175,7 +199,7 @@ public class DelegateVersionService {
   }
 
   public SupportedDelegateVersion getSupportedDelegateVersion(String accountId) {
-    String latestSupportedDelegateImage = getImmutableDelegateImageTag(accountId);
+    String latestSupportedDelegateImage = getLatestImmutableDelegateImageTag(accountId);
     String[] split = latestSupportedDelegateImage.split(":");
     String latestVersion = split[1];
 
