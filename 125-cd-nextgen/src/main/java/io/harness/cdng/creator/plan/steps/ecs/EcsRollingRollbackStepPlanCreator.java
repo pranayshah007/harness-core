@@ -11,20 +11,29 @@ import static io.harness.cdng.visitor.YamlTypes.ECS_ROLLING_DEPLOY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
 import io.harness.cdng.ecs.EcsRollingRollbackStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsRollingRollbackStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsRollingRollbackStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK);
@@ -51,5 +60,22 @@ public class EcsRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Ec
     ecsRollingRollbackStepParameters.setDelegateSelectors(
         stepElement.getEcsRollingRollbackStepInfo().getDelegateSelectors());
     return stepParameters;
+  }
+
+  @Override
+  protected StepType getStepSpecType(PlanCreationContext ctx, EcsRollingRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsRollingRollbackStepV2.STEP_TYPE;
+    }
+    return EcsRollingRollbackStep.STEP_TYPE;
+  }
+
+  @Override
+  protected String getFacilitatorType(PlanCreationContext ctx, EcsRollingRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }
