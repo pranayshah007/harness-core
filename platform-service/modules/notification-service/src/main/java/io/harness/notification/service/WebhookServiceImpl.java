@@ -220,7 +220,8 @@ public class WebhookServiceImpl implements ChannelService {
                                                     .build();
       DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
       if (responseData instanceof ErrorNotifyResponseData) {
-        throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+        throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
+            ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
       } else {
         notificationTaskResponse = (NotificationTaskResponse) responseData;
       }
