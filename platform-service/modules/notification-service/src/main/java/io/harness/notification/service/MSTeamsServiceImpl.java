@@ -30,6 +30,8 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
@@ -38,6 +40,7 @@ import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
+import io.harness.notification.remote.dto.MSTeamNotificationRequestDTO;
 import io.harness.notification.remote.dto.MSTeamSettingDTO;
 import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
@@ -63,7 +66,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StrSubstitutor;
 
@@ -152,7 +154,31 @@ public class MSTeamsServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendNotification(NotificationRequestDTO notificationRequestDTO) {
-    throw new NotImplementedException();
+    MSTeamNotificationRequestDTO msTeamNotificationRequestDTO = (MSTeamNotificationRequestDTO) notificationRequestDTO;
+    String webhookUrl = msTeamNotificationRequestDTO.getWebhookUrl();
+    if (Objects.isNull(stripToNull(msTeamNotificationRequestDTO.getAccountId()))) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", msTeamNotificationRequestDTO.getNotificationId()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+    if (Objects.isNull(stripToNull(webhookUrl))) {
+      throw new NotificationException(String.format("Malformed webhook Url encountered while processing request %s",
+                                          msTeamNotificationRequestDTO.getNotificationId()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+    notificationSettingsHelper.validateRecipient(webhookUrl, msTeamNotificationRequestDTO.getAccountId(),
+        SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+
+    NotificationTaskResponse taskResponse =
+        sendInSync(Collections.singletonList(webhookUrl), msTeamNotificationRequestDTO.getMessage(),
+            notificationRequestDTO.getNotificationId(), notificationRequestDTO.getAccountId());
+    if (taskResponse.getProcessingResponse() == null || taskResponse.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(taskResponse.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to process MSTeam request. %s", taskResponse.getErrorMessage()), DEFAULT_ERROR_CODE,
+          USER);
+    }
+    return taskResponse;
   }
 
   private NotificationProcessingResponse send(List<String> microsoftTeamsWebhookUrls, String templateId,
@@ -203,6 +229,46 @@ public class MSTeamsServiceImpl implements ChannelService {
             : "Notification request {} sent",
         notificationId);
     return processingResponse;
+  }
+
+  private NotificationTaskResponse sendInSync(
+      List<String> microsoftTeamsWebhookUrls, String message, String notificationId, String accountId) {
+    List<String> microsoftTeamsWebhookUrlDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
+    NotificationTaskResponse notificationTaskResponse = null;
+    NotificationProcessingResponse processingResponse = null;
+    if (notificationSettingsService.checkIfWebhookIsSecret(microsoftTeamsWebhookUrls)) {
+      DelegateTaskRequest delegateTaskRequest =
+          DelegateTaskRequest.builder()
+              .accountId(accountId)
+              .taskType("NOTIFY_MICROSOFTTEAMS")
+              .taskParameters(MicrosoftTeamsTaskParams.builder()
+                                  .notificationId(notificationId)
+                                  .message(message)
+                                  .microsoftTeamsWebhookUrls(microsoftTeamsWebhookUrls)
+                                  .microsoftTeamsWebhookUrlDomainAllowlist(microsoftTeamsWebhookUrlDomainAllowlist)
+                                  .build())
+              .taskSetupAbstractions(Collections.emptyMap())
+              .expressionFunctorToken(0)
+              .executionTimeout(Duration.ofMinutes(1L))
+              .build();
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      if (responseData instanceof ErrorNotifyResponseData) {
+        throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
+            ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
+      } else {
+        notificationTaskResponse = (NotificationTaskResponse) responseData;
+      }
+    } else {
+      processingResponse = microsoftTeamsSender.send(
+          microsoftTeamsWebhookUrls, message, notificationId, microsoftTeamsWebhookUrlDomainAllowlist);
+      notificationTaskResponse = NotificationTaskResponse.builder().processingResponse(processingResponse).build();
+    }
+    log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
+            ? "Failed to send notification for request {}"
+            : "Notification request {} sent",
+        notificationId);
+    return notificationTaskResponse;
   }
 
   private Optional<String> getDecoratedNotificationMessage(String templateText, Map<String, String> params) {
