@@ -58,8 +58,7 @@ public class CCMDataDeletionService {
   @Autowired private AutoCudDeletionHandler autoCudDeletionHandler;
 
   public void processDataDeletionRecords() {
-    // TODO: Make this ~5hrs once its stable in QA
-    Long timestampThreshold = Instant.now().minus(30, ChronoUnit.MINUTES).toEpochMilli();
+    Long timestampThreshold = Instant.now().minus(5, ChronoUnit.HOURS).toEpochMilli();
     List<DataDeletionRecord> dataDeletionRecords =
         dataDeletionRecordDao.getRecordsToProcess(MAX_RETRIES, timestampThreshold);
     for (DataDeletionRecord dataDeletionRecord : dataDeletionRecords) {

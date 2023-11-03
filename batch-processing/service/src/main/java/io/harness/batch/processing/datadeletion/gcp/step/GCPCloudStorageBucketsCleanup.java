@@ -8,6 +8,8 @@
 package io.harness.batch.processing.datadeletion.gcp.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.CE_GCP_CREDENTIALS_PATH;
+import static io.harness.ccm.billing.GcpServiceAccountServiceImpl.getCredentials;
 import static io.harness.ccm.commons.entities.datadeletion.DataDeletionStep.GCP_GCS_BUCKET;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +17,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.ccm.commons.entities.datadeletion.DataDeletionRecord;
 
 import com.google.api.gax.paging.Page;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Bucket;
@@ -34,7 +37,15 @@ public class GCPCloudStorageBucketsCleanup {
 
   public boolean delete(String accountId, DataDeletionRecord dataDeletionRecord, boolean dryRun) throws Exception {
     String projectId = configuration.getGcpConfig().getGcpProjectId();
-    Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+    ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+    if (serviceAccountCredentials == null) {
+      throw new Exception("Couldn't get credentials from CE_GCP_CREDENTIALS_PATH");
+    }
+    Storage storage = StorageOptions.newBuilder()
+                          .setProjectId(projectId)
+                          .setCredentials(serviceAccountCredentials)
+                          .build()
+                          .getService();
     Page<Bucket> buckets = storage.list();
     while (true) {
       for (Bucket bucket : buckets.iterateAll()) {
