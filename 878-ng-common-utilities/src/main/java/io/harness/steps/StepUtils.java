@@ -55,6 +55,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -100,7 +101,7 @@ public class StepUtils {
 
   public static String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
 
-  public static List<String> keysToSkipInLogBaseKey = List.of("spec", "execution");
+  public static List<String> keysToSkipInLogBaseKey = List.of("spec", "execution", "pipeline", "stages", "steps");
 
   public static Task prepareDelegateTaskInput(
       String accountId, TaskData taskData, Map<String, String> setupAbstractions) {
@@ -127,12 +128,19 @@ public class StepUtils {
 
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
+
+      StepCategory stepCategory = currentLevel.getStepType().getStepCategory();
+
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
 
       String levelValue = currentLevel.getIdentifier() + retrySuffix;
 
       if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
         if (keysToSkipInLogBaseKey.contains(levelValue)) {
+          continue;
+        }
+
+        if (stepCategory.equals(StepCategory.FORK) && levelValue.startsWith("parallel")) {
           continue;
         }
       }
@@ -142,10 +150,6 @@ public class StepUtils {
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
-    }
-
-    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
-      logAbstractions.put("planExecutionId", "-" + ambiance.getPlanExecutionId());
     }
 
     return logAbstractions;
@@ -165,6 +169,10 @@ public class StepUtils {
 
     logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
     logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put("planExecutionId", "-" + ambiance.getPlanExecutionId());
+    }
 
     if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
       logAbstractions.put(IS_SIMPLIFY, "true");
