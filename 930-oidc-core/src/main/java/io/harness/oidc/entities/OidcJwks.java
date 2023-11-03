@@ -7,11 +7,9 @@
 
 package io.harness.oidc.entities;
 
-import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -24,16 +22,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.TypeAlias;
 
+@OwnedBy(HarnessTeam.PL)
 @Data
 @AllArgsConstructor
+@Builder
 @EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "OidcJwksKeys")
 @StoreIn(DbAliases.HARNESS)
-@Entity(value = "ngOidcJwksKeys")
-@HarnessEntity(exportable = true)
-@OwnedBy(HarnessTeam.PL)
-@Builder
+@Entity(value = "ngOidcJwksKeys", noClassnameStored = true)
+@TypeAlias("oidcJwks")
 public class OidcJwks implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;
   String accountId;
