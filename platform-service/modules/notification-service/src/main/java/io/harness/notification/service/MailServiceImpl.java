@@ -34,7 +34,9 @@ import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.remote.dto.EmailDTO;
+import io.harness.notification.remote.dto.EmailNotificationRequestDTO;
 import io.harness.notification.remote.dto.EmailSettingDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.api.ChannelService;
@@ -155,6 +157,36 @@ public class MailServiceImpl implements ChannelService {
     return true;
   }
 
+  @Override
+  public NotificationTaskResponse sendNotification(NotificationRequestDTO notificationRequestDTO) {
+    EmailNotificationRequestDTO emailDTO = (EmailNotificationRequestDTO) notificationRequestDTO;
+
+    List<String> emails = new ArrayList<>(emailDTO.getToRecipients());
+    List<String> ccEmails = new ArrayList<>(emailDTO.getCcRecipients());
+    String accountId = emailDTO.getAccountId();
+    if (Objects.isNull(accountId)) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
+    }
+    validateEmptyEmails(emails, ccEmails, "");
+    String errorMessage = validateEmails(
+        emails, ccEmails, accountId, false); // using hard coded false for sendToNonHarnessRecipients need to revisit
+    validateEmptyEmails(emails, ccEmails, errorMessage);
+
+    NotificationTaskResponse response = sendInSync(
+        emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
+    if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to send email. Check SMTP configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+    if (StringUtils.isNotEmpty(errorMessage)) {
+      response.setErrorMessage(errorMessage);
+    }
+    return response;
+  }
+
   private boolean isSmtpConfigProvided(String accountId) {
     return Objects.nonNull(notificationSettingsService.getSmtpConfigResponse(accountId));
   }
@@ -172,9 +204,9 @@ public class MailServiceImpl implements ChannelService {
       throw new NotificationException(
           String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
     }
-    validateEmptyEmails(emailDTO, emails, ccEmails, "");
+    validateEmptyEmails(emails, ccEmails, "");
     String errorMessage = validateEmails(emails, ccEmails, accountId, emailDTO.isSendToNonHarnessRecipients());
-    validateEmptyEmails(emailDTO, emails, ccEmails, errorMessage);
+    validateEmptyEmails(emails, ccEmails, errorMessage);
     NotificationTaskResponse response = sendInSync(
         emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
@@ -189,7 +221,7 @@ public class MailServiceImpl implements ChannelService {
     return response;
   }
 
-  private void validateEmptyEmails(EmailDTO emailDTO, List<String> emails, List<String> ccEmails, String errorMessage) {
+  private void validateEmptyEmails(List<String> emails, List<String> ccEmails, String errorMessage) {
     if (emails.isEmpty() && ccEmails.isEmpty()) {
       String emptyEmailMessage = String.format("No email id encountered");
       if (StringUtils.isNotEmpty(errorMessage)) {

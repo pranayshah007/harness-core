@@ -15,11 +15,13 @@ import static io.harness.notification.NotificationServiceConstants.SLACKSERVICE;
 import static io.harness.notification.NotificationServiceConstants.WEBHOOKSERVICE;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.remote.client.NGRestUtils;
@@ -88,6 +90,18 @@ public class ChannelServiceImpl implements ChannelService {
       throw new InvalidRequestException(
           String.format("Cannot send notification as %s notification channel is disabled from Account settings",
               notificationSettingDTO.getType().name()));
+    }
+  }
+
+  @Override
+  public NotificationTaskResponse sendNotification(NotificationRequestDTO notificationRequestDTO) {
+    String enableChannelSettingId = settingsMap.get(notificationRequestDTO.getType());
+    if (isChannelTypeEnabled(enableChannelSettingId, notificationRequestDTO.getAccountId())) {
+      return implementationMapping.get(notificationRequestDTO.getType()).sendNotification(notificationRequestDTO);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Cannot send notification as %s notification channel is disabled from Account settings",
+              notificationRequestDTO.getType().name()));
     }
   }
 
