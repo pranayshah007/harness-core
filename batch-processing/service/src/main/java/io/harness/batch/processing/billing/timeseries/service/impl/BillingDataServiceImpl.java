@@ -39,6 +39,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -354,8 +355,14 @@ public class BillingDataServiceImpl {
                   .maxStorageRequest(resultSet.getDouble("MAXSTORAGEREQUEST"))
                   .orgIdentifier(resultSet.getString("ORGIDENTIFIER"))
                   .projectIdentifier(resultSet.getString("PROJECTIDENTIFIER"))
-                  .usageStartTime(resultSet.getTimestamp("USAGESTARTTIME").toInstant().toEpochMilli())
-                  .usageStopTime(resultSet.getTimestamp("USAGESTOPTIME").toInstant().toEpochMilli())
+                  .usageStartTime(Optional.ofNullable(resultSet.getTimestamp("USAGESTARTTIME"))
+                                      .map(Timestamp::toInstant)
+                                      .map(Instant::toEpochMilli)
+                                      .orElse(0l))
+                  .usageStopTime(Optional.ofNullable(resultSet.getTimestamp("USAGESTOPTIME"))
+                                     .map(Timestamp::toInstant)
+                                     .map(Instant::toEpochMilli)
+                                     .orElse(0l))
                   .build());
         }
         return instanceBillingDataList;
