@@ -66,10 +66,16 @@ public class InstanceInfoServiceImpl implements InstanceInfoService {
   @Override
   public StepOutcome saveServerInstancesIntoSweepingOutput(
       Ambiance ambiance, @NotNull List<ServerInstanceInfo> instanceInfoList) {
+    return saveServerInstancesIntoSweepingOutput(ambiance, instanceInfoList, null);
+  }
+
+  @Override
+  public StepOutcome saveServerInstancesIntoSweepingOutput(
+      Ambiance ambiance, List<ServerInstanceInfo> instanceInfoList, DeploymentOutcomeMetadata metadata) {
     log.info("Start saving service instances into sweeping output, instanceInfoListSize: {}, instanceInfoListClass: {}",
         instanceInfoList.size(), instanceInfoList.getClass());
 
-    DeploymentInfoOutcome deploymentInfoOutcome = buildDeploymentInfoOutcome(instanceInfoList);
+    DeploymentInfoOutcome deploymentInfoOutcome = buildDeploymentInfoOutcome(instanceInfoList, metadata);
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME,
         deploymentInfoOutcome, StepOutcomeGroup.STEP.name());
 
@@ -117,7 +123,12 @@ public class InstanceInfoServiceImpl implements InstanceInfoService {
 
     return output.getDeploymentOutcomeMetadata();
   }
-  private DeploymentInfoOutcome buildDeploymentInfoOutcome(List<ServerInstanceInfo> instanceInfoList) {
-    return DeploymentInfoOutcome.builder().serverInstanceInfoList(instanceInfoList).build();
+
+  private DeploymentInfoOutcome buildDeploymentInfoOutcome(
+      List<ServerInstanceInfo> instanceInfoList, DeploymentOutcomeMetadata metadata) {
+    return DeploymentInfoOutcome.builder()
+        .serverInstanceInfoList(instanceInfoList)
+        .deploymentOutcomeMetadata(metadata)
+        .build();
   }
 }

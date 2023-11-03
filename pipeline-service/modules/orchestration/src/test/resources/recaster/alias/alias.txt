@@ -227,3 +227,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata
