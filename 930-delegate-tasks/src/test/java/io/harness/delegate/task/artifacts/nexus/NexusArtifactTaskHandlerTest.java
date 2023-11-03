@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
@@ -32,7 +33,6 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,7 +133,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     NexusRequest nexusInternalConfig = createNexusConfigWithUrl(nexusUsernamePasswordAuthDTO, nexusConnectorDTO);
     NexusArtifactDelegateRequest sourceAttributes = createNexusDelegateRequestWithTagAndUrl(nexusConnectorDTO);
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(ListUtils.newArrayList(buildDetailsInternal))
         .when(nexusRegistryService)
         .getBuilds(nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(), null, null, null,
             null, null, null, Integer.MAX_VALUE);

@@ -35,6 +35,7 @@ import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -97,10 +98,10 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
-    String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper
-            .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE)
-            .getMergedPipelineYaml();
+    String resolveTemplateRefsInPipeline = pipelineTemplateHelper
+                                               .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml,
+                                                   BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0)
+                                               .getMergedPipelineYaml();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(givenYaml);
   }
 
@@ -121,7 +122,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
         .thenThrow(new InvalidRequestException("Exception in resolving template refs in given yaml."));
     assertThatThrownBy(()
                            -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(
-                               ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE))
+                               ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }

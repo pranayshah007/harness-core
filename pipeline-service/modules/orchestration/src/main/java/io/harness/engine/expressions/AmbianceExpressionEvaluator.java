@@ -28,6 +28,7 @@ import io.harness.engine.expressions.functors.SecretFunctor;
 import io.harness.engine.expressions.functors.SecretFunctorWithRbac;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
+import io.harness.engine.secrets.ExpressionsObserverFactory;
 import io.harness.exception.EngineExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
@@ -103,6 +104,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
 
+  @Inject private ExpressionsObserverFactory expressionsObserverFactory;
+
   protected final Ambiance ambiance;
   private final Set<NodeExecutionEntityType> entityTypes;
   private final boolean refObjectSpecific;
@@ -149,9 +152,13 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
       addToContext("xml", new XmlFunctor());
       if (pmsFeatureFlagService.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_USE_SECRET_FUNCTOR_WITH_RBAC)) {
-        addToContext(SECRETS, new SecretFunctorWithRbac(ambiance, pipelineRbacHelper));
+        addToContext(SECRETS,
+            new SecretFunctorWithRbac(ambiance, pipelineRbacHelper,
+                expressionsObserverFactory.getSubjectForSecretsRuntimeUsages(ExpressionsObserverFactory.SECRET)));
       } else {
-        addToContext(SECRETS, new SecretFunctor(ambiance.getExpressionFunctorToken()));
+        addToContext(SECRETS,
+            new SecretFunctor(ambiance,
+                expressionsObserverFactory.getSubjectForSecretsRuntimeUsages(ExpressionsObserverFactory.SECRET)));
       }
     }
 

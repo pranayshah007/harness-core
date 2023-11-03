@@ -379,7 +379,7 @@ public class AccountServiceImpl implements AccountService {
       }
 
       publishAccountChangeEvent(account);
-      // TODO {karan} uncomment this when NG is enabled globally for new accounts
+      // TODO: uncomment this when NG is enabled globally for new accounts
       // publishAccountChangeEventViaEventFramework(account.getUuid(), EventsFrameworkMetadataConstants.CREATE_ACTION);
 
       log.info("Successfully created account.");

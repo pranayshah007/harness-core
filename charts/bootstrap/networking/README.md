@@ -1,6 +1,6 @@
 # networking
 
-![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.9.3](https://img.shields.io/badge/Version-0.9.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -49,6 +49,8 @@ A Helm chart for Kubernetes
 | global.istio.istioGatewayServiceUrl | string | `""` | set to istio gateway's k8s service FQDN for internal use case. eg "internal-istio-gateway.istio-system.svc.cluster.local" If not set, internal request routing would happen via global.loadbalancerUrl |
 | global.istio.virtualService.hosts | string | `nil` | add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty. |
 | nginx.affinity | object | `{}` |  |
+| nginx.clusterIP | string | `nil` |  |
+| nginx.clusterIPEnabled | bool | `false` | Creates clusterIP |
 | nginx.controller.annotations | object | `{}` | annotations to be addded to ingress Controller |
 | nginx.create | bool | `false` | Create Nginx Controller.  True will deploy a controller into your cluster |
 | nginx.healthNodePort | string | `""` |  |
@@ -57,11 +59,11 @@ A Helm chart for Kubernetes
 | nginx.httpsNodePort | string | `""` |  |
 | nginx.image.digest | string | `""` |  |
 | nginx.image.pullPolicy | string | `"IfNotPresent"` |  |
-| nginx.image.registry | string | `"us.gcr.io"` |  |
-| nginx.image.repository | string | `"k8s-artifacts-prod/ingress-nginx/controller"` |  |
-| nginx.image.tag | string | `"v1.0.0-alpha.2"` |  |
+| nginx.image.registry | string | `"registry.k8s.io"` |  |
+| nginx.image.repository | string | `"ingress-nginx/controller"` |  |
+| nginx.image.tag | string | `"v1.3.0"` |  |
 | nginx.loadBalancerEnabled | bool | `false` |  |
-| nginx.loadBalancerIP | string | `"0.0.0.0"` |  |
+| nginx.loadBalancerIP | string | `nil` |  |
 | nginx.nodeSelector | object | `{}` |  |
 | nginx.objects.annotations | object | `{}` | annotations to be added to ingress Objects |
 | nginx.podLabels | object | `{}` |  |

@@ -10,6 +10,7 @@ package software.wings.sm.states.pcf;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.HarnessStringUtils.defaultIfEmpty;
 import static io.harness.pcf.CfCommandUnitConstants.FetchGitFiles;
 import static io.harness.pcf.CfCommandUnitConstants.Pcfplugin;
 import static io.harness.pcf.model.PcfConstants.DEFAULT_PCF_TASK_TIMEOUT_MIN;
@@ -18,7 +19,6 @@ import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
 import static software.wings.beans.TaskType.PCF_COMMAND_TASK;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -98,7 +98,6 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -245,7 +244,7 @@ public class PcfPluginState extends State {
   }
 
   private String canonacalizePath(String path) {
-    return Strings.defaultIfEmpty(path.trim(), "/");
+    return defaultIfEmpty(path.trim(), "/");
   }
 
   private boolean isServiceManifestRemote(ApplicationManifest serviceManifest) {

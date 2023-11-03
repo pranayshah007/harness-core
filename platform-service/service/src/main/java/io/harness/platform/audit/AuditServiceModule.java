@@ -14,6 +14,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUN
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.AuditFilterModule;
 import io.harness.audit.api.AuditService;
@@ -166,6 +167,8 @@ public class AuditServiceModule extends AbstractModule {
         return appConfig.getSegmentConfiguration();
       }
     });
+    install(new AccountClientModule(appConfig.getManagerServiceConfig(),
+        appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId()));
   }
 
   private void registerEventListeners() {

@@ -13,6 +13,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-oidc-core:module",
         "//940-secret-manager-client:module",
         "//947-scim-core:module",
         "//950-delegate-tasks-beans:module",

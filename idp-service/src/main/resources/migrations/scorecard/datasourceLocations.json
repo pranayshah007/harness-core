@@ -409,6 +409,22 @@
       },
       "requestBody": "{\"query\":\"{\\n  search(query: \\\"repo:{REPOSITORY_OWNER}/{REPOSITORY_NAME} is:pr is:open author:{AUTHOR_NAME}\\\", type: ISSUE, last: 100) {\\n    edges {\\n      node {\\n        ... on PullRequest {\\n          url\\n          title\\n          createdAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
+  },
+  {
+    "id": "653783106d639d0b1de18fdf",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_file_contents",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/graphql",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\": \"{ repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") { object(expression: \\\"{REPOSITORY_BRANCH}:{FILE_PATH_REPLACER}\\\") { ... on Blob { text } } } }\"}"
+    }
   }
 ]
 

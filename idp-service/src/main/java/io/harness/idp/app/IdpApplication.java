@@ -29,6 +29,7 @@ import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.events.consumers.IdpModuleLicenseUsageCaptureEventConsumer;
+import io.harness.idp.license.usage.jobs.IDPTelemetryRecordsJob;
 import io.harness.idp.license.usage.jobs.LicenseUsageDailyCountJob;
 import io.harness.idp.license.usage.resources.IDPLicenseUsageResource;
 import io.harness.idp.migration.IdpMigrationProvider;
@@ -202,6 +203,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
     environment.jersey().register(injector.getInstance(IdpServiceRequestInterceptor.class));
+    injector.getInstance(IDPTelemetryRecordsJob.class).scheduleTasks();
 
     //    initMetrics(injector);
     log.info("Starting app done");

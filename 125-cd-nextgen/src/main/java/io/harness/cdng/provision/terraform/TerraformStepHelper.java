@@ -301,11 +301,11 @@ public class TerraformStepHelper {
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(StoreConfig store, Ambiance ambiance, String identifier) {
-    return getGitFetchFilesConfig(store, ambiance, identifier, null);
+    return getGitFetchFilesConfig(store, ambiance, identifier, null, false);
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(
-      StoreConfig store, Ambiance ambiance, String identifier, String manifestType) {
+      StoreConfig store, Ambiance ambiance, String identifier, String manifestType, boolean isVarFileOptional) {
     if (store == null || !ManifestStoreType.isInGitSubset(store.getKind())) {
       return null;
     }
@@ -356,6 +356,7 @@ public class TerraformStepHelper {
                                                         .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
                                                         .paths(paths)
                                                         .connectorName(connectorDTO.getName())
+                                                        .optional(isVarFileOptional)
                                                         .build();
 
     GitFetchFilesConfigBuilder builder = GitFetchFilesConfig.builder();
@@ -1427,8 +1428,8 @@ public class TerraformStepHelper {
             }
             GitStoreConfig gitStoreConfig =
                 ((TerraformRemoteVarFileConfig) fileConfig).getGitStoreConfigDTO().toGitStoreConfig();
-            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(
-                getGitFetchFilesConfig(gitStoreConfig, ambiance, identifier, "GIT VAR_FILES"));
+            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(getGitFetchFilesConfig(
+                gitStoreConfig, ambiance, identifier, "GIT VAR_FILES", terraformRemoteVarFileConfig.isOptional()));
           }
           if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
             FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
@@ -1767,8 +1768,15 @@ public class TerraformStepHelper {
                   gitStoreConfigDTO = gitStoreConfig.toGitStoreConfigDTO();
                 }
 
+                boolean isVarFileOptional = false;
+                if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                  isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                      ((RemoteTerraformVarFileSpec) spec).getOptional());
+                }
+
                 varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
                                        .identifier(file.getIdentifier())
+                                       .isOptional(isVarFileOptional)
                                        .gitStoreConfigDTO(gitStoreConfigDTO)
                                        .build());
               }
@@ -1994,8 +2002,15 @@ public class TerraformStepHelper {
               i++;
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               // Retrieve the files from the GIT stores
-              GitFetchFilesConfig gitFetchFilesConfig =
-                  getGitFetchFilesConfig(storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES");
+
+              boolean isVarFileOptional = false;
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                    ((RemoteTerraformVarFileSpec) spec).getOptional());
+              }
+
+              GitFetchFilesConfig gitFetchFilesConfig = getGitFetchFilesConfig(
+                  storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES", isVarFileOptional);
               // And retrieve the files from the Files stores
               FileStoreFetchFilesConfig fileFetchFilesConfig =
                   getFileStoreFetchFilesConfig(storeConfig, ambiance, file.getIdentifier());
@@ -2026,8 +2041,15 @@ public class TerraformStepHelper {
               i++;
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               // Retrieve the files from the GIT stores
-              GitFetchFilesConfig gitFetchFilesConfig =
-                  getGitFetchFilesConfig(storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES");
+
+              boolean isVarFileOptional = false;
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                    ((RemoteTerraformVarFileSpec) spec).getOptional());
+              }
+
+              GitFetchFilesConfig gitFetchFilesConfig = getGitFetchFilesConfig(
+                  storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES", isVarFileOptional);
 
               //  And retrieve the files from the Files stores
               FileStoreFetchFilesConfig fileFetchFilesConfig =

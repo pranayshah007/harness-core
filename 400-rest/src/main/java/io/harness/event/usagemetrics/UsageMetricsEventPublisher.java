@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.beans.WorkflowType;
+import io.harness.data.structure.ListUtils;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.queue.QueuePublisher;
@@ -36,7 +37,6 @@ import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -251,7 +251,7 @@ public class UsageMetricsEventPublisher {
     if (workflowExecution.getPipelineExecution() != null) {
       stringData.put(EventProcessor.PIPELINE, workflowExecution.getPipelineExecution().getPipelineId());
     } else {
-      listData.put(EventProcessor.WORKFLOW_LIST, Lists.newArrayList(workflowExecution.getWorkflowId()));
+      listData.put(EventProcessor.WORKFLOW_LIST, ListUtils.newArrayList(workflowExecution.getWorkflowId()));
     }
 
     stringData.put(EventProcessor.APPID, workflowExecution.getAppId());
@@ -260,7 +260,7 @@ public class UsageMetricsEventPublisher {
 
     List<String> cloudProviderIds = workflowExecution.getDeployedCloudProviders();
 
-    if (!Lists.isNullOrEmpty(cloudProviderIds)) {
+    if (!isEmpty(cloudProviderIds)) {
       listData.put(EventProcessor.CLOUD_PROVIDER_LIST, cloudProviderIds);
     }
 
@@ -284,7 +284,7 @@ public class UsageMetricsEventPublisher {
       stringData.put(EventProcessor.FAILED_STEP_TYPES, workflowExecution.getFailedStepTypes());
     }
 
-    if (!Lists.isNullOrEmpty(workflowExecution.getArtifacts())) {
+    if (!isEmpty(workflowExecution.getArtifacts())) {
       listData.put(EventProcessor.ARTIFACT_LIST,
           workflowExecution.getArtifacts()
               .stream()
@@ -295,13 +295,13 @@ public class UsageMetricsEventPublisher {
     }
 
     List<String> serviceIds = workflowExecution.getDeployedServices();
-    if (!Lists.isNullOrEmpty(serviceIds)) {
+    if (!isEmpty(serviceIds)) {
       listData.put(EventProcessor.SERVICE_LIST, serviceIds);
     }
 
     List<EnvSummary> environments = workflowExecution.getDeployedEnvironments();
 
-    if (!Lists.isNullOrEmpty(environments)) {
+    if (!isEmpty(environments)) {
       listData.put(EventProcessor.ENVTYPES,
           new ArrayList<>(
               environments.stream().map(env -> env.getEnvironmentType().name()).collect(Collectors.toSet())));
@@ -334,7 +334,7 @@ public class UsageMetricsEventPublisher {
       booleanData.put(EventProcessor.MANUALLY_ROLLED_BACK, (boolean) metadata.get("manuallyRolledBack"));
     }
 
-    if (!Lists.isNullOrEmpty(workflowExecution.getWorkflowIds())) {
+    if (!isEmpty(workflowExecution.getWorkflowIds())) {
       listData.put(EventProcessor.WORKFLOWS, workflowExecution.getWorkflowIds());
     }
     stringData.put(EventProcessor.ACCOUNTID, accountId);
@@ -347,11 +347,11 @@ public class UsageMetricsEventPublisher {
         EventProcessor.TAGS, workflowExecutionService.getDeploymentTags(accountId, workflowExecution.getTags()));
 
     List<String> infraDefinitionIds = workflowExecution.getInfraDefinitionIds();
-    if (!Lists.isNullOrEmpty(infraDefinitionIds)) {
+    if (!isEmpty(infraDefinitionIds)) {
       listData.put(EventProcessor.INFRA_DEFINITIONS, infraDefinitionIds);
     }
     List<String> infraMappingIds = workflowExecution.getInfraMappingIds();
-    if (!Lists.isNullOrEmpty(infraMappingIds)) {
+    if (!isEmpty(infraMappingIds)) {
       listData.put(EventProcessor.INFRA_MAPPINGS, infraMappingIds);
     }
 

@@ -28,6 +28,7 @@ import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -49,7 +50,6 @@ import io.harness.security.dto.UserPrincipal;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import com.google.common.collect.ImmutableList;
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -214,12 +214,12 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void listServiceAccountDTO() {
-    doReturn(Lists.newArrayList(ApiKey.builder()
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(ListUtils.newArrayList(ApiKey.builder()
+                                        .identifier(identifier)
+                                        .accountIdentifier(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .build()))
         .when(apiKeyRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, SERVICE_ACCOUNT, parentIdentifier);

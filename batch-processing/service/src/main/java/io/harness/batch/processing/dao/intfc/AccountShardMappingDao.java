@@ -13,4 +13,8 @@ import java.util.List;
 
 public interface AccountShardMappingDao {
   List<AccountShardMapping> getAccountShardMapping();
+
+  long count(String accountId);
+
+  boolean delete(String accountId);
 }

@@ -76,7 +76,7 @@ public class DynatraceDataCollectionInfo extends TimeSeriesDataCollectionInfo<Dy
                               })
                               .collect(Collectors.toList());
     } else if (customMetrics != null) {
-      dslEnvVariables.put(ENTITY_ID_PARAM, "type(\"dt.entity.service\"),entityId(\"".concat(serviceId).concat("\")"));
+      dslEnvVariables.put(ENTITY_ID_PARAM, null);
       metricsToValidate = customMetrics.stream()
                               .map(metricDefinitionDTO -> {
                                 Map<String, String> metricMap = new HashMap<>();

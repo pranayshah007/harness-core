@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.PipelineServiceTestHelper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.execution.NodeExecution;
@@ -27,7 +28,6 @@ import io.harness.pms.expressions.YamlExpressionEvaluator;
 import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetail;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -142,7 +142,7 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
     doReturn("dummy").when(engineExpressionService).resolve(any(), any(), any());
     detailMap = new HashMap<>();
     expressionEvaluatorService.evaluateExpressionUsingAmbiance(
-        detailMap, fqn, Lists.newArrayList(staticExpression), null);
+        detailMap, fqn, ListUtils.newArrayList(staticExpression), null);
     key = fqn + "+" + staticExpression;
     assertThat(detailMap.containsKey(key)).isTrue();
     assertThat(detailMap.get(key).isResolvedByYaml()).isFalse();
@@ -171,7 +171,7 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
     Map<String, Ambiance> fqnToAmbianceMap = expressionEvaluatorService.getFQNToAmbianceMap(
         PipelineServiceTestHelper.createCloseableIterator(
             List.of(NodeExecution.builder().ambiance(ambiance).build()).iterator()),
-        Lists.newArrayList(expectedFqn));
+        ListUtils.newArrayList(expectedFqn));
     assertThat(fqnToAmbianceMap.containsKey(expectedFqn)).isTrue();
     assertThat(fqnToAmbianceMap.get(expectedFqn)).isEqualTo(ambiance);
   }

@@ -167,6 +167,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                       .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
                           "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
                       .build())
+              .approvalMessage("this is first line \n this is second line")
               .build();
       approvalInstance.setAmbiance(ambiance);
       approvalInstance.setCreatedAt(System.currentTimeMillis());
@@ -234,6 +235,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
       assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
       assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
           .isEqualTo(url);
+      // testing whether approval message has lin breaks added in case of email but in other channels
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.approvalMessage))
+          .isEqualTo("this is first line \n this is second line");
+      assertThat(notificationChannels.get(1).getTemplateData().get(ApprovalSummaryKeys.approvalMessage))
+          .isEqualTo("this is first line <br> this is second line");
+
       assertThat(notificationChannels.get(8).getTemplateId())
           .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier());
       assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
@@ -587,11 +594,16 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                       .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
                           "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
                       .build())
-              .approvalActivities(Collections.singletonList(HarnessApprovalActivity.builder()
-                                                                .user(EmbeddedUser.builder().email("email").build())
-                                                                .approvedAt(20000000)
-                                                                .action(HarnessApprovalAction.APPROVE)
-                                                                .build())
+              .approvalActivities(Arrays.asList(HarnessApprovalActivity.builder()
+                                                    .user(EmbeddedUser.builder().email("email").build())
+                                                    .approvedAt(20000000)
+                                                    .action(HarnessApprovalAction.APPROVE)
+                                                    .build(),
+                  HarnessApprovalActivity.builder()
+                      .user(EmbeddedUser.builder().email("email2").build())
+                      .approvedAt(20000020)
+                      .action(HarnessApprovalAction.APPROVE)
+                      .build())
 
                       )
               .build();
@@ -667,6 +679,21 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
       assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
       assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
           .isEqualTo(url);
+      // checking whether line breaks are added properly in case of multiple approval activities for email only
+      // two comparisons are made to prevent flakiness depend on system's locale
+      String actionNonEmail = notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.action);
+      assertThat(
+          actionNonEmail.equals("email approved on Jan 01, 05:33 AM GMT   \nemail2 approved on Jan 01, 05:33 AM GMT   ")
+          || actionNonEmail.equals(
+              "email approved on Jan 01, 05:33 am GMT   \nemail2 approved on Jan 01, 05:33 am GMT   "))
+          .isTrue();
+      String actionEmail = notificationChannels.get(1).getTemplateData().get(ApprovalSummaryKeys.action);
+      assertThat(
+          actionEmail.equals("email approved on Jan 01, 05:33 AM GMT   <br>email2 approved on Jan 01, 05:33 AM GMT   ")
+          || actionEmail.equals(
+              "email approved on Jan 01, 05:33 am GMT   <br>email2 approved on Jan 01, 05:33 am GMT   "))
+          .isTrue();
+
       assertThat(notificationChannels.get(8).getTemplateId())
           .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier());
       assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);

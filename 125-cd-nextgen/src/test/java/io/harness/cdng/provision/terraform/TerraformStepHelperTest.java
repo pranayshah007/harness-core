@@ -777,7 +777,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
-        TerraformRemoteVarFileConfig.builder().gitStoreConfigDTO(configFiles1).build();
+        TerraformRemoteVarFileConfig.builder().isOptional(true).gitStoreConfigDTO(configFiles1).build();
     varFileConfigs.add(inlineFileConfig);
     varFileConfigs.add(remoteFileConfig);
 
@@ -803,6 +803,8 @@ public class TerraformStepHelperTest extends CategoryTest {
         assertThat(
             remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO().getUrl())
             .isEqualTo("https://github.com/wings-software/terraform");
+        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().isOptional())
+            .isTrue();
       }
     }
   }
@@ -3253,7 +3255,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
-        TerraformRemoteVarFileConfig.builder().gitStoreConfigDTO(configFiles1).build();
+        TerraformRemoteVarFileConfig.builder().isOptional(true).gitStoreConfigDTO(configFiles1).build();
     varFileConfigs.add(inlineFileConfig);
     varFileConfigs.add(remoteFileConfig);
 
@@ -3278,6 +3280,8 @@ public class TerraformStepHelperTest extends CategoryTest {
             .isEqualTo("terraform");
         assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO())
             .isInstanceOf(GithubConnectorDTO.class);
+        assertThat(remoteTerraformVarFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig().isOptional())
+            .isTrue();
       }
     }
   }
@@ -3444,5 +3448,78 @@ public class TerraformStepHelperTest extends CategoryTest {
     String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
 
     assertThat(fetchedCommitId).isNull();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetRemoteVarFilesInfoWhenVarFileIsOptional() {
+    StoreConfig storeVarFiles;
+
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+
+    storeVarFiles = GithubStore.builder()
+                        .branch(ParameterField.createValueField(gitStoreVarFiles.getBranch()))
+                        .gitFetchType(gitStoreVarFiles.getFetchType())
+                        .repoName(ParameterField.createValueField("testRepo"))
+                        .paths(ParameterField.createValueField(List.of("testPath1, testPath2")))
+                        .folderPath(ParameterField.createValueField(gitStoreVarFiles.getFolderPath().getValue()))
+                        .connectorRef(ParameterField.createValueField(gitStoreVarFiles.getConnectoref().getValue()))
+                        .build();
+    remoteTerraformVarFileSpec.setOptional(ParameterField.createValueField(true));
+    remoteTerraformVarFileSpec.setStore(
+        StoreConfigWrapper.builder().spec(storeVarFiles).type(StoreConfigType.GITHUB).build());
+
+    LinkedHashMap<String, TerraformVarFile> varFilesMap = new LinkedHashMap<>();
+    varFilesMap.put("var-file-02",
+        TerraformVarFile.builder().identifier("var-file-02").type("Remote").spec(remoteTerraformVarFileSpec).build());
+
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
+                                         .name("terraform")
+                                         .identifier("terraform")
+                                         .connectorType(GITHUB)
+                                         .connectorConfig(GitConfigDTO.builder()
+                                                              .gitAuthType(GitAuthType.HTTP)
+                                                              .gitConnectionType(GitConnectionType.ACCOUNT)
+                                                              .delegateSelectors(Collections.singleton("delegateName"))
+                                                              .url("https://github.com/wings-software")
+                                                              .branchName("master")
+                                                              .validationRepo("test")
+                                                              .build())
+                                         .build();
+
+    doNothing().when(cdStepHelper).validateGitStoreConfig(any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
+
+    doReturn(connectorInfo).when(cdStepHelper).getConnector(any(), any());
+    doReturn(SSHKeySpecDTO.builder().build())
+        .when(mockGitConfigAuthenticationInfoHelper)
+        .getSSHKey(any(), anyString(), anyString(), anyString());
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
+
+    doReturn(Collections.emptyList())
+        .when(mockGitConfigAuthenticationInfoHelper)
+        .getEncryptedDataDetails(any(), any(), any());
+
+    List<TerraformVarFileInfo> varFileInfos = helper.getRemoteVarFilesInfo(varFilesMap, getAmbiance());
+
+    assertThat(varFileInfos).isNotEmpty();
+    assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0))
+                   .getGitFetchFilesConfig()
+                   .getGitStoreDelegateConfig()
+                   .isOptional())
+        .isTrue();
+    assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0)).getGitFetchFilesConfig().getIdentifier())
+        .isEqualTo("var-file-02");
+    assertThat(((RemoteTerraformVarFileInfo) varFileInfos.get(0)).getGitFetchFilesConfig().getManifestType())
+        .isEqualTo("GIT VAR_FILES");
   }
 }

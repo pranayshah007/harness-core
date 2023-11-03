@@ -98,4 +98,14 @@ public class CECloudAccountDao {
         .containsIgnoreCase(filterAccountName)
         .asList();
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(CECloudAccount.class).field(CECloudAccountKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CECloudAccount> query =
+        hPersistence.createQuery(CECloudAccount.class).field(CECloudAccountKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

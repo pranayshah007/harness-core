@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.docker.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -31,6 +32,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -59,7 +61,6 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
@@ -78,6 +79,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   private static String IMAGE_PATH = "imagePath";
   private static String ORG_IDENTIFIER = "orgIdentifier";
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
+  public static final String TAG_REGEX = "tagRegex";
   private static final String TAG = "tag";
   private static final String IDENTIFIER = "identifier";
   private static final String INPUT = "<+input>";
@@ -127,7 +129,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
@@ -158,7 +160,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
@@ -189,13 +191,13 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(ListUtils.newArrayList(
                                                        DockerArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -223,13 +225,13 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(ListUtils.newArrayList(
                                                        DockerArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -256,13 +258,13 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(ListUtils.newArrayList(
                                                        DockerArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -290,7 +292,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
 
@@ -317,7 +319,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
@@ -335,7 +337,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     Object obj = new Object();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(RemoteMethodReturnValueData.builder()
@@ -374,7 +376,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
@@ -402,7 +404,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new ExplanationException("Please check you Docker tag configuration.",
             new DockerHubInvalidTagRuntimeRuntimeException("errorMessage")));
@@ -432,7 +434,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new ExplanationException("Please check you Docker tag configuration.",
@@ -457,7 +459,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new ExplanationException(
             "Commands tried https://index.docker.io/v2/library/nginx23 but no metadata was returned",
@@ -471,6 +473,38 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                                IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage(HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_NULL() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               IDENTIFIER_REF, null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_Empty() {
+    assertThatThrownBy(
+        () -> dockerResourceService.getBuildDetails(IDENTIFIER_REF, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void getBuildDetails_ImagePath_INPUT() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               IDENTIFIER_REF, INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TAG_REGEX))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
   }
 
   @Test

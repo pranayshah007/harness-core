@@ -24,4 +24,9 @@ public class ServiceStepV3Constants {
   public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
   public static final String ECS_SERVICE_SWEEPING_OUTPUT = "serviceCustomSweepingOutput";
   public static final String GOOGLE_FUNCTION_SERVICE_SWEEPING_OUTPUT = "googleFunctionServiceCustomSweepingOutput";
+
+  public static final String SERVICE_GIT_BRANCH = "serviceGitBranch";
+  public static final String ENV_GIT_BRANCH = "envGitBranch";
+  public static final String SERVICE_GIT_BRANCH_EXPRESSION = "<+matrix." + SERVICE_GIT_BRANCH + ">";
+  public static final String ENV_GIT_BRANCH_EXPRESSION = "<+matrix." + ENV_GIT_BRANCH + ">";
 }

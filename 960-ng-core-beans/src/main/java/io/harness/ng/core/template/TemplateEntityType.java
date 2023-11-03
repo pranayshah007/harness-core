@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.template;
+
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.NAME_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
@@ -89,6 +90,9 @@ public enum TemplateEntityType {
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TemplateEntityType getTemplateType(@JsonProperty("type") String yamlType) {
+    if (yamlType.equals("group")) {
+      return TemplateEntityType.STEPGROUP_TEMPLATE;
+    }
     for (TemplateEntityType value : TemplateEntityType.values()) {
       if (value.yamlType.equalsIgnoreCase(yamlType)) {
         return value;

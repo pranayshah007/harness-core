@@ -21,10 +21,12 @@ import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.observers.SecretResolutionObserver;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.EngineFunctorException;
 import io.harness.exception.WingsException;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.rule.Owner;
@@ -54,7 +56,10 @@ public class SecretFunctorWithRbacTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetValue() {
-    SecretFunctorWithRbac secretFunctorWithRbac = new SecretFunctorWithRbac(ambiance, pipelineRbacHelper);
+    Subject<SecretResolutionObserver> secretsRuntimeUsagesSubject = new Subject<>();
+
+    SecretFunctorWithRbac secretFunctorWithRbac =
+        new SecretFunctorWithRbac(ambiance, pipelineRbacHelper, secretsRuntimeUsagesSubject);
     MockedStatic<IdentifierRefProtoDTOHelper> mockedStatic = Mockito.mockStatic(IdentifierRefProtoDTOHelper.class);
     mockedStatic.when(() -> IdentifierRefProtoDTOHelper.fromIdentifierRef(any()))
         .thenReturn(IdentifierRefProtoDTO.newBuilder().build());

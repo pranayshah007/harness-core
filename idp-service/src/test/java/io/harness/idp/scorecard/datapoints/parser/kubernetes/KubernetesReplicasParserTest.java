@@ -73,7 +73,7 @@ public class KubernetesReplicasParserTest extends CategoryTest {
                              .build();
     Map<String, Object> data =
         Map.of(DSL_RESPONSE, Map.of("cluster", List.of("workload", Map.of("spec", Map.of("replicas", 2.0)))));
-    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptySet());
+    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptyList());
     assertEquals(2, response.get(DATA_POINT_VALUE_KEY));
   }
 
@@ -84,7 +84,7 @@ public class KubernetesReplicasParserTest extends CategoryTest {
     String errorMessage = "401 Unauthorized";
     DataPointEntity dp = DataPointEntity.builder().build();
     Map<String, Object> data = Map.of(DSL_RESPONSE, Map.of(ERROR_MESSAGE_KEY, errorMessage));
-    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptySet());
+    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptyList());
     assertEquals(errorMessage, response.get(ERROR_MESSAGE_KEY));
   }
 
@@ -95,7 +95,7 @@ public class KubernetesReplicasParserTest extends CategoryTest {
     String errorMessage = "Missing Data";
     DataPointEntity dp = DataPointEntity.builder().build();
     Map<String, Object> data = Map.of(DSL_RESPONSE, Map.of(ERROR_MESSAGE_KEY, errorMessage));
-    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptySet());
+    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptyList());
     assertEquals(errorMessage, response.get(ERROR_MESSAGE_KEY));
   }
 
@@ -106,7 +106,7 @@ public class KubernetesReplicasParserTest extends CategoryTest {
     String errorMessage = "Missing Data";
     DataPointEntity dp = DataPointEntity.builder().build();
     Map<String, Object> data = Map.of(ERROR_MESSAGE_KEY, errorMessage);
-    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptySet());
+    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptyList());
     assertEquals(errorMessage, response.get(ERROR_MESSAGE_KEY));
   }
 
@@ -120,7 +120,7 @@ public class KubernetesReplicasParserTest extends CategoryTest {
                              .outcomeExpression("kubernetes.workload.spec.replicas")
                              .build();
     Map<String, Object> data = Map.of(DSL_RESPONSE, Map.of("abc", List.of("workload", Map.of("replicas", 2.0))));
-    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptySet());
+    Map<String, Object> response = (Map<String, Object>) parser.parseDataPoint(data, dp, Collections.emptyList());
     assertEquals("Missing Data for cluster: abc", response.get(ERROR_MESSAGE_KEY));
   }
 }

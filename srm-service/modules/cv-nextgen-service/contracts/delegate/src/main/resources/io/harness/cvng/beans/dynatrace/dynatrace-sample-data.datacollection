@@ -3,7 +3,6 @@ Var params = {}
 Var:params.put("from", Env:from)
 Var:params.put("to", Env:to)
 Var:params.put("resolution", Env:resolution)
-Var:params.put("entitySelector", Env:entitySelector)
 Var nullObject = null
 Var returnList = []
 Var:params.put("metricSelector", Env:metricSelector)

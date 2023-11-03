@@ -86,4 +86,17 @@ public class ViewCustomFieldDao {
     log.info(query.toString());
     return (ViewCustomField) query.asList().get(0);
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(ViewCustomField.class)
+        .field(ViewCustomFieldKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<ViewCustomField> query =
+        hPersistence.createQuery(ViewCustomField.class).field(ViewCustomFieldKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

@@ -43,4 +43,17 @@ public class PublishedMessageDaoImpl implements PublishedMessageDao {
     query.useReadPreference(ReadPreference.secondaryPreferred());
     return query.asList(new FindOptions().limit(batchSize));
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(PublishedMessage.class)
+        .field(PublishedMessageKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<PublishedMessage> query =
+        hPersistence.createQuery(PublishedMessage.class).field(PublishedMessageKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

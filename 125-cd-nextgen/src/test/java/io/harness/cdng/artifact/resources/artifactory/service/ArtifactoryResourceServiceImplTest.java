@@ -39,6 +39,7 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDT
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
@@ -66,7 +67,6 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -314,7 +314,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
@@ -344,7 +344,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -379,7 +379,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ArtifactTaskResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -463,13 +463,13 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(ListUtils.newArrayList(
                                                        ArtifactoryArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -504,13 +504,13 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(ListUtils.newArrayList(
                                                        ArtifactoryArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -543,7 +543,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     List<ArtifactoryImagePath> imagePaths = new ArrayList<>();
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ArtifactoryFetchImagePathResponse.builder()

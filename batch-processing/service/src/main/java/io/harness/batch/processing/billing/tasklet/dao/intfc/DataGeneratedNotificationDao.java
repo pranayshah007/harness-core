@@ -12,4 +12,6 @@ import io.harness.ccm.commons.entities.batch.DataGeneratedNotification;
 public interface DataGeneratedNotificationDao {
   boolean save(DataGeneratedNotification notification);
   boolean isMailSent(String accountId);
+  long count(String accountId);
+  boolean deleteAllForAccount(String accountId);
 }

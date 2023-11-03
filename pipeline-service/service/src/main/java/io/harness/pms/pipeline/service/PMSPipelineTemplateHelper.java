@@ -38,7 +38,6 @@ import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.remote.client.PipelineRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -66,28 +65,27 @@ public class PMSPipelineTemplateHelper {
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(PipelineEntity pipelineEntity, String loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), loadFromCache);
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), loadFromCache,
+        pipelineEntity.getHarnessVersion());
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
       PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences, boolean loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false, getMergedTemplateWithTemplateReferences,
-        parseLoadFromCache(loadFromCache));
+        parseLoadFromCache(loadFromCache), pipelineEntity.getHarnessVersion());
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      String accountId, String orgId, String projectId, String yaml, String loadFromCache) {
-    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false, loadFromCache);
+      String accountId, String orgId, String projectId, String yaml, String loadFromCache, String yamlVersion) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false, loadFromCache, yamlVersion);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
-      String loadFromCache) {
-    // TODO(BRIJESH): Pass the yamlVersion from caller instead of hardcoded value HarnessYamlVersion.V0. This flow is
-    // not main for execution so passed V0 for now.
+      String loadFromCache, String yamlVersion) {
     return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, checkForTemplateAccess,
-        getMergedTemplateWithTemplateReferences, loadFromCache, false, HarnessYamlVersion.V0);
+        getMergedTemplateWithTemplateReferences, loadFromCache, false, yamlVersion);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipelineAndAppendInputSetValidators(String accountId,

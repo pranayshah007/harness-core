@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,10 @@ import lombok.experimental.NonFinal;
 @Builder
 @FieldNameConstants(innerTypeName = "ApprovalSummaryKeys")
 public class ApprovalSummary {
+  // maintain this list with field keys which can have multiple lines
+  // it is being used to convert to line breaks when rendering as html
+  public static final List<String> TEXT_FIELDS_IN_APPROVAL_SUMMARY =
+      List.of(ApprovalSummaryKeys.approvalMessage, ApprovalSummaryKeys.action);
   String pipelineName;
   String orgName;
   String projectName;

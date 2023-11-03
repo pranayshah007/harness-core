@@ -187,6 +187,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                       .equal(accountId)
                                       .field(DelegateTokenKeys.owner)
                                       .equal(owner)
+                                      .field(DelegateTokenKeys.isNg)
+                                      .equal(true)
                                       .field(DelegateTokenKeys.status)
                                       .equal(ACTIVE)
                                       .order(DelegateTokenKeys.createdAt)

@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.VerificationOperationException;
@@ -102,7 +103,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -362,7 +362,7 @@ public class CVConfigurationServiceImplTest extends WingsBaseTest {
 
     assertThat(actualDefinitions).hasSize(6);
 
-    List<String> expectedKeySet = Lists.newArrayList("Docker CPU Usage", "Docker RSS Memory (%)",
+    List<String> expectedKeySet = ListUtils.newArrayList("Docker CPU Usage", "Docker RSS Memory (%)",
         "Docker CPU Throttled", "ECS Container CPU Usage", "ECS Container RSS Memory", "ECS Container Memory Usage");
     Collections.sort(expectedKeySet);
 
@@ -731,7 +731,7 @@ public class CVConfigurationServiceImplTest extends WingsBaseTest {
     assertThat(definition).isNotNull();
     assertThat(definition.getMetricTemplates().size()).isEqualTo(3);
     assertThat(definition.getMetricTemplates().keySet())
-        .isEqualTo(new HashSet<>(Lists.newArrayList("metricName2", "metricName3", updatedMetricName)));
+        .isEqualTo(new HashSet<>(ListUtils.newArrayList("metricName2", "metricName3", updatedMetricName)));
   }
 
   @Test

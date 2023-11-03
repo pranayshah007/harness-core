@@ -91,6 +91,7 @@ public class AbortHelper {
         nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), Status.ABORTED, ops -> {
           ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
           ops.set(NodeExecutionKeys.unitProgresses, unitProgresses);
+          ops.set(NodeExecutionKeys.progressData + "." + NodeExecutionKeys.unitProgresses, unitProgresses);
           ops.addToSet(NodeExecutionKeys.interruptHistories,
               InterruptEffect.builder()
                   .interruptId(interruptId)

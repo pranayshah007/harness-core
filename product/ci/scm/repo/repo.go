@@ -386,6 +386,20 @@ func convertHarnessEnumToStrings(enums *pb.HarnessWebhookEvents) (strings []stri
 			strings = append(strings, "pullreq_created")
 		case pb.HarnessWebhookEvent_HARNESS_PULLREQ_REOPENED:
 			strings = append(strings, "pullreq_reopened")
+		case pb.HarnessWebhookEvent_HARNESS_BRANCH_CREATED:
+			strings = append(strings, "branch_created")
+		case pb.HarnessWebhookEvent_HARNESS_BRANCH_UPDATED:
+			strings = append(strings, "branch_updated")
+		case pb.HarnessWebhookEvent_HARNESS_BRANCH_DELETED:
+			strings = append(strings, "branch_deleted")
+		case pb.HarnessWebhookEvent_HARNESS_TAG_CREATED:
+			strings = append(strings, "tag_created")
+		case pb.HarnessWebhookEvent_HARNESS_TAG_DELETED:
+			strings = append(strings, "tag_deleted")
+		case pb.HarnessWebhookEvent_HARNESS_TAG_UPDATED:
+			strings = append(strings, "tag_updated")
+		case pb.HarnessWebhookEvent_HARNESS_PULLREQ_COMMENT_CREATED:
+			strings = append(strings, "pullreq_comment_created")
 		}
 	}
 	return strings

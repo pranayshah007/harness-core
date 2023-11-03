@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 
+import io.harness.data.structure.ListUtils;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -22,7 +23,6 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Lists;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ public class ObserverEventConsumer implements Runnable {
       @Named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL) MessageListener delegateTaskEventListener,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
-    this.messageListeners = Lists.newArrayList(delegateTaskEventListener);
+    this.messageListeners = ListUtils.newArrayList(delegateTaskEventListener);
     this.queueController = queueController;
   }
 

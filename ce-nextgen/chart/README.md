@@ -1,6 +1,6 @@
 # ce-nextgen
 
-![Version: 0.11.0](https://img.shields.io/badge/Version-0.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.81100](https://img.shields.io/badge/AppVersion-0.0.81100-informational?style=flat-square)
+![Version: 0.12.0](https://img.shields.io/badge/Version-0.12.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.81102](https://img.shields.io/badge/AppVersion-0.0.81102-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -48,13 +48,31 @@ A Helm chart for Kubernetes
 | global.ccm.gcpProjectId | string | `"placeHolder"` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
-| global.database.clickhouse.enabled | bool | `false` |  |
+| global.database.clickhouse.enabled | bool | `true` |  |
+| global.database.clickhouse.secrets.kubernetesSecrets[0].keys.CLICKHOUSE_PASSWORD | string | `""` |  |
+| global.database.clickhouse.secrets.kubernetesSecrets[0].keys.CLICKHOUSE_USERNAME | string | `""` |  |
+| global.database.clickhouse.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.CLICKHOUSE_PASSWORD.name | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.CLICKHOUSE_PASSWORD.property | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.CLICKHOUSE_USERNAME.name | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.CLICKHOUSE_USERNAME.property | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.clickhouse.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
 | global.database.mongo.passwordKey | string | `""` |  |
 | global.database.mongo.protocol | string | `"mongodb"` |  |
 | global.database.mongo.secretName | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].keys.MONGO_PASSWORD | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].keys.MONGO_USER | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD.name | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD.property | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.name | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.property | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.mongo.userKey | string | `""` |  |
 | global.database.postgres.extraArgs | string | `""` |  |
 | global.database.postgres.hosts[0] | string | `"postgres:5432"` |  |
@@ -69,6 +87,15 @@ A Helm chart for Kubernetes
 | global.database.redis.passwordKey | string | `"redis-password"` |  |
 | global.database.redis.protocol | string | `"redis"` |  |
 | global.database.redis.secretName | string | `"redis-secret"` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.REDIS_PASSWORD | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.REDIS_USERNAME | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.redis.userKey | string | `"redis-user"` |  |
 | global.database.timescaledb.certKey | string | `""` |  |
 | global.database.timescaledb.certName | string | `""` |  |
@@ -78,6 +105,8 @@ A Helm chart for Kubernetes
 | global.database.timescaledb.passwordKey | string | `""` |  |
 | global.database.timescaledb.protocol | string | `"jdbc:postgresql"` |  |
 | global.database.timescaledb.secretName | string | `""` |  |
+| global.database.timescaledb.secrets | object | `{"kubernetesSecrets":[{"keys":{"TIMESCALEDB_PASSWORD":"","TIMESCALEDB_SSL_ROOT_CERT":"","TIMESCALEDB_USERNAME":""},"secretName":""}],"secretManagement":{"externalSecretsOperator":[{"remoteKeys":{"TIMESCALEDB_PASSWORD":{"name":"","property":""},"TIMESCALEDB_SSL_ROOT_CERT":{"name":"","property":""},"TIMESCALEDB_USERNAME":{"name":"","property":""}},"secretStore":{"kind":"","name":""}}]}}` | TimescaleDB secrets |
+| global.database.timescaledb.sslEnabled | bool | `false` | Enable TimescaleDB SSL |
 | global.database.timescaledb.userKey | string | `""` |  |
 | global.deployMode | string | `"KUBERNETES_ONPREM"` |  |
 | global.imagePullSecrets | list | `[]` |  |
@@ -104,13 +133,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ce-nextgen-signed"` |  |
-| image.tag | string | `"81100-000"` |  |
+| image.tag | string | `"81102-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/ce-nextgen-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"81100-000"` |  |
+| imageClickhouseEnabled.tag | string | `"81102-000"` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `"nginx"` |  |
 | java.memory | string | `"4096m"` |  |
@@ -119,6 +148,18 @@ A Helm chart for Kubernetes
 | lifecycleHooks | object | `{}` |  |
 | maxSurge | string | `"100%"` |  |
 | maxUnavailable | int | `0` |  |
+| mongo.extraArgs | string | `""` |  |
+| mongo.hosts | list | `[]` |  |
+| mongo.protocol | string | `"redis"` |  |
+| mongo.secrets.kubernetesSecrets[0].keys.MONGO_PASSWORD | string | `""` |  |
+| mongo.secrets.kubernetesSecrets[0].keys.MONGO_USER | string | `""` |  |
+| mongo.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD.name | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD.property | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.name | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.property | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | mongoSecrets.password.key | string | `"mongodb-root-password"` |  |
 | mongoSecrets.password.name | string | `"mongodb-replicaset-chart"` |  |
 | mongoSecrets.userName.key | string | `"mongodbUsername"` |  |
@@ -127,10 +168,45 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| redis.extraArgs | string | `""` |  |
+| redis.hosts | list | `[]` |  |
+| redis.protocol | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.REDIS_PASSWORD | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.REDIS_USERNAME | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | replicaCount | int | `2` |  |
 | resources.limits.memory | string | `"4Gi"` |  |
 | resources.requests.cpu | int | `1` |  |
 | resources.requests.memory | string | `"4Gi"` |  |
+| secrets.default.ACCESS_CONTROL_SECRET | string | `"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"` |  |
+| secrets.default.JWT_AUTH_SECRET | string | `"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"` |  |
+| secrets.default.JWT_IDENTITY_SERVICE_SECRET | string | `"HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="` |  |
+| secrets.default.NEXT_GEN_MANAGER_SECRET | string | `"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"` |  |
+| secrets.default.NOTIFICATION_CLIENT_SECRET | string | `"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"` |  |
+| secrets.kubernetesSecrets[0].keys.ACCESS_CONTROL_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].keys.JWT_AUTH_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].keys.JWT_IDENTITY_SERVICE_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].keys.NEXT_GEN_MANAGER_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].keys.NOTIFICATION_CLIENT_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.ACCESS_CONTROL_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.ACCESS_CONTROL_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.JWT_AUTH_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.JWT_AUTH_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.JWT_IDENTITY_SERVICE_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.JWT_IDENTITY_SERVICE_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.NEXT_GEN_MANAGER_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.NEXT_GEN_MANAGER_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.NOTIFICATION_CLIENT_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.NOTIFICATION_CLIENT_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | securityContext | object | `{}` |  |
 | service.annotations | object | `{}` |  |
 | service.port | int | `6340` |  |
@@ -140,6 +216,8 @@ A Helm chart for Kubernetes
 | serviceAccount.name | string | `"harness-default"` |  |
 | timescaleSecret.password.key | string | `"timescaledbPostgresPassword"` |  |
 | timescaleSecret.password.name | string | `"harness-secrets"` |  |
+| timescaledb.hosts | list | `[]` | TimescaleDB host names |
+| timescaledb.secrets | object | `{"kubernetesSecrets":[{"keys":{"TIMESCALEDB_PASSWORD":"","TIMESCALEDB_SSL_ROOT_CERT":"","TIMESCALEDB_USERNAME":""},"secretName":""}],"secretManagement":{"externalSecretsOperator":[{"remoteKeys":{"TIMESCALEDB_PASSWORD":{"name":"","property":""},"TIMESCALEDB_SSL_ROOT_CERT":{"name":"","property":""},"TIMESCALEDB_USERNAME":{"name":"","property":""}},"secretStore":{"kind":"","name":""}}]}}` | TimescaleDB secrets |
 | tolerations | list | `[]` |  |
 | virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
@@ -151,4 +229,4 @@ A Helm chart for Kubernetes
 | workloadIdentity.enabled | bool | `false` |  |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.11.3](https://github.com/norwoodj/helm-docs/releases/v1.11.3)
+Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

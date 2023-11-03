@@ -36,6 +36,7 @@ import io.harness.yaml.core.timeout.Timeout;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -104,13 +105,18 @@ public class VmPluginCompatibleStepSerializer {
       return null;
     }
 
-    Map<EnvVariableEnum, String> connectorSecretEnvMap =
+    Map<EnvVariableEnum, String> additionalSecretsMap =
         PluginSettingUtils.getConnectorSecretEnvMap(pluginCompatibleStep.getNonYamlInfo().getStepInfoType());
+
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
-    connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
+
+    Map<EnvVariableEnum, String> newEnvToSecretsMap = new HashMap<>(connectorDetails.getEnvToSecretsMap());
+    newEnvToSecretsMap.putAll(additionalSecretsMap);
+
+    connectorDetails.setEnvToSecretsMap(newEnvToSecretsMap);
+
     return connectorDetails;
   }
-
   public Set<String> preProcessStep(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
       StageInfraDetails stageInfraDetails, String identifier, boolean isBareMetalUsed) {
     Set<String> secretSet = new HashSet<>();

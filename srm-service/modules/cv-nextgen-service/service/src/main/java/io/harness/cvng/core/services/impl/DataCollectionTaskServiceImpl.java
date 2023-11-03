@@ -38,6 +38,7 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
+import io.harness.data.structure.ListUtils;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -47,7 +48,6 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import dev.morphia.query.UpdateResults;
-import io.fabric8.utils.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -456,7 +456,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             .field(DataCollectionTaskKeys.verificationTaskId)
             .in(verificationTaskIds)
             .field(DataCollectionTaskKeys.status)
-            .in(Lists.newArrayList(DataCollectionExecutionStatus.WAITING, DataCollectionExecutionStatus.QUEUED));
+            .in(ListUtils.newArrayList(DataCollectionExecutionStatus.WAITING, DataCollectionExecutionStatus.QUEUED));
     UpdateOperations<DataCollectionTask> abortDCTaskOperation =
         hPersistence.createUpdateOperations(DataCollectionTask.class)
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.ABORTED);

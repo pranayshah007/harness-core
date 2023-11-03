@@ -6,6 +6,7 @@
  */
 
 package io.harness.k8s.model;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.noop;
@@ -616,11 +617,11 @@ public class KubernetesResource {
           return Yaml.loadAs(this.spec, V1CronJob.class);
         case HorizontalPodAutoscaler:
           if (isHPAV2()) {
-            return Yaml.loadAs(this.spec, V2HorizontalPodAutoscaler.class);
+            return K8sYamlUtils.yamlLoadAs(this.spec, V2HorizontalPodAutoscaler.class);
           }
-          return Yaml.loadAs(this.spec, V1HorizontalPodAutoscaler.class);
+          return K8sYamlUtils.yamlLoadAs(this.spec, V1HorizontalPodAutoscaler.class);
         case PodDisruptionBudget:
-          return Yaml.loadAs(this.spec, V1PodDisruptionBudget.class);
+          return K8sYamlUtils.yamlLoadAs(this.spec, V1PodDisruptionBudget.class);
         default:
           unhandled(this.resourceId.getKind());
           throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());

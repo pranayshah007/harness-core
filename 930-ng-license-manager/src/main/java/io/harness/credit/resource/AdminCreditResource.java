@@ -31,6 +31,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -106,5 +107,18 @@ public class AdminCreditResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @Valid CreditDTO creditDTO) {
     return ResponseDTO.newResponse(creditService.updateCredit(accountIdentifier, creditDTO));
+  }
+
+  @DELETE
+  @Path("{creditId}")
+  @ApiOperation(value = "Enables Harness Support User to delete an existing Credit for a customer account",
+      nickname = "adminDeleteCustomerCredit")
+  @Operation(operationId = "adminDeleteCustomerCredit", summary = "Admin level delete credit for a customer account")
+  @InternalApi
+  public ResponseDTO<Void>
+  deleteCredit(@PathParam("creditId") String creditId,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    creditService.deleteCredit(creditId, accountIdentifier);
+    return ResponseDTO.newResponse();
   }
 }

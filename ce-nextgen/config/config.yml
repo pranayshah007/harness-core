@@ -301,7 +301,7 @@ proxy:
   port: 80
   username: ""
   password: ""
-  protocol: http
+  protocol: https
 
 awsServiceEndpointUrls:
   enabled: false

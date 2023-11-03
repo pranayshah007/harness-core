@@ -31,6 +31,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.functors.StrategyFunctor;
+import io.harness.engine.secrets.ExpressionsObserverFactory;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
@@ -84,6 +85,8 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock NodeExecutionsCache nodeExecutionsCache;
   @Inject NodeExecutionInfoService nodeExecutionInfoService;
+
+  @Mock private ExpressionsObserverFactory expressionsObserverFactory;
 
   @Before
   public void setup() {
@@ -505,6 +508,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("inputSetValidatorFactory", inputSetValidatorFactory);
     on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
+    on(evaluator).set("expressionsObserverFactory", expressionsObserverFactory);
 
     if (EmptyPredicate.isEmpty(contextMap)) {
       return evaluator;

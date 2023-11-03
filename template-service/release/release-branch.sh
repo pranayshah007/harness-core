@@ -198,6 +198,10 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout ${SHA}
     git checkout -b release/${PURPOSE}/${newBranch}
 
+    # Updating static-schema for v0 template.json
+    TEMPLATE_JSON="template-service/service/src/main/resources/static-schema/v0/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/template.json" ${TEMPLATE_JSON}
+    template_curl_result=$?
 
     # Updating static-schema for v0 template.json in branch cut branch
     if [ $template_curl_result -eq 0 ]; then
@@ -206,6 +210,11 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     else
         echo "Template V0 file was not updated"
     fi
+
+    # Updating static-schema for v1 template.json
+    TEMPLATE_V1_JSON="template-service/service/src/main/resources/static-schema/v1/template.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v1/template.json" ${TEMPLATE_V1_JSON}
+    template_v1_curl_result=$?
 
     # Updating static-schema for v1 template.json in branch cut branch
     if [ $template_v1_curl_result -eq 0 ]; then

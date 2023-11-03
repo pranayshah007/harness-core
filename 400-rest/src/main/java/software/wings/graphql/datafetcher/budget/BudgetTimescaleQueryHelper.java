@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.budget;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,19 +37,20 @@ import software.wings.graphql.schema.type.aggregation.billing.QLBillingDataFilte
 import com.google.inject.Inject;
 import com.healthmarketscience.sqlbuilder.BinaryCondition;
 import com.healthmarketscience.sqlbuilder.Converter;
+import com.healthmarketscience.sqlbuilder.DeleteQuery;
 import com.healthmarketscience.sqlbuilder.FunctionCall;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.InsertQuery;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
-import io.fabric8.utils.Lists;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -209,6 +211,70 @@ public class BudgetTimescaleQueryHelper {
     }
   }
 
+  public Long getCountForAccount(String accountId) {
+    try {
+      if (timeScaleDBService.isValid()) {
+        SelectQuery query = new SelectQuery();
+        addAccountFilter(query, accountId);
+        query.addCustomColumns(Converter.toCustomColumnSqlObject(FunctionCall.countAll(), "BUDGET_ALERTS_COUNT"));
+        Long count = 0L;
+        boolean successful = false;
+        int retryCount = 0;
+        while (!successful && retryCount < MAX_RETRY) {
+          ResultSet resultSet = null;
+          try (Connection connection = timeScaleDBService.getDBConnection();
+               Statement statement = connection.createStatement()) {
+            resultSet = statement.executeQuery(query.toString());
+            if (null != resultSet && resultSet.next()) {
+              count = resultSet.getLong("BUDGET_ALERTS_COUNT");
+              successful = true;
+            }
+          } catch (SQLException e) {
+            retryCount++;
+            if (retryCount >= MAX_RETRY) {
+              log.error("Failed to execute query in BudgetCostData, max retry count reached, query=[{}],accountId=[{}]",
+                  query, accountId, e);
+            } else {
+              log.warn("Failed to execute query in BudgetCostData, query=[{}],accountId=[{}], retryCount=[{}]", query,
+                  accountId, retryCount);
+            }
+          } finally {
+            DBUtils.close(resultSet);
+          }
+        }
+        return count;
+      } else {
+        throw new InvalidRequestException("Cannot process request in BudgetTimescaleQueryHelper");
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Error while fetching budget alerts data {}", e);
+    }
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    boolean successfulDelete = false;
+    if (timeScaleDBService.isValid()) {
+      DeleteQuery query = new DeleteQuery(schema.getBudgetAlertsTable());
+      query.addCondition(new InCondition(schema.getAccountId(), Collections.singletonList(accountId)));
+      String queryStatement = query.validate().toString();
+      log.info("Deleting BudgetCostData with query : [{}]", queryStatement);
+      int retryCount = 0;
+      while (!successfulDelete && retryCount < MAX_RETRY) {
+        try (Connection dbConnection = timeScaleDBService.getDBConnection();
+             Statement statement = dbConnection.createStatement()) {
+          statement.execute(queryStatement);
+          successfulDelete = true;
+        } catch (SQLException e) {
+          log.error("Failed to delete BudgetCostData , retryCount=[{}], Exception: ", retryCount, e);
+          retryCount++;
+        }
+      }
+    } else {
+      log.error("Not able to delete BudgetCostData in timescale db(validity:{}) ", timeScaleDBService.isValid());
+    }
+    return successfulDelete;
+  }
+
   private QLBillingAmountData fetchBillingAmount(ResultSet resultSet) throws SQLException {
     QLBillingAmountData totalCostData = null;
     while (null != resultSet && resultSet.next()) {
@@ -243,7 +309,7 @@ public class BudgetTimescaleQueryHelper {
 
     selectQuery.addCustomFromTable(billingDataTableSchema.getBillingDataTable());
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       addFilters(selectQuery, filters);
     }
 
@@ -272,7 +338,7 @@ public class BudgetTimescaleQueryHelper {
             BillingDataMetaDataFields.COUNT.getFieldName()));
     fieldNames.add(BillingDataMetaDataFields.COUNT);
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       addFilters(selectQuery, getAlertTimeFilters(filters));
     }
 

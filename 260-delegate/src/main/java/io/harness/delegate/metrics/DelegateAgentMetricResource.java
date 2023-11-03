@@ -40,7 +40,7 @@ public class DelegateAgentMetricResource {
   @ExceptionMetered
   public String get() throws IOException {
     try (StringWriter writer = new StringWriter()) {
-      TextFormat.write004(writer,
+      TextFormat.writeOpenMetrics100(writer,
           metricRegistry.getMetric(Arrays.stream(DelegateMetric.values())
                                        .collect(Collectors.toList())
                                        .stream()

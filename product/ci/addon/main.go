@@ -58,7 +58,7 @@ func parseArgs() {
 	// set defaults here
 	args.DeploymentEnvironment = "prod"
 	args.Verbose = false
-	args.LogMetrics = true
+	args.LogMetrics = false
 
 	arg.MustParse(&args)
 }

@@ -107,9 +107,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -236,17 +238,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Optional<Environment> get(String accountId, String orgIdentifier, String projectIdentifier,
+  public Optional<Environment> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String environmentRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(accountIdentifier), "accountIdentifier must be present");
 
-    return getEnvironmentByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, deleted, loadFromCache,
-        loadFromFallbackBranch, false);
+    return getEnvironmentByRef(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, deleted,
+        loadFromCache, loadFromFallbackBranch, false);
   }
 
   @Override
   public Optional<Environment> getMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String environmentRef, boolean deleted) {
+    checkArgument(isNotEmpty(accountIdentifier), "accountIdentifier must be present");
     // includeMetadataOnly fetches the entity from db so source code params are not needed
     return getEnvironmentByRef(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, deleted, false, false, true);
@@ -943,85 +946,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   getEnvironmentsInputYamlAndServiceOverridesMetadataInternal(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<String> envRefs, Map<String, String> environmentRefBranchMap,
       List<String> serviceRefs, boolean isServiceOverrideV2FFEnabled, boolean loadFromCache) {
-    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
-        new ArrayList<>();
+    // Using SynchronousQueue to avoid ConcurrentModification Issues.
+    Queue<EnvironmentInputSetYamlAndServiceOverridesMetadata> envInputYamlAndServiceOverridesQueue =
+        new ConcurrentLinkedQueue<>();
     List<Environment> environmentEntities =
         fetchesNonDeletedEnvironmentFromListOfRefs(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
 
-    Map<String, Environment> environmentRefAndEntityMap =
-        getEnvironmentMapWithYAMLInBatches(environmentRefBranchMap, loadFromCache, environmentEntities);
-
-    for (String envIdentifier : envRefs) {
-      // org level entities need to have compatible ids. Eg. Stage level template will call with only org.env type
-      // refs
-      if (isNotEmpty(envIdentifier) && !EngineExpressionEvaluator.hasExpressions(envIdentifier)) {
-        IdentifierRef envIdentifierRef =
-            IdentifierRefHelper.getIdentifierRef(envIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
-
-        boolean overridesV2Enabled =
-            isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier, isServiceOverrideV2FFEnabled);
-
-        Environment environment = environmentRefAndEntityMap.get(envIdentifier);
-        String envInputYaml = overridesV2Enabled
-            ? createEnvironmentInputYamlFromOverride(accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier)
-            : createEnvironmentInputsYaml(envIdentifier, environment.getYaml());
-
-        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
-        for (String serviceRef : serviceRefs) {
-          if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
-            IdentifierRef serviceIdentifierRef =
-                IdentifierRefHelper.getIdentifierRef(serviceRef, accountIdentifier, orgIdentifier, projectIdentifier);
-
-            Optional<ServiceEntity> serviceEntity = serviceEntityService.getMetadata(
-                serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-                serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
-            if (serviceEntity.isPresent()) {
-              // use envRef ref and service ref to fetch service overrides
-              // overrides will be at same level of envRef, this can be different from service
-              String serviceOverridesInputsYaml = overridesV2Enabled
-                  ? serviceOverridesServiceV2.createServiceOverrideInputsYaml(
-                      accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceRef)
-                  : serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
-                      envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), envIdentifier,
-                      serviceRef);
-              serviceOverridesMetadataList.add(
-                  ServiceOverridesMetadata.builder()
-                      .serviceRef(serviceRef)
-                      .serviceOverridesYaml(serviceOverridesInputsYaml)
-                      .serviceYaml(serviceEntity.get().getYaml())
-                      .serviceRuntimeInputYaml(
-                          serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml(), serviceRef))
-                      .build());
-            }
-          }
-        }
-        environmentInputSetYamlAndServiceOverridesMetadataList.add(
-            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
-                .envRef(envIdentifier)
-                .orgIdentifier(environment.getOrgIdentifier())
-                .projectIdentifier(environment.getProjectIdentifier())
-                .envRuntimeInputYaml(envInputYaml)
-                .servicesOverrides(serviceOverridesMetadataList)
-                .envYaml(environment.getYaml())
-                .entityGitDetails(EnvironmentMapper.getEntityGitDetails(environment))
-                .connectorRef(environment.getConnectorRef())
-                .storeType(environment.getStoreType())
-                .fallbackBranch(environment.getFallBackBranch())
-                .build());
-      }
-    }
-    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
-        .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
-        .build();
-  }
-
-  private Map<String, Environment> getEnvironmentMapWithYAMLInBatches(
-      Map<String, String> environmentRefBranchMap, boolean loadFromCache, List<Environment> environmentEntities) {
-    Map<String, Environment> environmentRefAndEntityMap = new HashMap<>();
-
-    for (int i = 0; i < environmentEntities.size(); i += REMOTE_ENVIRONMENTS_BATCH_SIZE) {
-      List<Environment> batch = getBatch(environmentEntities, i);
-
+    // Sorting List so that git calls are made parallelly at the earliest.
+    List<Environment> sortedEnvironmentEntities = sortByStoreType(environmentEntities);
+    for (int i = 0; i < sortedEnvironmentEntities.size(); i += REMOTE_ENVIRONMENTS_BATCH_SIZE) {
+      List<Environment> batch = getBatch(sortedEnvironmentEntities, i);
       List<CompletableFuture<Void>> batchFutures = new ArrayList<>();
 
       for (Environment env : batch) {
@@ -1032,14 +966,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
           CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(branchInfo)) {
-              environmentRefAndEntityMap.put(
-                  envRef, environmentRepository.getRemoteEntityWithYaml(env, loadFromCache, false));
+              Environment environmentFromRemote =
+                  environmentRepository.getRemoteEnvironmentWithYaml(env, loadFromCache, false);
+
+              envInputYamlAndServiceOverridesQueue.addAll(fetchEnvInputYamlAndServiceOverrides(accountIdentifier,
+                  orgIdentifier, projectIdentifier, serviceRefs, isServiceOverrideV2FFEnabled, environmentFromRemote));
             }
           }, executorService);
 
           batchFutures.add(future);
         } else {
-          environmentRefAndEntityMap.put(env.getIdentifier(), env);
+          envInputYamlAndServiceOverridesQueue.addAll(fetchEnvInputYamlAndServiceOverrides(
+              accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, isServiceOverrideV2FFEnabled, env));
         }
       }
 
@@ -1047,7 +985,100 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       CompletableFuture<Void> allOf = CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
       allOf.join();
     }
-    return environmentRefAndEntityMap;
+
+    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(fetchResponsesInListFromQueue(envInputYamlAndServiceOverridesQueue))
+        .build();
+  }
+
+  private List<Environment> sortByStoreType(List<Environment> environmentEntities) {
+    List<Environment> sortedEnvironmentEntities = new ArrayList<>();
+    for (Environment env : environmentEntities) {
+      if (StoreType.REMOTE.equals(env.getStoreType())) {
+        sortedEnvironmentEntities.add(env);
+      }
+    }
+
+    for (Environment env : environmentEntities) {
+      // StoreType can be null.
+      if (!StoreType.REMOTE.equals(env.getStoreType())) {
+        sortedEnvironmentEntities.add(env);
+      }
+    }
+    return sortedEnvironmentEntities;
+  }
+
+  private static List<EnvironmentInputSetYamlAndServiceOverridesMetadata> fetchResponsesInListFromQueue(
+      Queue<EnvironmentInputSetYamlAndServiceOverridesMetadata> envInputYamlAndServiceOverridesQueue) {
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> envInputYamlAndServiceOverridesList = new ArrayList<>();
+    while (!envInputYamlAndServiceOverridesQueue.isEmpty()) {
+      EnvironmentInputSetYamlAndServiceOverridesMetadata element = envInputYamlAndServiceOverridesQueue.poll();
+      envInputYamlAndServiceOverridesList.add(element);
+    }
+    return envInputYamlAndServiceOverridesList;
+  }
+
+  private List<EnvironmentInputSetYamlAndServiceOverridesMetadata> fetchEnvInputYamlAndServiceOverrides(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceRefs,
+      boolean isServiceOverrideV2FFEnabled, Environment environment) {
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> envInputYamlAndServiceOverridesList = new ArrayList<>();
+    String envIdentifier = environment.getIdentifier();
+    if (isNotEmpty(envIdentifier) && !EngineExpressionEvaluator.hasExpressions(envIdentifier)) {
+      // org level entities need to have compatible ids. Eg. Stage level template will call with only org.env type
+      // refs
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(envIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
+
+      boolean overridesV2Enabled =
+          isOverridesV2Enabled(accountIdentifier, orgIdentifier, projectIdentifier, isServiceOverrideV2FFEnabled);
+
+      String envInputYaml = overridesV2Enabled
+          ? createEnvironmentInputYamlFromOverride(accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier)
+          : createEnvironmentInputsYaml(envIdentifier, environment.getYaml());
+
+      List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+      for (String serviceRef : serviceRefs) {
+        if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
+          IdentifierRef serviceIdentifierRef =
+              IdentifierRefHelper.getIdentifierRef(serviceRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+          Optional<ServiceEntity> serviceEntity = serviceEntityService.getMetadata(
+              serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
+              serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
+          if (serviceEntity.isPresent()) {
+            // use envRef ref and service ref to fetch service overrides
+            // overrides will be at same level of envRef, this can be different from service
+            String serviceOverridesInputsYaml = overridesV2Enabled
+                ? serviceOverridesServiceV2.createServiceOverrideInputsYaml(
+                    accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceRef)
+                : serviceOverrideService.createServiceOverrideInputsYaml(envIdentifierRef.getAccountIdentifier(),
+                    envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(), envIdentifier,
+                    serviceRef);
+            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
+                                                 .serviceRef(serviceRef)
+                                                 .serviceOverridesYaml(serviceOverridesInputsYaml)
+                                                 .serviceYaml(serviceEntity.get().getYaml())
+                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
+                                                     serviceEntity.get().getYaml(), serviceRef))
+                                                 .build());
+          }
+        }
+      }
+      envInputYamlAndServiceOverridesList.add(EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                                                  .envRef(envIdentifier)
+                                                  .orgIdentifier(environment.getOrgIdentifier())
+                                                  .projectIdentifier(environment.getProjectIdentifier())
+                                                  .envRuntimeInputYaml(envInputYaml)
+                                                  .servicesOverrides(serviceOverridesMetadataList)
+                                                  .envYaml(environment.getYaml())
+                                                  .entityGitDetails(EnvironmentMapper.getEntityGitDetails(environment))
+                                                  .connectorRef(environment.getConnectorRef())
+                                                  .storeType(environment.getStoreType())
+                                                  .fallbackBranch(environment.getFallBackBranch())
+                                                  .build());
+    }
+
+    return envInputYamlAndServiceOverridesList;
   }
 
   private static List<Environment> getBatch(List<Environment> environmentEntities, int i) {

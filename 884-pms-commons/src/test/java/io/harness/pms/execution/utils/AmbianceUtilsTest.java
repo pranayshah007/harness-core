@@ -14,12 +14,14 @@ import static io.harness.pms.contracts.steps.StepCategory.PIPELINE;
 import static io.harness.pms.contracts.steps.StepCategory.STAGE;
 import static io.harness.pms.contracts.steps.StepCategory.STEP;
 import static io.harness.pms.contracts.steps.StepCategory.STEP_GROUP;
+import static io.harness.pms.contracts.steps.StepCategory.STRATEGY;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -1492,5 +1494,44 @@ public class AmbianceUtilsTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
 
     assertThat("STEP").isEqualTo(AmbianceUtils.obtainNodeType(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetNearestStepGroupLevelWithStrategyFromAmbiance() {
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STRATEGY).setType("STRATEGY"))
+                   .build();
+    Level l4 = Level.newBuilder()
+                   .setIdentifier("i4")
+                   .setRuntimeId("r4")
+                   .setSetupId("s4")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+    Level l5 = Level.newBuilder()
+                   .setIdentifier("i5")
+                   .setRuntimeId("r5")
+                   .setSetupId("s5")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(List.of(l1, l2, l3, l4, l5)).build();
+
+    assertThat(Optional.of(l4)).isEqualTo(AmbianceUtils.getNearestStepGroupLevelWithStrategyFromAmbiance(ambiance));
   }
 }

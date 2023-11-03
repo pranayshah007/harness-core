@@ -21,6 +21,7 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.serializer.kryo.NGCacheDataKryoRegistrar;
+import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.serializer.morphia.FeedbackMorphiaRegistrars;
 import io.harness.serializer.morphia.InvitesMorphiaRegistrar;
 import io.harness.serializer.morphia.MockRoleAssignmentMorphiaRegistrar;
@@ -87,6 +88,7 @@ public class NextGenRegistrars {
           .addAll(NGSettingRegistrar.morphiaRegistrars)
           .addAll(IpAllowlistRegistrars.morphiaRegistrars)
           .addAll(EulaRegistrar.morphiaRegistrars)
+          .addAll(OidcRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
