@@ -68,6 +68,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
@@ -93,6 +94,7 @@ import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -239,6 +241,7 @@ public class TasStepHelper {
   @Inject private StepHelper stepHelper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -264,7 +267,7 @@ public class TasStepHelper {
                                                         .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
                                                         .unitProgresses(new ArrayList<>())
                                                         .build();
-    filterManifestOutcomesByType(tasStepPassThroughData, manifestsOutcome.values());
+    filterManifestOutcomesByType(ambiance, tasStepPassThroughData, manifestsOutcome.values());
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
@@ -769,7 +772,7 @@ public class TasStepHelper {
   }
 
   public void filterManifestOutcomesByType(
-      TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
+      Ambiance ambiance, TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
       throw new InvalidRequestException("Manifests are mandatory for TAS step.", USER);
     }
@@ -782,7 +785,11 @@ public class TasStepHelper {
     AutoScalerManifestOutcome autoScalerManifestOutcome = null;
     boolean autoScalarManifestFound = false;
     List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
-    validateArtifactBundleManifestStore(orderedManifestOutcomes);
+    if (cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_ENABLE_TAS_ARTIFACT_AS_MANIFEST_SOURCE_NG)) {
+      validateArtifactBundleManifestStore(orderedManifestOutcomes);
+    }
+
     for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
       switch (manifestOutcome.getType()) {
         case TAS_AUTOSCALER:
