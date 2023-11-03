@@ -6,3 +6,7 @@ metrics:
     metricDefinition: CIManagerStepMetrics step completed
     type: LastValue
     unit: count
+  - metricName: stage_execution_active_count
+    metricDefinition: CIManagerStageMetrics stage completed
+    type: LastValue
+    unit: count
