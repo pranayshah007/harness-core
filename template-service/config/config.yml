@@ -42,7 +42,7 @@ mongo:
   traceMode: DISABLED
 
 templateClient:
-    uri: mongodb://localhost:27017/template
+    uri: mongodb://localhost:27017/template-harness
     connectTimeout: 30000
     serverSelectionTimeout: 90000
     socketTimeout: 360000

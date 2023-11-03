@@ -23,6 +23,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TemplateClientConfiguration {
-  // @JsonProperty("mongo") TemplateClientBackendConfiguration templateClientBackendConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConfig;
 }

@@ -75,7 +75,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitSyncSdkService gitSyncSdkService;
   private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject @Named("template-mongodb") public MongoTemplate mongoTemplate;
-
   private final TemplateGitXService templateGitXService;
   OutboxService outboxService;
 

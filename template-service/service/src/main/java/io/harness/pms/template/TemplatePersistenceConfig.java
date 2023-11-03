@@ -52,16 +52,11 @@ import org.springframework.guice.annotation.GuiceModule;
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PL)
 public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration {
-  //  private final MongoBackendConfiguration mongoBackendConfiguration;
   private final HarnessConnectionPoolListener harnessConnectionPoolListener;
   private final MongoConfig mongoConfig;
 
   @Inject
   public TemplatePersistenceConfig(Injector injector) {
-    //    this.mongoBackendConfiguration =
-    //        (MongoBackendConfiguration)
-    //        injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getMongoConfig();
-
     this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
     this.mongoConfig =
         injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getTemplateClientConfiguration();
