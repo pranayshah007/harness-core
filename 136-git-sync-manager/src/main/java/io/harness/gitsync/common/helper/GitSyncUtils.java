@@ -12,6 +12,8 @@ import static io.harness.authorization.AuthorizationServiceHeader.GIT_SYNC_SERVI
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
@@ -19,6 +21,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,5 +76,15 @@ public class GitSyncUtils {
       userIdentifier = Optional.of(currentPrincipal.getPrincipal().getName());
     }
     return userIdentifier;
+  }
+
+  public Scope getApplicableConnectorScope(Scope scope, String connectorRef) {
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
+        connectorRef, scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    return Scope.builder()
+        .accountIdentifier(identifierRef.getAccountIdentifier())
+        .orgIdentifier(identifierRef.getOrgIdentifier())
+        .projectIdentifier(identifierRef.getProjectIdentifier())
+        .build();
   }
 }
