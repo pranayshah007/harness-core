@@ -10,12 +10,17 @@ package io.harness.ng.core.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static java.lang.String.format;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
-import io.harness.ng.core.AccountOrgProjectValidator;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.DefaultOrganization;
+import io.harness.ng.core.OrgIdentifier;
+import io.harness.ng.core.ProjectIdentifier;
 import io.harness.ng.core.beans.ScopeInfo;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -34,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class ScopeInfoServiceImpl implements ScopeInfoService {
-  private final AccountOrgProjectValidator accountOrgProjectValidator;
+  private final AccountClient accountClient;
   private final OrganizationService organizationService;
   private final ProjectService projectService;
   private final Cache<String, ScopeInfo> scopeInfoCache;
@@ -43,10 +48,9 @@ public class ScopeInfoServiceImpl implements ScopeInfoService {
   private static final String SCOPE_INFO_CACHE_KEY_DELIMITER = "/";
 
   @Inject
-  public ScopeInfoServiceImpl(AccountOrgProjectValidator accountOrgProjectValidator,
-      OrganizationService organizationService, ProjectService projectService,
-      @Named(SCOPE_INFO_DATA_CACHE_KEY) Cache<String, ScopeInfo> scopeInfoCache) {
-    this.accountOrgProjectValidator = accountOrgProjectValidator;
+  public ScopeInfoServiceImpl(AccountClient accountClient, OrganizationService organizationService,
+      ProjectService projectService, @Named(SCOPE_INFO_DATA_CACHE_KEY) Cache<String, ScopeInfo> scopeInfoCache) {
+    this.accountClient = accountClient;
     this.organizationService = organizationService;
     this.projectService = projectService;
     this.scopeInfoCache = scopeInfoCache;
@@ -60,7 +64,7 @@ public class ScopeInfoServiceImpl implements ScopeInfoService {
     }
 
     if (isEmpty(orgIdentifier) && isEmpty(projectIdentifier)) {
-      if (!accountOrgProjectValidator.isPresent(accountIdentifier, null, null)) {
+      if (!isPresent(accountIdentifier, null, null)) {
         log.warn(format(
             "%s Account with identifier [%s] does not exist", SCOPE_DETAIL_RESOLVER_LOG_CONST, accountIdentifier));
         return Optional.empty();
@@ -144,5 +148,24 @@ public class ScopeInfoServiceImpl implements ScopeInfoService {
           .append(projectIdentifier);
     }
     return sb.toString();
+  }
+
+  @DefaultOrganization
+  public boolean isPresent(
+      String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
+    if (isEmpty(accountIdentifier)) {
+      return true;
+    } else if (isEmpty(orgIdentifier)) {
+      try {
+        return getResponse(accountClient.getAccountDTO(accountIdentifier)) != null;
+      } catch (InvalidRequestException exception) {
+        log.error(String.format("Account with accountIdentifier %s not found", accountIdentifier));
+        return false;
+      }
+    } else if (isEmpty(projectIdentifier)) {
+      return organizationService.get(accountIdentifier, orgIdentifier).isPresent();
+    } else {
+      return projectService.get(accountIdentifier, orgIdentifier, projectIdentifier).isPresent();
+    }
   }
 }
