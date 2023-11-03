@@ -16,7 +16,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingRollbackStepParameters;
-import io.harness.cdng.k8s.ayncsteps.K8sRollingRollbackStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sRollingRollbackStepV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.steps.StepType;

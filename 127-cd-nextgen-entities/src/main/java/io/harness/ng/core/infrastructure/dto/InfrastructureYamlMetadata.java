@@ -10,18 +10,21 @@ package io.harness.ng.core.infrastructure.dto;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(CDC)
-@Value
+@Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -29,6 +32,13 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("InfrastructureYamlMetadata")
 public class InfrastructureYamlMetadata {
   @NotNull String infrastructureIdentifier;
+  // scope identifiers
+  String orgIdentifier;
+  String projectIdentifier;
   String infrastructureYaml;
   String inputSetTemplateYaml;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
 }

@@ -187,6 +187,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                       .equal(accountId)
                                       .field(DelegateTokenKeys.owner)
                                       .equal(owner)
+                                      .field(DelegateTokenKeys.isNg)
+                                      .equal(true)
                                       .field(DelegateTokenKeys.status)
                                       .equal(ACTIVE)
                                       .order(DelegateTokenKeys.createdAt)
@@ -397,5 +399,19 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     if (revokeAfter != null && revokeAfter < System.currentTimeMillis()) {
       throw new InvalidRequestException("Token revocation time can not be less than current time.");
     }
+  }
+
+  @Override
+  public boolean doesDelegateTokenExist(String accountId, String delegateTokenName) {
+    if (null == delegateTokenName) {
+      return true;
+    }
+    DelegateToken delegateToken = persistence.createQuery(DelegateToken.class)
+                                      .field(DelegateTokenKeys.accountId)
+                                      .equal(accountId)
+                                      .field(DelegateTokenKeys.name)
+                                      .equal(delegateTokenName)
+                                      .get();
+    return delegateToken != null;
   }
 }

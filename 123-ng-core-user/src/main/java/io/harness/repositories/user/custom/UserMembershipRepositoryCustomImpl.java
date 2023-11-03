@@ -7,18 +7,26 @@
 
 package io.harness.repositories.user.custom;
 
+import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.user.entities.UserMembership;
 import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
+import io.harness.ng.core.user.entities.UsersPerAccountCount;
+import io.harness.ng.core.user.entities.UsersPerAccountCount.UsersPerAccountCountKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.MongoBulkWriteException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -29,6 +37,11 @@ import org.springframework.data.mongodb.BulkOperationException;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -114,5 +127,32 @@ public class UserMembershipRepositoryCustomImpl implements UserMembershipReposit
   public long count(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.count(query, UserMembership.class);
+  }
+
+  @Override
+  public Map<String, Integer> getUserCountPerAccount(List<String> accountIdentifiers) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY).in(accountIdentifiers);
+    MatchOperation matchStage = Aggregation.match(criteria);
+
+    GroupOperation groupBy =
+        group(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY).addToSet(UserMembershipKeys.userId).as("distinctUsers");
+
+    ProjectionOperation projectionStage = project()
+                                              .and(MONGODB_ID)
+                                              .as(UsersPerAccountCountKeys.accountIdentifier)
+                                              .andExpression("{ $size: '$distinctUsers' }")
+                                              .as(UsersPerAccountCountKeys.userCount);
+
+    Map<String, Integer> result = new HashMap<>();
+    aggregate(newAggregation(matchStage, groupBy, projectionStage), UsersPerAccountCount.class)
+        .getMappedResults()
+        .forEach(usersPerAccountCount
+            -> result.put(usersPerAccountCount.getAccountIdentifier(), usersPerAccountCount.getUserCount()));
+
+    return result;
+  }
+
+  private <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
+    return mongoTemplate.aggregate(aggregation, UserMembership.class, classToFillResultIn);
   }
 }

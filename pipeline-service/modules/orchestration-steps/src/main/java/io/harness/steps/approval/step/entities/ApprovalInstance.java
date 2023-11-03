@@ -121,6 +121,12 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                 .field(HarnessApprovalInstanceKeys.isAutoRejectEnabled)
                 .rangeField(ApprovalInstanceKeys.createdAt)
                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("status_type_nextIterations_0")
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .ascSortField("nextIterations.0")
+                 .build())
         .build();
   }
 

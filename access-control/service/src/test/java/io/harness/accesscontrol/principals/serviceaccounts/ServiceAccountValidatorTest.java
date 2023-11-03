@@ -9,6 +9,7 @@ package io.harness.accesscontrol.principals.serviceaccounts;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -24,6 +25,8 @@ import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -39,6 +42,10 @@ public class ServiceAccountValidatorTest extends AccessControlTestBase {
   private ServiceAccountService serviceAccountService;
   private ScopeService scopeService;
   private PrincipalValidator principalValidator;
+
+  private final String ACCOUNT_IDENTIFIER = randomAlphabetic(10);
+  private final String ORG_IDENTIFIER = randomAlphabetic(10);
+  private final String PROJECT_IDENTIFIER = randomAlphabetic(10);
 
   @Before
   public void setup() {
@@ -57,31 +64,87 @@ public class ServiceAccountValidatorTest extends AccessControlTestBase {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testValidatePrincipalValid() {
-    String scopeIdentifier = randomAlphabetic(10);
+  public void testValidatePrincipalValid_inSameScope() {
+    String scopeIdentifier =
+        "/ACCOUNT/" + ACCOUNT_IDENTIFIER + "/ORGANIZATION/" + ORG_IDENTIFIER + "/PROJECT/" + PROJECT_IDENTIFIER;
     String principalIdentifier = randomAlphabetic(11);
     Principal principal = Principal.builder()
                               .principalType(PrincipalType.SERVICE_ACCOUNT)
                               .principalIdentifier(principalIdentifier)
                               .build();
+    Scope scope = getScope();
+    when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier)).thenReturn(scope);
+
     when(serviceAccountService.get(principalIdentifier, scopeIdentifier))
         .thenReturn(Optional.of(ServiceAccount.builder().build()));
     assertTrue(principalValidator.validatePrincipal(principal, scopeIdentifier).isValid());
     verify(serviceAccountService, times(1)).get(principalIdentifier, scopeIdentifier);
   }
-
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testValidatePrincipalInValid() {
-    String scopeIdentifier = randomAlphabetic(10);
+  public void testValidatePrincipalValid_inParentScope() {
+    String scopeIdentifier =
+        "/ACCOUNT/" + ACCOUNT_IDENTIFIER + "/ORGANIZATION/" + ORG_IDENTIFIER + "/PROJECT/" + PROJECT_IDENTIFIER;
     String principalIdentifier = randomAlphabetic(11);
     Principal principal = Principal.builder()
                               .principalType(PrincipalType.SERVICE_ACCOUNT)
                               .principalIdentifier(principalIdentifier)
                               .build();
+    Scope scope = getScope();
+    when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier)).thenReturn(scope);
+
+    String orgScopeIdentifier = scope.getParentScope().toString();
+    String accountScopeIdentifier = scope.getParentScope().getParentScope().toString();
+
     when(serviceAccountService.get(principalIdentifier, scopeIdentifier)).thenReturn(Optional.empty());
+    when(serviceAccountService.get(principalIdentifier, orgScopeIdentifier)).thenReturn(Optional.empty());
+
+    when(serviceAccountService.get(principalIdentifier, accountScopeIdentifier))
+        .thenReturn(Optional.of(ServiceAccount.builder().build()));
+    assertTrue(principalValidator.validatePrincipal(principal, scopeIdentifier).isValid());
+    verify(serviceAccountService, times(1)).get(principalIdentifier, scopeIdentifier);
+    verify(serviceAccountService, times(1)).get(principalIdentifier, orgScopeIdentifier);
+    verify(serviceAccountService, times(1)).get(principalIdentifier, accountScopeIdentifier);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testValidatePrincipalInValid() {
+    String scopeIdentifier =
+        "/ACCOUNT/" + ACCOUNT_IDENTIFIER + "/ORGANIZATION/" + ORG_IDENTIFIER + "/PROJECT/" + PROJECT_IDENTIFIER;
+    String principalIdentifier = randomAlphabetic(11);
+    Principal principal = Principal.builder()
+                              .principalType(PrincipalType.SERVICE_ACCOUNT)
+                              .principalIdentifier(principalIdentifier)
+                              .build();
+    Scope scope = getScope();
+    when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier)).thenReturn(scope);
+
+    String orgScopeIdentifier = scope.getParentScope().toString();
+    String accountScopeIdentifier = scope.getParentScope().getParentScope().toString();
+
+    when(serviceAccountService.get(principalIdentifier, scopeIdentifier)).thenReturn(Optional.empty());
+    when(serviceAccountService.get(principalIdentifier, orgScopeIdentifier)).thenReturn(Optional.empty());
+
+    when(serviceAccountService.get(principalIdentifier, accountScopeIdentifier)).thenReturn(Optional.empty());
     assertFalse(principalValidator.validatePrincipal(principal, scopeIdentifier).isValid());
     verify(serviceAccountService, times(1)).get(principalIdentifier, scopeIdentifier);
+    verify(serviceAccountService, times(1)).get(principalIdentifier, orgScopeIdentifier);
+    verify(serviceAccountService, times(1)).get(principalIdentifier, accountScopeIdentifier);
+  }
+
+  private Scope getScope() {
+    return Scope.builder()
+        .instanceId(PROJECT_IDENTIFIER)
+        .level(HarnessScopeLevel.PROJECT)
+        .parentScope(
+            Scope.builder()
+                .instanceId(ORG_IDENTIFIER)
+                .level(HarnessScopeLevel.ORGANIZATION)
+                .parentScope(Scope.builder().instanceId(ACCOUNT_IDENTIFIER).level(HarnessScopeLevel.ACCOUNT).build())
+                .build())
+        .build();
   }
 }

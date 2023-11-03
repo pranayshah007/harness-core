@@ -64,3 +64,30 @@ Create the name of the service account to use
 {{- define "ng-manager.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image .Values.initContainer.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage NG Manager Secrets
+USAGE:
+{{- "ng-manager.generateSecrets" (dict "ctx" $)}}
+default LOG_STREAMING_SERVICE_TOKEN was c76e567a-b341-404d-a8dd-d9738714eb82 and
+*/}}
+{{- define "ng-manager.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+GITOPS_SERVICE_SECRET: {{ .ctx.Values.secrets.default.GITOPS_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

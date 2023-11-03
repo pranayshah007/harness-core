@@ -82,6 +82,7 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
     try (NgManagerSourcePrincipalGuard ignore = new NgManagerSourcePrincipalGuard(setupMetadata)) {
       return addReferenceInternal(object, accountIdentifier, orgIdentifier, projectIdentifier, contextMap);
     } catch (ExplanationException | HintException | ScmException ex) {
+      // Todo : @Tathagat iteratively improve on this exception handling
       log.error("Exception while adding references in ServiceEntityVisitorHelperV2", ex);
       throw ex;
     } catch (Exception ex) {

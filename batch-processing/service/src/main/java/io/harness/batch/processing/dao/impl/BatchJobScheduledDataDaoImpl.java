@@ -80,4 +80,20 @@ public class BatchJobScheduledDataDaoImpl implements BatchJobScheduledDataDao {
     updateOperations.set(BatchJobScheduledDataKeys.validRun, false);
     hPersistence.update(query, updateOperations);
   }
+
+  @Override
+  public long count(String accountId) {
+    return hPersistence.createQuery(BatchJobScheduledData.class)
+        .field(BatchJobScheduledDataKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  @Override
+  public boolean deleteAllForAccount(String accountId) {
+    Query<BatchJobScheduledData> query = hPersistence.createQuery(BatchJobScheduledData.class)
+                                             .field(BatchJobScheduledDataKeys.accountId)
+                                             .equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

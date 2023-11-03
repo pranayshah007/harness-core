@@ -57,16 +57,20 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
         taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.SERVICE_TEMPLATE_ID_FIELD);
     String artifactStreamId =
         taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.ARTIFACT_STREAM_ID_FIELD);
+    boolean isNG = taskSetupAbstractions != null && "true".equals(taskSetupAbstractions.get("ng"));
 
-    addFunctor("configFile",
-        ConfigFileFunctor.builder()
-            .appId(appId)
-            .envId(envId)
-            .serviceTemplateId(serviceTemplateId)
-            .configService(configService)
-            .serviceTemplateService(serviceTemplateService)
-            .expressionFunctorToken(expressionFunctorToken)
-            .build());
+    // should be added only if it's CG
+    if (!isNG) {
+      addFunctor("configFile",
+          ConfigFileFunctor.builder()
+              .appId(appId)
+              .envId(envId)
+              .serviceTemplateId(serviceTemplateId)
+              .configService(configService)
+              .serviceTemplateService(serviceTemplateService)
+              .expressionFunctorToken(expressionFunctorToken)
+              .build());
+    }
 
     addFunctor("dockerconfig",
         DockerConfigFunctor.builder()

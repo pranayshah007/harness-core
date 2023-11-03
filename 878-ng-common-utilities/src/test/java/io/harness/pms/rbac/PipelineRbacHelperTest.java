@@ -27,6 +27,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.AccessDeniedException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
@@ -36,7 +37,6 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -261,7 +261,7 @@ public class PipelineRbacHelperTest extends CategoryTest {
             .type(EntityType.CONNECTORS)
             .build();
 
-    return Lists.newArrayList(entityDetailAccountLevel, entityDetailOrgLevel, entityDetailProjectLevel);
+    return ListUtils.newArrayList(entityDetailAccountLevel, entityDetailOrgLevel, entityDetailProjectLevel);
   }
 
   private EntityDetail getEntityDetailWithMetadata() {

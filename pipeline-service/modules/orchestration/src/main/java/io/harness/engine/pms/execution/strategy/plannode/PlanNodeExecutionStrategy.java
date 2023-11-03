@@ -441,6 +441,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     }
 
     processOrQueueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
+    if (!StatusUtils.flowingStatuses().contains(nodeExecution.getStatus())) {
+      planExecutionService.calculateAndUpdateRunningStatusUnderLock(ambiance.getPlanExecutionId(), null);
+    }
   }
 
   @VisibleForTesting

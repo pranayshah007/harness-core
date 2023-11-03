@@ -115,6 +115,18 @@ if [[ "" != "$SSCA_ENFORCEMENT_IMAGE" ]]; then
   export SSCA_ENFORCEMENT_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.sscaEnforcementConfig.image=env(SSCA_ENFORCEMENT_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DOCKER_PROVENANCE_IMAGE" ]]; then
+  export DOCKER_PROVENANCE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.provenanceConfig.image=env(DOCKER_PROVENANCE_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GCR_PROVENANCE_IMAGE" ]]; then
+  export GCR_PROVENANCE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.provenanceGcrConfig.image=env(GCR_PROVENANCE_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SLSA_VERIFICATION_DOCKER_IMAGE" ]]; then
+  export SLSA_VERIFICATION_DOCKER_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.slsaVerificationConfig.image=env(SLSA_VERIFICATION_DOCKER_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_SSCA_ORCHESTRATION_IMAGE" ]]; then
   export VM_SSCA_ORCHESTRATION_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.sscaOrchestration=env(VM_SSCA_ORCHESTRATION_IMAGE)' $CONFIG_FILE
 fi
@@ -233,6 +245,10 @@ fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SLSA_VERIFICATION_GCR_IMAGE" ]]; then
+  export SLSA_VERIFICATION_GCR_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.slsaVerificationGcrConfig.image=env(SLSA_VERIFICATION_GCR_IMAGE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HOSTED_VM_INTERNAL_ACCOUNTS" ]]; then

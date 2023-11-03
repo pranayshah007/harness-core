@@ -22,15 +22,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.steps.CustomStageStep;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,7 +98,21 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
     customStageNode.setCustomStageConfig(CustomStageConfig.builder().build());
     MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
-    assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();
+    Map<String, PlanCreationResponse> planForChildrenNodes =
+        customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode);
+    assertThat(planForChildrenNodes).isNotNull();
+    YamlField specField =
+        Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+    String executionNodeId = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION).getNode().getUuid();
+    assertThat(planForChildrenNodes.get(executionNodeId)
+                   .getDependencies()
+                   .getDependencyMetadataMap()
+                   .get(executionNodeId)
+                   .getParentInfo()
+                   .getDataMap()
+                   .get("stageId")
+                   .getStringValue())
+        .isEqualTo("tempid");
     mockSettings.close();
   }
 }

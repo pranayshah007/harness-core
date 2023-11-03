@@ -60,7 +60,6 @@ import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
-import io.fabric8.utils.Lists;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -133,7 +132,7 @@ public class CEExportDataQueryBuilder {
       addSelectedColumns(selectQuery, fieldNames, selectedFields);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTagsAndLabels(accountId, filters);
       decorateQueryWithFilters(selectQuery, filters);
     }

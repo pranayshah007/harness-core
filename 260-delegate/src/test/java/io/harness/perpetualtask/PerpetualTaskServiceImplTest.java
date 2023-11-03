@@ -885,13 +885,16 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     perpetualTaskRecordDao.updateTaskNonAssignableToAssignable(ACCOUNT_ID);
     PerpetualTaskRecord updatedPtRecord1 = perpetualTaskRecordDao.getTask(perpetualTaskRecord1.getUuid());
     assertThat(updatedPtRecord1.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPtRecord1.getAssignAfterMs()).isNotNull();
     assertThat(updatedPtRecord1.getUnassignedReason()).isNull();
     PerpetualTaskRecord updatedPtRecord2 = perpetualTaskRecordDao.getTask(perpetualTaskRecord2.getUuid());
     assertThat(updatedPtRecord2.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
     assertThat(updatedPtRecord2.getUnassignedReason()).isNull();
+    assertThat(updatedPtRecord2.getAssignAfterMs()).isNotNull();
     PerpetualTaskRecord updatedPtRecord3 = perpetualTaskRecordDao.getTask(perpetualTaskRecord3.getUuid());
     assertThat(updatedPtRecord3.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
     assertThat(updatedPtRecord3.getUnassignedReason()).isNull();
+    assertThat(updatedPtRecord3.getAssignAfterMs()).isNotNull();
   }
 
   @Test

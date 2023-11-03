@@ -6,9 +6,9 @@
  */
 package io.harness.idp.audittrails.eventhandlers;
 
-import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent.CHECK_CREATED;
-import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent.CHECK_DELETED;
-import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent.CHECK_UPDATED;
+import static io.harness.idp.scorecard.checks.events.CheckCreateEvent.CHECK_CREATED;
+import static io.harness.idp.scorecard.checks.events.CheckDeleteEvent.CHECK_DELETED;
+import static io.harness.idp.scorecard.checks.events.CheckUpdateEvent.CHECK_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -21,9 +21,9 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.idp.audittrails.eventhandlers.dtos.CheckDTO;
-import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent;
-import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent;
-import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent;
+import io.harness.idp.scorecard.checks.events.CheckCreateEvent;
+import io.harness.idp.scorecard.checks.events.CheckDeleteEvent;
+import io.harness.idp.scorecard.checks.events.CheckUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;

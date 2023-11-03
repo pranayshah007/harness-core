@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.DeprecatedIntegrationTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.rule.Owner;
 
 import software.wings.beans.ApmMetricCollectionInfo;
@@ -52,7 +53,6 @@ import software.wings.verification.prometheus.PrometheusCVServiceConfiguration;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
-import io.fabric8.utils.Lists;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -196,13 +196,13 @@ public class HeatMapApiIntegrationTest extends IntegrationTestBase {
   }
 
   private void createAPMConfig() {
-    List<ApmMetricCollectionInfo> timeSeries = Lists.newArrayList(ApmMetricCollectionInfo.builder()
-                                                                      .collectionUrl("URL1")
-                                                                      .metricName("METRIC1")
-                                                                      .method(Method.GET)
-                                                                      .responseType(ResponseType.JSON)
-                                                                      .metricType(MetricType.THROUGHPUT)
-                                                                      .build(),
+    List<ApmMetricCollectionInfo> timeSeries = ListUtils.newArrayList(ApmMetricCollectionInfo.builder()
+                                                                          .collectionUrl("URL1")
+                                                                          .metricName("METRIC1")
+                                                                          .method(Method.GET)
+                                                                          .responseType(ResponseType.JSON)
+                                                                          .metricType(MetricType.THROUGHPUT)
+                                                                          .build(),
         ApmMetricCollectionInfo.builder()
             .collectionUrl("URL2")
             .metricName("METRIC2")
@@ -230,12 +230,12 @@ public class HeatMapApiIntegrationTest extends IntegrationTestBase {
   }
 
   private void createPrometheusConfig() {
-    List<TimeSeries> timeSeries = Lists.newArrayList(TimeSeries.builder()
-                                                         .url("URL1")
-                                                         .txnName("TRANSACTION1")
-                                                         .metricName("METRIC1")
-                                                         .metricType(MetricType.VALUE.name())
-                                                         .build(),
+    List<TimeSeries> timeSeries = ListUtils.newArrayList(TimeSeries.builder()
+                                                             .url("URL1")
+                                                             .txnName("TRANSACTION1")
+                                                             .metricName("METRIC1")
+                                                             .metricType(MetricType.VALUE.name())
+                                                             .build(),
         TimeSeries.builder()
             .url("URL2")
             .txnName("TRANSACTION1")

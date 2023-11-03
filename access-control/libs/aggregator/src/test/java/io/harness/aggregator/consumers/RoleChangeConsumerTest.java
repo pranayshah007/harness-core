@@ -112,7 +112,7 @@ public class RoleChangeConsumerTest extends AggregatorTestBase {
     }
     Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.roleIdentifier).is(roleDBO.getIdentifier());
     criteria.and(RoleAssignmentDBOKeys.scopeIdentifier).is(roleDBO.getScopeIdentifier());
-    when(roleAssignmentRepository.findAll(criteria, Pageable.ofSize(10000)))
+    when(roleAssignmentRepository.findAll(criteria, Pageable.ofSize(100000)))
         .thenReturn(PageTestUtils.getPage(roleAssignmentDBOS, roleAssignmentDBOS.size()));
     return roleAssignmentDBOS;
   }

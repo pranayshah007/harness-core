@@ -10,9 +10,12 @@ package io.harness.audit.repositories;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.Action;
 import io.harness.audit.entities.AuditEvent;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -23,4 +26,9 @@ public interface AuditRepositoryCustom {
   AuditEvent get(Criteria criteria);
   void delete(Criteria criteria);
   List<String> fetchDistinctAccountIdentifiers();
+
+  Map<String, Integer> getUniqueProjectCountPerAccountId(List<String> accountIds, Instant startTime, Instant endTime);
+
+  Map<String, Integer> getUniqueLoginCountPerAccountId(
+      List<String> accountIds, List<Action> actions, Instant startTime, Instant endTime);
 }

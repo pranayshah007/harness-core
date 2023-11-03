@@ -28,12 +28,14 @@ import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +51,8 @@ public class CdAsyncExecutable<R extends ResponseData, T extends CdTaskExecutabl
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private AsyncExecutableTaskHelper asyncExecutableTaskHelper;
   @Inject private StrategyHelper strategyHelper;
+  @Inject private AsyncWaitEngine asyncWaitEngine;
+
   @Override
   public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepBaseParameters stepParameters, Map<String, ResponseData> responseDataMap) {
@@ -69,7 +73,7 @@ public class CdAsyncExecutable<R extends ResponseData, T extends CdTaskExecutabl
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     return getAsyncExecutableResponse(
-        cdTaskExecutable.obtainTaskAfterRbac(ambiance, stepParameters, inputPackage), ambiance);
+        ambiance, cdTaskExecutable.obtainTaskAfterRbac(ambiance, stepParameters, inputPackage));
   }
 
   @Override
@@ -86,24 +90,30 @@ public class CdAsyncExecutable<R extends ResponseData, T extends CdTaskExecutabl
         AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
   }
 
-  private AsyncExecutableResponse getAsyncExecutableResponse(TaskRequest taskRequest, Ambiance ambiance) {
+  private AsyncExecutableResponse getAsyncExecutableResponse(Ambiance ambiance, TaskRequest taskRequest) {
     SubmitTaskRequest request = taskRequest.getDelegateTaskRequest().getRequest();
     TaskData taskData = asyncExecutableTaskHelper.extractTaskRequest(request.getDetails());
     Set<String> selectorsList =
         request.getSelectorsList().stream().map(TaskSelector::getSelector).collect(Collectors.toSet());
+    String taskName = taskRequest.getDelegateTaskRequest().getTaskName();
     DelegateTaskRequest delegateTaskRequest =
         asyncExecutableTaskHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, selectorsList, "", false);
 
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
-    asyncExecutableTaskHelper.publishStepDelegateInfoStepDetails(
-        ambiance, taskData, taskRequest.getDelegateTaskRequest().getTaskName(), taskId);
-    return createAsyncExecutableResponse(taskId, taskRequest, taskData.getTimeout());
+    return createAsyncExecutableResponse(ambiance, taskId, taskName, taskRequest, taskData.getTimeout());
   }
 
   private AsyncExecutableResponse createAsyncExecutableResponse(
-      String callbackId, TaskRequest taskRequest, long timeout) {
+      Ambiance ambiance, String callbackId, String taskName, TaskRequest taskRequest, long timeout) {
     List<String> logKeysList = taskRequest.getDelegateTaskRequest().getLogKeysList();
     List<String> units = taskRequest.getDelegateTaskRequest().getUnitsList();
+    byte[] ambianceBytes = ambiance.toByteArray();
+    AsyncDelegateResumeCallback asyncDelegateResumeCallback = AsyncDelegateResumeCallback.builder()
+                                                                  .ambianceBytes(ambianceBytes)
+                                                                  .taskId(callbackId)
+                                                                  .taskName(taskName)
+                                                                  .build();
+    asyncWaitEngine.waitForAllOn(asyncDelegateResumeCallback, null, Collections.singletonList(callbackId), 0);
     return AsyncExecutableResponse.newBuilder()
         .addAllLogKeys(logKeysList)
         .addAllUnits(units)

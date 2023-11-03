@@ -56,6 +56,7 @@ import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.InfrastructureInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
+import io.harness.ng.core.dashboard.ServiceDeployments;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -238,7 +239,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + "moduleinfo_repository,"
         + "trigger_type,"
         + "moduleinfo_author_id,"
-        + "author_avatar";
+        + "author_avatar,"
+        + "orgidentifier,"
+        + "projectidentifier";
   }
   public String queryBuilderSelectStatusTime(
       String accountId, String orgId, String projectId, long startInterval, long endInterval) {
@@ -2285,6 +2288,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> planExecutionIdList = new ArrayList<>();
     List<String> identifierList = new ArrayList<>();
     List<String> deploymentStatus = new ArrayList<>();
+    List<String> orgIdentifierList = new ArrayList<>();
+    List<String> projectIdentifierList = new ArrayList<>();
 
     // CI-Info
     List<GitInfo> gitInfoList = new ArrayList<>();
@@ -2305,6 +2310,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           namePipelineList.add(resultSet.getString("name"));
           startTs.add(Long.valueOf(resultSet.getString("startts")));
           deploymentStatus.add(resultSet.getString("status"));
+          orgIdentifierList.add(resultSet.getString("orgidentifier"));
+          projectIdentifierList.add(resultSet.getString("projectidentifier"));
           if (resultSet.getString("endTs") != null) {
             endTs.add(Long.valueOf(resultSet.getString("endTs")));
           } else {
@@ -2349,6 +2356,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .gitInfoList(gitInfoList)
         .triggerType(triggerTypeList)
         .author(authorInfoList)
+        .orgIdentifierList(orgIdentifierList)
+        .projectIdentifierList(projectIdentifierList)
         .build();
   }
 
@@ -2360,6 +2369,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> deploymentStatus = new ArrayList<>();
     List<String> planExecutionIdList = new ArrayList<>();
     List<String> pipelineIdentifierList = new ArrayList<>();
+    List<String> orgIdentifierList = new ArrayList<>();
+    List<String> projectIdentifierList = new ArrayList<>();
 
     // CI-Info
     List<GitInfo> gitInfoList = new ArrayList<>();
@@ -2377,6 +2388,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     startTs = deploymentStatusInfoList.getStartTs();
     planExecutionIdList = deploymentStatusInfoList.getPlanExecutionIdList();
     pipelineIdentifierList = deploymentStatusInfoList.getPipelineIdentifierList();
+    orgIdentifierList = deploymentStatusInfoList.getOrgIdentifierList();
+    projectIdentifierList = deploymentStatusInfoList.getProjectIdentifierList();
 
     gitInfoList = deploymentStatusInfoList.getGitInfoList();
     triggerType = deploymentStatusInfoList.getTriggerType();
@@ -2396,7 +2409,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String planExecutionId = planExecutionIdList.get(i);
       statusInfo.add(this.getDeploymentStatusInfoObject(namePipelineList.get(i), pipelineIdentifier, planExecutionId,
           startTime, endTime, deploymentStatus.get(i), gitInfoList.get(i), triggerType.get(i), author.get(i),
-          serviceTagMap.get(objectId), pipelineToEnvMap.get(objectId)));
+          serviceTagMap.get(objectId), pipelineToEnvMap.get(objectId), orgIdentifierList.get(i),
+          projectIdentifierList.get(i)));
     }
     return statusInfo;
   }
@@ -2432,8 +2446,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   private ExecutionStatusInfo getDeploymentStatusInfoObject(String name, String identfier, String planExecutionId,
       Long startTime, Long endTime, String status, GitInfo gitInfo, String triggerType, AuthorInfo authorInfo,
-      List<ServiceDeploymentInfo> serviceDeploymentInfos,
-      List<EnvironmentDeploymentsInfo> environmentDeploymentsInfos) {
+      List<ServiceDeploymentInfo> serviceDeploymentInfos, List<EnvironmentDeploymentsInfo> environmentDeploymentsInfos,
+      String orgIdentifier, String projectIdentifier) {
     return ExecutionStatusInfo.builder()
         .pipelineName(name)
         .pipelineIdentifier(identfier)
@@ -2446,6 +2460,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .author(authorInfo)
         .serviceInfoList(serviceDeploymentInfos)
         .environmentInfoList(environmentDeploymentsInfos)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
         .build();
   }
 
@@ -3972,6 +3988,44 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return DeploymentsInfo.builder().deployments(deployments).build();
   }
 
+  public ServiceDeployments getAllDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
+    String serviceRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String query = queryBuilderAllDeployments(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, startTimeInMs, endTimeInMs);
+    String queryServiceNameTagId = queryBuilderServiceTag(
+        queryToGetAllIds(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef), serviceRef);
+    List<ExecutionStatusInfo> deployments = getDeploymentStatusInfo(query, queryServiceNameTagId);
+    Map<String, Map<String, ServiceDeployments.ProjectDeployments>> orgDeploymentsMap = new HashMap<>();
+    for (ExecutionStatusInfo executionStatusInfo : deployments) {
+      orgDeploymentsMap.putIfAbsent(executionStatusInfo.getOrgIdentifier(), new HashMap<>());
+      orgDeploymentsMap.get(executionStatusInfo.getOrgIdentifier())
+          .putIfAbsent(executionStatusInfo.getProjectIdentifier(),
+              ServiceDeployments.ProjectDeployments.builder()
+                  .deployments(new ArrayList<>())
+                  .projectIdentifier(executionStatusInfo.getProjectIdentifier())
+                  .build());
+      orgDeploymentsMap.get(executionStatusInfo.getOrgIdentifier())
+          .get(executionStatusInfo.getProjectIdentifier())
+          .getDeployments()
+          .add(executionStatusInfo);
+    }
+    List<ServiceDeployments.OrgDeployments> orgDeploymentsList = new ArrayList<>();
+    for (Map.Entry<String, Map<String, ServiceDeployments.ProjectDeployments>> entry : orgDeploymentsMap.entrySet()) {
+      List<ServiceDeployments.ProjectDeployments> projectDeploymentsList = new ArrayList<>();
+      for (Map.Entry<String, ServiceDeployments.ProjectDeployments> projectDeploymentsEntry :
+          entry.getValue().entrySet()) {
+        projectDeploymentsList.add(projectDeploymentsEntry.getValue());
+      }
+      orgDeploymentsList.add(ServiceDeployments.OrgDeployments.builder()
+                                 .orgIdentifier(entry.getKey())
+                                 .projectDeploymentsList(projectDeploymentsList)
+                                 .build());
+    }
+    return ServiceDeployments.builder().orgDeploymentsList(orgDeploymentsList).build();
+  }
+
   private String queryBuilderDeployments(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, long startTimeInMs, long endTimeInMs) {
     return "select " + executionStatusCdTimeScaleColumns() + " from " + tableNameCD + " where id in ( "
@@ -3985,6 +4039,26 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + String.format("accountid='%s' and ", accountIdentifier)
         + String.format("orgidentifier='%s' and ", orgIdentifier)
         + String.format("projectidentifier='%s' and ", projectIdentifier) + String.format("service_id='%s'", serviceId);
+  }
+
+  private String queryBuilderAllDeployments(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, long startTimeInMs, long endTimeInMs) {
+    return "select " + executionStatusCdTimeScaleColumns() + " from " + tableNameCD + " where id in ( "
+        + queryToGetAllIds(accountIdentifier, orgIdentifier, projectIdentifier, serviceId) + ") and "
+        + String.format("startts>='%s' and startts<='%s' ", startTimeInMs, endTimeInMs) + "order by startts desc";
+  }
+
+  private String queryToGetAllIds(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    String query = "select distinct pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra + " where "
+        + String.format("accountid='%s' and ", accountIdentifier);
+    if (orgIdentifier != null) {
+      query = query + String.format("orgidentifier='%s' and ", orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      query = query + String.format("projectidentifier='%s' and ", projectIdentifier);
+    }
+    return query + String.format("service_id='%s'", serviceId);
   }
 
   public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(String accountIdentifier,

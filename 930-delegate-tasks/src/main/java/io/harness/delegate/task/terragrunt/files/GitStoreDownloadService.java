@@ -25,6 +25,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.DownloadFilesRequest;
 import io.harness.git.model.GitRepositoryType;
@@ -34,6 +35,7 @@ import io.harness.shell.SshSessionConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,8 +85,25 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
 
     // Is it expected that this method will be used with a single path file, otherwise it will require to find nearest
     // relative path based on all paths
+
+    boolean repoFolderPathExists;
+    Path rootDirectoryPath;
+
+    try {
+      rootDirectoryPath = Paths.get(outputDirectory, gitStoreConfig.getPaths().get(0)).toAbsolutePath();
+      repoFolderPathExists = rootDirectoryPath.toFile().exists();
+    } catch (Exception ex) {
+      log.error(format("Error checking if repo folder path exists, %s", ex.getMessage()));
+      throw ex;
+    }
+
+    if (!repoFolderPathExists) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please ensure that Folder Path exists in the repo.",
+          format("Folder Path %s does not exist in the repo.", gitStoreConfig.getPaths().get(0)));
+    }
+
     return DownloadResult.builder()
-        .rootDirectory(Paths.get(outputDirectory, gitStoreConfig.getPaths().get(0)).toAbsolutePath().toString())
+        .rootDirectory(rootDirectoryPath.toString())
         .sourceReference(commitReference)
         .build();
   }

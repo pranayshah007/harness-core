@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
@@ -25,7 +26,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -251,7 +251,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
         JsonNode clonedNode = StrategyUtils.replaceExpressions(
             JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null);
-        StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
+        StrategyUtils.modifyJsonNode(clonedNode, ListUtils.newArrayList(String.valueOf(i)));
         jsonNodes.add(clonedNode);
       }
     } else {
@@ -260,7 +260,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       for (String value : params) {
         JsonNode clonedNode = StrategyUtils.replaceExpressions(
             JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), currentIteration, params.size(), value);
-        StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(currentIteration)));
+        StrategyUtils.modifyJsonNode(clonedNode, ListUtils.newArrayList(String.valueOf(currentIteration)));
         jsonNodes.add(clonedNode);
         currentIteration++;
       }

@@ -131,7 +131,7 @@ public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig,
   }
 
   @Override
-  public List<String> getFilePaths() {
+  public List<String> retrieveFilePaths() {
     return this.getFiles().getValue();
   }
 }

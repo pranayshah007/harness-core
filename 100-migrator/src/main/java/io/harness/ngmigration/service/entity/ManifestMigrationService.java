@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -309,28 +310,32 @@ public class ManifestMigrationService extends NgMigrationService {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     List<ManifestConfigWrapper> ngManifests = new ArrayList<>();
     for (CgEntityId manifestEntityId : manifestEntityIds) {
-      CgEntityNode manifestNode = entities.get(manifestEntityId);
-      ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      if (null != applicationManifest && null == service && isNotEmpty(applicationManifest.getServiceId())) {
-        service = serviceResourceService.get(applicationManifest.getAppId(), applicationManifest.getServiceId());
+      try {
+        CgEntityNode manifestNode = entities.get(manifestEntityId);
+        ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
+        if (null != applicationManifest && null == service && isNotEmpty(applicationManifest.getServiceId())) {
+          service = serviceResourceService.get(applicationManifest.getAppId(), applicationManifest.getServiceId());
+        }
+        MigratorExpressionUtils.render(migrationContext, applicationManifest, inputDTO.getCustomExpressions());
+        BaseProvidedInput manifestInput =
+            inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
+        ManifestProvidedEntitySpec entitySpec = null;
+        if (manifestInput != null && manifestInput.getSpec() != null) {
+          entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);
+        }
+        List<NGYamlFile> files = getYamlFilesForManifest(migrationContext, applicationManifest);
+        if (EmptyPredicate.isNotEmpty(files)) {
+          files = files.stream()
+                      .filter(file -> !"FOLDER".equalsIgnoreCase(((FileYamlDTO) file.getYaml()).getFileUsage()))
+                      .collect(Collectors.toList());
+        }
+        NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest, service);
+        List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
+            applicationManifest, entities, migratedEntities, entitySpec, files, identifierCaseFormat);
+        ngManifests.addAll(manifestConfigWrapper);
+      } catch (Exception ex) {
+        log.error("Failed to get manifest: {} with error: {}", manifestEntityId, ex.getMessage());
       }
-      MigratorExpressionUtils.render(migrationContext, applicationManifest, inputDTO.getCustomExpressions());
-      BaseProvidedInput manifestInput =
-          inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
-      ManifestProvidedEntitySpec entitySpec = null;
-      if (manifestInput != null && manifestInput.getSpec() != null) {
-        entitySpec = JsonUtils.treeToValue(manifestInput.getSpec(), ManifestProvidedEntitySpec.class);
-      }
-      List<NGYamlFile> files = getYamlFilesForManifest(migrationContext, applicationManifest);
-      if (EmptyPredicate.isNotEmpty(files)) {
-        files = files.stream()
-                    .filter(file -> !"FOLDER".equalsIgnoreCase(((FileYamlDTO) file.getYaml()).getFileUsage()))
-                    .collect(Collectors.toList());
-      }
-      NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest, service);
-      List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
-          applicationManifest, entities, migratedEntities, entitySpec, files, identifierCaseFormat);
-      ngManifests.addAll(manifestConfigWrapper);
     }
     return ngManifests;
   }

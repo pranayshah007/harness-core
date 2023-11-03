@@ -113,12 +113,17 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null) {
       return currField.getNode().getField(YAMLFieldNameConstants.STEP);
     }
+    if (currField.getNode().getField(YAMLFieldNameConstants.STEP_GROUP) != null) {
+      return currField.getNode().getField(YAMLFieldNameConstants.STEP_GROUP);
+    }
     return currField;
   }
 
   private String getYamlVersionFromStepField(YamlField currField) {
-    if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null
-        || YAMLFieldNameConstants.STEP.equals(currField.getNode().getFieldName())) {
+    if ((currField.getNode().getField(YAMLFieldNameConstants.STEP) != null
+            || YAMLFieldNameConstants.STEP.equals(currField.getNode().getFieldName()))
+        || (currField.getNode().getField(YAMLFieldNameConstants.STEP_GROUP) != null
+            || YAMLFieldNameConstants.STEP_GROUP.equals(currField.getNode().getFieldName()))) {
       return HarnessYamlVersion.V0;
     }
     return HarnessYamlVersion.V1;

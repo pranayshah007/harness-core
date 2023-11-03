@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -68,7 +69,6 @@ import com.google.protobuf.StringValue;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -304,7 +304,7 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
 
   @Override
   public DelegateProfile add(DelegateProfile delegateProfile) {
-    if (Strings.isNullOrBlank(delegateProfile.getIdentifier())) {
+    if (isEmpty(delegateProfile.getIdentifier())) {
       delegateProfile.setIdentifier(Utils.normalizeIdentifier(delegateProfile.getName()));
     }
     if (delegateProfile.isNg()) {
@@ -319,7 +319,7 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
                   .reduce("", (i, j) -> i + " <" + j + "> "));
       }
     }
-    if (Strings.isNotBlank(delegateProfile.getIdentifier())
+    if (isNotEmpty(delegateProfile.getIdentifier())
         && identifierExists(
             delegateProfile.getAccountId(), delegateProfile.getOwner(), delegateProfile.getIdentifier())) {
       throw new InvalidRequestException(

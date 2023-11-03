@@ -7,6 +7,8 @@
 
 package io.harness.migrations.timescaledb.data;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.migrations.TimeScaleDBDataMigration;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -18,7 +20,6 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -97,7 +98,7 @@ public class UpdateEnvSvcCPInDeployment implements TimeScaleDBDataMigration {
           wfDataList.add(
               WfData.builder().executionId(queryResultSet.getString(1)).appId(queryResultSet.getString(2)).build());
         }
-        if (!Lists.isNullOrEmpty(wfDataList)) {
+        if (!isEmpty(wfDataList)) {
           populateHolderList(wfDataList);
           updateHolderList(wfDataList);
         }
@@ -134,7 +135,7 @@ public class UpdateEnvSvcCPInDeployment implements TimeScaleDBDataMigration {
                                        .map(env -> env.getEnvironmentType().name())
                                        .collect(Collectors.toSet());
 
-            if (!Lists.isNullOrEmpty(envIds)) {
+            if (!isEmpty(envIds)) {
               updateStatement.setArray(1, connection.createArrayOf("text", envIds.toArray()));
             } else {
               updateStatement.setArray(1, null);
@@ -145,14 +146,14 @@ public class UpdateEnvSvcCPInDeployment implements TimeScaleDBDataMigration {
               updateStatement.setArray(2, null);
             }
 
-            if (!Lists.isNullOrEmpty(wfData.getCloudProviders())) {
+            if (!isEmpty(wfData.getCloudProviders())) {
               List<String> cloudProviderIds = wfData.getCloudProviders();
               updateStatement.setArray(3, connection.createArrayOf("text", cloudProviderIds.toArray()));
             } else {
               updateStatement.setArray(3, null);
             }
 
-            if (!Lists.isNullOrEmpty(wfData.getServices())) {
+            if (!isEmpty(wfData.getServices())) {
               List<String> services = wfData.getServices();
               updateStatement.setArray(4, connection.createArrayOf("text", services.toArray()));
             } else {

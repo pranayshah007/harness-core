@@ -68,4 +68,8 @@ data:
   CPU: {{ .Values.cpu | quote}}
   SCORE_COMPUTER_THREADS_PER_CORE: {{.Values.scoreComputerThreadsPerCore | quote}}
   INTERNAL_ACCOUNTS: {{.Values.internalAccounts}}
+  SEGMENT_ENABLED: {{.Values.segmentEnabled}}
+  SEGMENT_URL: {{.Values.segmentUrl}}
+  SEGMENT_APIKEY: {{.Values.segmentApikey}}
+  SEGMENT_VERIFY_CERT: {{.Values.segmentVerifyCert}}
 

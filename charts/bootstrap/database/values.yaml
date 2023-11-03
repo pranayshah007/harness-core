@@ -1,20 +1,141 @@
-# Default values for databases.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 global:
   database:
-    minio:
-      installed: true
-    mongodb:
-      installed: true
-    postgres:
-      installed: true
-    timescaledb:
-      installed: true
-    redis:
-      installed: true
     clickhouse:
       enabled: false
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              CLICKHOUSE_USERNAME: ""
+              CLICKHOUSE_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                CLICKHOUSE_USERNAME:
+                  name: ""
+                  property: ""
+                CLICKHOUSE_PASSWORD:
+                  name: ""
+                  property: ""
+    minio:
+      installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              S3_USER: ""
+              S3_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                S3_USER:
+                  name: ""
+                  property: ""
+                S3_PASSWORD:
+                  name: ""
+                  property: ""
+    mongo:
+      installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD: ""
+              MONGO_REPLICA_SET_KEY: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD:
+                  name: ""
+                  property: ""
+                MONGO_REPLICA_SET_KEY:
+                  name: ""
+                  property: ""
+    postgres:
+      installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              POSTGRES_USER: ""
+              POSTGRES_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                POSTGRES_USER:
+                  name: ""
+                  property: ""
+                POSTGRES_PASSWORD:
+                  name: ""
+                  property: ""
+    timescaledb:
+      installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+              TIMESCALEDB_REPLICATION_PASSWORD: ""
+              TIMESCALEDB_ADMIN_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_REPLICATION_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_ADMIN_PASSWORD:
+                  name: ""
+                  property: ""
+    redis:
+      installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              CLICKHOUSE_USERNAME: ""
+              CLICKHOUSE_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                CLICKHOUSE_USERNAME:
+                  name: ""
+                  property: ""
+                CLICKHOUSE_PASSWORD:
+                  name: ""
+                  property: ""
 minio:
   fullnameOverride: "minio"
   mode: standalone
@@ -24,7 +145,7 @@ minio:
   persistence:
     size: 200Gi
   auth:
-    existingSecret: "minio"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "minio" "defaultSecret" "minio") }}'
 # -- configurations for mongodb
 mongodb:
   architecture: replicaset
@@ -40,7 +161,7 @@ mongodb:
     nameOverride: "mongodb-replicaset-chart"
   auth:
     rootUser: "admin"
-    existingSecret: "mongodb-replicaset-chart"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "mongo" "defaultSecret" "mongodb-replicaset-chart") }}'
   podLabels: { app: mongodb-replicaset }
   resources:
     limits:
@@ -63,7 +184,7 @@ postgresql:
     # Additional init can be added using a configmap
     # primary.initdb.scriptsConfigMap
     database: overops
-    existingSecret: "postgres"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "postgres" "defaultSecret" "postgres") }}'
   serviceAccount:
     create: true
     name: "postgres"
@@ -80,13 +201,16 @@ postgresql:
       requests:
         cpu: 4
         memory: 8192Mi
+timescaledb:
+  secrets:
+    credentialsSecretName: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "timescaledb" "defaultSecret" "harness-secrets") }}'
 clickhouse:
   fullnameOverride: "clickhouse"
   auth:
     existingSecret: "clickhouse"
     existingSecretKey: "admin-password"
   image:
-    tag: 23.3.13-debian-11-r0
+    tag: 23.9.2-debian-11-r0
   podLabels: { app: clickhouse }
   resources:
     limits:

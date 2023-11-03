@@ -22,6 +22,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SearchFilter;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogParams.DelegateSelectionLogParamsBuilder;
@@ -48,7 +49,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -177,7 +177,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     if (isEmpty(nonAssignableDelegates)) {
       return;
     }
-    List<String> excludeGroups = Lists.newArrayList(CAN_NOT_ASSIGN_OWNER, CAN_NOT_ASSIGN_CG_NG_TASK_GROUP);
+    List<String> excludeGroups = ListUtils.newArrayList(CAN_NOT_ASSIGN_OWNER, CAN_NOT_ASSIGN_CG_NG_TASK_GROUP);
     List<String> nonAssignables =
         nonAssignableDelegates.keySet()
             .stream()

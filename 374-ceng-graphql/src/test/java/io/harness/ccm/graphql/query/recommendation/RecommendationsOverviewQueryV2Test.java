@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.query.recommendation;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.rule.OwnerRule.ABHIJEET;
 import static io.harness.rule.OwnerRule.UTSAV;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
@@ -61,7 +62,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import graphql.com.google.common.collect.ImmutableList;
-import io.fabric8.utils.Lists;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -602,7 +602,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
   private HashMap<String, CEViewShortHand> allowedMockedRecommendations(List<String> anomalieIds) {
     HashMap<String, CEViewShortHand> allowedRecommendations = new HashMap<>();
-    if (!Lists.isNullOrEmpty(anomalieIds)) {
+    if (!isEmpty(anomalieIds)) {
       anomalieIds.forEach(anomalyId -> allowedRecommendations.put(anomalyId, createCEViewShortHand()));
     }
     return allowedRecommendations;

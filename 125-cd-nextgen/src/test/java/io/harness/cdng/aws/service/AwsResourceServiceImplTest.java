@@ -32,6 +32,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
@@ -41,14 +42,20 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.encryption.SecretRefData;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.exception.AwsCFException;
 import io.harness.exception.AwsIAMRolesException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.api.NGSecretServiceV2;
+import io.harness.ng.core.models.Secret;
 import io.harness.rule.Owner;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
@@ -62,6 +69,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,21 +81,56 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 public class AwsResourceServiceImplTest extends CategoryTest {
+  static final String ACCOUNT_ID = "accountIdentifier";
+  static final String ORG_ID = "orgIdentifier";
+  static final String PROJECT_ID = "projectIdentifier";
+
   @Mock private AwsResourceServiceHelper serviceHelper;
   @Mock private GitResourceServiceHelper gitHelper;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
+  @Mock private NGSecretServiceV2 ngSecretService;
+  @Mock private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
 
   @InjectMocks private AwsResourceServiceImpl service;
+
+  IdentifierRef awsConnectorRef;
+  AwsConnectorDTO awsConnectorDTO;
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+
+    awsConnectorRef = IdentifierRef.builder()
+                          .accountIdentifier(ACCOUNT_ID)
+                          .orgIdentifier(ORG_ID)
+                          .projectIdentifier(PROJECT_ID)
+                          .build();
+
+    awsConnectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(AwsCredentialDTO.builder()
+                            .config(AwsManualConfigSpecDTO.builder()
+                                        .secretKeyRef(SecretRefData.builder().identifier("identifier").build())
+                                        .build())
+                            .build())
+            .build();
+
+    doReturn(Optional.of(Secret.builder()
+                             .identifier("secretIdentifier")
+                             .accountIdentifier(ACCOUNT_ID)
+                             .orgIdentifier(ORG_ID)
+                             .projectIdentifier(PROJECT_ID)
+                             .name("secretName")
+                             .build()))
+        .when(ngSecretService)
+        .get(anyString(), anyString(), anyString(), anyString());
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testGetRolesArn() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -98,8 +141,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     AwsIAMRolesResponse mockAwsIAMRolesResponse =
         AwsIAMRolesResponse.builder().roles(rolesMap).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     doReturn(mockAwsIAMRolesResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
-    service.getRolesARNs(mockIdentifierRef, "foo", "bar", "us-east-1");
+    service.getRolesARNs(awsConnectorRef, "foo", "bar", "us-east-1");
     assertThat(mockAwsIAMRolesResponse.getRoles().size()).isEqualTo(2);
   }
 
@@ -107,8 +149,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testGetRolesArnWithErrorNotifiedResponse() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     Map<String, String> rolesMap = new HashMap<>();
@@ -116,16 +157,14 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     rolesMap.put("role2", "arn:aws:iam::123456789012:role/role2");
     ErrorNotifyResponseData mockAwsIAMRolesResponse = ErrorNotifyResponseData.builder().build();
     doReturn(mockAwsIAMRolesResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
-    service.getRolesARNs(mockIdentifierRef, "foo", "bar", "us-east-1");
+    service.getRolesARNs(awsConnectorRef, "foo", "bar", "us-east-1");
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testAwsCFParameterKeys() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -145,10 +184,9 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                   .build();
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     service.getCFparametersKeys(
-        "s3", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "quux", "corge", "abc", "efg", "hij");
+        "s3", "bar", true, "far", null, "cat", "baz", awsConnectorRef, "quux", "corge", "abc", "efg", "hij");
     assertThat(mockAwsCFTaskResponse.getListOfParams().size()).isEqualTo(2);
   }
 
@@ -156,8 +194,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testAwsCFParameterKeysWithErrorNotifiedResponse() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -177,18 +214,16 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                   .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                                                   .build();
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     service.getCFparametersKeys(
-        "s3", "bar", true, "far", null, "zar", "baz", mockIdentifierRef, "quux", "corge", "abc", "efg", "hij");
+        "s3", "bar", true, "far", null, "zar", "baz", awsConnectorRef, "quux", "corge", "abc", "efg", "hij");
   }
 
   @Test
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testAwsFilterHosts() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -204,12 +239,11 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                        .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     List<String> vpcIds = Collections.emptyList();
     Map<String, String> tags = Collections.emptyMap();
 
-    List<AwsEC2Instance> result = service.filterHosts(mockIdentifierRef, true, "region", vpcIds, tags, null);
+    List<AwsEC2Instance> result = service.filterHosts(awsConnectorRef, true, "region", vpcIds, tags, null);
     assertThat(result.size()).isEqualTo(1);
   }
 
@@ -217,8 +251,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testAwsFilterHostsASG() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -234,10 +267,9 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                        .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     List<AwsEC2Instance> result =
-        service.filterHosts(mockIdentifierRef, true, "region", null, null, "autoScalingGroupName");
+        service.filterHosts(awsConnectorRef, true, "region", null, null, "autoScalingGroupName");
     assertThat(result.size()).isEqualTo(1);
   }
 
@@ -245,8 +277,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetVPCs() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -259,9 +290,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
         AwsListVpcTaskResponse.builder().vpcs(vpcs).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<AwsVPC> result = service.getVPCs(mockIdentifierRef, "org", "project", "region");
+    List<AwsVPC> result = service.getVPCs(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).getId().equals("id"));
   }
 
@@ -269,8 +299,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetTags() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -284,9 +313,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    Map<String, String> result = service.getTags(mockIdentifierRef, "org", "project", "region");
+    Map<String, String> result = service.getTags(awsConnectorRef, "org", "project", "region");
     assertThat(result.get("tag").equals("value"));
   }
 
@@ -294,8 +322,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetLoadBalancers() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -309,9 +336,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                         .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getLoadBalancers(mockIdentifierRef, "org", "project", "region");
+    List<String> result = service.getLoadBalancers(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).equals("lb1"));
   }
 
@@ -319,8 +345,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetASGNames() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -334,9 +359,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                    .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getASGNames(mockIdentifierRef, "org", "project", "region");
+    List<String> result = service.getASGNames(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).equals("asg1"));
   }
 
@@ -344,8 +368,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetClusterNames() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -359,9 +382,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                    .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getClusterNames(mockIdentifierRef, "org", "project", "region");
+    List<String> result = service.getClusterNames(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).equals("cluster"));
   }
 
@@ -369,8 +391,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetElasticLoadBalancerNames() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -384,9 +405,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                               .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getElasticLoadBalancerNames(mockIdentifierRef, "org", "project", "region");
+    List<String> result = service.getElasticLoadBalancerNames(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).equals("elb"));
   }
 
@@ -394,8 +414,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetElasticLoadBalancerListenersArn() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -409,10 +428,9 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                        .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    Map<String, String> result = service.getElasticLoadBalancerListenersArn(
-        mockIdentifierRef, "org", "project", "region", "elasticLoadBalancer");
+    Map<String, String> result =
+        service.getElasticLoadBalancerListenersArn(awsConnectorRef, "org", "project", "region", "elasticLoadBalancer");
     assertThat(result.get("tag").equals("value"));
   }
 
@@ -443,8 +461,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testAwsCFParameterKeysThowExceptions() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -464,21 +481,19 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                   .build();
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     assertThatThrownBy(()
-                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
-                               mockIdentifierRef, "", "corge", "abc", "efg", "hij"))
+                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz", awsConnectorRef,
+                               "", "corge", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
 
     assertThatThrownBy(()
                            -> service.getCFparametersKeys("git", "bar", true, "far", null, "cat", "baz",
-                               mockIdentifierRef, "", "", "abc", "efg", "hij"))
+                               awsConnectorRef, "", "", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
 
-    assertThatThrownBy(()
-                           -> service.getCFparametersKeys(
-                               "", "", true, "", null, "", "", mockIdentifierRef, "", "", "abc", "efg", "hij"))
+    assertThatThrownBy(
+        () -> service.getCFparametersKeys("", "", true, "", null, "", "", awsConnectorRef, "", "", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
     AwsCFTaskResponse mockAwsCFTaskResponseFailed = AwsCFTaskResponse.builder()
                                                         .listOfParams(response)
@@ -486,8 +501,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                         .build();
     doReturn(mockAwsCFTaskResponseFailed).when(serviceHelper).getResponseData(any(), any(), anyString());
     assertThatThrownBy(()
-                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
-                               mockIdentifierRef, "data", "corge", "abc", "efg", "hij"))
+                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz", awsConnectorRef,
+                               "data", "corge", "abc", "efg", "hij"))
         .isInstanceOf(AwsCFException.class);
   }
 
@@ -495,8 +510,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void testGetEKSClusterNames() {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -510,9 +524,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                    .build();
 
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString(), any(Duration.class));
-    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getEKSClusterNames(mockIdentifierRef, "org", "project", "region");
+    List<String> result = service.getEKSClusterNames(awsConnectorRef, "org", "project", "region");
     assertThat(result.get(0).equals("cluster"));
   }
 
@@ -526,8 +539,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   }
 
   private void testRegionParam(String region) {
-    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
-    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(any());
     BaseNGAccess mockAccess = BaseNGAccess.builder().build();
     doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
@@ -545,7 +557,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     when(serviceHelper.getResponseData(
              any(BaseNGAccess.class), awsTaskParamsArgumentCaptor.capture(), anyString(), any(Duration.class)))
         .thenReturn(mockResponse);
-    List<String> result = service.getEKSClusterNames(IdentifierRef.builder().build(), "org", "project", region);
+    List<String> result = service.getEKSClusterNames(awsConnectorRef, "org", "project", region);
     assertThat(result.get(0)).isEqualTo("cluster");
 
     AwsTaskParams awsTaskParams = awsTaskParamsArgumentCaptor.getValue();

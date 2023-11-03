@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.aws.util.AwsCallTracker;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -41,6 +42,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.EcrConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.ExecutionLogCallback;
@@ -57,6 +59,8 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
@@ -160,7 +164,9 @@ import com.amazonaws.services.elasticloadbalancingv2.model.TargetGroup;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.waiters.FixedDelayStrategy;
 import com.amazonaws.waiters.MaxAttemptsRetryStrategy;
 import com.amazonaws.waiters.PollingStrategy;
@@ -177,6 +183,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -1508,6 +1515,31 @@ public class AwsHelperService {
       throw new InvalidRequestException(
           "Cannot get the temporary credentials", ExceptionMessageSanitizer.sanitizeException(e));
     }
+  }
+
+  public AWSCredentialsProvider getCredentialsForIRSAonDelegate(AwsConfig awsConfig) {
+    AWSCredentialsProvider credentialsProvider;
+
+    credentialsProvider = WebIdentityTokenCredentialsProvider.builder()
+                              .roleSessionName(awsConfig.getAccountId() + UUIDGenerator.generateUuid())
+                              .build();
+
+    if (awsConfig.isAssumeCrossAccountRole()) {
+      // For the security token service we default to us-east-1.
+      AWSSecurityTokenService securityTokenService =
+          AWSSecurityTokenServiceClientBuilder.standard()
+              .withRegion(isNotBlank(awsConfig.getDefaultRegion()) ? awsConfig.getDefaultRegion() : AWS_DEFAULT_REGION)
+              .withCredentials(credentialsProvider)
+              .build();
+      AwsCrossAccountAttributes crossAccountAttributes = awsConfig.getCrossAccountAttributes();
+      credentialsProvider = new STSAssumeRoleSessionCredentialsProvider
+                                .Builder(crossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
+                                .withStsClient(securityTokenService)
+                                .withExternalId(crossAccountAttributes.getExternalId())
+                                .build();
+    }
+
+    return credentialsProvider;
   }
 
   public Map<String, String> fetchLabels(

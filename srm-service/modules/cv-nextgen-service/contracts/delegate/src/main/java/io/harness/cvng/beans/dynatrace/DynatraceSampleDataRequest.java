@@ -40,7 +40,6 @@ public class DynatraceSampleDataRequest extends DynatraceRequest {
   @Override
   public Map<String, Object> fetchDslEnvVariables() {
     Map<String, Object> commonEnvVariables = super.fetchDslEnvVariables();
-    commonEnvVariables.put("entitySelector", "type(\"dt.entity.service\"),entityId(".concat(serviceId).concat(")"));
     commonEnvVariables.put("resolution", RESOLUTION_PARAM);
     commonEnvVariables.put("metricSelector", metricSelector);
     commonEnvVariables.put("from", from);

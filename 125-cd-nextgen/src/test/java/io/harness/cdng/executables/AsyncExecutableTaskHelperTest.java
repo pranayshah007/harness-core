@@ -11,13 +11,10 @@ import static io.harness.rule.OwnerRule.BUHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.common.beans.StepDelegateInfo;
-import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
@@ -26,12 +23,8 @@ import io.harness.delegate.TaskMode;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.git.GitFetchRequest;
-import io.harness.delegate.task.k8s.K8sBGDeployRequest;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -52,7 +45,6 @@ import org.mockito.MockitoAnnotations;
 
 public class AsyncExecutableTaskHelperTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
-  @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @InjectMocks private AsyncExecutableTaskHelper asyncExecutableTaskHelper;
 
   private AutoCloseable mocks;
@@ -167,45 +159,5 @@ public class AsyncExecutableTaskHelperTest extends CategoryTest {
     assertThat(delegateTaskRequest.getBaseLogKey()).isEqualTo("baseLogKey");
     assertThat(delegateTaskRequest.isShouldSkipOpenStream()).isTrue();
     assertThat(delegateTaskRequest.isSelectionLogsTrackingEnabled()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testPublishStepDelegateInfoStepDetails() {
-    TaskData taskData =
-        TaskData.builder()
-            .parameters(new Object[] {K8sBGDeployRequest.builder().commandName("K8s BG Deploy").build()})
-            .build();
-    Ambiance ambiance = Ambiance.newBuilder().build();
-    String taskName = "Task Name";
-    String taskId = "task-id";
-
-    asyncExecutableTaskHelper.publishStepDelegateInfoStepDetails(ambiance, taskData, taskName, taskId);
-
-    StepDetailsDelegateInfo stepDetailsDelegateInfo =
-        StepDetailsDelegateInfo.builder()
-            .stepDelegateInfos(List.of(StepDelegateInfo.builder().taskName(taskName).taskId(taskId).build()))
-            .build();
-    verify(sdkGraphVisualizationDataService)
-        .publishStepDetailInformation(ambiance, stepDetailsDelegateInfo, "K8s BG Deploy");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testPublishStepDelegateInfoStepDetailsWithParamNotK8sDeploy() {
-    TaskData taskData = TaskData.builder().parameters(new Object[] {GitFetchRequest.builder().build()}).build();
-    Ambiance ambiance = Ambiance.newBuilder().build();
-    String taskName = "Task Name";
-    String taskId = "task-id";
-
-    asyncExecutableTaskHelper.publishStepDelegateInfoStepDetails(ambiance, taskData, taskName, taskId);
-
-    StepDetailsDelegateInfo stepDetailsDelegateInfo =
-        StepDetailsDelegateInfo.builder()
-            .stepDelegateInfos(List.of(StepDelegateInfo.builder().taskName(taskName).taskId(taskId).build()))
-            .build();
-    verify(sdkGraphVisualizationDataService).publishStepDetailInformation(ambiance, stepDetailsDelegateInfo, "");
   }
 }

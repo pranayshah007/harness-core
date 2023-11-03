@@ -151,6 +151,7 @@ public class ExpiryHelper {
         nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), Status.EXPIRED, ops -> {
           ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
           ops.set(NodeExecutionKeys.unitProgresses, unitProgresses);
+          ops.set(NodeExecutionKeys.progressData + "." + NodeExecutionKeys.unitProgresses, unitProgresses);
           setUnset(ops, NodeExecutionKeys.failureInfo,
               FailureInfo.newBuilder()
                   .setErrorMessage(finalErrorMessage)

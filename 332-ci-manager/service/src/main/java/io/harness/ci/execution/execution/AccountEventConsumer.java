@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 
+import io.harness.data.structure.ListUtils;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -22,7 +23,6 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Lists;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +41,7 @@ public class AccountEventConsumer implements Runnable {
   public AccountEventConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
       @Named(ACCOUNT_ENTITY + ENTITY_CRUD) MessageListener accountEntityListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
-    this.messageListeners = Lists.newArrayList(accountEntityListener);
+    this.messageListeners = ListUtils.newArrayList(accountEntityListener);
     this.queueController = queueController;
   }
 

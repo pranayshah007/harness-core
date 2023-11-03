@@ -428,6 +428,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getSlsaVerificationTag()).isEqualTo("slsaVerification:0.0.1");
     assertThat(ciExecutionImages.getProvenanceTag()).isEqualTo("provenance:0.0.1");
     assertThat(ciExecutionImages.getProvenanceGcrTag()).isEqualTo("provenanceGcr:0.0.1");
+    assertThat(ciExecutionImages.getSlsaVerificationGcrTag()).isEqualTo("slsaVerificationGcr:0.0.1");
   }
 
   @Test
@@ -934,7 +935,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
         .isEqualTo(accountLevelVmImageConfig.getGcsUpload());
     assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SAVE_CACHE_GCS, accountId))
         .isEqualTo(accountLevelVmImageConfig.getCacheGCS());
-    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.IACM, accountId))
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.IACM_TERRAFORM_PLUGIN, accountId))
         .isEqualTo(accountLevelVmImageConfig.getIacmTerraform());
   }
 
@@ -1076,7 +1077,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
         .isEqualTo(accountLevelVmImageConfig.getGcsUpload());
     assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SAVE_CACHE_GCS, accountId))
         .isEqualTo(accountLevelVmImageConfig.getCacheGCS());
-    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.IACM, accountId))
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.IACM_TERRAFORM_PLUGIN, accountId))
         .isEqualTo(accountLevelVmImageConfig.getIacmTerraform());
   }
 

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.serializer.AccessControlClientRegistrars;
 import io.harness.serializer.CvNextGenBeansRegistrars;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
@@ -64,5 +65,6 @@ public class ResourceGroupSerializer {
           .addAll(GitSyncSdkRegistrar.morphiaRegistrars)
           .add(ResourceGroupMorphiaRegistrar.class)
           .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
+          .addAll(OidcRegistrars.morphiaRegistrars)
           .build();
 }

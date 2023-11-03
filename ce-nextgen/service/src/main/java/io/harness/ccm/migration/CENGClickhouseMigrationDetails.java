@@ -7,6 +7,7 @@
 
 package io.harness.ccm.migration;
 
+import io.harness.ccm.migration.clickhouse.AddInstanceUsageColumnsMigration;
 import io.harness.ccm.migration.clickhouse.SetupClickHouseTablesAndDatabase;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
@@ -31,6 +32,7 @@ public class CENGClickhouseMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, SetupClickHouseTablesAndDatabase.class))
+        .add(Pair.of(2, AddInstanceUsageColumnsMigration.class))
         .build();
   }
 }

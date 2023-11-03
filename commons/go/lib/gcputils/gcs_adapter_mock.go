@@ -10,10 +10,11 @@
 package gcputils
 
 import (
-	storage "cloud.google.com/go/storage"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	storage "cloud.google.com/go/storage"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockStorageClient is a mock of StorageClient interface.
@@ -104,6 +105,21 @@ func (mr *MockBucketHandleMockRecorder) Object(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Object", reflect.TypeOf((*MockBucketHandle)(nil).Object), name)
 }
 
+// SignedURL mocks base method.
+func (m *MockBucketHandle) SignedURL(bucket string, opts *storage.SignedURLOptions) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignedURL", bucket, opts)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SignedURL indicates an expected call of SignedURL.
+func (mr *MockBucketHandleMockRecorder) SignedURL(bucket, opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignedURL", reflect.TypeOf((*MockBucketHandle)(nil).SignedURL), bucket, opts)
+}
+
 // MockObjectHandle is a mock of ObjectHandle interface.
 type MockObjectHandle struct {
 	ctrl     *gomock.Controller
@@ -125,35 +141,6 @@ func NewMockObjectHandle(ctrl *gomock.Controller) *MockObjectHandle {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockObjectHandle) EXPECT() *MockObjectHandleMockRecorder {
 	return m.recorder
-}
-
-// NewReader mocks base method.
-func (m *MockObjectHandle) NewReader(arg0 context.Context) (StorageReader, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewReader", arg0)
-	ret0, _ := ret[0].(StorageReader)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NewReader indicates an expected call of NewReader.
-func (mr *MockObjectHandleMockRecorder) NewReader(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewReader", reflect.TypeOf((*MockObjectHandle)(nil).NewReader), arg0)
-}
-
-// NewWriter mocks base method.
-func (m *MockObjectHandle) NewWriter(ctx context.Context) StorageWriter {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewWriter", ctx)
-	ret0, _ := ret[0].(StorageWriter)
-	return ret0
-}
-
-// NewWriter indicates an expected call of NewWriter.
-func (mr *MockObjectHandleMockRecorder) NewWriter(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewWriter", reflect.TypeOf((*MockObjectHandle)(nil).NewWriter), ctx)
 }
 
 // Attrs mocks base method.
@@ -183,6 +170,35 @@ func (m *MockObjectHandle) Delete(ctx context.Context) error {
 func (mr *MockObjectHandleMockRecorder) Delete(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockObjectHandle)(nil).Delete), ctx)
+}
+
+// NewReader mocks base method.
+func (m *MockObjectHandle) NewReader(arg0 context.Context) (StorageReader, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewReader", arg0)
+	ret0, _ := ret[0].(StorageReader)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NewReader indicates an expected call of NewReader.
+func (mr *MockObjectHandleMockRecorder) NewReader(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewReader", reflect.TypeOf((*MockObjectHandle)(nil).NewReader), arg0)
+}
+
+// NewWriter mocks base method.
+func (m *MockObjectHandle) NewWriter(ctx context.Context) StorageWriter {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewWriter", ctx)
+	ret0, _ := ret[0].(StorageWriter)
+	return ret0
+}
+
+// NewWriter indicates an expected call of NewWriter.
+func (mr *MockObjectHandleMockRecorder) NewWriter(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewWriter", reflect.TypeOf((*MockObjectHandle)(nil).NewWriter), ctx)
 }
 
 // Update mocks base method.
@@ -223,6 +239,20 @@ func (m *MockStorageReader) EXPECT() *MockStorageReaderMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method.
+func (m *MockStorageReader) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockStorageReaderMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorageReader)(nil).Close))
+}
+
 // Read mocks base method.
 func (m *MockStorageReader) Read(p []byte) (int, error) {
 	m.ctrl.T.Helper()
@@ -236,20 +266,6 @@ func (m *MockStorageReader) Read(p []byte) (int, error) {
 func (mr *MockStorageReaderMockRecorder) Read(p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStorageReader)(nil).Read), p)
-}
-
-// Close mocks base method.
-func (m *MockStorageReader) Close() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Close indicates an expected call of Close.
-func (mr *MockStorageReaderMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorageReader)(nil).Close))
 }
 
 // MockStorageWriter is a mock of StorageWriter interface.
@@ -275,6 +291,20 @@ func (m *MockStorageWriter) EXPECT() *MockStorageWriterMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method.
+func (m *MockStorageWriter) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockStorageWriterMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorageWriter)(nil).Close))
+}
+
 // Write mocks base method.
 func (m *MockStorageWriter) Write(p []byte) (int, error) {
 	m.ctrl.T.Helper()
@@ -288,18 +318,4 @@ func (m *MockStorageWriter) Write(p []byte) (int, error) {
 func (mr *MockStorageWriterMockRecorder) Write(p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStorageWriter)(nil).Write), p)
-}
-
-// Close mocks base method.
-func (m *MockStorageWriter) Close() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Close indicates an expected call of Close.
-func (mr *MockStorageWriterMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorageWriter)(nil).Close))
 }

@@ -13,7 +13,6 @@ import io.harness.network.Http;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
-import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +20,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.inject.Inject;
 import com.google.inject.Provider;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
@@ -36,15 +32,20 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @Slf4j
 public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
-  @Inject private KryoConverterFactory kryoConverterFactory;
-
+  private static final ObjectMapper OBJECT_MAPPER =
+      new ObjectMapper()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .registerModule(new Jdk8Module())
+          .registerModule(new GuavaModule())
+          .registerModule(new JavaTimeModule())
+          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
   private final String logStreamingServiceBaseUrl;
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
   private final boolean trustAllCertificates;
 
-  public LogStreamingClientFactory(String logStreamingServiceBaseUrl, String clientCertificateFilePath,
-      String clientCertificateKeyFilePath, boolean trustAllCertificates) {
+  public LogStreamingClientFactory(final String logStreamingServiceBaseUrl, final String clientCertificateFilePath,
+      final String clientCertificateKeyFilePath, final boolean trustAllCertificates) {
     this.logStreamingServiceBaseUrl = logStreamingServiceBaseUrl;
     this.clientCertificateFilePath = clientCertificateFilePath;
     this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
@@ -60,23 +61,15 @@ public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
       return null;
     }
 
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.registerModule(new Jdk8Module());
-    objectMapper.registerModule(new GuavaModule());
-    objectMapper.registerModule(new JavaTimeModule());
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    final OkHttpClient httpClient =
+        this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
 
-    OkHttpClient httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
-
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(httpClient)
-                            .baseUrl(logStreamingServiceBaseUrl)
-                            .addConverterFactory(kryoConverterFactory)
-                            .addConverterFactory(JacksonConverterFactory.create(objectMapper))
-                            .build();
-
-    return retrofit.create(LogStreamingClient.class);
+    return new Retrofit.Builder()
+        .client(httpClient)
+        .baseUrl(logStreamingServiceBaseUrl)
+        .addConverterFactory(JacksonConverterFactory.create(OBJECT_MAPPER))
+        .build()
+        .create(LogStreamingClient.class);
   }
 
   private OkHttpClient getSafeOkHttpClient() {
@@ -90,7 +83,7 @@ public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
 
   private OkHttpClient getUnsafeOkHttpClient() {
     try {
-      X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
+      final X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
       return this.getOkHttpClient(trustManager);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -99,18 +92,18 @@ public class LogStreamingClientFactory implements Provider<LogStreamingClient> {
 
   private OkHttpClient getOkHttpClient(X509TrustManager trustManager)
       throws KeyManagerBuilderException, SslContextBuilderException {
-    X509SslContextBuilder sslContextBuilder = new X509SslContextBuilder().trustManager(trustManager);
+    final var sslContextBuilder = new X509SslContextBuilder().trustManager(trustManager);
 
     if (StringUtils.isNotEmpty(this.clientCertificateFilePath)
         && StringUtils.isNotEmpty(this.clientCertificateKeyFilePath)) {
-      X509KeyManager keyManager =
+      final var keyManager =
           new X509KeyManagerBuilder()
               .withClientCertificateFromFile(this.clientCertificateFilePath, this.clientCertificateKeyFilePath)
               .build();
       sslContextBuilder.keyManager(keyManager);
     }
 
-    SSLContext sslContext = sslContextBuilder.build();
+    final var sslContext = sslContextBuilder.build();
 
     return Http.getOkHttpClientWithProxyAuthSetup()
         .connectionPool(new ConnectionPool())

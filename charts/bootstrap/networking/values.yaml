@@ -88,6 +88,7 @@ nginx:
   podLabels: {}
   service:
     annotations: {}
+  replicaCount: 1
 
 
 defaultbackend:
@@ -112,3 +113,4 @@ defaultbackend:
   podLabels: {}
   service:
     annotations: {}
+  replicaCount: 1

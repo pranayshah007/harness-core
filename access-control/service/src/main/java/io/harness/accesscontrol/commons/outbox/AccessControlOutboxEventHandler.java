@@ -8,6 +8,7 @@
 package io.harness.accesscontrol.commons.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.ResourceTypeConstants.RESOURCE_GROUP;
 import static io.harness.audit.ResourceTypeConstants.ROLE;
 import static io.harness.audit.ResourceTypeConstants.ROLE_ASSIGNMENT;
 
@@ -23,12 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 public class AccessControlOutboxEventHandler implements OutboxEventHandler {
   private final RoleEventHandler roleEventHandler;
   private final RoleAssignmentEventHandler roleAssignmentEventHandler;
+  private final ResourceGroupEventHandler resourceGroupEventHandler;
 
   @Inject
-  public AccessControlOutboxEventHandler(
-      RoleEventHandler roleEventHandler, RoleAssignmentEventHandler roleAssignmentEventHandler) {
+  public AccessControlOutboxEventHandler(RoleEventHandler roleEventHandler,
+      RoleAssignmentEventHandler roleAssignmentEventHandler, ResourceGroupEventHandler resourceGroupEventHandler) {
     this.roleEventHandler = roleEventHandler;
     this.roleAssignmentEventHandler = roleAssignmentEventHandler;
+    this.resourceGroupEventHandler = resourceGroupEventHandler;
   }
 
   @Override
@@ -42,6 +45,8 @@ public class AccessControlOutboxEventHandler implements OutboxEventHandler {
         case ROLE_ASSIGNMENT:
         case "roleassignment":
           return roleAssignmentEventHandler.handle(outboxEvent);
+        case RESOURCE_GROUP:
+          return resourceGroupEventHandler.handle(outboxEvent);
         default:
           return false;
       }

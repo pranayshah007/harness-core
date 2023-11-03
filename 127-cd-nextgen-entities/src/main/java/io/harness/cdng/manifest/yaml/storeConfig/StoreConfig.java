@@ -36,7 +36,7 @@ public interface StoreConfig extends OverridesApplier<StoreConfig>, OverrideConn
     return new HashSet<>();
   }
   default void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {}
-  default List<String> getFilePaths() {
+  default List<String> retrieveFilePaths() {
     return Collections.emptyList();
   }
 }

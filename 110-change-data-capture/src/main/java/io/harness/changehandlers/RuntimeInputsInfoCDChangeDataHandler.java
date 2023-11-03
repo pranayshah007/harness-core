@@ -92,15 +92,16 @@ public class RuntimeInputsInfoCDChangeDataHandler extends AbstractChangeDataHand
     if (dbObject == null) {
       return null;
     }
-    if (dbObject.get(PlanExecutionSummaryKeys.inputSetYaml) == null
-        || isEmpty(dbObject.get(PlanExecutionSummaryKeys.inputSetYaml).toString())) {
+    if (dbObject.get(PlanExecutionSummaryKeys.resolvedUserInputSetYaml) == null
+        || isEmpty(dbObject.get(PlanExecutionSummaryKeys.resolvedUserInputSetYaml).toString())) {
       return nodeMap;
     }
     if (dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate) == null
         || isEmpty(dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate).toString())) {
       return nodeMap;
     }
-    YamlConfig inputSetYamlConfig = new YamlConfig(dbObject.get(PlanExecutionSummaryKeys.inputSetYaml).toString());
+    YamlConfig inputSetYamlConfig =
+        new YamlConfig(dbObject.get(PlanExecutionSummaryKeys.resolvedUserInputSetYaml).toString());
     YamlConfig pipelineTemplateYamlConfig =
         new YamlConfig(dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate).toString());
     Map<FQN, Object> runtimeFqnToValueMap =

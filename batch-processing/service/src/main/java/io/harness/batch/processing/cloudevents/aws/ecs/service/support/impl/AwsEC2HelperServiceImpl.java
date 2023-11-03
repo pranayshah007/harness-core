@@ -114,6 +114,7 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
     builder.withCredentials(credentialsProvider);
     CEProxyConfig ceProxyConfig = awsCredentialHelper.getCeProxyConfig();
     if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      log.info("AmazonEC2Client client initializing with proxy config");
       return (AmazonEC2Client) builder.withClientConfiguration(awsCredentialHelper.getClientConfiguration())
           .withRegion(region)
           .build();

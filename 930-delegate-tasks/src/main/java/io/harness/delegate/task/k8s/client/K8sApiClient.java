@@ -56,7 +56,6 @@ public class K8sApiClient implements K8sClient {
             steadyStateDTO.getKubernetesConfig());
     Set<String> namespaces = k8sClientHelper.getNamespacesToMonitor(workloads, steadyStateDTO.getNamespace());
 
-    log.info("Executing API based steady state check for workloads.");
     K8sEventWatchDTO eventWatchDTO = k8sClientHelper.createEventWatchDTO(steadyStateDTO, apiClient);
     K8sStatusWatchDTO rolloutStatusDTO = k8sClientHelper.createStatusWatchDTO(steadyStateDTO, apiClient);
 

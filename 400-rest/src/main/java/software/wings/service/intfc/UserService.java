@@ -717,4 +717,6 @@ public interface UserService extends OwnedByAccount {
   void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
 
   boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
+
+  String getClaimsFromJWTToken(String jwtToken, JWT_CATEGORY category, String claim);
 }

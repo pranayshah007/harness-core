@@ -55,6 +55,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
@@ -72,6 +73,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -314,12 +316,14 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_EMAIL.getIdentifier();
+        Map<String, String> htmlTemplateData = ApprovalUtils.escapeHTMLForTextFields(
+            new HashMap<>(templateData), ApprovalSummary.TEXT_FIELDS_IN_APPROVAL_SUMMARY);
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
             .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
             .team(Team.PIPELINE)
             .templateId(emailTemplateId)
-            .templateData(templateData)
+            .templateData(htmlTemplateData)
             .recipients(Collections.emptyList())
             .build();
 
@@ -363,13 +367,14 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL.getIdentifier();
-        templateData.put("action", templateData.get("action").replace("\\n", "<br>"));
+        Map<String, String> htmlTemplateData = ApprovalUtils.escapeHTMLForTextFields(
+            new HashMap<>(templateData), ApprovalSummary.TEXT_FIELDS_IN_APPROVAL_SUMMARY);
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
             .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
             .team(Team.PIPELINE)
             .templateId(emailTemplateId)
-            .templateData(templateData)
+            .templateData(htmlTemplateData)
             .recipients(Collections.emptyList())
             .build();
 
@@ -401,11 +406,11 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         for (HarnessApprovalActivity harnessApprovalActivity : harnessApprovalActivities) {
           String userIdentification = getUserIdentification(harnessApprovalActivity.getUser());
           action = action
-              + (userIdentification + " approved on " + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \\n");
+              + (userIdentification + " approved on " + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \n");
         }
         if (!isEmpty(action)) {
           // removing last redundant new line character
-          action = action.substring(0, action.length() - 2);
+          action = action.substring(0, action.length() - 1);
         }
       } else if (HarnessApprovalAction.REJECT.equals(lastApprovalActivity.getAction())) {
         String userIdentification = getUserIdentification(lastApprovalActivity.getUser());

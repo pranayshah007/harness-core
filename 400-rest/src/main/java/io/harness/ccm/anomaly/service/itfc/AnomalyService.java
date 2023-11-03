@@ -33,6 +33,8 @@ public interface AnomalyService {
   List<AnomalyEntity> listCloud(String accountId, List<CloudBillingFilter> filters, List<CloudBillingGroupBy> groupBy);
   List<AnomalyEntity> listOverview(String accountId, List<QLBillingDataFilter> filters);
   void delete(List<String> ids, Instant date);
+  Long count(String accountId);
+  boolean deleteAllForAccount(String accountId);
   void insert(List<? extends AnomalyEntity> anomalies);
   AnomalyEntity update(AnomalyEntity anomaly);
 }

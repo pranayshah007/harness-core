@@ -100,8 +100,7 @@ public class DynatraceDataCollectionInfoTest extends CategoryTest {
     Map<String, Object> metricPackMetricsEnvVariables =
         classUnderTest.getDslEnvVariables(DynatraceConnectorDTO.builder().build());
 
-    assertThat(metricPackMetricsEnvVariables.get(ENTITY_ID_PARAM))
-        .isEqualTo("type(\"dt.entity.service\"),entityId(\"".concat(SERVICE_ID).concat("\")"));
+    assertThat(metricPackMetricsEnvVariables.get(ENTITY_ID_PARAM)).isEqualTo(null);
     assertThat(metricPackMetricsEnvVariables.get(GROUP_NAME_PARAM)).isEqualTo(GROUP_NAME);
     List<Map<String, String>> metricsToValidate =
         (List<Map<String, String>>) metricPackMetricsEnvVariables.get(METRICS_TO_VALIDATE_PARAM);

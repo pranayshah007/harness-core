@@ -37,7 +37,6 @@ import io.harness.rest.RestResponse;
 import io.harness.threading.Schedulable;
 import io.harness.watcher.app.WatcherConfiguration;
 import io.harness.watcher.app.WatcherConstants;
-import io.harness.watcher.logging.WatcherStackdriverLogAppender;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -91,8 +90,6 @@ public class WatcherServiceImplV2 implements WatcherService {
     }
 
     timeLimiter = HTimeLimiter.create(watchExecutor);
-    WatcherStackdriverLogAppender.setTimeLimiter(timeLimiter);
-    WatcherStackdriverLogAppender.setManagerClient(managerClient);
     try {
       performInitTasks();
 

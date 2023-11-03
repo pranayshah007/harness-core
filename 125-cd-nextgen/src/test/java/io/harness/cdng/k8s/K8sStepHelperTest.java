@@ -5111,7 +5111,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, stepElementParametersApplyStep);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
-    assertThat(k8sStepPassThroughData.getManifestOutcome().getStore().getFilePaths().get(0))
+    assertThat(k8sStepPassThroughData.getManifestOutcome().getStore().retrieveFilePaths().get(0))
         .isEqualTo("path/to/k8s/manifest/templates/deployment.yaml");
     assertThat(k8sStepPassThroughData.getManifestOutcome().getIdentifier()).isEqualTo(MANIFEST_SOURCE_IDENTIFIER);
     assertThat(k8sStepPassThroughData.getManifestOutcomeList().size()).isEqualTo(2);

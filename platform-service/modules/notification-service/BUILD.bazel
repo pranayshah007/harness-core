@@ -26,6 +26,7 @@ java_library(
         "//920-delegate-service-beans:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//950-delegate-tasks-beans:module",
         "//950-ng-project-n-orgs:module",
         "//950-wait-engine:module",

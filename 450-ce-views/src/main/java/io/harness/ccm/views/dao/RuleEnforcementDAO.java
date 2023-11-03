@@ -21,6 +21,7 @@ import com.google.inject.Singleton;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -157,6 +158,17 @@ public class RuleEnforcementDAO {
     }
   }
 
+  public List<String> fetchSchedulerNamesByAccountId(String accountId) {
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .project(RuleEnforcementId.uuid, true)
+        .asList()
+        .stream()
+        .map(ruleEnforcement -> ruleEnforcement.getUuid().toLowerCase())
+        .collect(Collectors.toList());
+  }
+
   public List<RuleEnforcement> list(String accountId) {
     Query<RuleEnforcement> query =
         hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId);
@@ -204,5 +216,15 @@ public class RuleEnforcementDAO {
 
   public RuleEnforcement get(String uuid) {
     return hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.uuid).equal(uuid).get();
+  }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<RuleEnforcement> query =
+        hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId);
+    return hPersistence.delete(query);
   }
 }

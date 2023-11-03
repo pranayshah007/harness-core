@@ -24,4 +24,5 @@ import lombok.experimental.SuperBuilder;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformRemoteVarFileConfig")
 public class TerraformRemoteVarFileConfig extends TerraformRemoteFileConfig implements TerraformVarFileConfig {
   String identifier;
+  boolean isOptional;
 }

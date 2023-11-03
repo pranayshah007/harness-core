@@ -46,7 +46,7 @@ public class OidcIdTokenUtilityTest extends CategoryTest {
                                       .sub(oidc_sub)
                                       .aud(oidc_aud)
                                       .iss(oidc_iss)
-                                      .iat(Long.toString(base))
+                                      .iat(base)
                                       .exp(base + 3599)
                                       .accountId("kmpySmUISimoRrJL6NL73w")
                                       .build();

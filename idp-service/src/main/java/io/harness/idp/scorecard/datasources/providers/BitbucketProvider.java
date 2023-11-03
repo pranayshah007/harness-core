@@ -22,34 +22,37 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-public class BitbucketProvider extends DataSourceProvider {
+public class BitbucketProvider extends HttpDataSourceProvider {
   final ConfigReader configReader;
   private static final String SOURCE_LOCATION_ANNOTATION = "backstage.io/source-location";
   private static final String USERNAME_EXPRESSION_KEY = "appConfig.integrations.bitbucketCloud.0.username";
   private static final String PASSWORD_EXPRESSION_KEY = "appConfig.integrations.bitbucketCloud.0.appPassword";
   protected BitbucketProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
-      ConfigReader configReader) {
+      ConfigReader configReader, DataSourceRepository dataSourceRepository) {
     super(BITBUCKET_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
     this.configReader = configReader;
   }
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
@@ -60,8 +63,8 @@ public class BitbucketProvider extends DataSourceProvider {
       possibleReplaceableUrlBodyPairs = preparePossibleReplaceableUrlPairs(catalogLocation);
     }
 
-    return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, Collections.emptyMap(),
-        possibleReplaceableUrlBodyPairs);
+    return processOut(accountIdentifier, BITBUCKET_IDENTIFIER, entity, replaceableHeaders, Collections.emptyMap(),
+        possibleReplaceableUrlBodyPairs, dataPointsAndInputValues);
   }
 
   @Override

@@ -76,7 +76,7 @@ public interface EnvironmentService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs);
 
   String createEnvironmentInputsYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String gitBranch);
 
   String createEnvironmentInputsYaml(String envIdentifier, String environmentYaml);
 

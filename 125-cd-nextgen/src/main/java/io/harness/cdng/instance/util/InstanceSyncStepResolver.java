@@ -53,7 +53,8 @@ import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sCanaryStepV2;
-import io.harness.cdng.k8s.ayncsteps.K8sRollingRollbackStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sRollingRollbackStepV2;
+import io.harness.cdng.k8s.asyncsteps.K8sRollingStepV2;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
 import io.harness.cdng.ssh.CommandStep;
@@ -75,8 +76,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class InstanceSyncStepResolver {
   public final Set<String> INSTANCE_SYN_STEP_TYPES = Collections.unmodifiableSet(Sets.newHashSet(
-      K8sRollingStep.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(), K8sCanaryStepV2.STEP_TYPE.getType(),
-      K8sBlueGreenStep.STEP_TYPE.getType(), K8sBlueGreenStepV2.STEP_TYPE.getType(),
+      K8sRollingStep.STEP_TYPE.getType(), K8sRollingStepV2.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(),
+      K8sCanaryStepV2.STEP_TYPE.getType(), K8sBlueGreenStep.STEP_TYPE.getType(), K8sBlueGreenStepV2.STEP_TYPE.getType(),
       K8sRollingRollbackStep.STEP_TYPE.getType(), HelmDeployStep.STEP_TYPE.getType(),
       HelmRollbackStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(),
       AzureWebAppSlotDeploymentStep.STEP_TYPE.getType(), AzureWebAppRollbackStep.STEP_TYPE.getType(),

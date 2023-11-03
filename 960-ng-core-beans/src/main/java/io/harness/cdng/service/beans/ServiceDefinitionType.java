@@ -11,12 +11,12 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.ListUtils;
 import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,77 +24,78 @@ import java.util.List;
 public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.KUBERNETES)
   KUBERNETES(ServiceSpecType.KUBERNETES,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
-          ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.KUBERNETES),
 
   @JsonProperty(ServiceSpecType.NATIVE_HELM)
   NATIVE_HELM(ServiceSpecType.NATIVE_HELM,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT), ServiceSpecType.NATIVE_HELM),
+      ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.NATIVE_HELM),
 
   @JsonProperty(ServiceSpecType.SSH)
   SSH(ServiceSpecType.SSH,
-      Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
+      ListUtils.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
           ExecutionStrategyType.CANARY),
       ServiceSpecType.SSH),
 
   @JsonProperty(ServiceSpecType.WINRM)
   WINRM(ServiceSpecType.WINRM,
-      Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
+      ListUtils.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
           ExecutionStrategyType.CANARY),
       ServiceSpecType.WINRM),
 
   @JsonProperty(ServiceSpecType.SERVERLESS_AWS_LAMBDA)
   SERVERLESS_AWS_LAMBDA("Serverless Aws Lambda",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.SERVERLESS_AWS_LAMBDA),
 
   @JsonProperty(ServiceSpecType.AZURE_WEBAPP)
   AZURE_WEBAPP("Azure Web Apps",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
-          ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.AZURE_WEBAPP),
 
   @JsonProperty(ServiceSpecType.CUSTOM_DEPLOYMENT)
-  CUSTOM_DEPLOYMENT(ServiceSpecType.CUSTOM_DEPLOYMENT, Lists.newArrayList(ExecutionStrategyType.DEFAULT),
+  CUSTOM_DEPLOYMENT(ServiceSpecType.CUSTOM_DEPLOYMENT, ListUtils.newArrayList(ExecutionStrategyType.DEFAULT),
       ServiceSpecType.CUSTOM_DEPLOYMENT),
 
   @JsonProperty(ServiceSpecType.ECS)
   ECS("ECS",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
           ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ECS),
 
   @JsonProperty(ServiceSpecType.ELASTIGROUP)
   ELASTIGROUP(ServiceSpecType.ELASTIGROUP,
-      Lists.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.BASIC,
-          ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ELASTIGROUP),
 
   @JsonProperty(ServiceSpecType.TAS)
   TAS(ServiceSpecType.TAS,
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
-          ExecutionStrategyType.DEFAULT, ExecutionStrategyType.ROLLING),
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
+          ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT, ExecutionStrategyType.ROLLING),
       ServiceSpecType.TAS),
 
   @JsonProperty(ServiceSpecType.ASG)
   ASG(ServiceSpecType.ASG,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
-          ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+          ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ASG),
 
   @JsonProperty(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS)
   GOOGLE_CLOUD_FUNCTIONS(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS,
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
-          ExecutionStrategyType.DEFAULT),
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
+          ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS),
 
   @JsonProperty(ServiceSpecType.AWS_LAMBDA)
-  AWS_LAMBDA(ServiceSpecType.AWS_LAMBDA, Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.AWS_LAMBDA),
+  AWS_LAMBDA(ServiceSpecType.AWS_LAMBDA,
+      ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT), ServiceSpecType.AWS_LAMBDA),
 
   @JsonProperty(ServiceSpecType.AWS_SAM)
-  AWS_SAM(ServiceSpecType.AWS_SAM, Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
+  AWS_SAM(ServiceSpecType.AWS_SAM, ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
       ServiceSpecType.AWS_SAM);
 
   /*

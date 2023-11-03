@@ -19,11 +19,11 @@ import (
 //go:generate mockgen -source addon_client.go -package=grpcclient -destination mocks/addon_client_mock.go AddonClient
 
 const (
-	backoffTime = 100 * time.Millisecond
-	maxRetries  = 1000 // Max retry time of 100 seconds
+	backoffTime = 300 * time.Millisecond
+	maxRetries  = 30 // Max retry time of 9 seconds
 )
 
-//AddonClient implements a GRPC client to communicate with CI addon
+// AddonClient implements a GRPC client to communicate with CI addon
 type AddonClient interface {
 	CloseConn() error
 	Client() pb.AddonClient

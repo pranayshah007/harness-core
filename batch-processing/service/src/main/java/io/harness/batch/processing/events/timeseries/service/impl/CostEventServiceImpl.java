@@ -54,6 +54,11 @@ public class CostEventServiceImpl implements CostEventService {
       "SELECT STARTTIME, OLDYAMLREF, NEWYAMLREF FROM COST_EVENT_DATA WHERE ACCOUNTID=? AND CLUSTERID=? AND INSTANCEID=?"
       + " AND COSTEVENTTYPE=? AND STARTTIME >= ? ORDER BY STARTTIME";
 
+  static final String COST_EVENT_DATA_COUNT =
+      "SELECT COUNT(*) as COST_EVENT_DATA_COUNT FROM COST_EVENT_DATA WHERE ACCOUNTID=?";
+
+  static final String COST_EVENT_DATA_DELETE_FOR_ACCOUNT = "DELETE FROM COST_EVENT_DATA WHERE ACCOUNTID = '%s'";
+
   @Override
   public boolean create(List<CostEventData> costEventDataList) {
     boolean successfulInsert = false;
@@ -163,6 +168,34 @@ public class CostEventServiceImpl implements CostEventService {
       }
     }
     return Collections.emptyList();
+  }
+
+  @Override
+  public Long count(String accountId) {
+    int retryCount = 0;
+    while (retryCount < MAX_RETRY_COUNT) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = dbConnection.prepareStatement(COST_EVENT_DATA_COUNT)) {
+        statement.setString(1, accountId);
+        log.debug("CostEventData count query {}", statement);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (null != resultSet && resultSet.next()) {
+            return resultSet.getLong("COST_EVENT_DATA_COUNT");
+          }
+        }
+      } catch (SQLException e) {
+        log.error("Failed CostEventData count retryCount=[{}]", retryCount, e);
+        retryCount++;
+      }
+    }
+    return 0L;
+  }
+
+  @Override
+  public boolean deleteAllForAccount(String accountId) {
+    String deleteQuery = String.format(COST_EVENT_DATA_DELETE_FOR_ACCOUNT, accountId);
+    log.info("Delete Query: {}", deleteQuery);
+    return executeQuery(deleteQuery);
   }
 
   private void updateDeploymentStatement(PreparedStatement statement, CostEventData costEventData) throws SQLException {

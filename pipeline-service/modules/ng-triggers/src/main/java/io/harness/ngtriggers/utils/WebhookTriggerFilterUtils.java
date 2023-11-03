@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.utils;
+
 import static io.harness.beans.WebhookEvent.Type.PR;
 import static io.harness.beans.WebhookEvent.Type.PUSH;
 import static io.harness.constants.Constants.BITBUCKET_CLOUD_HEADER_KEY;
@@ -40,7 +41,6 @@ import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAction;
-import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
@@ -60,21 +60,8 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @Slf4j
 public class WebhookTriggerFilterUtils {
-  public boolean checkIfEventTypeMatchesHarnessScm(WebhookTriggerSpecV2 webhookTriggerSpec) {
-    if (webhookTriggerSpec.fetchGitAware() == null) {
-      throw new TriggerException(
-          "Invalid Filter used. Event Filter is not compatible with class: " + webhookTriggerSpec.getClass(), USER_SRE);
-    }
-    String gitEvent = webhookTriggerSpec.fetchGitAware().fetchEvent().getValue();
-    return gitEvent.equals(PUSH_EVENT_TYPE);
-  }
-
   public boolean evaluateEventAndActionFilters(
       WebhookPayloadData webhookPayloadData, WebhookTriggerSpecV2 webhookTriggerConfigSpec) {
-    if (webhookTriggerConfigSpec instanceof HarnessSpec) {
-      return checkIfEventTypeMatchesHarnessScm(webhookTriggerConfigSpec)
-          && checkIfActionMatches(webhookPayloadData, webhookTriggerConfigSpec);
-    }
     return checkIfEventTypeMatches(webhookPayloadData.getWebhookEvent().getType(), webhookTriggerConfigSpec)
         && checkIfActionMatches(webhookPayloadData, webhookTriggerConfigSpec);
   }

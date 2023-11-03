@@ -80,10 +80,6 @@ func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap
 		return errors.Wrap(err, "failed to upload cg to ti server")
 	}
 	log.Infow(resp.CgMsg)
-	if resp.EmptyCg {
-		log.Infow("Skipping call graph upload since no call graph was generated")
-		return nil
-	}
 	log.Infow(fmt.Sprintf("Successfully uploaded callgraph in %s time", time.Since(start)))
 	return nil
 }
@@ -360,7 +356,7 @@ func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommi
 	req := &pb.GetChangedFilesPushTriggerRequest{
 		StepId:         stepID,
 		LastSuccCommit: lastSuccessfulCommitID,
-		CurrentCommit: currentCommitID,
+		CurrentCommit:  currentCommitID,
 	}
 	resp, err := client.Client().GetChangedFilesPushTrigger(ctx, req)
 	if err != nil {

@@ -54,6 +54,7 @@ import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
+import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,6 +79,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
   @Inject private ScmFetchFilesHelper scmFetchFilesHelper;
 
   public static final int GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT = 10;
+  private static final String NOT_DIR_ERROR_MSG = "Not a directory";
 
   public GitFetchFilesTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -121,7 +123,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
 
           // Values.yaml in service spec is optional.
           if (AppManifestKind.VALUES == appManifestKind && K8sValuesLocation.Service.toString().equals(k8ValuesLocation)
-              && ex.getCause() instanceof NoSuchFileException) {
+              && isFileNotFound(ex)) {
             log.info("Values.yaml file not found. " + exceptionMsg, ex);
             executionLogCallback.saveExecutionLog(exceptionMsg, WARN);
             if (taskParams.isShouldInheritGitFetchFilesConfigMap()
@@ -183,6 +185,19 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
           .gitCommandStatus(GitCommandStatus.FAILURE)
           .build();
     }
+  }
+
+  private boolean isFileNotFound(Exception ex) {
+    return isANoSuchFileException(ex) || isANotDirectoryException(ex);
+  }
+
+  private boolean isANoSuchFileException(Exception ex) {
+    return ex.getCause() instanceof NoSuchFileException;
+  }
+
+  private boolean isANotDirectoryException(Exception ex) {
+    return ex.getCause() instanceof FileSystemException && EmptyPredicate.isNotEmpty(ex.getCause().getMessage())
+        && ex.getCause().getMessage().contains(NOT_DIR_ERROR_MSG);
   }
 
   private GitFetchFilesResult fetchFilesFromRepo(String identifier, GitFileConfig gitFileConfig, GitConfig gitConfig,

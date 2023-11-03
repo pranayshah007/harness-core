@@ -111,4 +111,34 @@ public class AutoDiscoveryResourceTest extends CvNextGenTestBase {
     RestResponse<AutoDiscoveryAsyncResponseDTO> restResponse = response.readEntity(new GenericType<>() {});
     assertThat(restResponse.getResource().getStatus()).isEqualTo(AsyncStatus.RUNNING);
   }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void reImportStatusAutoDiscovery() {
+    AutoDiscoveryRequestDTO autoDiscoveryRequestDTO = builderFactory.getAutoDiscoveryRequestDTO();
+    autoDiscoveryRequestDTO.setAgentIdentifier("agent1");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/auto-discovery/"
+                                + "re-import")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(autoDiscoveryRequestDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<AutoDiscoveryAsyncResponseDTO> restResponse = response.readEntity(new GenericType<>() {});
+    assertThat(restResponse.getResource().getStatus()).isEqualTo(AsyncStatus.RUNNING);
+    String correlationId = restResponse.getResource().getCorrelationId();
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/auto-discovery/"
+                       + "status/" + correlationId)
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    restResponse = response.readEntity(new GenericType<>() {});
+    assertThat(restResponse.getResource().getStatus()).isEqualTo(AsyncStatus.COMPLETED);
+  }
 }

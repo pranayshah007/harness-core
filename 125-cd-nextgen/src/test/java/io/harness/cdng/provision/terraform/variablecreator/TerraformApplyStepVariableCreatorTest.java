@@ -80,6 +80,7 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tfvar_arifactory.spec.store.spec.connectorRef",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tvfar_inline.spec.content",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.environmentVariables.GIT_SSH_COMMAND",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tfvar_arifactory.spec.optional",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.name",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.configFiles.store.spec.connectorRef",

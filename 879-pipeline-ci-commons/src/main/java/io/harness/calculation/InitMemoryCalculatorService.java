@@ -21,7 +21,6 @@ import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.plugin.StepInfo;
 
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -92,7 +91,7 @@ public abstract class InitMemoryCalculatorService {
 
     // For parallel steps, as they don't have uuid field
     for (ExecutionWrapperConfig step : steps) {
-      if (Strings.isNullOrBlank(step.getUuid())) {
+      if (isEmpty(step.getUuid())) {
         Integer request = getExecutionWrapperRequestWithStrategy(step, strategy, accountId, resource, pluginsData);
         executionWrapperRequest = Math.max(executionWrapperRequest, request);
       }
@@ -190,7 +189,7 @@ public abstract class InitMemoryCalculatorService {
   private Map<String, List<ExecutionWrapperConfig>> getUUIDStepsMap(List<ExecutionWrapperConfig> steps) {
     Map<String, List<ExecutionWrapperConfig>> map = new HashMap<>();
     for (ExecutionWrapperConfig step : steps) {
-      if (Strings.isNotBlank(step.getUuid())) {
+      if (isNotEmpty(step.getUuid())) {
         if (!map.containsKey(step.getUuid())) {
           map.put(step.getUuid(), new ArrayList<>());
         }

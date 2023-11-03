@@ -10,14 +10,16 @@ package io.harness.idp.scorecard.datasources.repositories;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceRepository extends CrudRepository<DataSourceEntity, String>, DataSourceRepositoryCustom {
+  Optional<DataSourceEntity> findByAccountIdentifierInAndIdentifier(Set<String> accountIdentifier, String identifier);
   List<DataSourceEntity> findAllByAccountIdentifierIn(Set<String> accountIdentifiers);
 }

@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/instance/sync/response:module",
         "//950-delegate-tasks-beans:module",
     ],
 )

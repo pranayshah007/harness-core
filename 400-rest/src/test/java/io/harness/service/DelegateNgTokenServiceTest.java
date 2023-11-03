@@ -8,13 +8,16 @@
 package io.harness.service;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
+import static io.harness.delegate.beans.DelegateTokenStatus.ACTIVE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyBoolean;
@@ -30,6 +33,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.exception.InvalidRequestException;
@@ -37,6 +41,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 
 import software.wings.WingsBaseTest;
@@ -257,5 +262,29 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
         delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
     assertThat(result).hasSize(2);
     result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNull());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void
+  testGetDefaultTokenOrOldestActiveDelegateToken_shouldReturnOnlyNgOldestActiveTokenInCaseDefaultTokenDoestNotExist() {
+    String randomTokenValue = "randomCgTokenValue";
+    DelegateToken cgToken = DelegateToken.builder()
+                                .accountId(TEST_ACCOUNT_ID)
+                                .owner(null)
+                                .name("cg_token")
+                                .status(ACTIVE)
+                                .value(randomTokenValue)
+                                .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
+                                .revokeAfter(null)
+                                .build();
+    persistence.save(cgToken);
+    String ngTokenName = "ngToken";
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, ngTokenName, null);
+    DelegateTokenDetails delegateTokenDetails =
+        delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(TEST_ACCOUNT_ID, null);
+    assertNotNull(delegateTokenDetails);
+    assertThat(delegateTokenDetails.getName()).isEqualTo(ngTokenName);
   }
 }

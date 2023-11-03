@@ -70,4 +70,18 @@ public class CCMNotificationsDao {
                       .equal(accountId);
     return persistence.delete(query);
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CCMNotificationSetting.class)
+        .field(CCMNotificationSettingKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CCMNotificationSetting> query = persistence.createQuery(CCMNotificationSetting.class)
+                                              .field(CCMNotificationSettingKeys.accountId)
+                                              .equal(accountId);
+    return persistence.delete(query);
+  }
 }

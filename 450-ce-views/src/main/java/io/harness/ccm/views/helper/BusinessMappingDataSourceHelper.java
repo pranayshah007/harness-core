@@ -8,6 +8,7 @@
 package io.harness.ccm.views.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
@@ -23,7 +24,6 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -51,7 +51,7 @@ public class BusinessMappingDataSourceHelper {
       final List<QLCEViewRule> ruleFilters) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     ruleFilters.forEach(ruleFilter -> {
-      if (Objects.nonNull(ruleFilter) && !Lists.isNullOrEmpty(ruleFilter.getConditions())) {
+      if (Objects.nonNull(ruleFilter) && !isEmpty(ruleFilter.getConditions())) {
         viewFieldIdentifiers.addAll(getBusinessMappingViewFieldIdentifiersFromIdFilters(ruleFilter.getConditions()));
       }
     });
@@ -90,10 +90,10 @@ public class BusinessMappingDataSourceHelper {
   public Set<ViewFieldIdentifier> getBusinessMappingViewFieldIdentifiers(final BusinessMapping businessMapping) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (Objects.nonNull(businessMapping)) {
-      if (!Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
+      if (!isEmpty(businessMapping.getCostTargets())) {
         viewFieldIdentifiers.addAll(getCostTargetViewFieldIdentifiers(businessMapping.getCostTargets()));
       }
-      if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+      if (!isEmpty(businessMapping.getSharedCosts())) {
         viewFieldIdentifiers.addAll(getSharedCostViewFieldIdentifiers(businessMapping.getSharedCosts()));
       }
     }
@@ -104,7 +104,7 @@ public class BusinessMappingDataSourceHelper {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (Objects.nonNull(costTargets)) {
       costTargets.forEach(costTarget -> {
-        if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
+        if (Objects.nonNull(costTarget) && !isEmpty(costTarget.getRules())) {
           viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(costTarget.getRules()));
         }
       });
@@ -116,7 +116,7 @@ public class BusinessMappingDataSourceHelper {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (Objects.nonNull(sharedCosts)) {
       sharedCosts.forEach(sharedCost -> {
-        if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
+        if (Objects.nonNull(sharedCost) && !isEmpty(sharedCost.getRules())) {
           viewFieldIdentifiers.addAll(getViewRulesViewFieldIdentifiers(sharedCost.getRules()));
         }
       });

@@ -28,4 +28,5 @@ public class FilterConstants {
   public static final String ANOMALY_FILTER = "Anomaly";
   public static final String ENVIRONMENT = "Environment";
   public static final String EXECUTION_FILTER = "RuleExecution";
+  public static final String OVERRIDE_FILTER = "Override";
 }

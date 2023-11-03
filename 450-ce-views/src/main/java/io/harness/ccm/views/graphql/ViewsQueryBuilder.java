@@ -46,6 +46,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_REQUEST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import io.harness.annotations.dev.CodePulse;
@@ -99,7 +100,6 @@ import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.UnionQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
-import io.fabric8.utils.Lists;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -244,7 +244,7 @@ public class ViewsQueryBuilder {
           selectQuery, inExpressionFilters, groupByEntity, tableIdentifier, viewLabelsFlattened);
     }
 
-    if (!Lists.isNullOrEmpty(sharedCostBusinessMappings)) {
+    if (!isEmpty(sharedCostBusinessMappings)) {
       decorateQueryWithNegateSharedCosts(selectQuery, sharedCostBusinessMappings, tableIdentifier, viewLabelsFlattened);
     }
 
@@ -253,7 +253,7 @@ public class ViewsQueryBuilder {
     }
 
     if (!queryParams.isSkipGroupBy()) {
-      if (!Lists.isNullOrEmpty(sharedCostGroupByEntity)) {
+      if (!isEmpty(sharedCostGroupByEntity)) {
         decorateQueryWithGroupByAndColumns(selectQuery, sharedCostGroupByEntity, tableIdentifier, viewLabelsFlattened);
       } else {
         decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier, viewLabelsFlattened);
@@ -269,7 +269,7 @@ public class ViewsQueryBuilder {
       }
     }
 
-    if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
+    if (!isEmpty(viewPreferenceAggregations)) {
       decorateQueryWithViewPreferenceAggregations(
           selectQuery, viewPreferenceAggregations, tableIdentifier, viewLabelsFlattened);
       aggregations = removeCostAggregationColumn(aggregations);
@@ -415,7 +415,7 @@ public class ViewsQueryBuilder {
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
     final ViewLabelsFlattened viewLabelsFlattened =
         getViewLabelsFlattened(labelsKeyAndColumnMapping, queryParams.getAccountId(), cloudProviderTableName);
-    if (!Lists.isNullOrEmpty(groupBy)) {
+    if (!isEmpty(groupBy)) {
       decorateQueryWithGroupBy(query, getGroupByEntity(groupBy), tableIdentifier, viewLabelsFlattened);
     }
     query.addCustomFromTable(String.format("(%s)", unionQuery));
@@ -429,7 +429,7 @@ public class ViewsQueryBuilder {
 
   private void decorateSharedCostQueryGroupBy(final List<QLCEViewGroupBy> groupBy, final boolean isClusterPerspective,
       final SelectQuery query, final String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
-    if (!Lists.isNullOrEmpty(groupBy)) {
+    if (!isEmpty(groupBy)) {
       // Handling label groupBy separately
       final List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupBy);
       final List<QLCEViewFieldInput> groupByLabel = getLabelGroupBy(groupByEntity);
@@ -455,10 +455,10 @@ public class ViewsQueryBuilder {
     final ViewLabelsFlattened viewLabelsFlattened =
         getViewLabelsFlattened(labelsKeyAndColumnMapping, queryParams.getAccountId(), cloudProviderTableName);
     decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, query, tableIdentifier, viewLabelsFlattened);
-    if (!Lists.isNullOrEmpty(aggregateFunction)) {
+    if (!isEmpty(aggregateFunction)) {
       decorateQueryWithAggregations(query, aggregateFunction, tableIdentifier, true);
     }
-    if (!Lists.isNullOrEmpty(sort)) {
+    if (!isEmpty(sort)) {
       decorateQueryWithSortCriteria(query, sort);
     }
     query.addCustomFromTable(String.format("(%s)", unionQuery));
@@ -1514,7 +1514,7 @@ public class ViewsQueryBuilder {
           ? String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_CLUSTER_DATA_TABLE, sharedCostColumn)
           : String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, sharedCostColumn);
     }
-    if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
+    if (!isEmpty(viewPreferenceAggregations)) {
       if (isClickHouseQuery()) {
         viewPreferenceAggregations = addTableNamePrefixInViewPreferenceAggregationColumns(viewPreferenceAggregations);
       }
@@ -2373,14 +2373,12 @@ public class ViewsQueryBuilder {
   }
 
   private static List<String> handleSingleQuotes(List<String> values) {
-    return Lists.isNullOrEmpty(values)
-        ? Collections.emptyList()
-        : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
+    return isEmpty(values) ? Collections.emptyList()
+                           : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
   }
 
   private static List<List<String>> handleSingleQuotesForInExpressionValues(List<List<String>> values) {
-    return Lists.isNullOrEmpty(values)
-        ? Collections.emptyList()
-        : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
+    return isEmpty(values) ? Collections.emptyList()
+                           : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
   }
 }

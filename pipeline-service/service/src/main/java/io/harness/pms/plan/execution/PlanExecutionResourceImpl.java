@@ -401,8 +401,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     String yaml = pipelineEntity.getYaml();
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       yaml = pipelineTemplateHelper
-                 .resolveTemplateRefsInPipeline(
-                     accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), loadFromCache)
+                 .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(),
+                     loadFromCache, pipelineEntity.getHarnessVersion())
                  .getMergedPipelineYaml();
     }
     boolean shouldAllowStageExecutions;

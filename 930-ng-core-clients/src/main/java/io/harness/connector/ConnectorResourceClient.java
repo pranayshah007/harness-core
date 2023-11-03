@@ -12,6 +12,7 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.oidc.gcp.GcpOidcTokenRequestDTO;
 import io.harness.serializer.kryo.KryoResponse;
 
 import java.util.List;
@@ -73,4 +74,7 @@ public interface ConnectorResourceClient {
   Call<ResponseDTO<PageResponse<ConnectorResponseDTO>>> listAllConnectors(
       @Query(NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size,
       @Body ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO);
+
+  @POST("/oidc/id-token/gcp")
+  Call<ResponseDTO<String>> getOidcIdToken(@Body GcpOidcTokenRequestDTO gcpOidcTokenRequestDTO);
 }

@@ -1080,7 +1080,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
-        accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, null);
 
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(environmentInputsYaml).build());
