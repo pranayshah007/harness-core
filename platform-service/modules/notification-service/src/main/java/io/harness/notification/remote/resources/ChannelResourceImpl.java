@@ -10,7 +10,9 @@ package io.harness.notification.remote.resources;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.service.api.ChannelService;
 
@@ -30,5 +32,10 @@ public class ChannelResourceImpl implements ChannelResource {
         notificationSettingDTO.getNotificationId());
     boolean result = channelService.sendTestNotification(notificationSettingDTO);
     return ResponseDTO.newResponse(result);
+  }
+
+  public ResponseDTO<NotificationTaskResponse> sendNotification(NotificationRequestDTO notificationRequestDTO) {
+    NotificationTaskResponse response = channelService.sendNotification(notificationRequestDTO);
+    return ResponseDTO.newResponse(response);
   }
 }
