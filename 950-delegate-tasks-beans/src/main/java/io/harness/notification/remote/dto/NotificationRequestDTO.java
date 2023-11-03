@@ -26,7 +26,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true, property = "type")
-@JsonSubTypes({ @JsonSubTypes.Type(value = EmailNotificationRequestDTO.class, name = "EMAIL") })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = EmailNotificationRequestDTO.class, name = "EMAIL")
+  , @JsonSubTypes.Type(value = WebhookNotificationRequestDTO.class, name = "WEBHOOK")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NotificationRequest", description = "Notification Request to be send")
 public abstract class NotificationRequestDTO {
