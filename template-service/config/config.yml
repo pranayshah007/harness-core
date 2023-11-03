@@ -41,18 +41,6 @@ mongo:
   aliasDBName: template-harness
   traceMode: DISABLED
 
-templateClient:
-    uri: mongodb://localhost:27017/template-harness
-    connectTimeout: 30000
-    serverSelectionTimeout: 90000
-    socketTimeout: 360000
-    maxConnectionIdleTime: 600000
-    connectionsPerHost: 300
-    indexManagerMode: AUTO
-    transactionsEnabled: false
-    aliasDBName: pms-harness
-    traceMode: DISABLED
-
 gitSdkConfiguration:
   gitSdkGrpcServerConfig:
     connectors:

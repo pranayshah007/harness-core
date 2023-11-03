@@ -55,8 +55,7 @@ public class TemplatePersistenceConfig extends AbstractMongoClientConfiguration 
   @Inject
   public TemplatePersistenceConfig(Injector injector) {
     this.harnessConnectionPoolListener = injector.getInstance(HarnessConnectionPoolListener.class);
-    this.mongoConfig =
-        injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getTemplateClientConfiguration();
+    this.mongoConfig = injector.getInstance(Key.get(TemplateServiceConfiguration.class)).getMongoConfig();
   }
 
   @Bean("template-mongo-client")
