@@ -152,8 +152,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.29
-  liteEngineImage: harness/ci-lite-engine:1.16.29
+  addonImage: harness/ci-addon:1.16.22.1.4
+  liteEngineImage: harness/ci-lite-engine:1.16.22.1.4
   isLocal: false
   hostedVmConfig:
     splitLinuxAmd64Pool: false
