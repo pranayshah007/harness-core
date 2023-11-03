@@ -134,8 +134,8 @@ public class WebhookServiceImpl implements ChannelService {
           DEFAULT_ERROR_CODE, USER);
     }
     if (Objects.isNull(stripToNull(webhookUrl))) {
-      throw new NotificationException(
-          String.format("Malformed webhook Url encountered while processing request %s", webhookUrl),
+      throw new NotificationException(String.format("Malformed webhook Url encountered while processing request %s",
+                                          webhookNotificationRequestDTO.getNotificationId()),
           DEFAULT_ERROR_CODE, USER);
     }
     notificationSettingsHelper.validateRecipient(webhookUrl, webhookNotificationRequestDTO.getAccountId(),
@@ -146,7 +146,7 @@ public class WebhookServiceImpl implements ChannelService {
         notificationRequestDTO.getNotificationId(), notificationRequestDTO.getAccountId());
     if (taskResponse.getProcessingResponse() == null || taskResponse.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(taskResponse.getProcessingResponse())) {
-      throw new NotificationException(String.format("Failed to complete webhook request. Please check webhook url. %s",
+      throw new NotificationException(String.format("Failed to process webhook request. Please check webhook url. %s",
                                           taskResponse.getErrorMessage()),
           DEFAULT_ERROR_CODE, USER);
     }
