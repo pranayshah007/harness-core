@@ -119,7 +119,7 @@ image:
   repository: harness/log-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "release-91-ubi"
+  tag: "release-115-ubi"
   digest: ""
   imagePullSecrets: []
 
