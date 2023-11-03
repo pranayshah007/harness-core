@@ -48,7 +48,6 @@ import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
