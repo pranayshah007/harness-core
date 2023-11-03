@@ -15,21 +15,45 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsBasicRollbackStep;
 import io.harness.cdng.ecs.EcsBasicRollbackStepNode;
 import io.harness.cdng.ecs.EcsBasicRollbackStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsBasicRollbackStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class EcsBasicRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsBasicRollbackStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+  @Override
+  protected StepType getStepSpecType(PlanCreationContext ctx, EcsBasicRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsBasicRollbackStepV2.STEP_TYPE;
+    }
+    return EcsBasicRollbackStep.STEP_TYPE;
+  }
+
+  @Override
+  protected String getFacilitatorType(PlanCreationContext ctx, EcsBasicRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
+  }
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ECS_BASIC_ROLLBACK);
