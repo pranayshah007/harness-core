@@ -197,14 +197,14 @@ public class AdminAccountResource {
   }
 
   @GET
-  @Path("get-recent-updates-account")
+  @Path("recently-updated-accounts")
   public RestResponse<List<AccountSummary>> getRecentAccountUpdates() {
     long currentTime = System.currentTimeMillis();
-    long thirtySecondsAgo = currentTime - TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS);
-    List<String> updatedAccountsIds = adminAccountService.getUpdatedAccounts(thirtySecondsAgo).stream()
+    long thirtySecondsAgo = currentTime - TimeUnit.MILLISECONDS.convert(60, TimeUnit.SECONDS);
+    List<String> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(thirtySecondsAgo).stream()
             .map(UuidAware::getUuid)
             .collect(toList());
-    return new RestResponse<>(adminAccountService.getAccountSummariesByAccountIds(updatedAccountsIds));
+    return new RestResponse<>(adminAccountService.getAccountSummaries(updatedAccountsIds));
   }
 
   @PUT

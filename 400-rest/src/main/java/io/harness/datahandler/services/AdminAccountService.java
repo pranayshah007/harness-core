@@ -80,7 +80,7 @@ public interface AdminAccountService {
 
   Account createGlobalDelegateAccount(Account account, String adminUserEmail);
 
-  List<Account> getUpdatedAccounts(long timestamp);
+  List<Account> getAccountsUpdatedSinceTimestamp(long timestamp);
 
-  List<AccountSummary> getAccountSummariesByAccountIds(List<String> accountIds);
+  List<AccountSummary> getAccountSummaries(List<String> accountIds);
 }

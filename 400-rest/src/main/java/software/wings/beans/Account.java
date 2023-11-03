@@ -109,7 +109,12 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                 .field(AccountKeys.companyName)
                 .field(AccountKeys.licenseInfo)
                 .field(AccountKeys.encryptedLicenseInfo)
-                .build())
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("lastUpdatedAt_1")
+                .field(AccountKeys.lastUpdatedAt)
+                .build()
+        )
         .build();
   }
 
