@@ -87,7 +87,7 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
     AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
         AWSCostAndUsageReportClientBuilder.standard().withRegion(ceAWSRegion).withCredentials(credentialsProvider);
     if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
-      log.info("awsCostAndUsageReportClientBuilder initializing with proxy config");
+      log.info("AWSCostAndUsageReport client initializing with proxy config");
       awsCostAndUsageReportClientBuilder.withClientConfiguration(
           getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
     }
@@ -241,7 +241,7 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(ceAWSRegion);
     builder.withCredentials(credentialsProvider);
     if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
-      log.info("AWSOrganizationsClientBuilder initializing with proxy config");
+      log.info("AWSOrganizationsClient client initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
     }
     AWSOrganizationsClient awsOrganizationsClient = (AWSOrganizationsClient) builder.build();

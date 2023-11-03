@@ -47,6 +47,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -199,7 +200,7 @@ public class PipelinesApiImplTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
     requestBody.setIdentifier(identifier);
@@ -223,7 +224,7 @@ public class PipelinesApiImplTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
     requestBody.setIdentifier(identifier);
@@ -252,6 +253,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
+
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)

@@ -14,6 +14,7 @@ import static io.harness.accesscontrol.roleassignments.persistence.RoleAssignmen
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
@@ -184,16 +185,8 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
       criteria.and(RoleAssignmentDBOKeys.internal).ne(true);
     }
 
-    Criteria[] principalCriteria = roleAssignmentFilter.getPrincipalFilter()
-                                       .stream()
-                                       .map(principal
-                                           -> Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
-                                                  .is(principal.getPrincipalIdentifier())
-                                                  .and(RoleAssignmentDBOKeys.principalType)
-                                                  .is(principal.getPrincipalType())
-                                                  .and(RoleAssignmentDBOKeys.principalScopeLevel)
-                                                  .is(principal.getPrincipalScopeLevel()))
-                                       .toArray(Criteria[] ::new);
+    Criteria[] principalCriteria =
+        roleAssignmentFilter.getPrincipalFilter().stream().map(this::getPrincipalFilter).toArray(Criteria[] ::new);
 
     Criteria criteria1 = new Criteria().orOperator(scopeCriteria.toArray(Criteria[] ::new));
     List<Criteria> criteria3 = new ArrayList<>();
@@ -203,5 +196,17 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
     }
     return scopeCriteria.isEmpty() ? new Criteria().andOperator(criteria3.toArray(Criteria[] ::new))
                                    : criteria1.andOperator(criteria3.toArray(Criteria[] ::new));
+  }
+
+  private Object getPrincipalFilter(Principal principal) {
+    Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
+                            .is(principal.getPrincipalIdentifier())
+                            .and(RoleAssignmentDBOKeys.principalType)
+                            .is(principal.getPrincipalType());
+
+    if (principal.getPrincipalScopeLevel() != null) {
+      criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).is(principal.getPrincipalScopeLevel());
+    }
+    return criteria;
   }
 }

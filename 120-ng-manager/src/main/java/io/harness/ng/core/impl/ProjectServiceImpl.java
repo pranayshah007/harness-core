@@ -74,6 +74,8 @@ import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
+import io.harness.ng.core.entities.metrics.ProjectsPerAccountCount;
+import io.harness.ng.core.entities.metrics.ProjectsPerAccountCount.ProjectsPerAccountCountKeys;
 import io.harness.ng.core.events.ProjectCreateEvent;
 import io.harness.ng.core.events.ProjectDeleteEvent;
 import io.harness.ng.core.events.ProjectRestoreEvent;
@@ -727,5 +729,25 @@ public class ProjectServiceImpl implements ProjectService {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(orgIdentifier, project.getOrgIdentifier())), true);
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(identifier, project.getIdentifier())), false);
     validateParentOrgExists(accountIdentifier, orgIdentifier);
+  }
+
+  @Override
+  public Map<String, Integer> getProjectsCountPerAccount(List<String> accountIdentifier) {
+    Criteria criteria =
+        Criteria.where(ProjectKeys.accountIdentifier).in(accountIdentifier).and(ProjectKeys.deleted).ne(Boolean.TRUE);
+    MatchOperation matchStage = Aggregation.match(criteria);
+
+    GroupOperation groupBy = group(ProjectKeys.accountIdentifier).count().as(ProjectsPerAccountCountKeys.count);
+
+    ProjectionOperation projectionStage =
+        project().and(MONGODB_ID).as(ProjectKeys.accountIdentifier).andInclude(ProjectsPerAccountCountKeys.count);
+
+    Map<String, Integer> result = new HashMap<>();
+    projectRepository.aggregate(newAggregation(matchStage, groupBy, projectionStage), ProjectsPerAccountCount.class)
+        .getMappedResults()
+        .forEach(projectsPerAccountCount
+            -> result.put(projectsPerAccountCount.getAccountIdentifier(), projectsPerAccountCount.getCount()));
+
+    return result;
   }
 }

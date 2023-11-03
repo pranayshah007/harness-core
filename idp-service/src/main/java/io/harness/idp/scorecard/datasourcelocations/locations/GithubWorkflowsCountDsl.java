@@ -28,13 +28,15 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +49,7 @@ public class GithubWorkflowsCountDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      DataSourceLocationEntity dataSourceLocationEntity, List<DataFetchDTO> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
       throws NoSuchAlgorithmException, KeyManagementException {
@@ -56,12 +58,10 @@ public class GithubWorkflowsCountDsl implements DataSourceLocation {
     HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
     apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
     Map<String, Object> data = new HashMap<>();
-
     if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
         || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
         || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
-      data.put(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR);
-      return data;
+      return Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR);
     }
 
     Map<String, String> replaceablePairs = new HashMap<>();
@@ -84,7 +84,8 @@ public class GithubWorkflowsCountDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

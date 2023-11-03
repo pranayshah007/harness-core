@@ -8,13 +8,16 @@
 package io.harness.accesscontrol.resources.resourcegroups;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.KARAN;
 
+import static java.util.Collections.singleton;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,7 +25,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupDeleteEvent;
+import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupUpdateEvent;
 import io.harness.accesscontrol.resources.resourcegroups.persistence.ResourceGroupDao;
+import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.scopes.TestScopeLevels;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,10 +36,12 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.util.HashSet;
 import java.util.List;
@@ -42,22 +50,27 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
   private ResourceGroupDao resourceGroupDao;
   private RoleAssignmentService roleAssignmentService;
-  private TransactionTemplate transactionTemplate;
   private ResourceGroupServiceImpl resourceGroupService;
+  @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate outboxTransactionTemplate;
+  private OutboxService outboxService;
 
   @Before
   public void setup() {
     resourceGroupDao = mock(ResourceGroupDao.class);
     roleAssignmentService = mock(RoleAssignmentService.class);
-    transactionTemplate = mock(TransactionTemplate.class);
-    resourceGroupService =
-        spy(new ResourceGroupServiceImpl(resourceGroupDao, roleAssignmentService, transactionTemplate));
+    outboxTransactionTemplate = mock(TransactionTemplate.class);
+    outboxService = mock(OutboxService.class);
+    resourceGroupService = spy(new ResourceGroupServiceImpl(
+        resourceGroupDao, roleAssignmentService, outboxTransactionTemplate, outboxService));
   }
 
   private ResourceGroup getResourceGroup(int count, boolean managed) {
@@ -101,13 +114,26 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
              resourceGroupUpdate.getIdentifier(), resourceGroupUpdate.getScopeIdentifier(), ManagedFilter.ONLY_CUSTOM))
         .thenReturn(Optional.of(currentResourceGroup));
 
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(resourceGroupDao.upsert(resourceGroupUpdate)).thenReturn(updatedResourceGroup);
+    ResourceGroupUpdateEvent resourceGroupUpdateEvent = new ResourceGroupUpdateEvent(
+        currentResourceGroup, updatedResourceGroup, updatedResourceGroup.getScopeIdentifier());
 
+    when(outboxService.save(any())).thenReturn(null);
+
+    ArgumentCaptor<ResourceGroupUpdateEvent> argumentCaptor = ArgumentCaptor.forClass(ResourceGroupUpdateEvent.class);
     ResourceGroup resourceGroupUpdateResult = resourceGroupService.upsert(resourceGroupUpdate);
 
     assertEquals(updatedResourceGroup, resourceGroupUpdateResult);
+    verify(outboxTransactionTemplate, times(1)).execute(any());
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
     verify(resourceGroupDao, times(1)).upsert(any());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    ResourceGroupUpdateEvent resourceGroupUpdateEventResult = argumentCaptor.getValue();
+    assertEquals(resourceGroupUpdateEvent, resourceGroupUpdateEventResult);
   }
 
   @Test
@@ -155,13 +181,41 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
              resourceGroupUpdate.getIdentifier(), resourceGroupUpdate.getScopeIdentifier(), ManagedFilter.ONLY_MANAGED))
         .thenReturn(Optional.of(currentResourceGroup));
 
-    when(transactionTemplate.execute(any())).thenReturn(updatedResourceGroup);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(resourceGroupDao.upsert(resourceGroupUpdate)).thenReturn(updatedResourceGroup);
+    ResourceGroupUpdateEvent resourceGroupUpdateEvent = new ResourceGroupUpdateEvent(
+        currentResourceGroup, updatedResourceGroup, updatedResourceGroup.getScopeIdentifier());
 
+    when(outboxService.save(any())).thenReturn(null);
+
+    ArgumentCaptor<ResourceGroupUpdateEvent> argumentCaptor = ArgumentCaptor.forClass(ResourceGroupUpdateEvent.class);
     ResourceGroup resourceGroupUpdateResult = resourceGroupService.upsert(resourceGroupUpdate);
+    Set<String> removedScopeLevels =
+        Sets.difference(currentResourceGroup.getAllowedScopeLevels(), updatedResourceGroup.getAllowedScopeLevels());
+    when(roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
+                                               .resourceGroupFilter(singleton(currentResourceGroup.getIdentifier()))
+                                               .scopeFilter("/")
+                                               .includeChildScopes(true)
+                                               .scopeLevelFilter(removedScopeLevels)
+                                               .build()))
+        .thenReturn(0L);
 
     assertEquals(updatedResourceGroup, resourceGroupUpdateResult);
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxTransactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    ResourceGroupUpdateEvent resourceGroupUpdateEventResult = argumentCaptor.getValue();
+    assertEquals(resourceGroupUpdateEvent, resourceGroupUpdateEventResult);
+    verify(roleAssignmentService, times(1))
+        .deleteMulti(RoleAssignmentFilter.builder()
+                         .resourceGroupFilter(singleton(currentResourceGroup.getIdentifier()))
+                         .scopeFilter("/")
+                         .includeChildScopes(true)
+                         .scopeLevelFilter(removedScopeLevels)
+                         .build());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -249,41 +303,24 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testDelete() {
-    String identifier = randomAlphabetic(10);
-    String scopeIdentifier = randomAlphabetic(10);
-    ResourceGroup resourceGroup =
-        ResourceGroup.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
-    when(resourceGroupDao.get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM))
-        .thenReturn(Optional.of(resourceGroup));
-    when(transactionTemplate.execute(any())).thenReturn(resourceGroup);
-    ResourceGroup deletedResourceGroup = resourceGroupService.delete(identifier, scopeIdentifier);
-    assertEquals(resourceGroup, deletedResourceGroup);
-    verify(resourceGroupDao, times(1)).get(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
-  }
-
-  @Test(expected = InvalidRequestException.class)
-  @Owner(developers = KARAN)
-  @Category(UnitTests.class)
-  public void testDeleteNotFound() {
-    String identifier = randomAlphabetic(10);
-    String scopeIdentifier = randomAlphabetic(10);
-    when(resourceGroupDao.get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM)).thenReturn(Optional.empty());
-    resourceGroupService.delete(identifier, scopeIdentifier);
-  }
-
-  @Test
-  @Owner(developers = KARAN)
-  @Category(UnitTests.class)
   public void testDeleteManagedIfPresent() {
     String identifier = randomAlphabetic(10);
     ResourceGroup resourceGroup = ResourceGroup.builder().identifier(identifier).build();
     when(resourceGroupDao.get(identifier, null, ManagedFilter.ONLY_MANAGED)).thenReturn(Optional.of(resourceGroup));
-    when(transactionTemplate.execute(any())).thenReturn(resourceGroup);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(resourceGroupDao.delete(identifier, null)).thenReturn(Optional.of(resourceGroup));
+    ResourceGroupDeleteEvent resourceGroupDeleteEvent =
+        new ResourceGroupDeleteEvent(resourceGroup, resourceGroup.getScopeIdentifier());
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<ResourceGroupDeleteEvent> argumentCaptor = ArgumentCaptor.forClass(ResourceGroupDeleteEvent.class);
     resourceGroupService.deleteManagedIfPresent(identifier);
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxTransactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    assertEquals(resourceGroupDeleteEvent, argumentCaptor.getValue());
   }
 
   @Test
@@ -294,6 +331,7 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
     when(resourceGroupDao.get(identifier, null, ManagedFilter.ONLY_MANAGED)).thenReturn(Optional.empty());
     resourceGroupService.deleteManagedIfPresent(identifier);
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
+    verify(outboxTransactionTemplate, never()).execute(any());
   }
 
   @Test
@@ -306,10 +344,22 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
         ResourceGroup.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(resourceGroupDao.get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM))
         .thenReturn(Optional.of(resourceGroup));
-    when(transactionTemplate.execute(any())).thenReturn(resourceGroup);
+
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(resourceGroupDao.delete(identifier, resourceGroup.getScopeIdentifier()))
+        .thenReturn(Optional.of(resourceGroup));
+    ResourceGroupDeleteEvent resourceGroupDeleteEvent =
+        new ResourceGroupDeleteEvent(resourceGroup, resourceGroup.getScopeIdentifier());
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<ResourceGroupDeleteEvent> argumentCaptor = ArgumentCaptor.forClass(ResourceGroupDeleteEvent.class);
     resourceGroupService.deleteIfPresent(identifier, scopeIdentifier);
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxTransactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    assertEquals(resourceGroupDeleteEvent, argumentCaptor.getValue());
   }
 
   @Test
@@ -321,5 +371,6 @@ public class ResourceGroupServiceImplTest extends AccessControlCoreTestBase {
     when(resourceGroupDao.get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM)).thenReturn(Optional.empty());
     resourceGroupService.deleteIfPresent(identifier, scopeIdentifier);
     verify(resourceGroupDao, times(1)).get(any(), any(), any());
+    verify(outboxTransactionTemplate, never()).execute(any());
   }
 }

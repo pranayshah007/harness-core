@@ -38,6 +38,7 @@ import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -55,7 +56,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -433,9 +433,9 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
         EnvironmentYamlV2.builder()
             .environmentRef(ParameterField.createValueField("env1"))
             .infrastructureDefinitions(ParameterField.createValueField(
-                Lists.newArrayList(InfraStructureDefinitionYaml.builder()
-                                       .identifier(ParameterField.createValueField("identifier1"))
-                                       .build(),
+                ListUtils.newArrayList(InfraStructureDefinitionYaml.builder()
+                                           .identifier(ParameterField.createValueField("identifier1"))
+                                           .build(),
                     InfraStructureDefinitionYaml.builder()
                         .identifier(ParameterField.createValueField("identifier2"))
                         .build())))

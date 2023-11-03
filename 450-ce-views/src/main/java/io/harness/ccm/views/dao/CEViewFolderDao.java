@@ -137,4 +137,14 @@ public class CEViewFolderDao {
                                     .equal(uuid);
     return hPersistence.delete(query);
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(CEViewFolder.class).field(CEViewFolderKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEViewFolder> query =
+        hPersistence.createQuery(CEViewFolder.class).field(CEViewFolderKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

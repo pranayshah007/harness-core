@@ -31,17 +31,16 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,7 +69,7 @@ public abstract class DataSourceProvider {
   }
 
   public abstract Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<DataFetchDTO> dataPointsAndInputValues, String configs)
       throws UnsupportedEncodingException, JsonProcessingException, NoSuchAlgorithmException, KeyManagementException;
 
   protected abstract Map<String, String> getAuthHeaders(String accountIdentifier, String configs);
@@ -78,7 +77,9 @@ public abstract class DataSourceProvider {
   protected Map<String, Map<String, Object>> processOut(String accountIdentifier, String identifier,
       BackstageCatalogEntity backstageCatalogEntity, Map<String, String> replaceableHeaders,
       Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
-      Map<String, Set<String>> dataPointsAndInputValues) throws NoSuchAlgorithmException, KeyManagementException {
+      List<DataFetchDTO> dataToFetch) throws NoSuchAlgorithmException, KeyManagementException {
+    Map<String, List<DataFetchDTO>> dataToFetchByDsl =
+        dataPointService.getDslDataPointsInfo(accountIdentifier, this.getIdentifier(), dataToFetch);
     Optional<DataSourceEntity> dataSourceEntityOpt = dataSourceRepository.findByAccountIdentifierInAndIdentifier(
         addGlobalAccountIdentifierAlong(accountIdentifier), identifier);
     if (dataSourceEntityOpt.isEmpty()) {
@@ -89,28 +90,23 @@ public abstract class DataSourceProvider {
     DataSourceConfig config =
         this.getDataSourceConfig(dataSourceEntity, replaceableHeaders, possibleReplaceableUrlPairs);
 
-    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-    Map<String, List<DataPointEntity>> dataToFetch = dataPointService.getDslDataPointsInfo(
-        accountIdentifier, new ArrayList<>(dataPointIdentifiers), this.getIdentifier());
-
     Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
 
-    for (String dslIdentifier : dataToFetch.keySet()) {
-      Map<DataPointEntity, Set<String>> dataToFetchWithInputValues =
-          prepareDataToFetch(dataToFetch, dslIdentifier, dataPointsAndInputValues);
+    for (Map.Entry<String, List<DataFetchDTO>> entry : dataToFetchByDsl.entrySet()) {
+      String dslIdentifier = entry.getKey();
+      List<DataFetchDTO> dataToFetchForDsl = entry.getValue();
 
       DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
       DataSourceLocationEntity dataSourceLocationEntity = dataSourceLocationRepository.findByIdentifier(dslIdentifier);
       Map<String, Object> response = dataSourceLocation.fetchData(accountIdentifier, backstageCatalogEntity,
-          dataSourceLocationEntity, dataToFetchWithInputValues, replaceableHeaders, possibleReplaceableRequestBodyPairs,
+          dataSourceLocationEntity, dataToFetchForDsl, replaceableHeaders, possibleReplaceableRequestBodyPairs,
           possibleReplaceableUrlPairs, config);
       log.info("Response for DSL in Process out - dsl Identifier - {} dataToFetchWithInputValues - {} Response - {} ",
-          dslIdentifier, dataToFetchWithInputValues, response);
+          dslIdentifier, dataToFetchByDsl, response);
 
-      parseResponseAgainstDataPoint(dataToFetchWithInputValues, response, aggregatedData);
+      parseResponseAgainstDataPoint(dataToFetchForDsl, response, aggregatedData);
     }
-    log.info(
-        "Aggregated data for data for DataPoints - {}, aggregated data - {}", dataPointsAndInputValues, aggregatedData);
+    log.info("Aggregated data for data for DataPoints - {}, aggregated data - {}", dataToFetch, aggregatedData);
 
     return aggregatedData;
   }
@@ -118,33 +114,20 @@ public abstract class DataSourceProvider {
   protected abstract DataSourceConfig getDataSourceConfig(DataSourceEntity dataSourceEntity,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableUrlPairs);
 
-  private Map<DataPointEntity, Set<String>> prepareDataToFetch(Map<String, List<DataPointEntity>> dataToFetch,
-      String dslIdentifier, Map<String, Set<String>> dataPointsAndInputValues) {
-    Map<DataPointEntity, Set<String>> dataToFetchWithInputValues = new HashMap<>();
-    dataToFetch.get(dslIdentifier)
-        .forEach(dataPointEntity
-            -> dataToFetchWithInputValues.put(
-                dataPointEntity, dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
-    return dataToFetchWithInputValues;
-  }
+  private void parseResponseAgainstDataPoint(
+      List<DataFetchDTO> dataFetchDTOS, Map<String, Object> response, Map<String, Map<String, Object>> aggregatedData) {
+    Map<String, Object> providerData = aggregatedData.getOrDefault(getIdentifier(), new HashMap<>());
 
-  private void parseResponseAgainstDataPoint(Map<DataPointEntity, Set<String>> dataToFetchWithInputValues,
-      Map<String, Object> response, Map<String, Map<String, Object>> aggregatedData) {
-    Map<String, Object> dataPointValues = new HashMap<>();
-    for (Map.Entry<DataPointEntity, Set<String>> entry : dataToFetchWithInputValues.entrySet()) {
-      DataPointEntity dataPointEntity = entry.getKey();
-
+    for (DataFetchDTO dataFetchDTO : dataFetchDTOS) {
+      DataPointEntity dataPointEntity = dataFetchDTO.getDataPoint();
       Object values;
-      Set<String> inputValues = entry.getValue();
       DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointEntity.getIdentifier());
-      values = dataPointParser.parseDataPoint(response, dataPointEntity, inputValues);
+      values = dataPointParser.parseDataPoint(response, dataFetchDTO);
       if (values != null) {
-        dataPointValues.put(dataPointEntity.getIdentifier(), values);
+        providerData.putAll((Map<String, Object>) values);
       }
     }
 
-    Map<String, Object> providerData = aggregatedData.getOrDefault(getIdentifier(), new HashMap<>());
-    providerData.putAll(dataPointValues);
     aggregatedData.put(getIdentifier(), providerData);
   }
 

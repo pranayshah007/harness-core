@@ -37,4 +37,17 @@ public class CEGcpServiceAccountDao {
                                            .equal(serviceAccountEmail);
     return query.get();
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CEGcpServiceAccount.class)
+        .field(CEGcpServiceAccountKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEGcpServiceAccount> query =
+        persistence.createQuery(CEGcpServiceAccount.class).field(CEGcpServiceAccountKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

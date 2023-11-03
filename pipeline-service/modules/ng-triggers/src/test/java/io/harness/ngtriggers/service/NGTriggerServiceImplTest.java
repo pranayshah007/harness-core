@@ -622,7 +622,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .thenReturn(Collections.emptyList());
     assertThatThrownBy(() -> ngTriggerServiceImpl.fetchTriggerEventHistory(ACCOUNT_ID, "eventId"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Trigger event history eventId does not exist");
+        .hasMessage("Trigger event history doesn't exist for event with eventId eventId");
     List<TriggerEventHistory> triggerEventHistories = new ArrayList<>();
     TriggerEventHistory triggerEventHistory1 = TriggerEventHistory.builder()
                                                    .accountId(ACCOUNT_ID)

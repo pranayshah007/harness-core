@@ -16,6 +16,7 @@ import io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 
 public interface InstanceInfoTimescaleDAO {
   void insertIntoNodeInfo(@NotNull InstanceInfo instanceInfo);
@@ -45,4 +46,16 @@ public interface InstanceInfoTimescaleDAO {
 
   void stopInactivePodsAtTime(@NotNull String accountId, @NotNull String clusterId, @NotNull Instant syncEventTimestamp,
       @NotNull List<String> activePodUidsList);
+
+  boolean deleteNodeInfoForAccount(String accountId);
+
+  boolean deletePodInfoForAccount(String accountId);
+
+  boolean deleteWorkloadInfoForAccount(String accountId);
+
+  Long countNodeInfoForAccount(@NonNull String accountId);
+
+  Long countPodInfoForAccount(@NonNull String accountId);
+
+  Long countWorkloadInfoForAccount(@NonNull String accountId);
 }

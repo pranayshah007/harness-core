@@ -50,9 +50,10 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   boolean delete(ProjectParams projectParams, String identifier, boolean validateReferencedCompositeSLOForSimpleSLO);
   boolean forceDelete(ProjectParams projectParams, String identifier);
 
-  boolean forceDelete(ProjectParams projectParams, List<String> identifiers);
+  boolean forceDelete(ProjectParams projectParams, List<String> identifiers, List<String> uniqueIdentifiers);
 
-  boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> identifiers);
+  boolean forceDeleteCompositeSLO(
+      ProjectParams projectParams, List<String> identifiers, List<String> uniqueIdentifiers);
 
   void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);

@@ -39,6 +39,7 @@ public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String manifestType;
   String manifestId;
   private boolean optimizedFilesFetch;
+  boolean optional;
 
   @Override
   public StoreDelegateConfigType getType() {

@@ -21,6 +21,7 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.spec.server.idp.v1.model.ClusterConfig;
 import io.harness.spec.server.idp.v1.model.DataPointInputValues;
 import io.harness.spec.server.idp.v1.model.DataSourceLocationInfo;
@@ -38,7 +39,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -65,17 +65,17 @@ public class KubernetesProvider extends HttpDataSourceProvider {
   }
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+  public Map<String, Map<String, Object>> fetchData(
+      String accountIdentifier, BackstageCatalogEntity entity, List<DataFetchDTO> dataFetchDTOS, String configs)
       throws UnsupportedEncodingException, JsonProcessingException, NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> replaceableHeaders = new HashMap<>(this.getAuthHeaders(accountIdentifier, null));
     replaceableHeaders.put(HARNESS_ACCOUNT, accountIdentifier);
     List<ClusterConfig> clustersConfigList = getClustersConfig(accountIdentifier, configs);
     String labelSelector = entity.getMetadata().getAnnotations().get(KUBERNETES_LABEL_SELECTOR_ANNOTATION);
     Map<String, String> possibleReplaceableRequestBodyPairs =
-        prepareRequestBodyReplaceablePairs(clustersConfigList, labelSelector, dataPointsAndInputValues);
+        prepareRequestBodyReplaceablePairs(clustersConfigList, labelSelector, dataFetchDTOS);
     return processOut(accountIdentifier, KUBERNETES_IDENTIFIER, entity, replaceableHeaders,
-        possibleReplaceableRequestBodyPairs, prepareUrlReplaceablePairs(env), dataPointsAndInputValues);
+        possibleReplaceableRequestBodyPairs, prepareUrlReplaceablePairs(env), dataFetchDTOS);
   }
 
   @Override
@@ -84,12 +84,11 @@ public class KubernetesProvider extends HttpDataSourceProvider {
   }
 
   private Map<String, String> prepareRequestBodyReplaceablePairs(List<ClusterConfig> clustersConfig,
-      String labelSelector, Map<String, Set<String>> dataPointsAndInputValues) throws JsonProcessingException {
+      String labelSelector, List<DataFetchDTO> dataFetchDTOS) throws JsonProcessingException {
     List<DataPointInputValues> dataPoints = new ArrayList<>();
-    for (Map.Entry<String, Set<String>> entry : dataPointsAndInputValues.entrySet()) {
+    for (DataFetchDTO dataFetchDTO : dataFetchDTOS) {
       DataPointInputValues dataPointInputValues = new DataPointInputValues();
-      dataPointInputValues.setDataPointIdentifier(entry.getKey());
-      dataPointInputValues.setValues(new ArrayList<>(entry.getValue()));
+      dataPointInputValues.setDataPointIdentifier(dataFetchDTO.getDataPoint().getIdentifier());
       dataPoints.add(dataPointInputValues);
     }
     DataSourceLocationInfo dataSourceLocationInfo = new DataSourceLocationInfo();

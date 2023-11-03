@@ -8,15 +8,14 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.util.Map;
-import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class PipelineTestFailingInCiIsZeroParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
-    return data.get(dataPoint.getIdentifier());
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    return Map.of(dataFetchDTO.getRuleIdentifier(), data.get(dataFetchDTO.getDataPoint().getIdentifier()));
   }
 }

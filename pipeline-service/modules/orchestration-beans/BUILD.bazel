@@ -17,6 +17,7 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//959-timeout-engine:module",
         "//960-ng-license-beans:module",
         "//960-persistence:module",

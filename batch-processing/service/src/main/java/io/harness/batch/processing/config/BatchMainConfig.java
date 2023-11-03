@@ -58,6 +58,8 @@ public class BatchMainConfig {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("cePythonService") private CEPythonServiceConfig cePythonServiceConfig;
   @JsonProperty("banzaiConfig") private BanzaiConfig banzaiConfig;
+  @JsonProperty("lightwingAutoCUDClientConfig") private ServiceHttpClientConfig lightwingAutoCUDClientConfig;
+  @JsonProperty("dkronClientConfig") private ServiceHttpClientConfig dkronClientConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("ceNgServiceHttpClientConfig") private ServiceHttpClientConfig ceNgServiceHttpClientConfig;

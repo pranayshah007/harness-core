@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol.principals.serviceaccounts;
 
-import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.common.validation.ValidationResult;
@@ -20,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
@@ -43,18 +41,19 @@ public class ServiceAccountValidator implements PrincipalValidator {
 
   @Override
   public ValidationResult validatePrincipal(Principal principal, String scopeIdentifier) {
-    Scope scope =
-        toParentScope(scopeService.buildScopeFromScopeIdentifier(scopeIdentifier), principal.getPrincipalScopeLevel());
-    String principalScopeIdentifier = scope == null ? scopeIdentifier : scope.toString();
+    Scope scope = scopeService.buildScopeFromScopeIdentifier(scopeIdentifier);
     String identifier = principal.getPrincipalIdentifier();
-    Optional<ServiceAccount> serviceAccountOptional = serviceAccountService.get(identifier, principalScopeIdentifier);
-    if (serviceAccountOptional.isPresent()) {
-      return ValidationResult.builder().valid(true).build();
+    Scope currentScope = scope;
+    while (currentScope != null) {
+      if (serviceAccountService.get(identifier, currentScope.toString()).isPresent()) {
+        return ValidationResult.builder().valid(true).build();
+      }
+      currentScope = currentScope.getParentScope();
     }
     return ValidationResult.builder()
         .valid(false)
         .errorMessage(String.format(
-            "service account not found with the given identifier %s in the scope %s", identifier, scopeIdentifier))
+            "Service Account not found with the given identifier %s in account %s", identifier, scopeIdentifier))
         .build();
   }
 }

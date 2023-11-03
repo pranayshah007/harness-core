@@ -3897,6 +3897,26 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  @Override
+  public String getClaimsFromJWTToken(String jwtToken, JWT_CATEGORY category, String claim) {
+    String jwtPasswordSecret = secretManager.getJWTSecret(category);
+    if (jwtPasswordSecret == null) {
+      throw new InvalidRequestException(INCORRECT_PORTAL_SETUP);
+    }
+    try {
+      Algorithm algorithm = Algorithm.HMAC256(jwtPasswordSecret);
+      JWTVerifier verifier = JWT.require(algorithm).withIssuer(HARNESS_ISSUER).build();
+      verifier.verify(jwtToken);
+      return JWT.decode(jwtToken).getClaim(claim).asString();
+    } catch (UnsupportedEncodingException | JWTCreationException exception) {
+      log.error("JWTToken validation failed", exception);
+      throw new GeneralException("JWTToken validation failed");
+    } catch (JWTDecodeException | SignatureVerificationException exception) {
+      log.error("Invalid JWTToken received, failed to decode the token", exception);
+      throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
+    }
+  }
+
   private boolean isUserAdminOfAnyAccount(User user) {
     return user.getAccounts().stream().anyMatch(account -> {
       List<UserGroup> userGroupList = userGroupService.listByAccountId(account.getUuid(), user, true);

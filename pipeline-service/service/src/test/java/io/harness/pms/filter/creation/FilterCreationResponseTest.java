@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -20,7 +21,6 @@ import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.rule.Owner;
 
 import com.google.protobuf.StringValue;
-import io.fabric8.utils.Lists;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,12 +31,12 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testAddReferredEntities() {
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder().build();
-    List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-        Lists.newArrayList(EntityDetailProtoDTO.newBuilder()
-                               .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                                     .setIdentifier(StringValue.newBuilder().setValue("test").build())
-                                                     .build())
-                               .build());
+    List<EntityDetailProtoDTO> entityDetailProtoDTOS = ListUtils.newArrayList(
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                  .setIdentifier(StringValue.newBuilder().setValue("test").build())
+                                  .build())
+            .build());
     filterCreationResponse.addReferredEntities(entityDetailProtoDTOS);
     assertThat(filterCreationResponse.getReferredEntities()).isEqualTo(entityDetailProtoDTOS);
     filterCreationResponse.addReferredEntities(entityDetailProtoDTOS);
@@ -48,12 +48,12 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testAddStageNames() {
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder().build();
-    List<String> stageNames = Lists.newArrayList("stage1");
+    List<String> stageNames = ListUtils.newArrayList("stage1");
     filterCreationResponse.addStageNames(stageNames);
     assertThat(filterCreationResponse.getStageNames().get(0)).isEqualTo("stage1");
-    filterCreationResponse.addStageNames(Lists.newArrayList("stage2"));
+    filterCreationResponse.addStageNames(ListUtils.newArrayList("stage2"));
     assertThat(filterCreationResponse.getStageNames().size()).isEqualTo(2);
-    assertThat(filterCreationResponse.getStageNames()).isEqualTo(Lists.newArrayList("stage1", "stage2"));
+    assertThat(filterCreationResponse.getStageNames()).isEqualTo(ListUtils.newArrayList("stage1", "stage2"));
   }
 
   @Test
@@ -81,18 +81,18 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testToBlobResponse() {
-    List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-        Lists.newArrayList(EntityDetailProtoDTO.newBuilder()
-                               .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                                     .setIdentifier(StringValue.newBuilder().setValue("test").build())
-                                                     .build())
-                               .build());
+    List<EntityDetailProtoDTO> entityDetailProtoDTOS = ListUtils.newArrayList(
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                  .setIdentifier(StringValue.newBuilder().setValue("test").build())
+                                  .build())
+            .build());
     Dependencies dependencies = Dependencies.newBuilder().setYaml("yaml").putDependencies("a", "b").build();
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder()
                                                         .dependencies(dependencies)
                                                         .resolvedDependencies(dependencies)
                                                         .referredEntities(entityDetailProtoDTOS)
-                                                        .stageNames(Lists.newArrayList("test"))
+                                                        .stageNames(ListUtils.newArrayList("test"))
                                                         .stageCount(1)
                                                         .build();
     FilterCreationBlobResponse response = FilterCreationBlobResponse.newBuilder()

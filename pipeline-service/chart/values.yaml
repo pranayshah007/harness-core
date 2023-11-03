@@ -12,6 +12,8 @@ global:
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
   disableFreezeNotifyTemplate: true
+  ssca: 
+    enabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -227,8 +229,7 @@ mongo:
               property: ""
 
 
-  ssca: 
-    enabled: false
+  
 
 replicaCount: 1
 maxSurge: 1

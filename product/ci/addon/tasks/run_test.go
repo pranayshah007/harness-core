@@ -505,10 +505,10 @@ func TestDetachRunExecuteWithEntrypointSuccess(t *testing.T) {
 	cmd.EXPECT().Start().Return(nil)
 	cmd.EXPECT().Pid().Return(int(1))
 	cmd.EXPECT().ProcessState().Return(pstate)
-	pstate.EXPECT().MaxRss().Return(int64(100), nil)
-	cmd.EXPECT().Wait().Do(func() {
+	cmd.EXPECT().Wait().Return(nil)
+	pstate.EXPECT().MaxRss().Do(func() {
 		wg.Done()
-	}).Return(nil)
+	}).Return(int64(100), nil)
 
 	o, retries, err := r.Run(ctx)
 	assert.Nil(t, err)
@@ -553,10 +553,10 @@ func TestDetachRunExecuteWithEntrypointNonZeroStatus(t *testing.T) {
 	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
 	cmd.EXPECT().Start().Return(nil)
 	cmd.EXPECT().ProcessState().Return(pstate)
-	pstate.EXPECT().MaxRss().Return(int64(100), nil)
-	cmd.EXPECT().Wait().Do(func() {
+	cmd.EXPECT().Wait().Return(&exec.ExitError{})
+	pstate.EXPECT().MaxRss().Do(func() {
 		wg.Done()
-	}).Return(&exec.ExitError{})
+	}).Return(int64(100), nil)
 
 	o, retries, err := r.Run(ctx)
 	assert.Nil(t, err)
@@ -607,10 +607,10 @@ func TestDetachRunExecuteWithCommandSuccess(t *testing.T) {
 	cmd.EXPECT().Start().Return(nil)
 	cmd.EXPECT().Pid().Return(int(1))
 	cmd.EXPECT().ProcessState().Return(pstate)
-	pstate.EXPECT().MaxRss().Return(int64(100), nil)
-	cmd.EXPECT().Wait().Do(func() {
+	cmd.EXPECT().Wait().Return(nil)
+	pstate.EXPECT().MaxRss().Do(func() {
 		wg.Done()
-	}).Return(nil)
+	}).Return(int64(100), nil)
 
 	o, retries, err := r.Run(ctx)
 	assert.Nil(t, err)
@@ -655,10 +655,10 @@ func TestDetachRunExecuteWithCommandNonZeroStatus(t *testing.T) {
 	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
 	cmd.EXPECT().Start().Return(nil)
 	cmd.EXPECT().ProcessState().Return(pstate)
-	pstate.EXPECT().MaxRss().Return(int64(100), nil)
-	cmd.EXPECT().Wait().Do(func() {
+	cmd.EXPECT().Wait().Return(&exec.ExitError{})
+	pstate.EXPECT().MaxRss().Do(func() {
 		wg.Done()
-	}).Return(&exec.ExitError{})
+	}).Return(int64(100), nil)
 
 	o, retries, err := r.Run(ctx)
 	assert.Nil(t, err)
@@ -708,10 +708,10 @@ func TestDetachRunExecuteWithoutEntrypointAndCommandSuccess(t *testing.T) {
 	cmd.EXPECT().WithEnvVarsMap(gomock.Any()).Return(cmd)
 	cmd.EXPECT().Start().Return(nil)
 	cmd.EXPECT().ProcessState().Return(pstate)
-	pstate.EXPECT().MaxRss().Return(int64(100), nil)
-	cmd.EXPECT().Wait().Do(func() {
+	cmd.EXPECT().Wait().Return(nil)
+	pstate.EXPECT().MaxRss().Do(func() {
 		wg.Done()
-	}).Return(nil)
+	}).Return(int64(100), nil)
 
 	o, retries, err := r.Run(ctx)
 	assert.Nil(t, err)

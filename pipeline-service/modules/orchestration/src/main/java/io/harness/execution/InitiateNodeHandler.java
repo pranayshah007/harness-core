@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.pms.events.base.PmsBaseEventHandler;
 import io.harness.utils.PmsFeatureFlagService;
@@ -50,7 +51,11 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
 
   @Override
   protected void handleEventWithContext(InitiateNodeEvent event) {
-    engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
-        event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
+    if (event.getInitiateMode() == InitiateMode.START) {
+      engine.startNodeExecution(event.getAmbiance());
+    } else {
+      engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
+          event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
+    }
   }
 }

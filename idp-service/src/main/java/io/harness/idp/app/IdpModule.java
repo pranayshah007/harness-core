@@ -114,6 +114,9 @@ import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
 import io.harness.idp.proxy.services.ProxyApi;
 import io.harness.idp.proxy.services.ProxyApiImpl;
+import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
+import io.harness.idp.scorecard.checks.service.CheckService;
+import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datapoints.service.DataPointServiceImpl;
 import io.harness.idp.scorecard.datapointsdata.resource.HarnessDataPointsApiImpl;
@@ -127,12 +130,9 @@ import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationSe
 import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
 import io.harness.idp.scorecard.datasources.service.DataSourceService;
 import io.harness.idp.scorecard.datasources.service.DataSourceServiceImpl;
-import io.harness.idp.scorecard.scorecardchecks.resources.ChecksApiImpl;
-import io.harness.idp.scorecard.scorecardchecks.resources.ScorecardsApiImpl;
-import io.harness.idp.scorecard.scorecardchecks.service.CheckService;
-import io.harness.idp.scorecard.scorecardchecks.service.CheckServiceImpl;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardServiceImpl;
+import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
 import io.harness.idp.scorecard.scores.service.ScoreComputerService;
 import io.harness.idp.scorecard.scores.service.ScoreComputerServiceImpl;
@@ -198,6 +198,8 @@ import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
 import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
@@ -224,6 +226,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -468,6 +471,19 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("licenseUsageDailyCountJob"))
         .toInstance(new ManagedScheduledExecutorService("licenseUsageDailyCountJob"));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return appConfig.getSegmentConfiguration();
+      }
+    });
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("idpTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("idp-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
   }
 
   private void registerOutboxEventHandlers() {

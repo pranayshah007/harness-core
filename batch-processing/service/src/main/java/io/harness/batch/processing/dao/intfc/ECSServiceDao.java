@@ -15,4 +15,6 @@ import java.util.Map;
 public interface ECSServiceDao {
   void create(ECSService ecsService);
   Map<String, ECSService> fetchServices(String accountId, List<String> serviceArns);
+  long count(String accountId);
+  boolean deleteAllForAccount(String accountId);
 }

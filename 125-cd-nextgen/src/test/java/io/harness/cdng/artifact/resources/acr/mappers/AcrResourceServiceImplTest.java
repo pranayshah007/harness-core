@@ -30,6 +30,7 @@ import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
@@ -45,7 +46,6 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Rule;
@@ -111,7 +111,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
-    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
 
@@ -249,7 +249,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
             .build();
 
     when(azureHelperService.getEncryptionDetails(azureArtifactsConnectorDTO, baseNGAccess))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
     when(azureHelperService.executeSyncTask(any(), eq(baseNGAccess), eq(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD),
              eq("ACR Artifact Get Last Successful Build task failure due to error")))
         .thenReturn(ArtifactTaskResponse.builder()
@@ -288,7 +288,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
-    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     AzureRepositoriesResponse acrArtifactDelegateResponse =
         AzureRepositoriesResponse.builder().repositories(Collections.singletonList("first")).build();
@@ -328,7 +328,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
-    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     AzureRegistriesResponse acrArtifactDelegateResponse =
         AzureRegistriesResponse.builder().containerRegistries(Collections.singletonList("first")).build();

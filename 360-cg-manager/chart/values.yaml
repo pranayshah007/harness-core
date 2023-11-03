@@ -127,6 +127,7 @@ global:
         - secretName: ""
           keys:
             CG_LICENSE: ""
+            NG_LICENSE: ""
       secretManagement: 
         externalSecretsOperator:
           - secretStore:
@@ -134,6 +135,9 @@ global:
               kind: ""
             remoteKeys:
               CG_LICENSE:
+                name: ""
+                property: ""
+              NG_LICENSE:
                 name: ""
                 property: ""
   cd:
@@ -474,7 +478,7 @@ featureFlags:
   # -- CHAOS Feature Flags
   CHAOS: "CHAOS_ENABLED"
   # -- CET Feature Flags
-  CET: "CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
+  CET: "SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
   # -- Additional Feature Flag
   ADDITIONAL: ""
 

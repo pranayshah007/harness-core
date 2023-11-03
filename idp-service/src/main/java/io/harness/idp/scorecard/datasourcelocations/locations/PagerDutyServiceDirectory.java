@@ -29,13 +29,15 @@ import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +50,7 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
   private static final String ERROR_MESSAGE_FOR_INVALID_SERVICE_ID = "PagerDuty service id provided is invalid";
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      DataSourceLocationEntity dataSourceLocationEntity, List<DataFetchDTO> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
       throws NoSuchAlgorithmException, KeyManagementException {
@@ -57,11 +59,11 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
 
     String apiUrl = apiRequestDetails.getUrl();
 
-    Map<String, Object> inputValueData = new HashMap<>();
+    Map<String, Object> data = new HashMap<>();
 
     if (replaceableHeaders.get(AUTHORIZATION_HEADER) == null) {
-      inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_NOT_ENABLED_ERROR_MESSAGE);
-      return inputValueData;
+      data.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_NOT_ENABLED_ERROR_MESSAGE);
+      return data;
     }
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
@@ -70,8 +72,8 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
 
     String serviceId = possibleReplaceableUrlPairs.get(PAGERDUTY_SERVICE_ID);
     if (serviceId == null) {
-      inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_ANNOTATION_MISSING_ERROR);
-      return inputValueData;
+      data.put(ERROR_MESSAGE_KEY, PAGERDUTY_ANNOTATION_MISSING_ERROR);
+      return data;
     }
 
     apiUrl = constructUrl(httpConfig.getTarget(), apiUrl, possibleReplaceableUrlPairs);
@@ -82,22 +84,23 @@ public class PagerDutyServiceDirectory implements DataSourceLocation {
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
 
     if (response.getStatus() == 200) {
-      inputValueData.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
+      data.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
     } else if (response.getStatus() == 404) {
-      inputValueData.put(ERROR_MESSAGE_KEY, ERROR_MESSAGE_FOR_INVALID_SERVICE_ID);
+      data.put(ERROR_MESSAGE_KEY, ERROR_MESSAGE_FOR_INVALID_SERVICE_ID);
     } else if (response.getStatus() == 401) {
-      inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_INVALID_TOKEN_ERROR_MESSAGE);
+      data.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_INVALID_TOKEN_ERROR_MESSAGE);
     } else if (response.getStatus() == 500) {
-      inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_INVALID_URL_ERROR_MESSAGE);
+      data.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_INVALID_URL_ERROR_MESSAGE);
     } else {
-      inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE);
+      data.put(ERROR_MESSAGE_KEY, PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE);
     }
 
-    return inputValueData;
+    return data;
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(
+      String requestBody, DataPointEntity dataPoint, List<InputValue> inputValues) {
     return null;
   }
 }

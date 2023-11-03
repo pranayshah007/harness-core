@@ -792,7 +792,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     List<TriggerEventHistory> triggerEventHistoryList =
         triggerEventHistoryRepository.findByAccountIdAndEventCorrelationId(accountId, eventId);
     if (triggerEventHistoryList.size() == 0) {
-      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+      throw new InvalidRequestException(
+          String.format("Trigger event history doesn't exist for event with eventId %s", eventId));
     }
     TriggerEventHistory triggerEventHistory = triggerEventHistoryList.get(0);
     String warningMsg = null;

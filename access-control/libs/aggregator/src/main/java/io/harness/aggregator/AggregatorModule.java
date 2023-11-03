@@ -22,8 +22,10 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlChangeConsumer;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
+import io.harness.aggregator.consumers.ResourceGroupChangeConsumer;
 import io.harness.aggregator.consumers.RoleChangeConsumer;
 import io.harness.aggregator.consumers.UserGroupChangeConsumer;
+import io.harness.aggregator.models.ResourceGroupChangeEventData;
 import io.harness.aggregator.models.RoleChangeEventData;
 import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
@@ -74,6 +76,8 @@ public class AggregatorModule extends AbstractModule {
     bind(AggregatorMetricsService.class).to(AggregatorMetricsServiceImpl.class);
     bind(new TypeLiteral<AccessControlChangeConsumer<UserGroupUpdateEventData>>() {}).to(UserGroupChangeConsumer.class);
     bind(new TypeLiteral<AccessControlChangeConsumer<RoleChangeEventData>>() {}).to(RoleChangeConsumer.class);
+    bind(new TypeLiteral<AccessControlChangeConsumer<ResourceGroupChangeEventData>>() {
+    }).to(ResourceGroupChangeConsumer.class);
     registerRequiredBindings();
     bind(ACLGeneratorService.class).toProvider(ACLGeneratorServiceFactory.class).in(Scopes.SINGLETON);
     bind(ACLGeneratorService.class)

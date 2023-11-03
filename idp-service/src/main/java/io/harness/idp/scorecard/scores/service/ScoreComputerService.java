@@ -8,7 +8,7 @@
 package io.harness.idp.scorecard.scores.service;
 
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
+import io.harness.idp.scorecard.scores.beans.ScorecardAndChecks;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 
 import java.util.List;

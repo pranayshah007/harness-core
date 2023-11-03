@@ -23,6 +23,7 @@ import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
@@ -30,7 +31,6 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -179,7 +179,7 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
     DockerInternalConfig dockerInternalConfig =
         DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(ListUtils.newArrayList(buildDetailsInternal))
         .when(dockerRegistryService)
         .getBuilds(dockerInternalConfig, "imagePath", MAX_NO_OF_TAGS_PER_IMAGE, "tagRegex");
     DockerArtifactDelegateRequest sourceAttributes =
@@ -214,13 +214,13 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
     DockerInternalConfig dockerInternalConfig =
         DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
-    doReturn(Lists.newArrayList(new HashMap()))
+    doReturn(ListUtils.newArrayList(new HashMap()))
         .when(dockerRegistryService)
-        .getLabels(dockerInternalConfig, "imagePath", Lists.newArrayList("tag1"));
+        .getLabels(dockerInternalConfig, "imagePath", ListUtils.newArrayList("tag1"));
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
-            .tagsList(Lists.newArrayList("tag1"))
+            .tagsList(ListUtils.newArrayList("tag1"))
             .dockerConnectorDTO(DockerConnectorDTO.builder()
                                     .dockerRegistryUrl("URL")
                                     .auth(DockerAuthenticationDTO.builder()
@@ -252,7 +252,7 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
-            .tagsList(Lists.newArrayList("tag1"))
+            .tagsList(ListUtils.newArrayList("tag1"))
             .dockerConnectorDTO(DockerConnectorDTO.builder()
                                     .dockerRegistryUrl("URL")
                                     .auth(DockerAuthenticationDTO.builder()
@@ -279,7 +279,7 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
-            .tagsList(Lists.newArrayList("tag1"))
+            .tagsList(ListUtils.newArrayList("tag1"))
             .dockerConnectorDTO(DockerConnectorDTO.builder()
                                     .dockerRegistryUrl("URL")
                                     .auth(DockerAuthenticationDTO.builder()

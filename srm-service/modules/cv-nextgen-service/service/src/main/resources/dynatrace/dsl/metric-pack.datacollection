@@ -8,7 +8,9 @@ foreach metricToValidate in Env:metricsToValidate {
   Var:params.put("from", Env:startTimeMillis)
   Var:params.put("to", Env:endTimeMillis)
   Var:params.put("resolution", Env:resolution)
-  Var:params.put("entitySelector", Env:entitySelector)
+  if Env:entitySelector != Var:nullObject {
+     Var:params.put("entitySelector", Env:entitySelector)
+  }
   Var query = extract(Var:metricToValidate, $.querySelector)
   Var:params.put("metricSelector", Var:query)
   Var metricName = extract(Var:metricToValidate, $.metricName)

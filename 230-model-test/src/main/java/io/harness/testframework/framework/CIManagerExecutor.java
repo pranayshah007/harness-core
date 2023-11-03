@@ -18,12 +18,12 @@ import static io.restassured.config.HttpClientConfig.httpClientConfig;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.filesystem.FileIo;
 import io.harness.project.Alpn;
 import io.harness.resource.Project;
 import io.harness.threading.Poller;
 
-import io.fabric8.utils.Strings;
 import io.restassured.RestAssured;
 import io.restassured.config.RestAssuredConfig;
 import java.io.File;
@@ -107,7 +107,7 @@ public class CIManagerExecutor {
     command.add(verb);
     addConfig(config, command);
 
-    log.info(Strings.join(command, " "));
+    log.info(HarnessStringUtils.join(" ", command));
 
     ProcessExecutor processExecutor = new ProcessExecutor();
     processExecutor.directory(directory);

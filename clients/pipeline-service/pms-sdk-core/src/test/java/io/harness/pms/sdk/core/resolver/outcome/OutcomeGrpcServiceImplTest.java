@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.service.OutcomeConsumeBlobRequest;
@@ -34,7 +35,6 @@ import io.harness.pms.sdk.core.data.StringOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -78,7 +78,7 @@ public class OutcomeGrpcServiceImplTest extends PmsSdkCoreTestBase {
     when(outcomeProtoServiceBlockingStub.fetchOutcomes(
              OutcomeFetchOutcomesBlobRequest.newBuilder().addOutcomeInstanceIds(RUNTIME_ID).build()))
         .thenReturn(OutcomeFetchOutcomesBlobResponse.newBuilder().build());
-    assertThat(outcomeGrpcService.fetchOutcomes(Lists.newArrayList(RUNTIME_ID)).size()).isEqualTo(0);
+    assertThat(outcomeGrpcService.fetchOutcomes(ListUtils.newArrayList(RUNTIME_ID)).size()).isEqualTo(0);
     Mockito.verify(outcomeProtoServiceBlockingStub)
         .fetchOutcomes(OutcomeFetchOutcomesBlobRequest.newBuilder().addOutcomeInstanceIds(RUNTIME_ID).build());
   }

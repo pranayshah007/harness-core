@@ -1,0 +1,27 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: test-hpa-1
+spec:
+  irregularField: some-value
+  scaleTargetRef:
+    irregularField: some-value
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: web
+    subresource: scale
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: test-pdb-1
+spec:
+  irregularField: some-value
+  minAvailable: 1
+  selector:
+    irregularField: some-value
+    matchLabels:
+      app: test-deployment-config

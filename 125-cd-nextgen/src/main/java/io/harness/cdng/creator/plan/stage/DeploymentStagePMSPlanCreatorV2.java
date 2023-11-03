@@ -292,7 +292,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
           stageNode.getIdentifier(), planCreationResponseMap, metadataMap,
-          StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), false);
+          StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), false, false);
 
       return planCreationResponseMap;
     } catch (IOException e) {
@@ -316,7 +316,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
         stageNode.getIdentifier(), planCreationResponseMap, new HashMap<>(),
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), false);
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), false, false);
 
     return planCreationResponseMap;
   }

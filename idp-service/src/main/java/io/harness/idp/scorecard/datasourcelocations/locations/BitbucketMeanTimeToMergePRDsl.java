@@ -14,6 +14,7 @@ import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.Inputs.BRANCH_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.WORKSPACE;
@@ -30,14 +31,16 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
+import io.harness.spec.server.idp.v1.model.InputValue;
 
 import com.google.inject.Inject;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 
@@ -49,7 +52,7 @@ public class BitbucketMeanTimeToMergePRDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
-      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      DataSourceLocationEntity dataSourceLocationEntity, List<DataFetchDTO> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs, DataSourceConfig dataSourceConfig)
       throws NoSuchAlgorithmException, KeyManagementException {
@@ -58,59 +61,54 @@ public class BitbucketMeanTimeToMergePRDsl implements DataSourceLocation {
     HttpConfig httpConfig = (HttpConfig) dataSourceConfig;
     apiRequestDetails.getHeaders().putAll(httpConfig.getHeaders());
     Map<String, Object> data = new HashMap<>();
-
-    Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
-        dataPointsAndInputValues.entrySet()
-            .stream()
-            .filter(entry -> entry.getKey().getIdentifier().equals(PULL_REQUEST_MEAN_TIME_TO_MERGE))
-            .findFirst();
-
-    if (dataPointAndInputValuesOpt.isEmpty()) {
-      return data;
-    }
-
-    DataPointEntity dataPoint = dataPointAndInputValuesOpt.get().getKey();
-    Set<String> inputValues = dataPointAndInputValuesOpt.get().getValue();
     String tempUrl = apiRequestDetails.getUrl(); // using temp variable to store unchanged url
 
-    for (String inputValue : inputValues) {
+    for (DataFetchDTO dataFetchDTO : dataPointsAndInputValues) {
+      DataPointEntity dataPoint = dataFetchDTO.getDataPoint();
+      List<InputValue> inputValues = dataFetchDTO.getInputValues();
+
       if (isEmpty(possibleReplaceableUrlPairs.get(REPO_SCM)) || isEmpty(possibleReplaceableUrlPairs.get(WORKSPACE))
           || isEmpty(possibleReplaceableUrlPairs.get(REPOSITORY_NAME))) {
-        data.put(inputValue, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        data.put(dataFetchDTO.getRuleIdentifier(), Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
         continue;
       }
-      Map<DataPointEntity, String> dataPointAndInputValueToFetch = Map.of(dataPoint, inputValue);
-      String url =
-          constructUrl(httpConfig.getTarget(), tempUrl, possibleReplaceableUrlPairs, dataPointAndInputValueToFetch);
+      String url = constructUrl(httpConfig.getTarget(), tempUrl, possibleReplaceableUrlPairs, dataPoint, inputValues);
       apiRequestDetails.setUrl(url);
       DslClient dslClient =
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
       Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-      Map<String, Object> inputValueData = new HashMap<>();
+      Map<String, Object> ruleData = new HashMap<>();
       if (response.getStatus() == 200) {
-        inputValueData.put(
-            DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
+        ruleData.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
       } else if (response.getStatus() == 500) {
-        inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
+        ruleData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
       } else {
-        inputValueData.put(ERROR_MESSAGE_KEY,
+        ruleData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
-      data.put(inputValue, inputValueData);
+      data.put(dataFetchDTO.getRuleIdentifier(), ruleData);
     }
+
     return data;
   }
 
   @Override
-  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String url) {
-    if (!isEmpty(dataPointIdsAndInputValue.get(PULL_REQUEST_MEAN_TIME_TO_MERGE))) {
-      String inputValue = dataPointIdsAndInputValue.get(PULL_REQUEST_MEAN_TIME_TO_MERGE);
-      if (!inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
-        url = url.replace(DESTINATION_BRANCH_NAME_REPLACER,
-            " AND destination.branch.name="
-                + "\"" + inputValue + "\"");
-      } else {
-        url = url.replace(DESTINATION_BRANCH_NAME_REPLACER, "");
+  public String replaceInputValuePlaceholdersIfAny(
+      String url, DataPointEntity dataPoint, List<InputValue> inputValues) {
+    if (dataPoint.getIdentifier().equals(PULL_REQUEST_MEAN_TIME_TO_MERGE)) {
+      Optional<InputValue> inputValueOpt =
+          inputValues.stream().filter(inputValue -> inputValue.getKey().equals(BRANCH_NAME)).findFirst();
+      if (inputValueOpt.isPresent()) {
+        String inputValue = inputValueOpt.get().getValue();
+        if (!inputValue.isEmpty()) {
+          if (!inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
+            url = url.replace(DESTINATION_BRANCH_NAME_REPLACER,
+                " AND destination.branch.name="
+                    + "\"" + inputValue + "\"");
+          } else {
+            url = url.replace(DESTINATION_BRANCH_NAME_REPLACER, "");
+          }
+        }
       }
     }
     return url;

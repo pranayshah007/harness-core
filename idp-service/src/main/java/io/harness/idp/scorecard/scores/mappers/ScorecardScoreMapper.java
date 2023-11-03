@@ -8,7 +8,7 @@ package io.harness.idp.scorecard.scores.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scores.entity.ScoreEntity;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 
 import lombok.experimental.UtilityClass;

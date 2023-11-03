@@ -6,6 +6,9 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
+import static io.harness.cvng.CVConstants.MAX_NUMBER_OF_SLOS;
+import static io.harness.cvng.CVConstants.MIN_NUMBER_OF_SLOS;
+
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -33,7 +36,8 @@ public class CompositeServiceLevelObjective extends AbstractServiceLevelObjectiv
   }
   private int version;
 
-  @Size(min = 2, max = 30, message = "A minimum of 2 simple SLOs and a maximum of 30 simple SLOs can be referenced.")
+  @Size(min = MIN_NUMBER_OF_SLOS, max = MAX_NUMBER_OF_SLOS,
+      message = "A minimum of 2 simple SLOs and a maximum of 30 simple SLOs can be referenced.")
   List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails;
 
   private CompositeSLOFormulaType compositeSLOFormulaType;

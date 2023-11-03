@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -20,7 +21,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
     for (int i = 0; i < parallelism; i++) {
       JsonNode clonedJsonNode =
           StrategyUtils.replaceExpressions(JsonPipelineUtils.asTree(jsonNode), new HashMap<>(), i, parallelism, null);
-      StrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
+      StrategyUtils.modifyJsonNode(clonedJsonNode, ListUtils.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(jsonNodes.size()).build();

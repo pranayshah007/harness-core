@@ -1285,6 +1285,7 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOut
 io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata
 io.harness.cdng.pipeline.beans.CustomStageSpecParams
 io.harness.cdng.creator.plan.stage.CustomStageNode
 io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum
@@ -1308,3 +1309,4 @@ io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
 io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
 io.harness.cdng.manifest.yaml.ManifestSourceWrapper
 io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1
+io.harness.cdng.manifest.yaml.ArtifactBundleStore

@@ -329,4 +329,14 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .useReadPreference(ReadPreference.secondaryPreferred());
     return query.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(InstanceData.class).field(InstanceDataKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<InstanceData> query =
+        hPersistence.createQuery(InstanceData.class).field(InstanceDataKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

@@ -30,4 +30,8 @@ public interface BillingDataPipelineRecordDao {
   BillingDataPipelineRecord upsert(BillingDataPipelineRecord billingDataPipelineRecord);
 
   boolean removeBillingDataPipelineRecord(String accountId, String settingId);
+
+  long count(String accountId);
+
+  boolean deleteAllForAccount(String accountId);
 }

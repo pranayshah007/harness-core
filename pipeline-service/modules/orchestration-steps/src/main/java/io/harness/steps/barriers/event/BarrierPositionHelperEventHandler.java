@@ -90,7 +90,10 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
     String stageRuntimeId = AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
     String stepGroupRuntimeId =
-        AmbianceUtils.getStepGroupLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
+        AmbianceUtils.getNearestStepGroupLevelWithStrategyFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
+    if (stepGroupRuntimeId == null) {
+      stepGroupRuntimeId = AmbianceUtils.getStepGroupLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
+    }
     try (AcquiredLock<?> ignore = persistentLocker.waitToAcquireLock(
              BARRIER_UPDATE_LOCK + planExecutionId, Duration.ofSeconds(20), Duration.ofSeconds(60))) {
       return barrierService.updatePosition(

@@ -19,6 +19,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.filesystem.FileIo;
 import io.harness.resource.Project;
@@ -32,7 +33,6 @@ import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -106,7 +106,7 @@ public class DelegateExecutor {
         addJar(jar, command);
         addConfig(config, command);
 
-        log.info(Strings.join(command, " "));
+        log.info(HarnessStringUtils.join(" ", command));
 
         ProcessExecutor processExecutor = new ProcessExecutor();
         processExecutor.directory(directory);

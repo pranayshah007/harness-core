@@ -35,4 +35,20 @@ public class DataGeneratedNotificationDaoImpl implements DataGeneratedNotificati
                                                  .filter(DataGeneratedNotificationKeys.mailSent, true);
     return query.get() != null;
   }
+
+  @Override
+  public long count(String accountId) {
+    return hPersistence.createQuery(DataGeneratedNotification.class)
+        .field(DataGeneratedNotificationKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  @Override
+  public boolean deleteAllForAccount(String accountId) {
+    Query<DataGeneratedNotification> query = hPersistence.createQuery(DataGeneratedNotification.class)
+                                                 .field(DataGeneratedNotificationKeys.accountId)
+                                                 .equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

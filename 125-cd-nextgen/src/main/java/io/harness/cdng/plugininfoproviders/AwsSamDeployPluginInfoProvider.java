@@ -8,7 +8,10 @@
 package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -34,6 +37,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -53,6 +57,7 @@ import io.harness.steps.container.execution.plugin.StepImageConfig;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
@@ -61,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jooq.tools.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -85,7 +91,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
       cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
-          String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
+          format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
@@ -107,7 +113,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(ambiance, awsSamDeployStepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(
+        validateEnvVariables(getEnvironmentVariables(ambiance, awsSamDeployStepInfo)));
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
@@ -116,6 +123,24 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
                                       .setUuid(cdAbstractStepNode.getUuid())
                                       .build();
     return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
+  }
+  @VisibleForTesting
+  Map<String, String> validateEnvVariables(Map<String, String> environmentVariables) {
+    if (isEmpty(environmentVariables)) {
+      return environmentVariables;
+    }
+
+    List<String> envVarsWithNullValue = environmentVariables.entrySet()
+                                            .stream()
+                                            .filter(entry -> entry.getValue() == null)
+                                            .map(Map.Entry::getKey)
+                                            .collect(Collectors.toList());
+    if (isNotEmpty(envVarsWithNullValue)) {
+      throw new InvalidArgumentsException(format("Not found value for environment variable%s: %s",
+          envVarsWithNullValue.size() == 1 ? "" : "s", String.join(",", envVarsWithNullValue)));
+    }
+
+    return environmentVariables;
   }
 
   @Override

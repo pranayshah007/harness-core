@@ -8,6 +8,7 @@
 package io.harness.ccm.commons.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,7 +23,6 @@ import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,7 +64,7 @@ public class ModuleLicenseHelper {
   public boolean isFreeEditionModuleLicense(@NonNull final String accountId) {
     boolean isFreeEditionModuleLicense = false;
     final AccountLicenseDTO accountLicenseDTO = getAccountLicensesDTO(accountId);
-    if (Objects.nonNull(accountLicenseDTO) && !Maps.isNullOrEmpty(accountLicenseDTO.getAllModuleLicenses())) {
+    if (Objects.nonNull(accountLicenseDTO) && isNotEmpty(accountLicenseDTO.getAllModuleLicenses())) {
       for (final Map.Entry<ModuleType, List<ModuleLicenseDTO>> entry :
           accountLicenseDTO.getAllModuleLicenses().entrySet()) {
         if (ModuleType.CE == entry.getKey() && Objects.nonNull(entry.getValue())) {

@@ -1,7 +1,7 @@
 {
   "OPENID_CONFIGURATION" : {
-    "issuer": "https://token.oidc.harness.io/account/{account_id}",
-    "jwks_uri": "https://token.oidc.harness.io/account/{account_id}/.well-known/jwks",
+    "issuer": "https://oidc.harness.io",
+    "jwks_uri": "https://oidc.harness.io/.wellknown/jwks",
     "subject_types_supported":["public","pairwise"],
     "response_types_supported":["id_token"],
     "claims_supported":
@@ -18,9 +18,9 @@
       "kid": "GENERATE_AT_RUNTIME"
     },
     "payload": {
-      "sub": "Provider:Harness:Account:{account_id}",
+      "sub": "{account_id}",
       "aud": "https://iam.googleapis.com/projects/{gcp_project_id}/locations/global/workloadIdentityPools/{workload_pool_id}/providers/{provider_id}",
-      "iss": "https://token.oidc.harness.io/account/{account_id}",
+      "iss": "https://oidc.harness.io",
       "exp": 3600,
       "iat": 0,
       "account_id": "{account_id}"

@@ -17,6 +17,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -30,7 +31,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -60,7 +60,7 @@ public class EngineObtainmentHelperTest extends PmsSdkCoreTestBase {
                            .setName("output")
                            .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
                            .build();
-    List<RefObject> refObjects = Lists.newArrayList(outcome, output);
+    List<RefObject> refObjects = ListUtils.newArrayList(outcome, output);
     Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
     TestStepTransput testStepTransput = TestStepTransput.builder().build();
     when(outcomeService.resolve(ambiance, outcome)).thenReturn(testStepTransput);

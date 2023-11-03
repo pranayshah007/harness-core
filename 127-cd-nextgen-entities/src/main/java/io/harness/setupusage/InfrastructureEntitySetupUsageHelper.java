@@ -34,6 +34,7 @@ import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
@@ -131,8 +132,9 @@ public class InfrastructureEntitySetupUsageHelper {
     setupUsageHelper.publishInfraEntitySetupUsage(entityDetail, referredEntities, entity.getAccountId());
   }
 
-  private EntityDetailProtoDTO buildInfraDefRefBasedEntityDetailProtoDTO(@NonNull InfrastructureEntity entity) {
-    Optional<Environment> environment = environmentService.get(entity.getAccountId(), entity.getOrgIdentifier(),
+  @VisibleForTesting
+  EntityDetailProtoDTO buildInfraDefRefBasedEntityDetailProtoDTO(@NonNull InfrastructureEntity entity) {
+    Optional<Environment> environment = environmentService.getMetadata(entity.getAccountId(), entity.getOrgIdentifier(),
         entity.getProjectIdentifier(), entity.getEnvIdentifier(), false);
     return EntityDetailProtoDTO.newBuilder()
         .setInfraDefRef(createInfraDefinitionReferenceProtoDTO(entity.getAccountId(), entity.getOrgIdentifier(),

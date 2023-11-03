@@ -20,6 +20,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -37,6 +38,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +67,32 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
   }
 
   @Override
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T config) {
+    PlanCreationResponse finalResponse = PlanCreationResponse.builder().build();
+    String startingNodeId = getStartingNodeId(config);
+    if (EmptyPredicate.isNotEmpty(startingNodeId)) {
+      finalResponse.setStartingNodeId(startingNodeId);
+    }
+
+    LinkedHashMap<String, PlanCreationResponse> childrenResponses = createPlanForChildrenNodes(ctx, config);
+    List<String> childrenNodeIds = new LinkedList<>();
+    for (Map.Entry<String, PlanCreationResponse> entry : childrenResponses.entrySet()) {
+      finalResponse.merge(entry.getValue());
+      childrenNodeIds.add(entry.getKey());
+    }
+
+    PlanNode stageNode = createPlanForParentNode(ctx, config, childrenNodeIds);
+    stageNode =
+        stageNode.toBuilder()
+            .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, stageNode.getAdviserObtainments())
+            .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, stageNode.getAdviserObtainments())
+            .build();
+    finalResponse.addNode(stageNode);
+    finalResponse.setGraphLayoutResponse(getLayoutNodeInfo(ctx, config));
+    return finalResponse;
+  }
+
+  @Override
   public abstract PlanNode createPlanForParentNode(PlanCreationContext ctx, T stageNode, List<String> childrenNodeIds);
 
   /**
@@ -88,7 +116,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 
   public PlanNodeBuilder setStageTimeoutObtainment(
@@ -122,6 +150,6 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getName(),
         field.getIdentifier(), planCreationResponseMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 }

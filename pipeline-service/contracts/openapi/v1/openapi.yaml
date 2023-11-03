@@ -248,6 +248,21 @@ paths:
                     {}
       x-stoplight:
         id: p672d7lofj32z
+    patch:
+      summary: Patch API for pipeline
+      operationId: patch-pipeline
+      responses:
+        '200':
+          $ref: '#/components/responses/PipelineCreateResponseBody'
+      description: Patch API for pipeline
+      tags:
+        - Pipelines
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/PipelinePatchRequestBody'
   '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/validate':
     parameters:
       - name: org
@@ -2724,17 +2739,6 @@ components:
           type: string
           x-stoplight:
             id: 6g2l9bcr1d5rt
-        entity_type:
-          x-stoplight:
-            id: umvcas8rv6rtu
-          enum:
-            - STAGE
-            - STEP
-            - STEP_GROUP
-        stage_type:
-          type: string
-          x-stoplight:
-            id: min1rai4qchv4
     RuntimeInputDependencyDetailsDTO:
       title: RuntimeInputDependencyDetailsDTO
       x-stoplight:
@@ -2809,6 +2813,138 @@ components:
           type: string
           x-stoplight:
             id: 4dwjdszswtxm4
+    PipelinePatchRequestBody:
+      title: PipelinePatchRequestBody
+      x-stoplight:
+        id: d9ahmqa5z2buq
+      type: object
+      x-examples:
+        Example 1:
+          pipeline_yaml: |
+            pipeline:
+              identifier: example_pipeline
+              name: ExamplePipeline
+              allowStageExecutions: false
+              stages:
+                - stage:
+                    name: Example Build Stage
+                    identifier: example_build_stage
+                    description: ''
+                    type: Approval
+                    spec:
+                      execution:
+                        steps:
+                          - step:
+                              name: Approval Step
+                              identifier: Approval_Step
+                              type: HarnessApproval
+                              timeout: 1d
+                              spec:
+                                approvalMessage: |-
+                                  Please review the following information
+                                  and approve the pipeline progression
+                                includePipelineExecutionHistory: true
+                                approvers:
+                                  minimumCount: 1
+                                  disallowPipelineExecutor: false
+                                  userGroups: <+input>
+                                approverInputs: []
+                          - step:
+                              type: ShellScript
+                              name: ShellScript Step
+                              identifier: ShellScript_Step
+                              spec:
+                                shell: Bash
+                                onDelegate: true
+                                source:
+                                  type: Inline
+                                  spec:
+                                    script: <+input>
+                                environmentVariables: []
+                                outputVariables: []
+                                executionTarget: {}
+                              timeout: 10m
+                    tags: {}
+                - stage:
+                    name: Example Deploy Stage
+                    identifier: example_deploy_stage
+                    description: ''
+                    type: Deployment
+                    spec:
+                      serviceConfig:
+                        serviceRef: <+input>
+                        serviceDefinition:
+                          spec:
+                            variables: []
+                          type: Kubernetes
+                      infrastructure:
+                        environmentRef: <+input>
+                        infrastructureDefinition:
+                          type: KubernetesDirect
+                          spec:
+                            connectorRef: <+input>
+                            namespace: <+input>
+                            releaseName: release-<+INFRA_KEY>
+                        allowSimultaneousDeployments: false
+                      execution:
+                        steps:
+                          - step:
+                              name: Rollout Deployment
+                              identifier: rolloutDeployment
+                              type: K8sRollingDeploy
+                              timeout: 10m
+                              spec:
+                                skipDryRun: false
+                        rollbackSteps:
+                          - step:
+                              name: Rollback Rollout Deployment
+                              identifier: rollbackRolloutDeployment
+                              type: K8sRollingRollback
+                              timeout: 10m
+                              spec: {}
+                    tags: {}
+                    failureStrategies:
+                      - onFailure:
+                          errors:
+                            - AllErrors
+                          action:
+                            type: StageRollback
+          name: ExamplePipeline
+          desc: Pipeline Description
+          tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
+          git_details:
+            branch_name: branch
+            commit_message: Added Harness Git Experience
+            last_object_id: abcdXYZ
+            base_branch: old_branch
+            last_commit_id: abcdXYZ
+            connector_ref: git_connector
+            store_type: REMOTE
+            repo_name: example_repository
+      description: Pipeline Patch Request body (All the non empty values in this request body will be updated).
+      properties:
+        pipeline_yaml:
+          type: string
+          description: Pipeline YAML (to be passed as a String).
+        name:
+          type: string
+          description: Pipeline Name.
+        desc:
+          type: string
+          description: Pipeline Description.
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Pipeline Tags.
+        git_details:
+          $ref: '#/components/schemas/GitUpdateDetails'
+        version:
+          type: string
+          description: 'Version of pipeline yaml, should be one of "0" or "1"'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -4159,3 +4295,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PipelineInputsSchemaRequestBody'
+    PipelinePatchRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelinePatchRequestBody'

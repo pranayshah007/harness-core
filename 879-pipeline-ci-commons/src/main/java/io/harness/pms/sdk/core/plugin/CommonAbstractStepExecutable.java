@@ -97,7 +97,6 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -143,7 +142,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     String completeStepIdentifier = getCompleteStepIdentifier(ambiance, stepIdentifier);
-    if (Strings.isNotBlank(stepGroupIdentifier)) {
+    if (isNotEmpty(stepGroupIdentifier)) {
       stepIdentifier = stepGroupIdentifier + UNDERSCORE_SEPARATOR + stepIdentifier;
     }
     String accountId = AmbianceUtils.getAccountId(ambiance);

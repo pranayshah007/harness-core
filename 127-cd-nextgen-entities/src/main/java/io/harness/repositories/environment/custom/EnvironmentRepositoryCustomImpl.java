@@ -257,11 +257,11 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
       return Optional.of(savedEntity);
     }
 
-    return Optional.of(getRemoteEntityWithYaml(savedEntity, loadFromCache, loadFromFallbackBranch));
+    return Optional.of(getRemoteEnvironmentWithYaml(savedEntity, loadFromCache, loadFromFallbackBranch));
   }
 
   @Override
-  public Environment getRemoteEntityWithYaml(
+  public Environment getRemoteEnvironmentWithYaml(
       @NonNull Environment environment, boolean loadFromCache, boolean loadFromFallbackBranch) {
     try {
       String branchName = gitAwareEntityHelper.getWorkingBranch(environment.getRepo());

@@ -24,12 +24,12 @@ import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.data.structure.ListUtils;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   public void testHasMultiDeploymentConfigured() {
     ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
     ServicesYaml servicesYaml =
-        ServicesYaml.builder().values(ParameterField.createValueField(Lists.newArrayList(serviceYamlV2))).build();
+        ServicesYaml.builder().values(ParameterField.createValueField(ListUtils.newArrayList(serviceYamlV2))).build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder().services(servicesYaml).build())
@@ -58,7 +58,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   public void testHasMultiDeploymentConfiguredWithServices() {
     ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
     ServicesYaml servicesYaml =
-        ServicesYaml.builder().values(ParameterField.createValueField(Lists.newArrayList(serviceYamlV2))).build();
+        ServicesYaml.builder().values(ParameterField.createValueField(ListUtils.newArrayList(serviceYamlV2))).build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder().services(servicesYaml).build())
@@ -77,7 +77,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
         EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("env1")).build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder()
-            .values(ParameterField.createValueField(Lists.newArrayList(environmentYamlV2)))
+            .values(ParameterField.createValueField(ListUtils.newArrayList(environmentYamlV2)))
             .build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
@@ -100,7 +100,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
             .deploymentStageConfig(DeploymentStageConfig.builder()
                                        .environmentGroup(EnvironmentGroupYaml.builder()
                                                              .environments(ParameterField.createValueField(
-                                                                 Lists.newArrayList(environmentYamlV2)))
+                                                                 ListUtils.newArrayList(environmentYamlV2)))
                                                              .build())
                                        .build())
             .build();
@@ -122,7 +122,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
                                        .gitOpsEnabled(true)
                                        .environmentGroup(EnvironmentGroupYaml.builder()
                                                              .environments(ParameterField.createValueField(
-                                                                 Lists.newArrayList(environmentYamlV2)))
+                                                                 ListUtils.newArrayList(environmentYamlV2)))
                                                              .build())
                                        .build())
             .build();
@@ -138,7 +138,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   public void testHasMultiDeploymentConfiguredWithGitOpsEnabledMultiService() {
     ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
     ServicesYaml servicesYaml =
-        ServicesYaml.builder().values(ParameterField.createValueField(Lists.newArrayList(serviceYamlV2))).build();
+        ServicesYaml.builder().values(ParameterField.createValueField(ListUtils.newArrayList(serviceYamlV2))).build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder().gitOpsEnabled(true).services(servicesYaml).build())
@@ -154,7 +154,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateMultiServiceInfra() {
     ServicesYaml servicesYaml =
-        ServicesYaml.builder().values(ParameterField.createValueField(Lists.newArrayList())).build();
+        ServicesYaml.builder().values(ParameterField.createValueField(ListUtils.newArrayList())).build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder().services(servicesYaml).build())
@@ -170,7 +170,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateMultiServiceInfraNoEnvironment() {
     EnvironmentsYaml environmentsYaml =
-        EnvironmentsYaml.builder().values(ParameterField.createValueField(Lists.newArrayList())).build();
+        EnvironmentsYaml.builder().values(ParameterField.createValueField(ListUtils.newArrayList())).build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder().environments(environmentsYaml).build())
@@ -189,7 +189,7 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
         EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("env1")).build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder()
-            .values(ParameterField.createValueField(Lists.newArrayList(environmentYamlV2)))
+            .values(ParameterField.createValueField(ListUtils.newArrayList(environmentYamlV2)))
             .build();
     DeploymentStageNode deploymentStageNode =
         DeploymentStageNode.builder()

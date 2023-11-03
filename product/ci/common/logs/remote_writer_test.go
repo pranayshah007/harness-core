@@ -67,7 +67,7 @@ func Test_RemoteWriter_Open_Failure(t *testing.T) {
 	rw.Write([]byte(msg1))
 	rw.Write([]byte(msg2))
 	rw.Write([]byte(msg3))
-	rw.flush() // Force write to the remote
+	rw.flush(-1) // Force write to the remote
 	assert.Equal(t, len(rw.history), 3)
 
 	err = rw.Close()
@@ -99,13 +99,13 @@ func Test_RemoteWriter_Limits(t *testing.T) {
 	rw.SetInterval(time.Duration(100) * time.Second)
 	rw.SetLimit(200)
 	rw.Write([]byte(msg1))
-	err = rw.flush()
+	err = rw.flush(-1)
 	assert.Nil(t, err)
 	rw.Write([]byte(msg2))
-	err = rw.flush()
+	err = rw.flush(-1)
 	assert.Nil(t, err)
 	rw.Write([]byte(msg3))
-	err = rw.flush()
+	err = rw.flush(-1)
 	assert.Nil(t, err)
 
 	assert.Equal(t, len(rw.history), 2)
@@ -127,7 +127,7 @@ func Test_RemoteWriter_WriteSingleLine(t *testing.T) {
 	rw.opened = true // open the stream to write to it
 	rw.SetInterval(time.Duration(100) * time.Second)
 	rw.Write([]byte(msg))
-	rw.flush() // Force write to the remote
+	rw.flush(-1) // Force write to the remote
 
 	assert.Equal(t, len(rw.history), 1)
 	assert.Equal(t, rw.history[0].Level, "info")
@@ -146,7 +146,7 @@ func Test_RemoteWriter_WriteSingleHugeLine(t *testing.T) {
 	for i := range b {
 		b[i] = 'a'
 	}
-	b[len(b) - 1] = '\n'
+	b[len(b)-1] = '\n'
 
 	msg := string(b)
 	truncatedMsg := truncate(msg, maxLineLimit)
@@ -158,7 +158,7 @@ func Test_RemoteWriter_WriteSingleHugeLine(t *testing.T) {
 	rw.opened = true // open the stream to write to it
 	rw.SetInterval(time.Duration(100) * time.Second)
 	rw.Write([]byte(msg))
-	rw.flush() // Force write to the remote
+	rw.flush(-1) // Force write to the remote
 
 	assert.Equal(t, len(rw.history), 1)
 	assert.Equal(t, rw.history[0].Level, "info")
@@ -182,9 +182,9 @@ func Test_RemoteWriter_WriteMultiple(t *testing.T) {
 	rw.opened = true // open the stream to write to it
 	rw.SetInterval(time.Duration(100) * time.Second)
 	rw.Write([]byte(msg1))
-	rw.flush() // Force write to the remote
+	rw.flush(-1) // Force write to the remote
 	rw.Write([]byte(msg2))
-	rw.flush() // Force write to the remote
+	rw.flush(-1) // Force write to the remote
 	assert.Equal(t, len(rw.history), 2)
 	// Ensure strict ordering
 	assert.Equal(t, rw.history[0].Level, "info")
@@ -220,15 +220,15 @@ func Test_RemoteWriter_MultipleCharacters(t *testing.T) {
 	// Write character by character followed by new line
 	for _, c := range msg1 {
 		rw.Write([]byte(string(c)))
-		rw.flush()
+		rw.flush(-1)
 	}
 	rw.Write([]byte("\n"))
 	for _, c := range msg2 {
 		rw.Write([]byte(string(c)))
-		rw.flush()
+		rw.flush(-1)
 	}
 	rw.Write([]byte("\n"))
-	rw.flush()
+	rw.flush(-1)
 
 	assert.Equal(t, len(rw.history), 2)
 	// Ensure strict ordering
@@ -286,7 +286,7 @@ func Test_RemoteWriter_VariousCases(t *testing.T) {
 	for _, w := range s {
 		rw.Write([]byte(w))
 	}
-	rw.flush()
+	rw.flush(-1)
 
 	assert.Equal(t, len(rw.history), 8)
 	assert.Equal(t, rw.history[0].Message, "ABC\n")
@@ -309,9 +309,9 @@ func Test_RemoteWriter_VariousCases_WithFlushes(t *testing.T) {
 	   This test will test out various combinations with added flushes in b/w.
 	   Write order:
 			Write("A")
-			flush()
+			flush(-1)
 			Write("B")
-			flush()
+			flush(-1)
 			Write("C\nD")
 			...
 			Write("EF\n")
@@ -344,7 +344,7 @@ func Test_RemoteWriter_VariousCases_WithFlushes(t *testing.T) {
 	// Write character by character followed by new line
 	for _, w := range s {
 		rw.Write([]byte(w))
-		rw.flush()
+		rw.flush(-1)
 	}
 
 	assert.Equal(t, len(rw.history), 8)
@@ -374,7 +374,7 @@ func Test_RemoteWriter_JSON(t *testing.T) {
 	rw.SetInterval(time.Duration(100) * time.Second)
 
 	rw.Write([]byte(msg1))
-	rw.flush()
+	rw.flush(-1)
 
 	assert.Equal(t, len(rw.history), 1)
 	// Ensure strict ordering
@@ -406,10 +406,10 @@ func Test_RemoteWriter_Close(t *testing.T) {
 	rw.SetInterval(time.Duration(100) * time.Second)
 
 	rw.Write([]byte(msg1))
-	rw.flush()
+	rw.flush(-1)
 
 	rw.Write([]byte(msg2))
-	rw.flush()
+	rw.flush(-1)
 
 	assert.Equal(t, rw.prev, []byte(msg2))
 
@@ -456,16 +456,16 @@ func Test_RemoteWriter_WithErrors(t *testing.T) {
 	expErr := formatNudge(l, x)
 
 	rw.Write([]byte(msg1))
-	rw.flush()
+	rw.flush(-1)
 
 	rw.Write([]byte(msg2))
-	rw.flush()
+	rw.flush(-1)
 
 	rw.Write([]byte(msg3))
-	rw.flush()
+	rw.flush(-1)
 
 	rw.Write([]byte(msg4))
-	rw.flush()
+	rw.flush(-1)
 
 	rw.Close()
 	assert.Equal(t, expErr, rw.Error())

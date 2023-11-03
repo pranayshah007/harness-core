@@ -45,6 +45,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverride.beans.OverrideFilterPropertiesDTO;
 import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideBatchMigrationDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
@@ -341,9 +342,11 @@ public class ServiceOverridesResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This is service override type which is based on override source") @QueryParam(
-          "type") ServiceOverridesType type) {
-    Criteria criteria =
-        ServiceOverrideCriteriaHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, type);
+          "type") ServiceOverridesType type,
+      @RequestBody(description = "This is the body for the filter properties for listing overrides.")
+      OverrideFilterPropertiesDTO filterProperties) {
+    Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, type, filterProperties);
     Pageable pageRequest =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);

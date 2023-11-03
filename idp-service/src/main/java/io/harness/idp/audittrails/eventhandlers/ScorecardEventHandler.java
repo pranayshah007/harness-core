@@ -6,9 +6,9 @@
  */
 package io.harness.idp.audittrails.eventhandlers;
 
-import static io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardCreateEvent.SCORECARD_CREATED;
-import static io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardDeleteEvent.SCORECARD_DELETED;
-import static io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardUpdateEvent.SCORECARD_UPDATED;
+import static io.harness.idp.scorecard.scorecards.events.ScorecardCreateEvent.SCORECARD_CREATED;
+import static io.harness.idp.scorecard.scorecards.events.ScorecardDeleteEvent.SCORECARD_DELETED;
+import static io.harness.idp.scorecard.scorecards.events.ScorecardUpdateEvent.SCORECARD_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -21,9 +21,9 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.idp.audittrails.eventhandlers.dtos.ScorecardsDTO;
-import io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardCreateEvent;
-import io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardDeleteEvent;
-import io.harness.idp.scorecard.scorecardchecks.events.scorecards.ScorecardUpdateEvent;
+import io.harness.idp.scorecard.scorecards.events.ScorecardCreateEvent;
+import io.harness.idp.scorecard.scorecards.events.ScorecardDeleteEvent;
+import io.harness.idp.scorecard.scorecards.events.ScorecardUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
