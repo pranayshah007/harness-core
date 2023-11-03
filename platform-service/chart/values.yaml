@@ -204,7 +204,7 @@ image:
   repository: platform-205701/platform-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.2.0"
+  tag: "1.2.1"
   digest: ""
   imagePullSecrets: []
 waitForInitContainer:
