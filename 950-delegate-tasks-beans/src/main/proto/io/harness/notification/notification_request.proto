@@ -82,6 +82,7 @@ message NotificationRequest {
     int64 expressionFunctorToken = 11;
     string templateId = 3;
     map<string, string> headers = 13;
+    string message = 14;
   }
 
   message UserGroup {
