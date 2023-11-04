@@ -68,6 +68,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 
@@ -129,6 +130,11 @@ public class MailServiceImpl implements ChannelService {
           ExceptionUtils.getMessage(e));
       return NotificationProcessingResponse.trivialResponseWithRetries;
     }
+  }
+
+  @Override
+  public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
+    throw new NotImplementedException();
   }
 
   @Override

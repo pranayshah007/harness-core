@@ -20,7 +20,10 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.WebhookTaskParams;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
@@ -97,6 +100,45 @@ public class WebhookServiceImpl implements ChannelService {
   }
 
   @Override
+  public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
+    if (Objects.isNull(notificationRequest) || !notificationRequest.hasWebhook()
+        || Objects.isNull(notificationRequest.getAccountId())) {
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    String notificationId = notificationRequest.getId();
+    Webhook webhookDetails = notificationRequest.getWebhook();
+    String templateId = webhookDetails.getTemplateId();
+    Map<String, String> templateData = webhookDetails.getTemplateDataMap();
+
+    if (Objects.isNull(trimToNull(templateId))) {
+      log.info("template Id is null for notification request {}", notificationId);
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    List<String> webhookUrls = getRecipients(notificationRequest);
+    if (isEmpty(webhookUrls)) {
+      log.info("No webhookUrls found in notification request {}", notificationId);
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    int expressionFunctorToken = Math.toIntExact(webhookDetails.getExpressionFunctorToken());
+
+    Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
+        notificationRequest.getAccountId(), webhookDetails.getOrgIdentifier(), webhookDetails.getProjectIdentifier());
+
+    return sendInSync(webhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
+        new HashMap<>(webhookDetails.getHeadersMap()), webhookDetails.getMessage());
+  }
+
+  @Override
   public boolean sendTestNotification(NotificationSettingDTO notificationSettingDTO) {
     WebhookSettingDTO webhookSettingDTO = (WebhookSettingDTO) notificationSettingDTO;
     String webhookUrl = webhookSettingDTO.getRecipient();
@@ -159,6 +201,60 @@ public class WebhookServiceImpl implements ChannelService {
             : "Notification request {} sent",
         notificationId);
     return processingResponse;
+  }
+
+  private NotificationTaskResponse sendInSync(List<String> webhookUrls, String templateId,
+      Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
+      Map<String, String> abstractionMap, Map<String, String> headers, String message) {
+    NotificationTaskResponse notificationTaskResponse;
+    if (!"NONE".equals(templateId)) {
+      Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
+      if (!templateOpt.isPresent()) {
+        log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
+        return NotificationTaskResponse.builder()
+            .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+            .build();
+      }
+      String template = templateOpt.get();
+      StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
+      message = strSubstitutor.replace(template);
+    }
+
+    List<String> webhookDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
+    NotificationProcessingResponse processingResponse = null;
+    if (notificationSettingsService.checkIfWebhookIsSecret(webhookUrls)
+        || notificationSettingsService.checkIfHeadersHasAnySecretValue(headers)) {
+      DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                    .accountId(accountId)
+                                                    .taskType("NOTIFY_WEBHOOK")
+                                                    .taskParameters(WebhookTaskParams.builder()
+                                                                        .notificationId(notificationId)
+                                                                        .message(message)
+                                                                        .webhookUrls(webhookUrls)
+                                                                        .headers(headers)
+                                                                        .webhookDomainAllowlist(webhookDomainAllowlist)
+                                                                        .build())
+                                                    .taskSetupAbstractions(abstractionMap)
+                                                    .expressionFunctorToken(expressionFunctorToken)
+                                                    .executionTimeout(Duration.ofMinutes(1L))
+                                                    .build();
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      if (responseData instanceof ErrorNotifyResponseData) {
+        throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
+            ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
+      } else {
+        notificationTaskResponse = (NotificationTaskResponse) responseData;
+      }
+    } else {
+      processingResponse = webhookSender.send(webhookUrls, message, notificationId, headers, webhookDomainAllowlist);
+      notificationTaskResponse = NotificationTaskResponse.builder().processingResponse(processingResponse).build();
+    }
+    log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
+            ? "Failed to send notification for request {}"
+            : "Notification request {} sent",
+        notificationId);
+    return notificationTaskResponse;
   }
 
   private List<String> getRecipients(NotificationRequest notificationRequest) {

@@ -21,6 +21,7 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
@@ -56,6 +57,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.text.StrSubstitutor;
 import org.apache.commons.text.WordUtils;
 import org.json.JSONObject;
@@ -101,6 +103,11 @@ public class PagerDutyServiceImpl implements ChannelService {
 
     return send(pagerDutyKeys, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+  }
+
+  @Override
+  public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
+    throw new NotImplementedException();
   }
 
   @Override

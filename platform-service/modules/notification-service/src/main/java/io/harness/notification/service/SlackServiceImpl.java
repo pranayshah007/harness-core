@@ -21,6 +21,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.text.StrSubstitutor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -92,6 +94,11 @@ public class SlackServiceImpl implements ChannelService {
 
     return send(slackWebhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+  }
+
+  @Override
+  public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
+    throw new NotImplementedException();
   }
 
   @Override

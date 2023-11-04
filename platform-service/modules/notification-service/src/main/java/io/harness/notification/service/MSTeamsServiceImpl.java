@@ -32,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -61,6 +62,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StrSubstitutor;
 
@@ -123,6 +125,11 @@ public class MSTeamsServiceImpl implements ChannelService {
 
     return send(microsoftTeamsWebhookUrls, templateId, templateData, notificationId, notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+  }
+
+  @Override
+  public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
+    throw new NotImplementedException();
   }
 
   @Override
