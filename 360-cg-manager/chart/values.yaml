@@ -266,33 +266,59 @@ redis:
               property: ""
 
 timescaledb:
-  # -- TimescaleDB host names
-  hosts: []
-  # -- Enable TimescaleDB SSL
-  # sslEnabled: false
-  # -- TimescaleDB secrets
-  secrets:
-    kubernetesSecrets:
-      - secretName: ""
-        keys:
-          TIMESCALEDB_USERNAME: ""
-          TIMESCALEDB_PASSWORD: ""
-          TIMESCALEDB_SSL_ROOT_CERT: ""
-    secretManagement: 
-      externalSecretsOperator:
-        - secretStore:
-            name: ""
-            kind: ""
-          remoteKeys:
-            TIMESCALEDB_USERNAME:
+  harness:
+    enabled: false
+    database: "harness"
+    # -- TimescaleDB host names
+    hosts: []
+    # -- Enable TimescaleDB SSL
+    sslEnabled: false
+    # -- TimescaleDB secrets
+    envConfig:
+      username:
+        envName: "TIMESCALEDB_USERNAME"
+      password:
+        envName: "TIMESCALEDB_PASSWORD"
+      host:
+        envName: ""
+      port:
+        envName: ""
+        value: ""
+      enableSSL:
+        envName: ""
+      sslMode:
+        envName: "TIMESCALEDB_SSL_MODE"
+        enabledValue: "require"
+      cert:
+        envName: "TIMESCALEDB_SSL_ROOT_CERT"
+      certPath:
+        envName: "TIMESCALEDB_SSL_CERT_PATH"
+        value: ""
+      connectionURI:
+        envName: ""
+        includeSSLModeArg: true
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            TIMESCALEDB_USERNAME: ""
+            TIMESCALEDB_PASSWORD: ""
+            TIMESCALEDB_SSL_ROOT_CERT: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
               name: ""
-              property: ""
-            TIMESCALEDB_PASSWORD:
-              name: ""
-              property: ""
-            TIMESCALEDB_SSL_ROOT_CERT:
-              name: ""
-              property: ""
+              kind: ""
+            remoteKeys:
+              TIMESCALEDB_USERNAME:
+                name: ""
+                property: ""
+              TIMESCALEDB_PASSWORD:
+                name: ""
+                property: ""
+              TIMESCALEDB_SSL_ROOT_CERT:
+                name: ""
+                property: ""
 mongo:
   dms:
     enabled: false
