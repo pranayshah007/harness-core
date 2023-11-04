@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.Webhook;
+import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_WEBHOOK_TEMPLATE;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -207,7 +208,7 @@ public class WebhookServiceImpl implements ChannelService {
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
       Map<String, String> abstractionMap, Map<String, String> headers, String message) {
     NotificationTaskResponse notificationTaskResponse;
-    if (!"NONE".equals(templateId)) {
+    if (!NO_TEMPLATE.equals(templateId)) {
       Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
       if (!templateOpt.isPresent()) {
         log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);

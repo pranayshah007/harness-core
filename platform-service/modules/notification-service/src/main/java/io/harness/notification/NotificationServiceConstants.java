@@ -23,6 +23,8 @@ public class NotificationServiceConstants {
   public static final String MSTEAMSSERVICE = "msteamsservice";
   public static final String WEBHOOKSERVICE = "webhookservice";
 
+  public static final String NO_TEMPLATE = "no_template";
+
   public static final String NOTIFICATION = "NOTIFICATION";
 
   // permissions
