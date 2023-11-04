@@ -97,6 +97,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
           .addAllSlackWebHookUrls(slackChannel.getSlackWebHookUrls())
           .putAllTemplateData(slackChannel.getTemplateData())
           .addAllUserGroup(NotificationUserGroupMapper.toProto(slackChannel.getUserGroups()))
+          .setMessage(slackChannel.getMessage())
           .build();
     } else if (channel instanceof PagerDutyChannel) {
       PagerDutyChannel pagerDutyChannel = (PagerDutyChannel) channel;

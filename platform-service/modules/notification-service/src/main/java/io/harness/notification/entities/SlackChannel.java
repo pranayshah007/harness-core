@@ -32,12 +32,14 @@ public class SlackChannel implements Channel {
   List<String> slackWebHookUrls;
   List<UserGroup> userGroups;
   Map<String, String> templateData;
+  String message;
   @Override
   public Object toObjectofProtoSchema() {
     return Slack.newBuilder()
         .addAllSlackWebHookUrls(slackWebHookUrls)
         .putAllTemplateData(templateData)
         .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+        .setMessage(message)
         .build();
   }
 
@@ -52,6 +54,7 @@ public class SlackChannel implements Channel {
         .slackWebHookUrls(slackDetails.getSlackWebHookUrlsList())
         .templateData(slackDetails.getTemplateDataMap())
         .userGroups(NotificationUserGroupMapper.toEntity(slackDetails.getUserGroupList()))
+        .message(slackDetails.getMessage())
         .build();
   }
 }

@@ -34,16 +34,18 @@ public class SlackChannel extends NotificationChannel {
   String orgIdentifier;
   String projectIdentifier;
   long expressionFunctorToken;
+  String message;
 
   @Builder
   public SlackChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> webhookUrls, String orgIdentifier,
-      String projectIdentifier, long expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken, String message) {
     super(accountId, userGroups, templateId, templateData, team);
     this.webhookUrls = webhookUrls;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.expressionFunctorToken = expressionFunctorToken;
+    this.message = message;
   }
 
   @Override
@@ -58,6 +60,7 @@ public class SlackChannel extends NotificationChannel {
                                                          .addAllSlackWebHookUrls(webhookUrls)
                                                          .setTemplateId(templateId)
                                                          .putAllTemplateData(templateData)
+                                                         .setMessage(message)
                                                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
 
     if (orgIdentifier != null) {
