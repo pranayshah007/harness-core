@@ -119,6 +119,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
           .putAllTemplateData(webhookChannel.getTemplateData())
           .addAllUserGroup(NotificationUserGroupMapper.toProto(webhookChannel.getUserGroups()))
           .putAllHeaders(webhookChannel.getHeaders())
+          .setMessage(webhookChannel.getMessage())
           .build();
     }
     return null;
