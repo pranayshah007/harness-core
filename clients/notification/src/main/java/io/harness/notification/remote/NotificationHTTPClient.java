@@ -33,4 +33,7 @@ public interface NotificationHTTPClient {
       @Query("identifier") String identifier, @Query("harnessManaged") Boolean harnessManaged);
 
   @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
+
+  @POST("channels/send")
+  Call<ResponseDTO<NotificationTaskResponse>> sendNotificationSync(@Body byte[] notificationRequestBytes);
 }
