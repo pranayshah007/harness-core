@@ -54,6 +54,13 @@ public class NotificationClientImpl implements NotificationClient {
     return NotificationResultWithoutStatus.builder().notificationId(notificationRequest.getId()).build();
   }
 
+  @Override
+  public Response<ResponseDTO<NotificationTaskResponse>> sendNotificationSync(NotificationChannel notificationChannel)
+      throws IOException {
+    NotificationRequest notificationRequest = notificationChannel.buildNotificationRequest();
+    return notificationHTTPClient.sendNotificationSync(notificationRequest.toByteArray()).execute();
+  }
+
   public Response<ResponseDTO<NotificationTaskResponse>> sendEmail(EmailDTO emailDTO) throws IOException {
     return notificationHTTPClient.sendEmail(emailDTO).execute();
   }
