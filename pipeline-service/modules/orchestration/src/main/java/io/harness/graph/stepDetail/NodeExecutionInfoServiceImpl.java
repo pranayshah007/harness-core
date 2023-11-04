@@ -324,8 +324,9 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
     if (EmptyPredicate.isEmpty(nodeExecutionsInfo)) {
       return new HashMap<>();
     }
-    return nodeExecutionsInfo.stream().collect(
-        Collectors.toMap(NodeExecutionsInfo::getNodeExecutionId, NodeExecutionsInfo::getStrategyMetadata));
+    return nodeExecutionsInfo.stream()
+        .filter(nodeExecutionsInfo1 -> nodeExecutionsInfo1.getStrategyMetadata() != null)
+        .collect(Collectors.toMap(NodeExecutionsInfo::getNodeExecutionId, NodeExecutionsInfo::getStrategyMetadata));
   }
 
   @Override
