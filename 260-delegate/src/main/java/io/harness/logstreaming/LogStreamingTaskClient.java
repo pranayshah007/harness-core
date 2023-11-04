@@ -7,6 +7,8 @@
 
 package io.harness.logstreaming;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
@@ -86,7 +88,9 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Override
   public void openStream(String baseLogKeySuffix) {
     String logKey = getLogKey(baseLogKeySuffix);
-
+    if (isEmpty(token)) {
+      return;
+    }
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
