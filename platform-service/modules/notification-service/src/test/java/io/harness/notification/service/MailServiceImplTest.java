@@ -10,6 +10,7 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.RICHA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -35,7 +36,9 @@ import io.harness.notification.SmtpConfig;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.remote.dto.EmailDTO;
+import io.harness.notification.remote.dto.EmailNotificationRequestDTO;
 import io.harness.notification.remote.dto.EmailSettingDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.MailServiceImpl.EmailTemplate;
@@ -436,5 +439,38 @@ public class MailServiceImplTest extends CategoryTest {
     DelegateTaskRequest request = requestCaptor.getValue();
     assertThat(((MailTaskParams) request.getTaskParameters()).getEmailIds().size()).isEqualTo(2);
     assertThat(((MailTaskParams) request.getTaskParameters()).getCcEmailIds().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_CheckAllGaurds() {
+    final NotificationRequestDTO notificationRequestDTO1 = EmailNotificationRequestDTO.builder().build();
+    assertThatThrownBy(() -> mailService.sendNotification(notificationRequestDTO1))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationRequestDTO notificationRequestDTO2 =
+        EmailNotificationRequestDTO.builder().accountId(accountId).build();
+    assertThatThrownBy(() -> mailService.sendNotification(notificationRequestDTO2))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationRequestDTO notificationRequestDTO3 =
+        EmailNotificationRequestDTO.builder().toRecipients(Set.of("email@harness.io")).build();
+    assertThatThrownBy(() -> mailService.sendNotification(notificationRequestDTO3))
+        .isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidRequest() {
+    final NotificationRequestDTO notificationRequestDTO3 =
+        EmailNotificationRequestDTO.builder().accountId(accountId).toRecipients(Set.of("email@harness.io")).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    NotificationTaskResponse taskResponse = mailService.sendNotification(notificationRequestDTO3);
+    assertTrue(taskResponse.getProcessingResponse().getResult().iterator().next());
   }
 }

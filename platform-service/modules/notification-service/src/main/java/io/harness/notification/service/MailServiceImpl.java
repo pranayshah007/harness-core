@@ -20,6 +20,7 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
@@ -159,22 +160,28 @@ public class MailServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendNotification(NotificationRequestDTO notificationRequestDTO) {
-    EmailNotificationRequestDTO emailDTO = (EmailNotificationRequestDTO) notificationRequestDTO;
+    EmailNotificationRequestDTO emailNotificationRequestDTO = (EmailNotificationRequestDTO) notificationRequestDTO;
 
-    List<String> emails = new ArrayList<>(emailDTO.getToRecipients());
-    List<String> ccEmails = new ArrayList<>(emailDTO.getCcRecipients());
-    String accountId = emailDTO.getAccountId();
+    List<String> emails = EmptyPredicate.isEmpty(emailNotificationRequestDTO.getToRecipients())
+        ? new ArrayList<>()
+        : new ArrayList<>(emailNotificationRequestDTO.getToRecipients());
+    List<String> ccEmails = EmptyPredicate.isEmpty(emailNotificationRequestDTO.getCcRecipients())
+        ? new ArrayList<>()
+        : new ArrayList<>(emailNotificationRequestDTO.getCcRecipients());
+
+    String accountId = emailNotificationRequestDTO.getAccountId();
     if (Objects.isNull(accountId)) {
       throw new NotificationException(
-          String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
+          String.format("No account id encountered for %s.", emailNotificationRequestDTO.getNotificationId()),
+          DEFAULT_ERROR_CODE, USER);
     }
     validateEmptyEmails(emails, ccEmails, "");
     String errorMessage = validateEmails(
         emails, ccEmails, accountId, false); // using hard coded false for sendToNonHarnessRecipients need to revisit
     validateEmptyEmails(emails, ccEmails, errorMessage);
 
-    NotificationTaskResponse response = sendInSync(
-        emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
+    NotificationTaskResponse response = sendInSync(emails, ccEmails, emailNotificationRequestDTO.getSubject(),
+        emailNotificationRequestDTO.getBody(), emailNotificationRequestDTO.getNotificationId(), accountId);
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
       throw new NotificationException(

@@ -10,6 +10,7 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static junit.framework.TestCase.assertEquals;
@@ -27,7 +28,9 @@ import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.exception.NotificationException;
+import io.harness.notification.remote.dto.MSTeamNotificationRequestDTO;
 import io.harness.notification.remote.dto.MSTeamSettingDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MSTeamsSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
@@ -38,6 +41,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.Before;
@@ -303,5 +307,38 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of("This is a test notification"));
     boolean response = msTeamService.sendTestNotification(notificationSettingDTO4);
     assertTrue(response);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_CheckAllGaurds() {
+    final NotificationRequestDTO notificationRequestDTO1 = MSTeamNotificationRequestDTO.builder().build();
+    assertThatThrownBy(() -> msTeamService.sendNotification(notificationRequestDTO1))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationRequestDTO notificationRequestDTO2 =
+        MSTeamNotificationRequestDTO.builder().accountId(accountId).build();
+    assertThatThrownBy(() -> msTeamService.sendNotification(notificationRequestDTO2))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationRequestDTO notificationRequestDTO3 =
+        MSTeamNotificationRequestDTO.builder().webhookUrl("ms-team.webhook.url").build();
+    assertThatThrownBy(() -> msTeamService.sendNotification(notificationRequestDTO3))
+        .isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidRequest() {
+    final NotificationRequestDTO notificationRequestDTO3 =
+        MSTeamNotificationRequestDTO.builder().accountId(accountId).webhookUrl("ms-team.webhook.url").build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    NotificationTaskResponse taskResponse = msTeamService.sendNotification(notificationRequestDTO3);
+    assertTrue(taskResponse.getProcessingResponse().getResult().iterator().next());
   }
 }
