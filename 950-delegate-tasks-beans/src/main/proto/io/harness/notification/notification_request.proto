@@ -61,6 +61,8 @@ message NotificationRequest {
     string projectIdentifier = 11;
     int64 expressionFunctorToken = 12;
     string templateId = 3;
+    string summary = 13;
+    map<string, string> links = 14;
   }
 
   message MSTeam {

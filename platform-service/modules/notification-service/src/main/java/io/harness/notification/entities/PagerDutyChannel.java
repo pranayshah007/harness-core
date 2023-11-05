@@ -33,6 +33,8 @@ public class PagerDutyChannel implements Channel {
   List<UserGroup> userGroups;
   Map<String, String> templateData;
   String templateId;
+  String summary;
+  Map<String, String> links;
 
   @Override
   public Object toObjectofProtoSchema() {
@@ -41,6 +43,8 @@ public class PagerDutyChannel implements Channel {
         .putAllTemplateData(templateData)
         .setTemplateId(templateId)
         .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+        .setSummary(summary)
+        .putAllLinks(links)
         .build();
   }
 
@@ -56,6 +60,8 @@ public class PagerDutyChannel implements Channel {
         .templateData(pagerDutyDetails.getTemplateDataMap())
         .templateId(pagerDutyDetails.getTemplateId())
         .userGroups(NotificationUserGroupMapper.toEntity(pagerDutyDetails.getUserGroupList()))
+        .summary(pagerDutyDetails.getSummary())
+        .links(pagerDutyDetails.getLinksMap())
         .build();
   }
 }

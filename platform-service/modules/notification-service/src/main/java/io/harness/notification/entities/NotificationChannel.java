@@ -105,6 +105,8 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
           .addAllPagerDutyIntegrationKeys(pagerDutyChannel.getPagerDutyIntegrationKeys())
           .putAllTemplateData(pagerDutyChannel.getTemplateData())
           .addAllUserGroup(NotificationUserGroupMapper.toProto(pagerDutyChannel.getUserGroups()))
+          .setSummary(pagerDutyChannel.getSummary())
+          .putAllLinks(pagerDutyChannel.getLinks())
           .build();
     } else if (channel instanceof MicrosoftTeamsChannel) {
       MicrosoftTeamsChannel microsoftTeamsChannel = (MicrosoftTeamsChannel) channel;

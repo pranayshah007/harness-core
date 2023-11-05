@@ -34,16 +34,20 @@ public class PagerDutyChannel extends NotificationChannel {
   String orgIdentifier;
   String projectIdentifier;
   long expressionFunctorToken;
+  String summary;
+  Map<String, String> links;
 
   @Builder
   public PagerDutyChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> integrationKeys, String orgIdentifier,
-      String projectIdentifier, long expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken, String summary, Map<String, String> links) {
     super(accountId, userGroups, templateId, templateData, team);
     this.integrationKeys = integrationKeys;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.expressionFunctorToken = expressionFunctorToken;
+    this.summary = summary;
+    this.links = links;
   }
 
   @Override
@@ -63,7 +67,9 @@ public class PagerDutyChannel extends NotificationChannel {
             .addAllPagerDutyIntegrationKeys(integrationKeys)
             .setTemplateId(templateId)
             .putAllTemplateData(templateData)
-            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+            .setSummary(summary)
+            .putAllLinks(links);
     if (orgIdentifier != null) {
       pagerDutyBuilder.setOrgIdentifier(orgIdentifier);
     }
