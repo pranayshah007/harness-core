@@ -15,19 +15,28 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRollbackStepParameters;
+import io.harness.cdng.tas.asyncsteps.TasSwapRollbackStepV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasSwapRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwapRollbackStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.SWAP_ROLLBACK);
@@ -59,5 +68,23 @@ public class TasSwapRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSw
     String tasAppResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
     tasSwapRollbackStepParameters.setTasResizeFqn(tasAppResizeFqn);
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, TasSwapRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return TasSwapRollbackStepV2.STEP_TYPE;
+    }
+    return TasSwapRollbackStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, TasSwapRollbackStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }

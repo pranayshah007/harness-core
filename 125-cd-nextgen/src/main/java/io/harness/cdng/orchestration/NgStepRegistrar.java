@@ -175,6 +175,9 @@ import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.*;
 import io.harness.cdng.tas.asyncsteps.TasCanaryAppSetupStepV2;
+import io.harness.cdng.tas.asyncsteps.TasRollbackStepV2;
+import io.harness.cdng.tas.asyncsteps.TasRollingRollbackStepV2;
+import io.harness.cdng.tas.asyncsteps.TasSwapRollbackStepV2;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -325,6 +328,9 @@ public class NgStepRegistrar {
 
     // TAS ASYNC
     engineSteps.put(TasCanaryAppSetupStepV2.STEP_TYPE, TasCanaryAppSetupStepV2.class);
+    engineSteps.put(TasRollbackStepV2.STEP_TYPE, TasRollbackStepV2.class);
+    engineSteps.put(TasRollingRollbackStepV2.STEP_TYPE, TasRollingRollbackStepV2.class);
+    engineSteps.put(TasSwapRollbackStepV2.STEP_TYPE, TasSwapRollbackStepV2.class);
 
     engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
