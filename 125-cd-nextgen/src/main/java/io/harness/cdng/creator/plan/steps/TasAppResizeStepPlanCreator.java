@@ -14,18 +14,27 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasAppResizeStepParameters;
+import io.harness.cdng.tas.asyncsteps.TasAppResizeStepV2;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasAppResizeStepPlanCreator extends CDPMSStepPlanCreatorV2<TasAppResizeStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(TAS_APP_RESIZE);
@@ -55,5 +64,23 @@ public class TasAppResizeStepPlanCreator extends CDPMSStepPlanCreatorV2<TasAppRe
     String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
     tasAppResizeStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, TasAppResizeStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return TasAppResizeStepV2.STEP_TYPE;
+    }
+    return TasAppResizeStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, TasAppResizeStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }

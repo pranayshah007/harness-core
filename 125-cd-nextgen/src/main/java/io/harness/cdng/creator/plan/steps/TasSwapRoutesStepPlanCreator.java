@@ -15,18 +15,27 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepParameters;
+import io.harness.cdng.tas.asyncsteps.TasSwapRoutesStepV2;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwapRoutesStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(TAS_SWAP_ROUTES);
@@ -59,5 +68,23 @@ public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwap
     String tasResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
     tasSwapRoutesStepParameters.setTasResizeFqn(tasResizeFqn);
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, TasSwapRoutesStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return TasSwapRoutesStepV2.STEP_TYPE;
+    }
+    return TasSwapRoutesStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, TasSwapRoutesStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }

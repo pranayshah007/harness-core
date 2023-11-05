@@ -174,7 +174,10 @@ import io.harness.cdng.service.steps.constants.ServiceStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.*;
+import io.harness.cdng.tas.asyncsteps.TasAppResizeStepV2;
 import io.harness.cdng.tas.asyncsteps.TasCanaryAppSetupStepV2;
+import io.harness.cdng.tas.asyncsteps.TasRouteMappingStepV2;
+import io.harness.cdng.tas.asyncsteps.TasSwapRoutesStepV2;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -325,6 +328,9 @@ public class NgStepRegistrar {
 
     // TAS ASYNC
     engineSteps.put(TasCanaryAppSetupStepV2.STEP_TYPE, TasCanaryAppSetupStepV2.class);
+    engineSteps.put(TasAppResizeStepV2.STEP_TYPE, TasAppResizeStepV2.class);
+    engineSteps.put(TasRouteMappingStepV2.STEP_TYPE, TasRouteMappingStepV2.class);
+    engineSteps.put(TasSwapRoutesStepV2.STEP_TYPE, TasSwapRoutesStepV2.class);
 
     engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);
