@@ -64,6 +64,7 @@ import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingRollbackStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
+import io.harness.cdng.tas.asyncsteps.TasRollingDeployStepV2;
 import io.harness.pms.contracts.steps.StepType;
 
 import com.google.common.collect.Sets;
@@ -88,17 +89,18 @@ public class InstanceSyncStepResolver {
       TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType(),
       TasSwapRollbackStep.STEP_TYPE.getType(), ElastigroupBGStageSetupStep.STEP_TYPE.getType(),
       ElastigroupSwapRouteStep.STEP_TYPE.getType(), ElastigroupRollbackStep.STEP_TYPE.getType(),
-      TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType(),
-      AsgRollingDeployStep.STEP_TYPE.getType(), AsgCanaryDeployStep.STEP_TYPE.getType(),
-      AsgCanaryDeleteStep.STEP_TYPE.getType(), AsgRollingRollbackStep.STEP_TYPE.getType(),
-      AsgBlueGreenDeployStep.STEP_TYPE.getType(), AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(),
-      AsgBlueGreenRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployStep.STEP_TYPE.getType(),
-      GoogleFunctionsRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
-      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(),
-      AwsLambdaRollbackStep.STEP_TYPE.getType(), GoogleFunctionsGenOneDeployStep.STEP_TYPE.getType(),
-      GoogleFunctionsGenOneRollbackStep.STEP_TYPE.getType(), AwsSamDeployStep.STEP_TYPE.getType(),
-      ServerlessAwsLambdaDeployV2Step.STEP_TYPE.getType(), EcsUpgradeContainerStep.STEP_TYPE.getType(),
-      EcsBasicRollbackStep.STEP_TYPE.getType(), K8sRollingRollbackStepV2.STEP_TYPE.getType()));
+      TasRollingDeployStep.STEP_TYPE.getType(), TasRollingDeployStepV2.STEP_TYPE.getType(),
+      TasRollingRollbackStep.STEP_TYPE.getType(), AsgRollingDeployStep.STEP_TYPE.getType(),
+      AsgCanaryDeployStep.STEP_TYPE.getType(), AsgCanaryDeleteStep.STEP_TYPE.getType(),
+      AsgRollingRollbackStep.STEP_TYPE.getType(), AsgBlueGreenDeployStep.STEP_TYPE.getType(),
+      AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(), AsgBlueGreenRollbackStep.STEP_TYPE.getType(),
+      GoogleFunctionsDeployStep.STEP_TYPE.getType(), GoogleFunctionsRollbackStep.STEP_TYPE.getType(),
+      GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(), GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(),
+      AwsLambdaDeployStep.STEP_TYPE.getType(), AwsLambdaRollbackStep.STEP_TYPE.getType(),
+      GoogleFunctionsGenOneDeployStep.STEP_TYPE.getType(), GoogleFunctionsGenOneRollbackStep.STEP_TYPE.getType(),
+      AwsSamDeployStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployV2Step.STEP_TYPE.getType(),
+      EcsUpgradeContainerStep.STEP_TYPE.getType(), EcsBasicRollbackStep.STEP_TYPE.getType(),
+      K8sRollingRollbackStepV2.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

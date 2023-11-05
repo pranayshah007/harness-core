@@ -11,16 +11,28 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SE
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.tas.TasBasicAppSetupStep;
 import io.harness.cdng.tas.TasBasicAppSetupStepNode;
+import io.harness.cdng.tas.TasRollingDeployStep;
+import io.harness.cdng.tas.TasRollingDeployStepNode;
+import io.harness.cdng.tas.asyncsteps.TasBasicAppSetupStepV2;
+import io.harness.cdng.tas.asyncsteps.TasRollingDeployStepV2;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasBasicAppSetupStepPlanCreator extends CDPMSStepPlanCreatorV2<TasBasicAppSetupStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(TAS_BASIC_APP_SETUP);
@@ -39,5 +51,23 @@ public class TasBasicAppSetupStepPlanCreator extends CDPMSStepPlanCreatorV2<TasB
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, TasBasicAppSetupStepNode stepElement) {
     return super.getStepParameters(ctx, stepElement);
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, TasBasicAppSetupStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return TasBasicAppSetupStepV2.STEP_TYPE;
+    }
+    return TasBasicAppSetupStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, TasBasicAppSetupStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_TAS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }
