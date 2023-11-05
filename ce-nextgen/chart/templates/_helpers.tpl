@@ -112,6 +112,10 @@ JWT_IDENTITY_SERVICE_SECRET: '{{ .ctx.Values.secrets.default.JWT_IDENTITY_SERVIC
     {{- end }}
     {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "NOTIFICATION_CLIENT_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
+AZURE_APP_CLIENT_SECRET: '{{ .ctx.Values.secrets.default.AZURE_APP_CLIENT_SECRET | b64enc }}'
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "AZURE_APP_CLIENT_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
 NOTIFICATION_CLIENT_SECRET: '{{ .ctx.Values.secrets.default.NOTIFICATION_CLIENT_SECRET | b64enc }}'
     {{- end }}
     {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "ACCESS_CONTROL_SECRET")) "true" }}

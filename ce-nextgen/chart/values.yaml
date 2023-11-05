@@ -308,6 +308,9 @@ awsSecret:
   AWS_TEMPLATE_LINK: ""
   CE_AWS_TEMPLATE_URL: ""
 
+azureSecret:
+  AZURE_APP_CLIENT_SECRET: ""
+
 ceng-gcp-credentials: ""
 
 nameOverride: "nextgen-ce"
