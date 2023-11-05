@@ -112,6 +112,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
           .addAllMsTeamKeys(microsoftTeamsChannel.getMsTeamKeys())
           .putAllTemplateData(microsoftTeamsChannel.getTemplateData())
           .addAllUserGroup(NotificationUserGroupMapper.toProto(microsoftTeamsChannel.getUserGroups()))
+          .setMessage(microsoftTeamsChannel.getMessage())
           .build();
     } else if (channel instanceof WebhookChannel) {
       WebhookChannel webhookChannel = (WebhookChannel) channel;

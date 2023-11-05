@@ -34,16 +34,18 @@ public class MSTeamChannel extends NotificationChannel {
   String orgIdentifier;
   String projectIdentifier;
   long expressionFunctorToken;
+  String message;
 
   @Builder
   public MSTeamChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> msTeamKeys, String orgIdentifier,
-      String projectIdentifier, long expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken, String message) {
     super(accountId, userGroups, templateId, templateData, team);
     this.msTeamKeys = msTeamKeys;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.expressionFunctorToken = expressionFunctorToken;
+    this.message = message;
   }
 
   @Override
@@ -58,7 +60,8 @@ public class MSTeamChannel extends NotificationChannel {
                                                             .addAllMsTeamKeys(msTeamKeys)
                                                             .setTemplateId(templateId)
                                                             .putAllTemplateData(templateData)
-                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+                                                            .setMessage(message);
     if (orgIdentifier != null) {
       msTeamsBuilder.setOrgIdentifier(orgIdentifier);
     }

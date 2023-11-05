@@ -33,6 +33,7 @@ public class MicrosoftTeamsChannel implements Channel {
   List<UserGroup> userGroups;
   Map<String, String> templateData;
   String templateId;
+  String message;
 
   @Override
   public Object toObjectofProtoSchema() {
@@ -41,6 +42,7 @@ public class MicrosoftTeamsChannel implements Channel {
         .putAllTemplateData(templateData)
         .setTemplateId(templateId)
         .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+        .setMessage(message)
         .build();
   }
 
@@ -56,6 +58,7 @@ public class MicrosoftTeamsChannel implements Channel {
         .templateData(msTeamDetails.getTemplateDataMap())
         .templateId(msTeamDetails.getTemplateId())
         .userGroups(NotificationUserGroupMapper.toEntity(msTeamDetails.getUserGroupList()))
+        .message(msTeamDetails.getMessage())
         .build();
   }
 }

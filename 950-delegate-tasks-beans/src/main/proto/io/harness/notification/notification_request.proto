@@ -72,6 +72,7 @@ message NotificationRequest {
     string projectIdentifier = 11;
     int64 expressionFunctorToken = 12;
     string templateId = 3;
+    string message = 13;
   }
 
   message Webhook {
