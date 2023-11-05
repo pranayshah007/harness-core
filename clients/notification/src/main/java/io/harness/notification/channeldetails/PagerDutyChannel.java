@@ -8,6 +8,7 @@
 package io.harness.notification.channeldetails;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -67,14 +68,18 @@ public class PagerDutyChannel extends NotificationChannel {
             .addAllPagerDutyIntegrationKeys(integrationKeys)
             .setTemplateId(templateId)
             .putAllTemplateData(templateData)
-            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-            .setSummary(summary)
-            .putAllLinks(links);
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
     if (orgIdentifier != null) {
       pagerDutyBuilder.setOrgIdentifier(orgIdentifier);
     }
     if (projectIdentifier != null) {
       pagerDutyBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    if (isNotEmpty(summary)) {
+      pagerDutyBuilder.setSummary(summary);
+    }
+    if (isNotEmpty(links)) {
+      pagerDutyBuilder.putAllLinks(links);
     }
     pagerDutyBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return pagerDutyBuilder.build();

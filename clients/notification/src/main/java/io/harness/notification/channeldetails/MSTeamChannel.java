@@ -8,6 +8,7 @@
 package io.harness.notification.channeldetails;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -60,13 +61,15 @@ public class MSTeamChannel extends NotificationChannel {
                                                             .addAllMsTeamKeys(msTeamKeys)
                                                             .setTemplateId(templateId)
                                                             .putAllTemplateData(templateData)
-                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-                                                            .setMessage(message);
+                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
     if (orgIdentifier != null) {
       msTeamsBuilder.setOrgIdentifier(orgIdentifier);
     }
     if (projectIdentifier != null) {
       msTeamsBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    if (isNotEmpty(message)) {
+      msTeamsBuilder.setMessage(message);
     }
     msTeamsBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return msTeamsBuilder.build();

@@ -67,7 +67,6 @@ public class WebhookChannel extends NotificationChannel {
                                                              .addAllUrls(webhookUrls)
                                                              .setTemplateId(templateId)
                                                              .putAllTemplateData(templateData)
-                                                             .setMessage(message)
                                                              .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
 
     if (orgIdentifier != null) {
@@ -78,6 +77,9 @@ public class WebhookChannel extends NotificationChannel {
     }
     if (isNotEmpty(headers)) {
       webhookBuilder.putAllHeaders(headers);
+    }
+    if (isNotEmpty(message)) {
+      webhookBuilder.setMessage(message);
     }
     webhookBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return webhookBuilder.build();

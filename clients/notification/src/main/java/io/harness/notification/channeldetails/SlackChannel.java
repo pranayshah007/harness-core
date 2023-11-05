@@ -8,6 +8,7 @@
 package io.harness.notification.channeldetails;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -60,7 +61,6 @@ public class SlackChannel extends NotificationChannel {
                                                          .addAllSlackWebHookUrls(webhookUrls)
                                                          .setTemplateId(templateId)
                                                          .putAllTemplateData(templateData)
-                                                         .setMessage(message)
                                                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
 
     if (orgIdentifier != null) {
@@ -68,6 +68,9 @@ public class SlackChannel extends NotificationChannel {
     }
     if (projectIdentifier != null) {
       slackBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    if (isNotEmpty(message)) {
+      slackBuilder.setMessage(message);
     }
     slackBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return slackBuilder.build();

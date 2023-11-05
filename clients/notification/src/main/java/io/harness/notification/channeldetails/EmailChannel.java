@@ -8,6 +8,7 @@
 package io.harness.notification.channeldetails;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -50,17 +51,25 @@ public class EmailChannel extends NotificationChannel {
   public NotificationRequest buildNotificationRequest() {
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    return builder.setId(notificationId)
-        .setAccountId(accountId)
-        .setTeam(team)
-        .setEmail(builder.getEmailBuilder()
-                      .addAllEmailIds(recipients)
-                      .setTemplateId(templateId)
-                      .putAllTemplateData(templateData)
-                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-                      .addAllCcEmailIds(ccEmailIds)
-                      .setSubject(subject)
-                      .setBody(body))
-        .build();
+    return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setEmail(buildEmail(builder)).build();
+  }
+
+  private NotificationRequest.Email.Builder buildEmail(NotificationRequest.Builder builder) {
+    NotificationRequest.Email.Builder emailBuilder = builder.getEmailBuilder()
+                                                         .addAllEmailIds(recipients)
+                                                         .setTemplateId(templateId)
+                                                         .putAllTemplateData(templateData)
+                                                         .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+
+    if (isNotEmpty(ccEmailIds)) {
+      emailBuilder.addAllCcEmailIds(ccEmailIds);
+    }
+    if (isNotEmpty(subject)) {
+      emailBuilder.setSubject(subject);
+    }
+    if (isNotEmpty(body)) {
+      emailBuilder.setBody(body);
+    }
+    return emailBuilder;
   }
 }
