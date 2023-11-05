@@ -174,6 +174,7 @@ import io.harness.cdng.service.steps.constants.ServiceStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.*;
+import io.harness.cdng.tas.asyncsteps.TasCanaryAppSetupStepV2;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;

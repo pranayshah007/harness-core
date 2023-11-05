@@ -15,7 +15,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.tas.TasCanaryAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
-import io.harness.cdng.tas.TasCanaryAppSetupStepV2;
+import io.harness.cdng.tas.asyncsteps.TasCanaryAppSetupStepV2;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

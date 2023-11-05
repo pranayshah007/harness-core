@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.tas;
+package io.harness.cdng.tas.asyncsteps;
 
 import io.harness.cdng.executables.CdAsyncChainExecutable;
+import io.harness.cdng.tas.TasCanaryAppSetupStep;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
