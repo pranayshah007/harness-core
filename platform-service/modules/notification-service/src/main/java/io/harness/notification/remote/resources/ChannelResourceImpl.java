@@ -8,21 +8,17 @@
 package io.harness.notification.remote.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.notification.NotificationServiceConstants.TEST_WEBHOOK_TEMPLATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.NotificationRequest;
-import io.harness.notification.Team;
-import io.harness.notification.channeldetails.WebhookChannel;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.service.api.ChannelService;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.Collections;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +36,9 @@ public class ChannelResourceImpl implements ChannelResource {
     return ResponseDTO.newResponse(result);
   }
 
-  public ResponseDTO<NotificationTaskResponse> sendNotification(byte[] notificationRequestBytes)
+  public ResponseDTO<NotificationTaskResponse> sendNotification(NotificationRequestDTO notificationRequestDTO)
       throws InvalidProtocolBufferException {
-    NotificationRequest notificationRequest = NotificationRequest.parseFrom(notificationRequestBytes);
+    NotificationRequest notificationRequest = NotificationRequest.parseFrom(notificationRequestDTO.getBytes());
     log.info("Received test notification request for {} - notificationId: {}", notificationRequest.getChannelCase(),
         notificationRequest.getId());
     NotificationTaskResponse taskResponse = channelService.sendSync(notificationRequest);

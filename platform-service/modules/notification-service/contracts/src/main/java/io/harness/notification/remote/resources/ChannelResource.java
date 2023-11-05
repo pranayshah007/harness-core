@@ -14,6 +14,7 @@ import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -45,6 +46,6 @@ public interface ChannelResource {
   @POST
   @Path("/send")
   @ApiOperation(value = "Send notification", nickname = "sendNotification")
-  ResponseDTO<NotificationTaskResponse> sendNotification(@NotNull byte[] notificationRequestBytes)
+  ResponseDTO<NotificationTaskResponse> sendNotification(@NotNull NotificationRequestDTO notificationRequestDTO)
       throws InvalidProtocolBufferException;
 }
