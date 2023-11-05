@@ -11,6 +11,7 @@ import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
 import io.harness.notification.remote.dto.EmailDTO;
+import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 
@@ -35,5 +36,5 @@ public interface NotificationHTTPClient {
   @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
 
   @POST("channels/send")
-  Call<ResponseDTO<NotificationTaskResponse>> sendNotificationSync(@Body byte[] notificationRequestBytes);
+  Call<ResponseDTO<NotificationTaskResponse>> sendNotificationSync(@Body NotificationRequestDTO notificationRequestDTO);
 }
