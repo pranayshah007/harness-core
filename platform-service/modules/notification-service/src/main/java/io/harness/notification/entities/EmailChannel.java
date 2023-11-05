@@ -33,6 +33,9 @@ public class EmailChannel implements Channel {
   List<UserGroup> userGroups;
   Map<String, String> templateData;
   String templateId;
+  List<String> ccEmailIds;
+  String subject;
+  String body;
 
   @Override
   public Object toObjectofProtoSchema() {
@@ -41,6 +44,9 @@ public class EmailChannel implements Channel {
         .putAllTemplateData(templateData)
         .setTemplateId(templateId)
         .addAllUserGroup(NotificationUserGroupMapper.toProto(userGroups))
+        .addAllCcEmailIds(ccEmailIds)
+        .setSubject(subject)
+        .setBody(body)
         .build();
   }
 
@@ -56,6 +62,9 @@ public class EmailChannel implements Channel {
         .templateData(emailDetails.getTemplateDataMap())
         .templateId(emailDetails.getTemplateId())
         .userGroups(NotificationUserGroupMapper.toEntity(emailDetails.getUserGroupList()))
+        .ccEmailIds(emailDetails.getCcEmailIdsList())
+        .subject(emailDetails.getSubject())
+        .body(emailDetails.getBody())
         .build();
   }
 }

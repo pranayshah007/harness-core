@@ -87,9 +87,12 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
     if (channel instanceof EmailChannel) {
       EmailChannel emailChannel = (EmailChannel) channel;
       return NotificationRequest.Email.newBuilder()
-          .addAllEmailIds(emailChannel.emailIds)
+          .addAllEmailIds(emailChannel.getEmailIds())
           .putAllTemplateData(emailChannel.getTemplateData())
           .addAllUserGroup(NotificationUserGroupMapper.toProto(emailChannel.getUserGroups()))
+          .addAllCcEmailIds(emailChannel.getCcEmailIds())
+          .setSubject(emailChannel.getSubject())
+          .setBody(emailChannel.getBody())
           .build();
     } else if (channel instanceof SlackChannel) {
       SlackChannel slackChannel = (SlackChannel) channel;

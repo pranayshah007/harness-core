@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
@@ -68,7 +69,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 
@@ -134,7 +134,60 @@ public class MailServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
-    throw new NotImplementedException();
+    if (Objects.isNull(notificationRequest) || !notificationRequest.hasEmail()) {
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    String notificationId = notificationRequest.getId();
+    NotificationRequest.Email mailDetails = notificationRequest.getEmail();
+    Map<String, String> templateData = mailDetails.getTemplateDataMap();
+    String templateId = mailDetails.getTemplateId();
+
+    if (Objects.isNull(stripToNull(templateId))) {
+      log.info("template Id is null for notification request {}", notificationId);
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    List<String> emailIds = resolveRecipients(notificationRequest);
+    if (isEmpty(emailIds)) {
+      log.info("No recipients found in notification request {}", notificationId);
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+          .build();
+    }
+
+    try {
+      String subject = mailDetails.getSubject();
+      String body = mailDetails.getBody();
+      List<String> ccEmailIds = new ArrayList<>(mailDetails.getCcEmailIdsList());
+      if (!NO_TEMPLATE.equals(templateId)) {
+        Optional<EmailTemplate> emailTemplateOpt = getTemplate(templateId, notificationRequest.getTeam());
+        if (!emailTemplateOpt.isPresent()) {
+          log.error(
+              "Failed to send email for notification request {} possibly due to no valid template with name {} found",
+              notificationId, templateId);
+          return NotificationTaskResponse.builder()
+              .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
+              .build();
+        }
+        EmailTemplate emailTemplate = emailTemplateOpt.get();
+
+        subject = processTemplate(templateId + "-subject", emailTemplate.getSubject(), templateData);
+        body = processTemplate(templateId + "-body", emailTemplate.getBody(), templateData);
+      }
+
+      return sendInSync(emailIds, ccEmailIds, subject, body, notificationId, notificationRequest.getAccountId());
+    } catch (Exception e) {
+      log.error("Failed to send email. Check template details for notificationId: {}\n{}", notificationId,
+          ExceptionUtils.getMessage(e));
+      return NotificationTaskResponse.builder()
+          .processingResponse(NotificationProcessingResponse.trivialResponseWithRetries)
+          .build();
+    }
   }
 
   @Override

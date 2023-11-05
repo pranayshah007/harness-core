@@ -31,12 +31,19 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class EmailChannel extends NotificationChannel {
   List<String> recipients;
+  List<String> ccEmailIds;
+  String subject;
+  String body;
 
   @Builder
   public EmailChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> recipients) {
+      Map<String, String> templateData, Team team, List<String> recipients, List<String> ccEmailIds, String subject,
+      String body) {
     super(accountId, userGroups, templateId, templateData, team);
     this.recipients = recipients;
+    this.ccEmailIds = ccEmailIds;
+    this.subject = subject;
+    this.body = body;
   }
 
   @Override
@@ -50,7 +57,10 @@ public class EmailChannel extends NotificationChannel {
                       .addAllEmailIds(recipients)
                       .setTemplateId(templateId)
                       .putAllTemplateData(templateData)
-                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
+                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+                      .addAllCcEmailIds(ccEmailIds)
+                      .setSubject(subject)
+                      .setBody(body))
         .build();
   }
 }

@@ -50,6 +50,9 @@ message NotificationRequest {
     repeated UserGroup userGroup = 9;
     map<string, string> templateData = 4;
     string templateId = 3;
+    repeated string ccEmailIds = 10;
+    string subject = 11;
+    string body = 12;
   }
 
   message PagerDuty {
