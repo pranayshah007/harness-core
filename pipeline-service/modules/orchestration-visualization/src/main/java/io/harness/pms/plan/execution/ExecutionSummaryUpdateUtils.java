@@ -78,7 +78,6 @@ public class ExecutionSummaryUpdateUtils {
     if (ExecutionModeUtils.isPostExecutionRollbackMode(nodeExecution.getAmbiance().getMetadata().getExecutionMode())) {
       String startingNodeId =
           planExecutionMetadata.getPostExecutionRollbackInfos().get(0).getPostExecutionRollbackStageId();
-      ;
       if (OrchestrationUtils.isStageNode(nodeExecution)) {
         for (Level nodeLevel : nodeExecution.getAmbiance().getLevelsList()) {
           if (Objects.equals(nodeLevel.getSetupId(), startingNodeId)) {
