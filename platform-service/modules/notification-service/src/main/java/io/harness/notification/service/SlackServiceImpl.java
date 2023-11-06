@@ -26,6 +26,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.SlackTaskParams;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -100,11 +101,13 @@ public class SlackServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
-    if (Objects.isNull(notificationRequest) || !notificationRequest.hasSlack()
-        || Objects.isNull(notificationRequest.getAccountId())) {
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+    if (Objects.isNull(notificationRequest) || !notificationRequest.hasSlack()) {
+      throw new NotificationException("Invalid slack notification request", DEFAULT_ERROR_CODE, USER);
+    }
+
+    if (isEmpty(notificationRequest.getAccountId())) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", notificationRequest.getId()), DEFAULT_ERROR_CODE, USER);
     }
 
     String notificationId = notificationRequest.getId();
@@ -122,9 +125,9 @@ public class SlackServiceImpl implements ChannelService {
     List<String> slackWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(slackWebhookUrls)) {
       log.info("No slackWebhookUrls found in notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException(
+          String.format("No slackWebhookUrls found in notification request %s.", notificationRequest.getId()),
+          DEFAULT_ERROR_CODE, USER);
     }
 
     int expressionFunctorToken = Math.toIntExact(slackDetails.getExpressionFunctorToken());
@@ -132,9 +135,18 @@ public class SlackServiceImpl implements ChannelService {
     Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
         notificationRequest.getAccountId(), slackDetails.getOrgIdentifier(), slackDetails.getProjectIdentifier());
 
-    return sendInSync(slackWebhookUrls, templateId, templateData, notificationRequest.getId(),
-        notificationRequest.getTeam(), notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
-        slackDetails.getMessage());
+    NotificationTaskResponse response = sendInSync(slackWebhookUrls, templateId, templateData,
+        notificationRequest.getId(), notificationRequest.getTeam(), notificationRequest.getAccountId(),
+        expressionFunctorToken, abstractionMap, slackDetails.getMessage());
+
+    if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to send slack notification. Check slack configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+
+    return response;
   }
 
   @Override
@@ -234,7 +246,14 @@ public class SlackServiceImpl implements ChannelService {
                                                     .expressionFunctorToken(expressionFunctorToken)
                                                     .executionTimeout(Duration.ofMinutes(1L))
                                                     .build();
-      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      DelegateResponseData responseData = null;
+      try {
+        responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      } catch (DelegateServiceDriverException exception) {
+        throw new NotificationException(
+            String.format("Failed to send notification %s, %s", notificationId, exception.getMessage()), exception,
+            DEFAULT_ERROR_CODE, USER);
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
             ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
