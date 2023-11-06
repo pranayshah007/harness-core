@@ -36,6 +36,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -132,9 +133,12 @@ public class MSTeamsServiceImpl implements ChannelService {
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
     if (Objects.isNull(notificationRequest) || !notificationRequest.hasMsTeam()) {
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException("Invalid microsoft teams notification request", DEFAULT_ERROR_CODE, USER);
+    }
+
+    if (isEmpty(notificationRequest.getAccountId())) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", notificationRequest.getId()), DEFAULT_ERROR_CODE, USER);
     }
 
     String notificationId = notificationRequest.getId();
@@ -151,10 +155,10 @@ public class MSTeamsServiceImpl implements ChannelService {
 
     List<String> microsoftTeamsWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(microsoftTeamsWebhookUrls)) {
-      log.info("No microsoft teams webhook url found in notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      log.info("No microsoft teams webhook found in notification request {}", notificationId);
+      throw new NotificationException(
+          String.format("No microsoft teams webhook found in notification request %s.", notificationRequest.getId()),
+          DEFAULT_ERROR_CODE, USER);
     }
 
     int expressionFunctorToken = Math.toIntExact(msTeamDetails.getExpressionFunctorToken());
@@ -162,9 +166,19 @@ public class MSTeamsServiceImpl implements ChannelService {
     Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
         notificationRequest.getAccountId(), msTeamDetails.getOrgIdentifier(), msTeamDetails.getProjectIdentifier());
 
-    return sendInSync(microsoftTeamsWebhookUrls, templateId, templateData, notificationId,
-        notificationRequest.getTeam(), notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
-        msTeamDetails.getMessage());
+    NotificationTaskResponse response =
+        sendInSync(microsoftTeamsWebhookUrls, templateId, templateData, notificationId, notificationRequest.getTeam(),
+            notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap, msTeamDetails.getMessage());
+
+    if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to send microsoft teams webhook notification. Check webhook configuration. %s",
+              response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+
+    return response;
   }
 
   @Override
@@ -281,7 +295,14 @@ public class MSTeamsServiceImpl implements ChannelService {
               .expressionFunctorToken(expressionFunctorToken)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      DelegateResponseData responseData = null;
+      try {
+        responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      } catch (DelegateServiceDriverException exception) {
+        throw new NotificationException(
+            String.format("Failed to send notification %s, %s", notificationId, exception.getMessage()), exception,
+            DEFAULT_ERROR_CODE, USER);
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
             ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
