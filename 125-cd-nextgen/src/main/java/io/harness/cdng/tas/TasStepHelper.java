@@ -68,7 +68,6 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
@@ -783,11 +782,7 @@ public class TasStepHelper {
     AutoScalerManifestOutcome autoScalerManifestOutcome = null;
     boolean autoScalarManifestFound = false;
     List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
-    if (cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_ENABLE_TAS_ARTIFACT_AS_MANIFEST_SOURCE_NG)) {
-      validateArtifactBundleManifestStore(orderedManifestOutcomes);
-    }
-
+    validateArtifactBundleManifestStore(orderedManifestOutcomes);
     for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
       switch (manifestOutcome.getType()) {
         case TAS_AUTOSCALER:

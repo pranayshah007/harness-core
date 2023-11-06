@@ -2495,7 +2495,6 @@ public class TasStepHelperTest extends CategoryTest {
             .autoScalerPath(ParameterField.createValueField(List.of("autoscalerPath")))
             .store(ArtifactBundleStore.builder().build())
             .build();
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
     TasManifestOutcome tasManifestOutcome2 = TasManifestOutcome.builder()
                                                  .order(1)
                                                  .identifier("ArtifactBundleStoreTaskManifest")
@@ -2519,7 +2518,6 @@ public class TasStepHelperTest extends CategoryTest {
             .autoScalerPath(ParameterField.createValueField(List.of("autoscalerPath")))
             .store(ArtifactBundleStore.builder().build())
             .build();
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
     AutoScalerManifestOutcome tasManifestOutcome2 = AutoScalerManifestOutcome.builder()
                                                         .order(1)
                                                         .identifier("ArtifactBundleStoreTaskManifest")
