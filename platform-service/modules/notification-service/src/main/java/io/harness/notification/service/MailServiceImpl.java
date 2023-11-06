@@ -165,9 +165,11 @@ public class MailServiceImpl implements ChannelService {
           log.error(
               "Failed to send email for notification request {} possibly due to no valid template with name {} found",
               notificationId, templateId);
-          return NotificationTaskResponse.builder()
-              .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-              .build();
+          throw new NotificationException(
+              String.format(
+                  "Failed to send email for notification request %s possibly due to no valid template with name %s found",
+                  notificationId, templateId),
+              DEFAULT_ERROR_CODE, USER);
         }
         EmailTemplate emailTemplate = emailTemplateOpt.get();
 
@@ -186,11 +188,11 @@ public class MailServiceImpl implements ChannelService {
       }
       return response;
     } catch (Exception e) {
-      log.error("Failed to send email. Check template details for notificationId: {}\n{}", notificationId,
-          ExceptionUtils.getMessage(e));
+      log.error(
+          "Failed to send email. Check template details for notificationId: {}\n{}", notificationId, e.getMessage());
       throw new NotificationException(
-          String.format(
-              "Failed to send email. Check template details for notificationId. %s", ExceptionUtils.getMessage(e)),
+          String.format("Failed to send email. Check template details for notificationId. %s%n%s", notificationId,
+              e.getMessage()),
           DEFAULT_ERROR_CODE, USER);
     }
   }

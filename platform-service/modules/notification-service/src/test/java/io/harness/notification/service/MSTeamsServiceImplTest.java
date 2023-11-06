@@ -10,19 +10,28 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.notification.NotificationRequest;
@@ -36,6 +45,7 @@ import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
+import io.vavr.collection.List;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -43,11 +53,13 @@ import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
 public class MSTeamsServiceImplTest extends CategoryTest {
+  private static final String TEST_NOTIFICATION_TEMPLATE_CONTENT = "This is a test notification";
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private MSTeamsSenderImpl msTeamsSender;
@@ -134,7 +146,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+        .thenReturn(Optional.empty(), Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
@@ -185,7 +197,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+        .thenReturn(Optional.empty(), Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
@@ -239,7 +251,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+        .thenReturn(Optional.empty(), Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
@@ -300,8 +312,173 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     boolean response = msTeamService.sendTestNotification(notificationSettingDTO4);
     assertTrue(response);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_EmptyRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder().build();
+
+    assertThatThrownBy(() -> msTeamService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessage("Invalid microsoft teams notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_OnlyIdInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder().setId(id).build();
+
+    assertThatThrownBy(() -> msTeamService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessage("Invalid microsoft teams notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NoAccountIdInRequest() {
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setMsTeam(NotificationRequest.MSTeam.newBuilder().build()).build();
+
+    assertThatThrownBy(() -> msTeamService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("No account id encountered for");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NoRecipientInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
+                                                  .setId(id)
+                                                  .setAccountId(accountId)
+                                                  .setMsTeam(NotificationRequest.MSTeam.newBuilder()
+                                                                 .setTemplateId(msTeamsTemplateName)
+                                                                 .addAllMsTeamKeys(Collections.EMPTY_LIST)
+                                                                 .build())
+                                                  .build();
+
+    assertThatThrownBy(() -> msTeamService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("No microsoft teams webhook found in notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NonExistingTemplateInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
+                                                  .setId(id)
+                                                  .setAccountId(accountId)
+                                                  .setMsTeam(NotificationRequest.MSTeam.newBuilder()
+                                                                 .setTemplateId(msTeamsTemplateName)
+                                                                 .addAllMsTeamKeys(List.of(msTeamsWebhookurl))
+                                                                 .build())
+                                                  .build();
+    when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> msTeamService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("Failed to send notification request")
+        .hasMessageContaining("possibly due to no valid template with name");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidCase_WithoutTemplateIdInRequest() {
+    NotificationRequest.MSTeam msTeamBuilder = NotificationRequest.MSTeam.newBuilder()
+                                                   .addAllMsTeamKeys(Collections.singletonList(msTeamsWebhookurl))
+                                                   .setMessage("custom-message")
+                                                   .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setMsTeam(msTeamBuilder).build();
+
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    NotificationTaskResponse notificationTaskResponse = msTeamService.sendSync(notificationRequest);
+
+    verifyNoInteractions(notificationTemplateService);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    MicrosoftTeamsTaskParams mailTaskParams = (MicrosoftTeamsTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).isNotEmpty();
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).hasSize(1);
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).contains(msTeamsWebhookurl);
+    assertEquals(msTeamBuilder.getMessage(), mailTaskParams.getMessage());
+    assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidCase_WithoutDelegate() {
+    NotificationRequest.MSTeam msTeamBuilder = NotificationRequest.MSTeam.newBuilder()
+                                                   .setTemplateId(msTeamsTemplateName)
+                                                   .addAllMsTeamKeys(Collections.singletonList(msTeamsWebhookurl))
+                                                   .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setMsTeam(msTeamBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(false);
+    when(msTeamsSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+
+    NotificationTaskResponse notificationTaskResponse = msTeamService.sendSync(notificationRequest);
+
+    verify(msTeamsSender, times(1)).send(anyList(), eq(TEST_NOTIFICATION_TEMPLATE_CONTENT), anyString(), anyList());
+
+    assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidCase_UsingDelegate() {
+    NotificationRequest.MSTeam msTeamBuilder = NotificationRequest.MSTeam.newBuilder()
+                                                   .setTemplateId(msTeamsTemplateName)
+                                                   .addAllMsTeamKeys(Collections.singletonList(msTeamsWebhookurl))
+                                                   .setMessage("custom-message")
+                                                   .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setMsTeam(msTeamBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+
+    NotificationTaskResponse notificationTaskResponse = msTeamService.sendSync(notificationRequest);
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    MicrosoftTeamsTaskParams mailTaskParams = (MicrosoftTeamsTaskParams) actualDelegateTaskRequest.getTaskParameters();
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).isNotEmpty();
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).hasSize(1);
+    assertThat(mailTaskParams.getMicrosoftTeamsWebhookUrls()).contains(msTeamsWebhookurl);
+    assertEquals(TEST_NOTIFICATION_TEMPLATE_CONTENT, mailTaskParams.getMessage());
+    assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
   }
 }

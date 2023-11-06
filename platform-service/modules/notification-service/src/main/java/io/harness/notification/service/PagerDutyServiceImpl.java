@@ -258,10 +258,12 @@ public class PagerDutyServiceImpl implements ChannelService {
     if (isNotEmpty(templateId)) {
       Optional<PagerDutyTemplate> templateOpt = getTemplate(templateId, team);
       if (!templateOpt.isPresent()) {
-        log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
-        return NotificationTaskResponse.builder()
-            .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-            .build();
+        log.info("Failed to send notification request {} possibly due to no valid template with name {} found",
+            notificationId, templateId);
+        throw new NotificationException(
+            String.format("Failed to send notification request %s possibly due to no valid template with name %s found",
+                notificationId, templateId),
+            DEFAULT_ERROR_CODE, USER);
       }
       PagerDutyTemplate template = templateOpt.get();
 

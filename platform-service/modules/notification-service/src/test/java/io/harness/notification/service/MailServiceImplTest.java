@@ -10,6 +10,7 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.RICHA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -20,6 +21,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -100,7 +104,6 @@ public class MailServiceImplTest extends CategoryTest {
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);
-    //    when(NGRestUtils.getResponse(any())).thenReturn(true);
 
     when(NGRestUtils.getResponse(responseTrue)).thenReturn(true);
     when(NGRestUtils.getResponse(responseFalse)).thenReturn(false);
@@ -436,5 +439,163 @@ public class MailServiceImplTest extends CategoryTest {
     DelegateTaskRequest request = requestCaptor.getValue();
     assertThat(((MailTaskParams) request.getTaskParameters()).getEmailIds().size()).isEqualTo(2);
     assertThat(((MailTaskParams) request.getTaskParameters()).getCcEmailIds().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_EmptyRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder().build();
+
+    assertThatThrownBy(() -> mailService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessage("Invalid email notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_OnlyIdInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder().setId(id).build();
+
+    assertThatThrownBy(() -> mailService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessage("Invalid email notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NoAccountIdInRequest() {
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setEmail(NotificationRequest.Email.newBuilder().build()).build();
+
+    assertThatThrownBy(() -> mailService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("No account id encountered for");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NoRecipientInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
+                                                  .setId(id)
+                                                  .setAccountId(accountId)
+                                                  .setEmail(NotificationRequest.Email.newBuilder().build())
+                                                  .build();
+
+    assertThatThrownBy(() -> mailService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("No recipients found in notification request");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_NonExistingTemplateInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
+                                                  .setId(id)
+                                                  .setAccountId(accountId)
+                                                  .setEmail(NotificationRequest.Email.newBuilder()
+                                                                .setTemplateId(mailTemplateName)
+                                                                .addAllEmailIds(Collections.singletonList(emailAdress))
+                                                                .build())
+                                                  .build();
+    when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> mailService.sendSync(notificationRequest))
+        .isInstanceOf(NotificationException.class)
+        .hasMessageContaining("Failed to send email for notification request")
+        .hasMessageContaining("possibly due to no valid template with name");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidCase_WithoutTemplateIdInRequest() {
+    NotificationRequest.Email emailBuilder = NotificationRequest.Email.newBuilder()
+                                                 .addAllEmailIds(List.of(emailAdress))
+                                                 .addAllCcEmailIds(List.of(emailAdress))
+                                                 .setSubject("test-subject")
+                                                 .setBody("test-body")
+                                                 .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setEmail(emailBuilder).build();
+
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+    when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
+        .thenReturn(Optional.of("this is test notification"));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+
+    NotificationTaskResponse notificationTaskResponse = mailService.sendSync(notificationRequest);
+
+    verifyNoInteractions(notificationTemplateService);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    MailTaskParams mailTaskParams = (MailTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(mailTaskParams.getEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getEmailIds()).contains(emailAdress);
+    assertThat(mailTaskParams.getCcEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getCcEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getCcEmailIds()).contains(emailAdress);
+    assertEquals(emailBuilder.getSubject(), mailTaskParams.getSubject());
+    assertEquals(emailBuilder.getBody(), mailTaskParams.getBody());
+    assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendSyncNotification_ValidCase_WithTemplateIdInRequest() {
+    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
+                                                  .setId(id)
+                                                  .setAccountId(accountId)
+                                                  .setEmail(NotificationRequest.Email.newBuilder()
+                                                                .setTemplateId(mailTemplateName)
+                                                                .addAllEmailIds(List.of(emailAdress))
+                                                                .addAllCcEmailIds(List.of(emailAdress))
+                                                                .setSubject("some-subject")
+                                                                .setBody("some-body")
+                                                                .build())
+                                                  .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
+        .thenReturn(Optional.of("this is test notification"));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+
+    NotificationTaskResponse notificationTaskResponse = mailService.sendSync(notificationRequest);
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    MailTaskParams mailTaskParams = (MailTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(mailTaskParams.getEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getEmailIds()).contains(emailAdress);
+    assertThat(mailTaskParams.getCcEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getCcEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getCcEmailIds()).contains(emailAdress);
+    assertEquals(emailTemplate.getSubject(), mailTaskParams.getSubject());
+    assertEquals(emailTemplate.getBody(), mailTaskParams.getBody());
+    assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
   }
 }
