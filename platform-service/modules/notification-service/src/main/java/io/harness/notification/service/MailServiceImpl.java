@@ -135,9 +135,12 @@ public class MailServiceImpl implements ChannelService {
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
     if (Objects.isNull(notificationRequest) || !notificationRequest.hasEmail()) {
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException("Invalid email notification request", DEFAULT_ERROR_CODE, USER);
+    }
+
+    if (isEmpty(notificationRequest.getAccountId())) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", notificationRequest.getId()), DEFAULT_ERROR_CODE, USER);
     }
 
     String notificationId = notificationRequest.getId();
@@ -155,9 +158,9 @@ public class MailServiceImpl implements ChannelService {
     List<String> emailIds = resolveRecipients(notificationRequest);
     if (isEmpty(emailIds)) {
       log.info("No recipients found in notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException(
+          String.format("No recipients found in notification request %s.", notificationRequest.getId()),
+          DEFAULT_ERROR_CODE, USER);
     }
 
     try {
@@ -180,13 +183,23 @@ public class MailServiceImpl implements ChannelService {
         body = processTemplate(templateId + "-body", emailTemplate.getBody(), templateData);
       }
 
-      return sendInSync(emailIds, ccEmailIds, subject, body, notificationId, notificationRequest.getAccountId());
+      NotificationTaskResponse response =
+          sendInSync(emailIds, ccEmailIds, subject, body, notificationId, notificationRequest.getAccountId());
+
+      if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+          || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+        throw new NotificationException(
+            String.format("Failed to send email notification. %s", response.getErrorMessage()), DEFAULT_ERROR_CODE,
+            USER);
+      }
+      return response;
     } catch (Exception e) {
       log.error("Failed to send email. Check template details for notificationId: {}\n{}", notificationId,
           ExceptionUtils.getMessage(e));
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithRetries)
-          .build();
+      throw new NotificationException(
+          String.format(
+              "Failed to send email. Check template details for notificationId. %s", ExceptionUtils.getMessage(e)),
+          DEFAULT_ERROR_CODE, USER);
     }
   }
 
