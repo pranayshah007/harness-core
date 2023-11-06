@@ -258,21 +258,21 @@ java:
   memoryLimit: "4096m"
 
 image:
-  registry: docker.io
-  repository: harness/ce-nextgen-signed
+  registry: us.gcr.io/platform-205701
+  repository: ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "81102-000"
+  tag: "1.0.0-ccm-14985-256499"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
 
 imageClickhouseEnabled:
-  registry: docker.io
-  repository: harness/ce-nextgen-signed
-  pullPolicy: Always
+  registry: us.gcr.io/platform-205701
+  repository: ce-nextgen-signed
+  pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "81102-000"
+  tag: "1.0.0-ccm-14985-256499"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -307,9 +307,6 @@ awsSecret:
   AWS_DESTINATION_BUCKET: ""
   AWS_TEMPLATE_LINK: ""
   CE_AWS_TEMPLATE_URL: ""
-
-azureSecret:
-  AZURE_APP_CLIENT_SECRET: ""
 
 ceng-gcp-credentials: ""
 
@@ -408,6 +405,7 @@ secrets:
     JWT_IDENTITY_SERVICE_SECRET: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
     NOTIFICATION_CLIENT_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
     ACCESS_CONTROL_SECRET: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    AZURE_APP_CLIENT_SECRET: ""
   kubernetesSecrets:
     - secretName: ""
       keys:
@@ -416,6 +414,7 @@ secrets:
         JWT_IDENTITY_SERVICE_SECRET: ""
         NOTIFICATION_CLIENT_SECRET: ""
         ACCESS_CONTROL_SECRET: ""
+        AZURE_APP_CLIENT_SECRET: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:
@@ -435,5 +434,8 @@ secrets:
             name: ""
             property: ""
           ACCESS_CONTROL_SECRET:
+            name: ""
+            property: ""
+          AZURE_APP_CLIENT_SECRET:
             name: ""
             property: ""
