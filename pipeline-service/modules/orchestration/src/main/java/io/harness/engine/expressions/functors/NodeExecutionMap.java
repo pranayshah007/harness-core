@@ -30,6 +30,7 @@ import io.harness.expression.LateBindingMap;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -146,7 +147,8 @@ public class NodeExecutionMap extends LateBindingMap {
      * c) a Pipeline Stage -> which is same as normal stage
      */
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
-    Ambiance nodeAmbiance = nodeExecutionsCache.getAmbiance(nodeExecution.getUuid());
+    // Todo: Fetch Ambiance on demand
+    Ambiance nodeAmbiance = nodeExecution.getAmbiance();
     boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
     // If any other node expression is called, then return pipeline execution url.
     if (!currentLevelInsideStage) {
@@ -279,9 +281,12 @@ public class NodeExecutionMap extends LateBindingMap {
   }
 
   private Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
-    if (nodeExecution.getUuid() != null) {
-      return nodeExecutionInfoService.fetchStrategyObjectMap(
-          nodeExecution.getUuid(), AmbianceUtils.shouldUseMatrixFieldName(ambiance));
+    if (nodeExecution.getAmbiance() != null) {
+      Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
+      if (currentLevel != null) {
+        return nodeExecutionInfoService.fetchStrategyObjectMap(
+            currentLevel, AmbianceUtils.shouldUseMatrixFieldName(nodeExecution.getAmbiance()));
+      }
     }
     return new HashMap<>();
   }

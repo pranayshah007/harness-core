@@ -16,7 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -45,15 +44,10 @@ public class NodeExecutionMapTest extends CategoryTest {
 
     Ambiance ambiance = Ambiance.newBuilder().addAllLevels(getNormalStageLevels(stageRuntimeId, stageSetupId)).build();
 
-    NodeExecutionsCache nodeExecutionsCache = NodeExecutionsCache.builder().build();
-    String nodeExecutionId = UUIDGenerator.generateUuid();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, ambiance);
-    NodeExecutionMap nodeExecutionMap =
-        NodeExecutionMap.builder()
-            .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build())
-            .nodeExecutionsCache(nodeExecutionsCache)
-            .ambiance(ambiance)
-            .build();
+    NodeExecutionMap nodeExecutionMap = NodeExecutionMap.builder()
+                                            .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                                            .ambiance(ambiance)
+                                            .build();
     Optional<Object> executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
@@ -61,10 +55,8 @@ public class NodeExecutionMapTest extends CategoryTest {
 
     // Stage inside parallel block
     ambiance = Ambiance.newBuilder().addAllLevels(getStageLevelInsideParallel(stageRuntimeId, stageSetupId)).build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, ambiance);
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build())
-                           .nodeExecutionsCache(nodeExecutionsCache)
+                           .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
                            .ambiance(ambiance)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
@@ -75,10 +67,8 @@ public class NodeExecutionMapTest extends CategoryTest {
     String stepRuntimeId = UUIDGenerator.generateUuid();
     Ambiance stepAmbiance =
         Ambiance.newBuilder().addAllLevels(getNormalStepLevels(stepRuntimeId, stageRuntimeId, stageSetupId)).build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, stepAmbiance);
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(stepAmbiance).build())
-                           .nodeExecutionsCache(nodeExecutionsCache)
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
                            .ambiance(stepAmbiance)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
@@ -90,11 +80,8 @@ public class NodeExecutionMapTest extends CategoryTest {
     stepAmbiance = Ambiance.newBuilder()
                        .addAllLevels(getStepLevelInsideParallel(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, stepAmbiance);
-
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(stepAmbiance).build())
-                           .nodeExecutionsCache(nodeExecutionsCache)
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
                            .ambiance(stepAmbiance)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
@@ -112,21 +99,15 @@ public class NodeExecutionMapTest extends CategoryTest {
     String stageSetupId = UUIDGenerator.generateUuid();
     String stageRuntimeId = UUIDGenerator.generateUuid();
 
-    NodeExecutionsCache nodeExecutionsCache = NodeExecutionsCache.builder().build();
-    String nodeExecutionId = UUIDGenerator.generateUuid();
-
     Ambiance ambiance = Ambiance.newBuilder()
                             .addAllLevels(getStageLevelInsideStrategy(stageRuntimeId, stageSetupId))
                             .setStageExecutionId(stageRuntimeId)
                             .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, ambiance);
 
-    NodeExecutionMap nodeExecutionMap =
-        NodeExecutionMap.builder()
-            .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build())
-            .ambiance(ambiance)
-            .nodeExecutionsCache(nodeExecutionsCache)
-            .build();
+    NodeExecutionMap nodeExecutionMap = NodeExecutionMap.builder()
+                                            .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
+                                            .ambiance(ambiance)
+                                            .build();
     Optional<Object> executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
@@ -138,12 +119,9 @@ public class NodeExecutionMapTest extends CategoryTest {
                    .addAllLevels(getStageLevelInsideStrategyInParallel(stageRuntimeId, stageSetupId))
                    .setStageExecutionId(stageRuntimeId)
                    .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, ambiance);
-
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build())
+                           .nodeExecution(NodeExecution.builder().ambiance(ambiance).build())
                            .ambiance(ambiance)
-                           .nodeExecutionsCache(nodeExecutionsCache)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
@@ -157,12 +135,9 @@ public class NodeExecutionMapTest extends CategoryTest {
                                 .addAllLevels(getStepLevelInsideStrategy(stepRuntimeId, stageRuntimeId, stageSetupId))
                                 .setStageExecutionId(stageRuntimeId)
                                 .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, stepAmbiance);
-
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(stepAmbiance).build())
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
                            .ambiance(stepAmbiance)
-                           .nodeExecutionsCache(nodeExecutionsCache)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
@@ -174,12 +149,9 @@ public class NodeExecutionMapTest extends CategoryTest {
                        .addAllLevels(getStepLevelInsideStrategyInParallel(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .setStageExecutionId(stageRuntimeId)
                        .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, stepAmbiance);
-
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(stepAmbiance).build())
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
                            .ambiance(stepAmbiance)
-                           .nodeExecutionsCache(nodeExecutionsCache)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
@@ -191,12 +163,9 @@ public class NodeExecutionMapTest extends CategoryTest {
                        .addAllLevels(getStepLevelInsideStageStrategy(stepRuntimeId, stageRuntimeId, stageSetupId))
                        .setStageExecutionId(stageRuntimeId)
                        .build();
-    nodeExecutionsCache.getAmbianceMap().put(nodeExecutionId, stepAmbiance);
-
     nodeExecutionMap = NodeExecutionMap.builder()
-                           .nodeExecution(NodeExecution.builder().uuid(nodeExecutionId).ambiance(stepAmbiance).build())
+                           .nodeExecution(NodeExecution.builder().ambiance(stepAmbiance).build())
                            .ambiance(stepAmbiance)
-                           .nodeExecutionsCache(nodeExecutionsCache)
                            .build();
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();

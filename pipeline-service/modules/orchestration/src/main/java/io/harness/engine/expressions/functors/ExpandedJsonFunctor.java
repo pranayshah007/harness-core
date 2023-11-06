@@ -50,7 +50,7 @@ public class ExpandedJsonFunctor {
     } else {
       response.put("strategy",
           nodeExecutionInfoService.fetchStrategyObjectMap(
-              AmbianceUtils.obtainCurrentLevel(ambiance).getRuntimeId(), useMatrixFieldName));
+              AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
     }
     return response;
   }
