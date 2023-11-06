@@ -1,5 +1,4 @@
 name: Go Build
-on:
   pull_request:
     branches:
       - master
@@ -44,7 +43,7 @@ jobs:
         run: |
           echo "Building gopath"
           bazel build :gopath --javacopt=' -XepDisableAllChecks'
-
+asdasd
       - name: Building queue-service code
         run: |
           echo "Building golang queue-service code using bazel..."
