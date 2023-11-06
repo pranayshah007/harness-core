@@ -55,6 +55,7 @@ public class TasStepPassThroughData implements PassThroughData {
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteCustomFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteGitStoreFetch = Boolean.FALSE;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteArtifactBundleStoreFetch = Boolean.FALSE;
   @Setter @NonFinal Boolean shouldCloseFetchFilesStream;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   String rawScript;

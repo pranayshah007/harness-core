@@ -75,6 +75,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -122,6 +123,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -142,6 +144,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig.TasContainerArtifactConfigBuilder;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
+import io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -768,6 +771,55 @@ public class TasStepHelper {
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
+  protected TaskChainResponse getArtifactBundleTaskChainResponse(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      ArtifactOutcome primaryArtifactOutcome) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    TasManifestDelegateConfig tasManifestDelegateConfig = TasManifestDelegateConfig.builder().build();
+    ArtifactBundleFetchRequest artifactBundleFetchRequest =
+        ArtifactBundleFetchRequest.builder()
+            .tasArtifactConfig(getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome))
+            .tasManifestDelegateConfig(tasManifestDelegateConfig)
+            .shouldOpenLogStream(true)
+            .closeLogStream(true)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(
+                UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build()))
+            .accountId(accountId)
+            .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ARTIFACT_BUNDLE_FETCH_TASK.name())
+                                  .parameters(new Object[] {artifactBundleFetchRequest})
+                                  .build();
+
+    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
+    if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
+      stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasBasicAppSetupStepParameters) {
+      stepLevelSelectors = ((TasBasicAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasBGAppSetupStepParameters) {
+      stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasCommandStepParameters) {
+      stepLevelSelectors = ((TasCommandStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasRollingDeployStepParameters) {
+      stepLevelSelectors = ((TasRollingDeployStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    }
+
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            tasStepPassThroughData.getCommandUnits(), TaskType.ARTIFACT_BUNDLE_FETCH_TASK.getDisplayName(),
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
+
+    return TaskChainResponse.builder()
+        .chainEnd(false)
+        .taskRequest(taskRequest)
+        .passThroughData(tasStepPassThroughData)
+        .build();
+  }
+
   public void filterManifestOutcomesByType(
       TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
@@ -966,8 +1018,39 @@ public class TasStepHelper {
           ambiance, stepElementParameters, updatedTasStepPassThroughData, tasManifestOutcome.getStore());
     }
 
+    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      return prepareArtifactBundleTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData);
+    }
+
     return executeTasTask(
         ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifestOutcome);
+  }
+
+  protected TaskChainResponse prepareArtifactBundleTaskChainResponse(
+      Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
+    TasManifestOutcome tasManifestOutcome = tasStepPassThroughData.getTasManifestOutcome();
+    ArtifactsOutcome artifactsOutcome = resolveArtifactOutcome(ambiance);
+
+    if (artifactsOutcome.getPrimary() == null || !(artifactsOutcome.getPrimary().isPrimaryArtifact())) {
+      throw new GeneralException("Provided Artifact should be a Primary Artifact for Artifact Bundle Store");
+    }
+    return getArtifactBundleTaskChainResponse(
+        ambiance, stepElementParameters, tasStepPassThroughData, artifactsOutcome.getPrimary());
+  }
+
+  private ArtifactsOutcome resolveArtifactOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (optionalOutcome.isFound()) {
+      return (ArtifactsOutcome) optionalOutcome.getOutcome();
+    }
+    String stageName =
+        AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
+    String stepType =
+        Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("TAS");
+    throw new GeneralException(format(
+        "No Artifact Bundle found in stage %s. %s step requires at least one Artifact Bundle defined in stage service definition",
+        stageName, stepType));
   }
 
   public static boolean shouldOpenFetchFilesStream(Boolean openFetchFilesStream) {
@@ -1565,6 +1648,8 @@ public class TasStepHelper {
       tasStepPassThroughData.setShouldExecuteGitStoreFetch(true);
     } else if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
       tasStepPassThroughData.setShouldExecuteHarnessStoreFetch(true);
+    } else if (ManifestStoreType.ARTIFACT_BUNDLE.equals(manifestOutcome.getStore().getKind())) {
+      tasStepPassThroughData.setShouldExecuteArtifactBundleStoreFetch(true);
     } else {
       throw new InvalidRequestException(
           format("Manifest store type: %s is not supported yet", manifestOutcome.getStore().getKind()));
