@@ -18,6 +18,7 @@ shared_dependencies = [
     "//890-sm-core:module",
     "//930-delegate-tasks:module",
     "//930-ng-core-clients:module",
+    "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
     "//933-ci-commons:module",
     "//942-enforcement-sdk:module",
     "//950-log-client:module",
@@ -404,7 +405,7 @@ java_library(
         "//310-iacm-manager:__subpackages__",
         "//315-sto-manager/app:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
-        "//idp-service/src/main/java/io/harness/idp/scorecard/datapointsdata:__subpackages__",
+        "//idp-service/src/main/java/io/harness/idp/scorecard:__subpackages__",
     ],
     deps = shared_dependencies + [
         "//:lombok",

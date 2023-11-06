@@ -7,7 +7,6 @@
 
 package io.harness.polling.service.impl;
 import static io.harness.polling.bean.PollingType.ARTIFACT;
-import static io.harness.polling.bean.PollingType.MANIFEST;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.CodePulse;
@@ -200,31 +199,33 @@ public class PollingServiceImpl implements PollingService {
     if (pollingDocument.getPolledResponse() == null) {
       return Collections.emptyList();
     }
-    if (ARTIFACT.equals(pollingDocument.getPollingType())) {
-      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
-        return Collections.emptyList();
-      }
-      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
-          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
-        return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
-            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
-      } else {
+    int polledKeyCount = 0;
+    switch (pollingDocument.getPollingType()) {
+      case ARTIFACT:
+        if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+          return Collections.emptyList();
+        }
+        polledKeyCount = ((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size();
+        if (polledKeyCount > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+          return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+              .subList(polledKeyCount - MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS, polledKeyCount);
+        }
         return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
-      }
-    }
-    if (MANIFEST.equals(pollingDocument.getPollingType())) {
-      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
-        return Collections.emptyList();
-      }
-      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
-          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
-        return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
-            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
-      } else {
+
+      case MANIFEST:
+        if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+          return Collections.emptyList();
+        }
+        polledKeyCount = ((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size();
+        if (polledKeyCount > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+          return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+              .subList(polledKeyCount - MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS, polledKeyCount);
+        }
         return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
-      }
+
+      default:
+        return Collections.emptyList();
     }
-    return Collections.emptyList();
   }
 
   @Override

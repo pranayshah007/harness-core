@@ -106,9 +106,10 @@ public class DebugResource {
   @Timed
   @Path("slo")
   @ApiOperation(value = "Force deletes SLOs and associated entities", nickname = "forceDeleteSLO", hidden = true)
-  public RestResponse<Boolean> forceDeleteSLO(@NotNull @BeanParam ProjectParams projectParams,
-      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
-    return new RestResponse<>(debugService.forceDeleteSLO(projectParams, identifiers));
+  public RestResponse<Boolean> forceDeleteSLO(@BeanParam ProjectParams projectParams,
+      @QueryParam("identifiers") List<String> identifiers,
+      @QueryParam("uniqueIdentifiers") List<String> uniqueIdentifiers) {
+    return new RestResponse<>(debugService.forceDeleteSLO(projectParams, identifiers, uniqueIdentifiers));
   }
 
   @DELETE
@@ -126,9 +127,9 @@ public class DebugResource {
   @ApiOperation(value = "Force deletes composite SLOs and associated entities", nickname = "forceDeleteCompositeSLO",
       hidden = true)
   public RestResponse<Boolean>
-  forceDeleteCompositeSLO(@NotNull @BeanParam ProjectParams projectParams,
-      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
-    return new RestResponse<>(debugService.forceDeleteCompositeSLO(projectParams, identifiers));
+  forceDeleteCompositeSLO(@BeanParam ProjectParams projectParams, @QueryParam("identifiers") List<String> identifiers,
+      @QueryParam("uniqueIdentifiers") List<String> uniqueIdentifiers) {
+    return new RestResponse<>(debugService.forceDeleteCompositeSLO(projectParams, identifiers, uniqueIdentifiers));
   }
 
   @GET

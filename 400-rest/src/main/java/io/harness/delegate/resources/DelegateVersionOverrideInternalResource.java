@@ -45,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @InternalApi
 public class DelegateVersionOverrideInternalResource {
   private final AdminDelegateVersionService adminDelegateVersionService;
+  public static final String HARNESS_IMAGE_TAG = "harness/delegate";
 
   @Inject
   public DelegateVersionOverrideInternalResource(AdminDelegateVersionService adminDelegateVersionService) {
@@ -63,7 +64,11 @@ public class DelegateVersionOverrideInternalResource {
       @QueryParam("delegateTag") @NotNull String delegateTag,
       @QueryParam("validTillNextRelease") @NotNull final Boolean validTillNextRelease,
       @QueryParam("validForDays") @NotNull final int validForDays) {
-    return new RestResponse<>(adminDelegateVersionService.setDelegateImageTag(
+    if (delegateTag.startsWith(HARNESS_IMAGE_TAG)) {
+      return new RestResponse<>(adminDelegateVersionService.setDelegateImageTag(
+          delegateTag, accountIdentifier, validTillNextRelease, validForDays));
+    }
+    return new RestResponse<>(adminDelegateVersionService.setCustomDelegateImageTag(
         delegateTag, accountIdentifier, validTillNextRelease, validForDays));
   }
 }

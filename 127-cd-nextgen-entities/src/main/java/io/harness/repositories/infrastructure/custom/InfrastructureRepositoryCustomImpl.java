@@ -252,7 +252,7 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
   public Optional<InfrastructureEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String environmentIdentifier, String infraIdentifier,
-      boolean loadFromCache, boolean loadFromFallbackBranch) {
+      boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly) {
     if (EmptyPredicate.isEmpty(infraIdentifier)) {
       return Optional.empty();
     }
@@ -264,19 +264,38 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
       return Optional.empty();
     }
 
-    if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
-      if (loadFromFallbackBranch) {
-        savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
-      } else {
-        savedEntity = fetchRemoteEntity(
-            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
-      }
+    if (getMetadataOnly || !StoreType.REMOTE.equals(savedEntity.getStoreType())) {
+      return Optional.of(savedEntity);
     }
 
-    return Optional.of(savedEntity);
+    return Optional.of(getRemoteInfrastructureWithYaml(savedEntity, loadFromCache, loadFromFallbackBranch));
+  }
+
+  public InfrastructureEntity getRemoteInfrastructureWithYaml(
+      InfrastructureEntity infrastructure, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    try {
+      String branchName = gitAwareEntityHelper.getWorkingBranch(infrastructure.getRepo());
+      if (loadFromFallbackBranch) {
+        infrastructure =
+            fetchRemoteEntityWithFallBackBranch(infrastructure.getAccountId(), infrastructure.getOrgIdentifier(),
+                infrastructure.getProjectIdentifier(), infrastructure, branchName, loadFromCache);
+      } else {
+        infrastructure = fetchRemoteEntity(infrastructure.getAccountId(), infrastructure.getOrgIdentifier(),
+            infrastructure.getProjectIdentifier(), infrastructure, branchName, loadFromCache);
+      }
+
+      return infrastructure;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(
+          String.format("Error while retrieving yaml for infrastructure: [%s]", infrastructure.getIdentifier()), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format(
+                    "Unexpected error occurred while yaml for infrastructure: [%s]", infrastructure.getIdentifier()),
+          e);
+      throw new InternalServerErrorException(String.format(
+          "Unexpected error occurred while retrieving yaml for infrastructure: [%s]", infrastructure.getIdentifier()));
+    }
   }
 
   private InfrastructureEntity updateInfrastructureEntityInMongo(

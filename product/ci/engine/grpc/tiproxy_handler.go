@@ -27,7 +27,7 @@ import (
 var (
 	getRemoteTiClient = external.GetTiHTTPClient
 	getWrkspcPath     = external.GetWrkspcPath
-	getChFiles        = external.GetChangedFiles
+	getChFiles        = external.GetChangedFilesPush
 )
 
 const (
@@ -112,6 +112,7 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 	skipVerify := false
 	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
 
+	h.log.Infow("TIProxy - starting write API call", "step_id", stepID)
 	// Write API call
 	report := "junit" // get from proto if we need other reports in the future
 	err := tiClient.Write(stream.Context(), stepID, report, tests)
@@ -119,11 +120,14 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 		h.log.Errorw("could not write test cases: ", zap.Error(err))
 		return err
 	}
+	h.log.Infow("TIProxy - completed write API call", "step_id", stepID)
+	h.log.Infow("TIProxy - starting SendAndClose call", "step_id", stepID)
 	err = stream.SendAndClose(&pb.WriteTestsResponse{})
 	if err != nil {
 		h.log.Errorw("could not close test case data protobuf stream", zap.Error(err))
 		return err
 	}
+	h.log.Infow("TIProxy - completed SendAndClose call", "step_id", stepID)
 	h.log.Infow("parsed test cases", "num_cases", len(tests))
 	return nil
 }
@@ -141,12 +145,9 @@ func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) 
 	source := req.GetSource()
 	target := req.GetTarget()
 	timeMs := req.GetTimeMs()
-	encCg, msg, emptyCg, err := h.getEncodedData(req)
+	encCg, msg, _, err := h.getEncodedData(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get avro encoded callgraph")
-	} else if emptyCg {
-		h.log.Infow("Skipping call graph upload since no call graph was generated")
-		return &pb.UploadCgResponse{CgMsg: msg, EmptyCg: emptyCg}, nil
 	}
 
 	err = tiClient.UploadCg(ctx, stepID, source, target, timeMs, encCg)
@@ -222,9 +223,6 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, string
 	}
 	msg := fmt.Sprintf("Size of Test nodes: %d, Test relations: %d, Vis Relations %d", len(cg.Nodes), len(cg.TestRelations), len(cg.VisRelations))
 	h.log.Infow(msg)
-	if isCgEmpty(cg) {
-		return nil, msg, true, nil
-	}
 
 	cgMap := cg.ToStringMap()
 	cgSer, err := avro.NewCgphSerialzer(cgSchemaType, false)
@@ -309,13 +307,14 @@ func (h *tiProxyHandler) GetChangedFilesPushTrigger(ctx context.Context, req *pb
 	if lastSuccessfulCommitID == "" {
 		return nil, fmt.Errorf("last Successful Commit ID not present in request")
 	}
+	currentCommitID := req.GetCurrentCommit()
 
 	workspace, err := getWrkspcPath()
 	if err != nil {
 		return nil, err
 	}
 
-	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, true, h.log, h.procWriter)
+	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, currentCommitID, h.log, h.procWriter)
 	if err != nil {
 		h.log.Errorw("failed to get changed files for push trigger in runTests step", "step_id", stepID, zap.Error(err))
 		return nil, err

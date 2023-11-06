@@ -1,0 +1,24 @@
+{
+  "skipOverwrite": false,
+  "java11": true,
+  "typeMappings": {
+  },
+  "importMappings": {
+  },
+  "hideGenerationTimestamp": true,
+  "oas3": true,
+  "apiPackage": "io.harness.spec.server.notification.v1",
+  "modelPackage": "io.harness.spec.server.notification.v1.model",
+  "groupId": "io.harness",
+  "artifactId": "notification-server-spec",
+  "artifactVersion": "1.0.10",
+  "interfaceOnly": true,
+  "returnResponse": true,
+  "sourceFolder": "src/main/java",
+  "dateLibrary": "java8",
+  "ignoreImportMapping": [
+  ],
+  "additionalProperties": {
+    "useTags": true
+  }
+}

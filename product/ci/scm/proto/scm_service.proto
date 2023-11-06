@@ -321,6 +321,7 @@ message Provider {
   // If skipVerify is false, we can pass in a path of additional certs to allow
   // This might be useful in self hosted repositories which use self signed certs.
   string additional_certs_path = 10;
+  string proxy = 13;
 }
 
 /*
@@ -681,6 +682,7 @@ enum HarnessWebhookEvent {
   HARNESS_TAG_CREATED = 6;
   HARNESS_TAG_DELETED = 7;
   HARNESS_TAG_UPDATED = 8;
+  HARNESS_PULLREQ_COMMENT_CREATED = 9;
 }
 
 message GithubWebhookEvents {

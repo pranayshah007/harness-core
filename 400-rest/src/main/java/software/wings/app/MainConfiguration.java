@@ -163,6 +163,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("ocVersion") private String ocVersion;
   @JsonProperty("scmVersion") private String scmVersion;
   @JsonProperty("trialRegistrationAllowed") private boolean trialRegistrationAllowed;
+  @JsonProperty("useUserProvidedAccountIdInTrialSignup") private boolean useUserProvidedAccountIdInTrialSignup;
   @JsonProperty("eventsFrameworkAvailableInOnPrem") private boolean eventsFrameworkAvailableInOnPrem;
   @JsonProperty(value = "trialRegistrationAllowedForBugathon", defaultValue = "false")
   private boolean trialRegistrationAllowedForBugathon;
@@ -195,6 +196,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("sampleTargetEnv") private String sampleTargetEnv;
   @JsonProperty("sampleTargetStatusHost") private String sampleTargetStatusHost;
   @JsonProperty("timescaledb") @ConfigSecret private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("licenseUsageTimescaleSocketTimeout") private int licenseUsageTimescaleSocketTimeout;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("ngAuthUIEnabled") private boolean ngAuthUIEnabled;
   @JsonProperty("gcpMarketplaceConfig") private GcpMarketplaceConfig gcpMarketplaceConfig;

@@ -23,12 +23,14 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
@@ -38,6 +40,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
@@ -61,6 +64,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -75,6 +79,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -87,6 +93,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureEntityService infraService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -281,6 +288,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getEnvironment() != null) {
       addFiltersFromEnvironment(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironment(),
           deploymentStageConfig.getGitOpsEnabled());
+      validateInfraScopedToServices(deploymentStageConfig, filterCreationContext);
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
       addFiltersFromEnvironmentGroup(filterCreationContext, deploymentStageConfig.getEnvironmentGroup());
     } else if (deploymentStageConfig.getEnvironments() != null) {
@@ -290,6 +298,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           addFiltersFromEnvironment(
               filterCreationContext, filterBuilder, environmentYamlV2, deploymentStageConfig.getGitOpsEnabled());
         }
+        validateInfraScopedToServices(deploymentStageConfig, filterCreationContext);
       }
     } else {
       throw new InvalidYamlRuntimeException(format(
@@ -345,7 +354,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
             "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      Optional<Environment> environmentEntityOptional = environmentService.get(
+      Optional<Environment> environmentEntityOptional = environmentService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
       environmentEntityOptional.ifPresent(environment -> {
@@ -415,6 +424,82 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+  }
+
+  private void validateInfraScopedToServices(
+      DeploymentStageConfig deploymentStageConfig, FilterCreationContext filterCreationContext) {
+    if (!ngFeatureFlagHelperService.isEnabled(
+            filterCreationContext.getSetupMetadata().getAccountId(), FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      return;
+    }
+
+    List<String> serviceRefs = new ArrayList<>();
+    Map<String, List<String>> envInfraMap = new HashMap<>();
+    if (deploymentStageConfig.getService() != null) {
+      addServiceRef(deploymentStageConfig.getService(), serviceRefs);
+    }
+    if (deploymentStageConfig.getServices() != null) {
+      addMultiServiceRef(deploymentStageConfig.getServices(), serviceRefs);
+    }
+    if (deploymentStageConfig.getEnvironment() != null) {
+      addEnvRef(deploymentStageConfig.getEnvironment(), envInfraMap);
+    }
+    if (deploymentStageConfig.getEnvironments() != null) {
+      addMultiEnvRef(deploymentStageConfig.getEnvironments(), envInfraMap);
+    }
+    infraService.checkIfInfraIsScopedToService(filterCreationContext.getSetupMetadata().getAccountId(),
+        filterCreationContext.getSetupMetadata().getOrgId(), filterCreationContext.getSetupMetadata().getProjectId(),
+        serviceRefs, envInfraMap);
+  }
+
+  private void addMultiEnvRef(EnvironmentsYaml envs, Map<String, List<String>> envInfraMap) {
+    List<EnvironmentYamlV2> envList = ParameterFieldHelper.getParameterFieldValue(envs.getValues());
+    if (CollectionUtils.isNotEmpty(envList)) {
+      envList.forEach(env -> addEnvRef(env, envInfraMap));
+    }
+  }
+
+  private void addEnvRef(EnvironmentYamlV2 environment, Map<String, List<String>> envInfraMap) {
+    String envRef = ParameterFieldHelper.getParameterFieldValue(environment.getEnvironmentRef());
+    if (StringUtils.isBlank(envRef)) {
+      return;
+    }
+    List<InfraStructureDefinitionYaml> infraList =
+        ParameterFieldHelper.getParameterFieldValue(environment.getInfrastructureDefinitions());
+    if (CollectionUtils.isNotEmpty(infraList)) {
+      infraList.forEach(infra -> addInfraRef(infra, envInfraMap, envRef));
+    }
+    InfraStructureDefinitionYaml infra =
+        ParameterFieldHelper.getParameterFieldValue(environment.getInfrastructureDefinition());
+    if (infra != null) {
+      addInfraRef(infra, envInfraMap, envRef);
+    }
+  }
+
+  private void addInfraRef(InfraStructureDefinitionYaml infra, Map<String, List<String>> envInfraMap, String envRef) {
+    String infraRef = ParameterFieldHelper.getParameterFieldValue(infra.getIdentifier());
+    if (StringUtils.isNotBlank(infraRef)) {
+      List<String> infraRefs = new ArrayList<>();
+      if (CollectionUtils.isNotEmpty(envInfraMap.get(envRef))) {
+        infraRefs = envInfraMap.get(envRef);
+      }
+      infraRefs.add(infraRef);
+      envInfraMap.put(envRef, infraRefs);
+    }
+  }
+
+  private void addServiceRef(ServiceYamlV2 service, List<String> serviceRefs) {
+    String serviceRef = ParameterFieldHelper.getParameterFieldValue(service.getServiceRef());
+    if (StringUtils.isNotBlank(serviceRef)) {
+      serviceRefs.add(serviceRef);
+    }
+  }
+
+  private void addMultiServiceRef(ServicesYaml services, List<String> serviceRefs) {
+    List<ServiceYamlV2> serviceList = ParameterFieldHelper.getParameterFieldValue(services.getValues());
+    if (CollectionUtils.isNotEmpty(serviceList)) {
+      serviceList.forEach(service -> addServiceRef(service, serviceRefs));
     }
   }
 
@@ -573,7 +658,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     ParameterField<String> environmentRef = infrastructure.getEnvironmentRef();
     if (environmentRef != null && !environmentRef.isExpression()) {
-      Optional<Environment> environmentEntityOptional = environmentService.get(
+      Optional<Environment> environmentEntityOptional = environmentService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
       environmentEntityOptional.ifPresent(environment -> cdFilter.environmentName(environmentRef.getValue()));

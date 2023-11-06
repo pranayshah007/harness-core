@@ -42,6 +42,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetFilterPropertiesDto;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.MergeInputSetForRerunRequestDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
@@ -561,11 +562,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<PageResponse<InputSetListResponseDTO>> listInputSetsForProject(int page, int size,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, InputSetListTypePMS inputSetListType, String searchTerm,
-      List<String> sort, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      List<String> sort, GitEntityFindInfoDTO gitEntityBasicInfo,
+      InputSetFilterPropertiesDto inputSetFilterPropertiesDto) {
     log.info(String.format(
         "Get List of input sets for project %s, org %s, account %s", projectIdentifier, orgIdentifier, accountId));
     Criteria criteria = PMSInputSetFilterHelper.listInputSetsForProjectCriteria(
-        accountId, orgIdentifier, projectIdentifier, inputSetListType, searchTerm, false);
+        accountId, orgIdentifier, projectIdentifier, inputSetListType, searchTerm, false, inputSetFilterPropertiesDto);
     Pageable pageRequest = PageUtils.getPageRequest(
         page, size, new ArrayList<>(), Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
     Page<InputSetEntity> inputSetEntities =

@@ -145,6 +145,11 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
   }
 
   private List<String> getMatchingFilePaths(List<String> modifiedFilePaths, GitXWebhook gitXWebhook) {
+    if (isEmpty(gitXWebhook.getFolderPaths())) {
+      log.info(String.format("No folderPaths mentioned in the webhook %s, parsing all the modifiedFilePaths",
+          gitXWebhook.getIdentifier()));
+      return modifiedFilePaths;
+    }
     return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFilePaths);
   }
 

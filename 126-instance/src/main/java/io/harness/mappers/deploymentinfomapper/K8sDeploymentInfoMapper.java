@@ -7,8 +7,11 @@
 
 package io.harness.mappers.deploymentinfomapper;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
 
@@ -16,6 +19,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.DX)
 @UtilityClass
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sDeploymentInfoMapper {
   public K8sDeploymentInfoDTO toDTO(K8sDeploymentInfo k8sDeploymentInfo) {
     return K8sDeploymentInfoDTO.builder()
@@ -24,6 +28,7 @@ public class K8sDeploymentInfoMapper {
         .releaseName(k8sDeploymentInfo.getReleaseName())
         .cloudConfigMetadata(k8sDeploymentInfo.getCloudConfigMetadata())
         .helmChartInfo(k8sDeploymentInfo.getHelmChartInfo())
+        .canary(Boolean.TRUE.equals(k8sDeploymentInfo.getCanary()))
         .build();
   }
 
@@ -34,6 +39,7 @@ public class K8sDeploymentInfoMapper {
         .releaseName(k8sDeploymentInfoDTO.getReleaseName())
         .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata())
         .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
+        .canary(k8sDeploymentInfoDTO.isCanary())
         .build();
   }
 }

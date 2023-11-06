@@ -42,6 +42,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -92,7 +93,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       socketTimeoutMillis =
           (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
     }
-    HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+    HttpStepParameters httpStepParameters = httpStepUtils.getHttpStepParameters(stepParameters);
 
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
 
@@ -147,6 +148,11 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
+    return handleTaskResultWithSecurityContext(ambiance, stepParameters, responseSupplier, HarnessYamlVersion.V0);
+  }
+
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
+      ThrowingSupplier<HttpStepResponse> responseSupplier, String version) throws Exception {
     try {
       NGLogCallback logCallback =
           httpStepUtils.getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
@@ -154,7 +160,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       StepResponseBuilder responseBuilder = StepResponse.builder();
       HttpStepResponse httpStepResponse = responseSupplier.get();
 
-      HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+      HttpStepParameters httpStepParameters = httpStepUtils.getHttpStepParameters(stepParameters);
       logCallback.saveExecutionLog(String.format(
           "Successfully executed the http request %s .", httpStepUtils.fetchFinalValue(httpStepParameters.getUrl())));
 
@@ -166,15 +172,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       logCallback.saveExecutionLog("Validating the assertions...");
       boolean assertionSuccessful =
           HttpStepUtils.validateAssertions(httpStepResponse, httpStepParameters.getAssertion());
-      HttpOutcome executionData = HttpOutcome.builder()
-                                      .httpUrl(httpStepUtils.fetchFinalValue(httpStepParameters.getUrl()))
-                                      .httpMethod(httpStepUtils.fetchFinalValue(httpStepParameters.getMethod()))
-                                      .httpResponseCode(httpStepResponse.getHttpResponseCode())
-                                      .httpResponseBody(httpStepResponse.getHttpResponseBody())
-                                      .status(httpStepResponse.getCommandExecutionStatus())
-                                      .errorMsg(httpStepResponse.getErrorMessage())
-                                      .outputVariables(outputVariablesEvaluated)
-                                      .build();
+      HttpBaseOutcome executionData =
+          httpStepUtils.getHttpOutcome(version, httpStepParameters, httpStepResponse, outputVariablesEvaluated);
 
       if (!assertionSuccessful) {
         responseBuilder.status(Status.FAILED);

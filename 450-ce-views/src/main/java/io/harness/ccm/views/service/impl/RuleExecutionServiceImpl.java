@@ -15,6 +15,7 @@ import static io.harness.ccm.views.helper.RuleCloudProviderType.AZURE;
 import static io.harness.ccm.views.helper.RuleCostType.POTENTIAL;
 import static io.harness.ccm.views.helper.RuleCostType.REALIZED;
 import static io.harness.ccm.views.helper.RuleExecutionType.INTERNAL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
@@ -49,7 +50,6 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -178,7 +178,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     // Getting the recommendations data from mongo DB(Only the executions data is projected)
     List<RuleRecommendation> ruleRecommendationList =
         rulesExecutionDAO.getGovernanceRecommendations(accountId, recommendationIds);
-    if (Lists.isNullOrEmpty(ruleRecommendationList)) {
+    if (isEmpty(ruleRecommendationList)) {
       return OverviewExecutionCostDetails.builder().build();
     }
 

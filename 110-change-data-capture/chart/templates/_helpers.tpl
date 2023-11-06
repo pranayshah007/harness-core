@@ -61,6 +61,21 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{/*
+Manage change-data-capture Secrets
+USAGE:
+{{- "change-data-capture.generateSecrets" (dict "ctx" $)}}
+*/}}
+
+{{- define "change-data-capture.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}
+
 {{- define "change-data-capture.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}

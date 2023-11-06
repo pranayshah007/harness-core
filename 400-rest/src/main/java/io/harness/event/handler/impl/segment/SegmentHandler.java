@@ -7,6 +7,7 @@
 
 package io.harness.event.handler.impl.segment;
 
+import static io.harness.TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -166,7 +167,6 @@ public class SegmentHandler implements EventHandler {
           log.error("User email is empty");
           return;
         }
-
         String identity = reportIdentity(properties.get(USER_NAME), email);
         if (isNotEmpty(identity)) {
           reportTrackEvent(eventType, Arrays.asList(identity));
@@ -243,7 +243,6 @@ public class SegmentHandler implements EventHandler {
     if (isEmpty(usersOfAccount)) {
       return;
     }
-
     List<String> IdentityList = usersOfAccount.stream().map(User::getSegmentIdentity).collect(Collectors.toList());
     reportTrackEvent(eventType, IdentityList);
   }
@@ -410,7 +409,7 @@ public class SegmentHandler implements EventHandler {
         user = userService.getUserFromCacheOrDB(userId);
       }
     } else {
-      identity = "system-" + account.getUuid();
+      identity = SEGMENT_DUMMY_ACCOUNT_PREFIX + account.getUuid();
     }
 
     if (properties == null) {

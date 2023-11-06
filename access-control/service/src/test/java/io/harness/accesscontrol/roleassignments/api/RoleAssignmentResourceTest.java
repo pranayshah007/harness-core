@@ -101,6 +101,7 @@ import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -112,8 +113,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
-import org.springframework.transaction.support.SimpleTransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -435,13 +434,15 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentFilterDTOClone.getPrincipalFilter(), roleAssignmentFilter);
   }
 
-  private void testGetAggregatedV2Internal(RoleAssignmentFilterV2 roleAssignmentFilterV2DTO) {
+  private void testGetAggregatedV2Internal(
+      RoleAssignmentFilterV2 roleAssignmentFilterV2DTO, Set<ScopeSelector> scopeSelectors) {
     Scope scope = fromParams(harnessScopeParams);
     preViewPrincipalPermissions(true, false, false);
     boolean isUserPrincipal = roleAssignmentFilterV2DTO.getPrincipalFilter() != null
         && USER.equals(roleAssignmentFilterV2DTO.getPrincipalFilter().getType());
     if (isUserPrincipal) {
-      when(userGroupService.list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier()))
+      when(userGroupService.listUserGroupForUserInAccessibleScopes(
+               scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier(), scopeSelectors))
           .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
     }
     ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
@@ -465,7 +466,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2DTO);
     if (isUserPrincipal) {
       verify(userGroupService, times(1))
-          .list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
+          .listUserGroupForUserInAccessibleScopes(
+              scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier(), scopeSelectors);
     }
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
@@ -486,7 +488,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
     RoleAssignmentFilterV2 roleAssignmentFilterV2 =
         RoleAssignmentFilterV2.builder().resourceGroupFilter(resourceGroupFilter).roleFilter(roleFilter).build();
-    testGetAggregatedV2Internal(roleAssignmentFilterV2);
+    testGetAggregatedV2Internal(roleAssignmentFilterV2, Collections.emptySet());
   }
 
   @Test
@@ -501,7 +503,13 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
             .roleFilter(roleFilter)
             .principalFilter(PrincipalDTO.builder().identifier("user1").type(PrincipalType.USER).build())
             .build();
-    testGetAggregatedV2Internal(roleAssignmentFilterV2);
+    testGetAggregatedV2Internal(roleAssignmentFilterV2,
+        Set.of(ScopeSelector.builder()
+                   .accountIdentifier(harnessScopeParams.getAccountIdentifier())
+                   .orgIdentifier(harnessScopeParams.getOrgIdentifier())
+                   .projectIdentifier(null)
+                   .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                   .build()));
   }
 
   @Test
@@ -588,11 +596,10 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, true, true, true);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
     roleAssignmentResource.create(harnessScopeParams, roleAssignmentDTO);
     assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test
@@ -612,7 +619,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     roleAssignmentResource.create(harnessScopeParams1, roleAssignmentDTO);
     assertSyncDependencies(2, roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(2, roleAssignmentDTOClone);
-    verify(transactionTemplate, times(2)).execute(any());
+    verify(roleAssignmentService, times(2)).create(any());
   }
 
   @Test
@@ -623,11 +630,10 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, false, false, false);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
     roleAssignmentResource.create(harnessScopeParams, roleAssignmentDTO);
     assertSyncDependencies(roleAssignmentDTOClone, false, false, false);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test
@@ -644,7 +650,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     } catch (InvalidRequestException invalidRequestException) {
       assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
       assertCheckUpdatePermission(roleAssignmentDTOClone);
-      verify(transactionTemplate, times(0)).execute(any());
+      verify(roleAssignmentService, times(0)).create(any());
     }
   }
 
@@ -764,16 +770,18 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testUpdate() {
     RoleAssignmentDTO roleAssignmentDTO = getRoleAssignmentDTO();
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
+    when(roleAssignmentService.update(any())).thenReturn(roleAssignment);
     roleAssignmentResource.update(roleAssignmentDTO.getIdentifier(), harnessScopeParams, roleAssignmentDTO);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).update(any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -797,7 +805,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
       fail();
     } catch (InvalidRequestException invalidRequestException) {
       assertCheckUpdatePermission(roleAssignmentDTOClone);
-      verify(transactionTemplate, times(0)).execute(any());
+      verify(roleAssignmentService, times(0)).update(any());
     }
   }
 
@@ -812,13 +820,12 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentDTO -> roleAssignmentDTOsClone.add((RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO)));
     preSyncDependencies(roleAssignmentDTOs, true, true, true);
     preCheckUpdatePermission(roleAssignmentDTOs);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
     roleAssignmentResource.create(
         harnessScopeParams, RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOs).build());
     for (RoleAssignmentDTO roleAssignmentDTOClone : roleAssignmentDTOsClone) {
       assertSyncDependencies(roleAssignmentDTOs.size(), roleAssignmentDTOClone, true, true, true);
       assertCheckUpdatePermission(roleAssignmentDTOs.size(), roleAssignmentDTOClone);
-      verify(transactionTemplate, times(roleAssignmentDTOs.size())).execute(any());
+      verify(roleAssignmentService, times(roleAssignmentDTOs.size())).create(any());
     }
   }
 
@@ -833,13 +840,12 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         roleAssignmentDTO -> roleAssignmentDTOsClone.add((RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO)));
     preSyncDependencies(roleAssignmentDTOs, false, false, false);
     preCheckUpdatePermission(roleAssignmentDTOs);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
     roleAssignmentResource.create(
         harnessScopeParams, RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOs).build());
     for (RoleAssignmentDTO roleAssignmentDTOClone : roleAssignmentDTOsClone) {
       assertSyncDependencies(roleAssignmentDTOs.size(), roleAssignmentDTOClone, false, false, false);
       assertCheckUpdatePermission(roleAssignmentDTOs.size(), roleAssignmentDTOClone);
-      verify(transactionTemplate, times(roleAssignmentDTOs.size())).execute(any());
+      verify(roleAssignmentService, times(roleAssignmentDTOs.size())).create(any());
     }
   }
 
@@ -906,12 +912,13 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     preCheckUpdatePermission(roleAssignmentDTO);
     ValidationResult validResult = ValidationResult.VALID;
     when(actionValidator.canDelete(roleAssignment)).thenReturn(validResult);
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse());
+    when(roleAssignmentService.delete(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
+        .thenReturn(Optional.of(roleAssignment));
     roleAssignmentResource.delete(harnessScopeParams, roleAssignmentDTO.getIdentifier());
     verify(roleAssignmentService, times(1)).get(any(), any());
     assertCheckUpdatePermission(roleAssignmentDTO);
     verify(actionValidator, times(1)).canDelete(any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).delete(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier());
   }
 
   @Test
@@ -931,11 +938,9 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     String id3 = roleAssignment3.getIdentifier();
 
     mockCallForBulkDelete(roleAssignmentDTO1, roleAssignmentDTO2, roleAssignmentDTO3);
-    when(transactionTemplate.execute(any()))
-        .thenAnswer(invocationOnMock
-            -> invocationOnMock.getArgument(0, TransactionCallback.class)
-                   .doInTransaction(new SimpleTransactionStatus()));
-    ArgumentCaptor<List<String>> deleteCapture = ArgumentCaptor.forClass(List.class);
+    List<RoleAssignment> roleAssignments = List.of(roleAssignment1, roleAssignment2, roleAssignment3);
+    when(roleAssignmentService.deleteMulti(scopeIdentifier, List.of(id1))).thenReturn(roleAssignments);
+
     when(roleAssignmentDTOMapper.toResponseDTO(roleAssignment1))
         .thenReturn(RoleAssignmentResponseDTO.builder()
                         .scope(ScopeDTO.builder().accountIdentifier("acc").build())
@@ -943,9 +948,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
                         .build());
     ResponseDTO<RoleAssignmentDeleteResponseDTO> result =
         roleAssignmentResource.bulkDelete(harnessScopeParams, Set.of(id1, id2, id3));
-    verify(roleAssignmentService, times(1)).deleteMulti(eq(scopeIdentifier), deleteCapture.capture());
-    List<String> deletedIds = deleteCapture.getValue();
-    assertThat(deletedIds).isEqualTo(List.of(id1));
+    verify(roleAssignmentService, times(1)).deleteMulti(scopeIdentifier, List.of(id1));
+
     assertThat(result).isNotNull();
     assertThat(result.getData().failedToDelete).isEqualTo(2);
     assertThat(result.getData().successfullyDeleted).isEqualTo(1);

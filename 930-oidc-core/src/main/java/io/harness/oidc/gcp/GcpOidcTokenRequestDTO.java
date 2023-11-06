@@ -13,20 +13,21 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
 @Schema(name = "GcpOidcTokenRequest", description = "This contains GCP OIDC Token request details")
+@Setter
 public class GcpOidcTokenRequestDTO {
+  @NotNull @NotEmpty @Schema(description = "This specifies the Harness Account Id") private String accountId;
   @NotNull @NotEmpty @Schema(description = "This specifies the Workload Pool Id") private String workloadPoolId;
   @NotNull @NotEmpty @Schema(description = "This specifies the OIDC ID Provider") private String providerId;
   @NotNull @NotEmpty @Schema(description = "This specifies the GCP Project Id") private String gcpProjectId;
-  @NotNull
-  @NotEmpty
-  @Schema(description = "This specifies the GCP Service Account Email")
-  private String serviceAccountEmail;
+  @Schema(description = "This specifies the GCP Service Account Email") private String serviceAccountEmail;
 }

@@ -26,6 +26,7 @@ public class K8sDeploymentInfo extends DeploymentInfo {
   @NotNull private LinkedHashSet<String> namespaces;
   @NotNull private String releaseName;
   private String blueGreenStageColor;
+  private Boolean canary;
   @EqualsAndHashCode.Exclude private HelmChartInfo helmChartInfo;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
 }

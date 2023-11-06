@@ -50,6 +50,8 @@ import io.harness.cdng.buckets.resources.s3.S3ResourceService;
 import io.harness.cdng.buckets.resources.s3.S3ResourceServiceImpl;
 import io.harness.cdng.buckets.resources.service.GcsResourceService;
 import io.harness.cdng.buckets.resources.service.GcsResourceServiceImpl;
+import io.harness.cdng.creator.plan.stage.service.DeploymentStagePlanCreationInfoService;
+import io.harness.cdng.creator.plan.stage.service.DeploymentStagePlanCreationInfoServiceImpl;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
@@ -249,6 +251,7 @@ public class NGModule extends AbstractModule {
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(GitRestraintInstanceService.class).to(GitRestraintInstanceServiceImpl.class);
     bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
+    bind(DeploymentStagePlanCreationInfoService.class).to(DeploymentStagePlanCreationInfoServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

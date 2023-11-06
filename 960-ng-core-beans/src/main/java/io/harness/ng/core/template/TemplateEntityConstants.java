@@ -41,4 +41,14 @@ public interface TemplateEntityConstants {
   String STEP_GROUP = "StepGroup";
   String STEP_GROUP_ROOT_FIELD = "stepGroup";
   String TEMPLATE_ID_PARAM_MESSAGE = "Template Identifier";
+
+  // below constants are used for Template v1 Schema Parser
+  String STAGE_TEMPLATE_V1_TITLE = "StageTemplate";
+  String STEP_TEMPLATE_V1_TITLE = "StepTemplate";
+  String ARTIFACT_SOURCE_TEMPLATE_V1_TITLE = "ArtifactSourceTemplate";
+  String STEPGROUP_TEMPLATE_V1_TITLE = "StepGroupTemplate";
+  String PIPELINE_TEMPLATE_V1_TITLE = "PipelineTemplate";
+  String CUSTOM_DEPLOYMENT_TEMPLATE_V1_TITLE = "CustomDeploymentTemplate";
+  String SECRET_MANAGER_TEMPLATE_V1_TITLE = "SecretManagerTemplate";
+  String DEFAULT_TEMPLATE_V1_TITLE = "template";
 }

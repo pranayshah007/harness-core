@@ -50,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +147,16 @@ public class InfrastructureStepHelper {
     for (ParameterField<T> input : inputs) {
       if (unresolvedExpression(input)) {
         throw new InvalidRequestException(format("Unresolved Expression : [%s]", input.getExpressionValue()));
+      }
+    }
+  }
+  public <T> void validateExpression(Map<String, ParameterField<T>> fieldNameValueMap) {
+    for (Map.Entry<String, ParameterField<T>> entry : fieldNameValueMap.entrySet()) {
+      String fieldName = entry.getKey();
+      ParameterField<T> parameter = entry.getValue();
+      if (unresolvedExpression(parameter)) {
+        throw new InvalidRequestException(
+            format("Unresolved Expression : [%s], for field [%s]", parameter.getExpressionValue(), fieldName));
       }
     }
   }

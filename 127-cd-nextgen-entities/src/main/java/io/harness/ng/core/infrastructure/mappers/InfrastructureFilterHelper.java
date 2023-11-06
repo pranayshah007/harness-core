@@ -8,6 +8,7 @@
 package io.harness.ng.core.infrastructure.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -36,7 +37,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class InfrastructureFilterHelper {
   public Criteria createListCriteria(String accountId, String orgIdentifier, String projectIdentifier,
-      String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType) {
+      String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType,
+      String repoName) {
     String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
     if (envRefSplit == null || envRefSplit.length == 1) {
@@ -63,6 +65,9 @@ public class InfrastructureFilterHelper {
     }
     if (deploymentType != null) {
       criteria.and(InfrastructureEntityKeys.deploymentType).is(deploymentType);
+    }
+    if (isNotEmpty(repoName)) {
+      criteria.and(InfrastructureEntityKeys.repo).is(repoName);
     }
     return criteria;
   }

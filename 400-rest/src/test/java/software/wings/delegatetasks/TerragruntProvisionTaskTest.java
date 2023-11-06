@@ -440,6 +440,7 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
         .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
         .runAll(runAll)
         .pathToModule(PATH_TO_MODULE)
+        .hardResetForGitRef(true)
         .build();
   }
 
@@ -480,12 +481,13 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
         .runAll(featuresMap.get(RUN_ALL))
         .pathToModule(PATH_TO_MODULE)
         .useAutoApproveFlag(featuresMap.get(USE_AUTO_APPROVED_FLAG))
+        .hardResetForGitRef(true)
         .build();
   }
 
   private void verify(TerragruntExecutionData terragruntExecutionData, TerragruntCommand command, boolean runAll) {
     Mockito.verify(encryptionService, times(1)).decrypt(gitConfig, sourceRepoEncryptionDetails, false);
-    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class));
+    Mockito.verify(gitClient, times(1)).ensureRepoLocallyClonedAndUpdated(any(GitOperationContext.class), eq(true));
     Mockito.verify(gitClientHelper, times(1)).getRepoDirectory(any(GitOperationContext.class));
     Mockito.verify(delegateFileManager, times(runAll ? 0 : 1)).upload(any(DelegateFile.class), any(InputStream.class));
     assertThat(terragruntExecutionData.getWorkspace()).isEqualTo(WORKSPACE);

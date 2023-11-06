@@ -61,7 +61,8 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.spec.provisionerIdentifier",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.name",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.spec.configuration.skipRefreshCommand",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.when");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.when",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply_Inherit.spec.configuration.skipStateStorage");
   }
 
   @Test
@@ -79,6 +80,7 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tfvar_arifactory.spec.store.spec.connectorRef",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tvfar_inline.spec.content",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.environmentVariables.GIT_SSH_COMMAND",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.varFiles.tfvar_arifactory.spec.optional",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.name",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.configFiles.store.spec.connectorRef",
@@ -92,6 +94,7 @@ public class TerraformApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.environmentVariables.ANSWER",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.spec.configFiles.moduleSource.useConnectorCredentials",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.skipRefreshCommand",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.when");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.when",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Apply.spec.configuration.skipStateStorage");
   }
 }

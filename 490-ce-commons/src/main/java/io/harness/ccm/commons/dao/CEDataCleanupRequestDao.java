@@ -59,4 +59,17 @@ public class CEDataCleanupRequestDao {
   public boolean delete(String uuid) {
     return persistence.delete(CEDataCleanupRequest.class, uuid);
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CEDataCleanupRequest.class)
+        .field(CEDataCleanupRequestKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEDataCleanupRequest> query =
+        persistence.createQuery(CEDataCleanupRequest.class).field(CEDataCleanupRequestKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

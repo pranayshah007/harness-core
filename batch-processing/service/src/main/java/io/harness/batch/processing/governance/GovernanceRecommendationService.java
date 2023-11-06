@@ -10,6 +10,7 @@ package io.harness.batch.processing.governance;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AZURE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
@@ -53,7 +54,6 @@ import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import software.wings.beans.AwsCrossAccountAttributes;
 
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -189,7 +189,7 @@ public class GovernanceRecommendationService {
   void enqueueRecommendationForAccount(List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal, Set<Rule> ruleList,
       List<String> regions, String accountId, RuleCloudProviderType ruleCloudProviderType) {
     for (RecommendationAdhocDTO recommendationAdhoc : recommendationAdhocDTOListFinal) {
-      if (Lists.isNullOrEmpty(regions)) {
+      if (isEmpty(regions)) {
         if (ruleCloudProviderType == RuleCloudProviderType.AWS) {
           regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
                                                         .crossAccountRoleArn(recommendationAdhoc.getRoleInfo())

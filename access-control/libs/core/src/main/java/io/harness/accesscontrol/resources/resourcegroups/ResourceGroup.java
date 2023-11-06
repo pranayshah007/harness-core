@@ -10,7 +10,10 @@ package io.harness.accesscontrol.resources.resourcegroups;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.google.common.collect.Sets;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -44,4 +47,25 @@ public class ResourceGroup {
   @EqualsAndHashCode.Exclude @Setter Long createdAt;
   @EqualsAndHashCode.Exclude @Setter Long lastModifiedAt;
   @EqualsAndHashCode.Exclude @Setter Long version;
+
+  public static Set<ResourceSelector> getDiffOfResourceSelectors(
+      ResourceGroup resourceGroup1, ResourceGroup resourceGroup2) {
+    Set<ResourceSelector> resourceSelectors1 = getAllResourceSelectors(resourceGroup1);
+    Set<ResourceSelector> resourceSelectors2 = getAllResourceSelectors(resourceGroup2);
+    return Sets.difference(resourceSelectors1, resourceSelectors2);
+  }
+
+  private static Set<ResourceSelector> getAllResourceSelectors(ResourceGroup resourceGroup) {
+    Set<ResourceSelector> resourceSelectors = new HashSet<>();
+    if (resourceGroup.getResourceSelectors() != null) {
+      resourceSelectors.addAll(resourceGroup.getResourceSelectors()
+                                   .stream()
+                                   .map(selector -> ResourceSelector.builder().selector(selector).build())
+                                   .collect(Collectors.toList()));
+    }
+    if (resourceGroup.getResourceSelectorsV2() != null) {
+      resourceSelectors.addAll(resourceGroup.getResourceSelectorsV2());
+    }
+    return resourceSelectors;
+  }
 }

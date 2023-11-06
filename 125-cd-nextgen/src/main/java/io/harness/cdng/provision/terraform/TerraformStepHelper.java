@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
+import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -71,6 +72,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDeta
 import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -299,11 +301,11 @@ public class TerraformStepHelper {
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(StoreConfig store, Ambiance ambiance, String identifier) {
-    return getGitFetchFilesConfig(store, ambiance, identifier, null);
+    return getGitFetchFilesConfig(store, ambiance, identifier, null, false);
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(
-      StoreConfig store, Ambiance ambiance, String identifier, String manifestType) {
+      StoreConfig store, Ambiance ambiance, String identifier, String manifestType, boolean isVarFileOptional) {
     if (store == null || !ManifestStoreType.isInGitSubset(store.getKind())) {
       return null;
     }
@@ -354,6 +356,7 @@ public class TerraformStepHelper {
                                                         .commitId(getParameterFieldValue(gitStoreConfig.getCommitId()))
                                                         .paths(paths)
                                                         .connectorName(connectorDTO.getName())
+                                                        .optional(isVarFileOptional)
                                                         .build();
 
     GitFetchFilesConfigBuilder builder = GitFetchFilesConfig.builder();
@@ -581,7 +584,9 @@ public class TerraformStepHelper {
         .encryptedTfPlan(terraformTaskNGResponse.getEncryptedTfPlan())
         .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
         .planName(getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
-            planStepParameters.getProvisionerIdentifier().getValue()));
+            planStepParameters.getProvisionerIdentifier().getValue()))
+        .skipStateStorage(ParameterFieldHelper.getBooleanParameterFieldValue(
+            planStepParameters.getConfiguration().getSkipStateStorage()));
     String fullEntityId =
         generateFullIdentifier(getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     String inheritOutputName =
@@ -955,6 +960,7 @@ public class TerraformStepHelper {
             .workspace(inheritOutput.getWorkspace())
             .targets(inheritOutput.getTargets())
             .providerCredentialConfig(inheritOutput.getProviderCredentialConfig())
+            .skipStateStorage(inheritOutput.isSkipStateStorage())
             .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
@@ -1053,7 +1059,8 @@ public class TerraformStepHelper {
         .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .workspace(getParameterFieldValue(spec.getWorkspace()))
         .targets(getParameterFieldValue(spec.getTargets()))
-        .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()));
+        .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()))
+        .skipStateStorage(getBooleanParameterFieldValue(stepParameters.getConfiguration().getSkipStateStorage()));
     if (spec.getProviderCredential() != null) {
       builder.providerCredentialConfig(toTerraformProviderCredentialConfig(spec.getProviderCredential()));
     }
@@ -1421,8 +1428,8 @@ public class TerraformStepHelper {
             }
             GitStoreConfig gitStoreConfig =
                 ((TerraformRemoteVarFileConfig) fileConfig).getGitStoreConfigDTO().toGitStoreConfig();
-            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(
-                getGitFetchFilesConfig(gitStoreConfig, ambiance, identifier, "GIT VAR_FILES"));
+            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(getGitFetchFilesConfig(
+                gitStoreConfig, ambiance, identifier, "GIT VAR_FILES", terraformRemoteVarFileConfig.isOptional()));
           }
           if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
             FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
@@ -1761,8 +1768,15 @@ public class TerraformStepHelper {
                   gitStoreConfigDTO = gitStoreConfig.toGitStoreConfigDTO();
                 }
 
+                boolean isVarFileOptional = false;
+                if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                  isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                      ((RemoteTerraformVarFileSpec) spec).getOptional());
+                }
+
                 varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
                                        .identifier(file.getIdentifier())
+                                       .isOptional(isVarFileOptional)
                                        .gitStoreConfigDTO(gitStoreConfigDTO)
                                        .build());
               }
@@ -1988,8 +2002,15 @@ public class TerraformStepHelper {
               i++;
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               // Retrieve the files from the GIT stores
-              GitFetchFilesConfig gitFetchFilesConfig =
-                  getGitFetchFilesConfig(storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES");
+
+              boolean isVarFileOptional = false;
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                    ((RemoteTerraformVarFileSpec) spec).getOptional());
+              }
+
+              GitFetchFilesConfig gitFetchFilesConfig = getGitFetchFilesConfig(
+                  storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES", isVarFileOptional);
               // And retrieve the files from the Files stores
               FileStoreFetchFilesConfig fileFetchFilesConfig =
                   getFileStoreFetchFilesConfig(storeConfig, ambiance, file.getIdentifier());
@@ -2020,8 +2041,15 @@ public class TerraformStepHelper {
               i++;
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               // Retrieve the files from the GIT stores
-              GitFetchFilesConfig gitFetchFilesConfig =
-                  getGitFetchFilesConfig(storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES");
+
+              boolean isVarFileOptional = false;
+              if (((RemoteTerraformVarFileSpec) spec).getOptional() != null) {
+                isVarFileOptional = ParameterFieldHelper.getBooleanParameterFieldValue(
+                    ((RemoteTerraformVarFileSpec) spec).getOptional());
+              }
+
+              GitFetchFilesConfig gitFetchFilesConfig = getGitFetchFilesConfig(
+                  storeConfig, ambiance, file.getIdentifier(), "GIT VAR_FILES", isVarFileOptional);
 
               //  And retrieve the files from the Files stores
               FileStoreFetchFilesConfig fileFetchFilesConfig =

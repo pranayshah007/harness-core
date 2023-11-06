@@ -53,6 +53,18 @@ public class K8sDeployResponseTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
+  public void getStepExecutionInstanceInfoNullCase2() {
+    k8sDeployResponse = K8sDeployResponse.builder().build();
+    StepExecutionInstanceInfo stepExecutionInstanceInfo = k8sDeployResponse.getStepExecutionInstanceInfo();
+    assertThat(stepExecutionInstanceInfo).isNotNull();
+    assertThat(stepExecutionInstanceInfo.getDeployedServiceInstances()).isEmpty();
+    assertThat(stepExecutionInstanceInfo.getServiceInstancesBefore()).isEmpty();
+    assertThat(stepExecutionInstanceInfo.getServiceInstancesAfter()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
   public void getStepExecutionInstanceInfo() {
     k8sDeployResponse =
         K8sDeployResponse.builder()

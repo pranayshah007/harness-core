@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.filters;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -26,6 +27,42 @@ import org.springframework.data.mongodb.core.query.Update;
     components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class PMSPipelineFilterHelper {
+  public Update getUpdateOperationsForPatch(PipelineEntity pipelineEntity, long timestamp) {
+    Update update = new Update();
+    // TODO(Shalini): Change conditions to not null check when CDS-81968 is done
+    if (isNotEmpty(pipelineEntity.getYaml())) {
+      update.set(PipelineEntityKeys.yaml, pipelineEntity.getYaml());
+    }
+    update.set(PipelineEntityKeys.lastUpdatedAt, timestamp);
+    update.set(PipelineEntityKeys.deleted, false);
+    if (isNotEmpty(pipelineEntity.getName())) {
+      update.set(PipelineEntityKeys.name, pipelineEntity.getName());
+    }
+    if (isNotEmpty(pipelineEntity.getDescription())) {
+      update.set(PipelineEntityKeys.description, pipelineEntity.getDescription());
+    }
+    if (isNotEmpty(pipelineEntity.getTags())) {
+      update.set(PipelineEntityKeys.tags, pipelineEntity.getTags());
+    }
+    if (isNotEmpty(pipelineEntity.getFilters())) {
+      update.set(PipelineEntityKeys.filters, pipelineEntity.getFilters());
+    }
+    if (pipelineEntity.getStageCount() != null) {
+      update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
+    }
+    if (isNotEmpty(pipelineEntity.getStageNames())) {
+      update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
+    }
+    if (pipelineEntity.getAllowStageExecutions() != null) {
+      update.set(PipelineEntityKeys.allowStageExecutions, pipelineEntity.getAllowStageExecutions());
+    }
+    update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());
+    if (pipelineEntity.getYamlHash() != null) {
+      update.set(PipelineEntityKeys.yamlHash, pipelineEntity.getYamlHash());
+    }
+    return update;
+  }
+
   public Update getUpdateOperations(PipelineEntity pipelineEntity, long timestamp) {
     Update update = new Update();
     update.set(PipelineEntityKeys.yaml, pipelineEntity.getYaml());
@@ -51,9 +88,31 @@ public class PMSPipelineFilterHelper {
     return update;
   }
 
+  public PipelineEntity updateFieldsInDBEntryForPatch(
+      PipelineEntity oldentityFromDB, PipelineEntity fieldsToUpdate, long timeOfUpdate) {
+    return oldentityFromDB.toBuilder()
+        .yaml(isNotEmpty(fieldsToUpdate.getYaml()) ? fieldsToUpdate.getYaml() : oldentityFromDB.getYaml())
+        .lastUpdatedAt(timeOfUpdate)
+        .name(isNotEmpty(fieldsToUpdate.getName()) ? fieldsToUpdate.getName() : oldentityFromDB.getName())
+        .description(isNotEmpty(fieldsToUpdate.getDescription()) ? fieldsToUpdate.getDescription()
+                                                                 : oldentityFromDB.getDescription())
+        .tags(isNotEmpty(fieldsToUpdate.getTags()) ? fieldsToUpdate.getTags() : oldentityFromDB.getTags())
+        .filters(isNotEmpty(fieldsToUpdate.getFilters()) ? fieldsToUpdate.getFilters() : oldentityFromDB.getFilters())
+        .stageCount(
+            fieldsToUpdate.getStageCount() != null ? fieldsToUpdate.getStageCount() : oldentityFromDB.getStageCount())
+        .stageNames(isNotEmpty(fieldsToUpdate.getStageNames()) ? fieldsToUpdate.getStageNames()
+                                                               : oldentityFromDB.getStageNames())
+        .allowStageExecutions(fieldsToUpdate.getAllowStageExecutions() != null
+                ? fieldsToUpdate.getAllowStageExecutions()
+                : oldentityFromDB.getAllowStageExecutions())
+        .yamlHash(fieldsToUpdate.getYamlHash() != null ? fieldsToUpdate.getYamlHash() : oldentityFromDB.getYamlHash())
+        .version(oldentityFromDB.getVersion() == null ? 1 : oldentityFromDB.getVersion() + 1)
+        .build();
+  }
+
   public PipelineEntity updateFieldsInDBEntry(
-      PipelineEntity entityFromDB, PipelineEntity fieldsToUpdate, long timeOfUpdate) {
-    return entityFromDB.toBuilder()
+      PipelineEntity oldentityFromDB, PipelineEntity fieldsToUpdate, long timeOfUpdate) {
+    return oldentityFromDB.toBuilder()
         .yaml(fieldsToUpdate.getYaml())
         .lastUpdatedAt(timeOfUpdate)
         .name(fieldsToUpdate.getName())
@@ -64,7 +123,7 @@ public class PMSPipelineFilterHelper {
         .stageNames(fieldsToUpdate.getStageNames())
         .allowStageExecutions(fieldsToUpdate.getAllowStageExecutions())
         .yamlHash(fieldsToUpdate.getYamlHash())
-        .version(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1)
+        .version(oldentityFromDB.getVersion() == null ? 1 : oldentityFromDB.getVersion() + 1)
         .build();
   }
 

@@ -89,14 +89,21 @@ public class PlanExecutionSummaryChangeDataHandlerAllStages extends AbstractChan
         }
       }
     }
-    if (((BasicDBObject) dbObject.get("moduleInfo")).get("ci") != null) {
-      DBObject ciObject = (DBObject) (((BasicDBObject) dbObject.get("moduleInfo")).get("ci"));
-      DBObject ciExecutionInfo = (DBObject) ciObject.get("ciExecutionInfoDTO");
-      if (ciExecutionInfo != null) {
-        DBObject author = (DBObject) (ciExecutionInfo.get("author"));
-        if (author != null) {
-          columnValueMapping.put("author_name", author.get("name").toString());
-          columnValueMapping.put("author_avatar", author.get("avatar").toString());
+    if (dbObject.get("moduleInfo") != null) {
+      BasicDBObject moduleInfo = (BasicDBObject) dbObject.get("moduleInfo");
+      if (moduleInfo.get("ci") != null) {
+        DBObject ciObject = (DBObject) moduleInfo.get("ci");
+        DBObject ciExecutionInfo = (DBObject) ciObject.get("ciExecutionInfoDTO");
+        if (ciExecutionInfo != null) {
+          DBObject author = (DBObject) (ciExecutionInfo.get("author"));
+          if (author != null) {
+            if (author.get("name") != null) {
+              columnValueMapping.put("author_name", author.get("name").toString());
+            }
+            if (author.get("avatar") != null) {
+              columnValueMapping.put("author_avatar", author.get("avatar").toString());
+            }
+          }
         }
       }
     }

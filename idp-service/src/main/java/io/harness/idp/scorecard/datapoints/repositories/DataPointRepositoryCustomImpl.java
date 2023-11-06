@@ -8,15 +8,10 @@ package io.harness.idp.scorecard.datapoints.repositories;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))

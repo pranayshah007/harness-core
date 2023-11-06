@@ -20,6 +20,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.PRWebhookEvent;
 import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -38,11 +39,13 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubPushSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
-import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessIssueCommentSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessPRSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessTriggerEvent;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
+import io.harness.product.ci.scm.proto.IssueCommentHook;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -133,7 +136,7 @@ public class TriggerEventActionFilterTest extends CategoryTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  public void applyFilterTest_Harness() {
+  public void applyFilterTest_Harness_PR() {
     WebhookPayloadData webhookPayloadData =
         WebhookPayloadData.builder()
             .webhookEvent(PRWebhookEvent.builder().build())
@@ -152,7 +155,50 @@ public class TriggerEventActionFilterTest extends CategoryTest {
             .build();
 
     HarnessSpec harnessSpec =
-        HarnessSpec.builder().type(HarnessTriggerEvent.PUSH).spec(HarnessPushSpec.builder().build()).build();
+        HarnessSpec.builder().type(HarnessTriggerEvent.PULL_REQUEST).spec(HarnessPRSpec.builder().build()).build();
+    WebhookTriggerConfigV2 webhookTriggerConfigV1 =
+        WebhookTriggerConfigV2.builder().type(WebhookTriggerType.HARNESS).spec(harnessSpec).build();
+    NGTriggerSourceV2 ngTriggerSourceV2 =
+        NGTriggerSourceV2.builder().type(WEBHOOK).spec(webhookTriggerConfigV1).build();
+    NGTriggerConfigV2 ngTriggerConfigV2 = NGTriggerConfigV2.builder().source(ngTriggerSourceV2).build();
+
+    // No payload match
+    doReturn(ngTriggerConfigV2).when(ngTriggerElementMapper).toTriggerConfigV2(triggerEntityHarness);
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(
+        FilterRequestData.builder()
+            .details(Arrays.asList(TriggerDetails.builder().ngTriggerEntity(triggerEntityHarness).build()))
+            .webhookPayloadData(webhookPayloadData)
+            .accountId("p")
+            .build());
+
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    assertThat(webhookEventMappingResponse.getTriggers().size()).isEqualTo(1);
+    assertThat(webhookEventMappingResponse.getTriggers().get(0).getNgTriggerEntity()).isEqualTo(triggerEntityHarness);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void applyFilterTest_Harness_PR_Comment() {
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder()
+            .webhookEvent(IssueCommentWebhookEvent.builder().build())
+            .originalEvent(TriggerWebhookEvent.builder().accountId("acc").createdAt(0l).build())
+            .parseWebhookResponse(
+                ParseWebhookResponse.newBuilder().setComment(IssueCommentHook.newBuilder().build()).build())
+            .build();
+
+    NGTriggerEntity triggerEntityHarness =
+        NGTriggerEntity.builder()
+            .metadata(NGTriggerMetadata.builder().webhook(WebhookMetadata.builder().type("HARNESS").build()).build())
+            .yaml("yaml")
+            .enabled(true)
+            .build();
+
+    HarnessSpec harnessSpec = HarnessSpec.builder()
+                                  .type(HarnessTriggerEvent.ISSUE_COMMENT)
+                                  .spec(HarnessIssueCommentSpec.builder().build())
+                                  .build();
     WebhookTriggerConfigV2 webhookTriggerConfigV1 =
         WebhookTriggerConfigV2.builder().type(WebhookTriggerType.HARNESS).spec(harnessSpec).build();
     NGTriggerSourceV2 ngTriggerSourceV2 =

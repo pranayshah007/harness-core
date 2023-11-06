@@ -181,30 +181,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testToEntityWithVersion() {
-    String acc = "acc";
-    String org = "org1";
-    String proj = "proj1";
-    String pipelineId = "p1";
-    String yaml = "pipeline:\n"
-        + "  identifier: p1\n"
-        + "  name: p1\n"
-        + "  description: desc\n"
-        + "  orgIdentifier: org1\n"
-        + "  projectIdentifier: proj1\n";
-    PipelineEntity noVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, pipelineId, yaml, null);
-    assertThat(noVersion.getVersion()).isNull();
-    PipelineEntity oneTwentyThree =
-        PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, pipelineId, yaml, "123");
-    assertThat(oneTwentyThree.getVersion()).isEqualTo(123L);
-
-    assertThatThrownBy(() -> PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, "pipelineId", yaml, null))
-        .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
   public void testGetEntityGitDetails() {
     PipelineEntity oldNonGitSync = PipelineEntity.builder().build();
     EntityGitDetails entityGitDetails0 = PMSPipelineDtoMapper.getEntityGitDetails(oldNonGitSync);
@@ -749,9 +725,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThatThrownBy(
         () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "<+input>", "", "yaml"))
         .isInstanceOf(InvalidRequestException.class);
-    assertThatThrownBy(
-        () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "<+input>", "", "yaml"))
-        .hasMessage("Pipeline name cannot be empty");
 
     assertThatThrownBy(()
                            -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(

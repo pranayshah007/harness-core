@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -73,6 +74,8 @@ public interface PMSPipelineService {
   PipelineGetResult getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache, boolean validateAsync);
+  String validatePipeline(String accountId, String orgIdentifier, String projectIdentifier, String identifier,
+      boolean loadFromFallbackBranch, boolean loadFromCache, boolean validateAsync, PipelineEntity pipelineEntity);
 
   //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
   Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
@@ -112,6 +115,9 @@ public interface PMSPipelineService {
    */
   PipelineCRUDResult validateAndUpdatePipeline(
       PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
+
+  PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails, boolean isPatch);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

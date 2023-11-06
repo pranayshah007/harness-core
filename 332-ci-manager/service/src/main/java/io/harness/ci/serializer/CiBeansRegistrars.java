@@ -39,6 +39,7 @@ import io.harness.ci.execution.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.kryo.CIBeansKryoRegistrar;
@@ -105,6 +106,7 @@ public class CiBeansRegistrars {
           .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
           .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
           .addAll(ContainerRegistrars.morphiaRegistrars)
+          .addAll(OidcRegistrars.morphiaRegistrars)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(CIBeansMorphiaRegistrar.class)
           .add(CIContractsMorphiaRegistrar.class)

@@ -72,4 +72,6 @@ public interface ProjectService {
   Long countProjects(String accountIdentifier);
 
   boolean isFavorite(Project project, String userId);
+
+  Map<String, Integer> getProjectsCountPerAccount(List<String> accountIdentifiers);
 }

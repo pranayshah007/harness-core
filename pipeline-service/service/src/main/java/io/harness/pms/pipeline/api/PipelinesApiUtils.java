@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.api;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -58,6 +59,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelinePatchRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
@@ -480,6 +482,20 @@ public class PipelinesApiUtils {
         .build();
   }
 
+  public static PipelineRequestInfoDTO mapPatchToRequestInfoDTO(
+      PipelinePatchRequestBody patchRequestBody, String identifier) {
+    if (patchRequestBody == null) {
+      throw new InvalidRequestException("Update Request Body cannot be null.");
+    }
+    return PipelineRequestInfoDTO.builder()
+        .identifier(identifier)
+        .name(patchRequestBody.getName())
+        .yaml(patchRequestBody.getPipelineYaml())
+        .description(patchRequestBody.getDesc())
+        .tags(patchRequestBody.getTags())
+        .build();
+  }
+
   public static PipelineValidationUUIDResponseBody buildPipelineValidationUUIDResponseBody(
       PipelineValidationEvent event) {
     return new PipelineValidationUUIDResponseBody().uuid(event.getUuid());
@@ -578,6 +594,9 @@ public class PipelinesApiUtils {
     pipelineYamlInputDTO.setDescription(inputDetails.getDescription());
     pipelineYamlInputDTO.setType(getYamlInputType(inputDetails.getType()));
     pipelineYamlInputDTO.setRequired(inputDetails.isRequired());
+    pipelineYamlInputDTO.setAllowedValues(inputDetails.getAllowedValues());
+    pipelineYamlInputDTO.setRegex(inputDetails.getRegex());
+    pipelineYamlInputDTO.execution(inputDetails.getExecution());
     return pipelineYamlInputDTO;
   }
 

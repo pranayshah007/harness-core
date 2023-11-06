@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.scm;
 
+import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -19,4 +20,5 @@ import lombok.Value;
 public class ConnectorDecryptionParams {
   ScmConnector scmConnector;
   List<EncryptedDataDetail> encryptedDataDetails;
+  Scope connectorScope;
 }

@@ -21,7 +21,8 @@ public enum CVNGNotificationChannelType {
   @JsonProperty("Email") EMAIL("Email"),
   @JsonProperty("Slack") SLACK("Slack"),
   @JsonProperty("PagerDuty") PAGERDUTY("PagerDuty"),
-  @JsonProperty("MsTeams") MSTEAMS("MsTeams");
+  @JsonProperty("MsTeams") MSTEAMS("MsTeams"),
+  @JsonProperty("Webhook") WEBHOOK("Webhook");
 
   @Getter private String templateSuffixIdentifier;
 

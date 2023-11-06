@@ -96,9 +96,20 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
       // If we see a failed step that isn't part of the retry stage, it should be added as an identity stage.
       // This allows us to create an identity node for all such executions and not just use the same IdentityPlanNode
       // pointing to one of the executions (hence copying the status).
-      Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
-      if ((ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
-              || !(node instanceof IdentityPlanNode))
+      Node node = planService.fetchNode(planId, nodeExecution.getNodeId());
+      if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
+          && node.getStepCategory() == StepCategory.STAGE) {
+        Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
+            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(),
+            nodeExecution.getUuid());
+        children.add(ChildrenExecutableResponse.Child.newBuilder()
+                         .setChildNodeId(identityNode.getUuid())
+                         .setStrategyMetadata(
+                             AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
+                         .build());
+        identityNodesToBeCreated.add(identityNode);
+      } else if ((ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
+                     || !(node instanceof IdentityPlanNode))
           && StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
                          .setChildNodeId(nodeExecution.getNodeId())

@@ -170,6 +170,10 @@ public class ClasspathParser {
                 cu.getPrimaryTypeName().get(), coit.getName(), exception);
             throw exception;
           }
+        } catch (Exception ex) {
+          logger.error("Skipping - Exception processing class {} - {}\n"
+                  + " Caught exception :",
+              cu.getPrimaryTypeName().get(), coit.getName(), ex);
         }
       }
       if (typeName != null) {

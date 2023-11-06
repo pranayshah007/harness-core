@@ -17,16 +17,16 @@ data:
   MANAGER_CLIENT_BASEURL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
   NG_MANAGER_CLIENT_BASEURL: "http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/"
   MANAGER_URL: "http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/"
-  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  DEPLOY_MODE: {{ .Values.global.deployMode | quote }}
   CE_NEXTGEN_PORT: {{ .Values.service.port | quote}}
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: "harness-redis"
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
   EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
-  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   {{- if not .Values.workloadIdentity.enabled }}
@@ -51,11 +51,6 @@ data:
   MOCK_ACCESS_CONTROL_SERVICE: "false"
   MEMORY: {{ .Values.java.memory | quote }}
   ENABLE_APPDYNAMICS: "false"
-  JWT_AUTH_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  JWT_IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
-  NOTIFICATION_CLIENT_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  ACCESS_CONTROL_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
   DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.distributedLockImplementation | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}

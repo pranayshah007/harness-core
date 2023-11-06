@@ -74,7 +74,7 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
     create(changeSources);
   }
   private void create(List<ChangeSource> changeSources) {
-    changeSources.forEach(changeSource -> setConfigForDemoIfApplicable(changeSource));
+    changeSources.forEach(this::setConfigForDemoIfApplicable);
 
     hPersistence.save(changeSources);
     changeSources.stream()
@@ -208,12 +208,12 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
   private void validate(Set<ChangeSourceDTO> changeSourceDTOs) {
     Optional<String> noUniqueIdentifier =
         changeSourceDTOs.stream()
-            .map(dto -> dto.getIdentifier())
+            .map(ChangeSourceDTO::getIdentifier)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
             .entrySet()
             .stream()
             .filter(element -> element.getValue() > 1)
-            .map(entrySet -> entrySet.getKey())
+            .map(Map.Entry::getKey)
             .findAny();
     if (noUniqueIdentifier.isPresent()) {
       throw new InvalidRequestException(

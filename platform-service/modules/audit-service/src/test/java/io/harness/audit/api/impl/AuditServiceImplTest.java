@@ -92,10 +92,9 @@ public class AuditServiceImplTest extends CategoryTest {
     auditFilterPropertiesValidator = mock(AuditFilterPropertiesValidator.class);
     transactionTemplate = mock(TransactionTemplate.class);
     auditSettingsService = mock(AuditSettingsService.class);
-    telemetryReporter = mock(TelemetryReporter.class);
 
-    auditService = spy(new AuditServiceImpl(auditRepository, auditYamlService, auditFilterPropertiesValidator,
-        transactionTemplate, auditSettingsService, telemetryReporter));
+    auditService = spy(new AuditServiceImpl(
+        auditRepository, auditYamlService, auditFilterPropertiesValidator, transactionTemplate, auditSettingsService));
     doNothing().when(auditFilterPropertiesValidator).validate(any(), any());
   }
 

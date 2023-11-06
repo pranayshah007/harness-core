@@ -75,6 +75,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +113,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryHandlerConfig.setReleaseName(k8sCanaryDeployRequest.getReleaseName());
     k8sCanaryHandlerConfig.setManifestFilesDirectory(
         Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString());
+    k8sCanaryHandlerConfig.setKubernetesConfig(k8sDelegateTaskParams.getKubernetesConfig());
     final long timeoutInMillis = getTimeoutMillisFromMinutes(k8sCanaryDeployRequest.getTimeoutIntervalInMin());
 
     LogCallback executionLogCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
@@ -161,6 +163,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
 
     // At this point we're sure that manifest has been applied successfully and canary workload is deployed
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     this.canaryWorkloadDeployed = true;
     this.saveReleaseHistory = true;
     k8sTaskHelperBase.saveRelease(k8sCanaryDeployRequest.isUseDeclarativeRollback(), false,
@@ -182,6 +185,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .kubernetesConfig(k8sCanaryHandlerConfig.getKubernetesConfig())
+                                              .startTime(manifestApplyTime)
                                               .build();
 
     K8sClient k8sClient =
@@ -262,8 +266,11 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
       ServiceHookHandler serviceHookHandler) throws Exception {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
-    k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    if (k8sCanaryHandlerConfig.getKubernetesConfig() == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    }
     k8sCanaryHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 

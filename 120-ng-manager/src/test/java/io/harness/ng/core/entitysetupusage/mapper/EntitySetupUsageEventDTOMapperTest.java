@@ -36,6 +36,7 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreat
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
@@ -57,6 +58,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -71,6 +73,7 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOMapper;
   ConnectorService connectorService;
   YamlGitConfigService yamlGitConfigService;
+  @Mock GitSyncSdkService gitSyncSdkService;
   String repo = "repo";
   String branch = "branch";
 
@@ -81,7 +84,7 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
     GitInfoPopulatorForConnector gitInfoPopulatorForConnector = new GitInfoPopulatorForConnector(connectorService);
     entitySetupUsageEventDTOMapper =
         new EntitySetupUsageEventDTOMapper(new EntityDetailProtoToRestMapper(), new SetupUsageDetailProtoToRestMapper(),
-            new SetupUsageGitInfoPopulator(gitInfoPopulatorForConnector, yamlGitConfigService));
+            new SetupUsageGitInfoPopulator(gitInfoPopulatorForConnector, yamlGitConfigService, gitSyncSdkService));
     MockitoAnnotations.initMocks(this);
   }
 
@@ -134,7 +137,7 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
     // Creating a list of account level referredEntities with details
     List<EntityDetailProtoDTO> accountLevelEntitiesReferenced = createRecordsForAccountLevelReferredEntities();
     referredEntityList.addAll(accountLevelEntitiesReferenced);
-
+    when(gitSyncSdkService.isDefaultBranch(any(), any(), any())).thenReturn(false);
     EntitySetupUsageCreateV2DTO createSetupUsageDTO =
         EntitySetupUsageCreateV2DTO.newBuilder()
             .setAccountIdentifier(accountIdentifier)

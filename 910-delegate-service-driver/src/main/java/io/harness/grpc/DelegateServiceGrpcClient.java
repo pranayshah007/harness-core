@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
@@ -68,7 +69,6 @@ import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
-import io.fabric8.utils.Strings;
 import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.Collections;
@@ -126,7 +126,7 @@ public class DelegateServiceGrpcClient {
     final String taskId = submitTaskResponse.getTaskId().getId();
     return Pair.of(taskId,
         delegateSyncService.waitForTask(taskId,
-            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+            HarnessStringUtils.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
             Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
@@ -162,7 +162,7 @@ public class DelegateServiceGrpcClient {
               .setDetails(taskDetails)
               .setForceExecute(forceExecute);
 
-      if (Strings.isNotBlank(stageId)) {
+      if (isNotEmpty(stageId)) {
         submitTaskRequestBuilder.setStageId(stageId);
       }
 

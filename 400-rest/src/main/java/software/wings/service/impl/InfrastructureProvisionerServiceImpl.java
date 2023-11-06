@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.CDS_TERRAFORM_CONFIG_INSPECT_V1_2;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR;
 import static io.harness.beans.FeatureName.VALIDATE_PROVISIONER_EXPRESSION;
@@ -774,10 +773,8 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
         TerraformProvisionParameters.builder()
             .scriptPath(terraformDirectory)
             .useTfConfigInspectLatestVersion(
-                featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId));
-    if (featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)) {
-      terraformProvisionParameters.terraformConfigInspectVersion(TfConfigInspectVersion.V1_2);
-    }
+                featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
+            .terraformConfigInspectVersion(TfConfigInspectVersion.V1_2);
 
     if (terraformSourceType.equals(TerraformSourceType.S3)) {
       validateS3Config(awsConfigId, s3URI, scmSettingId);
@@ -958,10 +955,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
                             .configFilesS3URI(terraformInfrastructureProvisioner.getS3URI())
                             .configFilesAwsSourceConfig(awsS3SourceBucketConfig)
                             .configFileAWSEncryptionDetails(awsS3EncryptionDetails)
-                            .terraformConfigInspectVersion(
-                                featureFlagService.isEnabled(CDS_TERRAFORM_CONFIG_INSPECT_V1_2, accountId)
-                                    ? TfConfigInspectVersion.V1_2
-                                    : null)
+                            .terraformConfigInspectVersion(TfConfigInspectVersion.V1_2)
                             .build()})
                     .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
                     .build())

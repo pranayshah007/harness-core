@@ -14,6 +14,7 @@ import static io.harness.data.structure.ListUtils.OneAndOnlyOne.ONE;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import lombok.experimental.UtilityClass;
@@ -67,5 +68,11 @@ public class ListUtils {
       return NONE;
     }
     return ONE;
+  }
+
+  public static <T> List<T> newArrayList(T... items) {
+    List<T> answer = new ArrayList<>(items.length);
+    answer.addAll(Arrays.asList(items));
+    return answer;
   }
 }

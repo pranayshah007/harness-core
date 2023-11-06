@@ -101,6 +101,7 @@ func (e *unitExecutor) Run(ctx context.Context, step *pb.UnitStep, so output.Sta
 	}
 
 	stepOutput, numRetries, err := e.execute(ctx, step, so)
+	e.log.Infow("LE: Step execution Completed", "step", step.String(), "step_id", step.GetId())
 	stepStatus := statuspb.StepExecutionStatus_SUCCESS
 	errMsg := ""
 	if err != nil {
@@ -224,6 +225,7 @@ func (e *unitExecutor) execute(ctx context.Context, step *pb.UnitStep,
 	case nil:
 		e.log.Infow("Field is not set", "step", x)
 	default:
+		e.log.Infow("LE: Default case LE", "UnitStep has unexpected type", x, "step_id", step.GetId())
 		return nil, numRetries, fmt.Errorf("UnitStep has unexpected type %T", x)
 	}
 
@@ -247,12 +249,16 @@ func (e *unitExecutor) Cleanup(ctx context.Context, step *pb.UnitStep) error {
 
 // Stops CI-Addon GRPC server
 func (e *unitExecutor) stopAddonServer(ctx context.Context, stepID string, port uint) error {
+	e.log.Infow("LE: Starting addonClient for unit_executor step container", "step_id", stepID, "port", port)
+
 	addonClient, err := newAddonClient(port, e.log)
 	if err != nil {
 		e.log.Errorw("Could not create CI Addon client", "step_id", stepID, zap.Error(err))
 		return errors.Wrap(err, "Could not create CI Addon client")
 	}
 	defer addonClient.CloseConn()
+
+	e.log.Infow("LE: Created addonClient for step container unit_executor", "step_id", stepID, "port", port)
 
 	_, err = addonClient.Client().SignalStop(ctx, &addonpb.SignalStopRequest{})
 	if err != nil {

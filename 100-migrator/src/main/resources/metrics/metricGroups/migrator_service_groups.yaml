@@ -1,0 +1,6 @@
+name: Migrator Service Metrics
+identifier: migratorServiceMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

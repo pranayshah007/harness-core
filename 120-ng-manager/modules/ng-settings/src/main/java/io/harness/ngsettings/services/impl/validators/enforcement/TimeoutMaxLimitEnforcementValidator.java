@@ -15,6 +15,7 @@ import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
+import java.util.concurrent.TimeUnit;
 
 public class TimeoutMaxLimitEnforcementValidator extends AbstractEnforcementValidator {
   @Inject
@@ -26,9 +27,15 @@ public class TimeoutMaxLimitEnforcementValidator extends AbstractEnforcementVali
   void checkStaticMaxLimit(RestrictionMetadataDTO currentRestriction, SettingDTO newSettingDTO) {
     Long limit = ((StaticLimitRestrictionMetadataDTO) currentRestriction).getLimit();
     Long settingValue = Timeout.fromString(newSettingDTO.getValue()).getTimeoutInMillis() / 1000;
+    long hours = TimeUnit.SECONDS.toHours(limit);
+    long days = TimeUnit.HOURS.toDays(hours);
     if (settingValue > limit) {
+      if (hours < 24) {
+        throw new InvalidRequestException(
+            String.format("%s cannot be greater than %s hours for given account plan", newSettingDTO.getName(), hours));
+      }
       throw new InvalidRequestException(
-          String.format("%s cannot be greater than %s seconds for given account plan", newSettingDTO.getName(), limit));
+          String.format("%s cannot be greater than %s days for given account plan", newSettingDTO.getName(), days));
     }
   }
 }

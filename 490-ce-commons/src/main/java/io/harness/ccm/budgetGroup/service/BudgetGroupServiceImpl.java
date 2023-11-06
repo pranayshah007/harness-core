@@ -15,6 +15,7 @@ import static io.harness.ccm.budgetGroup.CascadeType.NO_CASCADE;
 import static io.harness.ccm.budgetGroup.CascadeType.PROPORTIONAL;
 import static io.harness.ccm.budgetGroup.utils.BudgetGroupUtils.INVALID_INDIVIDUAL_PROPORTION;
 import static io.harness.ccm.budgetGroup.utils.BudgetGroupUtils.INVALID_TOTAL_PROPORTION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
@@ -35,7 +36,6 @@ import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -544,7 +544,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
 
     List<BudgetGroupChildEntityDTO> budgetGroupChildEntities = budgetGroup.getChildEntities();
-    if (!Lists.isNullOrEmpty(budgetGroupChildEntities)) {
+    if (!isEmpty(budgetGroupChildEntities)) {
       double totalAmount = 0.0;
       Boolean areChildrenBudgetGroup = budgetGroupChildEntities.get(0).isBudgetGroup();
       if (areChildrenBudgetGroup) {

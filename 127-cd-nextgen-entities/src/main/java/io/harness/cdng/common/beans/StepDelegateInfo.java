@@ -22,4 +22,6 @@ import lombok.Data;
 public class StepDelegateInfo {
   String taskId;
   String taskName;
+  String delegateName;
+  String delegateId;
 }

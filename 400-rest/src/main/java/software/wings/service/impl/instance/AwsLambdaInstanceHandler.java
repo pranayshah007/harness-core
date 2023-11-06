@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK;
 import static io.harness.beans.FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_LAMBDA_DEPLOYMENTS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
@@ -19,7 +20,6 @@ import static software.wings.beans.infrastructure.instance.InvocationCount.Invoc
 import static software.wings.service.impl.instance.InstanceSyncFlow.NEW_DEPLOYMENT;
 import static software.wings.service.impl.instance.InstanceSyncFlow.PERPETUAL_TASK;
 
-import static io.fabric8.utils.Lists.isNullOrEmpty;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
@@ -449,7 +449,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
       List<DeploymentSummary> deploymentSummaries, boolean rollback, OnDemandRollbackInfo onDemandRollbackInfo) {
     log.info(" Handling  new deployment. New Deployment Summary Size =[{}], rollback =[{}]",
         emptyIfNull(deploymentSummaries).size(), rollback);
-    if (!isNullOrEmpty(deploymentSummaries)) {
+    if (!isEmpty(deploymentSummaries)) {
       final String appId = deploymentSummaries.iterator().next().getAppId();
       final String infraMappingId = deploymentSummaries.iterator().next().getInfraMappingId();
       syncInstancesInternal(appId, infraMappingId, deploymentSummaries, null, NEW_DEPLOYMENT);
@@ -536,7 +536,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
     final List<Tag> tags = emptyIfNull(commandStepExecutionSummary.getTags());
     final List<FunctionMeta> lambdaFunctionMetaList = commandStepExecutionSummary.getLambdaFunctionMetaList();
 
-    if (isNullOrEmpty(lambdaFunctionMetaList)) {
+    if (isEmpty(lambdaFunctionMetaList)) {
       log.warn("Function Metadata not found for workflow:[{}] Can't create deployment event",
           workflowExecution.normalizedName());
       return Optional.empty();

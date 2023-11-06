@@ -248,3 +248,10 @@ proxyAllowListConfigServices:
       - /aggregate/acl/usergroups
       - /token/validate
 name: idp-service
+
+internalAccounts: kmpySmUISimoRrJL6NL73w
+
+segmentEnabled: false
+segmentUrl: "segment_url_place_holder"
+segmentApikey: "segment_api_key"
+segmentVerifyCert: false

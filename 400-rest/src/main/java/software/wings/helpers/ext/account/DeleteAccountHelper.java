@@ -333,4 +333,18 @@ public class DeleteAccountHelper {
       }
     }
   }
+
+  public void deleteDataForDeletedAccount(String accountId) {
+    log.info("Deleting account data for accountId {}", accountId);
+    deletePerpetualTasksForAccount(accountId);
+    delegateService.deleteByAccountId(accountId);
+    List<String> entitiesRemainingForDeletion = deleteAllEntities(accountId);
+    delegateNgTokenService.deleteByAccountId(accountId);
+    if (isEmpty(entitiesRemainingForDeletion)) {
+      deleteAccountFromAccountsCollection(accountId);
+    } else {
+      log.info("Entities Remaining For Deletion for accountID: " + accountId
+          + "are: " + entitiesRemainingForDeletion.toString());
+    }
+  }
 }

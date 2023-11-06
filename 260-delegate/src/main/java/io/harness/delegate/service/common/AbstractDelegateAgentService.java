@@ -42,7 +42,6 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
-import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.common.config.DelegateContext;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -369,7 +368,6 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
     if (socket != null) {
       finalizeSocket();
     }
-    DelegateStackdriverLogAppender.setManagerClient(null);
   }
 
   private void initDelegateProcess() {
@@ -378,9 +376,6 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
       log.info("The deploy mode for delegate is [{}]", System.getenv("DEPLOY_MODE"));
 
       delegateHealthTimeLimiter = HTimeLimiter.create(healthMonitorExecutor);
-      DelegateStackdriverLogAppender.setTimeLimiter(delegateHealthTimeLimiter);
-      // FIXME: ReIntroduce remote stackdriver logging
-      //      DelegateStackdriverLogAppender.setManagerClient(getDelegateAgentManagerClient());
 
       logProxyConfiguration();
 
@@ -396,7 +391,6 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
       this.delegateId = registerDelegate(builder);
 
       DelegateAgentCommonVariables.setDelegateId(delegateId);
-      DelegateStackdriverLogAppender.setDelegateId(delegateId);
 
       log.info("[New] Delegate registered in {} ms", getClock().millis() - start);
 

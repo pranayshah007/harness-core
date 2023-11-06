@@ -125,7 +125,12 @@ public class YAMLFieldNameConstants {
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
   public final String RETRY_STEP_GROUP = "retryStepGroup";
   public final String CUSTOM = "Custom";
+  public final String CUSTOM_V1 = "custom";
   public final String REF = "ref";
   public final String VERSION = "version";
   public final String KIND = "kind";
+  public final String VALIDATOR = "validator";
+  public final String ALLOWED = "allowed";
+  public final String REGEX = "regex";
+  public final String DESC = "desc";
 }

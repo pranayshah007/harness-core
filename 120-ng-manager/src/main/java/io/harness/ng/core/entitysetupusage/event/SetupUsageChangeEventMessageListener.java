@@ -149,6 +149,15 @@ public class SetupUsageChangeEventMessageListener implements MessageListener {
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking EntitySetupUsageCreateDTO   for key {}", entitySetupUsageMessage.getId(), e);
     }
+    if (entitySetupUsageCreateDTO != null) {
+      GitEntityInfo newBranch =
+          GitEntityInfo.builder()
+              .branch(entitySetupUsageCreateDTO.getReferredByEntity().getEntityGitMetadata().getBranch())
+              .yamlGitConfigId(entitySetupUsageCreateDTO.getReferredByEntity().getEntityGitMetadata().getRepo())
+              .findDefaultFromOtherRepos(true)
+              .build();
+      GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(newBranch).build());
+    }
     return entitySetupUsageCreateDTO;
   }
 

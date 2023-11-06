@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.core.currency;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
@@ -42,7 +43,6 @@ import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
-import io.fabric8.utils.Lists;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -380,7 +380,7 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
       throw new InvalidRequestException("Destination currency can't be NONE");
     }
     validateSetDestinationCurrency(setDestinationCurrency, destinationCurrency);
-    if (Lists.isNullOrEmpty(currencyConversionFactorDTO.getCurrencyConversionFactorDataList())) {
+    if (isEmpty(currencyConversionFactorDTO.getCurrencyConversionFactorDataList())) {
       throw new InvalidRequestException("Currency conversion factor entered list is empty");
     } else {
       for (final CurrencyConversionFactorData currencyConversionFactorData :

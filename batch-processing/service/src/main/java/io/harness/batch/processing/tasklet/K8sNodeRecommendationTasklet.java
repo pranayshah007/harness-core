@@ -39,7 +39,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
 
 import com.google.gson.Gson;
-import io.fabric8.utils.Lists;
 import java.net.ConnectException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -221,7 +220,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   }
 
   private void updateVMPrices(List<NodePool> nodePools, @NonNull Double conversionFactor) {
-    if (!Lists.isNullOrEmpty(nodePools)) {
+    if (!isEmpty(nodePools)) {
       for (NodePool nodePool : nodePools) {
         if (Objects.nonNull(nodePool.getVm())) {
           if (Objects.nonNull(nodePool.getVm().getAvgPrice())) {

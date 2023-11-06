@@ -32,7 +32,7 @@ public class ImageDetailsUtils {
         .build();
   }
 
-  public ImageInformation getImageDetails(io.harness.k8s.model.ImageDetails imageDetails) {
+  public ImageInformation getImageDetails(io.harness.k8s.model.ImageDetails imageDetails, String imagePullPolicy) {
     ImageInformation.Builder builder = ImageInformation.newBuilder();
     if (isNotBlank(imageDetails.getName())) {
       builder.setImageName(StringValue.of(imageDetails.getName()));
@@ -57,6 +57,9 @@ public class ImageDetailsUtils {
     }
     if (isNotBlank(imageDetails.getUsernameRef())) {
       builder.setUsernameRef(StringValue.of(imageDetails.getUsernameRef()));
+    }
+    if (isNotBlank(imagePullPolicy)) {
+      builder.setImagePullPolicy(StringValue.of(imagePullPolicy));
     }
     return builder.build();
   }

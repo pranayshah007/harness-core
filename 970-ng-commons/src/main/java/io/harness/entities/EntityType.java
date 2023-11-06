@@ -671,7 +671,12 @@ public enum EntityType {
   CHAOS_INFRASTRUCTURE(ModuleType.CHAOS, EntityTypeConstants.CHAOS_INFRASTRUCTURE, IdentifierRef.class,
       EntityYamlRootNames.CHAOS_INFRASTRUCTURE),
   @JsonProperty(EntityTypeConstants.ANCHORE)
-  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE);
+  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE),
+  @JsonProperty(EntityTypeConstants.OVERRIDES)
+  OVERRIDES(ModuleType.CORE, EntityTypeConstants.OVERRIDES, IdentifierRef.class, EntityYamlRootNames.OVERRIDES),
+  @JsonProperty(EntityTypeConstants.ASG_SHIFT_TRAFFIC)
+  ASG_SHIFT_TRAFFIC_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_SHIFT_TRAFFIC, IdentifierRef.class, EntityYamlRootNames.ASG_SHIFT_TRAFFIC);
 
   private final ModuleType moduleType;
   String yamlName;

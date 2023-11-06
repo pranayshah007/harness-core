@@ -332,7 +332,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .version(1L)
                                         .build();
     doReturn(pipelineEntity).when(transactionHelper).performTransaction(any());
-    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate, false);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);
     assertThat(updatedEntity.getName()).isEqualTo("new name");
     assertThat(updatedEntity.getDescription()).isEqualTo("new desc");
@@ -366,7 +366,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .version(1L)
                                         .build();
     doReturn(pipelineEntity).when(transactionHelper).performTransaction(any());
-    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate, false);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);
     assertThat(updatedEntity.getName()).isEqualTo("new name");
     assertThat(updatedEntity.getDescription()).isEqualTo("new desc");
@@ -389,7 +389,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                           .storeType(StoreType.REMOTE)
                                           .build();
     doReturn(null).when(transactionHelper).performTransaction(any());
-    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate, false);
     assertThat(updatedEntity).isNull();
   }
 
@@ -422,7 +422,8 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                          .createdAt(0L)
                                          .build();
     doReturn(oldEntityFromDB).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
-    PipelineEntity pipelineEntity = pipelineRepository.updatePipelineEntityInDB(query, update, pipelineToUpdate, 1L);
+    PipelineEntity pipelineEntity =
+        pipelineRepository.updatePipelineEntityInDB(query, update, pipelineToUpdate, 1L, false);
     assertThat(pipelineEntity.getCreatedAt()).isEqualTo(0L);
     assertThat(pipelineEntity.getLastUpdatedAt()).isEqualTo(1L);
     assertThat(pipelineEntity.getYaml()).isEqualTo(newYaml);

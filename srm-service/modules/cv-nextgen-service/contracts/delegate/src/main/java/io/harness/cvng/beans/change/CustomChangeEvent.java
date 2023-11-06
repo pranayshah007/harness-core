@@ -16,6 +16,6 @@ public class CustomChangeEvent {
   String description;
   String changeEventDetailsLink;
   String externalLinkToEntity;
-  String channelUrl;
   String webhookUrl;
+  String channelId;
 }

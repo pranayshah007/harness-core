@@ -8,9 +8,12 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_METHOD_INVOCATION_OLD_FLOW_EXPRESSION_ENGINE;
 import static io.harness.beans.FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES;
+import static io.harness.beans.FeatureName.CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
+import static io.harness.beans.FeatureName.PIE_SECRETS_OBSERVER;
 import static io.harness.beans.FeatureName.PIE_SIMPLIFY_LOG_BASE_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -95,8 +98,6 @@ import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessor;
-import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -105,6 +106,9 @@ import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessor;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -166,11 +170,12 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
-  PipelinePreprocessorFactory pipelinePreprocessorFactory;
+  YamlPreProcessorFactory yamlPreProcessorFactory;
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
       List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT, PIE_SIMPLIFY_LOG_BASE_KEY,
-          CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES);
+          CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES, CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE,
+          PIE_SECRETS_OBSERVER, CDS_METHOD_INVOCATION_OLD_FLOW_EXPRESSION_ENGINE);
   public static final String PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER = "pms_execution_settings";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
@@ -312,9 +317,12 @@ public class ExecutionHelper {
       case HarnessYamlVersion.V1:
         pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
-        PipelinePreprocessor preprocessor = pipelinePreprocessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
-        if (preprocessor != null) {
-          pipelineYaml = preprocessor.preProcess(pipelineYaml);
+        // Adds ids in all the stages and steps where it doesn't already exists
+        // For templates, the ids will be added by template service during template resolution
+        YamlPreProcessor preProcessor = yamlPreProcessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
+        if (preProcessor != null) {
+          YamlPreprocessorResponseDTO yamlPreprocessorResponseDTO = preProcessor.preProcess(pipelineYaml);
+          pipelineYaml = YamlUtils.writeYamlString(yamlPreprocessorResponseDTO.getPreprocessedJsonNode());
         }
         pipelineYamlWithTemplateRef = pipelineYaml;
         templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(

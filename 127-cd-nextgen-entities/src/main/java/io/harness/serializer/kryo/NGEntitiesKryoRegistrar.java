@@ -91,6 +91,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.yaml.ArtifactBundleStore;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.AsgConfigurationManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
@@ -417,5 +418,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleCloudFunctionGenOneDefinitionManifestOutcome.class, 1800002);
     kryo.register(ManifestConfigurations.class, 160005);
     kryo.register(OciHelmChartStoreEcrConfig.class, 160006);
+    kryo.register(ArtifactBundleStore.class, 160008);
   }
 }

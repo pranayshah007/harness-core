@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
@@ -26,4 +27,7 @@ public interface DataPointsRepository extends CrudRepository<DataPointEntity, St
   List<DataPointEntity> findByIdentifierIn(Set<String> identifiers);
 
   List<DataPointEntity> findAllByAccountIdentifierIn(Set<String> accountIdentifiers);
+
+  Optional<DataPointEntity> findByAccountIdentifierInAndDataSourceIdentifierAndIdentifier(
+      Set<String> accountIdentifiers, String dataSourceIdentifier, String identifier);
 }

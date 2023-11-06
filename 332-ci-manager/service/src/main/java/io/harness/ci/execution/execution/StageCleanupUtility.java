@@ -10,6 +10,7 @@ package io.harness.ci.execution.execution;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -60,7 +61,6 @@ import software.wings.beans.TaskType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,7 +188,7 @@ public class StageCleanupUtility {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+      throw new CIStageExecutionException("Unable to fetch stage details. Please retry or verify pipeline yaml");
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
@@ -205,7 +205,7 @@ public class StageCleanupUtility {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+      throw new CIStageExecutionException("Unable to fetch stage details. Please retry or verify pipeline yaml");
     }
 
     String baseLogKey = LogStreamingStepClientFactory.getLogBaseKey(ambiance);
@@ -253,7 +253,7 @@ public class StageCleanupUtility {
         dliteVmCleanupTaskParams.setDistributed(true);
       } else {
         String delegateId = fetchDelegateId(ambiance);
-        if (Strings.isNotBlank(delegateId)) {
+        if (isNotEmpty(delegateId)) {
           eligibleToExecuteDelegateIds.add(delegateId);
           ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
         } else {
@@ -271,7 +271,7 @@ public class StageCleanupUtility {
         OptionalOutcome optionalOutput = outcomeService.resolveOptional(
             ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
         VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
-        if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+        if (vmDetailsOutcome != null && isNotEmpty(vmDetailsOutcome.getDelegateId())) {
           eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
         }
       }
@@ -298,7 +298,7 @@ public class StageCleanupUtility {
         ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
     VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
 
-    if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+    if (vmDetailsOutcome != null && isNotEmpty(vmDetailsOutcome.getDelegateId())) {
       return vmDetailsOutcome.getDelegateId();
     } else {
       String stageId = ambiance.getStageExecutionId();
@@ -313,7 +313,7 @@ public class StageCleanupUtility {
 
         if (taskDetailsOptional.isPresent()) {
           CITaskDetails taskDetails = taskDetailsOptional.get();
-          if (Strings.isNotBlank(taskDetails.getDelegateId())) {
+          if (isNotEmpty(taskDetails.getDelegateId())) {
             log.info("Successfully found delegate ID: {} corresponding to stage ID: {}", taskDetails.getDelegateId(),
                 stageId);
             return taskDetails.getDelegateId();

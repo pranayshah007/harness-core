@@ -68,6 +68,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -98,6 +99,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     k8sApplyHandlerConfig.setReleaseName(k8sApplyRequest.getReleaseName());
     k8sApplyHandlerConfig.setManifestFilesDirectory(
         Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString());
+    k8sApplyHandlerConfig.setKubernetesConfig(k8sDelegateTaskParams.getKubernetesConfig());
     long timeoutInMillis = getTimeoutMillisFromMinutes(k8sDeployRequest.getTimeoutIntervalInMin());
 
     LogCallback executionLogCallback = k8sTaskHelperBase.getLogCallback(
@@ -128,6 +130,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true,
         isErrorFrameworkSupported(), commandFlags);
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
     if (!k8sApplyRequest.isSkipSteadyStateCheck() && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
@@ -150,6 +153,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
                                                 .denoteOverallSuccess(false)
                                                 .isErrorFrameworkEnabled(true)
                                                 .kubernetesConfig(k8sApplyHandlerConfig.getKubernetesConfig())
+                                                .startTime(manifestApplyTime)
                                                 .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sApplyRequest.isUseK8sApiForSteadyStateCheck());
@@ -181,8 +185,11 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
 
-    k8sApplyHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    if (k8sApplyHandlerConfig.getKubernetesConfig() == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      k8sApplyHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    }
 
     k8sApplyHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));

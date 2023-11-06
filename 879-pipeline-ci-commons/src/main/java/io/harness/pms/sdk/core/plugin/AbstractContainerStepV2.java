@@ -7,6 +7,8 @@
 
 package io.harness.pms.sdk.core.plugin;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
@@ -41,7 +43,6 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -160,7 +161,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
 
   public Integer getPort(Ambiance ambiance, String stepIdentifier) {
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
-    if (Strings.isNotBlank(stepGroupIdentifier)) {
+    if (isNotEmpty(stepGroupIdentifier)) {
       stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
     }
     return containerPortHelper.getPort(ambiance, stepIdentifier, false);

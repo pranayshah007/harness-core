@@ -166,12 +166,18 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
         }
         JsonNode author = ciExecutionInfo.get(PipelineExecutionSummaryKeys.author);
         if (author != null) {
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
-              author.get(PipelineExecutionSummaryKeys.commitId).toString());
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_NAME,
-              author.get(PipelineExecutionSummaryKeys.name).toString());
-          record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_AVATAR,
-              author.get(PipelineExecutionSummaryKeys.avatar).toString());
+          if (author.get(PipelineExecutionSummaryKeys.commitId) != null) {
+            record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_AUTHOR_ID,
+                author.get(PipelineExecutionSummaryKeys.commitId).toString());
+          }
+          if (author.get(PipelineExecutionSummaryKeys.name) != null) {
+            record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_NAME,
+                author.get(PipelineExecutionSummaryKeys.name).toString());
+          }
+          if (author.get(PipelineExecutionSummaryKeys.avatar) != null) {
+            record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.AUTHOR_AVATAR,
+                author.get(PipelineExecutionSummaryKeys.avatar).toString());
+          }
         }
         if (ciExecutionInfo.get(PipelineExecutionSummaryKeys.event) != null) {
           record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MODULEINFO_EVENT,

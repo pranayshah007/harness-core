@@ -93,7 +93,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import graphql.com.google.common.collect.ImmutableSet;
-import io.fabric8.utils.Lists;
 import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLContext;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
@@ -203,7 +202,7 @@ public class RecommendationsOverviewQueryV2 {
       allowedRecommendationsIdAndPerspectives = listAllowedRecommendationsIdAndPerspectives(accountId);
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, allowedRecommendationsIdAndPerspectives);
-      if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
+      if (isEmpty(appliedAllowedPerspectiveFilter.getIds())) {
         return RecommendationsDTO.builder().items(Collections.emptyList()).limit(10L).build();
       }
       condition = applyAllFiltersRestrictedAccess(appliedAllowedPerspectiveFilter, accountId);
@@ -253,7 +252,7 @@ public class RecommendationsOverviewQueryV2 {
     if (!hasRecommendationAccessOrAllPerspectiveView(accountId)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
-      if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
+      if (isEmpty(appliedAllowedPerspectiveFilter.getIds())) {
         return null;
       }
       condition = applyAllFiltersRestrictedAccess(appliedAllowedPerspectiveFilter, accountId);
@@ -304,7 +303,7 @@ public class RecommendationsOverviewQueryV2 {
     if (!hasRecommendationAccessOrAllPerspectiveView(accountId)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
-      if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
+      if (isEmpty(appliedAllowedPerspectiveFilter.getIds())) {
         return 0;
       }
       condition = applyAllFiltersRestrictedAccess(appliedAllowedPerspectiveFilter, accountId);
@@ -332,7 +331,7 @@ public class RecommendationsOverviewQueryV2 {
     if (!hasRecommendationAccessOrAllPerspectiveView(accountId)) {
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, listAllowedRecommendationsIdAndPerspectives(accountId));
-      if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getIds())) {
+      if (isEmpty(appliedAllowedPerspectiveFilter.getIds())) {
         return null;
       }
       condition = applyAllFiltersRestrictedAccess(appliedAllowedPerspectiveFilter, accountId);
@@ -437,7 +436,7 @@ public class RecommendationsOverviewQueryV2 {
       if (businessMapping != null) {
         if (Objects.nonNull(businessMapping.getCostTargets())) {
           businessMapping.getCostTargets().forEach(costTarget -> {
-            if (Objects.nonNull(costTarget) && !Lists.isNullOrEmpty(costTarget.getRules())) {
+            if (Objects.nonNull(costTarget) && !isEmpty(costTarget.getRules())) {
               viewRuleList.addAll(getUpdatedBusinessMappingViewRules(
                   costTarget.getName(), costTarget.getRules(), viewIdOperator, values));
             }
@@ -445,7 +444,7 @@ public class RecommendationsOverviewQueryV2 {
         }
         if (Objects.nonNull(businessMapping.getSharedCosts())) {
           businessMapping.getSharedCosts().forEach(sharedCost -> {
-            if (Objects.nonNull(sharedCost) && !Lists.isNullOrEmpty(sharedCost.getRules())) {
+            if (Objects.nonNull(sharedCost) && !isEmpty(sharedCost.getRules())) {
               viewRuleList.addAll(sharedCost.getRules());
             }
           });
@@ -715,7 +714,7 @@ public class RecommendationsOverviewQueryV2 {
       case NULL:
         return SQLConverter.getField(fieldId, table).isNull();
       case LIKE:
-        if (Lists.isNullOrEmpty(viewIdCondition.getValues())) {
+        if (isEmpty(viewIdCondition.getValues())) {
           return DSL.noCondition();
         } else {
           return SQLConverter.getField(fieldId, table).like("%" + viewIdCondition.getValues().get(0) + "%");
@@ -793,7 +792,7 @@ public class RecommendationsOverviewQueryV2 {
 
     if (allowedRecommendationIds != null && allowedRecommendationIds.size() > 0) {
       Set<String> recommendationIds = new HashSet<>();
-      if (!Lists.isNullOrEmpty(recommendationFilterDTO.getIds())) {
+      if (!isEmpty(recommendationFilterDTO.getIds())) {
         recommendationIds = recommendationFilterDTO.getIds()
                                 .stream()
                                 .filter(recommendationId -> allowedRecommendationIds.contains(recommendationId))

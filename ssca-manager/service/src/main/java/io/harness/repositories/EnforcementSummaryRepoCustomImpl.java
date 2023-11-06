@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.beans.EnforcementSummaryDBO;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -20,6 +21,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(SSCA)
 @AllArgsConstructor(access = AccessLevel.PROTECTED, onConstructor = @__({ @Inject }))
@@ -33,5 +36,18 @@ public class EnforcementSummaryRepoCustomImpl implements EnforcementSummaryRepoC
         .stream()
         .map(EnforcementSummaryDBO::getDocument)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<EnforcementSummaryEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, EnforcementSummaryEntity.class);
+  }
+
+  @Override
+  public EnforcementSummaryEntity findOne(String accountId, Criteria criteria) {
+    criteria.and(EnforcementSummaryEntityKeys.accountId).is(accountId);
+    Query query = new Query(criteria);
+    return mongoTemplate.findOne(query, EnforcementSummaryEntity.class);
   }
 }

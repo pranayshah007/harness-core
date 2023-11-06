@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -51,8 +53,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -60,6 +64,8 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
   @Mock private CdTaskChainExecutableTest cdTaskChainExecutable;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private AsyncExecutableTaskHelper asyncExecutableTaskHelper;
+  @Mock private AsyncWaitEngine asyncWaitEngine;
+
   @InjectMocks private CdAsyncChainExecutable<CdTaskChainExecutableTest> cdAsyncChainExecutable;
 
   Ambiance ambiance = buildAmbiance();
@@ -119,9 +125,13 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
   public void testStartChainLinkAfterRbac() {
     AsyncChainExecutableResponse response =
         cdAsyncChainExecutable.startChainLinkAfterRbac(ambiance, stepElementParameters, stepInputPackage);
-
+    ArgumentCaptor<AsyncDelegateResumeCallback> asyncDelegateResumeCallbackArgumentCaptor =
+        ArgumentCaptor.forClass(AsyncDelegateResumeCallback.class);
+    ArgumentCaptor<List<String>> correlationIdsCaptor = ArgumentCaptor.forClass(List.class);
+    Mockito.verify(asyncWaitEngine, Mockito.times(1))
+        .waitForAllOn(
+            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyInt());
     verify(cdTaskChainExecutable).startChainLinkAfterRbac(ambiance, stepElementParameters, stepInputPackage);
-    verify(asyncExecutableTaskHelper).publishStepDelegateInfoStepDetails(any(), any(), any(), any());
     assertResponse(response);
   }
 
@@ -131,10 +141,14 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
   public void testExecuteNextLinkWithSecurityContext() throws Exception {
     AsyncChainExecutableResponse response = cdAsyncChainExecutable.executeNextLinkWithSecurityContext(
         ambiance, stepElementParameters, stepInputPackage, passThroughData, null);
-
+    ArgumentCaptor<AsyncDelegateResumeCallback> asyncDelegateResumeCallbackArgumentCaptor =
+        ArgumentCaptor.forClass(AsyncDelegateResumeCallback.class);
+    ArgumentCaptor<List<String>> correlationIdsCaptor = ArgumentCaptor.forClass(List.class);
+    Mockito.verify(asyncWaitEngine, Mockito.times(1))
+        .waitForAllOn(
+            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyInt());
     verify(cdTaskChainExecutable)
         .executeNextLinkWithSecurityContext(ambiance, stepElementParameters, stepInputPackage, passThroughData, null);
-    verify(asyncExecutableTaskHelper).publishStepDelegateInfoStepDetails(any(), any(), any(), any());
     assertResponse(response);
   }
 
@@ -148,7 +162,6 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
 
     StepResponse response = cdAsyncChainExecutable.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, passThroughData, null);
-
     verify(cdTaskChainExecutable)
         .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters, passThroughData, null);
     assertThat(response).isEqualTo(stepResponse);

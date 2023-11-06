@@ -7,6 +7,8 @@
 
 package io.harness.ssca.execution.provenance;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
@@ -22,7 +24,6 @@ import io.harness.ssca.beans.provenance.GcrSourceSpec;
 import io.harness.ssca.beans.provenance.ProvenanceSource;
 import io.harness.ssca.beans.provenance.ProvenanceSourceType;
 
-import io.fabric8.utils.Strings;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.SSCA)
@@ -44,7 +45,7 @@ public class ProvenanceStepUtils {
     } catch (Exception ex) {
       String errorMessage = "Failed to deserialize ExecutionWrapperConfig step node";
       Throwable throwable = ex.getCause();
-      if (throwable != null && Strings.isNotBlank(throwable.getMessage())) {
+      if (throwable != null && isNotEmpty(throwable.getMessage())) {
         errorMessage = throwable.getMessage();
       }
       throw new CIStageExecutionException(errorMessage, ex);

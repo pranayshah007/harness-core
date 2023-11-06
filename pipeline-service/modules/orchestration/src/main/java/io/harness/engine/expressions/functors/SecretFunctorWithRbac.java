@@ -13,12 +13,16 @@ import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.observers.SecretObserverInfo;
+import io.harness.engine.observers.SecretResolutionObserver;
 import io.harness.engine.utils.FunctorUtils;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.EngineFunctorException;
 import io.harness.expression.functors.ExpressionFunctor;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -34,10 +38,13 @@ import lombok.extern.slf4j.Slf4j;
 public class SecretFunctorWithRbac implements ExpressionFunctor {
   PipelineRbacHelper pipelineRbacHelper;
   Ambiance ambiance;
+  Subject<SecretResolutionObserver> secretsRuntimeUsagesSubject;
 
-  public SecretFunctorWithRbac(Ambiance ambiance, PipelineRbacHelper pipelineRbacHelper) {
+  public SecretFunctorWithRbac(Ambiance ambiance, PipelineRbacHelper pipelineRbacHelper,
+      Subject<SecretResolutionObserver> secretsRuntimeUsagesSubject) {
     this.ambiance = ambiance;
     this.pipelineRbacHelper = pipelineRbacHelper;
+    this.secretsRuntimeUsagesSubject = secretsRuntimeUsagesSubject;
   }
 
   @SneakyThrows
@@ -53,6 +60,13 @@ public class SecretFunctorWithRbac implements ExpressionFunctor {
                      .setIdentifierRef(IdentifierRefProtoDTOHelper.fromIdentifierRef(identifierRef))
                      .build());
       pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+
+      if (EmptyPredicate.isNotEmpty(secretIdentifier) && ambiance != null
+          && AmbianceUtils.shouldEnableSecretsObserver(ambiance)) {
+        secretsRuntimeUsagesSubject.fireInform(SecretResolutionObserver::onSecretsRuntimeUsage,
+            SecretObserverInfo.builder().secretIdentifier(secretIdentifier).ambiance(ambiance).build());
+      }
+
       return FunctorUtils.getSecretExpression(ambiance.getExpressionFunctorToken(), secretIdentifier);
     } catch (NGAccessDeniedException exception) {
       log.error("Encountered error while resolving secret ", exception);

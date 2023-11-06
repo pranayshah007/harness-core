@@ -21,7 +21,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
@@ -197,12 +196,11 @@ public class RoleAssignmentApiUtils {
     }
 
     if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
-      if (isNotEmpty(roleAssignment.getPrincipalScopeLevel())
-          && !roleAssignment.getPrincipalScopeLevel().equals(scope.getLevel().toString())) {
-        throw new InvalidRequestException(
-            "Cannot create role assignment for given Service Account. Principal should be of same scope as of role assignment.");
+      if (!isEmpty(roleAssignment.getPrincipalScopeLevel())) {
+        principalScopeLevel = roleAssignment.getPrincipalScopeLevel();
+      } else {
+        principalScopeLevel = getServiceAccountScopeLevel(roleAssignment.getPrincipalIdentifier(), scope);
       }
-      principalScopeLevel = getServiceAccountScopeLevel(roleAssignment.getPrincipalIdentifier(), scope);
     }
     return io.harness.accesscontrol.roleassignments.RoleAssignment.builder()
         .identifier(roleAssignment.getIdentifier())
@@ -222,7 +220,14 @@ public class RoleAssignmentApiUtils {
   }
 
   private String getServiceAccountScopeLevel(@NotNull String serviceAccountIdentifier, @NotNull Scope scope) {
-    harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
+    Scope currentScope = scope;
+    while (currentScope != null) {
+      harnessServiceAccountService.sync(serviceAccountIdentifier, currentScope);
+      if (serviceAccountService.get(serviceAccountIdentifier, currentScope.toString()).isPresent()) {
+        return currentScope.getLevel().toString();
+      }
+      currentScope = currentScope.getParentScope();
+    }
     return scope.getLevel().toString();
   }
 

@@ -19,6 +19,7 @@ import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.inputset.InputSetFilterPropertiesDto;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
@@ -174,11 +175,12 @@ public interface PipelineServiceClient {
   @GET(PIPELINE_INPUT_SET_ENDPOINT + "list/")
   Call<ResponseDTO<PageResponse<InputSetListResponseDTO>>> listInputSetsInProject(
       @Query(value = NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Query(value = NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Query(value = NGResourceFilterConstants.SIZE_KEY) @DefaultValue("25") int size,
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = "inputSetType") @DefaultValue("ALL") InputSetListTypePMS inputSetListType,
       @Query(value = NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Query(value = NGResourceFilterConstants.SORT_KEY) List<String> sort);
+      @Query(value = NGResourceFilterConstants.SORT_KEY) List<String> sort,
+      @Body InputSetFilterPropertiesDto filterProperties);
 }

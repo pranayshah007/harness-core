@@ -65,7 +65,7 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
             .withStsClient(awsSecurityTokenService)
             .build();
     if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
-      log.info("AWSOrganizationsClientBuilder initializing with proxy config");
+      log.info("AWSOrganizationsClient client initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
     }
     builder.withCredentials(credentialsProvider);

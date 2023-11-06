@@ -523,7 +523,8 @@ public class PipelineResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     assertThatThrownBy(()
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                incorrectPipelineIdentifier, null, null, null, null, yaml))
@@ -545,7 +546,8 @@ public class PipelineResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
+        .resolveTemplateRefsInPipeline(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ResponseDTO<String> responseDTO = pipelineResource.updatePipeline(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData()).isEqualTo(PIPELINE_IDENTIFIER);
@@ -889,27 +891,6 @@ public class PipelineResourceTest extends CategoryTest {
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER,
         PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, PIPELINE_NAME, null, null, null, simplifiedYamlWithoutName, false);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testUpdateSimplifiedPipelineWithoutYamlNameFailure() {
-    doReturn(HarnessYamlVersion.V1).when(pmsPipelineService).pipelineVersion(ACCOUNT_ID, simplifiedYamlWithoutName);
-    simplifiedEntityWithVersion.setYaml(simplifiedYamlWithoutName);
-    simplifiedEntity.setYaml(simplifiedYamlWithoutName);
-    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
-    PipelineCRUDResult pipelineCRUDResult = PipelineCRUDResult.builder()
-                                                .governanceMetadata(governanceMetadata)
-                                                .pipelineEntity(simplifiedEntityWithVersion)
-                                                .build();
-    doReturn(pipelineCRUDResult)
-        .when(pmsPipelineService)
-        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
-    assertThatThrownBy(()
-                           -> pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYamlWithoutName, false))
-        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

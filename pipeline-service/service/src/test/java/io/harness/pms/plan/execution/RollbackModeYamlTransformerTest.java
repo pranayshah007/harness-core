@@ -266,13 +266,13 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         original, POST_EXECUTION_ROLLBACK, "ogId", Collections.EMPTY_LIST);
     String expected = "pipeline:\n"
         + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
         + "    - parallel:\n"
         + "        - stage:\n"
         + "            identifier: s2\n"
         + "        - stage:\n"
-        + "            identifier: s4\n"
-        + "    - stage:\n"
-        + "        identifier: s1\n";
+        + "            identifier: s4\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
 

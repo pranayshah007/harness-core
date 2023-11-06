@@ -8,8 +8,15 @@
 package io.harness.ssca.services;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.REETIKA;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.BuilderFactory;
 import io.harness.SSCAManagerTestBase;
@@ -17,18 +24,26 @@ import io.harness.category.element.UnitTests;
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.Artifact;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyComponentFilter;
+import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
+import io.harness.spec.server.ssca.v1.model.Operator;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.mongodb.BasicDBList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -36,6 +51,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase {
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
@@ -77,5 +93,50 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
         normalisedSbomComponentService.listNormalizedSbomComponent("org", "project", 2, 2, artifact, "accountId");
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.hasEntity()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIds() {
+    String licenseValue = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
+    ArtifactListingRequestBodyLicenseFilter licenseFilter =
+        new ArtifactListingRequestBodyLicenseFilter().operator(Operator.EQUALS).value(licenseValue);
+    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
+    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(4, document.size());
+    assertEquals(licenseValue, document.get(NormalizedSBOMEntityKeys.packageLicense));
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsForComponentFilter() {
+    String componentValue1 = randomAlphabetic(10);
+    String componentValue2 = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
+    List<ArtifactListingRequestBodyComponentFilter> componentFilter =
+        Lists.newArrayList(new ArtifactListingRequestBodyComponentFilter()
+                               .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTNAME)
+                               .operator(Operator.CONTAINS)
+                               .value(componentValue1),
+            new ArtifactListingRequestBodyComponentFilter()
+                .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTVERSION)
+                .operator(Operator.STARTSWITH)
+                .value(componentValue2));
+
+    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    Document document = criteria.getCriteriaObject();
+    assertEquals(4, document.size());
+    BasicDBList componentList = (BasicDBList) document.get("$and");
+
+    assertEquals(componentList.size(), 2);
   }
 }

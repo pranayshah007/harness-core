@@ -54,7 +54,7 @@ public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
     DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder().build();
     DeploymentSummaryDTO deploymentSummaryDTO =
         DeploymentSummaryDTO.builder().deploymentInfoDTO(deploymentInfoDTO).build();
-    DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().build();
+    DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().canary(false).build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
     when(deploymentSummaryRepository.save(deploymentSummary)).thenReturn(deploymentSummary);
     assertThat(deploymentSummaryService.save(deploymentSummaryDTO).getDeploymentInfoDTO()).isEqualTo(deploymentInfoDTO);

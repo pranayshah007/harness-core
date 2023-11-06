@@ -67,6 +67,12 @@ public class K8sUtilizationGranularDataServiceImpl {
 
   static final String PURGE_DATA_QUERY = "SELECT drop_chunks('kubernetes_utilization_data', interval '16 days')";
 
+  static final String COUNT_KUBERNETES_UTILIZATION_DATA =
+      "SELECT COUNT(*) as K8S_UTIL_COUNT FROM KUBERNETES_UTILIZATION_DATA WHERE ACCOUNTID=?";
+
+  static final String DELETE_KUBERNETES_UTILIZATION_DATA =
+      "DELETE FROM KUBERNETES_UTILIZATION_DATA WHERE ACCOUNTID = '%s'";
+
   public boolean create(List<K8sGranularUtilizationData> k8sGranularUtilizationDataList) {
     if (k8sGranularUtilizationDataList.isEmpty()) {
       return true;
@@ -103,6 +109,33 @@ public class K8sUtilizationGranularDataServiceImpl {
 
   public int purgeOldKubernetesUtilData() {
     return TimescaleUtils.execute(dslContext.query(PURGE_DATA_QUERY));
+  }
+
+  public Long count(String accountId) {
+    int retryCount = 0;
+    while (retryCount < MAX_RETRY_COUNT) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = dbConnection.prepareStatement(COUNT_KUBERNETES_UTILIZATION_DATA)) {
+        statement.setString(1, accountId);
+        log.debug("Kubernetes Utilization data count query {}", statement);
+        try (ResultSet resultSet = statement.executeQuery()) {
+          if (null != resultSet && resultSet.next()) {
+            return resultSet.getLong("K8S_UTIL_COUNT");
+          }
+        }
+      } catch (SQLException e) {
+        log.error("Failed Kubernetes Utilization data count retryCount=[{}]", retryCount, e);
+        retryCount++;
+      }
+    }
+    return 0L;
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    String deleteQuery = String.format(DELETE_KUBERNETES_UTILIZATION_DATA, accountId);
+    log.info("Delete Query: {}", deleteQuery);
+    TimescaleUtils.execute(dslContext.query(deleteQuery));
+    return true;
   }
 
   private void updateInsertStatement(PreparedStatement statement, K8sGranularUtilizationData k8sGranularUtilizationData)

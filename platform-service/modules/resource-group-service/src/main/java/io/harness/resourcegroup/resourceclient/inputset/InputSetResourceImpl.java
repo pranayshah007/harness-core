@@ -22,6 +22,7 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.inputset.InputSetFilterPropertiesDto;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.remote.client.NGRestUtils;
@@ -102,7 +103,8 @@ public class InputSetResourceImpl implements Resource {
         NGRestUtils
             .getResponse(
                 pipelineServiceClient.listInputSetsInProject(0, resourceIds.size(), scope.getAccountIdentifier(),
-                    scope.getOrgIdentifier(), scope.getProjectIdentifier(), InputSetListTypePMS.ALL, null, null))
+                    scope.getOrgIdentifier(), scope.getProjectIdentifier(), InputSetListTypePMS.ALL, null, null,
+                    InputSetFilterPropertiesDto.builder().inputSetIdsWithPipelineIds(resourceIds).build()))
             .getContent();
     Set<String> validResourceIds = inputSetListResponse.stream()
                                        .map(InputSetListResponseDTO::getInputSetIdWithPipelineId)

@@ -16,13 +16,13 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.Optional;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
@@ -53,7 +53,7 @@ public class PipelineExecutionUpdateEventHandlerTest extends CategoryTest {
             .ambiance(Ambiance.newBuilder()
                           .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                               "projectIdentfier", "orgIdentifier", "orgIdentifier"))
-                          .addAllLevels(Lists.newArrayList(Level.newBuilder().setRuntimeId("node1").build()))
+                          .addAllLevels(ListUtils.newArrayList(Level.newBuilder().setRuntimeId("node1").build()))
                           .build())
             .build();
     when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))

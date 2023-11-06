@@ -62,4 +62,5 @@ public class TerraformExecuteStepRequest {
   boolean encryptDecryptPlanForHarnessSMOnManager;
   boolean isNG; // whether is request is coming from NG manager or CG manager
   boolean skipColorLogs;
+  boolean skipStateStorage;
 }

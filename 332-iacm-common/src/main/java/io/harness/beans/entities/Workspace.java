@@ -35,5 +35,5 @@ public class Workspace {
   String repository_connector;
   String repository_path;
   String repository_commit;
-  VariablesRepo[] tf_var_files;
+  VariablesRepo[] terraform_variable_files;
 }

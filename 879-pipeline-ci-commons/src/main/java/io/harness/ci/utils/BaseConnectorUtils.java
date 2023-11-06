@@ -25,8 +25,10 @@ import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
+import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
@@ -45,6 +47,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDT
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -97,6 +100,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.GcpOidcAuthenticator;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -121,6 +125,8 @@ public class BaseConnectorUtils {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private ConnectorResourceClient connectorResourceClient;
   @Inject private SecretUtils secretUtils;
+
+  @Inject private GcpOidcAuthenticator gcpOidcAuthenticator;
 
   public final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   public final int MAX_ATTEMPTS = 6;
@@ -464,8 +470,8 @@ public class BaseConnectorUtils {
     }
   }
 
-  private ConnectorDetails getGcpConnectorDetails(
-      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+  private ConnectorDetails getGcpConnectorDetails(NGAccess ngAccess, ConnectorDTO connectorDTO,
+      ConnectorDetailsBuilder connectorDetailsBuilder) throws IOException {
     List<EncryptedDataDetail> encryptedDataDetails;
     GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
     GcpConnectorCredentialDTO credential = gcpConnectorDTO.getCredential();
@@ -477,6 +483,17 @@ public class BaseConnectorUtils {
           .build();
     } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
       return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate()).build();
+    } else if (credential.getGcpCredentialType() == GcpCredentialType.OIDC_AUTHENTICATION) {
+      GcpOidcDetailsDTO gcpOidcDetailsDTO = (GcpOidcDetailsDTO) credential.getConfig();
+      Map<EnvVariableEnum, String> oidcAuthMap = gcpOidcAuthenticator.handleOidcAuthentication(
+          connectorDTO.getConnectorInfo().getAccountIdentifier(), gcpOidcDetailsDTO);
+
+      if (oidcAuthMap.isEmpty()) {
+        throw new IllegalStateException("OIDC Authentication map is empty");
+      }
+
+      connectorDetailsBuilder.envToSecretsMap(oidcAuthMap);
+      return connectorDetailsBuilder.executeOnDelegate(gcpConnectorDTO.getExecuteOnDelegate()).build();
     }
     throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",
         gcpConnectorDTO.getCredential().getGcpCredentialType(), gcpConnectorDTO));
@@ -484,6 +501,11 @@ public class BaseConnectorUtils {
 
   private ConnectorDetails getGitConnectorDetails(
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof DelegateSelectable) {
+      DelegateSelectable delegateSelectable = (DelegateSelectable) connectorDTO.getConnectorInfo().getConnectorConfig();
+      connectorDetailsBuilder = connectorDetailsBuilder.delegateSelectors(delegateSelectable.getDelegateSelectors());
+    }
+
     if (connectorDTO.getConnectorInfo().getConnectorType() == GITHUB) {
       return buildGithubConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == AZURE_REPO) {

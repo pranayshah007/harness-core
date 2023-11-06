@@ -6,16 +6,11 @@
  */
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
-import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
-import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
-import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
-import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
-import static io.harness.idp.common.Constants.PAGERDUTY_INCIDENTS;
-import static io.harness.idp.common.Constants.PAGERDUTY_RESOLVED_INCIDENTS;
-import static io.harness.idp.common.Constants.PAGERDUTY_SERVICE_DIRECTORY;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_CONTAINS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_CONTENTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS;
@@ -30,13 +25,44 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_POLICY_EVALUATION_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_STO_SCAN_SETUP_DSL;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_COUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_OPEN_CLOSE_RATIO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_MEAN_TIME_TO_RESOLVE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_INCIDENTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_RESOLVED_INCIDENTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.PAGERDUTY_SERVICE_DIRECTORY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datasourcelocations.locations.bitbucket.BitbucketIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.bitbucket.BitbucketMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubContentsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubFileExistsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToCompleteSuccessWorkflowRunsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToCompleteWorkflowRunsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenCodeScanningAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenDependabotAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenPullRequestsByAccountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubOpenSecretScanningAlertsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubWorkflowSuccessRateDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.github.GithubWorkflowsCountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabFileExistsDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabIsBranchProtectionSetDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.gitlab.GitlabMeanTimeToMergePRDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.harness.HarnessProxyThroughDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraIssuesCountDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraIssuesOpenCloseRatioDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.jira.JiraMeanTimeToResolveDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.kubernetes.KubernetesProxyThroughDsl;
+import io.harness.idp.scorecard.datasourcelocations.locations.pagerduty.PagerDutyIncidents;
+import io.harness.idp.scorecard.datasourcelocations.locations.pagerduty.PagerDutyServiceDirectory;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -47,6 +73,7 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
+  private GithubContentsDsl githubContentsDsl;
   private GithubWorkflowsCountDsl githubWorkflowsCountDsl;
   private GithubWorkflowSuccessRateDsl githubWorkflowSuccessRateDsl;
   private GithubMeanTimeToCompleteWorkflowRunsDsl githubMeanTimeToCompleteWorkflowRunsDsl;
@@ -78,6 +105,9 @@ public class DataSourceLocationFactory {
         return githubIsBranchProtectionSetDsl;
       case GITHUB_FILE_EXISTS:
         return githubFileExistsDsl;
+      case GITHUB_FILE_CONTENTS:
+      case GITHUB_FILE_CONTAINS:
+        return githubContentsDsl;
       case GITHUB_WORKFLOWS_COUNT:
         return githubWorkflowsCountDsl;
       case GITHUB_WORKFLOW_SUCCESS_RATE:

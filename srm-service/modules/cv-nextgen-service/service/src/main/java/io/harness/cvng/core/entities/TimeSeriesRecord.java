@@ -63,7 +63,7 @@ public final class TimeSeriesRecord
 
   @Id private String uuid;
   @FdIndex private String accountId;
-  @FdIndex private String verificationTaskId;
+  private String verificationTaskId;
   @FdIndex private String host;
   @FdIndex private String metricName;
   @FdIndex private String metricIdentifier;

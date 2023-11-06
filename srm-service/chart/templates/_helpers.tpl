@@ -64,3 +64,21 @@ Create the name of the service account to use
 {{- define "cv-nextgen.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage Harness Manager Secrets
+USAGE:
+{{- "cv-nextgen.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "cv-nextgen.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+VERIFICATION_SERVICE_SECRET: '{{ .ctx.Values.secrets.default.VERIFICATION_SERVICE_SECRET | b64enc }}'
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

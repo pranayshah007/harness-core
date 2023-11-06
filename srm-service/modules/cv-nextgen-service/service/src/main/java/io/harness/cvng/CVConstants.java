@@ -69,6 +69,8 @@ public interface CVConstants {
   String SET_KEY = "$set";
   int BULK_OPERATION_THRESHOLD = 1000;
 
+  int MIN_NUMBER_OF_SLOS = 2;
+  int MAX_NUMBER_OF_SLOS = 30;
   int MONITORED_SERVICES_RISK_COUNT_CALCULATION_LIMIT = 500;
 
   String SLO_PARAM_MESSAGE = "SLO identifier for the entity";

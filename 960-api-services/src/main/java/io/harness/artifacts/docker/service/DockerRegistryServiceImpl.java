@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.docker.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -401,7 +402,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
             response = registryRestClient.getApiVersion(BEARER + token).execute();
           }
         }
-        if (response.code() == 404) { // https://harness.atlassian.net/browse/CDC-11979
+        if (response.code()
+            >= 400) { // https://harness.atlassian.net/browse/CDC-11979 https://harness.atlassian.net/browse/CDS-82616
           return handleValidateCredentialsEndingWithSlash(registryRestClient, dockerConfig);
         }
         return isSuccessful(response);

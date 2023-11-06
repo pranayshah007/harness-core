@@ -93,6 +93,7 @@ import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployMode;
 import io.harness.context.GlobalContext;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.AutoUpgrade;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
@@ -190,7 +191,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import freemarker.template.TemplateException;
-import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -3659,7 +3659,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(ListUtils.newArrayList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -3684,7 +3684,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(ListUtils.newArrayList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -3711,7 +3711,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(ListUtils.newArrayList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -3738,7 +3738,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(ListUtils.newArrayList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")

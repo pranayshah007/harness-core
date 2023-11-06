@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.HarnessStruct;
@@ -36,7 +37,6 @@ import io.harness.rule.Owner;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.protobuf.ByteString;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testFindPlanCreator() throws IOException {
-    List<PartialPlanCreator<?>> planCreators = Lists.newArrayList(new DummyChildrenPlanCreator());
+    List<PartialPlanCreator<?>> planCreators = ListUtils.newArrayList(new DummyChildrenPlanCreator());
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
@@ -98,8 +98,8 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     final URL testFile = classLoader.getResource("pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     Dependencies dependencies =
-        PlanCreatorServiceHelper.handlePlanCreationResponses(Lists.newArrayList(planCreationResponse), finalResponse,
-            yamlContent, Dependencies.newBuilder().build(), new ArrayList<>());
+        PlanCreatorServiceHelper.handlePlanCreationResponses(ListUtils.newArrayList(planCreationResponse),
+            finalResponse, yamlContent, Dependencies.newBuilder().build(), new ArrayList<>());
     assertThat(dependencies).isEqualTo(Dependencies.newBuilder().build());
     assertThat(finalResponse.getErrorMessages().size()).isEqualTo(1);
     assertThat(finalResponse.getErrorMessages().get(0)).isEqualTo("The plan creation has errored");
@@ -119,8 +119,8 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     List<Map.Entry<String, String>> dependenciesList = new ArrayList<>(deps.getDependenciesMap().entrySet());
 
     Dependencies dependencies =
-        PlanCreatorServiceHelper.handlePlanCreationResponses(Lists.newArrayList(planCreationResponse), finalResponse,
-            yamlContent, Dependencies.newBuilder().build(), dependenciesList);
+        PlanCreatorServiceHelper.handlePlanCreationResponses(ListUtils.newArrayList(planCreationResponse),
+            finalResponse, yamlContent, Dependencies.newBuilder().build(), dependenciesList);
     assertThat(dependencies).isEqualTo(Dependencies.newBuilder().setYaml(yamlContent).build());
     assertThat(finalResponse.getErrorMessages().size()).isEqualTo(0);
   }
@@ -149,7 +149,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testFindPlanCreatorWithUnsupportedVersion() throws IOException {
-    List<PartialPlanCreator<?>> planCreators = Lists.newArrayList(new DummyChildrenPlanCreatorV2());
+    List<PartialPlanCreator<?>> planCreators = ListUtils.newArrayList(new DummyChildrenPlanCreatorV2());
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
@@ -245,7 +245,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                     .putData(PlanCreatorConstants.STAGE_ID, HarnessValue.newBuilder().setStringValue("stageId").build())
                     .putData(PlanCreatorConstants.STEP_GROUP_ID,
                         HarnessValue.newBuilder().setStringValue("stepGroupId").build())
-                    .putData(PlanCreatorConstants.STRATEGY_ID,
+                    .putData(PlanCreatorConstants.NEAREST_STRATEGY_ID,
                         HarnessValue.newBuilder().setStringValue("strategyId").build())
                     .build())
             .build();
@@ -277,7 +277,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue("stepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreatorConstants.STRATEGY_ID))
+            PlanCreatorConstants.NEAREST_STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("strategyId").build());
 
     newDependencies =
@@ -292,7 +292,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                                            HarnessValue.newBuilder().setStringValue("otherStageId").build())
                                        .putData(PlanCreatorConstants.STEP_GROUP_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStepGroupId").build())
-                                       .putData(PlanCreatorConstants.STRATEGY_ID,
+                                       .putData(PlanCreatorConstants.NEAREST_STRATEGY_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStrategyId").build())
                                        .build())
                     .build())
@@ -315,7 +315,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreatorConstants.STRATEGY_ID))
+            PlanCreatorConstants.NEAREST_STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStrategyId").build());
   }
 }

@@ -183,4 +183,14 @@ public class K8sWorkloadDao {
     }
     return workloads;
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(K8sWorkload.class).field(K8sWorkloadKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<K8sWorkload> query =
+        persistence.createQuery(K8sWorkload.class).field(K8sWorkloadKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

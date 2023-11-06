@@ -121,8 +121,9 @@ Create the name of the delegate upgrader image to use
 {{- if .Values.global.saml.autoaccept }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.SAMLAutoAccept }}
 {{- end }}
-{{- $length := len .Values.global.license.ng }}
-{{- if gt $length 0}}
+{{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
+{{- $ngLicenseENV := include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "NG_LICENSE" "overrideEnvName" "SMP_LICENSE" "providedSecretValues" (list "global.license.ng") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator)))}}
+{{- if $ngLicenseENV }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.LICENSE }}
 {{- end }}
 {{- if .Values.global.ng.enabled }}
@@ -144,3 +145,26 @@ Create the name of the delegate upgrader image to use
 {{- define "harness-manager.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage Harness Manager Secrets
+
+USAGE:
+{{- "harness-manager.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "harness-manager.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+VERIFICATION_SERVICE_SECRET: {{ .ctx.Values.secrets.default.VERIFICATION_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

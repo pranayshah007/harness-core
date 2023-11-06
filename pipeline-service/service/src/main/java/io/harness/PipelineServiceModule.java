@@ -108,6 +108,7 @@ import io.harness.pms.events.base.PmsMessageListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
+import io.harness.pms.inputset.mappers.InputSetFilterPropertiesMapper;
 import io.harness.pms.jira.JiraStepHelperServiceImpl;
 import io.harness.pms.ngpipeline.inputs.api.InputsApiImpl;
 import io.harness.pms.ngpipeline.inputs.service.PMSInputsService;
@@ -194,6 +195,8 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.secretusage.SecretRuntimeUsageServiceImpl;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
@@ -478,6 +481,7 @@ public class PipelineServiceModule extends AbstractModule {
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.PIPELINESETUP.toString()).to(PipelineFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.INPUTSET.toString()).to(InputSetFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.PIPELINEEXECUTION.toString())
         .to(PipelineExecutionFilterPropertiesMapper.class);
 
@@ -516,6 +520,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(ContainerStepV2PluginProvider.class).to(ContainerStepV2PluginProviderImpl.class);
+    bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -591,15 +596,14 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("logStreamingClientThreadPool")
-  public ThreadPoolExecutor logStreamingClientThreadPool() {
+  @Named("logStreamingDelayExecutor")
+  public ScheduledExecutorService logStreamingDelayExecutor() {
     ThreadPoolConfig threadPoolConfig = configuration != null && configuration.getLogStreamingServiceConfig() != null
             && configuration.getLogStreamingServiceConfig().getThreadPoolConfig() != null
         ? configuration.getLogStreamingServiceConfig().getThreadPoolConfig()
-        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
-    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
-        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
+        : ThreadPoolConfig.builder().corePoolSize(10).build();
+    return new ScheduledThreadPoolExecutor(threadPoolConfig.getCorePoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides

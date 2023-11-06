@@ -30,6 +30,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -51,10 +52,8 @@ import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -109,20 +108,6 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
 
     processor.handleEvent(event);
 
-    ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<String> runtimeIdCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(initiateNodeHelper, times(2))
-        .publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture(), eq(null),
-            eq(InitiateMode.CREATE_AND_START));
-
-    List<String> nodeIds = nodeIdCaptor.getAllValues();
-    assertThat(nodeIds).hasSize(2);
-    assertThat(nodeIds).containsExactly(child1Id, child2Id);
-
-    List<String> runtimeIds = runtimeIdCaptor.getAllValues();
-    assertThat(runtimeIds).hasSize(2);
-
     ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
     ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
     verify(waitNotifyEngine, times(1)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
@@ -130,9 +115,6 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     assertThat(callbackCaptor.getAllValues().get(0)).isInstanceOf(EngineResumeCallback.class);
     EngineResumeCallback engineResumeCallback = (EngineResumeCallback) callbackCaptor.getAllValues().get(0);
     assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1));
-
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
   }
 
@@ -174,33 +156,22 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
             .setAmbiance(ambiance)
             .build();
 
-    when(engine.initiateNode(any(), anyString(), anyString(), any(), any(), any())).thenReturn(null);
+    when(engine.initiateNode(any(), anyString(), anyString(), any(), any(), any()))
+        .thenReturn(NodeExecution.builder().ambiance(ambiance).build());
     processor.handleEvent(event);
-
-    ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<String> runtimeIdCaptor = ArgumentCaptor.forClass(String.class);
 
     ArgumentCaptor<String> notRunningNodeIdCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> notRunningRuntimeIdCaptor = ArgumentCaptor.forClass(String.class);
 
-    verify(initiateNodeHelper, times(1))
-        .publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture(), eq(null),
-            eq(InitiateMode.CREATE_AND_START));
+    verify(initiateNodeHelper, times(1)).publishEvent(eq(ambiance), eq(InitiateMode.START));
 
-    verify(engine).initiateNode(
-        eq(ambiance), notRunningNodeIdCaptor.capture(), notRunningRuntimeIdCaptor.capture(), any(), any(), any());
+    verify(engine, times(2))
+        .initiateNode(
+            eq(ambiance), notRunningNodeIdCaptor.capture(), notRunningRuntimeIdCaptor.capture(), any(), any(), any());
 
-    List<String> nodeIds = nodeIdCaptor.getAllValues();
-    assertThat(nodeIds).hasSize(1);
-    assertThat(nodeIds).containsExactly(child1Id);
-
-    nodeIds = notRunningNodeIdCaptor.getAllValues();
-    assertThat(nodeIds).hasSize(1);
-    assertThat(nodeIds).containsExactly(child2Id);
-
-    List<String> runtimeIds = runtimeIdCaptor.getAllValues();
-    runtimeIds.addAll(notRunningRuntimeIdCaptor.getAllValues());
-    assertThat(runtimeIds).hasSize(2);
+    List<String> nodeIds = notRunningNodeIdCaptor.getAllValues();
+    assertThat(nodeIds).hasSize(2);
+    assertThat(nodeIds).containsExactly(child1Id, child2Id);
 
     ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
     ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
@@ -209,8 +180,6 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     assertThat(callbackCaptor.getAllValues().get(2)).isInstanceOf(EngineResumeCallback.class);
     EngineResumeCallback engineResumeCallback = (EngineResumeCallback) callbackCaptor.getAllValues().get(2);
     assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(runtimeIds.get(0), runtimeIds.get(1), runtimeIds.get(0), runtimeIds.get(1));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
   }
@@ -287,20 +256,6 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
 
     processor.handleEvent(event);
 
-    ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<String> runtimeIdCaptor = ArgumentCaptor.forClass(String.class);
-
-    verify(initiateNodeHelper, times(1))
-        .publishEvent(eq(ambiance), nodeIdCaptor.capture(), runtimeIdCaptor.capture(), eq(rollbackSTrategyMetadata),
-            eq(InitiateMode.CREATE_AND_START));
-
-    List<String> nodeIds = nodeIdCaptor.getAllValues();
-    assertThat(nodeIds).hasSize(1);
-    assertThat(nodeIds).contains(child1Id);
-
-    List<String> runtimeIds = runtimeIdCaptor.getAllValues();
-    assertThat(runtimeIds).hasSize(1);
-
     ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
     ArgumentCaptor<String[]> exIdCaptor = ArgumentCaptor.forClass(String[].class);
     verify(waitNotifyEngine, times(1)).waitForAllOn(any(), callbackCaptor.capture(), exIdCaptor.capture());
@@ -308,8 +263,6 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
     assertThat(callbackCaptor.getAllValues().get(0)).isInstanceOf(EngineResumeCallback.class);
     EngineResumeCallback engineResumeCallback = (EngineResumeCallback) callbackCaptor.getAllValues().get(0);
     assertThat(engineResumeCallback.getAmbiance()).isEqualTo(ambiance);
-    assertThat(exIdCaptor.getAllValues().stream().flatMap(Arrays::stream).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(runtimeIds.get(0));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
   }

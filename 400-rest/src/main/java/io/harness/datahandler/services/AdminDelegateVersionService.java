@@ -7,6 +7,7 @@
 
 package io.harness.datahandler.services;
 
+import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_CUSTOM_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
 import static io.harness.delegate.beans.VersionOverrideType.UPGRADER_IMAGE_TAG;
@@ -32,6 +33,11 @@ public class AdminDelegateVersionService {
   public String setDelegateImageTag(
       final String delegateTag, final String accountId, final boolean validTillNextRelease, final int validFor) {
     return setVersionOverride(accountId, DELEGATE_IMAGE_TAG, delegateTag, validTillNextRelease, validFor);
+  }
+
+  public String setCustomDelegateImageTag(
+      final String delegateTag, final String accountId, final boolean validTillNextRelease, final int validFor) {
+    return setVersionOverride(accountId, DELEGATE_CUSTOM_IMAGE_TAG, delegateTag, validTillNextRelease, validFor);
   }
 
   public void setUpgraderImageTag(

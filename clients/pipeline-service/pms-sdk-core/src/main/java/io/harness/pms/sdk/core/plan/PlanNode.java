@@ -32,7 +32,7 @@ import lombok.experimental.NonFinal;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class PlanNode {
   // Identifiers
   @NotNull String uuid;

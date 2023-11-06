@@ -14,7 +14,6 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
@@ -62,9 +61,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.security.SecurityContextBuilder;
-import io.harness.security.SourcePrincipalContextBuilder;
-import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -146,11 +142,6 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       VariableCreationContext ctx, DeploymentStageNode config) {
     YamlField currentField = ctx.getCurrentField();
 
-    // set source principal to get git entities
-    SecurityContextBuilder.setContext(new ServicePrincipal(AuthorizationServiceHeader.NG_MANAGER.getServiceId()));
-    SourcePrincipalContextBuilder.setSourcePrincipal(
-        new ServicePrincipal(AuthorizationServiceHeader.NG_MANAGER.getServiceId()));
-
     LinkedHashMap<String, VariableCreationResponse> responseMap =
         createVariablesForChildrenNodesPipelineV2Yaml(ctx, config);
     // v1
@@ -219,7 +210,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         createVariablesForEnvironments(ctx, responseMap, environmentsYaml, serviceVariables);
       }
       if (environment != null) {
-        stageVariableCreatorHelper.createVariablesForEnvironment(ctx, responseMap, serviceVariables, environment);
+        try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(getEnvironmentGitBranch(config))) {
+          stageVariableCreatorHelper.createVariablesForEnvironment(ctx, responseMap, serviceVariables, environment);
+        }
       }
       if (serviceRef != null) {
         try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(getServiceGitBranch(config))) {
@@ -255,8 +248,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       for (EnvironmentYamlV2 environmentYamlV2 : environmentsYaml.getValues().getValue()) {
         ParameterField<String> envRef = environmentYamlV2.getEnvironmentRef();
         if (envRef != null) {
-          stageVariableCreatorHelper.createVariablesForEnvironment(
-              ctx, responseMap, serviceVariables, environmentYamlV2);
+          try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(environmentYamlV2.getGitBranch())) {
+            stageVariableCreatorHelper.createVariablesForEnvironment(
+                ctx, responseMap, serviceVariables, environmentYamlV2);
+          }
         }
       }
     }
@@ -376,6 +371,14 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     ServiceYamlV2 serviceYamlV2 = stageNode.getDeploymentStageConfig().getService();
     if (serviceYamlV2 != null) {
       return serviceYamlV2.getGitBranch();
+    }
+    return null;
+  }
+
+  private String getEnvironmentGitBranch(DeploymentStageNode stageNode) {
+    EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
+    if (environmentYamlV2 != null) {
+      return environmentYamlV2.getGitBranch();
     }
     return null;
   }

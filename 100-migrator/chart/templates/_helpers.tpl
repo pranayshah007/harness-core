@@ -83,14 +83,28 @@ Create the name of the delegate upgrader image to use
 {{- end }}
 
 {{/*
-Randomly Creates Secret for access-control unless overwritten.
+Manage Migrator Secrets
+
+USAGE:
+{{- "migrator.generateSecrets" (dict "ctx" $)}}
 */}}
 {{- define "migrator.generateSecrets" }}
-    LOG_STREAMING_SERVICE_TOKEN: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "harness-manager" "key" "LOG_STREAMING_SERVICE_TOKEN" "providedValues" (list "secrets.LOG_STREAMING_SERVICE_TOKEN") "length" 10 "context" $) }}
-    MONGO_SSL_CA_TRUST_STORE_PATH: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "harness-manager" "key" "MONGO_SSL_CA_TRUST_STORE_PATH" "providedValues" (list "secrets.MONGO_SSL_CA_TRUST_STORE_PATH") "length" 10 "context" $) }}
-    MONGO_SSL_CA_TRUST_STORE_PASSWORD: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "harness-manager" "key" "MONGO_SSL_CA_TRUST_STORE_PASSWORD" "providedValues" (list "secrets.MONGO_SSL_CA_TRUST_STORE_PASSWORD") "length" 10 "context" $) }}
-    VERIFICATION_SERVICE_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "harness-manager" "key" "VERIFICATION_SERVICE_SECRET" "providedValues" (list "secrets.VERIFICATION_SERVICE_SECRET") "length" 10 "context" $) }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET")) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+VERIFICATION_SERVICE_SECRET: {{ .ctx.Values.secrets.default.VERIFICATION_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
 {{- end }}
+
 
 {{- define "migrator.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
@@ -100,6 +114,7 @@ Randomly Creates Secret for access-control unless overwritten.
 Overrride mongoUri if provided, else use the default
 */}}
 {{- define "migrator.mongoConnection" }}
+{{- $ := . }}
 {{- $type := "MONGO" }}
 {{- $override := .Values.migrator.mongodb.override }}
 {{- $hosts := .Values.migrator.mongodb.hosts }}
@@ -108,11 +123,12 @@ Overrride mongoUri if provided, else use the default
 {{- if $override }}
 {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs )}}
 {{- else }}
-{{- include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+{{- include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "harness" "ctx" $) }}
 {{- end }}
 {{- end }}
 
 {{- define "migrator.mongoEnv" }}
+{{- $ := . }}
 {{- $type := "mongo" }}
 {{- $override := .Values.migrator.mongodb.override }}
 {{- $passwordSecret := .Values.migrator.mongodb.secretName }}
@@ -122,6 +138,6 @@ Overrride mongoUri if provided, else use the default
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret "userKey" $userKey) }}
 {{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $passwordSecret "passwordKey" $passwordKey ) }}
 {{- else }}
-{{- include "harnesscommon.dbconnection.mongoEnv" . }}
+{{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) }}
 {{- end }}
 {{- end }}

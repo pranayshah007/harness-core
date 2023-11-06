@@ -105,7 +105,6 @@ import com.healthmarketscience.sqlbuilder.ValidationContext;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
 import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -613,7 +612,7 @@ public class DeploymentStatsDataFetcher extends AbstractStatsDataFetcherWithTags
       selectQuery.addCustomFromTable(schema.getDeploymentTable());
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTags(accountId, filters);
       filters = processFilterForDeploymentType(accountId, filters);
       filters = processFilterForWorkflowType(accountId, filters);
@@ -717,7 +716,7 @@ public class DeploymentStatsDataFetcher extends AbstractStatsDataFetcherWithTags
     selectTags.addCustomFromTable("skeys(t0." + columnName + ") as x(tagname)");
     selectTags.addCondition(new CustomCondition("x.tagname='" + tagName + "'"));
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTags(accountId, filters);
       decorateQueryWithFilters(selectTags, filters);
     }

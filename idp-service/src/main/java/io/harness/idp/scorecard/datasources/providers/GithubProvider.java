@@ -22,33 +22,36 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-public class GithubProvider extends DataSourceProvider {
+public class GithubProvider extends HttpDataSourceProvider {
   private static final String SOURCE_LOCATION_ANNOTATION = "backstage.io/source-location";
   protected GithubProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
       BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService,
-      ConfigReader configReader) {
+      ConfigReader configReader, DataSourceRepository dataSourceRepository) {
     super(GITHUB_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-        dataPointParserFactory);
+        dataPointParserFactory, dataSourceRepository);
     this.backstageEnvVariableRepository = backstageEnvVariableRepository;
     this.ngSecretService = ngSecretService;
     this.configReader = configReader;
+    this.dataSourceRepository = dataSourceRepository;
   }
 
   final BackstageEnvVariableRepository backstageEnvVariableRepository;
@@ -58,7 +61,7 @@ public class GithubProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<DataFetchDTO> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
@@ -69,8 +72,9 @@ public class GithubProvider extends DataSourceProvider {
       possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
     }
 
-    return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders,
-        possibleReplaceableRequestBodyPairs, prepareUrlReplaceablePairs(configs, accountIdentifier));
+    return processOut(accountIdentifier, GITHUB_IDENTIFIER, entity, replaceableHeaders,
+        possibleReplaceableRequestBodyPairs, prepareUrlReplaceablePairs(configs, accountIdentifier),
+        dataPointsAndInputValues);
   }
 
   @Override

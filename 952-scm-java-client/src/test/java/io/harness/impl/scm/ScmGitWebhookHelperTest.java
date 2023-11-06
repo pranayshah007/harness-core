@@ -107,11 +107,12 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testIsIdenticalEventsForHarnessTrue() {
-    List<HarnessWebhookEvent> allNativeEvents = Arrays.asList(HarnessWebhookEvent.HARNESS_PULLREQ_CREATED,
-        HarnessWebhookEvent.HARNESS_PULLREQ_REOPENED, HarnessWebhookEvent.HARNESS_PULLREQ_BRANCH_UPDATED,
-        HarnessWebhookEvent.HARNESS_BRANCH_CREATED, HarnessWebhookEvent.HARNESS_BRANCH_UPDATED,
-        HarnessWebhookEvent.HARNESS_BRANCH_DELETED, HarnessWebhookEvent.HARNESS_TAG_CREATED,
-        HarnessWebhookEvent.HARNESS_TAG_DELETED, HarnessWebhookEvent.HARNESS_TAG_UPDATED);
+    List<HarnessWebhookEvent> allNativeEvents =
+        Arrays.asList(HarnessWebhookEvent.HARNESS_PULLREQ_CREATED, HarnessWebhookEvent.HARNESS_PULLREQ_REOPENED,
+            HarnessWebhookEvent.HARNESS_PULLREQ_BRANCH_UPDATED, HarnessWebhookEvent.HARNESS_BRANCH_CREATED,
+            HarnessWebhookEvent.HARNESS_BRANCH_UPDATED, HarnessWebhookEvent.HARNESS_BRANCH_DELETED,
+            HarnessWebhookEvent.HARNESS_TAG_CREATED, HarnessWebhookEvent.HARNESS_TAG_DELETED,
+            HarnessWebhookEvent.HARNESS_TAG_UPDATED, HarnessWebhookEvent.HARNESS_PULLREQ_COMMENT_CREATED);
     WebhookResponse webhookResponse =
         WebhookResponse.newBuilder()
             .setNativeEvents(NativeEvents.newBuilder()
