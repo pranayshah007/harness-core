@@ -148,8 +148,8 @@ fi
 
 #creating the fix version
 chmod +x ssca-manager/release/release-branch-create-ssca-version.sh
-ssca-manager/release/release-branch-create-ssca-version.sh
+#ssca-manager/release/release-branch-create-ssca-version.sh
 
 #updating jiras with fix version
 chmod +x ssca-manager/release/release-branch-update-jiras.sh
-ssca-manager/release/release-branch-update-jiras.sh
+#ssca-manager/release/release-branch-update-jiras.sh
