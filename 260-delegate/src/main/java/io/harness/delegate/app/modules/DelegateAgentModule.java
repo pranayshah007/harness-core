@@ -6,8 +6,6 @@
  */
 
 package io.harness.delegate.app.modules;
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
@@ -92,16 +90,15 @@ public class DelegateAgentModule extends AbstractModule {
   }
 
   private void configureCcmEventPublishing() {
-    final String deployMode = System.getenv(DEPLOY_MODE);
     final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
     if (isNotBlank(managerHostAndPort)) {
       log.info("Running delegate, starting CCM event tailer");
       final DelegateTailerModule.Config tailerConfig;
-      if (isOnPrem(deployMode)) {
-        log.info("fetching OnPrem ChronicleEventsTailer Config");
-        tailerConfig = getOnPremTailerConfig();
+      if (!isMTLSEnabled()) {
+        log.info("fetching ChronicleEventsTailer Config without MTLS");
+        tailerConfig = getTailerConfigNoTLS();
       } else {
-        tailerConfig = getTailerConfig(managerHostAndPort);
+        tailerConfig = getTailerConfigTLS(managerHostAndPort);
       }
       install(new DelegateTailerModule(tailerConfig));
     } else {
@@ -112,7 +109,11 @@ public class DelegateAgentModule extends AbstractModule {
     install(new EventPublisherModule());
   }
 
-  private DelegateTailerModule.Config getTailerConfig(String managerHostAndPort) {
+  private  boolean isMTLSEnabled() {
+    return (StringUtils.isNotEmpty(configuration.getClientCertificateFilePath())
+            && StringUtils.isNotEmpty(configuration.getClientCertificateKeyFilePath()));
+  }
+  private DelegateTailerModule.Config getTailerConfigTLS(String managerHostAndPort) {
     return DelegateTailerModule.Config.builder()
         .queueFilePath(configuration.getQueueFilePath())
         .publishTarget(extractTarget(managerHostAndPort))
@@ -124,7 +125,7 @@ public class DelegateAgentModule extends AbstractModule {
         .build();
   }
 
-  private DelegateTailerModule.Config getOnPremTailerConfig() {
+  private DelegateTailerModule.Config getTailerConfigNoTLS() {
     return DelegateTailerModule.Config.builder()
         .queueFilePath(configuration.getQueueFilePath())
         .clientCertificateFilePath(configuration.getClientCertificateFilePath())
