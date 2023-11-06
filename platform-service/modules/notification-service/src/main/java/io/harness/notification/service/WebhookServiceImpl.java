@@ -26,6 +26,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.WebhookTaskParams;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -102,11 +103,13 @@ public class WebhookServiceImpl implements ChannelService {
 
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
-    if (Objects.isNull(notificationRequest) || !notificationRequest.hasWebhook()
-        || Objects.isNull(notificationRequest.getAccountId())) {
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+    if (Objects.isNull(notificationRequest) || !notificationRequest.hasWebhook()) {
+      throw new NotificationException("Invalid webhook notification request", DEFAULT_ERROR_CODE, USER);
+    }
+
+    if (isEmpty(notificationRequest.getAccountId())) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", notificationRequest.getId()), DEFAULT_ERROR_CODE, USER);
     }
 
     String notificationId = notificationRequest.getId();
@@ -124,9 +127,9 @@ public class WebhookServiceImpl implements ChannelService {
     List<String> webhookUrls = getRecipients(notificationRequest);
     if (isEmpty(webhookUrls)) {
       log.info("No webhookUrls found in notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException(
+          String.format("No webhookUrls found in notification request %s.", notificationRequest.getId()),
+          DEFAULT_ERROR_CODE, USER);
     }
 
     int expressionFunctorToken = Math.toIntExact(webhookDetails.getExpressionFunctorToken());
@@ -134,9 +137,19 @@ public class WebhookServiceImpl implements ChannelService {
     Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
         notificationRequest.getAccountId(), webhookDetails.getOrgIdentifier(), webhookDetails.getProjectIdentifier());
 
-    return sendInSync(webhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
-        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
+    NotificationTaskResponse response = sendInSync(webhookUrls, templateId, templateData, notificationRequest.getId(),
+        notificationRequest.getTeam(), notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
         new HashMap<>(webhookDetails.getHeadersMap()), webhookDetails.getMessage());
+
+    if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format(
+              "Failed to send webhook notification. Check webhook configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+
+    return response;
   }
 
   @Override
@@ -240,7 +253,14 @@ public class WebhookServiceImpl implements ChannelService {
                                                     .expressionFunctorToken(expressionFunctorToken)
                                                     .executionTimeout(Duration.ofMinutes(1L))
                                                     .build();
-      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      DelegateResponseData responseData = null;
+      try {
+        responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      } catch (DelegateServiceDriverException exception) {
+        throw new NotificationException(
+            String.format("Failed to send notification %s, %s", notificationId, exception.getMessage()), exception,
+            DEFAULT_ERROR_CODE, USER);
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
             ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
