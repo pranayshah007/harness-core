@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.PagerDuty;
-import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_PD_TEMPLATE;
 import static io.harness.notification.constant.NotificationClientConstants.HARNESS_NAME;
 
@@ -123,13 +122,6 @@ public class PagerDutyServiceImpl implements ChannelService {
     PagerDuty pagerDutyDetails = notificationRequest.getPagerDuty();
     String templateId = pagerDutyDetails.getTemplateId();
     Map<String, String> templateData = pagerDutyDetails.getTemplateDataMap();
-
-    if (Objects.isNull(stripToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
-    }
 
     List<String> pagerDutyKeys = getRecipients(notificationRequest);
     if (isEmpty(pagerDutyKeys)) {
@@ -263,7 +255,7 @@ public class PagerDutyServiceImpl implements ChannelService {
                          .collect(Collectors.toList());
     }
 
-    if (!NO_TEMPLATE.equals(templateId)) {
+    if (isNotEmpty(templateId)) {
       Optional<PagerDutyTemplate> templateOpt = getTemplate(templateId, team);
       if (!templateOpt.isPresent()) {
         log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);

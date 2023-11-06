@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
@@ -148,13 +147,6 @@ public class MailServiceImpl implements ChannelService {
     Map<String, String> templateData = mailDetails.getTemplateDataMap();
     String templateId = mailDetails.getTemplateId();
 
-    if (Objects.isNull(stripToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
-    }
-
     List<String> emailIds = resolveRecipients(notificationRequest);
     if (isEmpty(emailIds)) {
       log.info("No recipients found in notification request {}", notificationId);
@@ -167,7 +159,7 @@ public class MailServiceImpl implements ChannelService {
       String subject = mailDetails.getSubject();
       String body = mailDetails.getBody();
       List<String> ccEmailIds = new ArrayList<>(mailDetails.getCcEmailIdsList());
-      if (!NO_TEMPLATE.equals(templateId)) {
+      if (isNotEmpty(templateId)) {
         Optional<EmailTemplate> emailTemplateOpt = getTemplate(templateId, notificationRequest.getTeam());
         if (!emailTemplateOpt.isPresent()) {
           log.error(

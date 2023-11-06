@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.Slack;
-import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_SLACK_TEMPLATE;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -115,13 +114,6 @@ public class SlackServiceImpl implements ChannelService {
     String templateId = slackDetails.getTemplateId();
     Map<String, String> templateData = slackDetails.getTemplateDataMap();
 
-    if (Objects.isNull(trimToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
-    }
-
     List<String> slackWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(slackWebhookUrls)) {
       log.info("No slackWebhookUrls found in notification request {}", notificationId);
@@ -216,7 +208,7 @@ public class SlackServiceImpl implements ChannelService {
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
       Map<String, String> abstractionMap, String message) {
     NotificationTaskResponse notificationTaskResponse;
-    if (!NO_TEMPLATE.equals(templateId)) {
+    if (isNotEmpty(templateId)) {
       Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
       if (!templateOpt.isPresent()) {
         log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);

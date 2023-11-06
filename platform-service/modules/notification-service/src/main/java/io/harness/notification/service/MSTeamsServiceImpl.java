@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.MSTeam;
-import static io.harness.notification.NotificationServiceConstants.NO_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_MSTEAMS_TEMPLATE;
 import static io.harness.notification.constant.NotificationConstants.ABORTED_COLOR;
 import static io.harness.notification.constant.NotificationConstants.BLUE_COLOR;
@@ -146,13 +145,6 @@ public class MSTeamsServiceImpl implements ChannelService {
     String templateId = msTeamDetails.getTemplateId();
     Map<String, String> templateData = msTeamDetails.getTemplateDataMap();
 
-    if (Objects.isNull(trimToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
-    }
-
     List<String> microsoftTeamsWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(microsoftTeamsWebhookUrls)) {
       log.info("No microsoft teams webhook found in notification request {}", notificationId);
@@ -257,7 +249,7 @@ public class MSTeamsServiceImpl implements ChannelService {
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
       Map<String, String> abstractionMap, String message) {
     NotificationTaskResponse notificationTaskResponse;
-    if (!NO_TEMPLATE.equals(templateId)) {
+    if (isNotEmpty(templateId)) {
       Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
       if (!templateOpt.isPresent()) {
         log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
