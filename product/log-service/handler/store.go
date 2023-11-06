@@ -6,13 +6,13 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-	"errors"
 
 	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 
@@ -22,12 +22,15 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/queue"
 	"github.com/harness/harness-core/product/log-service/store"
+	"github.com/harness/harness-core/product/platform/client"
 )
 
 const (
-	filePathSuffix = "logs.zip"
+	filePathSuffix     = "logs.zip"
 	maxItemsToDownload = 1500
-	harnessDownload = "harness-download"
+	harnessDownload    = "harness-download"
+	storage            = "/storage/"
+	authTokenheader    = "Authorization"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -203,7 +206,7 @@ func HandleInternalDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
-func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS) http.HandlerFunc {
+func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS, ngClient *client.HTTPClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -234,6 +237,18 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				WriteNotFound(w, err)
 				return
 			}
+			if cfg.Platform.VanityURLEnabled {
+				vanityURL, err := ngClient.GetVanityURL(ctx, accountID, r.Header.Get(authTokenheader))
+				if err != nil || vanityURL == "" {
+					logger.FromRequest(r).
+						WithError(err).
+						WithField(usePrefixParam, prefix).
+						Warnln("api: cannot fetch the vanity url")
+				} else {
+					link = replaceVanityURL(vanityURL, link, prefix, r)
+					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Successfully replaced with vanity url")
+				}
+			}
 		}
 
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
@@ -248,14 +263,14 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 		}
 
 		if len(out) > maxItemsToDownload {
-		    err := errors.New("Amount of data is too large to download")
-        	logger.FromRequest(r).
-        	    WithError(err).
-        	    WithField(usePrefixParam, prefix).
-        	    Errorln("api: Download failed! Amount of data is too large")
-        	WriteInternalError(w, fmt.Errorf("Prefix Key Exceeds Maximum Download Limit"))
-        	return
-        }
+			err := errors.New("Amount of data is too large to download")
+			logger.FromRequest(r).
+				WithError(err).
+				WithField(usePrefixParam, prefix).
+				Errorln("api: Download failed! Amount of data is too large")
+			WriteInternalError(w, fmt.Errorf("Prefix Key Exceeds Maximum Download Limit"))
+			return
+		}
 
 		// creates a cache in status queued
 		logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Adding request to queued state for further processing")
@@ -344,4 +359,17 @@ func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.
 	}
 	link = link + harnessDownload + lstring[1]
 	return link, nil
+}
+
+func replaceVanityURL(vanityURL, link, prefix string, r *http.Request) string {
+	lstring := strings.Split(link, storage)
+
+	if len(lstring) >= 1 {
+		link = vanityURL + storage + lstring[1]
+	} else {
+		logger.FromRequest(r).
+			WithField(usePrefixParam, prefix).
+			Warnln("api: cannot split the download url")
+	}
+	return link
 }
