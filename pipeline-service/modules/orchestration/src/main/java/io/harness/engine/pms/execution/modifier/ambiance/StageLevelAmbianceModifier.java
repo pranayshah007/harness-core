@@ -10,7 +10,6 @@ package io.harness.engine.pms.execution.modifier.ambiance;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -67,12 +66,8 @@ public class StageLevelAmbianceModifier implements AmbianceModifier {
   }
 
   private List<PostExecutionRollbackInfo> getPostExecutionRollbackInfo(Ambiance ambiance) {
-    // TODO(archit): Remove get from execution_metadata from next release
     PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
         ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
-    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
-      return ambiance.getMetadata().getPostExecutionRollbackInfoList();
-    }
     return planExecutionMetadata.getPostExecutionRollbackInfos();
   }
 }

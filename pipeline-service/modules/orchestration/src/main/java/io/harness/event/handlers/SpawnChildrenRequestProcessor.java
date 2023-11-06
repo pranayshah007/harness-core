@@ -6,6 +6,7 @@
  */
 
 package io.harness.event.handlers;
+
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.OrchestrationPublisherName;
@@ -18,7 +19,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -236,10 +236,6 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   private List<PostExecutionRollbackInfo> getPostExecutionRollbackInfo(Ambiance ambiance) {
     PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
         ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
-    // TODO(archit): Remove get from execution_metadata from next release
-    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
-      return ambiance.getMetadata().getPostExecutionRollbackInfoList();
-    }
     return planExecutionMetadata.getPostExecutionRollbackInfos();
   }
 

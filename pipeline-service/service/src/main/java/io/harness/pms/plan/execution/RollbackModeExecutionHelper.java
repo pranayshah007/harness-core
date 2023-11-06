@@ -79,15 +79,6 @@ public class RollbackModeExecutionHelper {
       newMetadata = newMetadata.setPipelineStageInfo(parentStageInfo);
     }
 
-    // TODO(archit): remove after one release to handle rollback of service
-    if (EmptyPredicate.isNotEmpty(stageNodeExecutionIds)) {
-      List<NodeExecution> rollbackStageNodeExecutions = nodeExecutionService.getAllWithFieldIncluded(
-          new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForRollbackTransformer);
-      newMetadata.addAllPostExecutionRollbackInfo(rollbackStageNodeExecutions.stream()
-                                                      .map(ne -> createPostExecutionRollbackInfo(ne.getAmbiance()))
-                                                      .collect(Collectors.toList()));
-    }
-
     return newMetadata.build();
   }
 
