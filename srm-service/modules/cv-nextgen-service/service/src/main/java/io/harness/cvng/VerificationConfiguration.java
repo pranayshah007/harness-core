@@ -15,7 +15,6 @@ import static java.util.stream.Collectors.toSet;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.core.WebhookConfig;
