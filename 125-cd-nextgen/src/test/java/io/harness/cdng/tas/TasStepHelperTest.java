@@ -2502,7 +2502,7 @@ public class TasStepHelperTest extends CategoryTest {
                                                  .store(CustomRemoteStoreConfig.builder().build())
                                                  .build();
     Collection<ManifestOutcome> manifestOutcomes = List.of(tasManifestOutcome1, tasManifestOutcome2);
-    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(ambiance, passThroughData, manifestOutcomes))
+    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(passThroughData, manifestOutcomes))
         .hasMessageContaining(
             "Tas Manifest of Artifact Bundle Store type doesn't support Additional Manifest of type Tas Manifest.Expected count of Tas Manifest is 1 but found : 2");
   }
@@ -2526,7 +2526,7 @@ public class TasStepHelperTest extends CategoryTest {
                                                         .store(CustomRemoteStoreConfig.builder().build())
                                                         .build();
     Collection<ManifestOutcome> manifestOutcomes = List.of(tasManifestOutcome1, tasManifestOutcome2);
-    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(ambiance, passThroughData, manifestOutcomes))
+    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(passThroughData, manifestOutcomes))
         .hasMessageContaining(
             "Tas Manifest of Artifact Bundle Store type having Autoscaler manifest configured doesn't support Autoscaler manifest type Separately.");
   }

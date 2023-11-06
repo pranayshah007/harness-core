@@ -112,7 +112,7 @@ public class TasRouteMappingStep extends CdTaskExecutable<CfCommandResponseNG> {
                                                         .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
                                                         .unitProgresses(new ArrayList<>())
                                                         .build();
-    tasStepHelper.filterManifestOutcomesByType(ambiance, tasStepPassThroughData, manifestsOutcome.values());
+    tasStepHelper.filterManifestOutcomesByType(tasStepPassThroughData, manifestsOutcome.values());
 
     CfRouteMappingRequestNG cfRouteMappingRequestNG =
         CfRouteMappingRequestNG.builder()

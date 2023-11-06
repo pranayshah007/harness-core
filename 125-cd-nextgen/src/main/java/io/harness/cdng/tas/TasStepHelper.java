@@ -94,7 +94,6 @@ import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -241,7 +240,6 @@ public class TasStepHelper {
   @Inject private StepHelper stepHelper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -267,7 +265,7 @@ public class TasStepHelper {
                                                         .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
                                                         .unitProgresses(new ArrayList<>())
                                                         .build();
-    filterManifestOutcomesByType(ambiance, tasStepPassThroughData, manifestsOutcome.values());
+    filterManifestOutcomesByType(tasStepPassThroughData, manifestsOutcome.values());
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
@@ -772,7 +770,7 @@ public class TasStepHelper {
   }
 
   public void filterManifestOutcomesByType(
-      Ambiance ambiance, TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
+      TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
       throw new InvalidRequestException("Manifests are mandatory for TAS step.", USER);
     }
