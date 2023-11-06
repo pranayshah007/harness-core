@@ -26,6 +26,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -110,9 +111,12 @@ public class PagerDutyServiceImpl implements ChannelService {
   @Override
   public NotificationTaskResponse sendSync(NotificationRequest notificationRequest) {
     if (Objects.isNull(notificationRequest) || !notificationRequest.hasPagerDuty()) {
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException("Invalid pager duty notification request", DEFAULT_ERROR_CODE, USER);
+    }
+
+    if (isEmpty(notificationRequest.getAccountId())) {
+      throw new NotificationException(
+          String.format("No account id encountered for %s.", notificationRequest.getId()), DEFAULT_ERROR_CODE, USER);
     }
 
     String notificationId = notificationRequest.getId();
@@ -130,9 +134,9 @@ public class PagerDutyServiceImpl implements ChannelService {
     List<String> pagerDutyKeys = getRecipients(notificationRequest);
     if (isEmpty(pagerDutyKeys)) {
       log.info("No pagerduty integration key found in notification request {}", notificationId);
-      return NotificationTaskResponse.builder()
-          .processingResponse(NotificationProcessingResponse.trivialResponseWithNoRetries)
-          .build();
+      throw new NotificationException(
+          String.format("No pagerduty integration key found in notification request %s.", notificationRequest.getId()),
+          DEFAULT_ERROR_CODE, USER);
     }
 
     int expressionFunctorToken = Math.toIntExact(pagerDutyDetails.getExpressionFunctorToken());
@@ -141,9 +145,18 @@ public class PagerDutyServiceImpl implements ChannelService {
         notificationSettingsService.buildTaskAbstractions(notificationRequest.getAccountId(),
             pagerDutyDetails.getOrgIdentifier(), pagerDutyDetails.getProjectIdentifier());
 
-    return sendInSync(pagerDutyKeys, templateId, templateData, notificationRequest.getId(),
+    NotificationTaskResponse response = sendInSync(pagerDutyKeys, templateId, templateData, notificationRequest.getId(),
         notificationRequest.getTeam(), notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
         pagerDutyDetails.getSummary(), pagerDutyDetails.getLinksMap());
+
+    if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
+        || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
+      throw new NotificationException(
+          String.format("Failed to send pagerduty notification. Check configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
+    }
+
+    return response;
   }
 
   @Override
@@ -308,7 +321,14 @@ public class PagerDutyServiceImpl implements ChannelService {
                                                     .expressionFunctorToken(expressionFunctorToken)
                                                     .executionTimeout(Duration.ofMinutes(1L))
                                                     .build();
-      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      DelegateResponseData responseData = null;
+      try {
+        responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      } catch (DelegateServiceDriverException exception) {
+        throw new NotificationException(
+            String.format("Failed to send notification %s, %s", notificationId, exception.getMessage()), exception,
+            DEFAULT_ERROR_CODE, USER);
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException(String.format("Failed to send notification %s ", notificationId),
             ((ErrorNotifyResponseData) responseData).getException(), DEFAULT_ERROR_CODE, USER);
