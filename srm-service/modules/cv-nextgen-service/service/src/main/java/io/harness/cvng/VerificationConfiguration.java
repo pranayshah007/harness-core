@@ -102,7 +102,6 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("shouldConfigureWithNotification") private Boolean shouldConfigureWithNotification;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
-  @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("accessControlClientConfig") private AccessControlClientConfiguration accessControlClientConfiguration;
   @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("webhookConfig") private WebhookConfig webhookConfig;
