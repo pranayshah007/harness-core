@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.notification.NotificationRequest;
@@ -55,11 +57,11 @@ public class EmailChannel extends NotificationChannel {
   }
 
   private NotificationRequest.Email.Builder buildEmail(NotificationRequest.Builder builder) {
-    NotificationRequest.Email.Builder emailBuilder = builder.getEmailBuilder()
-                                                         .addAllEmailIds(recipients)
-                                                         .setTemplateId(templateId)
-                                                         .putAllTemplateData(templateData)
-                                                         .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    NotificationRequest.Email.Builder emailBuilder =
+        builder.getEmailBuilder()
+            .addAllEmailIds(recipients)
+            .putAllTemplateData(isNotEmpty(templateData) ? templateData : emptyMap())
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
 
     if (isNotEmpty(ccEmailIds)) {
       emailBuilder.addAllCcEmailIds(ccEmailIds);
@@ -69,6 +71,9 @@ public class EmailChannel extends NotificationChannel {
     }
     if (isNotEmpty(body)) {
       emailBuilder.setBody(body);
+    }
+    if (isNotEmpty(templateId)) {
+      emailBuilder.setTemplateId(templateId);
     }
     return emailBuilder;
   }

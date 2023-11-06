@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.notification.NotificationRequest;
@@ -57,11 +59,11 @@ public class MSTeamChannel extends NotificationChannel {
   }
 
   private NotificationRequest.MSTeam buildMSTeams(NotificationRequest.Builder builder) {
-    NotificationRequest.MSTeam.Builder msTeamsBuilder = builder.getMsTeamBuilder()
-                                                            .addAllMsTeamKeys(msTeamKeys)
-                                                            .setTemplateId(templateId)
-                                                            .putAllTemplateData(templateData)
-                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    NotificationRequest.MSTeam.Builder msTeamsBuilder =
+        builder.getMsTeamBuilder()
+            .addAllMsTeamKeys(msTeamKeys)
+            .putAllTemplateData(isNotEmpty(templateData) ? templateData : emptyMap())
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
     if (orgIdentifier != null) {
       msTeamsBuilder.setOrgIdentifier(orgIdentifier);
     }
@@ -70,6 +72,9 @@ public class MSTeamChannel extends NotificationChannel {
     }
     if (isNotEmpty(message)) {
       msTeamsBuilder.setMessage(message);
+    }
+    if (isNotEmpty(templateId)) {
+      msTeamsBuilder.setTemplateId(templateId);
     }
     msTeamsBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return msTeamsBuilder.build();

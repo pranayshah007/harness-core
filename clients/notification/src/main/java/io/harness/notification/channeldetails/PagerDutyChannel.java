@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.notification.NotificationRequest;
@@ -66,8 +68,7 @@ public class PagerDutyChannel extends NotificationChannel {
     NotificationRequest.PagerDuty.Builder pagerDutyBuilder =
         builder.getPagerDutyBuilder()
             .addAllPagerDutyIntegrationKeys(integrationKeys)
-            .setTemplateId(templateId)
-            .putAllTemplateData(templateData)
+            .putAllTemplateData(isNotEmpty(templateData) ? templateData : emptyMap())
             .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
     if (orgIdentifier != null) {
       pagerDutyBuilder.setOrgIdentifier(orgIdentifier);
@@ -80,6 +81,9 @@ public class PagerDutyChannel extends NotificationChannel {
     }
     if (isNotEmpty(links)) {
       pagerDutyBuilder.putAllLinks(links);
+    }
+    if (isNotEmpty(templateId)) {
+      pagerDutyBuilder.setTemplateId(templateId);
     }
     pagerDutyBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return pagerDutyBuilder.build();
