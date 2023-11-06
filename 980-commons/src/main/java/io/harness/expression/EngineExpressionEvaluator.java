@@ -71,8 +71,8 @@ public class EngineExpressionEvaluator {
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
   public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
   public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
-  public static final String CDS_METHOD_INVOCATION_OLD_FLOW_EXPRESSION_ENGINE =
-      "CDS_METHOD_INVOCATION_OLD_FLOW_EXPRESSION_ENGINE";
+  public static final String CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE =
+      "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE";
   public static final String PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT =
       "PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT";
 
@@ -298,8 +298,8 @@ public class EngineExpressionEvaluator {
     try {
       if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
         StringReplacerResponse replacerResponse;
-        if (ctx.isFeatureFlagEnabled(CDS_METHOD_INVOCATION_OLD_FLOW_EXPRESSION_ENGINE)) {
-          replacerResponse = runStringReplacerWithResponseAndOldMethodInvocation(expression, resolver);
+        if (ctx.isFeatureFlagEnabled(CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE)) {
+          replacerResponse = runStringReplacerWithResponseAndNewMethodInvocation(expression, resolver);
         } else {
           replacerResponse = runStringReplacerWithResponse(expression, resolver);
         }
@@ -726,11 +726,11 @@ public class EngineExpressionEvaluator {
     return replacer.replaceWithRenderCheck(expression);
   }
 
-  private static StringReplacerResponse runStringReplacerWithResponseAndOldMethodInvocation(
+  private static StringReplacerResponse runStringReplacerWithResponseAndNewMethodInvocation(
       @NotNull String expression, @NotNull ExpressionResolver resolver) {
     StringReplacer replacer =
         new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
-    return replacer.replaceWithRenderCheckAndOldMethodInvocation(expression);
+    return replacer.replaceWithRenderCheckAndNewMethodInvocation(expression);
   }
 
   public static boolean isSingleExpression(String str) {

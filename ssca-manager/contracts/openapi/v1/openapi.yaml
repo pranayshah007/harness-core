@@ -954,26 +954,9 @@ components:
         component_filter:
           type: array
           items:
-            x-stoplight:
-              id: z8927vi5w2zn4
-            type: object
-            properties:
-              field_name:
-                type: string
-                enum:
-                  - ComponentVersion
-                  - ComponentName
-              value:
-                type: string
-              operator:
-                $ref: '#/components/schemas/Operator'
+            $ref: '#/components/schemas/ComponentFilter'
         license_filter:
-          type: object
-          properties:
-            value:
-              type: string
-            operator:
-              $ref: '#/components/schemas/Operator'
+          $ref: '#/components/schemas/LicenseFilter'
         policy_violation:
           type: string
           enum:
@@ -1002,9 +985,9 @@ components:
         components_count:
           type: integer
         allow_list_violation_count:
-          type: integer
+          type: string
         deny_list_violation_count:
-          type: integer
+          type: string
         activity:
           type: string
           enum:
@@ -1066,21 +1049,11 @@ components:
       type: object
       properties:
         component_filter:
-          type: object
-          properties:
-            field_name:
-              type: string
-            operator:
-              type: string
-            value:
-              type: string
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentFilter'
         license_filter:
-          type: object
-          properties:
-            operator:
-              type: string
-            value:
-              type: string
+          $ref: '#/components/schemas/LicenseFilter'
         package_supplier:
           type: string
         package_manager:
@@ -1093,12 +1066,11 @@ components:
       properties:
         environment:
           type: string
-        'environment_type ':
+        environment_type:
           type: string
           enum:
-            - PROD
-            - NONPROD
-            - ALL
+            - Prod
+            - NonProd
         policy_violation:
           type: string
           enum:
@@ -1166,6 +1138,27 @@ components:
         - Equals
         - StartsWith
         - Contains
+    ComponentFilter:
+      title: ComponentFilter
+      type: object
+      properties:
+        field_name:
+          type: string
+          enum:
+            - ComponentVersion
+            - ComponentName
+        value:
+          type: string
+        operator:
+          $ref: '#/components/schemas/Operator'
+    LicenseFilter:
+      title: LicenseFilter
+      type: object
+      properties:
+        value:
+          type: string
+        operator:
+          $ref: '#/components/schemas/Operator'
   parameters:
     OrgParam:
       name: org

@@ -1,0 +1,58 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+# To be used when building in CIE
+
+# Create image for ci-scm service
+#
+# Build the ci-scm docker image using:
+# > bazel build --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //product/ci/scm/...
+# > docker build -t harness/ci-scm:<tag> -f product/ci/scm/docker/Dockerfile $(bazel info bazel-bin)/product/ci/scm/
+
+# First stage
+# To be used when building in CIE
+FROM ubuntu:latest as builder
+
+# Install curl
+RUN apt-get update -y && apt-get install -y curl
+
+# Download the Go distribution archive
+RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
+
+RUN mkdir -p /app
+ARG GCP_KEY
+ENV SERVICE_NAME="scm"
+COPY . /app
+
+WORKDIR /app
+
+ENV BUILD_PURPOSE=DEVELOPMENT
+ENV PLATFORM="jenkins"
+
+RUN chmod +x \
+    /app/product/ci/scm/build/feature_build.sh \
+    && /app/product/ci/scm/build/feature_build.sh $GCP_KEY \
+ENV CONTEXT_PATH $BAZEL_BIN
+
+RUN echo "First Debug Done"
+
+FROM alpine:3.12 as builder2
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.19 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+
+RUN echo "Second Debug Done"
+
+# Second stage
+FROM us.gcr.io/platform-205701/harness/ubi8/go1:1.21 as base
+COPY --from=builder2 /bin/grpc_health_probe /grpc_health_probe
+# Copy ci-scm binary
+COPY --from=builder /root/.cache/bazel/_bazel_root/8c069df52082beee3c95ca17836fb8e2/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/ci/scm/scm_/scm /usr/local/bin/scm
+USER root
+RUN chown -R 65534:65534 /usr/local/bin /grpc_health_probe
+RUN microdnf install git
+USER 65534:65534
+WORKDIR /usr/local/bin
+CMD ["/usr/local/bin/scm"]

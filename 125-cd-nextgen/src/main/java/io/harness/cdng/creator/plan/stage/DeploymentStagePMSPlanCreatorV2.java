@@ -87,8 +87,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -221,7 +219,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
 
     // We need to swap the ids if strategy is present
-    PlanNodeBuilder builder =
+    PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
@@ -237,13 +235,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                     .build())
             .adviserObtainments(adviserObtainments);
 
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    builder = setStageTimeoutObtainment(sdkTimeoutObtainment, builder);
-
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
-      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+      planNodeBuilder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
-    return builder.build();
+    return planNodeBuilder.build();
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {

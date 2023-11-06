@@ -268,7 +268,7 @@ public class CheckServiceImpl implements CheckService {
       DataPointEntity dataPoint = dataPointService.getDataPoint(
           accountIdentifier, rule.getDataSourceIdentifier(), rule.getDataPointIdentifier());
       List<InputDetails> inputsDetails = dataPoint.getInputDetails();
-      if (inputsDetails.size() == 1) {
+      if (inputsDetails != null && inputsDetails.size() == 1) {
         InputValue inputValue = new InputValue();
         inputValue.setKey(inputsDetails.get(0).getKey());
         inputValue.setValue(rule.getConditionalInputValue());

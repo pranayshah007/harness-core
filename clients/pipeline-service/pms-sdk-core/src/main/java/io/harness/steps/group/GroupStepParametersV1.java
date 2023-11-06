@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("groupStepParametersV1")
 @RecasterAlias("io.harness.steps.group.GroupStepParametersV1")
 public class GroupStepParametersV1 implements StepParameters {
-  String identifier;
+  String id;
   String name;
   String childNodeID;
 
@@ -39,7 +39,7 @@ public class GroupStepParametersV1 implements StepParameters {
       return GroupStepParametersV1.builder().childNodeID(childNodeID).build();
     }
     return GroupStepParametersV1.builder()
-        .identifier(config.getId())
+        .id(config.getId())
         .name(config.getNodeName())
         .childNodeID(childNodeID)
         .build();

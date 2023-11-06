@@ -49,8 +49,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.tags.TagUtils;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -131,9 +129,6 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()));
-
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    builder = setStageTimeoutObtainment(sdkTimeoutObtainment, builder);
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());

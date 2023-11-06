@@ -1,0 +1,39 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+# To be used when building in CIE
+FROM ubuntu:latest as builder
+
+# Install curl
+RUN apt-get update -y && apt-get install -y curl
+
+# Download the Go distribution archive
+RUN curl -O https://dl.google.com/go/go1.19.8.linux-amd64.tar.gz
+
+RUN mkdir -p /app
+ARG GCP_KEY
+ENV SERVICE_NAME="log-service"
+COPY . /app
+
+WORKDIR /app
+
+ENV BUILD_PURPOSE=DEVELOPMENT
+ENV PLATFORM="jenkins"
+
+RUN chmod +x \
+    /app/product/log-service/build/feature_build.sh \
+    && /app/product/log-service/build/feature_build.sh $GCP_KEY \
+
+ENV CONTEXT_PATH $BAZEL_BIN
+
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8 as base
+# Copy go binary
+
+COPY --from=builder /root/.cache/bazel/_bazel_root/8c069df52082beee3c95ca17836fb8e2/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/log-service/log-service_/log-service /usr/local/bin/log-service
+USER root
+RUN chown -R 65534:65534 /usr/local/bin
+USER 65534:65534
+WORKDIR /usr/local/bin
+CMD ["/usr/local/bin/log-service", "server"]

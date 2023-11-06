@@ -153,7 +153,8 @@ public class GitXWebhookMapper {
   }
 
   public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(String accountIdentifier,
-      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath) {
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath,
+      String eventIdentifier) {
     if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
       throw new InvalidRequestException(String.format(
           "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
@@ -165,6 +166,7 @@ public class GitXWebhookMapper {
         .eventEndTime(eventEndTime)
         .repoName(repoName)
         .filePath(filePath)
+        .eventIdentifier(eventIdentifier)
         .build();
   }
 

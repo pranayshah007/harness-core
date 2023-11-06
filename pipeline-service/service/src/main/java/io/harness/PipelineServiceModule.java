@@ -891,13 +891,6 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("allowedParallelStages")
-  public Integer getAllowedParallelStages() {
-    return configuration.getAllowedParallelStages();
-  }
-
-  @Provides
-  @Singleton
   @Named("planCreatorMergeServiceDependencyBatch")
   public Integer getPlanCreatorMergeServiceDependencyBatch() {
     return configuration.getPlanCreatorMergeServiceDependencyBatch();

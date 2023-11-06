@@ -25,4 +25,5 @@ public class PlanCreatorConstants {
   public final String NEAREST_STRATEGY_ID = "nearestStrategyId";
   public final String ALL_STRATEGY_IDS = "allStrategyIds";
   public final String STRATEGY_NODE_TYPE = "strategyNodeType";
+  public final String SET_STARTING_NODE_ID = "setStartingNodeId";
 }

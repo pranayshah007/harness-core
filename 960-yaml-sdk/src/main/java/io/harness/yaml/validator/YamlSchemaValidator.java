@@ -8,7 +8,6 @@
 package io.harness.yaml.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.yaml.schema.beans.SchemaConstants.PARALLEL_NODE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +20,6 @@ import io.harness.yaml.utils.SchemaValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -96,10 +94,8 @@ public class YamlSchemaValidator {
     return validateWithDetailedMessage(yaml, schema);
   }
 
-  public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
-      int allowedParallelStages, String pathToJsonNode) throws IOException {
+  public Set<String> validate(String yaml, String stringSchema) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
-    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
     JsonSchemaFactory factory =
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
@@ -107,9 +103,7 @@ public class YamlSchemaValidator {
     return processAndHandleValidationMessage(jsonNode, validateMsg, yaml);
   }
 
-  public Set<String> validate(JsonNode jsonNode, String stringSchema, boolean shouldValidateParallelStageCount,
-      int allowedParallelStages, String pathToJsonNode) throws IOException {
-    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
+  public Set<String> validate(JsonNode jsonNode, String stringSchema) throws IOException {
     JsonSchemaFactory factory =
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
@@ -146,37 +140,6 @@ public class YamlSchemaValidator {
     String pathInMessage = message.split(":")[0];
     String[] pathComponents = pathInMessage.split("\\.");
     return message.replace(pathInMessage, pathComponents[pathComponents.length - 1]);
-  }
-
-  protected void validateParallelStagesCount(
-      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages, String pathToJsonNode) {
-    if (shouldValidateParallelStageCount) {
-      return;
-    }
-    String[] pathToStageNode = pathToJsonNode.split("/");
-    JsonNode stagesNode = yaml;
-    for (String s : pathToStageNode) {
-      if (stagesNode == null) {
-        return;
-      } else {
-        stagesNode = stagesNode.get(s);
-      }
-    }
-    ArrayNode stages = (ArrayNode) stagesNode;
-    if (stages == null) {
-      return;
-    }
-    for (int index = 0; index < stages.size(); index++) {
-      JsonNode parallelNode = stages.get(index).get(PARALLEL_NODE);
-      if (parallelNode == null) {
-        continue;
-      }
-      if (parallelNode.size() > allowedParallelStages) {
-        throw new InvalidRequestException(String.format(
-            "More than %s parallel stages provided at $.pipeline.stages[%s].parallel. \nPlease check the pipeline and ensure that parallel stages count does not exceed allowed value of %s.",
-            allowedParallelStages, index, allowedParallelStages));
-      }
-    }
   }
 
   public void populateSchemaInStaticMap(JsonNode schema, EntityType entityType) {

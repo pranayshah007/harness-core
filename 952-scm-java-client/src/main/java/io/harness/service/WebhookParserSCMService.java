@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.beans.PRWebhookEvent;
 import io.harness.beans.WebhookPayload;
+import io.harness.product.ci.scm.proto.GitProvider;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 
@@ -25,4 +26,6 @@ public interface WebhookParserSCMService {
   WebhookPayload parseWebhookPayload(ParseWebhookResponse parseWebhookResponse);
 
   PRWebhookEvent convertPRWebhookEvent(PullRequestHook prHook);
+
+  GitProvider obtainWebhookSource(List<HeaderConfig> headers);
 }
