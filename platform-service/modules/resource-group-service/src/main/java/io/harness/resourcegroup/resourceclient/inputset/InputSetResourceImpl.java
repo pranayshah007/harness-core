@@ -54,9 +54,11 @@ import lombok.extern.slf4j.Slf4j;
 public class InputSetResourceImpl implements Resource {
   PipelineServiceClient pipelineServiceClient;
 
+  public String INPUT_SET = "INPUT_SET";
+
   @Override
   public String getType() {
-    return "INPUT_SET";
+    return INPUT_SET;
   }
 
   @Override
