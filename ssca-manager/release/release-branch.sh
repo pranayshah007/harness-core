@@ -148,8 +148,10 @@ fi
 
 #creating the fix version
 chmod +x ssca-manager/release/release-branch-create-ssca-version.sh
-#ssca-manager/release/release-branch-create-ssca-version.sh
+FIX_SSCA_VERSION_ID=`ssca-manager/release/release-branch-create-ssca-version.sh | grep 'FIX_SSCA_VERSION_ID' | sed -e 's: *FIX_SSCA_VERSION_ID=::g'`
 
 #updating jiras with fix version
 chmod +x ssca-manager/release/release-branch-update-jiras.sh
 #ssca-manager/release/release-branch-update-jiras.sh
+
+echo "finalVersions NEW_VERSION=$NEW_VERSION-FIX_SSCA_VERSION_ID=$FIX_SSCA_VERSION_ID"
