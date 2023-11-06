@@ -57,7 +57,6 @@ import org.json.JSONObject;
 @Slf4j
 public class ImageSecretBuilder {
   private static final String BASE_GCR_HOSTNAME = "gcr.io";
-  private static final String BASE_GAR_HOSTNAME = "docker.pkg.dev";
   private static final String GCR_USERNAME = "_json_key";
   private static final String BASE_ECR_HOSTNAME = "amazonaws.com";
   private static final String HTTPS_URL = "https://";
@@ -195,26 +194,13 @@ public class ImageSecretBuilder {
   }
 
   private ImageCredentials getGCRCredentials(String imageName, ConnectorDetails connectorDetails) {
-    // Image name is of format: HOST-NAME/PROJECT-ID/IMAGE. HOST-NAME is registry url. OR
-    // LOCATION-docker.pkg.dev/PROJECT-ID/REPO/IMAGE.
+    // Image name is of format: HOST-NAME/PROJECT-ID/IMAGE. HOST-NAME is registry url.
     String[] imageParts = imageName.split(PATH_SEPARATOR);
-
-    // Check that the image name has at least 4 parts (LOCATION, docker.pkg.dev, PROJECT-ID, REPOSITORY, IMAGE)
-    if (imageParts.length < 3) {
+    if (imageParts.length == 0 || !imageParts[0].endsWith(BASE_GCR_HOSTNAME)) {
       throw new InvalidArgumentsException(
-          format("Invalid image: %s. Please provide a fully qualified name in the format "
-                  + "HOSTNAME/PROJECT-ID/IMAGE for GCR or "
-                  + "LOCATION-docker.pkg.dev/PROJECT-ID/REPO/IMAGE for GAR",
+          format("Invalid image: %s for GCR connector. Please provide a fully qualified name in the format "
+                  + "HOSTNAME/PROJECT-ID/IMAGE:TAG or HOSTNAME/PROJECT-ID/IMAGE@IMAGE_DIGEST",
               imageName),
-          WingsException.USER);
-    }
-
-    boolean isGCR = imageParts.length == 3 && imageParts[0].endsWith(BASE_GCR_HOSTNAME);
-    boolean isGAR = imageParts.length >= 4 && imageParts[0].contains(BASE_GAR_HOSTNAME);
-
-    if (!isGCR && !isGAR) {
-      throw new InvalidArgumentsException(
-          format("Invalid image: %s. The image does not conform to GCR or GAR formats.", imageName),
           WingsException.USER);
     }
 
