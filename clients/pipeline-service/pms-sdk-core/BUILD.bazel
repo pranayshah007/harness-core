@@ -22,6 +22,7 @@ java_library(
         "//950-wait-engine:module",
         "//953-events-api:module",
         "//955-delegate-beans:module",
+        "//956-feature-flag-beans:module",
         "//960-persistence:module",
         "//970-grpc:module",
         "//970-ng-commons:module",

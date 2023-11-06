@@ -267,4 +267,9 @@ public class PlanCreationContext implements AsyncCreatorContext {
     PlanCreationContextValue value = getMetadata();
     return value.getExecutionContext().getSettingToValueMapOrDefault(timeoutIdentifier, DEFAULT_TIMEOUT);
   }
+
+  public boolean getFeatureFlagValue(String featureName) {
+    PlanCreationContextValue value = getMetadata();
+    return value.getExecutionContext().getFeatureFlagToValueMapOrDefault(featureName, false);
+  }
 }

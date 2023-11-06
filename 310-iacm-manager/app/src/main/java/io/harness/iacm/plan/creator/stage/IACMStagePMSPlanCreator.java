@@ -62,8 +62,6 @@ import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -481,8 +479,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     return planNodeBuilder.build();
   }
 

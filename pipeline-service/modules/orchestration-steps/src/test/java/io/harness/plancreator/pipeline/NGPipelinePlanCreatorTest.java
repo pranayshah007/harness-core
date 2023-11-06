@@ -157,7 +157,10 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
 
     assertThat(planForParentNode.getStepParameters()).isNotNull();
     assertThat(planForParentNode.getTimeoutObtainments()).isNotNull();
-    assertThat(planForParentNode.getTimeoutObtainments()).isEmpty();
+    assertThat(planForParentNode.getTimeoutObtainments()).isNotEmpty();
+    assertThat(
+        planForParentNode.getTimeoutObtainments().get(0).getParameters().prepareTimeoutParameters().getTimeoutMillis())
+        .isEqualTo(4838400000L);
   }
 
   @Test

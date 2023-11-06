@@ -360,7 +360,6 @@ public enum FeatureName {
   DISABLE_WINRM_COMMAND_ENCODING_NG(
       "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
       HarnessTeam.CDP),
-  DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   DYNATRACE_MULTI_SERVICE,
   ECS_AUTOSCALAR_REDESIGN,
   ECS_BG_DOWNSIZE,

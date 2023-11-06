@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
@@ -41,7 +40,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -61,16 +59,13 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   Map<String, YamlSchemaClient> yamlSchemaClientMapper;
   private YamlSchemaValidator yamlSchemaValidator;
   private AccountClient accountClient;
-  Integer allowedParallelStages;
 
   @Inject
   public NGTemplateSchemaServiceImpl(Map<String, YamlSchemaClient> yamlSchemaClientMapper,
-      YamlSchemaValidator yamlSchemaValidator, AccountClient accountClient,
-      @Named("allowedParallelStages") Integer allowedParallelStages) {
+      YamlSchemaValidator yamlSchemaValidator, AccountClient accountClient) {
     this.yamlSchemaClientMapper = yamlSchemaClientMapper;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.accountClient = accountClient;
-    this.allowedParallelStages = allowedParallelStages;
   }
 
   public void validateYamlSchemaInternal(TemplateEntity templateEntity) {
@@ -126,12 +121,9 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       if (templateEntityType.equals(TemplateEntityType.PIPELINE_TEMPLATE)) {
         String pathToJsonNode = TEMPLATE_NODE + "/" + SPEC_NODE + "/" + STAGES_NODE;
-        yamlSchemaValidator.validate(templateYaml, schemaString,
-            isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier, accountClient),
-            allowedParallelStages, pathToJsonNode);
+        yamlSchemaValidator.validate(templateYaml, schemaString);
       } else {
-        yamlSchemaValidator.validate(
-            templateYaml, schemaString, true, allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
+        yamlSchemaValidator.validate(templateYaml, schemaString);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException e) {
       log.info("[TEMPLATE_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
