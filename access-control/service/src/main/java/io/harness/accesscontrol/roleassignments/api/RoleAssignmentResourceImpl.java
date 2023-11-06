@@ -715,67 +715,11 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
 
   private Optional<RoleAssignmentFilter> buildRoleAssignmentFilterWithPermissionFilter(
       HarnessScopeParams harnessScopeParams, RoleAssignmentFilterDTO roleAssignmentFilterDTO) {
-    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
-    boolean hasAccessToUserGroupRoleAssignments =
-        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP);
-    boolean hasAccessToServiceAccountRoleAssignments =
-        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT);
     Scope scope = fromParams(harnessScopeParams);
     RoleAssignmentFilter roleAssignmentFilter = fromDTO(scope.toString(), roleAssignmentFilterDTO);
-    if (isNotEmpty(roleAssignmentFilter.getPrincipalFilter())) {
-      Set<Principal> principals = roleAssignmentFilter.getPrincipalFilter();
-      if (!hasAccessToUserGroupRoleAssignments) {
-        principals = principals.stream()
-                         .filter(principal -> !USER_GROUP.equals(principal.getPrincipalType()))
-                         .collect(Collectors.toSet());
-      }
-      if (!hasAccessToUserRoleAssignments) {
-        principals = principals.stream()
-                         .filter(principal -> !USER.equals(principal.getPrincipalType()))
-                         .collect(Collectors.toSet());
-      }
-      if (!hasAccessToServiceAccountRoleAssignments) {
-        principals = principals.stream()
-                         .filter(principal -> !SERVICE_ACCOUNT.equals(principal.getPrincipalType()))
-                         .collect(Collectors.toSet());
-      }
-      if (isEmpty(principals)) {
-        return Optional.empty();
-      }
-      roleAssignmentFilter.setPrincipalFilter(principals);
-    } else if (isNotEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
-      if (!hasAccessToUserGroupRoleAssignments) {
-        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER_GROUP);
-      }
-      if (!hasAccessToUserRoleAssignments) {
-        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER);
-      }
-      if (!hasAccessToServiceAccountRoleAssignments) {
-        roleAssignmentFilter.getPrincipalTypeFilter().remove(SERVICE_ACCOUNT);
-      }
-      if (isEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
-        return Optional.empty();
-      }
-    } else {
-      Set<PrincipalType> principalTypes = Sets.newHashSet();
-      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER)) {
-        principalTypes.add(USER);
-      }
-
-      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP)) {
-        principalTypes.add(USER_GROUP);
-      }
-
-      if (roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT)) {
-        principalTypes.add(SERVICE_ACCOUNT);
-      }
-
-      if (principalTypes.isEmpty()) {
-        return Optional.empty();
-      } else {
-        roleAssignmentFilter.setPrincipalTypeFilter(principalTypes);
-      }
-    }
+    Set<Principal> principals = roleAssignmentFilter.getPrincipalFilter();
+    roleAssignmentApiUtils.sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(
+        harnessScopeParams, USER_GROUP, principals, roleAssignmentFilter);
     return Optional.of(roleAssignmentFilter);
   }
 }

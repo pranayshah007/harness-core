@@ -21,9 +21,12 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -38,6 +41,7 @@ import io.harness.accesscontrol.principals.users.UserService;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
+import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
@@ -289,6 +293,26 @@ public class RoleAssignmentApiUtils {
     }
   }
 
+  public void sanitizeRoleAssignmentFilterDTOForAccessiblePrincipals(HarnessScopeParams harnessScopeParams,
+      PrincipalType principalType, Set<io.harness.accesscontrol.principals.Principal> principals,
+      RoleAssignmentFilter roleAssignmentFilter) {
+    boolean hasAccessToPrincipalTypeRoleAssignments = checkViewPermission(harnessScopeParams, principalType);
+    if (!hasAccessToPrincipalTypeRoleAssignments) {
+      Set<io.harness.accesscontrol.principals.Principal> permittedPrincipal =
+          checkSelectiveViewPermission(harnessScopeParams, principalType, principals);
+      roleAssignmentFilter.setPrincipalFilter(permittedPrincipal);
+
+      if (isNotEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(principalType);
+      }
+    } else {
+      if (isEmpty(roleAssignmentFilter.getPrincipalFilter())
+          && isEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+        roleAssignmentFilter.getPrincipalTypeFilter().add(principalType);
+      }
+    }
+  }
+
   public boolean checkViewPermission(HarnessScopeParams harnessScopeParams, PrincipalType principalType) {
     String resourceType = null;
     String permissionIdentifier = null;
@@ -310,6 +334,47 @@ public class RoleAssignmentApiUtils {
                                              .accountIdentifier(harnessScopeParams.getAccountIdentifier())
                                              .build(),
         Resource.of(resourceType, null), permissionIdentifier);
+  }
+
+  public Set<io.harness.accesscontrol.principals.Principal> checkSelectiveViewPermission(
+      HarnessScopeParams harnessScopeParams, PrincipalType principalType,
+      Set<io.harness.accesscontrol.principals.Principal> principals) {
+    String resourceType;
+    String permissionIdentifier;
+    if (USER_GROUP.equals(principalType)) {
+      resourceType = AccessControlResourceTypes.USER_GROUP;
+      permissionIdentifier = AccessControlPermissions.VIEW_USERGROUP_PERMISSION;
+    } else if (SERVICE_ACCOUNT.equals(principalType)) {
+      resourceType = AccessControlResourceTypes.SERVICEACCOUNT;
+      permissionIdentifier = AccessControlPermissions.VIEW_SERVICEACCOUNT_PERMISSION;
+    } else {
+      permissionIdentifier = null;
+      resourceType = null;
+    }
+
+    List<PermissionCheckDTO> permissionChecks =
+        principals.stream()
+            .map(principal
+                -> PermissionCheckDTO.builder()
+                       .permission(permissionIdentifier)
+                       .resourceIdentifier(principal.getPrincipalIdentifier())
+                       .resourceScope(
+                           getResourceScopeFromScopeLevel(harnessScopeParams, principal.getPrincipalScopeLevel()))
+                       .resourceType(resourceType)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    // todo:
+    return principals;
+  }
+
+  private ResourceScope getResourceScopeFromScopeLevel(HarnessScopeParams harnessScopeParams, String scopeLevel) {
+    return ResourceScope.of(harnessScopeParams.getAccountIdentifier(),
+        (scopeLevel.equals(HarnessScopeLevel.ACCOUNT.getName())
+            || scopeLevel.equals(HarnessScopeLevel.ORGANIZATION.getName()))
+            ? harnessScopeParams.getOrgIdentifier()
+            : null,
+        scopeLevel.equals(HarnessScopeLevel.PROJECT.getName()) ? harnessScopeParams.getProjectIdentifier() : null);
   }
 
   public void syncDependencies(io.harness.accesscontrol.roleassignments.RoleAssignment roleAssignment, Scope scope) {

@@ -103,12 +103,9 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
     RoleAssignmentFilterDTO roleAssignmentFilterDTO =
         RoleAssignmentFilterDTO.builder().principalFilter(principalDTOSet).build();
     Map<ImmutablePair<String, String>, List<RoleAssignmentMetadataDTO>> userGroupRoleAssignmentsMap = new HashMap<>();
-    try {
-      userGroupRoleAssignmentsMap =
-          getPrincipalRoleAssignmentMap(accountIdentifier, orgIdentifier, projectIdentifier, roleAssignmentFilterDTO);
-    } catch (Exception ex) {
-      log.error("Exception while fetching role assignments for user groups", ex);
-    }
+
+    userGroupRoleAssignmentsMap =
+        getPrincipalRoleAssignmentMap(accountIdentifier, orgIdentifier, projectIdentifier, roleAssignmentFilterDTO);
 
     Map<ImmutablePair<String, String>, List<RoleAssignmentMetadataDTO>> finalUserGroupRoleAssignmentsMap =
         userGroupRoleAssignmentsMap;
@@ -194,12 +191,9 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
     RoleAssignmentFilterDTO roleAssignmentFilterDTO =
         RoleAssignmentFilterDTO.builder().principalFilter(Collections.singleton(principalDTO)).build();
     Map<ImmutablePair<String, String>, List<RoleAssignmentMetadataDTO>> userGroupRoleAssignmentsMap = new HashMap<>();
-    try {
-      userGroupRoleAssignmentsMap = getPrincipalRoleAssignmentMap(roleAssignmentScope.getAccountIdentifier(),
-          roleAssignmentScope.getOrgIdentifier(), roleAssignmentScope.getProjectIdentifier(), roleAssignmentFilterDTO);
-    } catch (Exception ex) {
-      log.error("Exception while fetching role assignments for user groups", ex);
-    }
+
+    userGroupRoleAssignmentsMap = getPrincipalRoleAssignmentMap(roleAssignmentScope.getAccountIdentifier(),
+        roleAssignmentScope.getOrgIdentifier(), roleAssignmentScope.getProjectIdentifier(), roleAssignmentFilterDTO);
 
     List<UserMetadataDTO> users = isEmpty(userGroupOpt.get().getUsers())
         ? Collections.emptyList()
