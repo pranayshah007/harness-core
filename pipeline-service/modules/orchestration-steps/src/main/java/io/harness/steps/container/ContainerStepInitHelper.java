@@ -226,6 +226,7 @@ public class ContainerStepInitHelper {
     Map<String, String> logEnvVars = k8sPodInitUtils.getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> commonEnvVars =
         k8sPodInitUtils.getCommonStepEnvVariables(k8PodDetails, k8sPodInitUtils.getWorkDir(), logPrefix, ambiance);
+    Map<String, String> sscaEnvVariables = k8sPodInitUtils.getSscaServiceEnvVariables(ambiance);
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
@@ -255,9 +256,9 @@ public class ContainerStepInitHelper {
     CIK8ContainerParams liteEngineContainerParams = getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance,
         logPrefix, volumeToMountPath, logEnvVars, harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest,
         overridenExecutionConfig, imagePullPolicy);
-    List<ContainerDefinitionInfo> stepCtrDefinitions =
-        getContainerDefinitionInfos(containerStepInfo, infrastructure, ambiance, logPrefix, volumeToMountPath, os,
-            ngAccess, commonEnvVars, harnessInternalImageConnector, secretVariableDetails, containerParams);
+    List<ContainerDefinitionInfo> stepCtrDefinitions = getContainerDefinitionInfos(containerStepInfo, infrastructure,
+        ambiance, logPrefix, volumeToMountPath, os, ngAccess, commonEnvVars, harnessInternalImageConnector,
+        secretVariableDetails, containerParams, sscaEnvVariables);
 
     consumePortDetails(ambiance, stepCtrDefinitions);
     containerParams.add(liteEngineContainerParams);
@@ -267,16 +268,17 @@ public class ContainerStepInitHelper {
   private List<ContainerDefinitionInfo> getContainerDefinitionInfos(ContainerStepSpec containerStepInfo,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       OSType os, NGAccess ngAccess, Map<String, String> commonEnvVars, ConnectorDetails harnessInternalImageConnector,
-      List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
+      List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams,
+      Map<String, String> containerSecretEnvMap) {
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getStepContainerDefinitions(containerStepInfo, infrastructure, ambiance);
     Map<String, List<ConnectorConversionInfo>> stepConnectorMap =
         getStepConnectorRefsV2(containerStepInfo, AmbianceUtils.obtainStepGroupIdentifier(ambiance));
     for (ContainerDefinitionInfo containerDefinitionInfo : stepCtrDefinitions) {
-      CIK8ContainerParams cik8ContainerParams =
-          createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
-              stepConnectorMap, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
-              k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, secretVariableDetails, os);
+      CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
+          harnessInternalImageConnector, commonEnvVars, stepConnectorMap, volumeToMountPath,
+          k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix,
+          secretVariableDetails, os, containerSecretEnvMap);
       containerParams.add(cik8ContainerParams);
     }
     return stepCtrDefinitions;
@@ -354,7 +356,8 @@ public class ContainerStepInitHelper {
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
       Map<String, String> commonEnvVars, Map<String, List<ConnectorConversionInfo>> connectorRefs,
       Map<String, String> volumeToMountPath, String workDirPath, ContainerSecurityContext ctrSecurityContext,
-      String logPrefix, List<SecretVariableDetails> secretVariableDetails, OSType os) {
+      String logPrefix, List<SecretVariableDetails> secretVariableDetails, OSType os,
+      Map<String, String> containerSecretEnvMap) {
     Map<String, String> envVars = new HashMap<>();
     if (isNotEmpty(containerDefinitionInfo.getEnvVars())) {
       envVars.putAll(containerDefinitionInfo.getEnvVars()); // Put customer input env variables
@@ -418,7 +421,8 @@ public class ContainerStepInitHelper {
             .containerSecrets(ContainerSecrets.builder()
                                   .secretVariableDetails(containerSecretVariableDetails)
                                   .connectorDetailsMap(stepConnectorDetails)
-                                  .plainTextSecretsByName(containerParamsProvider.getLiteEngineSecretVars(emptyMap()))
+                                  .plainTextSecretsByName(containerParamsProvider.getLiteEngineSecretVars(
+                                      emptyMap(), containerSecretEnvMap))
                                   .build())
             .commands(containerDefinitionInfo.getCommands())
             .ports(containerDefinitionInfo.getPorts())

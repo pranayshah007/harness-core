@@ -38,6 +38,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.beans.entities.CIExecutionImages;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -58,6 +59,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,8 +86,9 @@ public class ContainerParamsProvider {
         .containerResourceParams(getLiteEngineResourceParams(stageCpuRequest, stageMemoryRequest))
         .envVars(getLiteEngineEnvVars(k8PodDetails, workDirPath, logPrefix, ambiance))
         .containerType(CIContainerType.LITE_ENGINE)
-        .containerSecrets(
-            ContainerSecrets.builder().plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars)).build())
+        .containerSecrets(ContainerSecrets.builder()
+                              .plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars, Collections.emptyMap()))
+                              .build())
         .imageDetailsWithConnector(
             ImageDetailsWithConnector.builder()
                 .imageDetails(ImageDetails.builder()
@@ -157,8 +160,12 @@ public class ContainerParamsProvider {
     return envVars;
   }
 
-  public Map<String, SecretParams> getLiteEngineSecretVars(Map<String, String> logEnvVars) {
+  public Map<String, SecretParams> getLiteEngineSecretVars(
+      Map<String, String> logEnvVars, Map<String, String> containerSecretEnvMap) {
     Map<String, String> vars = new HashMap<>(logEnvVars);
+    if (EmptyPredicate.isNotEmpty(containerSecretEnvMap)) {
+      vars.putAll(containerSecretEnvMap);
+    }
 
     Map<String, SecretParams> secretVars = new HashMap<>();
     for (Map.Entry<String, String> entry : vars.entrySet()) {

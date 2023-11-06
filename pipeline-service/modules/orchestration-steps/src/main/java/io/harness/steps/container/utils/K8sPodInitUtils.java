@@ -91,6 +91,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
@@ -137,6 +138,7 @@ public class K8sPodInitUtils {
   @Inject ContainerExecutionConfig containerExecutionConfig;
   @Inject LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject ContainerInitCpuMemHelper containerInitCpuMemHelper;
+  @Inject SSCAServiceUtils sscaServiceUtils;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -457,6 +459,16 @@ public class K8sPodInitUtils {
     } catch (IOException e) {
       throw new GeneralException("Token request to log service call failed", e);
     }
+  }
+
+  public Map<String, String> getSscaServiceEnvVariables(Ambiance ambiance) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (featureFlagHelper.isEnabled(accountId, FeatureName.SSCA_ENABLED)) {
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      return sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
+    }
+    return null;
   }
 
   public Map<String, String> getCommonStepEnvVariables(
