@@ -190,7 +190,8 @@ public enum ExecutionNodeType {
   ECS_UPGRADE_CONTAINER("ECS_UPGRADE_CONTAINER", YamlTypes.ECS_UPGRADE_CONTAINER),
   ECS_BASIC_ROLLBACK("ECS_BASIC_ROLLBACK", YamlTypes.ECS_BASIC_ROLLBACK),
   CUSTOM_STAGE("CUSTOM_STAGE", "custom"),
-  CUSTOM_STAGE_V1("CUSTOM_STAGE_V1", "custom");
+  CUSTOM_STAGE_V1("CUSTOM_STAGE_V1", "custom"),
+  ASG_SHIFT_TRAFFIC("ASG_SHIFT_TRAFFIC", YamlTypes.ASG_SHIFT_TRAFFIC);
 
   private final String name;
   private final String yamlType;

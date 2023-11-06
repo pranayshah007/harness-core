@@ -239,6 +239,7 @@ public interface EntityTypeConstants {
   String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
+  String ASG_SHIFT_TRAFFIC = "AsgShiftTraffic";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";

@@ -31,6 +31,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
+import io.harness.cdng.aws.asg.AsgShiftTrafficStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStep;
@@ -316,6 +317,7 @@ public class NgStepRegistrar {
     engineSteps.put(AsgBlueGreenDeployStep.STEP_TYPE, AsgBlueGreenDeployStep.class);
     engineSteps.put(AsgBlueGreenRollbackStep.STEP_TYPE, AsgBlueGreenRollbackStep.class);
     engineSteps.put(AsgServiceSettingsStep.STEP_TYPE, AsgServiceSettingsStep.class);
+    engineSteps.put(AsgShiftTrafficStep.STEP_TYPE, AsgShiftTrafficStep.class);
 
     // TAS
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
