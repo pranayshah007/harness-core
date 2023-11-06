@@ -17,7 +17,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface EnforcementStepService {
   EnforceSbomResponseBody enforceSbom(
-      String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body);
+      String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body, String authToken);
 
   EnforcementSummaryResponse getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);

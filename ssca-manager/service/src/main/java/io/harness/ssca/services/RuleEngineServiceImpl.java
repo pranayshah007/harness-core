@@ -65,6 +65,19 @@ public class RuleEngineServiceImpl implements RuleEngineService {
     return RuleDTO.builder().allowList(allowList).denyList(denyList).build();
   }
 
+  @Override
+  public String getPolicy(String accountId, String orgIdentifier, String projectIdentifier, String policyFileId) {
+    String filePath = getFilePath(accountId, orgIdentifier, projectIdentifier, policyFileId);
+    Response response = nextGenService.getRequest(null, null, filePath, accountId);
+    try {
+      JSONObject jsonObject = new JSONObject(response.body().string());
+      return jsonObject.getString("data");
+    } catch (Exception e) {
+      log.error(String.format("Policy File Response Doesn't have data"));
+      throw new InvalidArgumentsException(String.format("Policy file [%s] is Empty/Null", policyFileId));
+    }
+  }
+
   private String getFilePath(String accountId, String orgIdentifier, String projectIdentifier, String policyFileId) {
     String encodedQueryFileId = null;
     try {

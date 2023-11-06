@@ -36,10 +36,10 @@ public class SbomProcessorApiImpl implements SbomProcessorApi {
   @Inject EnforcementStepService enforcementStepService;
 
   @Override
-  public Response enforceSbom(
-      String orgIdentifier, String projectIdentifier, @Valid EnforceSbomRequestBody body, String accountId) {
+  public Response enforceSbom(String orgIdentifier, String projectIdentifier, @Valid EnforceSbomRequestBody body,
+      String accountId, String authToken) {
     EnforceSbomResponseBody response =
-        enforcementStepService.enforceSbom(accountId, orgIdentifier, projectIdentifier, body);
+        enforcementStepService.enforceSbom(accountId, orgIdentifier, projectIdentifier, body, authToken);
     return Response.ok().entity(response).build();
   }
 

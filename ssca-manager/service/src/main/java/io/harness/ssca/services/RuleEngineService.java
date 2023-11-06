@@ -11,4 +11,5 @@ import io.harness.ssca.beans.RuleDTO;
 
 public interface RuleEngineService {
   RuleDTO getRules(String accountId, String orgIdentifier, String projectIdentifier, String policyFileId);
+  String getPolicy(String accountId, String orgIdentifier, String projectIdentifier, String policyFileId);
 }
