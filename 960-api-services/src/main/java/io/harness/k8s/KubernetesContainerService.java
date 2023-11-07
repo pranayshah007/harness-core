@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
@@ -52,7 +53,9 @@ import lombok.SneakyThrows;
 public interface KubernetesContainerService {
   HasMetadata createOrReplaceController(KubernetesConfig kubernetesConfig, HasMetadata definition);
 
-  HasMetadata getController(KubernetesConfig kubernetesConfig, String name);
+  HasMetadata getFabric8Controller(KubernetesConfig kubernetesConfig, String name);
+
+  V1ObjectMeta getController(KubernetesConfig kubernetesConfig, String name);
 
   @SuppressWarnings("squid:S1452")
   List<? extends HasMetadata> getControllers(KubernetesConfig kubernetesConfig, Map<String, String> labels);
@@ -103,7 +106,9 @@ public interface KubernetesContainerService {
 
   V1Service getService(KubernetesConfig kubernetesConfig, String name);
 
-  List<Service> getServices(KubernetesConfig kubernetesConfig, Map<String, String> labels);
+  V1ServiceList getServiceList(KubernetesConfig kubernetesConfig, String labelSelector);
+
+  List<Service> getFabric8Services(KubernetesConfig kubernetesConfig, Map<String, String> labels);
 
   void deleteService(KubernetesConfig kubernetesConfig, String name);
 
@@ -195,7 +200,7 @@ public interface KubernetesContainerService {
 
   void persistKubernetesConfig(KubernetesConfig config, String workingDir) throws IOException;
 
-  HasMetadata getController(KubernetesConfig kubernetesConfig, String name, String namespace);
+  HasMetadata getFabric8Controller(KubernetesConfig kubernetesConfig, String name, String namespace);
 
   CEK8sDelegatePrerequisite.MetricsServerCheck validateMetricsServer(KubernetesConfig kubernetesConfig);
 

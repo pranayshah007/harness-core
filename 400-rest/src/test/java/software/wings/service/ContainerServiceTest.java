@@ -7,7 +7,9 @@
 
 package software.wings.service;
 
+import static io.harness.k8s.K8sConstants.HARNESS_KUBERNETES_REVISION_LABEL_KEY;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.rule.Owner;
@@ -51,11 +54,16 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerBuilder;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodBuilder;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,21 +146,6 @@ public class ContainerServiceTest extends WingsBaseTest {
 
   @Before
   public void setup() {
-    ReplicationController replicationController = new ReplicationControllerBuilder()
-                                                      .withApiVersion("v1")
-                                                      .withNewMetadata()
-                                                      .withName(KUBERNETES_REPLICATION_CONTROLLER_NAME)
-                                                      .endMetadata()
-                                                      .withNewSpec()
-                                                      .withReplicas(2)
-                                                      .endSpec()
-                                                      .build();
-    io.fabric8.kubernetes.api.model.Service kubernetesService = new io.fabric8.kubernetes.api.model.ServiceBuilder()
-                                                                    .withApiVersion("v1")
-                                                                    .withNewMetadata()
-                                                                    .withName(KUBERNETES_SERVICE_NAME)
-                                                                    .endMetadata()
-                                                                    .build();
     V1Pod pod = new V1PodBuilder()
                     .withApiVersion("v1")
                     .withNewStatus()
@@ -162,26 +155,13 @@ public class ContainerServiceTest extends WingsBaseTest {
                     .addToLabels("app", "MyApp")
                     .endMetadata()
                     .build();
-    PodTemplateSpec podTemplateSpec = new PodTemplateSpecBuilder()
-                                          .withNewMetadata()
-                                          .withLabels(ImmutableMap.of("app", "MyApp"))
-                                          .endMetadata()
-                                          .build();
     when(gkeClusterService.getCluster(gcpParams.getSettingAttribute(), emptyList(), CLUSTER_NAME, "default", false))
         .thenReturn(kubernetesConfig);
-    when(kubernetesContainerService.listControllers(kubernetesConfig))
-        .thenReturn((List) singletonList(replicationController));
-    when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString())).thenReturn(replicationController);
-    when(kubernetesContainerService.getServices(eq(kubernetesConfig), any()))
-        .thenReturn(singletonList(kubernetesService));
     when(kubernetesContainerService.getRunningPodsWithLabels(eq(kubernetesConfig), anyString(), anyMap()))
         .thenReturn(singletonList(pod));
-    when(kubernetesContainerService.getControllers(eq(kubernetesConfig), any()))
-        .thenReturn((List) singletonList(replicationController));
     when(kubernetesContainerService.getControllerPodCount(eq(kubernetesConfig), anyString()))
         .thenReturn(Optional.of(2));
     when(kubernetesContainerService.getControllerPodCount(any(ReplicationController.class))).thenReturn(2);
-    when(kubernetesContainerService.getPodTemplateSpec(replicationController)).thenReturn(podTemplateSpec);
     doReturn(null).when(encryptionService).decrypt(eq(kubernetesClusterConfig), any(), eq(false));
 
     Service ecsService = new Service();
@@ -205,27 +185,114 @@ public class ContainerServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = BRETT)
+  @Owner(developers = {BRETT, PRATYUSH})
   @Category(UnitTests.class)
-  public void shouldGetContainerInfos_Gcp() {
+  public void shouldGetContainerInfosFabric8_Gcp() {
+    setupMockForFabric8();
     List<ContainerInfo> result = containerService.getContainerInfos(gcpParams, false);
 
     assertThat(result.size()).isEqualTo(1);
   }
   @Test
-  @Owner(developers = BRETT)
+  @Owner(developers = {BRETT, PRATYUSH})
   @Category(UnitTests.class)
-  public void shouldGetContainerInfos_Aws() {
+  public void shouldGetContainerInfosFabric8_Aws() {
+    setupMockForFabric8();
     List<ContainerInfo> result = containerService.getContainerInfos(awsParams, false);
 
     assertThat(result.size()).isEqualTo(0);
   }
   @Test
-  @Owner(developers = BRETT)
+  @Owner(developers = {BRETT, PRATYUSH})
   @Category(UnitTests.class)
-  public void shouldGetContainerInfos_DirectKube() {
+  public void shouldGetContainerInfosFabric8_DirectKube() {
+    setupMockForFabric8();
     List<ContainerInfo> result = containerService.getContainerInfos(kubernetesConfigParams, false);
 
     assertThat(result.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetContainerInfos_Gcp() {
+    setupMockForJavaClient();
+    List<ContainerInfo> result = containerService.getContainerInfos(gcpParams, false);
+
+    assertThat(result.size()).isEqualTo(1);
+  }
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetContainerInfos_Aws() {
+    setupMockForJavaClient();
+    List<ContainerInfo> result = containerService.getContainerInfos(awsParams, false);
+
+    assertThat(result.size()).isEqualTo(0);
+  }
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetContainerInfos_DirectKube() {
+    setupMockForJavaClient();
+    List<ContainerInfo> result = containerService.getContainerInfos(kubernetesConfigParams, false);
+
+    assertThat(result.size()).isEqualTo(1);
+  }
+
+  private void setupMockForFabric8() {
+    ReplicationController replicationController = new ReplicationControllerBuilder()
+                                                      .withApiVersion("v1")
+                                                      .withNewMetadata()
+                                                      .withName(KUBERNETES_REPLICATION_CONTROLLER_NAME)
+                                                      .endMetadata()
+                                                      .withNewSpec()
+                                                      .withReplicas(2)
+                                                      .endSpec()
+                                                      .build();
+    io.fabric8.kubernetes.api.model.Service kubernetesService = new io.fabric8.kubernetes.api.model.ServiceBuilder()
+                                                                    .withApiVersion("v1")
+                                                                    .withNewMetadata()
+                                                                    .withName(KUBERNETES_SERVICE_NAME)
+                                                                    .endMetadata()
+                                                                    .build();
+    PodTemplateSpec podTemplateSpec = new PodTemplateSpecBuilder()
+                                          .withNewMetadata()
+                                          .withLabels(ImmutableMap.of("app", "MyApp"))
+                                          .endMetadata()
+                                          .build();
+    when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString()))
+        .thenThrow(new InvalidRequestException(""));
+    when(kubernetesContainerService.listControllers(kubernetesConfig))
+        .thenReturn((List) singletonList(replicationController));
+    when(kubernetesContainerService.getFabric8Controller(eq(kubernetesConfig), anyString()))
+        .thenReturn(replicationController);
+    when(kubernetesContainerService.getFabric8Services(eq(kubernetesConfig), any()))
+        .thenReturn(singletonList(kubernetesService));
+    when(kubernetesContainerService.getControllers(eq(kubernetesConfig), any()))
+        .thenReturn((List) singletonList(replicationController));
+    when(kubernetesContainerService.getPodTemplateSpec(replicationController)).thenReturn(podTemplateSpec);
+  }
+
+  private void setupMockForJavaClient() {
+    Map<String, String> map = new HashMap<>();
+    map.put("key", "value");
+    map.put(HARNESS_KUBERNETES_REVISION_LABEL_KEY, "value2");
+
+    V1ObjectMeta controllerObjectMeta = new V1ObjectMeta();
+    controllerObjectMeta.setName("controller");
+    controllerObjectMeta.setLabels(map);
+
+    V1ServiceList v1ServiceList = new V1ServiceList();
+    V1Service v1Service = new V1Service();
+    V1ObjectMeta serviceObjectMeta = new V1ObjectMeta();
+    serviceObjectMeta.setName("serviceName");
+    v1Service.setMetadata(serviceObjectMeta);
+    List<V1Service> v1Services = Collections.singletonList(v1Service);
+    v1ServiceList.setItems(v1Services);
+
+    when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString())).thenReturn(controllerObjectMeta);
+    when(kubernetesContainerService.getServiceList(kubernetesConfig, "harness.io/revision=value2,key=value"))
+        .thenReturn(v1ServiceList);
   }
 }

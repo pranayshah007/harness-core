@@ -424,7 +424,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
 
       if (definition instanceof StatefulSet) {
         HasMetadata existing =
-            kubernetesContainerService.getController(kubernetesConfig, definition.getMetadata().getName());
+            kubernetesContainerService.getFabric8Controller(kubernetesConfig, definition.getMetadata().getName());
         if (existing != null && existing.getKind().equals("StatefulSet")) {
           StatefulSet newDefinition = (StatefulSet) definition;
           StatefulSet mergedDefinition = (StatefulSet) existing;
@@ -1017,7 +1017,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
   }
 
   private String getControllerYaml(KubernetesConfig kubernetesConfig, String containerServiceName) {
-    HasMetadata controller = kubernetesContainerService.getController(kubernetesConfig, containerServiceName);
+    HasMetadata controller = kubernetesContainerService.getFabric8Controller(kubernetesConfig, containerServiceName);
     if (controller != null) {
       try {
         return toYaml(controller);
@@ -1254,8 +1254,9 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
     Optional<Integer> controllerPodCount =
         kubernetesContainerService.getControllerPodCount(kubernetesConfig, containerServiceName);
     int desiredCount = controllerPodCount.isPresent() ? controllerPodCount.get() : 0;
-    int previousCount =
-        kubernetesContainerService.getController(kubernetesConfig, containerServiceName) != null ? desiredCount : 0;
+    int previousCount = kubernetesContainerService.getFabric8Controller(kubernetesConfig, containerServiceName) != null
+        ? desiredCount
+        : 0;
     List<ContainerInfo> containerInfos = kubernetesContainerService.getContainerInfosWhenReady(kubernetesConfig,
         containerServiceName, previousCount, desiredCount, serviceSteadyStateTimeout, originalPods, true,
         executionLogCallback, true, startTime, kubernetesConfig.getNamespace());
@@ -1393,7 +1394,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
       executionLogCallback.saveExecutionLog(
           "Controller " + controllerName + " did not exist previously. Deleting on rollback");
       try {
-        HasMetadata controller = kubernetesContainerService.getController(kubernetesConfig, controllerName);
+        HasMetadata controller = kubernetesContainerService.getFabric8Controller(kubernetesConfig, controllerName);
         Map<String, String> labels = controller.getMetadata().getLabels();
         kubernetesContainerService.deleteController(kubernetesConfig, controllerName);
         kubernetesContainerService.waitForPodsToStop(
@@ -1881,7 +1882,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
           }
         });
 
-    kubernetesContainerService.getServices(kubernetesConfig, lookupLabels)
+    kubernetesContainerService.getFabric8Services(kubernetesConfig, lookupLabels)
         .stream()
         .filter(service -> !(service.getMetadata().getName().equals(getKubernetesServiceName(currentNamePrefix))))
         .filter(service
