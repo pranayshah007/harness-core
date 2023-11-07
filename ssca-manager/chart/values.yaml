@@ -217,3 +217,4 @@ s3SecretAccessKey:
 java17flags: ""
 
 redislabsCATruststore: "test"
+name: ssca-manager
