@@ -209,8 +209,8 @@ public class ImageSecretBuilder {
           WingsException.USER);
     }
 
-    boolean isGCR = imageParts.length == 3 && imageParts[0].endsWith(BASE_GCR_HOSTNAME);
-    boolean isGAR = imageParts.length >= 4 && imageParts[0].contains(BASE_GAR_HOSTNAME);
+    boolean isGCR = imageParts[0].contains(BASE_GCR_HOSTNAME);
+    boolean isGAR = imageParts[0].contains(BASE_GAR_HOSTNAME) && imageParts.length >= 4;
 
     if (!isGCR && !isGAR) {
       throw new InvalidArgumentsException(
