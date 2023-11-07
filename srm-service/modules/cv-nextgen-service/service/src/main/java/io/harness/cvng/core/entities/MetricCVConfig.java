@@ -68,7 +68,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
 
   @JsonIgnore
   public TimeRange getFirstTimeDataCollectionTimeRange() {
-    Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(getFirstTimeDataCollectionStartTime());
+    Instant endTime = DateTimeUtils.roundDownTo1MinBoundary(getFirstTimeDataCollectionStartTime());
     return TimeRange.builder()
         .startTime(endTime.minus(TIMESERIES_SERVICE_GUARD_DATA_LENGTH, ChronoUnit.MINUTES))
         .endTime(endTime)

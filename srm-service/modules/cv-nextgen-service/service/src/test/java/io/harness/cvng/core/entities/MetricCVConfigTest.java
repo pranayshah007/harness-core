@@ -58,8 +58,8 @@ public class MetricCVConfigTest extends CategoryTest {
     metricCVConfig.setCreatedAt(Instant.parse("2020-04-22T10:02:06Z").toEpochMilli());
     assertThat(metricCVConfig.getFirstTimeDataCollectionTimeRange())
         .isEqualTo(TimeRange.builder()
-                       .endTime(Instant.parse("2020-04-22T10:00:00Z"))
-                       .startTime(Instant.parse("2020-04-22T07:45:00Z"))
+                       .endTime(Instant.parse("2020-04-22T10:02:00Z"))
+                       .startTime(Instant.parse("2020-04-22T07:47:00Z"))
                        .build());
   }
 

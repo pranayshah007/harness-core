@@ -70,8 +70,8 @@ public class LogCVConfigTest extends CategoryTest {
     logCVConfig.setCreatedAt(Instant.parse("2020-04-22T10:02:06Z").toEpochMilli());
     assertThat(logCVConfig.getBaseline())
         .isEqualTo(TimeRange.builder()
-                       .endTime(Instant.parse("2020-04-22T10:00:00Z"))
-                       .startTime(Instant.parse("2020-04-22T09:30:00Z"))
+                       .endTime(Instant.parse("2020-04-22T10:02:00Z"))
+                       .startTime(Instant.parse("2020-04-22T09:32:00Z"))
                        .build());
   }
 
@@ -83,8 +83,8 @@ public class LogCVConfigTest extends CategoryTest {
     logCVConfig.setCreatedAt(Instant.parse("2020-04-22T10:02:06Z").toEpochMilli());
     assertThat(logCVConfig.getFirstTimeDataCollectionTimeRange())
         .isEqualTo(TimeRange.builder()
-                       .endTime(Instant.parse("2020-04-22T09:35:00Z"))
-                       .startTime(Instant.parse("2020-04-22T09:30:00Z"))
+                       .endTime(Instant.parse("2020-04-22T09:37:00Z"))
+                       .startTime(Instant.parse("2020-04-22T09:32:00Z"))
                        .build());
   }
 
