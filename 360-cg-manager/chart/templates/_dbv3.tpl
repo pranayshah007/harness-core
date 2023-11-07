@@ -231,7 +231,7 @@ REQUIRED:
 Generate External Secret CRDs for Mongo DBs
 
 USAGE:
-{{- include "harnesscommon.dbv3.manageMongoExternalSecret" (dict "ctx" $) | indent 12 }}
+{{- include "harnesscommon.dbv3.generateLocalMongoExternalSecret" (dict "ctx" $) | indent 12 }}
 
 PARAMETERS:
 REQUIRED:
@@ -240,12 +240,13 @@ REQUIRED:
 */}}
 {{- define "harnesscommon.dbv3.generateLocalMongoExternalSecret" }}
     {{- $ := .ctx }}
+    {{- $dbType := "mongo" }}
     {{- range $instanceName, $instance := $.Values.mongo }}
         {{- $localDBCtx := get $.Values.mongo $instanceName }}
         {{- $localEnabled := dig "enabled" false $localDBCtx }}
         {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
-            {{- $localMongoESOSecretCtxIdentifier := include "harnesscommon.dbv3.mongoESOSecretCtxIdentifier" (dict "ctx" $ "scope" "local" "instanceName" $instanceName) }}
-            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localMongoESOSecretCtxIdentifier) }}
+            {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
+            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
             {{- print "\n---" }}
         {{- end }}
     {{- end }}
@@ -553,7 +554,44 @@ REQUIRED:
 */}}
 {{- define "harnesscommon.dbv3.manageTimescaleDBEnv" }}
     {{- $ := .ctx }}
-    {{- $params := (dict "ctx" $ "database" .database "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "sslModeVariableName" .sslModeVariableName "sslModeValue" .sslModeValue "handleSSLModeDisable" .handleSSLModeDisable "certVariableName" .certVariableName "certPathVariableName" .certPathVariableName "certPathValue" .certPathValue "connectionURIVariableName" .connectionURIVariableName "protocol" .protocol "args" .args "addSSLModeArg" .addSSLModeArg) }}
+    {{- $useSingleDBEnvNames := default false .useSingleDBEnvNames }}
+    {{- $params := dict }}
+    {{- if $useSingleDBEnvNames }}
+        {{- $userVariableName := default "TIMESCALEDB_USERNAME" .userVariableName }}
+        {{- $passwordVariableName := default "TIMESCALEDB_PASSWORD" .passwordVariableName }}
+        {{- $sslModeVariableName := default "TIMESCALEDB_SSL_MODE" .sslModeVariableName }}
+        {{- $certVariableName := default "TIMESCALEDB_SSL_ROOT_CERT" .certVariableName }}
+        {{- $certPathVariableName := default "TIMESCALEDB_SSL_CERT_PATH" .certPathVariableName }}
+        {{- $connectionURIVariableName := default "TIMESCALEDB_URI" .connectionURIVariableName }}
+        {{- $params = (dict "ctx" $ "database" .database "userVariableName" $userVariableName "passwordVariableName" $passwordVariableName "sslModeVariableName" $sslModeVariableName "sslModeValue" .sslModeValue "handleSSLModeDisable" .handleSSLModeDisable "certVariableName" $certVariableName "certPathVariableName" $certPathVariableName "certPathValue" .certPathValue "connectionURIVariableName" $connectionURIVariableName "protocol" .protocol "args" .args "addSSLModeArg" .addSSLModeArg) }}
+    {{- else }}
+        {{- $params = (dict "ctx" $ "database" .database "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "sslModeVariableName" .sslModeVariableName "sslModeValue" .sslModeValue "handleSSLModeDisable" .handleSSLModeDisable "certVariableName" .certVariableName "certPathVariableName" .certPathVariableName "certPathValue" .certPathValue "connectionURIVariableName" .connectionURIVariableName "protocol" .protocol "args" .args "addSSLModeArg" .addSSLModeArg) }}
+    {{- end }}
     {{- include "harnesscommon.dbv3.timescaleEnv" $params }}
     {{- include "harnesscommon.dbv3.timescaleConnectionEnv" $params }}
+{{- end }}
+
+{{/*
+Generate External Secret CRDs for Timescale DBs
+
+USAGE:
+{{- include "harnesscommon.dbv3.generateLocalTimescaleExternalSecret" (dict "ctx" $) | indent 12 }}
+
+PARAMETERS:
+REQUIRED:
+1. ctx
+
+*/}}
+{{- define "harnesscommon.dbv3.generateLocalTimescaleExternalSecret" }}
+    {{- $ := .ctx }}
+    {{- $dbType := "timescaledb" }}
+    {{- range $instanceName, $instance := $.Values.timescaledb }}
+        {{- $localDBCtx := get $.Values.timescaledb $instanceName }}
+        {{- $localEnabled := dig "enabled" false $localDBCtx }}
+        {{- if and $localEnabled (eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" $localDBCtx.secrets)) "true") }}
+            {{- $localDBESOSecretCtxIdentifier := include "harnesscommon.dbv3.esoSecretCtxIdentifier" (dict "ctx" $ "dbType" $dbType "scope" "local" "instanceName" $instanceName) }}
+            {{- include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" $localDBCtx.secrets "secretNamePrefix" $localDBESOSecretCtxIdentifier) }}
+            {{- print "\n---" }}
+        {{- end }}
+    {{- end }}
 {{- end }}

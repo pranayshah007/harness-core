@@ -86,7 +86,7 @@ spec:
             {{- include "harnesscommon.dbv3.manageMongoEnv" (dict "ctx" $ "database" "dms-harness" "connectionURIVariableName" "DMS_MONGO_URI") | indent 12 }}
             {{- include "harnesscommon.dbv3.manageMongoEnv" (dict "ctx" $ "database" "notifications" "connectionURIVariableName" "NOTIFICATION_MONGO_URI") | indent 12 }}
             {{- include "harnesscommon.dbv3.manageMongoEnv" (dict "ctx" $ "database" "harness" "connectionURIVariableName" "MONGO_URI") | indent 12 }}
-            {{- include "harnesscommon.dbv3.manageTimescaleDBEnv" (dict "ctx" $ "database" "harness" "userVariableName" "TIMESCALEDB_USERNAME" "passwordVariableName" "TIMESCALEDB_PASSWORD" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "sslModeVariableName" "TIMESCALEDB_SSL_MODE" "certPathVariableName" "TIMESCALEDB_SSL_CERT_PATH" "connectionURIVariableName" "TIMESCALEDB_URI" "protocol" "jdbc:postgresql") | indent 12 }}
+            {{- include "harnesscommon.dbv3.manageTimescaleDBEnv" (dict "ctx" $ "database" "harness" "protocol" "jdbc:postgresql" "useSingleDBEnvNames" true) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
             {{- if .Values.extraEnvVars }}
