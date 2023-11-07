@@ -244,7 +244,7 @@ func sendStatusHTTP(ctx context.Context, stepID, delegateID, accountKey, account
 
 	additionalCertsDir := external.GetAdditionalCertsDir()
 
-	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, false, additionalCertsDir)
+	httpClient := delegate.New(managerSvcEndpoint, accountID, accountKey, true, additionalCertsDir)
 
 	stepStatusTaskResponseData := getStepStatusPayload(ctx, stepID, accountID, delegateID, delegateSvcEndpoint, taskID, status, numRetries, timeTaken, errMsg, stepOutput, artifact)
 

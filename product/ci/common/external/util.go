@@ -190,7 +190,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	internalLogURL, internalLogURLOk := os.LookupEnv(logSvcEp)
 
 	if delegateLogURLOk && !isUrlSame(delegateLogURL, internalLogURL) {
-		httpClient := client.NewHTTPClient(delegateLogURL, account, token, false, certsDir)
+		httpClient := client.NewHTTPClient(delegateLogURL, account, token, true, certsDir)
 		err := httpClient.Healthz(context.Background())
 		if err == nil {
 			fmt.Printf("%s env is set with value: %s \n", delegateLogURLEnv, delegateLogURL)
@@ -201,7 +201,7 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	}
 	if internalLogURLOk {
 		fmt.Printf("Using internalLogURL %s:\n", internalLogURL)
-		return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
+		return client.NewHTTPClient(internalLogURL, account, token, true, certsDir), nil
 	}
 
 	return nil, fmt.Errorf("No usable Log URL found.")
