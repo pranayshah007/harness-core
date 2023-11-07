@@ -23,6 +23,7 @@ import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -155,6 +156,7 @@ public class EnvironmentPlanCreatorHelper {
     }
 
     String mergedEnvYaml = originalEnvYaml;
+    ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", environmentV2.getEnvironmentInputs());
     if (isNotEmpty(environmentV2.getEnvironmentInputs().getValue())) {
       mergedEnvYaml = mergeEnvironmentInputs(originalEnvYaml, environmentV2.getEnvironmentInputs().getValue());
     }
@@ -175,6 +177,7 @@ public class EnvironmentPlanCreatorHelper {
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
           mergedEnvYaml, infrastructureConfigs, serviceOverrideConfig);
     } else {
+      ParameterFieldHelper.validateCollectionParameterFieldValue("gitops clusters", environmentV2.getGitOpsClusters());
       if ((environmentV2.getDeployToAll().getValue() == null || !environmentV2.getDeployToAll().getValue())
           && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
         throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false");
@@ -190,6 +193,8 @@ public class EnvironmentPlanCreatorHelper {
     if (serviceOverridesOptional.isPresent()) {
       NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesOptional.get();
       String mergedYaml = serviceOverridesEntity.getYaml();
+      ParameterFieldHelper.validateMapParameterFieldValue(
+          "service override inputs", environmentV2.getServiceOverrideInputs());
       if (isNotEmpty(environmentV2.getServiceOverrideInputs().getValue())) {
         mergedYaml = resolveServiceOverrideInputs(
             serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs().getValue());
@@ -228,6 +233,7 @@ public class EnvironmentPlanCreatorHelper {
         for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
           String ref = infraYaml.getIdentifier().getValue();
           infraIdentifierList.add(ref);
+          ParameterFieldHelper.validateMapParameterFieldValue("infrastructure inputs", infraYaml.getInputs());
           if (isNotEmpty(infraYaml.getInputs().getValue())) {
             refToInputMap.put(ref, infraYaml.getInputs().getValue());
           }
@@ -236,6 +242,7 @@ public class EnvironmentPlanCreatorHelper {
         InfraStructureDefinitionYaml infraYaml = environmentV2.getInfrastructureDefinition().getValue();
         String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
+        ParameterFieldHelper.validateMapParameterFieldValue("infrastructure inputs", infraYaml.getInputs());
         if (isNotEmpty(infraYaml.getInputs().getValue())) {
           refToInputMap.put(ref, infraYaml.getInputs().getValue());
         }
@@ -244,6 +251,8 @@ public class EnvironmentPlanCreatorHelper {
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
+      ParameterFieldHelper.validateCollectionParameterFieldValue(
+          "infrastructure definitions list", environmentV2.getInfrastructureDefinitions());
       if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())
           || ParameterField.isBlank(environmentV2.getInfrastructureDefinition())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",

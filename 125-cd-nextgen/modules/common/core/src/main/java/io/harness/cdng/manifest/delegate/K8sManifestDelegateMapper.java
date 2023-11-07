@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.manifest.delegate;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.validateListParameterFieldValue;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 
 import static java.lang.String.format;
@@ -385,6 +387,7 @@ public class K8sManifestDelegateMapper {
         break;
 
       default:
+        validateListParameterFieldValue("paths in git store", gitstoreConfig.getPaths());
         paths.addAll(getParameterFieldValue(gitstoreConfig.getPaths()));
     }
 

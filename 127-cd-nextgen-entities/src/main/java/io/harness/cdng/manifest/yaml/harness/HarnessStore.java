@@ -132,6 +132,7 @@ public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig,
 
   @Override
   public List<String> retrieveFilePaths() {
+    ParameterFieldHelper.validateListParameterFieldValue("file paths", this.getFiles());
     return this.getFiles().getValue();
   }
 }

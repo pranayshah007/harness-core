@@ -29,6 +29,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTaskType;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -318,6 +319,7 @@ public class AzureHelperService {
         return;
       }
 
+      ParameterFieldHelper.validateListParameterFieldValue("file references list", harnessStore.getFiles());
       List<String> fileReferences = harnessStore.getFiles().getValue();
       if (isEmpty(fileReferences)) {
         throw new InvalidRequestException(
@@ -335,6 +337,8 @@ public class AzureHelperService {
       if (harnessStore.getSecretFiles().isExpression()) {
         return;
       }
+      ParameterFieldHelper.validateListParameterFieldValue(
+          "secret file references list", harnessStore.getSecretFiles());
       List<String> secretFileReferences = harnessStore.getSecretFiles().getValue();
 
       if (secretFileReferences.size() > 1) {

@@ -200,10 +200,9 @@ public class ParameterFieldHelper {
   }
 
   /**
-   *
    * @param fieldValue
    * @return Integer value.
-   *
+   * <p>
    * In cases with expressions value is coming as Double and then new BigDecimal(1.0).intValueExact() is throwing class
    * cast exception
    */
@@ -237,5 +236,148 @@ public class ParameterFieldHelper {
 
     throw new InvalidArgumentsException(
         format("Unsupported value validation for parameter field, parameter field class: %s", value.getClass()));
+  }
+
+  public void validateIntegerParameterFieldValue(ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return;
+    }
+
+    if (value instanceof String) {
+      throw new IllegalArgumentException(format("Expected integer value, but got a string value %s", value));
+    }
+
+    if (value instanceof Map) {
+      throw new IllegalArgumentException(format("Expected integer value, but got a Map value %s", value));
+    }
+
+    if (value instanceof List) {
+      throw new IllegalArgumentException(format("Expected integer value, but got a List value %s", value));
+    }
+  }
+
+  public void validateStringParameterFieldValue(String field, ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got an integer value %s", field, value));
+    }
+
+    if (value instanceof Map) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a Map value %s", field, value));
+    }
+
+    if (value instanceof List) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a List value %s", field, value));
+    }
+
+    if (!(value instanceof String)) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a value %s", field, value));
+    }
+  }
+
+  public String getStringParameterFieldValue(String field, ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return null;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got an integer value %s", field, value));
+    }
+
+    if (value instanceof Map) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a Map value %s", field, value));
+    }
+
+    if (value instanceof List) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a List value %s", field, value));
+    }
+
+    if (!(value instanceof String)) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected string value, but got a value %s", field, value));
+    }
+
+    return (String) value;
+  }
+
+  public void validateMapParameterFieldValue(String a, ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(format("Expected Map value, but got an integer value %s", value));
+    }
+
+    if (value instanceof String) {
+      throw new IllegalArgumentException(format("Expected Map value, but got a string value %s", value));
+    }
+
+    if (value instanceof List) {
+      throw new IllegalArgumentException(format("Expected Map value, but got a List value %s", value));
+    }
+  }
+
+  public void validateListParameterFieldValue(String field, ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected List value, but got an integer value %s", field, value));
+    }
+
+    if (value instanceof String) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected List value, but got a string value %s", field, value));
+    }
+
+    if (value instanceof Map) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected List value, but got a Map value %s", field, value));
+    }
+  }
+
+  public void validateNotGeneralTypeParameterFieldValue(String field, ParameterField<?> fieldValue) {
+    Object value = getParameterFieldValue(fieldValue);
+    if (value == null) {
+      return;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. An integer value %s was not expected", field, value));
+    }
+
+    if (value instanceof String) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. A string value %s was not expected", field, value));
+    }
+
+    if (value instanceof Map) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. A Map value %s was not expected", field, value));
+    }
+
+    if (value instanceof List) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. A List value %s was not expected", field, value));
+    }
   }
 }

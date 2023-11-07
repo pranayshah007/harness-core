@@ -209,9 +209,7 @@ message HarnessValue {
   }
 }
 
-enum NullValue {
-  NULL_VALUE = 0;
-}
+enum NullValue { NULL_VALUE = 0; }
 
 message ListValue {
   repeated HarnessValue values = 1;

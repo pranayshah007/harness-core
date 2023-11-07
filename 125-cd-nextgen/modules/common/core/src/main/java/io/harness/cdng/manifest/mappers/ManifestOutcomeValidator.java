@@ -13,6 +13,7 @@ import static io.harness.cdng.manifest.ManifestType.K8Manifest;
 import static io.harness.cdng.manifest.ManifestType.Kustomize;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.validateListParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -283,6 +284,7 @@ public class ManifestOutcomeValidator {
   }
 
   private boolean hasValue(ParameterField<List<String>> parameterField) {
+    validateListParameterFieldValue("parameter field", parameterField);
     if (!ParameterField.isNull(parameterField) && isNotEmpty(getParameterFieldValue(parameterField))) {
       List<String> stringList = getParameterFieldValue(parameterField);
       return stringList.stream().noneMatch(StringUtils::isBlank);
@@ -291,6 +293,7 @@ public class ManifestOutcomeValidator {
   }
 
   private boolean optionalFieldHasValue(ParameterField<List<String>> parameterField) {
+    validateListParameterFieldValue("parameter field", parameterField);
     if (!ParameterField.isNull(parameterField) && isNotEmpty(getParameterFieldValue(parameterField))) {
       List<String> stringList = getParameterFieldValue(parameterField);
       return stringList.stream().noneMatch(StringUtils::isBlank);

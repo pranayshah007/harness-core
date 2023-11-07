@@ -22,6 +22,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
@@ -94,6 +95,7 @@ public class ElastigroupHelperService {
       return;
     }
 
+    ParameterFieldHelper.validateListParameterFieldValue("files list", harnessStore.getFiles());
     List<String> fileReferences = harnessStore.getFiles().getValue();
     if (isEmpty(fileReferences)) {
       throw new InvalidRequestException(
@@ -111,6 +113,7 @@ public class ElastigroupHelperService {
     if (harnessStore.getSecretFiles().isExpression()) {
       return;
     }
+    ParameterFieldHelper.validateListParameterFieldValue("secret files list", harnessStore.getSecretFiles());
     List<String> secretFileReferences = harnessStore.getSecretFiles().getValue();
 
     if (secretFileReferences.size() > 1) {

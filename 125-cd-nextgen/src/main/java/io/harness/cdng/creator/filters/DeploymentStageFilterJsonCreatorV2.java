@@ -454,6 +454,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void addMultiEnvRef(EnvironmentsYaml envs, Map<String, List<String>> envInfraMap) {
+    ParameterFieldHelper.validateListParameterFieldValue("environment yamls list", envs.getValues());
     List<EnvironmentYamlV2> envList = ParameterFieldHelper.getParameterFieldValue(envs.getValues());
     if (CollectionUtils.isNotEmpty(envList)) {
       envList.forEach(env -> addEnvRef(env, envInfraMap));
@@ -465,6 +466,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (StringUtils.isBlank(envRef)) {
       return;
     }
+    ParameterFieldHelper.validateListParameterFieldValue(
+        "infrastructure definitions list", environment.getInfrastructureDefinitions());
     List<InfraStructureDefinitionYaml> infraList =
         ParameterFieldHelper.getParameterFieldValue(environment.getInfrastructureDefinitions());
     if (CollectionUtils.isNotEmpty(infraList)) {
@@ -497,6 +500,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void addMultiServiceRef(ServicesYaml services, List<String> serviceRefs) {
+    ParameterFieldHelper.validateListParameterFieldValue("service yamls list", services.getValues());
     List<ServiceYamlV2> serviceList = ParameterFieldHelper.getParameterFieldValue(services.getValues());
     if (CollectionUtils.isNotEmpty(serviceList)) {
       serviceList.forEach(service -> addServiceRef(service, serviceRefs));

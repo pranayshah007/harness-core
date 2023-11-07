@@ -10,6 +10,8 @@ package io.harness.cdng.infra;
 import static io.harness.beans.FeatureName.CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR;
 import static io.harness.cdng.infra.beans.host.dto.HostFilterSpecDTO.HOSTS_SEPARATOR;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.validateListParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.validateMapParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
@@ -230,6 +232,7 @@ public class InfrastructureMapper {
           break;
         }
         setPdcInfrastructureHostValueSplittingStringToListIfNeeded(pdcInfrastructure);
+        validateListParameterFieldValue("hosts", pdcInfrastructure.getHosts());
         PdcInfrastructureOutcome pdcInfrastructureOutcome =
             PdcInfrastructureOutcome.builder()
                 .credentialsRef(getParameterFieldValue(pdcInfrastructure.getCredentialsRef()))
@@ -583,6 +586,7 @@ public class InfrastructureMapper {
     if (!ngFeatureFlagHelperService.isEnabled(accountIdentifier, CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR)) {
       return expressionEvaluator.evaluateExpression(tags, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     } else {
+      validateMapParameterFieldValue("tags", tags);
       return getParameterFieldValue(tags);
     }
   }

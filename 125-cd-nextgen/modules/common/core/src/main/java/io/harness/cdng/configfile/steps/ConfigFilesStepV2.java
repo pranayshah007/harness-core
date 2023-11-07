@@ -418,6 +418,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     StoreConfig storeConfig = configFileOutcome.getStore();
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
+      ParameterFieldHelper.validateListParameterFieldValue("git file paths", gitStoreConfig.getPaths());
       List<String> paths = ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths());
       return GitRequestFileConfig.builder()
           .gitStoreDelegateConfig(

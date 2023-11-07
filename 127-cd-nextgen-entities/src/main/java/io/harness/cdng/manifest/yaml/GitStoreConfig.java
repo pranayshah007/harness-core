@@ -11,6 +11,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.pms.yaml.ParameterField;
 
@@ -36,6 +37,7 @@ public interface GitStoreConfig extends StoreConfig {
 
   @Override
   default List<String> retrieveFilePaths() {
+    ParameterFieldHelper.validateListParameterFieldValue("file paths", this.getPaths());
     return this.getPaths().getValue();
   }
 }

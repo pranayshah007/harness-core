@@ -19,6 +19,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.TasManifest;
 import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.exception.InvalidYamlException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
@@ -52,6 +53,8 @@ public class TasServiceEntityValidator implements ServiceEntityValidator {
         throw new InvalidYamlException("Only one AutoScalar Manifest is supported");
       }
       if (!isNull(tasManifests.get(0).getAutoScalerPath())) {
+        ParameterFieldHelper.validateListParameterFieldValue(
+            "tas manifest autoscaler paths list", tasManifests.get(0).getAutoScalerPath());
         List<String> autoScalarPaths = tasManifests.get(0).getAutoScalerPath().getValue();
         if (isNotEmpty(autoScalarManifests)
             && (!isNull(tasManifests.get(0).getAutoScalerPath().getExpressionValue()) || isNotEmpty(autoScalarPaths))) {

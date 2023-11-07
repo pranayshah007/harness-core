@@ -9,6 +9,7 @@ package io.harness.cdng.infra;
 
 import static io.harness.cdng.ssh.SshWinRmConstants.HOSTNAME_HOST_ATTRIBUTE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.validateMapParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -60,6 +61,7 @@ public class PdcProvisionedInfrastructureMapper {
             ambiance, pdcInfrastructure.getProvisionerStepIdentifier())
         : new ProvisionerExpressionEvaluator(Collections.emptyMap(), inputSetValidatorFactory);
 
+    validateMapParameterFieldValue("host attributes", pdcInfrastructure.getHostAttributes());
     List<Map<String, Object>> evaluatedHostObjectsAttrs =
         evaluateHostInstancesAttrs(expressionEvaluator, getParameterFieldValue(pdcInfrastructure.getHostArrayPath()),
             getParameterFieldValue(pdcInfrastructure.getHostAttributes()));

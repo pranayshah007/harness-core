@@ -416,6 +416,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     }
 
     final InfrastructureEntity infrastructureEntity = infrastructureEntityOpt.get();
+    ParameterFieldHelper.validateMapParameterFieldValue("infrastructure inputs", stepParameters.getInfraInputs());
     if (ParameterField.isNotNull(stepParameters.getInfraInputs())
         && isNotEmpty(stepParameters.getInfraInputs().getValue())) {
       String mergedYaml = mergeInfraInputs(infrastructureEntity.getYaml(), stepParameters.getInfraInputs().getValue());

@@ -38,6 +38,7 @@ import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -261,6 +262,7 @@ public class InfrastructureValidator {
     }
 
     ParameterField<Map<String, String>> hostAttributes = infrastructure.getHostAttributes();
+    ParameterFieldHelper.validateMapParameterFieldValue("host attributes", hostAttributes);
     if (ParameterField.isNull(hostAttributes) || hostAttributes.getValue() == null
         || !hostAttributes.getValue().containsKey(HOSTNAME_HOST_ATTRIBUTE)) {
       throw new InvalidRequestException(
