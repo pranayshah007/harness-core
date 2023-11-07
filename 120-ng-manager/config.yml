@@ -611,3 +611,7 @@ deploymentStagePlanCreationInfoThreadConfig:
     maxPoolSize: ${DEPLOY_STAGE_PLAN_INFO_SAVE_POOL_MAX_SIZE:-10}
     idleTime: ${DEPLOY_STAGE_PLAN_INFO_SAVE_POOL_IDLE_TIME:-30}
     timeUnit: ${DEPLOY_STAGE_PLAN_INFO_SAVE_POOL_TIME_UNIT:-SECONDS}
+
+frpsTunnel:
+  host: ${FRPS_TUNNEL_HOST:-localhost}
+  protocol: ${FRPS_TUNNEL_PROTOCOL:-http}

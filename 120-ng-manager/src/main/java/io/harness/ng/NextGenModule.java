@@ -292,6 +292,8 @@ import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
 import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
 import io.harness.ng.support.client.CannyConfig;
+import io.harness.ng.tunnel.services.TunnelService;
+import io.harness.ng.tunnel.services.impl.TunnelServiceImpl;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -893,6 +895,7 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
+    bind(TunnelService.class).to(TunnelServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton

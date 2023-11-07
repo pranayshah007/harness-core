@@ -50,6 +50,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StageElementParameters;
@@ -79,12 +80,14 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
+import io.harness.tunnel.TunnelResourceClient;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
 import io.harness.yaml.registry.RegistryCredential;
@@ -118,6 +121,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private TunnelResourceClient tunnelResourceClient;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -128,6 +132,8 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    TunnelResponseDTO tunnelResponseDTO =
+        NGRestUtils.getResponse(tunnelResourceClient.getTunnel(AmbianceUtils.getAccountId(ambiance)));
 
     try {
       String jsonString = RecastOrchestrationUtils.toJson(stepParameters);

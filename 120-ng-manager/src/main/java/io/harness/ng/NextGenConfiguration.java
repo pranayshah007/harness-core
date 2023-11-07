@@ -53,6 +53,7 @@ import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.CEProxyConfig;
+import io.harness.remote.FRPSTunnelConfig;
 import io.harness.remote.NextGenConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
@@ -186,6 +187,7 @@ public class NextGenConfiguration extends Configuration {
   private static final String TERRAFORM_RESOURCE_PACKAGE = "io.harness.ng.core.terraform.resources";
   private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
   private static final String GITX_WEBHOOKS_PACKAGE = "io.harness.ng.gitxwebhook";
+  public static final String TUNNEL_RESOURCE_PACKAGE = "io.harness.ng.tunnel.resources";
 
   private static final String OIDC_CORE_RESOURCE = "io.harness.ng.core.oidc";
 
@@ -306,6 +308,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("oidcConfigPath") private String oidcConfigPath;
   @JsonProperty("deploymentStagePlanCreationInfoThreadConfig")
   private DeploymentStagePlanCreationInfoThreadPoolConfiguration deploymentStagePlanCreationInfoThreadPoolConfiguration;
+  @JsonProperty("frpsTunnel") private FRPSTunnelConfig frpsTunnelConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -369,7 +372,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
                 NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
-                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
+                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE,
+                NextGenConfiguration.TUNNEL_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

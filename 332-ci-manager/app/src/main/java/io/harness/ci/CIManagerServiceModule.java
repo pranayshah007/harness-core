@@ -116,6 +116,7 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
+import io.harness.tunnel.TunnelResourceClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.AsyncWaitEngineImpl;
@@ -451,6 +452,8 @@ public class CIManagerServiceModule extends AbstractModule {
     } else {
       bind(FeatureFlagService.class).toProvider(Providers.of(null));
     }
+    install(new TunnelResourceClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
   }
 
   private void registerEventListeners() {
