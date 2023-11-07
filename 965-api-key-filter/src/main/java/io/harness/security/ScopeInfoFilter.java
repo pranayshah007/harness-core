@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.security;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
@@ -6,21 +13,18 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.scope.remote.ScopeInfoClient;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
@@ -37,49 +41,50 @@ import software.wings.security.JWT_CATEGORY;
 @Slf4j
 @Provider
 public class ScopeInfoFilter extends JWTAuthenticationFilter /*implements ContainerRequestFilter*/ {
-  private final ScopeInfo scopeInfo;
   private final ScopeInfoClient scopeInfoClient;
   @Context private ResourceInfo resourceInfo;
-//  private final Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping;
-//  private final Map<String, String> serviceToSecretMapping;
 
-//  @Inject
   public ScopeInfoFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
-                         Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping, ScopeInfo scopeInfo, @Named("PRIVILEGED") ScopeInfoClient scopeInfoClient) {
+                         Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping, @Named("PRIVILEGED") ScopeInfoClient scopeInfoClient) {
     super(predicate, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
-//  this.serviceToJWTTokenHandlerMapping = serviceToJWTTokenHandlerMapping;
-//  this.serviceToSecretMapping = serviceToSecretMapping;
-    this.scopeInfo = scopeInfo;
     this.scopeInfoClient = scopeInfoClient;
   }
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
-    if (scopeInfo == null || getAccountIdentifierFrom(requestContext).isEmpty()
-        || getAccountIdentifierFrom(requestContext).get().isEmpty()) {
-      return;
-    }
-    if (scopeInfo.getUniqueId() != null && scopeInfo.getScopeType() != null) {
-      return;
-    }
-    if (isInternalRequest(resourceInfo)) {
-      super.filter(requestContext/*, serviceToJWTTokenHandlerMapping, serviceToSecretMapping*/);
-    } else {
-      Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(requestContext);
-      if (accountIdentifierOptional.isEmpty()) {
-        throw new InvalidRequestException("Account detail is not present in the request");
+    Object requestCtxObject = requestContext.getProperty("scopeInfo");
+    if (requestContext instanceof ScopeInfo) {
+      ScopeInfo scopeInfo = (ScopeInfo) requestCtxObject;
+
+      if (requestContext.getProperty("scopeInfo") == null || getAccountIdentifierFrom(requestContext).isEmpty()
+          || getAccountIdentifierFrom(requestContext).get().isEmpty()) {
+        return;
       }
-      String accountIdentifier = accountIdentifierOptional.get();
-      Optional<ScopeInfo> optionalScopeInfo = NGRestUtils.getResponse(scopeInfoClient.getScopeInfo(accountIdentifier,
-          getOrgIdentifierFrom(requestContext).isPresent() ? getOrgIdentifierFrom(requestContext).get() : null,
-          getProjectIdentifierFrom(requestContext).isPresent() ? getProjectIdentifierFrom(requestContext).get() : null));
-      scopeInfo.setAccountIdentifier(getAccountIdentifierFrom(requestContext).get());
-      scopeInfo.setOrgIdentifier(
-          getOrgIdentifierFrom(requestContext).isPresent() ? getOrgIdentifierFrom(requestContext).get() : null);
-      scopeInfo.setProjectIdentifier(
-          getProjectIdentifierFrom(requestContext).isPresent() ? getProjectIdentifierFrom(requestContext).get() : null);
-      scopeInfo.setScopeType(optionalScopeInfo.get().getScopeType());
-      scopeInfo.setUniqueId(optionalScopeInfo.get().getUniqueId());
+      if (scopeInfo.getUniqueId() != null && scopeInfo.getScopeType() != null) {
+        requestContext.setProperty("scopeInfo", scopeInfo);
+        return;
+      }
+      if (isInternalRequest(resourceInfo)) {
+        super.filter(requestContext);
+      } else {
+        Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(requestContext);
+        if (accountIdentifierOptional.isEmpty()) {
+          throw new InvalidRequestException("Account detail is not present in the request");
+        }
+        String accountIdentifier = accountIdentifierOptional.get();
+        String orgIdentifier = getOrgIdentifierFrom(requestContext).isPresent() ? getOrgIdentifierFrom(requestContext).get() : null;
+        String projectIdentifier = getProjectIdentifierFrom(requestContext).isPresent() ? getProjectIdentifierFrom(requestContext).get() : null;
+        Optional<ScopeInfo> optionalScopeInfo = NGRestUtils.getResponse(scopeInfoClient.getScopeInfo(accountIdentifier,
+            orgIdentifier,
+            projectIdentifier));
+        scopeInfo.setAccountIdentifier(accountIdentifier);
+        scopeInfo.setOrgIdentifier(orgIdentifier);
+        scopeInfo.setProjectIdentifier(projectIdentifier);
+        scopeInfo.setScopeType(optionalScopeInfo.get().getScopeType());
+        scopeInfo.setUniqueId(optionalScopeInfo.get().getUniqueId());
+        scopeInfo.setScopeType(ScopeLevel.ACCOUNT);
+        requestContext.setProperty("scopeInfo", scopeInfo);
+      }
     }
   }
 

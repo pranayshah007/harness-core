@@ -11,8 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
+import com.google.inject.Provider;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
@@ -46,10 +49,12 @@ import lombok.extern.slf4j.Slf4j;
 public class HealthResource {
   private final HealthService healthService;
   private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
+  private final Provider<ScopeInfo> scopeInfoProvider;
 
   @Inject
-  public HealthResource(HealthService healthService) {
+  public HealthResource(HealthService healthService, Provider<ScopeInfo> scopeInfoProvider) {
     this.healthService = healthService;
+    this.scopeInfoProvider = scopeInfoProvider;
     this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
@@ -58,6 +63,7 @@ public class HealthResource {
   @ExceptionMetered
   @Operation(hidden = true)
   public ResponseDTO<String> doReadinessCheck() throws Exception {
+    ScopeLevel scopeType = scopeInfoProvider.get().getScopeType();
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
       throw NoResultFoundException.newBuilder()
@@ -80,6 +86,7 @@ public class HealthResource {
   @ExceptionMetered
   @Operation(hidden = true)
   public RestResponse<String> doLivenessCheck() {
+    ScopeLevel scopeType = scopeInfoProvider.get().getScopeType();
     HealthCheck.Result check = threadDeadlockHealthCheck.execute();
     if (check.isHealthy()) {
       return new RestResponse<>("live");

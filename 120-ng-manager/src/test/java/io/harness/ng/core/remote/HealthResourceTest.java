@@ -14,7 +14,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import com.google.inject.Provider;
 import io.harness.CategoryTest;
+import io.harness.beans.ScopeInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
@@ -35,12 +37,14 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class HealthResourceTest extends CategoryTest {
   private HealthResource healthResource;
   private HealthService healthService;
+  private Provider<ScopeInfo> scopeInfoProvider;
   private MockedStatic<MaintenanceController> aStatic;
 
   @Before
   public void setup() {
     healthService = mock(HealthService.class);
-    healthResource = new HealthResource(healthService);
+    scopeInfoProvider = mock(Provider.class);
+    healthResource = new HealthResource(healthService, scopeInfoProvider);
     aStatic = mockStatic(MaintenanceController.class);
   }
 

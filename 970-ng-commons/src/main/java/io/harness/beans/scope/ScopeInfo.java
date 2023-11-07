@@ -27,7 +27,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@RequestScoped
+//@RequestScoped
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScopeInfo {

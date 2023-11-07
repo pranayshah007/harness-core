@@ -41,6 +41,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeInfoFactory;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
@@ -311,6 +312,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
@@ -473,7 +475,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
-    registerScopeInfoFilter(appConfig, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -497,6 +498,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
     registerManagedBeans(environment, injector, appConfig);
+    environment.jersey().getResourceConfig().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class).to(ScopeInfoFactory.class);
+      }
+    });
+    registerScopeInfoFilter(appConfig, environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
@@ -993,7 +1001,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         IDENTITY_SERVICE.getServiceId(), configuration.getNextGenConfig().getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNextGenConfig().getNgManagerServiceSecret());
 
-    environment.jersey().register(new ScopeInfoFilter(predicate, null, serviceToSecretMapping, injector.getInstance(Key.get(ScopeInfo.class)), injector.getInstance(Key.get(ScopeInfoClient.class, Names.named("PRIVILEGED")))));
+    environment.jersey().register(new ScopeInfoFilter(predicate, null, serviceToSecretMapping, injector.getInstance(Key.get(ScopeInfoClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {

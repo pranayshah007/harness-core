@@ -22,6 +22,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPage;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import com.google.inject.Provider;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -33,6 +34,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -76,6 +78,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+//import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -97,13 +100,14 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import retrofit2.http.Body;
+//import javax.inject.Provider;
 
 @OwnedBy(PL)
 @Api("user-groups")
 @Path("user-groups")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject}))
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -127,7 +131,7 @@ import retrofit2.http.Body;
 public class UserGroupResource {
   private final UserGroupService userGroupService;
   private final AccessControlClient accessControlClient;
-  private final ScopeInfo scopeInfo;
+  private final Provider<ScopeInfo> scopeInfoProvider;
 
   @POST
   @ApiOperation(value = "Create a User Group", nickname = "postUserGroup")
@@ -283,7 +287,7 @@ public class UserGroupResource {
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @BeanParam PageRequest pageRequest) {
 
-    this.scopeInfo.getScopeType();
+    ScopeLevel scopeTypeLocal = this.scopeInfoProvider.get().getScopeType();
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));

@@ -108,6 +108,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -157,7 +158,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public UserGroup create(UserGroupDTO userGroupDTO) {
+  public UserGroup create(@Valid UserGroupDTO userGroupDTO) {
     if (userGroupDTO.isHarnessManaged() || defaultUserGroups.contains(userGroupDTO.getIdentifier())) {
       throw new InvalidRequestException("Cannot create a harness managed user group");
     }
