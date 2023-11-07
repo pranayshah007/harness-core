@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ const (
 	harnessDownload    = "harness-download"
 	storage            = "/storage/"
 	authTokenheader    = "Authorization"
+	vanity             = "-vanity"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -238,15 +240,50 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				return
 			}
 			if cfg.Platform.VanityURLEnabled {
-				vanityURL, err := ngClient.GetVanityURL(ctx, accountID, r.Header.Get(authTokenheader))
-				if err != nil || vanityURL == "" {
+				//Get vanity URL from cache if it exists else calculate
+				vanityURL, err := getVanityURLCacheKey(ctx, accountID, prefix, c, cfg, r)
+				if err != nil {
 					logger.FromRequest(r).
 						WithError(err).
-						WithField(usePrefixParam, prefix).
-						Warnln("api: cannot fetch the vanity url")
-				} else {
-					link = replaceVanityURL(vanityURL, link, prefix, r)
-					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Successfully replaced with vanity url")
+						WithField("prefix", prefix).
+						Errorln("api: cannot fetch vanityURL from cache")
+				}
+				if vanityURL == "" {
+					logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity URL does not exists in cache fetching from platform")
+					vanityURL, err = ngClient.GetVanityURL(ctx, accountID, r.Header.Get(authTokenheader))
+					if err != nil || vanityURL == "" {
+						logger.FromRequest(r).
+							WithError(err).
+							WithField(usePrefixParam, prefix).
+							Warnln("api: cannot fetch the vanity url")
+					} else {
+						err = c.Create(ctx, accountID+vanity, vanityURL, cfg.Platform.VanityURLTTL)
+						if err != nil {
+							logger.FromRequest(r).
+								WithError(err).
+								WithField("vanity_url", vanityURL).
+								WithField("prefix", prefix).
+								Warnln("api: cannot create cache for vanity URL")
+						} else {
+							logger.FromRequest(r).
+								WithError(err).
+								WithField("vanity_url", vanityURL).
+								WithField("prefix", prefix).
+								Infoln("api: created cache for vanity URL")
+						}
+					}
+				}
+				if vanityURL != "" {
+					link, err = replaceVanityURL(vanityURL, link, prefix)
+					if err != nil {
+						logger.FromRequest(r).
+							WithError(err).
+							WithField("vanity_url", vanityURL).
+							WithField("prefix", prefix).
+							Warnln("api: cannot replace with vanity URL")
+					} else {
+						logger.FromRequest(r).WithField("prefix", prefix).Infoln("successfully replaced with vanity url")
+					}
 				}
 			}
 		}
@@ -361,15 +398,26 @@ func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.
 	return link, nil
 }
 
-func replaceVanityURL(vanityURL, link, prefix string, r *http.Request) string {
-	lstring := strings.Split(link, storage)
+func replaceVanityURL(vanityURL, link, prefix string) (string, error) {
+	lstring := strings.SplitN(link, storage, 2)
 
 	if len(lstring) >= 1 {
 		link = vanityURL + storage + lstring[1]
-	} else {
-		logger.FromRequest(r).
-			WithField(usePrefixParam, prefix).
-			Warnln("api: cannot split the download url")
+		return link, nil
 	}
-	return link
+	return link, fmt.Errorf("Error Splitting Vanity URL %s", link)
+}
+
+func getVanityURLCacheKey(ctx context.Context, accountID, prefix string, c cache.Cache, cfg config.Config, r *http.Request) (string, error) {
+	exists := c.Exists(ctx, accountID+vanity)
+	if exists {
+		logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity url exists in cache")
+		vanityURLBytes, err := c.Get(ctx, accountID+vanity)
+		if err != nil {
+			return "", err
+		} else {
+			return string(vanityURLBytes), nil
+		}
+	}
+	return "", fmt.Errorf("Vanity URL does not exist in cache")
 }
