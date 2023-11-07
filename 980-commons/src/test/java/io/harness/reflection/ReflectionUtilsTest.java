@@ -47,9 +47,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class ReflectionUtilsTest extends CategoryTest {
-  private static class FieldBase {
-    public String baseField;
-  }
+  private static class FieldBase { public String baseField; }
 
   @Builder
   private static class Field extends FieldBase {
