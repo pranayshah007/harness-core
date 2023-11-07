@@ -297,6 +297,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
         }
      */
 
+    // TODO Currently, we don’t show the existing helm parameters in the pipeline. So if the user has to add some
+    // parameters via the pipeline, they have to do some extra work to check if the parameter already exists in the app
+    // or in git and then add it in the pipeline. This should be enhanced to show existing params in the step. this
+    // logic to be removed after the UI ticket https://harness.atlassian.net/browse/CDS-83714
     if (pmsHelmValues.getParameters() != null && pmsHelmValues.getParameters().getValue() != null) {
       List<HelmSourceParameters> finalHelmSourceParameters =
           populateHelmParameters(helmSource, pmsHelmValues.getParameters().getValue());
