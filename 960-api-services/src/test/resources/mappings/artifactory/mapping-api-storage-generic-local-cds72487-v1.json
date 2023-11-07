@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/artifactory/api/storage/generic-local/CDS-72487/v1"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/artifactory/body-storage-generic-local-cds72487-v1.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
