@@ -133,7 +133,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.extraVolumes }}
       volumes:
+        - name: service-account
+          secret:
+            secretName: service-accounts-ssca-manager
+            items:
+              - key: redis-labs-ca-truststore
+                path: redis_labs_ca_truststore
+      {{- if .Values.extraVolumes }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.extraVolumes "context" $ ) | nindent 8 }}
       {{- end }}

@@ -215,3 +215,5 @@ s3SecretAccessKey:
   key: root-password
 
 java17flags: ""
+
+redislabsCATruststore: "test"
