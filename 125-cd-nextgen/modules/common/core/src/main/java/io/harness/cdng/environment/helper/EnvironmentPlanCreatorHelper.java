@@ -226,6 +226,8 @@ public class EnvironmentPlanCreatorHelper {
     List<InfrastructureEntity> infrastructureEntityList;
     Map<String, Map<String, Object>> refToInputMap = new HashMap<>();
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
+    ParameterFieldHelper.validateCollectionParameterFieldValue(
+        "infrastructure definitions list", environmentV2.getInfrastructureDefinitions());
     if (!environmentV2.getDeployToAll().getValue()) {
       List<String> infraIdentifierList = new ArrayList<>();
 

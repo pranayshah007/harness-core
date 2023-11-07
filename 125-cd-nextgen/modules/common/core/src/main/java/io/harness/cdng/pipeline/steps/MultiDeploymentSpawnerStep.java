@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.pipeline.steps;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
@@ -39,6 +40,7 @@ import io.harness.cdng.service.NGServiceEntityHelper;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -395,6 +397,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (servicesYaml.getValues().isExpression()) {
       throw new InvalidYamlException("Expression could not be resolved for services yaml");
     }
+    ParameterFieldHelper.validateListParameterFieldValue("services list", servicesYaml.getValues());
     List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
     if (services.isEmpty()) {
       throw new InvalidYamlException("No value of services provided. Please provide at least one value");
@@ -535,6 +538,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       throw new InvalidYamlException(String.format("Expression (%s) could not be resolved for environments yaml",
           environmentsYaml.getValues().getExpressionValue()));
     }
+    ParameterFieldHelper.validateListParameterFieldValue("environments list", environmentsYaml.getValues());
     List<EnvironmentYamlV2> environments = environmentsYaml.getValues().getValue();
     return getEnvironmentsMap(environments, null);
   }
@@ -545,6 +549,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
           String.format("Expected a value of environmentRefs to be provided but found expression (%s)",
               environmentGroupYaml.getEnvironments().getExpressionValue()));
     }
+    ParameterFieldHelper.validateCollectionParameterFieldValue(
+        "environments list", environmentGroupYaml.getEnvironments());
     List<EnvironmentYamlV2> environments = environmentGroupYaml.getEnvironments().getValue();
     if (EmptyPredicate.isEmpty(environments)) {
       throw new InvalidYamlException("Expected a value of environmentRefs to be provided but found empty");
@@ -600,6 +606,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (servicesYaml.getValues().isExpression()) {
       throw new InvalidYamlException("Expression could not be resolved for services yaml");
     }
+    ParameterFieldHelper.validateListParameterFieldValue("services list", servicesYaml.getValues());
     List<ServiceYamlV2> services = servicesYaml.getValues().getValue();
     if (services.isEmpty()) {
       throw new InvalidYamlException("No value of services provided. Please provide at least one value");

@@ -51,6 +51,7 @@ import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -571,7 +572,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   private NGServiceOverrideConfig mergeSvcOverrideInputs(
       String originalOverridesYaml, ParameterField<Map<String, Object>> serviceOverrideInputs) {
     NGServiceOverrideConfig serviceOverrideConfig = NGServiceOverrideConfig.builder().build();
-
+    ParameterFieldHelper.validateMapParameterFieldValue("service override inputs", serviceOverrideInputs);
     if (ParameterField.isNull(serviceOverrideInputs) || isEmpty(serviceOverrideInputs.getValue())) {
       return ServiceOverridesMapper.toNGServiceOverrideConfig(originalOverridesYaml);
     }
@@ -725,6 +726,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final ServiceEntity serviceEntity = serviceOpt.get();
 
     String mergedServiceYaml;
+    ParameterFieldHelper.validateMapParameterFieldValue("service inputs", stepParameters.getInputs());
     if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
       mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
     } else {

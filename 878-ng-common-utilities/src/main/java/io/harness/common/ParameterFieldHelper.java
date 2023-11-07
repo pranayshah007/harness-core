@@ -22,6 +22,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.base.Splitter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -238,97 +239,30 @@ public class ParameterFieldHelper {
         format("Unsupported value validation for parameter field, parameter field class: %s", value.getClass()));
   }
 
-  public void validateIntegerParameterFieldValue(ParameterField<?> fieldValue) {
+  public void validateMapParameterFieldValue(String field, ParameterField<?> fieldValue) {
     Object value = getParameterFieldValue(fieldValue);
     if (value == null) {
       return;
+    }
+
+    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected Map value, but got an integer value %s", field, value));
     }
 
     if (value instanceof String) {
-      throw new IllegalArgumentException(format("Expected integer value, but got a string value %s", value));
-    }
-
-    if (value instanceof Map) {
-      throw new IllegalArgumentException(format("Expected integer value, but got a Map value %s", value));
-    }
-
-    if (value instanceof List) {
-      throw new IllegalArgumentException(format("Expected integer value, but got a List value %s", value));
-    }
-  }
-
-  public void validateStringParameterFieldValue(String field, ParameterField<?> fieldValue) {
-    Object value = getParameterFieldValue(fieldValue);
-    if (value == null) {
-      return;
-    }
-
-    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
       throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got an integer value %s", field, value));
-    }
-
-    if (value instanceof Map) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a Map value %s", field, value));
+          format("Invalid value provided for %s. Expected Map value, but got a string value %s", field, value));
     }
 
     if (value instanceof List) {
       throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a List value %s", field, value));
+          format("Invalid value provided for %s. Expected Map value, but got a List value %s", field, value));
     }
 
-    if (!(value instanceof String)) {
+    if (!(value instanceof Map)) {
       throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a value %s", field, value));
-    }
-  }
-
-  public String getStringParameterFieldValue(String field, ParameterField<?> fieldValue) {
-    Object value = getParameterFieldValue(fieldValue);
-    if (value == null) {
-      return null;
-    }
-
-    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got an integer value %s", field, value));
-    }
-
-    if (value instanceof Map) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a Map value %s", field, value));
-    }
-
-    if (value instanceof List) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a List value %s", field, value));
-    }
-
-    if (!(value instanceof String)) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. Expected string value, but got a value %s", field, value));
-    }
-
-    return (String) value;
-  }
-
-  public void validateMapParameterFieldValue(String a, ParameterField<?> fieldValue) {
-    Object value = getParameterFieldValue(fieldValue);
-    if (value == null) {
-      return;
-    }
-
-    if (value instanceof Integer || value instanceof Double || value instanceof Long) {
-      throw new IllegalArgumentException(format("Expected Map value, but got an integer value %s", value));
-    }
-
-    if (value instanceof String) {
-      throw new IllegalArgumentException(format("Expected Map value, but got a string value %s", value));
-    }
-
-    if (value instanceof List) {
-      throw new IllegalArgumentException(format("Expected Map value, but got a List value %s", value));
+          format("Invalid value provided for %s. Expected Map value, but got a value %s", field, value));
     }
   }
 
@@ -352,32 +286,32 @@ public class ParameterFieldHelper {
       throw new IllegalArgumentException(
           format("Invalid value provided for %s. Expected List value, but got a Map value %s", field, value));
     }
+
+    if (!(value instanceof List)) {
+      throw new IllegalArgumentException(
+          format("Invalid value provided for %s. Expected List value, but got a value %s", field, value));
+    }
   }
 
-  public void validateNotGeneralTypeParameterFieldValue(String field, ParameterField<?> fieldValue) {
+  public void validateCollectionParameterFieldValue(String field, ParameterField<?> fieldValue) {
     Object value = getParameterFieldValue(fieldValue);
     if (value == null) {
       return;
     }
 
     if (value instanceof Integer || value instanceof Double || value instanceof Long) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. An integer value %s was not expected", field, value));
+      throw new IllegalArgumentException(format(
+          "Invalid value provided for %s. Expected Collection value, but got an integer value %s", field, value));
     }
 
     if (value instanceof String) {
       throw new IllegalArgumentException(
-          format("Invalid value provided for %s. A string value %s was not expected", field, value));
+          format("Invalid value provided for %s. Expected Collection value, but got a string value %s", field, value));
     }
 
-    if (value instanceof Map) {
+    if (!(value instanceof Collection)) {
       throw new IllegalArgumentException(
-          format("Invalid value provided for %s. A Map value %s was not expected", field, value));
-    }
-
-    if (value instanceof List) {
-      throw new IllegalArgumentException(
-          format("Invalid value provided for %s. A List value %s was not expected", field, value));
+          format("Invalid value provided for %s. Expected Collection value, but got a value %s", field, value));
     }
   }
 }

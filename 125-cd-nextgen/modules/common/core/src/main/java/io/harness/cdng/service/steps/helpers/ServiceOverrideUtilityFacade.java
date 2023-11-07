@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -129,6 +130,8 @@ public class ServiceOverrideUtilityFacade {
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
           getMergedOverridesAcrossScope(allTypesOverridesV2);
 
+      ParameterFieldHelper.validateMapParameterFieldValue(
+          "service override inputs", parameters.getServiceOverrideInputs());
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
           && !ParameterField.isNull(parameters.getServiceOverrideInputs())
           && isNotEmpty(parameters.getServiceOverrideInputs().getValue())) {
@@ -138,6 +141,7 @@ public class ServiceOverrideUtilityFacade {
         acrossScopeMergedOverrides.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, envServiceOverrideWithMergedInputs);
       }
 
+      ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", parameters.getEnvInputs());
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
           && !ParameterField.isNull(parameters.getEnvInputs()) && isNotEmpty(parameters.getEnvInputs().getValue())) {
         NGServiceOverrideConfigV2 envGlobalOverrideWithMergedInputs =
@@ -156,6 +160,8 @@ public class ServiceOverrideUtilityFacade {
           NGServiceOverrideConfigV2 overrideConfig = getOverrideConfigForNoInputsV1(ngServiceOverridesEntity.get());
           overridesMap.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, overrideConfig);
         } else {
+          ParameterFieldHelper.validateMapParameterFieldValue(
+              "service override inputs", parameters.getServiceOverrideInputs());
           NGServiceOverrideConfigV2 mergedInputsOverrideConfig =
               mergeOverrideV1Inputs(ngServiceOverridesEntity.get(), parameters.getServiceOverrideInputs().getValue());
           overridesMap.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, mergedInputsOverrideConfig);
@@ -170,6 +176,7 @@ public class ServiceOverrideUtilityFacade {
         NGServiceOverrideConfigV2 envGlobalOverride = getOverrideConfigForNoInputsV1(envEntity);
         overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverride);
       } else {
+        ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", parameters.getEnvInputs());
         NGServiceOverrideConfigV2 mergedInputsEnvGlobalOverride =
             getOverrideConfigV2FromEnvYaml(envEntity, parameters.getEnvInputs().getValue());
         overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, mergedInputsEnvGlobalOverride);
@@ -199,6 +206,7 @@ public class ServiceOverrideUtilityFacade {
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
           getMergedOverridesAcrossScope(allTypesOverridesV2);
 
+      ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", parameters.getEnvInputs());
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
           && !ParameterField.isNull(parameters.getEnvInputs()) && isNotEmpty(parameters.getEnvInputs().getValue())) {
         NGServiceOverrideConfigV2 envGlobalOverrideWithMergedInputs =
@@ -216,6 +224,7 @@ public class ServiceOverrideUtilityFacade {
         NGServiceOverrideConfigV2 envGlobalOverride = getOverrideConfigForNoInputsV1(envEntity);
         overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverride);
       } else {
+        ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", parameters.getEnvInputs());
         NGServiceOverrideConfigV2 mergedInputsEnvGlobalOverride =
             getOverrideConfigV2FromEnvYaml(envEntity, parameters.getEnvInputs().getValue());
         overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, mergedInputsEnvGlobalOverride);

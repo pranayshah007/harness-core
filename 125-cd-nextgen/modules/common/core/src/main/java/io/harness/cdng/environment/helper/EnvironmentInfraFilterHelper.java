@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.environment.helper;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -30,6 +31,7 @@ import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -187,6 +189,7 @@ public class EnvironmentInfraFilterHelper {
 
   public static List<EnvironmentYamlV2> getEnvYamlV2WithFilters(
       ParameterField<List<EnvironmentYamlV2>> environmentYamlV2s) {
+    ParameterFieldHelper.validateListParameterFieldValue("environment yamls list", environmentYamlV2s);
     return environmentYamlV2s.getValue()
         .stream()
         .filter(eg -> ParameterField.isNotNull(eg.getFilters()))
@@ -202,6 +205,7 @@ public class EnvironmentInfraFilterHelper {
       return true;
     }
     ParameterField<List<EnvironmentYamlV2>> environmentsValues = environments.getValues();
+    ParameterFieldHelper.validateListParameterFieldValue("environments list", environmentsValues);
     return ParameterField.isNotNull(environmentsValues)
         && isServiceTagsExpressionPresent(environmentsValues.getValue());
   }
@@ -216,6 +220,7 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private boolean isServiceTagsExpressionPresent(ParameterField<List<FilterYaml>> filters) {
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", filters);
     if (ParameterField.isNull(filters) || isEmpty(filters.getValue())) {
       return false;
     }
@@ -239,6 +244,7 @@ public class EnvironmentInfraFilterHelper {
       return true;
     }
     ParameterField<List<EnvironmentYamlV2>> environments = environmentGroup.getEnvironments();
+    ParameterFieldHelper.validateListParameterFieldValue("environments list", environments);
     return ParameterField.isNotNull(environments) && isServiceTagsExpressionPresent(environments.getValue());
   }
 
@@ -285,7 +291,8 @@ public class EnvironmentInfraFilterHelper {
       ServiceDefinitionType deploymentType) {
     List<EnvironmentYamlV2> finalyamlV2List;
     Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new LinkedHashSet<>();
-
+    ParameterFieldHelper.validateCollectionParameterFieldValue("environments list", envYamls);
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", filters);
     if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
       // Move filters to the values if both are provided
       if (ParameterField.isNotNull(envYamls) && isNotEmpty(envYamls.getValue())) {
@@ -323,6 +330,8 @@ public class EnvironmentInfraFilterHelper {
     List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
     if (isNotEmpty(envsFromYaml)) {
       for (EnvironmentYamlV2 e : envsFromYaml) {
+        ParameterFieldHelper.validateCollectionParameterFieldValue(
+            "infrastructure definitions list", e.getInfrastructureDefinitions());
         List<EnvironmentYamlV2> list = mergedFilteredEnvs.stream()
                                            .filter(in -> in.getEnvironmentRef().equals(e.getEnvironmentRef()))
                                            .collect(Collectors.toList());
@@ -411,6 +420,7 @@ public class EnvironmentInfraFilterHelper {
     if (isEmpty(serviceTags)) {
       return;
     }
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", filters);
     if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
       for (FilterYaml filterYaml : filters.getValue()) {
         if (filterYaml.getType().equals(FilterType.tags)) {
@@ -469,6 +479,7 @@ public class EnvironmentInfraFilterHelper {
   private void updateEnvironmentsWithEnvGroupScope(
       @javax.validation.constraints.NotNull ParameterField<String> envGroupRef,
       ParameterField<List<EnvironmentYamlV2>> environments) {
+    ParameterFieldHelper.validateCollectionParameterFieldValue("environments list", environments);
     if (ParameterField.isNull(environments) || isEmpty(environments.getValue())) {
       return;
     }
@@ -484,6 +495,7 @@ public class EnvironmentInfraFilterHelper {
   @NotNull
   private List<EnvClusterRefs> processClusterFiltersInEnvs(List<NGTag> serviceTags, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, ParameterField<List<EnvironmentYamlV2>> envYamls) {
+    ParameterFieldHelper.validateCollectionParameterFieldValue("environments list", envYamls);
     List<String> envRefs = envYamls.getValue()
                                .stream()
                                .map(environmentYamlV2 -> environmentYamlV2.getEnvironmentRef().getValue())
@@ -501,6 +513,7 @@ public class EnvironmentInfraFilterHelper {
 
     List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
     for (EnvironmentYamlV2 environmentYamlV2 : envYamls.getValue()) {
+      ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", environmentYamlV2.getFilters());
       if (ParameterField.isNotNull(environmentYamlV2.getFilters())
           && isNotEmpty(environmentYamlV2.getFilters().getValue())) {
         // This code can be optimized in future by batching for all envs with filters
@@ -541,6 +554,7 @@ public class EnvironmentInfraFilterHelper {
 
   private List<EnvClusterRefs> processClusterFiltersInEnv(EnvironmentYamlV2 envYamlV2, List<NGTag> serviceTags,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Environment environment) {
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", envYamlV2.getFilters());
     List<FilterYaml> filterYamls = envYamlV2.getFilters().getValue();
     resolveServiceTags(envYamlV2.getFilters(), serviceTags);
 
@@ -582,6 +596,7 @@ public class EnvironmentInfraFilterHelper {
   private List<EnvClusterRefs> processFiltersOnAllEnvs(List<NGTag> serviceTags, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<Environment> allEnvs,
       ParameterField<List<FilterYaml>> filters) {
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", filters);
     List<FilterYaml> filterYamls = filters.getValue();
 
     resolveServiceTags(filters, serviceTags);
@@ -633,7 +648,7 @@ public class EnvironmentInfraFilterHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     List<Environment> allPossibleEnvs =
         new ArrayList<>(getAllEnvironmentsFromAllScopes(accountIdentifier, orgIdentifier, projectIdentifier));
-
+    ParameterFieldHelper.validateCollectionParameterFieldValue("filters list", environmentsYaml.getFilters());
     if (ParameterField.isNotNull(environmentsYaml.getFilters())
         && isNotEmpty(environmentsYaml.getFilters().getValue())) {
       return processFiltersOnAllEnvs(serviceTags, accountIdentifier, orgIdentifier, projectIdentifier, allPossibleEnvs,

@@ -23,6 +23,7 @@ import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig.Environmen
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -63,6 +64,7 @@ public class EnvironmentsPlanCreatorHelper {
     final String orgIdentifier = ctx.getOrgIdentifier();
     final String projectIdentifier = ctx.getProjectIdentifier();
 
+    ParameterFieldHelper.validateListParameterFieldValue("environments list", environmentsYaml.getValues());
     List<EnvironmentYamlV2> environmentYamlV2s = CollectionUtils.emptyIfNull(environmentsYaml.getValues().getValue());
 
     List<String> envRefs =

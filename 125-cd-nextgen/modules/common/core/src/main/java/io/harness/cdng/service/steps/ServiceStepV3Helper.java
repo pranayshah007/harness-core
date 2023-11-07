@@ -37,6 +37,7 @@ import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FreezeEntityType;
@@ -259,6 +260,7 @@ public class ServiceStepV3Helper {
 
   public NGEnvironmentConfig mergeEnvironmentInputs(String accountId, String identifier, String yaml,
       ParameterField<Map<String, Object>> environmentInputs) throws IOException {
+    ParameterFieldHelper.validateMapParameterFieldValue("environment inputs", environmentInputs);
     if (ParameterField.isNull(environmentInputs) || isEmpty(environmentInputs.getValue())) {
       return getNgEnvironmentConfig(accountId, identifier, yaml);
     }

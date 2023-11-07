@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -45,6 +46,7 @@ public class NGServiceEntityHelper {
     List<String> serviceRefs = new ArrayList<>();
     if (services != null && ParameterField.isNotNull(services.getValues())
         && isNotEmpty(services.getValues().getValue())) {
+      ParameterFieldHelper.validateListParameterFieldValue("service yamls list", services.getValues());
       List<ServiceYamlV2> serviceYamlV2List = services.getValues().getValue();
       serviceRefs = serviceYamlV2List.stream().map(s -> s.getServiceRef().getValue()).collect(Collectors.toList());
     }

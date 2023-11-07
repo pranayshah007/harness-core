@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.environment.helper;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -22,6 +23,7 @@ import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.entity.Cluster;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -88,6 +90,7 @@ public class EnvironmentInfraFilterUtils {
       return new StringBuilder();
     }
     List<String> tagList = new ArrayList<>();
+    ParameterFieldHelper.validateMapParameterFieldValue("filter tags map", tagsFilter.getTags());
     for (Map.Entry<String, String> tag : tagsFilter.getTags().getValue().entrySet()) {
       StringBuilder tagString = new StringBuilder();
       tagString.append(tag.getKey());
