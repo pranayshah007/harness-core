@@ -68,7 +68,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @Singleton
 public class CiPluginStepInfoProvider implements PluginInfoProvider {
-  private static final int CACHE_EVICTION_TIME_MINUTES = 1;
+  private static final int CACHE_EVICTION_TIME_MINUTES = 5;
   private final LoadingCache<AmbianceSummary, List<SecretVariable>> sscaServiceEnvMap =
       CacheBuilder.newBuilder()
           .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
@@ -163,7 +163,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
                                        .accountId(AmbianceUtils.getAccountId(ambiance))
                                        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
                                        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
-                                       .pipelineExecutionId(AmbianceUtils.getPipelineExecutionIdentifier(ambiance))
                                        .build());
     } catch (Exception e) {
       log.error("Unable to get ssca service endpoint and secret", e);
@@ -203,6 +202,5 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     String accountId;
     String orgIdentifier;
     String projectIdentifier;
-    String pipelineExecutionId;
   }
 }
