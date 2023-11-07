@@ -268,35 +268,11 @@ redis:
 timescaledb:
   harness:
     enabled: false
-    database: "harness"
     # -- TimescaleDB host names
     hosts: []
     # -- Enable TimescaleDB SSL
     sslEnabled: false
     # -- TimescaleDB secrets
-    envConfig:
-      username:
-        envName: "TIMESCALEDB_USERNAME"
-      password:
-        envName: "TIMESCALEDB_PASSWORD"
-      host:
-        envName: ""
-      port:
-        envName: ""
-        value: ""
-      enableSSL:
-        envName: ""
-      sslMode:
-        envName: "TIMESCALEDB_SSL_MODE"
-        enabledValue: "require"
-      cert:
-        envName: "TIMESCALEDB_SSL_ROOT_CERT"
-      certPath:
-        envName: "TIMESCALEDB_SSL_CERT_PATH"
-        value: ""
-      connectionURI:
-        envName: ""
-        includeSSLModeArg: true
     secrets:
       kubernetesSecrets:
         - secretName: ""
@@ -320,19 +296,11 @@ timescaledb:
                 name: ""
                 property: ""
 mongo:
-  dms:
+  dmsharness:
     enabled: false
-    database: "dms-harness"
     protocol: ""
     hosts: []
     extraArgs: ""
-    envConfig:
-      username:
-        envName: "DMS_MONGO_USER"
-      password:
-        envName: "DMS_MONGO_PASSWORD"
-      connectionURI:
-        envName: "DMS_MONGO_URI"
     secrets:
       kubernetesSecrets:
         - secretName: ""
@@ -351,19 +319,11 @@ mongo:
               MONGO_PASSWORD:
                 name: ""
                 property: ""
-  notification:
+  notifications:
     enabled: false
-    database: "notifications"
     protocol: ""
     hosts: []
     extraArgs: ""
-    envConfig:
-      username:
-        envName: "NOTIFICATION_MONGO_USER"
-      password:
-        envName: "NOTIFICATION_MONGO_PASSWORD"
-      connectionURI:
-        envName: "NOTIFICATION_MONGO_URI"
     secrets:
       kubernetesSecrets:
         - secretName: ""
@@ -388,13 +348,6 @@ mongo:
     protocol: ""
     hosts: []
     extraArgs: ""
-    envConfig:
-      username:
-        envName: "MONGO_USER"
-      password:
-        envName: "MONGO_PASSWORD"
-      connectionURI:
-        envName: "MONGO_URI"
     secrets:
       kubernetesSecrets:
         - secretName: ""
