@@ -11,11 +11,26 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.execution.StageExecutionBasicSummaryProjection;
 import io.harness.cdng.execution.StageExecutionInfo;
 
+import java.util.List;
+import java.util.Set;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(CDP)
 public interface StageExecutionInfoRepository
-    extends PagingAndSortingRepository<StageExecutionInfo, String>, StageExecutionInfoRepositoryCustom {}
+    extends PagingAndSortingRepository<StageExecutionInfo, String>, StageExecutionInfoRepositoryCustom {
+  /**
+   * Finds all StageExecutionInfo for given scope and stage identifiers
+   * Uses - unique_stage_execution_info_using_stage_execution_id_idx idx
+   * @param accountIdentifier accountIdentifier
+   * @param orgIdentifier orgIdentifier
+   * @param projectIdentifier projectIdentifier
+   * @param stageExecutionIds set of stage execution identifiers to filter with
+   */
+  List<StageExecutionBasicSummaryProjection>
+  findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> stageExecutionIds);
+}

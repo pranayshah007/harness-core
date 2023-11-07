@@ -8,6 +8,11 @@
 package io.harness.cdng.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.ENVIRONMENT;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.INFRA_DEFINITION;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.NOT_AVAILABLE;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.ROW_FORMAT;
+import static io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo.SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -22,6 +27,7 @@ import io.harness.cdng.execution.ExecutionInfoUtility;
 import io.harness.cdng.execution.ExecutionSummaryDetails;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails.ServiceExecutionSummaryDetailsBuilder;
+import io.harness.cdng.execution.StageExecutionBasicSummaryProjection;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -37,22 +43,27 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.repositories.executions.StageExecutionInfoRepository;
 import io.harness.utils.StageStatus;
 
+import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
@@ -227,6 +238,68 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
   @Override
   public void delete(String id) {
     stageExecutionInfoRepository.deleteById(id);
+  }
+
+  @Override
+  public Map<String, String> listStageExecutionFormattedSummaryByStageExecutionIdentifiers(@Valid @NotNull Scope scope,
+      @NotNull List<String> stageExecutionIdentifiers, @NotNull String rowDelimiter,
+      @NotNull String keyValueDelimiter) {
+    if (isEmpty(stageExecutionIdentifiers)) {
+      log.warn("Empty stage identifiers provided");
+      throw new InvalidRequestException("Stage execution identifiers are required");
+    }
+
+    if (io.harness.encryption.Scope.PROJECT
+        != io.harness.encryption.Scope.of(
+            scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier())) {
+      log.warn("scope provided is invalid, PROJECT scope expected : {}", scope);
+      throw new InvalidRequestException("Invalid scope provided, project scope expected");
+    }
+
+    List<StageExecutionBasicSummaryProjection> stageExecutionInfoList =
+        stageExecutionInfoRepository
+            .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+                scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+                new HashSet<>(stageExecutionIdentifiers));
+    Map<String, String> stageExecutionInfoMap = new HashMap<>();
+    if (isEmpty(stageExecutionInfoList)) {
+      log.warn("stageExecutionInfo not found for given accountId: {}, ordId: {}, projectId: {}, stageExecutionIds: {}",
+          scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+          stageExecutionIdentifiers);
+      return stageExecutionInfoMap;
+    }
+    return stageExecutionInfoList.stream().collect(
+        Collectors.toMap(StageExecutionBasicSummaryProjection::getStageExecutionId,
+            stageExecutionBasicSummaryProjection
+            -> getFormattedStageSummary(stageExecutionBasicSummaryProjection, rowDelimiter, keyValueDelimiter)));
+  }
+
+  protected String getFormattedStageSummary(
+      @NotNull StageExecutionBasicSummaryProjection stageExecutionBasicSummaryProjection, @NotNull String rowDelimiter,
+      @NotNull String keyValueDelimiter) {
+    List<String> summaryRows = new ArrayList<>();
+    String environment = stageExecutionBasicSummaryProjection.getEnvIdentifier();
+    String service = stageExecutionBasicSummaryProjection.getServiceIdentifier();
+    String infra = stageExecutionBasicSummaryProjection.getInfraIdentifier();
+
+    if (StringUtils.isNotBlank(service)) {
+      summaryRows.add(String.format(ROW_FORMAT, SERVICE, keyValueDelimiter, service));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, SERVICE, keyValueDelimiter, NOT_AVAILABLE));
+    }
+
+    if (StringUtils.isNotBlank(environment)) {
+      summaryRows.add(String.format(ROW_FORMAT, ENVIRONMENT, keyValueDelimiter, environment));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, ENVIRONMENT, keyValueDelimiter, NOT_AVAILABLE));
+    }
+
+    if (StringUtils.isNotBlank(infra)) {
+      summaryRows.add(String.format(ROW_FORMAT, INFRA_DEFINITION, keyValueDelimiter, infra));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, INFRA_DEFINITION, keyValueDelimiter, NOT_AVAILABLE));
+    }
+    return Joiner.on(rowDelimiter).join(summaryRows);
   }
 
   private void updateStageExecutionInfoFromStageExecutionInfoUpdateDTO(

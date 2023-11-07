@@ -17,8 +17,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import javax.validation.constraints.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -29,4 +31,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = SingleServiceEnvDeploymentStageDetailsInfo.class,
           name = DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT)
     })
-public interface DeploymentStageDetailsInfo {}
+public interface DeploymentStageDetailsInfo {
+  @JsonIgnore String getFormattedStageSummary(@NotNull String rowDelimiter, @NotNull String keyValueDelimiter);
+}

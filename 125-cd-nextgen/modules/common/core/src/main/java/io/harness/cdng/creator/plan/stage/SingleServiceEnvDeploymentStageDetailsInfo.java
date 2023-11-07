@@ -16,13 +16,18 @@ import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.base.Joiner;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.annotation.TypeAlias;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Data
@@ -38,4 +43,36 @@ public class SingleServiceEnvDeploymentStageDetailsInfo implements DeploymentSta
   @Nullable private String infraName;
   @Nullable private String serviceIdentifier;
   @Nullable private String serviceName;
+  public static final String NOT_AVAILABLE = "NA";
+  public static final String SERVICE = "Service";
+  public static final String ENVIRONMENT = "Environment";
+  public static final String INFRA_DEFINITION = "Infrastructure Definition";
+  public static final String ROW_FORMAT = "%s%s%s";
+
+  @Override
+  public String getFormattedStageSummary(@NotNull String rowDelimiter, @NotNull String keyValueDelimiter) {
+    List<String> summaryRows = new ArrayList<>();
+    String environment = StringUtils.isBlank(envName) ? envIdentifier : envName;
+    String service = StringUtils.isBlank(serviceName) ? serviceIdentifier : serviceName;
+    String infra = StringUtils.isBlank(infraName) ? infraIdentifier : infraName;
+
+    if (StringUtils.isNotBlank(service)) {
+      summaryRows.add(String.format(ROW_FORMAT, SERVICE, keyValueDelimiter, service));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, SERVICE, keyValueDelimiter, NOT_AVAILABLE));
+    }
+
+    if (StringUtils.isNotBlank(environment)) {
+      summaryRows.add(String.format(ROW_FORMAT, ENVIRONMENT, keyValueDelimiter, environment));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, ENVIRONMENT, keyValueDelimiter, NOT_AVAILABLE));
+    }
+
+    if (StringUtils.isNotBlank(infra)) {
+      summaryRows.add(String.format(ROW_FORMAT, INFRA_DEFINITION, keyValueDelimiter, infra));
+    } else {
+      summaryRows.add(String.format(ROW_FORMAT, INFRA_DEFINITION, keyValueDelimiter, NOT_AVAILABLE));
+    }
+    return Joiner.on(rowDelimiter).join(summaryRows);
+  }
 }

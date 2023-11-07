@@ -22,6 +22,8 @@ import io.harness.utils.StageStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDP)
 public interface StageExecutionInfoService {
@@ -110,4 +112,17 @@ public interface StageExecutionInfoService {
   Optional<StageExecutionInfo> findById(String id);
 
   void delete(String id);
+
+  /**
+   * Lists summary of execution of deployment stages filtered by stage execution identifiers
+   *
+   * @param scope scope of the deployment stage
+   * @param stageExecutionIdentifiers list of CD stage execution identifiers to provide the summary for
+   * @param rowDelimiter delimiter for rows in formatted summary
+   * @param keyValueDelimiter delimiter for keys and values in formatted summary
+   *
+   * @return a map of stage execution identifiers and formatted stage summary if execution info is present
+   */
+  Map<String, String> listStageExecutionFormattedSummaryByStageExecutionIdentifiers(@Valid @NotNull Scope scope,
+      @NotNull List<String> stageExecutionIdentifiers, @NotNull String rowDelimiter, @NotNull String keyValueDelimiter);
 }

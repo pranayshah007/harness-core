@@ -13,7 +13,13 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfo;
+
+import java.util.List;
+import java.util.Map;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -25,5 +31,20 @@ public interface DeploymentStagePlanCreationInfoService {
    * @param deploymentStagePlanCreationInfo the deployment stage plan creation info
    * @return deployment stage plan creation info
    */
-  DeploymentStagePlanCreationInfo save(DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfo);
+  DeploymentStagePlanCreationInfo save(@Valid @NotNull DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfo);
+
+  /**
+   * Lists summary of deployment stages available at plan creation filtered by stage identifiers
+   *
+   * @param scope scope of the deployment stage
+   * @param planExecutionId plan executionId of the stage execution
+   * @param stageIdentifiers list of CD stage identifiers to provide the summary for
+   * @param rowDelimiter delimiter for rows in formatted summary
+   * @param keyValueDelimiter delimiter for keys and values in formatted summary
+   *
+   * @return a map of stage identifiers and the formatted summary if plan creation info is present
+   */
+  Map<String, String> listStagePlanCreationFormattedSummaryByStageIdentifiers(@Valid @NotNull Scope scope,
+      @NotNull String planExecutionId, @NotNull List<String> stageIdentifiers, @NotNull String rowDelimiter,
+      @NotNull String keyValueDelimiter);
 }

@@ -94,6 +94,8 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResource;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResourceImpl;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -891,6 +893,7 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
+    bind(CDNGStageSummaryResource.class).to(CDNGStageSummaryResourceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
