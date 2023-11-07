@@ -10,7 +10,7 @@ dependencies:
   version: 0.8.1
 - name: redis
   repository: file://./redis
-  version: 0.8.0
+  version: 0.8.2
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 12.4.2
@@ -20,5 +20,5 @@ dependencies:
 - name: harness-common
   repository: https://harness.github.io/helm-common
   version: 1.1.13
-digest: sha256:2925dbb513e4f75dedf050d279268163b89ec4dafeb58b47d1e031416b31190c
-generated: "2023-10-30T10:25:27.373975-07:00"
+digest: sha256:3fb426f3300fc444e4a612ac9c5e256ca1d1d0a08f9d1207337d332b9dc1a615
+generated: "2023-11-07T17:10:07.890881+05:30"

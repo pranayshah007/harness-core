@@ -19,7 +19,7 @@ redis:
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.12-alpine
+    tag: 6.2.14-alpine
     repository: redis
     pullPolicy: IfNotPresent
     digest: ""
@@ -34,7 +34,7 @@ sentinel:
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.12-alpine
+    tag: 6.2.14-alpine
     repository: redis
     pullPolicy: IfNotPresent
     digest: ""
