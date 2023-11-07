@@ -12,7 +12,7 @@ import static io.harness.ng.core.services.ScopeInfoService.SCOPE_INFO_DATA_CACHE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.ng.core.beans.ScopeInfo;
+import io.harness.beans.ScopeInfo;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;

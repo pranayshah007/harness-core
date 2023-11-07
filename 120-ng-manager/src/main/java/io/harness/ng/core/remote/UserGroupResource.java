@@ -32,6 +32,7 @@ import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.beans.ScopeInfo;
 import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -89,6 +90,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -279,7 +281,7 @@ public class UserGroupResource {
       @Parameter(description = "Search filter which matches by user group name/identifier") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
-      @BeanParam PageRequest pageRequest) {
+      @BeanParam PageRequest pageRequest, @Context ScopeInfo scopeInfo) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));

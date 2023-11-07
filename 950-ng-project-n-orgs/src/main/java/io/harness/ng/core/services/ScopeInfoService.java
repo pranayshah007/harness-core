@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
-import io.harness.ng.core.beans.ScopeInfo;
+import io.harness.beans.ScopeInfo;
 
 import java.util.Optional;
 import org.hibernate.validator.constraints.NotEmpty;

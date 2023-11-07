@@ -339,6 +339,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.scim.service.ScimGroupService;
 import io.harness.scim.service.ScimUserService;
+import io.harness.scopeinfoclient.ScopeInfoClientModule;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
@@ -956,6 +957,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
     install(NGFileServiceModule.getInstance(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(new ScopeInfoClientModule(appConfig.getNgManagerClientConfig(), appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(NgFileStoreModule.getInstance());
     install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {
