@@ -18,16 +18,19 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.account.DefaultExperience;
+import io.harness.notification.Team;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.logcontext.UserLogContext;
-import software.wings.persistence.mail.EmailData;
 import software.wings.security.authentication.totp.FeatureFlaggedTotpChecker;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.UserService;
+import software.wings.utils.EmailHelperUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -49,6 +52,8 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
   private AuthenticationUtils authenticationUtils;
   private EmailNotificationService emailNotificationService;
   private TotpChecker<? super FeatureFlaggedTotpChecker.Request> totpChecker;
+
+  @Inject private EmailHelperUtils emailHelperUtils;
 
   @Inject
   public TOTPAuthHandler(UserService userService, AuthenticationUtils authenticationUtils,
@@ -144,18 +149,19 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
     templateModel.put("totpSecret", user.getTotpSecretKey());
     String totpUrl = generateOtpUrl(defaultAccount.getCompanyName(), user.getEmail(), user.getTotpSecretKey());
     templateModel.put("totpUrl", totpUrl);
+    String templateName = "reset_2fa";
     List<String> toList = new ArrayList();
     toList.add(user.getEmail());
-    EmailData emailData = EmailData.builder()
-                              .to(toList)
-                              .templateName("reset_2fa")
-                              .templateModel(templateModel)
-                              .accountId(defaultAccount.getUuid())
-                              .build();
-    emailData.setCc(Collections.emptyList());
-    emailData.setRetries(2);
-    emailNotificationService.send(emailData);
-    log.info("Sent TwoFactorAuthenticationResetEmail for user {} with totpUrl {}", user.getUuid(), totpUrl);
+    if (DefaultExperience.NG.equals(defaultAccount.getDefaultExperience())
+        && emailHelperUtils.getSmtpConfig(defaultAccount.getUuid(), true) != null) {
+      userService.sendNotificationEmailNG(
+          defaultAccount.getUuid(), Collections.emptyList(), templateName, templateModel, Team.OTHER, toList);
+    } else {
+      if (!userService.sendNotificationEmailCG(defaultAccount.getUuid(), toList, Collections.emptyList(),
+              Collections.emptyList(), null, null, templateName, templateModel, 2)) {
+        throw new InvalidRequestException("SMTP Configuration Missing for Account: " + defaultAccount.getUuid());
+      }
+    }
     return true;
   }
 }
