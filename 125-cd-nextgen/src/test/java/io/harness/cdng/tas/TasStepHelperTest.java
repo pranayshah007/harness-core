@@ -65,6 +65,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
@@ -168,6 +169,7 @@ import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -183,6 +185,7 @@ import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.TasArtifactBundledArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
@@ -2326,6 +2329,93 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(1);
     assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 1, asList("path/to/autoScalar.yml"));
     assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void shouldHandleGitManifestFetchResponseWithPrepareArtifactBundle() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasCanaryAppSetupStepParameters.infoBuilder().build()).build();
+    StoreConfig store = ArtifactBundleStore.builder()
+                            .manifestPath(ParameterField.createValueField("/manifest.yaml"))
+                            .artifactBundleType(TasArtifactBundledArtifactType.ZIP)
+                            .deployableUnitPath(ParameterField.createValueField("/artifact.zip"))
+                            .build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().identifier("id").store(store).build();
+    Map<String, FetchFilesResult> filesFromMultipleRepo = new HashMap<>();
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder()
+                                          .outcome(ArtifactsOutcome.builder()
+                                                       .primary(DockerArtifactOutcome.builder()
+                                                                    .type(DOCKER_REGISTRY_NAME)
+                                                                    .connectorRef("connectorRef")
+                                                                    .primaryArtifact(true)
+                                                                    .build())
+                                                       .build())
+                                          .found(true)
+                                          .build();
+    final DockerConnectorDTO dockerConnectorDTO =
+        DockerConnectorDTO.builder()
+            .dockerRegistryUrl("url")
+            .providerType(DockerRegistryProviderType.DOCKER_HUB)
+            .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+            .build();
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
+    when(outcomeService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS)))
+        .thenReturn(optionalOutcome);
+    filesFromMultipleRepo.put("1",
+        FetchFilesResult.builder()
+            .files(List.of(GitFile.builder().fileContent(VARS_YML_2).filePath("path/to/vars2.yaml").build()))
+            .build());
+    Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
+    localStoreFileMapContents.put(
+        "1", asList(TasManifestFileContents.builder().fileContent(VARS_YML_1).filePath("path/to/vars.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
+                                            .filesFromMultipleRepo(filesFromMultipleRepo)
+                                            .taskStatus(TaskStatus.SUCCESS)
+                                            .unitProgressData(unitProgressData)
+                                            .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("git-file-fetch-response", gitFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder().connectorConfig(dockerConnectorDTO).name("test").build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    TasStepPassThroughData passThroughData =
+        TasStepPassThroughData.builder()
+            .tasManifestOutcome(tasManifestOutcome)
+            .shouldOpenFetchFilesStream(true)
+            .shouldExecuteGitStoreFetch(true)
+            .shouldExecuteArtifactBundleStoreFetch(true)
+            .varsManifestOutcomeList(new ArrayList<>())
+            .autoScalerManifestOutcome(getAutoScalarManifestOutcome(
+                1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-connector"), "autoScalarOverride"))
+            .maxManifestOrder(1)
+            .localStoreFileMapContents(localStoreFileMapContents)
+            .build();
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getGitFetchFilesResultMap()).isEqualTo(filesFromMultipleRepo);
+    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents()).isEqualTo(localStoreFileMapContents);
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(ArtifactBundleFetchRequest.class);
+    ArtifactBundleFetchRequest artifactBundleFetchRequest = (ArtifactBundleFetchRequest) taskParameters;
+    assertThat(artifactBundleFetchRequest.getTasArtifactConfig()).isInstanceOf(TasContainerArtifactConfig.class);
+    TasContainerArtifactConfig tasContainerArtifactConfig =
+        (TasContainerArtifactConfig) artifactBundleFetchRequest.getTasArtifactConfig();
+    assertThat(tasContainerArtifactConfig.getConnectorConfig()).isInstanceOf(DockerConnectorDTO.class);
   }
 
   @Test

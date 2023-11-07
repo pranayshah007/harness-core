@@ -531,7 +531,7 @@ public enum TaskType {
   HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2(TaskGroup.HELM, "Helm Command Task with Oci Helm Ecr Config"),
   ECR_HELM_API_LIST_TAGS_TASK_V2(TaskGroup.HELM, "Task to query OCI Helm ECR Config Type ECR API List Tags"),
   TERRAFORM_TASK_NG_V8(TaskGroup.TERRAFORM_NG, "Terraform Task NG V8"),
-  ARTIFACT_BUNDLE_FETCH_TASK(TaskGroup.PCF, "Artifact bundle fetch task in NG");
+  ARTIFACT_BUNDLE_FETCH_TASK(TaskGroup.ARTIFACT_BUNDLE, "Artifact bundle fetch task in NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;
