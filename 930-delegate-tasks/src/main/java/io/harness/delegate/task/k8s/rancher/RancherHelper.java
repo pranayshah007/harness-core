@@ -31,14 +31,7 @@ public class RancherHelper {
 
   public String getRancherBearerToken(RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
     if (rancherBearerTokenExists(rancherK8sInfraDelegateConfig)) {
-      return String.valueOf(
-          ((RancherConnectorBearerTokenAuthenticationDTO) rancherK8sInfraDelegateConfig.getRancherConnectorDTO()
-                  .getConfig()
-                  .getConfig()
-                  .getCredentials()
-                  .getAuth())
-              .getPasswordRef()
-              .getDecryptedValue());
+      return String.valueOf(getBearerTokenFromRancherConnector(rancherK8sInfraDelegateConfig));
     }
     return StringUtils.EMPTY;
   }
@@ -56,26 +49,48 @@ public class RancherHelper {
   }
 
   private boolean rancherUrlExists(RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
-    return rancherK8sInfraDelegateConfig != null && rancherK8sInfraDelegateConfig.getRancherConnectorDTO() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig() != null
-        && isNotEmpty(rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getRancherUrl());
+    if (isRancherConnectorConfigEmpty(rancherK8sInfraDelegateConfig)) {
+      return false;
+    }
+    return isNotEmpty(rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getRancherUrl());
   }
 
   private boolean rancherBearerTokenExists(RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
-    return rancherK8sInfraDelegateConfig != null && rancherK8sInfraDelegateConfig.getRancherConnectorDTO() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getCredentials() != null
-        && rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getCredentials().getAuth()
-        != null
-        && isNotEmpty(String.valueOf(
-            ((RancherConnectorBearerTokenAuthenticationDTO) rancherK8sInfraDelegateConfig.getRancherConnectorDTO()
-                    .getConfig()
-                    .getConfig()
-                    .getCredentials()
-                    .getAuth())
-                .getPasswordRef()
-                .getDecryptedValue()));
+    if (isRancherConnectorConfigEmpty(rancherK8sInfraDelegateConfig)) {
+      return false;
+    }
+    if (rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getCredentials() == null) {
+      return false;
+    }
+    if (rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getCredentials().getAuth()
+        == null) {
+      return false;
+    }
+
+    char[] decryptedBearerToken = getBearerTokenFromRancherConnector(rancherK8sInfraDelegateConfig);
+    return isNotEmpty(String.valueOf(decryptedBearerToken));
+  }
+
+  private char[] getBearerTokenFromRancherConnector(RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
+    return ((RancherConnectorBearerTokenAuthenticationDTO) rancherK8sInfraDelegateConfig.getRancherConnectorDTO()
+                .getConfig()
+                .getConfig()
+                .getCredentials()
+                .getAuth())
+        .getPasswordRef()
+        .getDecryptedValue();
+  }
+
+  private boolean isRancherConnectorConfigEmpty(RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
+    if (rancherK8sInfraDelegateConfig == null) {
+      return true;
+    }
+    if (rancherK8sInfraDelegateConfig.getRancherConnectorDTO() == null) {
+      return true;
+    }
+    if (rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig() == null) {
+      return true;
+    }
+    return rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig() == null;
   }
 }

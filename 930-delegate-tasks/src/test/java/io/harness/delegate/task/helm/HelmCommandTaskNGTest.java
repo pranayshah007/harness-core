@@ -30,6 +30,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -58,6 +59,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private LogCallback logCallback;
   @Mock private HelmTaskHelperBase helmTaskHelperBase;
+  @Mock private K8sTaskCleaner k8sTaskCleaner;
   private HelmCommandTaskNG spyHelmCommandTask;
   @InjectMocks
   private final HelmCommandTaskNG helmCommandTaskNG = new HelmCommandTaskNG(
@@ -114,6 +116,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
 
     verify(helmDeployServiceNG, times(1)).deploy(request);
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getHelmCommandResponse()).isSameAs(deployResponse);
   }
@@ -130,7 +133,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
 
     verify(helmDeployServiceNG, times(1)).rollback(request);
-
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getHelmCommandResponse()).isSameAs(rollbackResponse);
   }
@@ -148,7 +151,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
 
     verify(helmDeployServiceNG, times(1)).releaseHistory(request);
-
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getHelmCommandResponse()).isSameAs(releaseHistoryResponse);
   }
@@ -178,7 +181,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     doReturn(deployResponse).when(helmDeployServiceNG).deploy(request);
 
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
-
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(response.getErrorMessage()).isEqualTo("Error while deploying");
   }

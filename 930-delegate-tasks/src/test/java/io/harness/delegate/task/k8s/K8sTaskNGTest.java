@@ -157,6 +157,7 @@ public class K8sTaskNGTest extends CategoryTest {
 
     verify(instanceSyncRequestHandler)
         .executeTask(k8sDeployRequest, null, logStreamingTaskClient, emptyCommandUnitsProgress);
+    verify(instanceSyncRequestHandler, times(0)).performCleanup(any());
     assertThat(result).isEqualTo(syncResponse);
   }
 
@@ -422,6 +423,7 @@ public class K8sTaskNGTest extends CategoryTest {
             eq(emptyCommandUnitsProgress));
     verify(containerDeploymentDelegateBaseHelper, times(1))
         .persistKubernetesConfig(any(KubernetesConfig.class), anyString());
+    verify(rollingRequestHandler, times(1)).performCleanup(any());
 
     K8sDelegateTaskParams k8sDelegateTaskParams = delegateTaskParamsCaptor.getValue();
     assertCleanupWorkingDirectory(k8sDelegateTaskParams);

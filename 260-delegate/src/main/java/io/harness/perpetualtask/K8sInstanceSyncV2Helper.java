@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
+import static io.harness.delegate.beans.connector.ConnectorType.RANCHER;
 
 import static java.lang.String.format;
 
@@ -65,14 +66,18 @@ public class K8sInstanceSyncV2Helper {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
 
-  public KubernetesConfig getKubernetesConfig(
-      ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
-    K8sInfraDelegateConfig k8sInfraDelegateConfig =
-        getK8sInfraDelegateConfig(connectorDTO, kubernetesCloudClusterConfig, namespace);
+  //  public KubernetesConfig getKubernetesConfig(
+  //      ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
+  //    K8sInfraDelegateConfig k8sInfraDelegateConfig =
+  //        getK8sInfraDelegateConfig(connectorDTO, kubernetesCloudClusterConfig, namespace);
+  //    return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
+  //  }
+
+  public KubernetesConfig getKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
 
-  private K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+  public K8sInfraDelegateConfig getK8sInfraDelegateConfig(
       ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
     try {
       KubernetesHelperService.validateNamespace(namespace);
@@ -128,7 +133,7 @@ public class K8sInstanceSyncV2Helper {
               format("Unsupported Connector Type type: [%s]", connectorDTO.getConnectorType()));
       }
     } catch (ClassCastException ex) {
-      if (Set.of(KUBERNETES_CLUSTER, GCP, AZURE, AWS).contains(connectorDTO.getConnectorType())) {
+      if (Set.of(KUBERNETES_CLUSTER, GCP, AZURE, AWS, RANCHER).contains(connectorDTO.getConnectorType())) {
         throw new InvalidArgumentsException(
             Pair.of("connectorRef", String.format(CLASS_CAST_EXCEPTION_ERROR, connectorDTO.getConnectorType())));
       }

@@ -24,10 +24,12 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.instancesync.NativeHelmInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceInstanceInfoMapper;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.NativeHelmDeploymentReleaseData;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.K8sTaskCleanupDTO;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.HelmVersion;
@@ -66,6 +68,8 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+
+  @Inject private K8sTaskCleaner k8sTaskCleaner;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -156,6 +160,10 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
                    .releaseName(releaseName)
                    .helmChartInfo(releaseData.getHelmChartInfo())
                    .workloadLabelSelectors(releaseData.getWorkloadLabelSelectors())
+                   .cleanupDTO(K8sTaskCleanupDTO.builder()
+                                   .generatedKubeConfig(kubernetesConfig)
+                                   .infraDelegateConfig(releaseData.getK8sInfraDelegateConfig())
+                                   .build())
                    .build())
         .collect(Collectors.toList());
   }
@@ -173,6 +181,8 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
       log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
           requestData.getReleaseName(), ex);
       return Collections.emptyList();
+    } finally {
+      k8sTaskCleaner.cleanup(requestData.getCleanupDTO());
     }
   }
 
@@ -208,5 +218,6 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
     @NotNull private String releaseName;
     private HelmChartInfo helmChartInfo;
     private Map<String, List<String>> workloadLabelSelectors;
+    private K8sTaskCleanupDTO cleanupDTO;
   }
 }

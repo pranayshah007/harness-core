@@ -30,12 +30,14 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.K8sTaskCleanupDTO;
 import io.harness.exception.DataException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
@@ -44,6 +46,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.config.K8sGlobalConfigService;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -68,6 +71,7 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private ManifestDelegateConfigHelper manifestDelegateConfigHelper;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
+  @Inject private K8sTaskCleaner k8sTaskCleaner;
 
   private static final String WORKING_DIR_BASE = "./repository/helm/source/${REPO_NAME}";
   public static final String MANIFEST_FILES_DIR = "manifest-files";
@@ -160,6 +164,11 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(helmCommandRequestNG.getCommandUnitsProgress()),
           sanitizedException);
+    } finally {
+      k8sTaskCleaner.cleanup(K8sTaskCleanupDTO.builder()
+                                 .generatedKubeConfig(helmCommandRequestNG.getKubernetesConfig())
+                                 .infraDelegateConfig(helmCommandRequestNG.getK8sInfraDelegateConfig())
+                                 .build());
     }
 
     helmCommandRequestNG.getLogCallback().saveExecutionLog(
@@ -190,9 +199,10 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   private void init(HelmCommandRequestNG commandRequestNG, LogCallback logCallback) throws IOException {
     commandRequestNG.setLogCallback(logCallback);
     logCallback.saveExecutionLog("Creating KubeConfig", LogLevel.INFO, CommandExecutionStatus.RUNNING);
-    String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-            commandRequestNG.getK8sInfraDelegateConfig(), commandRequestNG.getWorkingDir(), logCallback));
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        commandRequestNG.getK8sInfraDelegateConfig(), commandRequestNG.getWorkingDir(), logCallback);
+    commandRequestNG.setKubernetesConfig(kubernetesConfig);
+    String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(kubernetesConfig);
     commandRequestNG.setKubeConfigLocation(configLocation);
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);

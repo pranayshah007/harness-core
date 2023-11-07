@@ -212,8 +212,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     ReleaseHistory releaseHistory = null;
     boolean isImprovedHelmTracking = commandRequest.isImprovedHelmTracking();
     try {
-      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+      kubernetesConfig = commandRequest.getKubernetesConfig();
+      if (kubernetesConfig == null) {
+        log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+        kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+            commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+      }
 
       List<K8sPod> existingPodList = Collections.emptyList();
       HelmInstallCmdResponseNG commandResponse;
@@ -645,9 +649,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Override
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+    kubernetesConfig = commandRequest.getKubernetesConfig();
     try {
+      if (kubernetesConfig == null) {
+        log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+        kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+            commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+      }
       List<KubernetesResource> existingManifest = commandRequest.isImprovedHelmTracking()
           ? helmSteadyStateService.readManifestFromHelmRelease(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest))
           : Collections.emptyList();

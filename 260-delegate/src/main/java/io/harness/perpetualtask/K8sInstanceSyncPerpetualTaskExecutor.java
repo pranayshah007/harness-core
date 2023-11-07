@@ -23,11 +23,13 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData.K8sDeploymentReleaseDataBuilder;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.K8sTaskCleanupDTO;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sPod;
@@ -66,6 +68,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+  @Inject private K8sTaskCleaner k8sTaskCleaner;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -149,6 +152,10 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
                    .namespace(namespace)
                    .releaseName(releaseName)
                    .helmChartInfo(helmChartInfo)
+                   .cleanupDTO(K8sTaskCleanupDTO.builder()
+                                   .infraDelegateConfig(releaseData.getK8sInfraDelegateConfig())
+                                   .generatedKubeConfig(kubernetesConfig)
+                                   .build())
                    .build())
         .collect(Collectors.toList());
   }
@@ -168,6 +175,8 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
       log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
           requestData.getReleaseName(), ex);
       return Collections.emptyList();
+    } finally {
+      k8sTaskCleaner.cleanup(requestData.getCleanupDTO());
     }
   }
 
@@ -201,5 +210,6 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     @NotNull private String namespace;
     @NotNull private String releaseName;
     private HelmChartInfo helmChartInfo;
+    private K8sTaskCleanupDTO cleanupDTO;
   }
 }

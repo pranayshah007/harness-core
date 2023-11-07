@@ -14,6 +14,7 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskCleanupDTO;
 import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.rancher.RancherHelper;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.rancher.RancherConnectionHelperService;
 
 import com.google.inject.Inject;
@@ -38,15 +39,16 @@ public class K8sTaskCleaner {
   private void cleanUpInternal(K8sTaskCleanupDTO cleanupDTO) {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = cleanupDTO.getInfraDelegateConfig();
     if (k8sInfraDelegateConfig instanceof RancherK8sInfraDelegateConfig) {
-      performRancherTokenCleanup(cleanupDTO, (RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig);
+      performRancherTokenCleanup(
+          cleanupDTO.getGeneratedKubeConfig(), (RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig);
     }
   }
 
   private void performRancherTokenCleanup(
-      K8sTaskCleanupDTO cleanupDTO, RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
+      KubernetesConfig kubernetesConfig, RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
     String rancherUrl = RancherHelper.getRancherUrl(rancherK8sInfraDelegateConfig);
     String bearerToken = RancherHelper.getRancherBearerToken(rancherK8sInfraDelegateConfig);
-    String tokenId = RancherHelper.getKubeConfigTokenName(cleanupDTO.getGeneratedKubeConfig());
+    String tokenId = RancherHelper.getKubeConfigTokenName(kubernetesConfig);
     rancherConnectionHelperService.deleteKubeconfigToken(rancherUrl, bearerToken, tokenId);
   }
 }

@@ -29,6 +29,7 @@ import io.harness.delegate.k8s.K8sRequestHandler;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.k8s.K8sTaskCleanupDTO.K8sTaskCleanupDTOBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -100,6 +101,7 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
                                     .toAbsolutePath()
                                     .toString();
       K8sRequestHandler requestHandler = k8sTaskTypeToRequestHandler.get(k8sDeployRequest.getTaskType().name());
+      K8sTaskCleanupDTOBuilder cleanupDTOBuilder = K8sTaskCleanupDTO.builder();
 
       try {
         createDirectoryIfDoesNotExist(workingDirectory);
@@ -130,6 +132,8 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             k8sDeployRequest, k8SDelegateTaskParams, getLogStreamingTaskClient(), commandUnitsProgress);
 
         k8sDeployResponse.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+        cleanupDTOBuilder.infraDelegateConfig(k8sDeployRequest.getK8sInfraDelegateConfig());
+        cleanupDTOBuilder.generatedKubeConfig(kubernetesConfig);
         return k8sDeployResponse;
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
@@ -155,6 +159,9 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             .build();
       } finally {
         cleanup(workingDirectory);
+        if (requestHandler != null) {
+          requestHandler.performCleanup(cleanupDTOBuilder.build());
+        }
       }
     }
   }
