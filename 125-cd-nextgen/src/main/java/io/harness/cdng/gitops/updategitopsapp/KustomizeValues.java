@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.gitops.updategitopsapp;
+
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
@@ -21,6 +23,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -44,4 +47,30 @@ public class KustomizeValues {
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_KUSTOMIZE_REPLICAS_LIST_CLASSPATH)
   @JsonProperty("replicas")
   ParameterField<List<KustomizeReplicas>> replicas;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @JsonProperty("namePrefix")
+  ParameterField<String> namePrefix;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @JsonProperty("nameSuffix")
+  ParameterField<String> nameSuffix;
+
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
+  private ParameterField<Map<String, String>> commonLabels;
+
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
+  private ParameterField<Map<String, String>> commonAnnotations;
+
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  public ParameterField<Boolean> forceCommonLabels;
+
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  public ParameterField<Boolean> forceCommonAnnotations;
 }

@@ -395,6 +395,30 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       }
       kustomizeSource.setReplicas(replicasList);
     }
+    if (pmsKustomizeValues.getNamePrefix() != null && pmsKustomizeValues.getNamePrefix().getValue() != null) {
+      kustomizeSource.setNamePrefix(pmsKustomizeValues.getNamePrefix().getValue());
+    }
+    if (pmsKustomizeValues.getNameSuffix() != null && pmsKustomizeValues.getNameSuffix().getValue() != null) {
+      kustomizeSource.setNameSuffix(pmsKustomizeValues.getNameSuffix().getValue());
+    }
+    // TODO check if this __uuid can be ignored in the pipeline service itself without any other impact
+    // Uniqueness of the keys for common labels and annotations is already handled - from the UI the user won't be able
+    // to input duplicate keys Instead of merging the new input fields with the existing labels/annotations here, they
+    // should be merged in the UI by the user and all the inputs should be received as input to the step
+    if (pmsKustomizeValues.getCommonLabels() != null && pmsKustomizeValues.getCommonLabels().getValue() != null) {
+      Map<String, String> commonLabels = pmsKustomizeValues.getCommonLabels().getValue();
+      commonLabels.remove("__uuid");
+      kustomizeSource.setCommonLabels(commonLabels);
+    }
+    if (pmsKustomizeValues.getForceCommonLabels() != null
+        && pmsKustomizeValues.getForceCommonLabels().getValue() != null) {
+      kustomizeSource.setForceCommonLabels(pmsKustomizeValues.getForceCommonLabels().getValue());
+    }
+    if (pmsKustomizeValues.getForceCommonAnnotations() != null
+        && pmsKustomizeValues.getForceCommonAnnotations().getValue() != null) {
+      kustomizeSource.setForceCommonAnnotations(pmsKustomizeValues.getForceCommonAnnotations().getValue());
+    }
+
     source.setKustomize(kustomizeSource);
   }
 
