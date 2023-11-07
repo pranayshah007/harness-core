@@ -24,7 +24,7 @@ import lombok.Data;
 @OwnedBy(CDP)
 public class TasManifestDelegateConfig {
   String identifier;
-  List<String> manifestPath;
+  String manifestPath;
   List<String> varsPaths;
   List<String> autoScalerPath;
   String deployableUnitPath;

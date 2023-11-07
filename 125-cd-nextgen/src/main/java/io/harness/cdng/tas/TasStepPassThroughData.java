@@ -14,6 +14,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FileData;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.TasManifestOutcome;
@@ -56,6 +57,7 @@ public class TasStepPassThroughData implements PassThroughData {
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteGitStoreFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteArtifactBundleStoreFetch = Boolean.FALSE;
+  Map<String, List<FileData>> filesFromArtifactBundle;
   @Setter @NonFinal Boolean shouldCloseFetchFilesStream;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   String rawScript;

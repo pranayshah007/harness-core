@@ -103,6 +103,7 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ArtifactBundleStore;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -114,6 +115,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.beans.ArtifactBundleFetchResponsePassThroughData;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.HarnessStringUtils;
@@ -124,6 +126,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -188,6 +191,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.ParameterFieldUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
@@ -403,6 +407,15 @@ public class TasStepHelper {
             tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
         return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData,
             tasStepPassThroughData.getTasManifestOutcome());
+      } else if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+        ArtifactsOutcome artifactsOutcome = resolveArtifactOutcome(ambiance);
+        if (artifactsOutcome.getPrimary() == null || !(artifactsOutcome.getPrimary().isPrimaryArtifact())) {
+          throw new GeneralException("Provided Artifact should be a Primary Artifact for Artifact Bundle Store");
+        }
+        TasStepPassThroughData updatedTasStepPassThroughData =
+            tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
+        return getArtifactBundleTaskChainResponse(
+            ambiance, stepElementParameters, updatedTasStepPassThroughData, artifactsOutcome.getPrimary());
       } else {
         throw new InvalidRequestException("Store Type used for tas manifest is not supported", USER);
       }
@@ -775,7 +788,17 @@ public class TasStepHelper {
       StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       ArtifactOutcome primaryArtifactOutcome) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
-    TasManifestDelegateConfig tasManifestDelegateConfig = TasManifestDelegateConfig.builder().build();
+    TasManifestOutcome tasManifestOutcome = tasStepPassThroughData.getTasManifestOutcome();
+    ArtifactBundleStore artifactBundleStore = (ArtifactBundleStore) tasManifestOutcome.getStore();
+    TasManifestDelegateConfig tasManifestDelegateConfig =
+        TasManifestDelegateConfig.builder()
+            .manifestPath(getParameterFieldValue(artifactBundleStore.getManifestPath()))
+            .deployableUnitPath(getParameterFieldValue(artifactBundleStore.getDeployableUnitPath()))
+            .artifactBundleType(artifactBundleStore.getArtifactBundleType().toString())
+            .varsPaths(getParameterFieldValue(tasManifestOutcome.getVarsPaths()))
+            .autoScalerPath(getParameterFieldValue(tasManifestOutcome.getAutoScalerPath()))
+            .build();
+
     ArtifactBundleFetchRequest artifactBundleFetchRequest =
         ArtifactBundleFetchRequest.builder()
             .tasArtifactConfig(getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome))
@@ -934,10 +957,14 @@ public class TasStepHelper {
         return handleGitFetchFilesResponse(
             responseData, tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData, tasManifest);
       }
-
       if (responseData instanceof CustomManifestValuesFetchResponse) {
         unitProgressData = ((CustomManifestValuesFetchResponse) responseData).getUnitProgressData();
         return handleCustomFetchResponse(
+            responseData, tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData, tasManifest);
+      }
+      if (responseData instanceof ArtifactBundleFetchResponse) {
+        unitProgressData = ((ArtifactBundleFetchResponse) responseData).getUnitProgressData();
+        return handleArtifactBundleFetchResponse(
             responseData, tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData, tasManifest);
       }
     } catch (Exception e) {
@@ -976,6 +1003,34 @@ public class TasStepHelper {
     tasStepPassThroughData.setUnitProgresses(gitFetchResponse.getUnitProgressData().getUnitProgresses());
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().gitFetchFilesResultMap(gitFetchResponse.getFilesFromMultipleRepo()).build();
+
+    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      return prepareArtifactBundleTaskChainResponse(ambiance, stepElementParameters, updatedTasStepPassThroughData);
+    }
+
+    return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifest);
+  }
+
+  private TaskChainResponse handleArtifactBundleFetchResponse(ResponseData responseData,
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
+      TasStepPassThroughData tasStepPassThroughData, TasManifestOutcome tasManifest) {
+    ArtifactBundleFetchResponse artifactBundleFetchResponse = (ArtifactBundleFetchResponse) responseData;
+    if (artifactBundleFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      ArtifactBundleFetchResponsePassThroughData artifactBundleFetchResponsePassThroughData =
+          ArtifactBundleFetchResponsePassThroughData.builder()
+              .errorMsg(artifactBundleFetchResponse.getErrorMessage())
+              .unitProgressData(artifactBundleFetchResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder()
+          .chainEnd(true)
+          .passThroughData(artifactBundleFetchResponsePassThroughData)
+          .build();
+    }
+    tasStepPassThroughData.setUnitProgresses(artifactBundleFetchResponse.getUnitProgressData().getUnitProgresses());
+    TasStepPassThroughData updatedTasStepPassThroughData =
+        tasStepPassThroughData.toBuilder()
+            .filesFromArtifactBundle(artifactBundleFetchResponse.getFilesFromArtifactBundle())
+            .build();
     return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifest);
   }
 
@@ -1018,17 +1073,12 @@ public class TasStepHelper {
           ambiance, stepElementParameters, updatedTasStepPassThroughData, tasManifestOutcome.getStore());
     }
 
-    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
-      return prepareArtifactBundleTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData);
-    }
-
     return executeTasTask(
         ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifestOutcome);
   }
 
   protected TaskChainResponse prepareArtifactBundleTaskChainResponse(
       Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
-    TasManifestOutcome tasManifestOutcome = tasStepPassThroughData.getTasManifestOutcome();
     ArtifactsOutcome artifactsOutcome = resolveArtifactOutcome(ambiance);
 
     if (artifactsOutcome.getPrimary() == null || !(artifactsOutcome.getPrimary().isPrimaryArtifact())) {
@@ -1098,6 +1148,9 @@ public class TasStepHelper {
     }
     if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       return prepareGitFetchTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData, storeConfig);
+    }
+    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      return prepareArtifactBundleTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData);
     }
     return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, tasStepPassThroughData,
         tasStepPassThroughData.getTasManifestOutcome());
@@ -1284,7 +1337,9 @@ public class TasStepHelper {
     if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
     }
-
+    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchFiles);
+    }
     if (tasStepExecutor instanceof TasRollingDeployStep) {
       commandUnits.addAll(Arrays.asList(
           CfCommandUnitConstants.VerifyManifests, CfCommandUnitConstants.Deploy, CfCommandUnitConstants.Wrapup));
@@ -1307,6 +1362,8 @@ public class TasStepHelper {
     } else if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
+    } else if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchFiles);
     } else {
       commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
     }
