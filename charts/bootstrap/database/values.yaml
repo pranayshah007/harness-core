@@ -55,7 +55,7 @@ postgresql:
   image:
     registry: docker.io
     repository: bitnami/postgresql
-    tag: 14.8.0-debian-11-r17
+    tag: 14.9.0-debian-11-r60
     digest: ""
   fullnameOverride: "postgres"
   auth:
