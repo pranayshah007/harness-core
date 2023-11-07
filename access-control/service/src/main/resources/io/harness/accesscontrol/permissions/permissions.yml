@@ -1726,7 +1726,7 @@ permissions:
       - account
   - identifier: core_inputset_edit
     name: Create or Edit InputSet
-    status: ACTIVE
+    status: INACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1734,7 +1734,7 @@ permissions:
       - project
   - identifier: core_inputset_delete
     name: Delete InputSet
-    status: ACTIVE
+    status: INACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1742,7 +1742,7 @@ permissions:
       - project
   - identifier: core_inputset_view
     name: View InputSet
-    status: ACTIVE
+    status: INACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
