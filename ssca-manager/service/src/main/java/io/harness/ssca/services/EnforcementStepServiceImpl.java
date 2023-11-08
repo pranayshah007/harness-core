@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +51,7 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
 
   @Override
   public EnforceSbomResponseBody enforceSbom(
-      String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body, String authToken) {
+      String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body) {
     String artifactId =
         artifactService.generateArtifactId(body.getArtifact().getRegistryUrl(), body.getArtifact().getName());
     ArtifactEntity artifactEntity =
@@ -71,7 +73,7 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
     requestMap.put("rego", regoPolicy);
     requestMap.put("input", entities.get().collect(Collectors.toList()));
     String requestBody = JsonUtils.asJson(requestMap);
-    String response = getHttpResponse(requestBody, authToken);
+    String response = getHttpResponse(requestBody);
     Map<String, Object> responseMap1 = JsonUtils.asMap(response);
     List<Map<String, Object>> outputMapList = (List<Map<String, Object>>) responseMap1.get("output");
     List<Map<String, Object>> expressionsMapList =
@@ -176,15 +178,17 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
                    .violationDetails(enforcementResultEntity.getViolationDetails()));
   }
 
-  private String getHttpResponse(String requestPayload, String authToken) {
+  private String getHttpResponse(String requestPayload) {
     try {
+      String base64EncodedKey = System.getenv("HARNESS_API_TOKEN");
+      String harnessAPIKey = new String(Base64.getDecoder().decode(base64EncodedKey));
       HttpRequest request2 =
           HttpRequest.newBuilder()
               .uri(new URI(
                   "https://qa.harness.io/gateway/pm/api/v1/evaluate?accountIdentifier=-k53qRQAQ1O7DBLb9ACnjQ&orgIdentifier=default&projectIdentifier=CloudWatch"))
               .header("content-type", "application/json")
               .header("accept", "application/json")
-              .header("Authorization", authToken)
+              .header("X-API-KEY", harnessAPIKey)
               .POST(HttpRequest.BodyPublishers.ofString(requestPayload))
               .build();
       HttpResponse<String> response =
