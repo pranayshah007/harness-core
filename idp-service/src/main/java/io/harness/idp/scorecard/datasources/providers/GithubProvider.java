@@ -22,7 +22,7 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;

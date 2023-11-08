@@ -64,6 +64,10 @@ if [[ "" != "$CDC_MONGO_URI" ]]; then
   export CDC_MONGO_URI; yq -i '.cdc-mongo.uri=env(CDC_MONGO_URI)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CHAOS_MONGO_URI" ]]; then
+  export CHAOS_MONGO_URI; yq -i '.chaos-harness.uri=env(CHAOS_MONGO_URI)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MONGO_CHANGE_STREAM_BATCH_SIZE" ]]; then
   export MONGO_CHANGE_STREAM_BATCH_SIZE; yq -i '.changeStreamBatchSize=env(MONGO_CHANGE_STREAM_BATCH_SIZE)' $CONFIG_FILE
 fi

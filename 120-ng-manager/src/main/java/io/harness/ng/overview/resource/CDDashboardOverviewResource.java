@@ -150,8 +150,9 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment health");
 
-    long previousStartInterval =
-        startInterval - getStartTimeOfPreviousInterval(startInterval, getNumberOfDays(startInterval, endInterval));
+    long numDays = getNumberOfDays(startInterval, endInterval);
+    long previousStartInterval = startInterval - getStartTimeOfPreviousInterval(startInterval, numDays);
+    cdOverviewDashboardService.validateDashboardRequestDuration(numDays);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getHealthDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval));
   }
@@ -169,8 +170,9 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment health");
 
-    long previousStartInterval =
-        startInterval - getStartTimeOfPreviousInterval(startInterval, getNumberOfDays(startInterval, endInterval));
+    long numDays = getNumberOfDays(startInterval, endInterval);
+    long previousStartInterval = startInterval - getStartTimeOfPreviousInterval(startInterval, numDays);
+    cdOverviewDashboardService.validateDashboardRequestDuration(numDays);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getHealthDeploymentDashboardV2(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval));
   }
@@ -188,6 +190,7 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGServiceConstants.SERVICE_IDENTIFIER) String serviceIdentifier,
       @QueryParam(NGServiceConstants.BUCKET_SIZE_IN_DAYS) @DefaultValue("1") long bucketSizeInDays) {
     log.info("Getting service deployments between %s and %s", startTime, endTime);
+    cdOverviewDashboardService.validateDashboardRequestDuration(startTime, endTime);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, serviceIdentifier, bucketSizeInDays));
   }
@@ -204,6 +207,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGServiceConstants.END_TIME) long endTime,
       @QueryParam(NGServiceConstants.SERVICE_IDENTIFIER) String serviceIdentifier,
       @QueryParam(NGServiceConstants.BUCKET_SIZE_IN_DAYS) @DefaultValue("1") long bucketSizeInDays) throws Exception {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startTime, endTime);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDeploymentsInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, serviceIdentifier, bucketSizeInDays));
   }
@@ -220,6 +224,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGServiceConstants.END_TIME) long endTime,
       @QueryParam(NGServiceConstants.SERVICE_IDENTIFIER) String serviceIdentifier,
       @QueryParam(NGServiceConstants.BUCKET_SIZE_IN_DAYS) @DefaultValue("1") long bucketSizeInDays) throws Exception {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startTime, endTime);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDeploymentsInfoV2(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, serviceIdentifier, bucketSizeInDays));
   }
@@ -236,6 +241,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment execution");
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getExecutionDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval));
   }
@@ -253,6 +259,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @QueryParam("top") @DefaultValue("20") long days) {
     log.info("Getting deployments for active failed and running status");
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getDeploymentActiveFailedRunningInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, days, startInterval, endInterval));
   }
@@ -272,6 +279,7 @@ public class CDDashboardOverviewResource {
     log.info("Getting workloads");
     long numDays = getNumberOfDays(startInterval, endInterval);
     long previousStartInterval = getStartTimeOfPreviousInterval(startInterval, numDays);
+    cdOverviewDashboardService.validateDashboardRequestDuration(numDays);
 
     return ResponseDTO.newResponse(cdOverviewDashboardService.getDashboardWorkloadDeployment(accountIdentifier,
         orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval, envType));
@@ -292,6 +300,7 @@ public class CDDashboardOverviewResource {
     log.info("Getting workloads");
     long numDays = getNumberOfDays(startInterval, endInterval);
     long previousStartInterval = getStartTimeOfPreviousInterval(startInterval, numDays);
+    cdOverviewDashboardService.validateDashboardRequestDuration(numDays);
 
     return ResponseDTO.newResponse(cdOverviewDashboardService.getDashboardWorkloadDeploymentV2(accountIdentifier,
         orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval, envType));
@@ -309,6 +318,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
       throws Exception {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startTime, endTime);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsList(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort));
   }
@@ -326,6 +336,7 @@ public class CDDashboardOverviewResource {
       @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort,
       @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
           "repoName") String repoName) throws Exception {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startTime, endTime);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsListV2(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort, repoName));
   }
@@ -341,6 +352,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.TIME_GROUP_BY_TYPE) TimeGroupType timeGroupType) {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServicesGrowthTrend(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, timeGroupType));
   }
@@ -545,6 +557,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGrowthTrend(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval, endInterval));
   }
@@ -560,6 +573,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceCountHistory(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval, endInterval));
   }
@@ -575,6 +589,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getDeploymentsByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval, endInterval));
   }
@@ -590,6 +605,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    cdOverviewDashboardService.validateDashboardRequestDuration(startInterval, endInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getAllDeploymentsByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval, endInterval));
   }

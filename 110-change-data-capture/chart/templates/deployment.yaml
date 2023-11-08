@@ -115,8 +115,10 @@ spec:
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "ng-harness" ) }}
             - name: CVNG_MONGO_URI
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "cvng-harness" ) }}
+            - name: CHAOS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "chaos-harness" ) }}
             - name: TIMESCALEDB_URI
-              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}            
+              value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
               {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}

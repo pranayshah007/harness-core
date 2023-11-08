@@ -24,12 +24,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.Artifact;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyComponentFilter;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
+import io.harness.spec.server.ssca.v1.model.ComponentFilter;
+import io.harness.spec.server.ssca.v1.model.LicenseFilter;
 import io.harness.spec.server.ssca.v1.model.Operator;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
-import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -102,14 +101,14 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
     String licenseValue = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
-    ArtifactListingRequestBodyLicenseFilter licenseFilter =
-        new ArtifactListingRequestBodyLicenseFilter().operator(Operator.EQUALS).value(licenseValue);
+    LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
     normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
     verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
-    assertEquals(licenseValue, document.get(NormalizedSBOMEntityKeys.packageLicense));
+    BasicDBList licenseList = (BasicDBList) document.get("$and");
+    assertEquals(licenseList.size(), 1);
   }
 
   @Test
@@ -120,13 +119,13 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
     String componentValue2 = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
-    List<ArtifactListingRequestBodyComponentFilter> componentFilter =
-        Lists.newArrayList(new ArtifactListingRequestBodyComponentFilter()
-                               .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTNAME)
+    List<ComponentFilter> componentFilter =
+        Lists.newArrayList(new ComponentFilter()
+                               .fieldName(ComponentFilter.FieldNameEnum.COMPONENTNAME)
                                .operator(Operator.CONTAINS)
                                .value(componentValue1),
-            new ArtifactListingRequestBodyComponentFilter()
-                .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTVERSION)
+            new ComponentFilter()
+                .fieldName(ComponentFilter.FieldNameEnum.COMPONENTVERSION)
                 .operator(Operator.STARTSWITH)
                 .value(componentValue2));
 
@@ -135,8 +134,13 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
-    BasicDBList componentList = (BasicDBList) document.get("$and");
+    BasicDBList andList = (BasicDBList) document.get("$and");
 
-    assertEquals(componentList.size(), 2);
+    assertEquals(andList.size(), 1);
+
+    Document criteriaDocument = (Document) andList.get(0);
+
+    BasicDBList orList = (BasicDBList) criteriaDocument.get("$or");
+    assertEquals(orList.size(), 2);
   }
 }

@@ -129,7 +129,7 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.empty();
     }
     // if Pipeline Node then skip as it would be resolved via PipelineExecutionFunctor
-    if (nodeExecution == null || OrchestrationUtils.isPipelineNode(nodeExecution)) {
+    if (nodeExecution == null || OrchestrationUtils.isPipelineNode(nodeExecution.getStepType())) {
       return Optional.empty();
     }
 

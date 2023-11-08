@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.stages.v1;
+
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
 
@@ -13,6 +14,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -157,10 +159,13 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                   i + 1 < edgeLayoutLists.size() ? edgeLayoutLists.get(i + 1) : EdgeLayoutList.newBuilder().build())
               .build());
     }
-    return GraphLayoutResponse.builder()
-        .layoutNodes(stageYamlFieldMap)
-        .startingNodeId(stagesYamlField.get(0).getNode().getUuid())
-        .build();
+    if (shouldSetStartingNodeId(ctx)) {
+      return GraphLayoutResponse.builder()
+          .layoutNodes(stageYamlFieldMap)
+          .startingNodeId(stagesYamlField.get(0).getNode().getUuid())
+          .build();
+    }
+    return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
   }
 
   @Override
@@ -194,5 +199,11 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   private List<YamlField> getStageYamlFields(YamlField yamlField) {
     List<YamlNode> yamlNodes = Optional.of(yamlField.getNode().asArray()).orElse(Collections.emptyList());
     return yamlNodes.stream().map(YamlField::new).collect(Collectors.toList());
+  }
+
+  private boolean shouldSetStartingNodeId(PlanCreationContext ctx) {
+    Optional<Object> value = PlanCreatorUtilsV1.getDeserializedObjectFromDependency(
+        ctx.getDependency(), kryoSerializer, PlanCreatorConstants.SET_STARTING_NODE_ID, false);
+    return value.isPresent() && (boolean) value.get();
   }
 }

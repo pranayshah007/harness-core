@@ -1,4 +1,5 @@
 io.harness.plancreator.customDeployment.StepTemplateRef
+io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 io.harness.utils.DummyOrchestrationOutcome
 io.harness.yaml.core.failurestrategy.OnFailureConfig
 parameterField

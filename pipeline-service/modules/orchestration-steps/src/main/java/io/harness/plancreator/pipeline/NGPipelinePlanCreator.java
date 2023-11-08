@@ -7,8 +7,11 @@
 
 package io.harness.plancreator.pipeline;
 
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -20,8 +23,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.SdkTimeoutObtainmentUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -30,8 +32,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.common.pipeline.PipelineSetupStepParameters;
-import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
-import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Preconditions;
 import java.util.Collections;
@@ -70,9 +71,6 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
     String name = config.getName() != null ? config.getName() : config.getIdentifier();
     YamlNode stagesYamlNode = Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField("stages")).getNode();
 
-    StepParameters stepParameters =
-        PipelineSetupStepParameters.getStepParameters(ctx, config, stagesYamlNode.getUuid());
-
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(config.getUuid())
@@ -81,24 +79,18 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
             .group(StepOutcomeGroup.PIPELINE.name())
             .name(name)
             .skipUnresolvedExpressionsCheck(true)
-            .stepParameters(stepParameters)
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .skipExpressionChain(false);
-
-    if (ParameterField.isNotNull(config.getTimeout())) {
-      planNodeBuilder.timeoutObtainment(
-          SdkTimeoutObtainment.builder()
-              .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-              .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
-                              .timeout(TimeoutUtils.getTimeoutParameterFieldString(config.getTimeout()))
-                              .build())
-              .build());
-    }
-
-    return planNodeBuilder.build();
+    ParameterField<Timeout> timeout =
+        SdkTimeoutObtainmentUtils.getTimeout(config.getTimeout(), ctx.getTimeoutDuration(MAX_STAGE_TIMEOUT.getName()),
+            ctx.getFeatureFlagValue(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString()));
+    planNodeBuilder = setStageTimeoutObtainment(timeout, planNodeBuilder);
+    StepParameters stepParameters =
+        PipelineSetupStepParameters.getStepParameters(ctx, config, stagesYamlNode.getUuid(), timeout);
+    return planNodeBuilder.stepParameters(stepParameters).build();
   }
 
   @Override

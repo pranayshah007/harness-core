@@ -18,13 +18,17 @@ import io.harness.cvng.autodiscovery.beans.AutoDiscoveryAsyncResponseDTO;
 import io.harness.cvng.autodiscovery.beans.AutoDiscoveryAsyncResponseDTO.AsyncStatus;
 import io.harness.cvng.autodiscovery.beans.AutoDiscoveryRequestDTO;
 import io.harness.cvng.autodiscovery.beans.AutoDiscoveryResponseDTO;
+import io.harness.cvng.autodiscovery.entities.AutoDiscoveryAgent;
+import io.harness.cvng.autodiscovery.entities.AutoDiscoveryAgent.AutoDiscoveryAgentKeys;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.query.UpdateOperations;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -37,6 +41,7 @@ import org.junit.experimental.categories.Category;
 public class AutoDiscoveryResourceTest extends CvNextGenTestBase {
   @Inject private Injector injector;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject HPersistence hPersistence;
   private BuilderFactory builderFactory;
   private static final AutoDiscoveryResource autoDiscoveryResource = new AutoDiscoveryResource();
 
@@ -115,7 +120,7 @@ public class AutoDiscoveryResourceTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
-  public void reImportStatusAutoDiscovery() {
+  public void reImportStatusAutoDiscovery() throws InterruptedException {
     AutoDiscoveryRequestDTO autoDiscoveryRequestDTO = builderFactory.getAutoDiscoveryRequestDTO();
     autoDiscoveryRequestDTO.setAgentIdentifier("agent1");
     Response response = RESOURCES.client()
@@ -130,6 +135,7 @@ public class AutoDiscoveryResourceTest extends CvNextGenTestBase {
     RestResponse<AutoDiscoveryAsyncResponseDTO> restResponse = response.readEntity(new GenericType<>() {});
     assertThat(restResponse.getResource().getStatus()).isEqualTo(AsyncStatus.RUNNING);
     String correlationId = restResponse.getResource().getCorrelationId();
+    Thread.sleep(1000);
     response = RESOURCES.client()
                    .target("http://localhost:9998/auto-discovery/"
                        + "status/" + correlationId)
@@ -140,5 +146,52 @@ public class AutoDiscoveryResourceTest extends CvNextGenTestBase {
                    .get();
     restResponse = response.readEntity(new GenericType<>() {});
     assertThat(restResponse.getResource().getStatus()).isEqualTo(AsyncStatus.COMPLETED);
+    assertThat(restResponse.getResource().getServiceDependenciesImported()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void reImport_withNewDependencies() throws InterruptedException {
+    AutoDiscoveryRequestDTO autoDiscoveryRequestDTO = builderFactory.getAutoDiscoveryRequestDTO();
+    autoDiscoveryRequestDTO.setAgentIdentifier("agent2");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/auto-discovery/"
+                                + "create")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(autoDiscoveryRequestDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    UpdateOperations<AutoDiscoveryAgent> updateOperations =
+        hPersistence.createUpdateOperations(AutoDiscoveryAgent.class)
+            .set(AutoDiscoveryAgentKeys.agentIdentifier, "agent3");
+    hPersistence.update(hPersistence.createQuery(AutoDiscoveryAgent.class), updateOperations);
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/auto-discovery/"
+                       + "re-import")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(autoDiscoveryRequestDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<AutoDiscoveryAsyncResponseDTO> restResponseReImport = response.readEntity(new GenericType<>() {});
+    assertThat(restResponseReImport.getResource().getStatus()).isEqualTo(AsyncStatus.RUNNING);
+    String correlationId = restResponseReImport.getResource().getCorrelationId();
+    Thread.sleep(1000);
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/auto-discovery/"
+                       + "status/" + correlationId)
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    restResponseReImport = response.readEntity(new GenericType<>() {});
+    assertThat(restResponseReImport.getResource().getStatus()).isEqualTo(AsyncStatus.COMPLETED);
+    assertThat(restResponseReImport.getResource().getServiceDependenciesImported()).isEqualTo(1);
   }
 }

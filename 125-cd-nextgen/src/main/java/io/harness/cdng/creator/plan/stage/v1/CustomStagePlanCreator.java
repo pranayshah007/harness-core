@@ -81,7 +81,7 @@ public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     if (stepsField == null) {
       throw new InvalidRequestException("Steps section is required in Custom stage");
     }
-    dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
+    dependenciesNodeMap.put(specField.getNode().getUuid(), specField);
 
     // adding support for strategy
     Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
@@ -89,12 +89,12 @@ public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
     // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
     // bytes for complex objects. We will deprecate the first one in v1
-    planCreationResponseMap.put(stepsField.getNode().getUuid(),
+    planCreationResponseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                               .toBuilder()
                               .putDependencyMetadata(field.getUuid(), strategyDependency)
-                              .putDependencyMetadata(stepsField.getNode().getUuid(), getDependencyForSteps(field))
+                              .putDependencyMetadata(specField.getNode().getUuid(), getDependencyForSteps(field))
                               .build())
             .build());
 

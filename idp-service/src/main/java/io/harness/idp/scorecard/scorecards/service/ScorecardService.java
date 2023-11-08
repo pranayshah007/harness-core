@@ -14,6 +14,8 @@ import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
+import io.harness.spec.server.idp.v1.model.ScorecardStats;
 
 import java.util.List;
 
@@ -24,6 +26,9 @@ public interface ScorecardService {
   void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   ScorecardDetailsResponse getScorecardDetails(String accountIdentifier, String identifier);
+  List<ScorecardFilter> getScorecardFilters(String accountIdentifier, List<String> scorecardIdentifiers);
   void deleteScorecard(String accountIdentifier, String identifier);
   Facets getAllEntityFacets(String accountIdentifier, String kind);
+  List<ScorecardStats> getScorecardStats(String accountIdentifier, String identifier);
+  List<String> getScorecardIdentifiers(String accountIdentifier, String checkIdentifier, Boolean custom);
 }

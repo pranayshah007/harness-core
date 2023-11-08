@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.AnchoreStepInfo;
+import io.harness.beans.steps.stepinfo.security.AquaSecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo;
@@ -365,6 +366,15 @@ public final class STOSettingsUtils {
       map.put(getSTOKey(PRODUCT_IMAGE_NAME),
           resolveStringParameter(TOOL_IMAGE_NAME, stepType, identifier, toolData.getImageName(), false));
     }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAquaSecurityFields(
+      AquaSecurityStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     return map;
   }
@@ -732,14 +742,17 @@ public final class STOSettingsUtils {
       case ANCHORE:
         map.putAll(processSTOAnchoreFields((AnchoreStepInfo) stepInfo, stepType, identifier));
         break;
+      case AQUA_SECURITY:
+        map.putAll(processSTOAquaSecurityFields((AquaSecurityStepInfo) stepInfo, stepType, identifier));
+        break;
+      case AQUA_TRIVY:
+        map.putAll(processSTOAquaTrivyFields((AquaTrivyStepInfo) stepInfo, stepType, identifier));
+        break;
       case AWS_ECR:
         map.putAll(processSTOAwsEcrFields((AwsEcrStepInfo) stepInfo, stepType, identifier));
         break;
       case AWS_SECURITY_HUB:
         map.putAll(processSTOAwsSecurityHubFields((AwsSecurityHubStepInfo) stepInfo, stepType, identifier));
-        break;
-      case AQUA_TRIVY:
-        map.putAll(processSTOAquaTrivyFields((AquaTrivyStepInfo) stepInfo, stepType, identifier));
         break;
       case BLACKDUCK:
         map.putAll(processSTOBlackDuckFields((BlackDuckStepInfo) stepInfo, stepType, identifier));

@@ -6,7 +6,9 @@
  */
 
 package io.harness.plancreator.stages;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
@@ -14,9 +16,11 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.Dependency;
@@ -29,10 +33,12 @@ import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.SdkTimeoutObtainmentUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -82,12 +88,24 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
     }
 
     PlanNode stageNode = createPlanForParentNode(ctx, config, childrenNodeIds);
-    stageNode =
+    PlanNodeBuilder planNodeBuilder =
         stageNode.toBuilder()
             .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, stageNode.getAdviserObtainments())
-            .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, stageNode.getAdviserObtainments())
-            .build();
-    finalResponse.addNode(stageNode);
+            .advisorObtainmentForExecutionMode(
+                ExecutionMode.POST_EXECUTION_ROLLBACK, stageNode.getAdviserObtainments());
+    ParameterField<Timeout> timeoutParameterField =
+        SdkTimeoutObtainmentUtils.getTimeout(config.getTimeout(), ctx.getTimeoutDuration(MAX_STAGE_TIMEOUT.getName()),
+            ctx.getFeatureFlagValue(FeatureName.CDS_DISABLE_MAX_TIMEOUT_CONFIG.toString()));
+    planNodeBuilder = setStageTimeoutObtainment(timeoutParameterField, planNodeBuilder);
+    if ((!ParameterField.isBlank(timeoutParameterField))
+        && stageNode.getStepParameters() instanceof StageElementParameters) {
+      StageElementParameters stageElementParameters = (StageElementParameters) stageNode.getStepParameters();
+      planNodeBuilder.stepParameters(
+          stageElementParameters.toBuilder()
+              .timeout(ParameterField.createValueField(timeoutParameterField.getValue().getTimeoutString()))
+              .build());
+    }
+    finalResponse.addNode(planNodeBuilder.build());
     finalResponse.setGraphLayoutResponse(getLayoutNodeInfo(ctx, config));
     return finalResponse;
   }
@@ -117,14 +135,6 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
         StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
-  }
-
-  public PlanNodeBuilder setStageTimeoutObtainment(
-      SdkTimeoutObtainment sdkTimeoutObtainment, PlanNodeBuilder planNodeBuilder) {
-    if (null != sdkTimeoutObtainment) {
-      return planNodeBuilder.timeoutObtainment(sdkTimeoutObtainment);
-    }
-    return planNodeBuilder;
   }
 
   @Override

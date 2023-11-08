@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
@@ -296,12 +297,13 @@ public class ProjectRoleAssignmentsApiImplTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, true, true, true);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any()))
-        .thenReturn(RoleAssignmentResponseDTO.builder().roleAssignment(roleAssignmentDTO).build());
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
+    when(roleAssignmentService.create(any())).thenReturn(roleAssignment);
     projectRoleAssignmentsApi.createProjectScopedRoleAssignments(request, org, project, account);
     assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test
@@ -314,12 +316,13 @@ public class ProjectRoleAssignmentsApiImplTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, false, false, false);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any()))
-        .thenReturn(RoleAssignmentResponseDTO.builder().roleAssignment(roleAssignmentDTO).build());
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
+    when(roleAssignmentService.create(any())).thenReturn(roleAssignment);
     projectRoleAssignmentsApi.createProjectScopedRoleAssignments(request, org, project, account);
     assertSyncDependencies(roleAssignmentDTOClone, false, false, false);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test

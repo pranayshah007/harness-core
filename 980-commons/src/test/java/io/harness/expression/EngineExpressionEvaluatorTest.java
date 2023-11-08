@@ -364,6 +364,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("g", "def")
             .put("h", "v2")
             .put("i", "v")
+            .put("w", "archit-harness")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
             .put("nested2", "<+nested3>")
@@ -382,6 +383,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v7", "<+secret1>")
                     .put("v8", "<+company>/archit-<+f>")
                     .put("v9", "<+company>/archit-<+f1>")
+                    .put("v10", "<+company> <+<+w>.replace('-','')>")
+                    .put("v11", "<+company> <+(<+w>).replace('-','')>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -391,7 +394,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
             .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
-            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
+            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
+                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE"))
             .build());
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
@@ -442,6 +446,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
     // EQ operator
+    assertThatThrownBy(() -> evaluator.evaluateExpression("<+a>==abc"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Expression <+a>==abc might contain some unresolved expressions which could not be evaluated.");
     assertThat(
         evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
         .isEqualTo(true);
@@ -532,6 +539,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+<+variables.v5>.replace('-','')>", true)).isEqualTo("architharness");
     assertThat(evaluator.resolve("<+variables.v6>", true)).isEqualTo("${ngSecretManager.obtain(\"org.v2\", 123)}");
     assertThat(evaluator.resolve("<+variables.v7>", true)).isEqualTo("${ngSecretManager.obtain(\"org.v2\", 123)}");
+    assertThat(evaluator.resolve("<+variables.v10>", true)).isEqualTo("harness architharness");
+    assertThat(evaluator.resolve("<+variables.v11>", true)).isEqualTo("harness architharness");
 
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");

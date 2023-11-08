@@ -140,6 +140,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     useDeclarativeRollback = k8sRollingDeployRequest.isUseDeclarativeRollback();
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
+    kubernetesConfig = k8sDelegateTaskParams.getKubernetesConfig();
     long steadyStateTimeoutInMillis = getTimeoutMillisFromMinutes(k8sDeployRequest.getTimeoutIntervalInMin());
 
     LogCallback logCallback = k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, FetchFiles,
@@ -322,8 +323,11 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       LogCallback executionLogCallback, ServiceHookHandler serviceHookHandler) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    }
     client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 

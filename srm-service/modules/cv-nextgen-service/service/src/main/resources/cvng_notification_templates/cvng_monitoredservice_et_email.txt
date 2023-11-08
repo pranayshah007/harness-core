@@ -13,7 +13,7 @@ body: "<html>
         >
           <div
             style=\"
-              width: 600px;
+              width: 90%;
               border: 1px solid #B0B1C3;
               border-top-width: 8px;
               border-top-style: solid;

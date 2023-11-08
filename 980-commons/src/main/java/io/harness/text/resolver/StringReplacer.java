@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.StringEscapeUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
@@ -42,7 +41,7 @@ public class StringReplacer {
     }
 
     StringBuffer buf = new StringBuffer(source);
-    return substitute(buf, source, false).getFinalExpressionValue();
+    return substitute(buf, source, false, false).getFinalExpressionValue();
   }
 
   public StringReplacerResponse replaceWithRenderCheck(String source) {
@@ -51,10 +50,20 @@ public class StringReplacer {
     }
 
     StringBuffer buf = new StringBuffer(source);
-    return substitute(buf, source, true);
+    return substitute(buf, source, true, false);
   }
 
-  private StringReplacerResponse substitute(StringBuffer buf, String source, boolean checkRenderExpression) {
+  public StringReplacerResponse replaceWithRenderCheckAndNewMethodInvocation(String source) {
+    if (source == null) {
+      return null;
+    }
+
+    StringBuffer buf = new StringBuffer(source);
+    return substitute(buf, source, true, true);
+  }
+
+  private StringReplacerResponse substitute(
+      StringBuffer buf, String source, boolean checkRenderExpression, boolean isNewMethodInvocation) {
     boolean altered = false;
     boolean onlyRenderedExpressions = true;
     int bufEnd = buf.length();
@@ -108,22 +117,23 @@ public class StringReplacer {
 
         // Get whole expression
         int expressionEndPos = pos;
-        String expressionWithDelimiters = getModifiedExpression(expressionStartPos, expressionEndPos, buf);
-        String expression = expressionWithDelimiters.substring(
-            expressionPrefix.length, expressionWithDelimiters.length() - expressionSuffix.length);
+        String expressionString = buf.substring(expressionStartPos, expressionEndPos);
+        String expression =
+            expressionString.substring(expressionPrefix.length, expressionString.length() - expressionSuffix.length);
 
         // Resolve the expression
         String expressionValue = expressionResolver.resolve(expression);
         if (checkRenderExpression
-            && checkIfExpressionValueCanBeConcatenated(expressionValue, expressionStartPos, expressionEndPos, buf)) {
+            && checkIfExpressionValueCanBeConcatenated(
+                expressionValue, expressionStartPos, expressionEndPos, buf, isNewMethodInvocation)) {
           expressionValue = (String) expressionResolver.getContextValue(expressionValue);
         } else {
           onlyRenderedExpressions = false;
         }
         buf.replace(expressionStartPos, expressionEndPos, expressionValue);
-        pos += expressionValue.length() - expressionWithDelimiters.length();
+        pos += expressionValue.length() - expressionString.length();
         bufEnd = buf.length();
-        altered = altered || !expressionWithDelimiters.equals(expressionValue);
+        altered = altered || !expressionString.equals(expressionValue);
         break;
       }
     }
@@ -147,8 +157,8 @@ public class StringReplacer {
    * @param buf
    * @return
    */
-  private boolean checkIfExpressionValueCanBeConcatenated(
-      String expressionValue, int expressionStartPos, int expressionEndPos, StringBuffer buf) {
+  private boolean checkIfExpressionValueCanBeConcatenated(String expressionValue, int expressionStartPos,
+      int expressionEndPos, StringBuffer buf, boolean isNewMethodInvocation) {
     Object contextValue = expressionResolver.getContextValue(expressionValue);
     if (expressionValue == null || contextValue == null) {
       return false;
@@ -163,7 +173,7 @@ public class StringReplacer {
     }
 
     // Check if right substring has method invocation, then return false
-    if (checkIfValueHasMethodInvocation(buf, expressionEndPos)) {
+    if (checkIfValueHasMethodInvocation(buf, expressionEndPos, isNewMethodInvocation)) {
       return false;
     }
 
@@ -219,19 +229,24 @@ public class StringReplacer {
     return false;
   }
 
-  private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
-    boolean isMatch;
+  private boolean checkIfValueHasMethodInvocation(
+      StringBuffer buf, int expressionEndPos, boolean isNewMethodInvocation) {
     // Right substring
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
-    Pattern pattern = Pattern.compile("\\.\\w+\\(");
-    Matcher matcher = pattern.matcher(charSequence);
-    isMatch = matcher.find();
-    Pattern pattern2 = Pattern.compile("^\\.\\w+\\(");
-    Matcher matcher2 = pattern2.matcher(charSequence);
-    if (isMatch != matcher2.find()) {
-      log.info("[Expression Method Invocation]: charSequence: {}, buf: {}", charSequence, buf);
+    if (!isNewMethodInvocation) {
+      Pattern pattern = Pattern.compile("\\.\\w+\\(");
+      Matcher matcher = pattern.matcher(charSequence);
+      return matcher.find();
     }
-    return isMatch;
+    // method invocation should be true for <+expr> in <+expr>.method()
+    Pattern pattern = Pattern.compile("^\\.\\w+\\(");
+    Matcher matcher = pattern.matcher(charSequence);
+    boolean isMatch = matcher.find();
+    // method invocation should be true for <+expr> in (<+expr>).method()
+    Pattern pattern2 = Pattern.compile("^\\)\\.\\w+\\(");
+    Matcher matcher2 = pattern2.matcher(charSequence);
+    boolean isMatch2 = matcher2.find();
+    return isMatch || isMatch2;
   }
 
   private boolean checkBooleanOperators(StringBuffer s, int currentPos, boolean leftSubString) {
@@ -303,20 +318,5 @@ public class StringReplacer {
       }
     }
     return true;
-  }
-
-  // When expression is wrapped around quotes, the characters like " and \ will be escaped in it. So, when we are
-  // extracting the expression from buf we need to unescape them.
-  private String getModifiedExpression(int expressionStartPos, int expressionEndPos, StringBuffer buf) {
-    String expression = buf.substring(expressionStartPos, expressionEndPos);
-    if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
-        && buf.charAt(expressionEndPos) == '\"') {
-      String unescapedExpression = StringEscapeUtils.unescapeJson(expression);
-      if (!expression.equals(unescapedExpression)) {
-        log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
-            StringEscapeUtils.unescapeJson(expression));
-      }
-    }
-    return expression;
   }
 }

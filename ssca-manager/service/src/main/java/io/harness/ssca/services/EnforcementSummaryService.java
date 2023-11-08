@@ -17,10 +17,13 @@ import java.util.Optional;
 
 public interface EnforcementSummaryService {
   String persistEnforcementSummary(String enforcementId, List<EnforcementResultEntity> denyListResult,
-      List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact);
+      List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact, String pipelineExecutionId);
 
   Optional<EnforcementSummaryEntity> getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
+
+  EnforcementSummaryEntity getEnforcementSummaryByPipelineExecution(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineExecutionId);
 
   void create(EnforcementSummaryDTO enforcementSummaryDTO);
 }

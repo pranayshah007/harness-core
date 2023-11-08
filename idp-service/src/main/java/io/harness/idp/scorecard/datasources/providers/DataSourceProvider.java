@@ -23,7 +23,7 @@ import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.common.beans.DataSourceConfig;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation;
@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,7 +79,7 @@ public abstract class DataSourceProvider {
   protected Map<String, Map<String, Object>> processOut(String accountIdentifier, String identifier,
       BackstageCatalogEntity backstageCatalogEntity, Map<String, String> replaceableHeaders,
       Map<String, String> possibleReplaceableRequestBodyPairs, Map<String, String> possibleReplaceableUrlPairs,
-      List<DataFetchDTO> dataToFetch) throws NoSuchAlgorithmException, KeyManagementException {
+      List<DataFetchDTO> dataToFetch) {
     Map<String, List<DataFetchDTO>> dataToFetchByDsl =
         dataPointService.getDslDataPointsInfo(accountIdentifier, this.getIdentifier(), dataToFetch);
     Optional<DataSourceEntity> dataSourceEntityOpt = dataSourceRepository.findByAccountIdentifierInAndIdentifier(
@@ -95,18 +97,29 @@ public abstract class DataSourceProvider {
     for (Map.Entry<String, List<DataFetchDTO>> entry : dataToFetchByDsl.entrySet()) {
       String dslIdentifier = entry.getKey();
       List<DataFetchDTO> dataToFetchForDsl = entry.getValue();
+      Set<String> ruleIdentifiers =
+          dataToFetchForDsl.stream().map(DataFetchDTO::getRuleIdentifier).collect(Collectors.toSet());
+      log.debug(
+          "Fetching data for entity {} and DTOs {}", backstageCatalogEntity.getMetadata().getUid(), dataToFetchForDsl);
 
-      DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
-      DataSourceLocationEntity dataSourceLocationEntity = dataSourceLocationRepository.findByIdentifier(dslIdentifier);
-      Map<String, Object> response = dataSourceLocation.fetchData(accountIdentifier, backstageCatalogEntity,
-          dataSourceLocationEntity, dataToFetchForDsl, replaceableHeaders, possibleReplaceableRequestBodyPairs,
-          possibleReplaceableUrlPairs, config);
-      log.info("Response for DSL in Process out - dsl Identifier - {} dataToFetchWithInputValues - {} Response - {} ",
-          dslIdentifier, dataToFetchByDsl, response);
+      try {
+        DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
+        DataSourceLocationEntity dataSourceLocationEntity =
+            dataSourceLocationRepository.findByIdentifier(dslIdentifier);
+        Map<String, Object> response = dataSourceLocation.fetchData(accountIdentifier, backstageCatalogEntity,
+            dataSourceLocationEntity, dataToFetchForDsl, replaceableHeaders, possibleReplaceableRequestBodyPairs,
+            possibleReplaceableUrlPairs, config);
+        log.info("Response for DSL in Process out - dsl Identifier - {} rule identifiers - {} Response - {} ",
+            dslIdentifier, ruleIdentifiers, response);
 
-      parseResponseAgainstDataPoint(dataToFetchForDsl, response, aggregatedData);
+        parseResponseAgainstDataPoint(dataToFetchForDsl, response, aggregatedData);
+      } catch (Exception e) {
+        log.warn(
+            "Could not fetch data for dsl identifier - {} rule identifiers - {}", dslIdentifier, ruleIdentifiers, e);
+      }
     }
-    log.info("Aggregated data for data for DataPoints - {}, aggregated data - {}", dataToFetch, aggregatedData);
+    log.info(
+        "Aggregated data for entity with uuid {} : {}", backstageCatalogEntity.getMetadata().getUid(), aggregatedData);
 
     return aggregatedData;
   }

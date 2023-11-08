@@ -214,6 +214,12 @@ ciExecutionServiceConfig:
     images:
       - product: anchore_default
         image: harness/anchore-job-runner
+      - product: aquasecurity_default
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
       - product: awsecr_default
         image: harness/aws-ecr-job-runner
       - product: awssecurityhub_default

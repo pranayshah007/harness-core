@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.ToString;
@@ -121,11 +122,6 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, "");
       notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, "");
 
-      log.info("Aggregated Events size = " + aggregatedEvents.size());
-      for (AggregatedEvents aggregatedEvent : aggregatedEvents) {
-        log.info("aggregatedEvent = " + aggregatedEvent);
-      }
-
       String slackVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
 
@@ -168,15 +164,16 @@ public class ErrorTrackingNotificationRuleUtils {
                               .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
                               .collect(Collectors.toList());
           }
-          AggregatedEvents aggregatedEvents = AggregatedEvents.builder()
-                                                  .version(scorecard.getVersionIdentifier())
-                                                  .url(eventListUrlWithParameters)
-                                                  .newCount(scorecard.getNewHitCount())
-                                                  .criticalCount(scorecard.getCriticalHitCount())
-                                                  .resurfacedCount(scorecard.getResurfacedHitCount())
-                                                  .errorTrackingEventStatus(eventStatus)
-                                                  .savedFilterId(codeErrorCondition.getSavedFilterId())
-                                                  .build();
+          AggregatedEvents aggregatedEvents =
+              AggregatedEvents.builder()
+                  .version(scorecard.getVersionIdentifier())
+                  .url(eventListUrlWithParameters)
+                  .newCount(Optional.ofNullable(scorecard.getNewHitCount()).orElse(0))
+                  .criticalCount(Optional.ofNullable(scorecard.getCriticalHitCount()).orElse(0))
+                  .resurfacedCount(Optional.ofNullable(scorecard.getResurfacedHitCount()).orElse(0))
+                  .errorTrackingEventStatus(eventStatus)
+                  .savedFilterId(codeErrorCondition.getSavedFilterId())
+                  .build();
           urlsByVersion.add(aggregatedEvents);
         }
       } else {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
@@ -154,6 +155,9 @@ public class PlanCreatorUtilsV1 {
         if (objectOptional.isPresent()) {
           return objectOptional;
         }
+      }
+      if (harnessValue.hasBoolValue()) {
+        return Optional.of(harnessValue.getBoolValue());
       }
     }
     ByteString bytes = getMetadataValueFromDependency(dependency, key);

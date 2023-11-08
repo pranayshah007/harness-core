@@ -255,7 +255,10 @@ public class HarnessApprovalStepTest {
     AutoApprovalParams autoApprovalParams =
         AutoApprovalParams.builder()
             .action(AutoApprovalAction.APPROVE)
-            .scheduledDeadline(ScheduledDeadline.builder().time("time").timeZone("timezone").build())
+            .scheduledDeadline(ScheduledDeadline.builder()
+                                   .time(ParameterField.createValueField("time"))
+                                   .timeZone(ParameterField.createValueField("timezone"))
+                                   .build())
             .comments(ParameterField.<String>builder().value("comments").build())
             .build();
     specParameters.setAutoApproval(autoApprovalParams);
@@ -300,7 +303,10 @@ public class HarnessApprovalStepTest {
     AutoApprovalParams autoApprovalParams =
         AutoApprovalParams.builder()
             .action(AutoApprovalAction.APPROVE)
-            .scheduledDeadline(ScheduledDeadline.builder().time("time").timeZone("timezone").build())
+            .scheduledDeadline(ScheduledDeadline.builder()
+                                   .time(ParameterField.createValueField("time"))
+                                   .timeZone(ParameterField.createValueField("timezone"))
+                                   .build())
             .comments(ParameterField.<String>builder().value("comments").build())
             .build();
     specParameters.setAutoApproval(autoApprovalParams);

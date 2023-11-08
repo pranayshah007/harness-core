@@ -60,6 +60,7 @@ serviceScheduler:
 enableIterators: ${ENABLE_ITERATORS:-true}
 iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
+useUserProvidedAccountIdInTrialSignup: ${USE_USER_PROVIDED_ACCOUNT_ID_IN_TRIAL_SIGNUP:-false}
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
 blacklistedEmailDomainsAllowed: true

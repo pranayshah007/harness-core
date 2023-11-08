@@ -21,6 +21,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepNode;
+import io.harness.cdng.aws.asg.AsgShiftTrafficStepNode;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
 import io.harness.cdng.aws.sam.AwsSamBuildStepNode;
@@ -1134,6 +1135,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AsgBlueGreenSwapServiceStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ASG_SHIFT_TRAFFIC_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AsgShiftTrafficStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

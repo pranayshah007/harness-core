@@ -81,6 +81,9 @@ public class AMIArtifactOutcome implements ArtifactOutcome {
    */
   String image;
 
+  /* Field for adding support for <artifact.tag> */
+  String tag;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return AMIArtifactSummary.builder().version(version).build();

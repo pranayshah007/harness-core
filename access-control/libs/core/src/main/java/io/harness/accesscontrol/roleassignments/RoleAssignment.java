@@ -31,6 +31,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @ToString
 @EqualsAndHashCode
 public class RoleAssignment {
+  final String id;
   @EntityIdentifier final String identifier;
   @NotEmpty final String scopeIdentifier;
   final String scopeLevel;

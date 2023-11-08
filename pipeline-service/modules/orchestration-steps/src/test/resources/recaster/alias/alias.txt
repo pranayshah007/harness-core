@@ -265,6 +265,7 @@ io.harness.steps.jira.update.JiraUpdateStepInfo
 io.harness.steps.shellscript.ShellScriptStepParameters
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.plancreator.customDeployment.StepTemplateRef
+io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 io.harness.beans.yaml.extended.TIDotNetVersion
 io.harness.steps.plugin.ContainerStepParameters
 io.harness.beans.environment.pod.container.ContainerImageDetails

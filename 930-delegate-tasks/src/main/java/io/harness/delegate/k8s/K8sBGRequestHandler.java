@@ -163,6 +163,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     }
     HelmChartInfo helmChartInfo = null;
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
+    kubernetesConfig = k8sDelegateTaskParams.getKubernetesConfig();
     deploymentSkipped = false;
     k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
     releaseName = k8sBGDeployRequest.getReleaseName();
@@ -326,8 +327,11 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
 
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    }
 
     client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());

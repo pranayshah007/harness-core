@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: p5m03797r8u7f
+  id: s2hxe3uzqn73n
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -19,7 +19,7 @@ paths:
           $ref: '#/components/responses/NotificationChannelListResponse'
       operationId: get-notification-channel
       x-stoplight:
-        id: xo9n5254plvn4
+        id: 3pj21zua8k5tt
       description: Returns a list of notification channels for the scope.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -36,7 +36,7 @@ paths:
         '201':
           $ref: '#/components/responses/NotificationChannelResponse'
       x-stoplight:
-        id: 02cdejdq99eq9
+        id: 9usbvchtwyfkm
       description: Create Notification Channel
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -68,7 +68,7 @@ paths:
           $ref: '#/components/responses/NotificationRuleListResponse'
       operationId: get-notification-rule-list
       x-stoplight:
-        id: 5b40i5kg1orlo
+        id: hnh2iugxlc787
       description: Get list of notification rules
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -85,7 +85,7 @@ paths:
         '201':
           $ref: '#/components/responses/NotificationRuleResponse'
       x-stoplight:
-        id: ohi2gjkvn246k
+        id: 5k00e0s63vi30
       description: Create Notification Rule
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -114,7 +114,7 @@ paths:
           $ref: '#/components/responses/NotificationChannelResponse'
       operationId: get-notification-channels-notification-channel
       x-stoplight:
-        id: usu1lyus0fyhf
+        id: d0dga5scd4qek
       description: Get Notification Channel
       parameters:
         - schema:
@@ -131,7 +131,7 @@ paths:
         '204':
           description: No Content
       x-stoplight:
-        id: bwluz2k4qy35x
+        id: a4pbj3q8ol1ij
       description: Delete notificatation channel
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -144,7 +144,7 @@ paths:
         '200':
           $ref: '#/components/responses/NotificationChannelResponse'
       x-stoplight:
-        id: h1so22cd430p8
+        id: u4umv6ssfip7h
       description: Update Notification Channel
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -170,7 +170,7 @@ paths:
           $ref: '#/components/responses/NotificationRuleResponse'
       operationId: get-v1-orgs-org-projects-project-notification-rule-notification-rule
       x-stoplight:
-        id: ehaor9ba4fr9k
+        id: madsrqiyap6so
       description: Get notification rule
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -183,7 +183,7 @@ paths:
         '204':
           description: No Content
       x-stoplight:
-        id: xlryt7yypbaqr
+        id: 6eyjxck7pgu8z
       description: Delete notification rule
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -196,7 +196,7 @@ paths:
         '200':
           $ref: '#/components/responses/NotificationRuleResponse'
       x-stoplight:
-        id: lzrljlz33cy8k
+        id: tjo9fld5mov2t
       description: Update Notification Rule
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -261,19 +261,19 @@ components:
         identifier:
           type: string
           x-stoplight:
-            id: s8lhbewdd9f8u
+            id: e65u9926dqspn
         org:
           type: string
           x-stoplight:
-            id: ghwqraodbm1zj
+            id: 5clzrztg72zia
         project:
           type: string
           x-stoplight:
-            id: nnpl22m2wx70e
+            id: j5an9wpm9ghl4
         notification_channel_type:
           type: string
           x-stoplight:
-            id: z9zfolm283o28
+            id: mwopk5r6h7zgx
         status:
           type: string
         channel:
@@ -284,21 +284,21 @@ components:
               items:
                 type: object
                 x-stoplight:
-                  id: wlqr0dozwu30r
+                  id: go3n4hin8293t
             user_groups:
               type: array
               items:
                 type: object
                 x-stoplight:
-                  id: q5pzcrexm858s
+                  id: etahdhfnrap6z
         created_by:
           type: object
           x-stoplight:
-            id: v2p9t12zj4wgk
+            id: rg71rpm6u7d94
         created:
           type: integer
           x-stoplight:
-            id: s6rt2x2fuai93
+            id: k7ttoc4njtkdq
       description: Notification Channel DTO
       title: ''
     NotificationRuleDTO:
@@ -349,51 +349,51 @@ components:
         identifier:
           type: string
           x-stoplight:
-            id: 3s55ikqk60ned
+            id: qvxngpgji660z
         account:
           type: string
           x-stoplight:
-            id: szhx3eumcr3u2
+            id: xn6mea3qctdro
         org:
           type: string
           x-stoplight:
-            id: mct69p1xphrx5
+            id: cs9zcnm9dc6f1
         project:
           type: string
           x-stoplight:
-            id: bb1t0u7ypjn0x
+            id: hq8wzryl4bh9a
         notification_entity:
           type: string
           x-stoplight:
-            id: grebcko35mvhy
+            id: fb8t97t79uo26
         notification_conditions:
           type: array
           items:
             type: object
             x-stoplight:
-              id: ipq9wrcla4295
+              id: b7sijruuua55x
             properties:
               condition_name:
                 type: string
                 x-stoplight:
-                  id: axypnee46ytwd
+                  id: wnxw3vmxjckf7
               notification_event_configs:
                 type: array
                 items:
                   type: object
                   x-stoplight:
-                    id: flgan3tzc4oj4
+                    id: 7neh7icmw20jv
                   properties:
                     notification_event:
                       type: string
                       x-stoplight:
-                        id: nagfe5lcippgj
+                        id: po8jbeuafnwmj
                     notification_channels:
                       type: array
                       items:
                         type: object
                         x-stoplight:
-                          id: lxn2ls2u5yxt5
+                          id: qmtrsxhfy1xzc
                         properties:
                           name:
                             type: string
@@ -402,9 +402,7 @@ components:
                           project:
                             type: string
                           notification_channel_type:
-                            type: string
-                            x-stoplight:
-                              id: xcripb2zbyndx
+                            $ref: '#/components/schemas/ChannelType'
                           status:
                             type: string
                           channel:
@@ -415,27 +413,54 @@ components:
                                 items:
                                   type: object
                                   x-stoplight:
-                                    id: p613h5qaaozln
+                                    id: fkuhcj0c0y5ek
                               user_groups:
                                 type: array
                                 items:
                                   type: object
                                   x-stoplight:
-                                    id: yhowsvz7q75h6
+                                    id: izvi5bpy652du
                           created_by:
                             type: object
                           created:
                             type: integer
+                    notification_event_data:
+                      type: object
+                      x-stoplight:
+                        id: z4lpk8nv2vah2
+                    notification_entity:
+                      type: string
+                      x-stoplight:
+                        id: hpvhjwr90zrmx
         status:
-          type: string
+          $ref: '#/components/schemas/Status'
         created_by:
           type: object
           x-stoplight:
-            id: cvs7hw3o07iix
+            id: n5t94adl9l4cj
         created:
           type: integer
           x-stoplight:
-            id: prksg4pvb473j
+            id: ywdav69ibricx
+    ChannelType:
+      title: ChannelType
+      x-stoplight:
+        id: 3vponhcuh4qxf
+      enum:
+        - EMAIL
+        - SLACK
+        - PAGERDUTY
+        - MSTEAMS
+        - WEBHOOK
+      description: Notification Channel Type
+    Status:
+      title: Status
+      x-stoplight:
+        id: 9q0ske4n8j8bv
+      enum:
+        - ENABLED
+        - DISABLED
+      description: Notification Rule Status
   securitySchemes:
     x-api-key:
       name: x-api-key

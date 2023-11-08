@@ -181,6 +181,29 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void validateNoServiceOverrideInputs_withTemplate_1() throws IOException {
+    String envId = "env_with_serviceoverride_inputs";
+    String serviceId = "serviceId";
+
+    mockEnvWithNoRuntimeInputs(envId);
+    mockEnvWithServiceOverrideInputs(serviceId, envId);
+
+    refreshContext.setResolvedTemplatesYamlNode(buildStageTemplateNodeMultiSvcEnvRuntime(serviceId));
+
+    YamlNode entityNode = buildEnvYamlNodeWithRuntimeInputs(envId);
+
+    JsonNode jsonNode = refreshHelper.refreshEnvironmentInputs(entityNode, refreshContext);
+    assertThat(jsonNode.toPrettyString())
+        .isEqualTo("{\n"
+            + "  \"environmentRef\" : \"env_with_serviceoverride_inputs\",\n"
+            + "  \"deployToAll\" : false,\n"
+            + "  \"infrastructureDefinitions\" : \"<+input>\"\n"
+            + "}");
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void validateEnvironmentInputs_whenExpression() throws IOException {
@@ -290,6 +313,15 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
     return YamlNode.fromYamlPath(yaml, "");
   }
 
+  private YamlNode buildEnvYamlNodeWithRuntimeInputs(String identifier) throws IOException {
+    String yaml = "environmentRef: " + identifier + "\n"
+        + "deployToAll: false\n"
+        + "environmentInputs: <+input>\n"
+        + "serviceOverrideInputs: <+input>\n"
+        + "infrastructureDefinitions: <+input>";
+    return YamlNode.fromYamlPath(yaml, "");
+  }
+
   private YamlNode buildEnvYamlNodeWithInfraDefAsExpression(String identifier) throws IOException {
     String yaml = "environmentRef: " + identifier + "\n"
         + "deployToAll: false\n"
@@ -391,6 +423,30 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
         + "    spec:\n"
         + "      deploymentType: NativeHelm\n"
         + "      service:\n"
+        + "        serviceRef: " + serviceRef + "\n"
+        + "        serviceInputs: <+input>\n"
+        + "      environment:\n"
+        + "        environmentRef: <+input>\n"
+        + "        deployToAll: false\n"
+        + "        environmentInputs: <+input>\n"
+        + "        serviceOverrideInputs: <+input>\n"
+        + "        infrastructureDefinitions: <+input>\n"
+        + "  identifier: stage_template\n"
+        + "  versionLabel: v1\n";
+    return YamlNode.fromYamlPath(yaml, "");
+  }
+
+  private YamlNode buildStageTemplateNodeMultiSvcEnvRuntime(String serviceRef) throws IOException {
+    String yaml = "template:\n"
+        + "  name: stage_template\n"
+        + "  type: Stage\n"
+        + "  projectIdentifier: projectId\n"
+        + "  orgIdentifier: orgId\n"
+        + "  spec:\n"
+        + "    type: Deployment\n"
+        + "    spec:\n"
+        + "      deploymentType: NativeHelm\n"
+        + "      services:\n"
         + "        serviceRef: " + serviceRef + "\n"
         + "        serviceInputs: <+input>\n"
         + "      environment:\n"

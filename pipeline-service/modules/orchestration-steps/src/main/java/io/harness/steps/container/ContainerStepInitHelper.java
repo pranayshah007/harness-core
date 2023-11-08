@@ -538,15 +538,15 @@ public class ContainerStepInitHelper {
   private ContainerDefinitionInfo createStepContainerDefinition(
       ContainerStepInfo runStepInfo, PortFinder portFinder, String accountId, OSType os) {
     if (runStepInfo.getImage() == null) {
-      throw new CIStageExecutionException(
-          String.format("image can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
-              runStepInfo.getIdentifier(), runStepInfo.getName()));
+      throw new CIStageExecutionException(String.format(
+          "With a Kubernetes cluster build infrastructure, image is required for stepId: %s and stepName: %s",
+          runStepInfo.getIdentifier(), runStepInfo.getName()));
     }
 
     if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
-      throw new ContainerStepExecutionException(
-          String.format("connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
-              runStepInfo.getIdentifier(), runStepInfo.getName()));
+      throw new ContainerStepExecutionException(String.format(
+          "With a Kubernetes cluster build infrastructure, connector ref is required for stepId: %s and stepName: %s",
+          runStepInfo.getIdentifier(), runStepInfo.getName()));
     }
     String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(runStepInfo.getIdentifier());
     Integer port = portFinder.getNextPort();

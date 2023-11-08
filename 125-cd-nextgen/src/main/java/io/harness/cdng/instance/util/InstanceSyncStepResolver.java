@@ -35,6 +35,8 @@ import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
 import io.harness.cdng.ecs.EcsUpgradeContainerStep;
+import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeployStepV2;
+import io.harness.cdng.ecs.asyncsteps.EcsRollingDeployStepV2;
 import io.harness.cdng.ecs.asyncsteps.EcsUpgradeContainerStepV2;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
@@ -48,6 +50,8 @@ import io.harness.cdng.googlefunctions.rollbackgenone.GoogleFunctionsGenOneRollb
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
+import io.harness.cdng.helm.async.HelmDeployStepV2;
+import io.harness.cdng.helm.async.HelmRollbackStepV2;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
@@ -80,10 +84,12 @@ public class InstanceSyncStepResolver {
       K8sRollingStep.STEP_TYPE.getType(), K8sRollingStepV2.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(),
       K8sCanaryStepV2.STEP_TYPE.getType(), K8sBlueGreenStep.STEP_TYPE.getType(), K8sBlueGreenStepV2.STEP_TYPE.getType(),
       K8sRollingRollbackStep.STEP_TYPE.getType(), HelmDeployStep.STEP_TYPE.getType(),
-      HelmRollbackStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(),
+      HelmDeployStepV2.STEP_TYPE.getType(), HelmRollbackStep.STEP_TYPE.getType(),
+      HelmRollbackStepV2.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType(),
       AzureWebAppSlotDeploymentStep.STEP_TYPE.getType(), AzureWebAppRollbackStep.STEP_TYPE.getType(),
       CommandStep.STEP_TYPE.getType(), EcsRollingDeployStep.STEP_TYPE.getType(),
-      EcsRollingRollbackStep.STEP_TYPE.getType(), EcsCanaryDeployStep.STEP_TYPE.getType(),
+      EcsRollingDeployStepV2.STEP_TYPE.getType(), EcsRollingRollbackStep.STEP_TYPE.getType(),
+      EcsCanaryDeployStep.STEP_TYPE.getType(), EcsCanaryDeployStepV2.STEP_TYPE.getType(),
       EcsBlueGreenSwapTargetGroupsStep.STEP_TYPE.getType(), EcsBlueGreenRollbackStep.STEP_TYPE.getType(),
       FetchInstanceScriptStep.STEP_TYPE.getType(), ElastigroupDeployStep.STEP_TYPE.getType(),
       TasAppResizeStep.STEP_TYPE.getType(), TasSwapRoutesStep.STEP_TYPE.getType(), TasRollbackStep.STEP_TYPE.getType(),

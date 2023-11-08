@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.common.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
@@ -25,6 +26,7 @@ import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.utils.CommonPlanCreatorUtils;
 import io.harness.yaml.core.properties.NGProperties;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -50,6 +52,7 @@ public class PipelineSetupStepParameters implements StepParameters {
   ParameterField<String> description;
   Map<String, String> tags;
   ParameterField<Map<String, Object>> properties;
+  ParameterField<String> timeout;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
 
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -60,7 +63,7 @@ public class PipelineSetupStepParameters implements StepParameters {
   public PipelineSetupStepParameters(String childNodeID, String name, String identifier, FlowControlConfig flowControl,
       ParameterField<String> description, Map<String, String> tags, NGProperties properties,
       List<NGVariable> originalVariables, String executionId, int sequenceId,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> timeout) {
     this.childNodeID = childNodeID;
     this.name = name;
     this.identifier = identifier;
@@ -71,10 +74,11 @@ public class PipelineSetupStepParameters implements StepParameters {
     this.variables = ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(originalVariables));
     this.executionId = executionId;
     this.delegateSelectors = delegateSelectors;
+    this.timeout = timeout;
   }
 
   public static PipelineSetupStepParameters getStepParameters(
-      PlanCreationContext ctx, PipelineInfoConfig infoConfig, String childNodeID) {
+      PlanCreationContext ctx, PipelineInfoConfig infoConfig, String childNodeID, ParameterField<Timeout> timeout) {
     if (infoConfig == null) {
       return PipelineSetupStepParameters.newBuilder()
           .childNodeID(childNodeID)
@@ -88,6 +92,8 @@ public class PipelineSetupStepParameters implements StepParameters {
     return new PipelineSetupStepParameters(childNodeID, infoConfig.getName(), infoConfig.getIdentifier(),
         infoConfig.getFlowControl(), SdkCoreStepUtils.getParameterFieldHandleValueNull(infoConfig.getDescription()),
         infoConfig.getTags(), infoConfig.getProperties(), infoConfig.getVariables(), ctx.getExecutionUuid(),
-        ctx.getRunSequence(), infoConfig.getDelegateSelectors());
+        ctx.getRunSequence(), infoConfig.getDelegateSelectors(),
+        ParameterField.isBlank(timeout) ? null
+                                        : ParameterField.createValueField(timeout.getValue().getTimeoutString()));
   }
 }

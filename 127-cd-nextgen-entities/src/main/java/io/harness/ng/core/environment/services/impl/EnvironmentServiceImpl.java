@@ -61,6 +61,8 @@ import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOve
 import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.beans.ServiceOverridesMetadata;
+import io.harness.ng.core.environment.dto.ScopedEnvironmentRequestDTO;
+import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
@@ -124,7 +126,9 @@ import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -157,6 +161,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final NGSettingsClient settingsClient;
   private final ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   private final EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
+  private final EnvironmentFilterHelper environmentFilterHelper;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
@@ -166,7 +171,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       ServiceEntityService serviceEntityService, AccountClient accountClient, NGSettingsClient settingsClient,
       EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper,
-      ServiceOverrideV2ValidationHelper overrideV2ValidationHelper) {
+      ServiceOverrideV2ValidationHelper overrideV2ValidationHelper, EnvironmentFilterHelper environmentFilterHelper) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -181,6 +186,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.settingsClient = settingsClient;
     this.environmentEntitySetupUsageHelper = environmentEntitySetupUsageHelper;
     this.overrideV2ValidationHelper = overrideV2ValidationHelper;
+    this.environmentFilterHelper = environmentFilterHelper;
   }
 
   @Override
@@ -368,6 +374,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public Page<Environment> list(Criteria criteria, Pageable pageable) {
     return environmentRepository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public Page<Environment> list(
+      String accountId, String envType, ScopedEnvironmentRequestDTO scopedEnvironmentRequestDTO, int page, int size) {
+    Criteria criteria = environmentFilterHelper.createCriteriaToGetScopedEnvironments(accountId,
+        scopedEnvironmentRequestDTO.getOrgIdentifiers(), scopedEnvironmentRequestDTO.getProjectIdentifiers(), envType,
+        scopedEnvironmentRequestDTO.getScopes());
+    Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
+    return list(criteria, pageRequest);
   }
 
   @Override

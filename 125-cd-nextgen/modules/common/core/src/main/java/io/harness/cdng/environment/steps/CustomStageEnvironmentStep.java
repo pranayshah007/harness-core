@@ -38,7 +38,6 @@ import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
@@ -53,6 +52,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
@@ -83,7 +83,6 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStageEnvironmentStepParameters> {
-  @Inject private EnvironmentService environmentService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
@@ -100,7 +99,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
 
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, CustomStageEnvironmentStepParameters parameters, StepInputPackage inputPackage) {
-    try {
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       final String accountId = AmbianceUtils.getAccountId(ambiance);
       final String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
       final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -306,8 +305,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
 
     EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
 
-    Optional<Environment> environment =
-        environmentService.get(accountId, orgIdentifier, projectIdentifier, finalEnvRef, false);
+    Optional<Environment> environment = serviceStepV3Helper.getEnvironmentWithYaml(
+        accountId, orgIdentifier, projectIdentifier, finalEnvRef, parameters.getEnvGitBranch());
     if (environment.isEmpty()) {
       throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", finalEnvRef));
     }

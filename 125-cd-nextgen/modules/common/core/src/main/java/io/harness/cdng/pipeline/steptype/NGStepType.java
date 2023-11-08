@@ -365,7 +365,10 @@ public enum NGStepType {
       StepSpecTypeConstants.ECS_UPGRADE_CONTAINER),
   @JsonProperty(StepSpecTypeConstants.ECS_BASIC_ROLLBACK)
   ECS_BASIC_ROLLBACK(
-      "ECS Basic Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BASIC_ROLLBACK);
+      "ECS Basic Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BASIC_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ASG_SHIFT_TRAFFIC)
+  ASG_SHIFT_TRAFFIC(
+      "Asg Shift Traffic", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_SHIFT_TRAFFIC);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

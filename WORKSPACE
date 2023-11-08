@@ -6530,7 +6530,7 @@ plain_artifacts = [
     "org.jodd:jodd-core:5.0.13",
     "org.jooq:jooq:3.14.8",
     "org.jooq:joor:0.9.5",
-    "org.json:json:20230227",
+    "org.json:json:20231013",
     "org.jsoup:jsoup:1.8.3",
     "org.jsoup:jsoup:1.8.3",
     "org.jsr107.ri:cache-annotations-ri-common:1.0.0",

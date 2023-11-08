@@ -21,7 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
 import io.harness.idp.proxy.services.IdpAuthInterceptor;
-import io.harness.idp.scorecard.datapoints.parser.DataSourceDataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataSourceDataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;

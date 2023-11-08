@@ -8,6 +8,7 @@
 package io.harness.delegate.service;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_CUSTOM_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
 import static io.harness.delegate.beans.VersionOverrideType.UPGRADER_IMAGE_TAG;
@@ -88,6 +89,14 @@ public class DelegateVersionService {
    * @return
    */
   public String getImmutableDelegateImageTag(final String accountId) {
+    final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_CUSTOM_IMAGE_TAG);
+    if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+      return versionOverride.getVersion();
+    }
+    return getLatestImmutableDelegateImageTag(accountId);
+  }
+
+  public String getLatestImmutableDelegateImageTag(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
@@ -175,7 +184,7 @@ public class DelegateVersionService {
   }
 
   public SupportedDelegateVersion getSupportedDelegateVersion(String accountId) {
-    String latestSupportedDelegateImage = getImmutableDelegateImageTag(accountId);
+    String latestSupportedDelegateImage = getLatestImmutableDelegateImageTag(accountId);
     String[] split = latestSupportedDelegateImage.split(":");
     String latestVersion = split[1];
 

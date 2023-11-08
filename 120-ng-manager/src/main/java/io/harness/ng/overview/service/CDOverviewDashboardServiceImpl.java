@@ -222,6 +222,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String ORG_IDENTIFIER = "org.";
   private static final Integer QUERY_PAGE_SIZE = 1000;
+  private static final String DASHBOARD_DATA_BEING_QUERIED_FOR_MORE_THAN_A_YEAR =
+      "Time interval being queried is for %s number of days which is more than a year";
 
   public String executionStatusCdTimeScaleColumns() {
     return "id,"
@@ -4330,5 +4332,16 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           : Boolean.FALSE;
     }
     return Boolean.FALSE;
+  }
+
+  public void validateDashboardRequestDuration(long numOfRequestedDays) {
+    if (numOfRequestedDays > 366) {
+      log.warn(String.format(DASHBOARD_DATA_BEING_QUERIED_FOR_MORE_THAN_A_YEAR, numOfRequestedDays));
+    }
+  }
+
+  public void validateDashboardRequestDuration(long startTime, long endTime) {
+    long numberOfDays = (long) Math.ceil((endTime - startTime) / (double) DAY_IN_MS);
+    validateDashboardRequestDuration(numberOfDays);
   }
 }

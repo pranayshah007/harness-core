@@ -55,7 +55,6 @@ import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
@@ -671,12 +670,43 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
     wireMockRule.stubFor(get(urlEqualTo("/v2/")).willReturn(aResponse().withStatus(200)));
     wireMockRule.stubFor(get(urlEqualTo("/")).willReturn(aResponse().withStatus(400)));
-    assertThat(dockerRegistryService.validateCredentials(dockerConfig));
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig)).isTrue();
     url2 = "http://localhost:" + wireMockRule.port() + "/v2/";
     dockerConfig2 =
         DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
     doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
-    assertThat(dockerRegistryService.validateCredentials(dockerConfig));
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testForWithoutSlash401() {
+    String url2 = "http://localhost:" + wireMockRule.port() + "/";
+    DockerInternalConfig dockerConfig2 =
+        DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
+    wireMockRule.stubFor(get(urlEqualTo("/v2/")).willReturn(aResponse().withStatus(200)));
+    wireMockRule.stubFor(get(urlEqualTo("/v2")).willReturn(aResponse().withStatus(401)));
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testForWithSlash401() {
+    String url2 = "http://localhost:" + wireMockRule.port() + "/";
+    DockerInternalConfig dockerConfig2 =
+        DockerInternalConfig.builder().dockerRegistryUrl(url2).username("username").password("password").build();
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig2);
+    wireMockRule.stubFor(get(urlEqualTo("/v2/")).willReturn(aResponse().withStatus(401)));
+    wireMockRule.stubFor(get(urlEqualTo("/v2")).willReturn(aResponse().withStatus(404)));
+    assertThatThrownBy(() -> dockerRegistryService.validateCredentials(dockerConfig))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .extracting("message")
+        .isEqualTo("Check if the provided credentials are correct");
   }
 
   @Test

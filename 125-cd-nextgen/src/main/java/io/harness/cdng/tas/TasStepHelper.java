@@ -782,6 +782,7 @@ public class TasStepHelper {
     AutoScalerManifestOutcome autoScalerManifestOutcome = null;
     boolean autoScalarManifestFound = false;
     List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
+    validateArtifactBundleManifestStore(orderedManifestOutcomes);
     for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
       switch (manifestOutcome.getType()) {
         case TAS_AUTOSCALER:
@@ -2119,5 +2120,37 @@ public class TasStepHelper {
       return treeMap.containsKey(NAME_MANIFEST_YML_ELEMENT);
     }
     return false;
+  }
+
+  private void validateArtifactBundleManifestStore(List<ManifestOutcome> orderedManifestOutcomes) {
+    TasManifestOutcome artifactBundleStoreManifestOutcome = null;
+    List<TasManifestOutcome> tasManifestTypeOutcomeList = new ArrayList<>();
+    AutoScalerManifestOutcome autoScalerManifestOutcome = null;
+    for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
+      if (manifestOutcome.getType().equals(TAS_MANIFEST)) {
+        if (manifestOutcome.getStore().getKind().equals(ManifestStoreType.ARTIFACT_BUNDLE)) {
+          artifactBundleStoreManifestOutcome = (TasManifestOutcome) manifestOutcome;
+        }
+        tasManifestTypeOutcomeList.add((TasManifestOutcome) manifestOutcome);
+      }
+      if (manifestOutcome.getType().equals(TAS_AUTOSCALER) && (manifestOutcome instanceof AutoScalerManifestOutcome)) {
+        autoScalerManifestOutcome = (AutoScalerManifestOutcome) manifestOutcome;
+      }
+    }
+    if (artifactBundleStoreManifestOutcome != null) {
+      if (tasManifestTypeOutcomeList.size() > 1) {
+        throw new InvalidRequestException(
+            format(
+                "Tas Manifest of Artifact Bundle Store type doesn't support Additional Manifest of type Tas Manifest.Expected count of Tas Manifest is 1 but found : %s",
+                tasManifestTypeOutcomeList.size()),
+            USER);
+      }
+      if (!isEmpty(getParameterFieldValue(artifactBundleStoreManifestOutcome.getAutoScalerPath()))
+          && (autoScalerManifestOutcome != null)) {
+        throw new InvalidRequestException(
+            "Tas Manifest of Artifact Bundle Store type having Autoscaler manifest configured doesn't support Autoscaler manifest type Separately.",
+            USER);
+      }
+    }
   }
 }

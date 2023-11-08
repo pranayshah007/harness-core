@@ -612,24 +612,24 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testInit() throws Exception {
-    testInit(false, false);
+    testInit(false, false, true);
   }
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testInitSkipDryRun() throws Exception {
-    testInit(true, false);
+    testInit(true, false, false);
   }
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testInitFailed() throws Exception {
-    testInit(false, true);
+    testInit(false, true, false);
   }
 
-  private void testInit(boolean skipDryRun, boolean throwException) throws Exception {
+  private void testInit(boolean skipDryRun, boolean throwException, boolean kubernetesConfigSetup) throws Exception {
     final K8sManifestDelegateConfig k8sManifestDelegateConfig = K8sManifestDelegateConfig.builder().build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
     final List<FileData> renderedFiles = Collections.singletonList(FileData.builder().build());
@@ -644,6 +644,11 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
                                                       .skipDryRun(skipDryRun)
                                                       .build();
     final InvalidRequestException thrownException = new InvalidRequestException("failed");
+    if (kubernetesConfigSetup) {
+      on(k8sBGRequestHandler).set("kubernetesConfig", kubernetesConfig);
+    } else {
+      on(k8sBGRequestHandler).set("kubernetesConfig", null);
+    }
     doReturn("sampleManifest")
         .when(k8sManifestHashGenerator)
         .manifestHash(anyList(), eq(k8sDelegateTaskParams), eq(logCallback), any(Kubectl.class));
@@ -668,9 +673,11 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     } else {
       k8sBGRequestHandler.init(k8sBGDeployRequest, k8sDelegateTaskParams, logCallback, serviceHookHandler);
     }
+    if (!kubernetesConfigSetup) {
+      verify(containerDeploymentDelegateBaseHelper)
+          .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
+    }
 
-    verify(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
     verify(releaseHandler).getReleaseHistory(any(), eq("releaseName"));
 
     if (!throwException) {

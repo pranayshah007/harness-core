@@ -235,6 +235,7 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     assertThat(triggerEventResponse.getProjectIdentifier()).isEqualTo(projectId);
     assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
     assertThat(triggerEventResponse.getPollingDocId()).isEqualTo(pollingDocId);
+    assertThat(triggerEventResponse.getBuild()).isEqualTo("v1");
 
     // Manifest
     NGTriggerEntity manifestTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -262,6 +263,7 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     assertThat(triggerEventResponse.getProjectIdentifier()).isEqualTo(projectId);
     assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
     assertThat(triggerEventResponse.getPollingDocId()).isEqualTo(pollingDocId);
+    assertThat(triggerEventResponse.getBuild()).isEqualTo("v1");
 
     // payload should be present even in case of exception
     doThrow(new InvalidRequestException("message"))

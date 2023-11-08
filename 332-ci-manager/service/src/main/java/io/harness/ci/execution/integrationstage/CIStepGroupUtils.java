@@ -245,7 +245,8 @@ public class CIStepGroupUtils {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    boolean queueEnabled = featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
+    boolean queueEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
     if (queueEnabled) {
       return ParameterField.createValueField(Timeout.fromString("10h"));
     }

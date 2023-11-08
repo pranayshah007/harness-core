@@ -2688,6 +2688,8 @@ components:
           type: boolean
           x-stoplight:
             id: w9foy9vxf0k6h
+        execution:
+          type: boolean
         default:
           type: object
           x-stoplight:
@@ -2697,6 +2699,8 @@ components:
           x-stoplight:
             id: dgtl70dkkov1t
           items: {}
+        regex:
+          type: string
     YamlInputType:
       title: YamlInputType
       x-stoplight:

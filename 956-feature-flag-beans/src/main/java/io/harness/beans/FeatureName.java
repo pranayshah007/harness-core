@@ -360,7 +360,6 @@ public enum FeatureName {
   DISABLE_WINRM_COMMAND_ENCODING_NG(
       "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
       HarnessTeam.CDP),
-  DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   DYNATRACE_MULTI_SERVICE,
   ECS_AUTOSCALAR_REDESIGN,
   ECS_BG_DOWNSIZE,
@@ -452,6 +451,8 @@ public enum FeatureName {
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
       "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
   IDP_ENABLE_SCORECARDS("This FF is for enabling the scorecards feature in IDP", HarnessTeam.IDP),
+
+  IDP_ENABLE_STAGE("This FF is for enabling the idp-stage in pipeline studio", HarnessTeam.IDP),
 
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   INLINE_SSH_COMMAND,
@@ -758,7 +759,6 @@ public enum FeatureName {
   STOP_SHOWING_RUNNING_EXECUTIONS,
   STO_AI_ENHANCED_REMEDIATIONS(
       "Enable STO to enhance security issues with remediation information using generative AI", HarnessTeam.STO),
-  STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),
   STO_ALL_ISSUES_PAGE("Enable all issues page for STO", HarnessTeam.STO),
   STO_DROPDOWN_FILTERS("Enable dropdown filters for STO", HarnessTeam.STO),
   STO_EXEMPTION_DETAILS("Enable exemption details for STO", HarnessTeam.STO),
@@ -928,6 +928,8 @@ public enum FeatureName {
   PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
   SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
   PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE),
+  CDS_NG_CONVERT_BRANCH_TO_PUSH_WEBHOOK_BITBUCKET_ON_PREM(
+      "Converts BitBucket on-prem branch webhook event to push event", HarnessTeam.CDC),
   CDS_DISABLE_MAX_TIMEOUT_CONFIG("Feature Flag to disable the max timeout Configuration", HarnessTeam.CDC),
   CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI),
   CDS_TF_TG_HARD_RESET_GIT_REF(
@@ -936,7 +938,12 @@ public enum FeatureName {
   CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE(
       "Remove sdk resume event for async and async chain modes to avoid race condition", PIPELINE),
   CDS_K8S_TRAFFIC_ROUTING_NG(
-      "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP);
+      "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP),
+  CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE(
+      "Supports edge cases of method invocation in expression engine", PIPELINE),
+
+  CDS_USE_AMBIANCE_IN_EXPRESSION_ENGINE(
+      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE);
 
   // keep-sorted end
 

@@ -167,6 +167,7 @@ public class NGGitServiceImpl implements NGGitService {
                                                                          : gitStoreDelegateConfig.getConnectorId())
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
+            .optionalFiles(gitStoreDelegateConfig.isOptional())
             .build();
     return gitClientV2.fetchFilesByPath(identifier, fetchFilesByPathRequest);
   }

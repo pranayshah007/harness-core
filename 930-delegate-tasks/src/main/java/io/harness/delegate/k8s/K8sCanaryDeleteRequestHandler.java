@@ -75,6 +75,7 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
     }
 
     K8sCanaryDeleteRequest canaryDeleteRequest = (K8sCanaryDeleteRequest) k8sDeployRequest;
+    kubernetesConfig = k8SDelegateTaskParams.getKubernetesConfig();
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(canaryDeleteRequest.isUseDeclarativeRollback());
     LogCallback initLogCallBack =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
@@ -100,8 +101,11 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
 
     client = KubectlFactory.getKubectlClient(
         delegateParams.getKubectlPath(), delegateParams.getKubeconfigPath(), delegateParams.getWorkingDirectory());
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), delegateParams.getWorkingDirectory(), logCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), delegateParams.getWorkingDirectory(), logCallback);
+    }
 
     if (isEmpty(request.getCanaryWorkloads())) {
       resourceIdsToDelete = getCanaryResourceIdsFromReleaseHistory(request.getReleaseName(), logCallback);

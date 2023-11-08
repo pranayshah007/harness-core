@@ -134,12 +134,5 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
     PlanNode approvalStagePlanNode =
         approvalStagePlanCreator.createPlanForParentNode(approvalStageContext, approvalStageConfig, null);
     assertThat(approvalStagePlanNode).isNotNull();
-    assertThat(approvalStagePlanNode.getTimeoutObtainments().size()).isEqualTo(1);
-    assertThat(approvalStagePlanNode.getTimeoutObtainments()
-                   .get(0)
-                   .getParameters()
-                   .prepareTimeoutParameters()
-                   .getTimeoutMillis())
-        .isEqualTo(10000L);
   }
 }

@@ -204,4 +204,7 @@ public interface CDOverviewDashboardService {
       String serviceId, boolean useCustomSequence);
   SequenceToggleDTO useCustomSequence(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  void validateDashboardRequestDuration(long numOfRequestedDays);
+  void validateDashboardRequestDuration(long startTime, long endTime);
 }

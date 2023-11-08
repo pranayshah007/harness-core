@@ -115,7 +115,7 @@ global:
                   name: ""
                   property: ""
     clickhouse:
-      enabled: true
+      enabled: false
       secrets:
         kubernetesSecrets:
           - secretName: ""

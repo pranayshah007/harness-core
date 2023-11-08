@@ -2308,6 +2308,7 @@
 88517:io.harness.yaml.options.Options
 88518:io.harness.yaml.clone.Clone
 88519:io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec
+88520:io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback

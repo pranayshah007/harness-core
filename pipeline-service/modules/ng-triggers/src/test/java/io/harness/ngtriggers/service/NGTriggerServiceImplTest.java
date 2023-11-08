@@ -817,6 +817,28 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                    ACCOUNT_ID, Collections.singletonList("signature")))
         .isEqualTo(Collections.singletonList(ngTrigger));
   }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testValidateTrigger() {
+    doThrow(new InvalidRequestException("message")).when(triggerValidationHandler).applyValidations(any());
+    when(ngTriggerRepository.updateValidationStatus(any(), any()))
+        .thenReturn(NGTriggerEntity.builder()
+                        .triggerStatus(TriggerStatus.builder()
+                                           .validationStatus(ValidationStatus.builder()
+                                                                 .statusResult(StatusResult.FAILED)
+                                                                 .detailedMessage("message")
+                                                                 .build())
+                                           .build())
+                        .build());
+    ValidationStatus validationStatus = ngTriggerServiceImpl.validateTrigger(NGTriggerEntity.builder().build())
+                                            .getTriggerStatus()
+                                            .getValidationStatus();
+    assertThat(validationStatus.getDetailedMessage()).isEqualTo("message");
+    assertThat(validationStatus.getStatusResult()).isEqualTo(StatusResult.FAILED);
+  }
+
   @Test
   @Owner(developers = MEET)
   @Category(UnitTests.class)
@@ -1236,6 +1258,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                                                            .build())
                         .build());
     when(ngTriggerRepository.update(any(), any())).thenReturn(ngTriggerEntity);
+    when(ngTriggerRepository.updateValidationStatus(any(), any())).thenReturn(ngTriggerEntity);
     ngTriggerServiceImpl.create(ngTriggerEntity);
     verify(ngTriggerWebhookRegistrationService, times(1)).registerWebhook(any());
     verify(triggerSetupUsageHelper, times(0)).publishSetupUsageEvent(any(), any());
@@ -1734,6 +1757,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   public void testUpdateTriggerStatus() {
     NGTriggerEntity ngTrigger = NGTriggerEntity.builder().build();
     when(ngTriggerRepository.update(any(), any())).thenReturn(ngTrigger);
+    when(ngTriggerRepository.updateValidationStatus(any(), any())).thenReturn(ngTrigger);
     assertThat(ngTriggerServiceImpl.updateTriggerStatus(ngTrigger, false)).isEqualTo(false);
   }
 

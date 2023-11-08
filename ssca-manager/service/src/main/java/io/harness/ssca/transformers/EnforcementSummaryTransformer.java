@@ -16,11 +16,16 @@ import java.math.BigDecimal;
 public class EnforcementSummaryTransformer {
   public static EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
     return EnforcementSummaryEntity.builder()
+        .accountId(dto.getAccountId())
+        .orgIdentifier(dto.getOrgIdentifier())
+        .projectIdentifier(dto.getProjectIdentifier())
+        .pipelineExecutionId(dto.getPipelineExecutionId())
         .status(dto.getStatus())
         .allowListViolationCount(dto.getAllowListViolationCount().intValue())
         .enforcementId(dto.getEnforcementId())
         .denyListViolationCount(dto.getDenyListViolationCount().intValue())
         .orchestrationId(dto.getOrchestrationId())
+        .createdAt(dto.getCreated().longValue())
         .artifact(Artifact.builder()
                       .url(dto.getArtifact().getRegistryUrl())
                       .type(dto.getArtifact().getType())
@@ -33,6 +38,11 @@ public class EnforcementSummaryTransformer {
 
   public static EnforcementSummaryDTO toDTO(EnforcementSummaryEntity entity) {
     return new EnforcementSummaryDTO()
+        .accountId(entity.getAccountId())
+        .orgIdentifier(entity.getOrgIdentifier())
+        .projectIdentifier(entity.getProjectIdentifier())
+        .pipelineExecutionId(entity.getPipelineExecutionId())
+        .created(new BigDecimal(entity.getCreatedAt()))
         .enforcementId(entity.getEnforcementId())
         .allowListViolationCount(new BigDecimal(entity.getAllowListViolationCount()))
         .enforcementId(entity.getEnforcementId())

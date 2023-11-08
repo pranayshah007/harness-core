@@ -7,20 +7,19 @@
 
 package io.harness.delegate.beans;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.Builder;
@@ -36,13 +35,17 @@ public class SSHTaskParams implements TaskParameters, ExecutionCapabilityDemande
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    if (isEmpty(delegateSelectors)) {
-      return Collections.singletonList(getSocketConnectivityCapability());
-    } else {
-      List<ExecutionCapability> capabilityList = new ArrayList<>(Arrays.asList(getSocketConnectivityCapability()));
-      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors);
-      return capabilityList;
+    List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+    executionCapabilities.add(getSocketConnectivityCapability());
+    if (isNotEmpty(delegateSelectors)) {
+      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(executionCapabilities, delegateSelectors);
     }
+    if (isNotEmpty(encryptionDetails)) {
+      executionCapabilities.addAll(
+          EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+              encryptionDetails, maskingEvaluator));
+    }
+    return executionCapabilities;
   }
 
   private ExecutionCapability getSocketConnectivityCapability() {

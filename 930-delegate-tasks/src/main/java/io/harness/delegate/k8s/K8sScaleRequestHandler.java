@@ -92,8 +92,12 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     K8sScaleRequest k8sScaleRequest = (K8sScaleRequest) k8sDeployRequest;
     LogCallback logCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
+    KubernetesConfig kubernetesConfig = k8SDelegateTaskParams.getKubernetesConfig();
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
+    }
 
     init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(), logCallback);
 
