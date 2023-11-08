@@ -12,7 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.k8s.ManifestType.KUSTOMIZE;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -43,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public abstract class K8sRequestHandler {
   @Inject K8sTaskCleaner k8sTaskCleaner;
 

@@ -13,8 +13,8 @@ java_library(
     deps = [
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming:module",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/utils:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/evaluator:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/utils:module",
         "//950-delegate-tasks-beans:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
