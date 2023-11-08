@@ -68,11 +68,13 @@ public class GithubConnectorDTO
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
   String gitConnectionUrl;
+  Boolean proxy;
+  String proxyUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
       GithubAuthenticationDTO authentication, GithubApiAccessDTO apiAccess, Set<String> delegateSelectors,
-      boolean executeOnDelegate) {
+      boolean executeOnDelegate, boolean proxy) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
@@ -80,6 +82,7 @@ public class GithubConnectorDTO
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
+    this.proxy = proxy;
   }
 
   @Override
@@ -167,5 +170,10 @@ public class GithubConnectorDTO
         .delegateSelectors(this.delegateSelectors)
         .executeOnDelegate(this.executeOnDelegate)
         .build();
+  }
+
+  @Override
+  public String getProxyUrl() {
+    return proxyUrl;
   }
 }

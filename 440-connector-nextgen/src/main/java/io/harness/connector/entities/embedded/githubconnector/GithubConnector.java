@@ -19,7 +19,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
@@ -29,8 +28,8 @@ import org.springframework.data.annotation.TypeAlias;
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.githubconnector.GithubConnector")
-@Persistent
 public class GithubConnector extends Connector {
+  Boolean proxy;
   GitConnectionType connectionType;
   String url;
   String validationRepo;

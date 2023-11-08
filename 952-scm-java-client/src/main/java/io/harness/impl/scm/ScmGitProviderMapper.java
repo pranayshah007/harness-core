@@ -244,6 +244,7 @@ public class ScmGitProviderMapper {
         .setEndpoint(GitClientHelper.getGithubApiURL(githubConnector.getUrl()))
         .setSkipVerify(skipVerify)
         .setAdditionalCertsPath(getAdditionalCertsPath())
+        .setProxy(githubConnector.getProxyUrl())
         .build();
   }
 

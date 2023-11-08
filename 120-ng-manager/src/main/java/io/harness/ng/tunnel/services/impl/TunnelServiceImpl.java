@@ -49,7 +49,7 @@ public class TunnelServiceImpl implements TunnelService {
   public TunnelResponseDTO getTunnel(String accountId) {
     Optional<Tunnel> optionalTunnel = tunnelRepository.findByAccountIdentifier(accountId);
     if (optionalTunnel.isEmpty()) {
-      throw new NotFoundException("Tunnel not enabled for the account");
+      return TunnelResponseDTO.builder().serverUrl("").port("").build();
     }
     return TunnelResponseDTO.builder()
         .serverUrl(nextGenConfiguration.getFrpsTunnelConfig().getHost())

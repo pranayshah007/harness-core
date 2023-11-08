@@ -26,11 +26,14 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.services.TunnelService;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -50,6 +53,8 @@ import lombok.AllArgsConstructor;
 public class ConnectorMapper {
   @Inject private Map<String, ConnectorDTOToEntityMapper> connectorDTOToEntityMapperMap;
   @Inject private Map<String, ConnectorEntityToDTOMapper> connectorEntityToDTOMapperMap;
+
+  @Inject private TunnelService tunnelService;
 
   public Connector toConnector(ConnectorDTO connectorRequestDTO, String accountIdentifier) {
     ConnectorInfoDTO connectorInfo = connectorRequestDTO.getConnectorInfo();
@@ -194,6 +199,19 @@ public class ConnectorMapper {
       final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
       ((ManagerExecutable) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
     }
+
+    if (connectorDTO instanceof GithubConnectorDTO) {
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
+      if (githubConnectorDTO.getProxy()) {
+        TunnelResponseDTO tunnelResponseDTO = tunnelService.getTunnel(connector.getAccountIdentifier());
+        if (tunnelResponseDTO.getServerUrl().isEmpty() || tunnelResponseDTO.getPort().isEmpty()) {
+          githubConnectorDTO.setProxyUrl("");
+        } else {
+          githubConnectorDTO.setProxyUrl(tunnelResponseDTO.getServerUrl() + ":" + tunnelResponseDTO.getPort());
+        }
+      }
+    }
+
     return connectorDTO;
   }
 }
