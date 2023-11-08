@@ -83,6 +83,11 @@ spec:
             {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ssca" "context" $) }}
+            - name: HARNESS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: harness-api-token
+                  key: token
             {{- if .Values.s3.accessKeyId }}
             - name: S3_ACCESS_KEY_ID
               value: {{ .Values.s3.accessKeyId }}
