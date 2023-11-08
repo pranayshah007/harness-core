@@ -341,6 +341,7 @@ public class OwnerRule implements TestRule {
   public static final String SHOBHIT_SINGH = "shobhit.singh";
   public static final String RAKSHIT_AGARWAL = "rakshit.agarwal";
   public static final String VINIT_KUMAR = "vinit.kumar";
+  public static final String SHUBHENDU = "shubhendu.patidar";
 
   public static final String EOIN_MCAFEE = "eoin.mcafee";
 
@@ -355,6 +356,7 @@ public class OwnerRule implements TestRule {
           .put(AADITI, defaultUserInfo(AADITI).slack("UCFPUNRAQ").team(CDC).build())
           .put(ABHIJEET, defaultUserInfo(ABHIJEET).slack("U0395DJBXS7").team(CE).build())
           .put(ABHIJITH, defaultUserInfo(ABHIJITH).slack("U0270PE0T24").team(CV).build())
+          .put(SHUBHENDU, defaultUserInfo(SHUBHENDU).slack("U05R38YQ8J3").team(CV).build())
           .put(ABHINAV, defaultUserInfo(ABHINAV).slack("UQQPR8M6Y").team(DX).build())
           .put(AKHIL_PANDEY, defaultUserInfo(AKHIL_PANDEY).slack("U0141LFM478").team(CDP).build())
           .put(ABHISHEK, defaultUserInfo(ABHISHEK).slack("U03F6BDAKTN").team(CDC).build())

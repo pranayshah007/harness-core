@@ -8,8 +8,7 @@
 package io.harness.cvng.core.services.api;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.DHRUVX;
-import static io.harness.rule.OwnerRule.PRAVEEN;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -141,7 +140,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponse));
     List<PrometheusSampleData> sampleData = prometheusService.getSampleData(
-        accountId, generateUuid(), generateUuid(), "up", tracingId, prometheusConnectionParams);
+        accountId, generateUuid(), generateUuid(), "up{}", tracingId, prometheusConnectionParams);
     verify(verificationManagerService, times(1))
         .getDataCollectionResponse(anyString(), anyString(), anyString(), any(PrometheusFetchSampleDataRequest.class));
     verify(verificationManagerService, times(0))
@@ -150,6 +149,22 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
     assertThat(sampleData).hasSize(6);
     assertThat(sampleData.get(0).getMetricDetails()).hasSize(9);
     assertThat(sampleData.get(0).getData()).hasSize(27);
+  }
+
+  @Test
+  @Owner(developers = SHUBHENDU)
+  @Category(UnitTests.class)
+  public void testPrometheus_getSampleData_absentFilters() throws IOException {
+    sampleDataResponse = JsonUtils.asMap(Resources.toString(
+        PrometheusServiceImplTest.class.getResource("/prometheus/sample-metric-data.json"), Charsets.UTF_8));
+    when(verificationManagerService.getDataCollectionResponse(
+             anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
+        .thenReturn(JsonUtils.asJson(sampleDataResponse));
+    assertThatThrownBy(()
+                           -> prometheusService.getSampleData(
+                               accountId, generateUuid(), generateUuid(), "up", tracingId, prometheusConnectionParams))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Query must contain filters. Please add blank curly braces({}) in case of absence of filters");
   }
 
   @Test
@@ -162,7 +177,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponse));
     List<PrometheusSampleData> sampleData =
-        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", tracingId,
+        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up{}", tracingId,
             PrometheusConnectionParams.builder()
                 .connectorIdentifier(connectorIdentifier)
                 .dataSourceType(DataSourceType.AWS_PROMETHEUS)
@@ -193,7 +208,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponseList));
     List<PrometheusSampleData> sampleData =
-        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", tracingId,
+        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up{}", tracingId,
             PrometheusConnectionParams.builder()
                 .connectorIdentifier(connectorIdentifier)
                 .dataSourceType(DataSourceType.PROMETHEUS)
@@ -213,7 +228,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testAwsPrometheus_getSampleData_regionIsNull() {
     assertThatThrownBy(()
-                           -> prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", "",
+                           -> prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up{}", "",
                                PrometheusConnectionParams.builder()
                                    .connectorIdentifier(connectorIdentifier)
                                    .dataSourceType(DataSourceType.AWS_PROMETHEUS)
@@ -228,7 +243,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testAwsPrometheus_getSampleData_workspaceIdIsNull() {
     assertThatThrownBy(()
-                           -> prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", "",
+                           -> prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up{}", "",
                                PrometheusConnectionParams.builder()
                                    .connectorIdentifier(connectorIdentifier)
                                    .dataSourceType(DataSourceType.AWS_PROMETHEUS)
