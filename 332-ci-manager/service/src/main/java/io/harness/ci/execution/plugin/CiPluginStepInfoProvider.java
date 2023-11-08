@@ -59,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -69,13 +70,13 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 public class CiPluginStepInfoProvider implements PluginInfoProvider {
   private static final int CACHE_EVICTION_TIME_MINUTES = 5;
-  private final LoadingCache<AmbianceSummary, List<SecretVariable>> sscaServiceEnvMap =
+  private final LoadingCache<AmbianceSummary, Map<String, String>> sscaServiceEnvMap =
       CacheBuilder.newBuilder()
           .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
           .build(new CacheLoader<>() {
             @NotNull
             @Override
-            public List<SecretVariable> load(@NotNull final AmbianceSummary ambianceSummary) {
+            public Map<String, String> load(@NotNull final AmbianceSummary ambianceSummary) {
               return getSscaServiceEnvVariables(ambianceSummary);
             }
           });
@@ -103,9 +104,9 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
                                                .stream()
                                                .map(SecretNgVariableUtils::getSecretVariable)
                                                .collect(Collectors.toList());
-    secretVariables.addAll(getSscaServiceSecrets(ambiance));
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
     ports.addAll(containerDefinitionInfo.getPorts());
+    Map<String, String> envVarsWithSecret = getSscaServiceSecrets(ambiance);
 
     PluginDetails.Builder pluginDetailsBuilder =
         PluginDetails.newBuilder()
@@ -126,7 +127,8 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
             .addAllPortUsed(containerDefinitionInfo.getPorts())
             .setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build())
             .setResource(getPluginContainerResources(containerDefinitionInfo))
-            .addAllSecretVariable(secretVariables);
+            .addAllSecretVariable(secretVariables)
+            .putAllEnvVariablesWithPlainTextSecret(envVarsWithSecret);
 
     if (containerDefinitionInfo.getRunAsUser() != null) {
       pluginDetailsBuilder.setRunAsUser(containerDefinitionInfo.getRunAsUser());
@@ -157,7 +159,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
-  private List<SecretVariable> getSscaServiceSecrets(Ambiance ambiance) {
+  private Map<String, String> getSscaServiceSecrets(Ambiance ambiance) {
     try {
       return sscaServiceEnvMap.get(AmbianceSummary.builder()
                                        .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -166,7 +168,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
                                        .build());
     } catch (Exception e) {
       log.error("Unable to get ssca service endpoint and secret", e);
-      return Collections.emptyList();
+      return Collections.emptyMap();
     }
   }
 
@@ -182,22 +184,19 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     return true;
   }
 
-  private List<SecretVariable> getSscaServiceEnvVariables(AmbianceSummary ambiance) {
+  private Map<String, String> getSscaServiceEnvVariables(AmbianceSummary ambiance) {
     String accountId = ambiance.getAccountId();
     if (featureFlagService.isEnabled(FeatureName.SSCA_ENABLED, accountId)) {
       String orgId = ambiance.getOrgIdentifier();
       String projectId = ambiance.getProjectIdentifier();
-      Map<String, String> envMap = sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
-      return envMap.entrySet()
-          .stream()
-          .map(e -> SecretVariable.newBuilder().setName(e.getKey()).setValue(e.getValue()).build())
-          .collect(Collectors.toList());
+      return sscaServiceUtils.getSSCAServiceEnvVariables(accountId, orgId, projectId);
     }
-    return Collections.emptyList();
+    return Collections.emptyMap();
   }
 
   @Getter
   @Builder
+  @EqualsAndHashCode
   private static class AmbianceSummary {
     String accountId;
     String orgIdentifier;
