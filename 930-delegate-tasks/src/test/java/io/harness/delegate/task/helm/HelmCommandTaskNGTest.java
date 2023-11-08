@@ -62,7 +62,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Mock private HelmTaskHelperBase helmTaskHelperBase;
   @Mock private K8sTaskCleaner k8sTaskCleaner;
   private HelmCommandTaskNG spyHelmCommandTask;
-  private HelmTaskDTO taskDTO;
+  private HelmTaskDTO taskDTO = HelmTaskDTO.builder().build();
   @InjectMocks
   private final HelmCommandTaskNG helmCommandTaskNG = new HelmCommandTaskNG(
       DelegateTaskPackage.builder().delegateId("delegateId").data(TaskData.builder().async(false).build()).build(),
@@ -169,6 +169,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
         .isInstanceOf(TaskNGDataException.class)
         .getRootCause()
         .hasMessageContaining("Unable to deploy");
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
   }
 
   @Test

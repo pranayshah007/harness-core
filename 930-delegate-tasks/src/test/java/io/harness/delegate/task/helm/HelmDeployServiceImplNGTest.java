@@ -19,6 +19,7 @@ import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -180,7 +181,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   private HelmCliResponse helmCliReleaseHistoryResponse;
   private HelmCliResponse helmCliResponse;
   private HelmCliResponse helmCliListReleasesResponse;
-  private HelmTaskDTO taskDTO;
+  private HelmTaskDTO taskDTO = HelmTaskDTO.builder().build();
 
   private TimeLimiter timeLimiter = new FakeTimeLimiter();
 
@@ -536,6 +537,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList());
     verify(k8sTaskHelperBase, never())
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+    verify(containerDeploymentDelegateBaseHelper, times(1)).createKubernetesConfig(any(), any(), any());
 
     // K8SteadyStateCheckEnabled true
     helmInstallCommandRequestNG.setK8SteadyStateCheckEnabled(true);
@@ -598,6 +600,10 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testDeployUpgrade() throws Exception {
+    deployUpgradeTest(taskDTO);
+  }
+
+  private void deployUpgradeTest(HelmTaskDTO inputTaskDTO) throws Exception {
     initForDeploy();
     doReturn(Collections.emptyList()).when(spyHelmDeployService).printHelmChartKubernetesResources(any());
     doReturn(taskProgressCallback).when(k8sTaskHelperBase).getTaskProgressCallback(any(), any());
@@ -619,8 +625,9 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                       .chart("todolist-0.1.0")
                                       .build()));
 
-    ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
-    assertThatCode(() -> spyHelmDeployService.deploy(helmInstallCommandRequestNG, taskDTO)).doesNotThrowAnyException();
+    ArgumentCaptor<HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
+    assertThatCode(() -> spyHelmDeployService.deploy(helmInstallCommandRequestNG, inputTaskDTO))
+        .doesNotThrowAnyException();
     verify(helmClient).upgrade(argumentCaptor.capture(), eq(true));
   }
 
@@ -1393,5 +1400,13 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   private String getReleaseName(HelmCommandRequestNG request) {
     return isNotEmpty(request.getReleaseHistoryPrefix()) ? request.getReleaseHistoryPrefix() + request.getReleaseName()
                                                          : request.getReleaseName();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testSkippingOfKubernetesConfigCreationIfTaskSetUpConfigProperly() throws Exception {
+    deployUpgradeTest(HelmTaskDTO.builder().kubernetesConfig(kubernetesConfig).build());
+    verify(containerDeploymentDelegateBaseHelper, times(0)).createKubernetesConfig(any(), any(), any());
   }
 }
