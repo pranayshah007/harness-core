@@ -307,4 +307,6 @@ public interface AccountService {
   Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
 
   List<Account> listAccountsMarkedForDeletion(int limit);
+
+  List<Account> getByLastUpdated(long timestamp);
 }
