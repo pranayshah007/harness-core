@@ -2541,10 +2541,6 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public List<Account> getByLastUpdated(long timestamp) {
-    return wingsPersistence.createQuery(Account.class)
-            .filter("lastUpdatedAt >", timestamp)
-            .asList();
+    return wingsPersistence.createQuery(Account.class).field(AccountKeys.lastUpdatedAt).greaterThan(timestamp).asList();
   }
-
-
 }
