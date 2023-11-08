@@ -43,6 +43,7 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.UnitStatus.RUNNING;
 import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.DEPLOYMENT_STAGE;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
@@ -52,6 +53,7 @@ import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.TAS_STEP_TYPE;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 
 import static software.wings.beans.LogHelper.color;
@@ -1102,9 +1104,9 @@ public class TasStepHelper {
       return (ArtifactsOutcome) optionalOutcome.getOutcome();
     }
     String stageName =
-        AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
+        AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse(DEPLOYMENT_STAGE);
     String stepType =
-        Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("TAS");
+        Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse(TAS_STEP_TYPE);
     throw new GeneralException(format(
         "No Artifact Bundle found in stage %s. %s step requires at least one Artifact Bundle defined in stage service definition",
         stageName, stepType));
