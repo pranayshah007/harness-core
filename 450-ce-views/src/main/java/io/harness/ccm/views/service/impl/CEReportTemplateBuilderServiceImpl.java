@@ -250,8 +250,9 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     templatePlaceholders.put(CHART, getEncodedImage(createChart(chartData, entities, !period.equals(WEEK))));
 
     // Trend bar for report
-    templatePlaceholders.put(
-        TOTAL_COST, trendData.getStatsValue().replaceFirst(currency.getSymbol(), currency.getUtf8HexSymbol()));
+    templatePlaceholders.put(TOTAL_COST,
+        currency.getUtf8HexSymbol() + viewsQueryHelper.formatNumber(Double.valueOf(trendData.getStatsValue())));
+    //            trendData.getStatsValue().replaceFirst(currency.getSymbol(), currency.getUtf8HexSymbol()));
     if (trendData.getStatsTrend().doubleValue() < 0) {
       templatePlaceholders.put(TOTAL_COST_TREND,
           String.format(COST_TREND, GREEN_COLOR, trendData.getStatsTrend() + PERCENT, getTotalCostDiff(trendData)));
