@@ -42,8 +42,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
@@ -163,17 +161,5 @@ public class NativeHelmInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBase
     assertThat(instanceSyncV2Request).isNotNull();
     assertThat(instanceSyncV2Request.getAccountId()).isEqualTo(ACCOUNT_IDENTIFIER);
     assertThat(instanceSyncV2Request.getPerpetualTaskId()).isEqualTo(PERPETUAL_TASK);
-  }
-
-  private boolean isVariableManifest(Map<String, Object> map) {
-    //    Optional entryOptional = map.entrySet().stream().filter(entry ->
-    //    isInvalidValue(entry.getValue())).findFirst();
-    //
-    //    return !entryOptional.isPresent();
-    return map.values().stream().anyMatch(Map.class ::isInstance);
-  }
-
-  private boolean isInvalidValue(Object value) {
-    return value instanceof Map;
   }
 }

@@ -15,8 +15,8 @@ import io.harness.k8s.model.KubernetesConfig;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public class HelmTaskDTO {
   KubernetesConfig kubernetesConfig;
