@@ -147,7 +147,12 @@ public enum PredefinedTemplate {
       "harness_approval_action_execution_msteams"),
   SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert"),
   IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK(
-      "notification_templates/slack/plugin_requests.txt", "idp_plugin_requests_notification_slack");
+      "notification_templates/slack/plugin_requests.txt", "idp_plugin_requests_notification_slack"),
+  DELEGATE_DOWN("templates/email/delegate_disconnected.txt", "delegate_disconnected"),
+  DELEGATE_EXPIRED("templates/email/delegate_expired.txt", "delegate_expired"),
+  DELEGATE_ABOUT_EXPIRE("templates/delegate_about_to_expire.txt", "delegate_about_to_expire");
+
+
 
   private String path;
   private String identifier;
