@@ -180,7 +180,7 @@ image:
   repository: harness/cdcdata-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80209"
+  tag: "81308"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
