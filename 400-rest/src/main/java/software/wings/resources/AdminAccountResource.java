@@ -8,6 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
@@ -44,6 +45,8 @@ import software.wings.service.intfc.DelegateService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -103,6 +106,12 @@ public class AdminAccountResource {
   public RestResponse<AccountSummary> getAccountSummaryByAccountId(@PathParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(adminAccountService.getAccountSummaryByAccountId(accountId));
   }
+
+//  @POST
+//  @Path("/update-accounts/accountIds")
+//  public RestResponse<List<AccountSummary>> getAccountSummariesByAccountIds(@Body List<String> accountIds) {
+//    return new RestResponse<>(adminAccountService.getAccountSummariesByAccountIds(accountIds));
+//  }
 
   @GET
   @Path("{accountId}/license")
@@ -194,6 +203,22 @@ public class AdminAccountResource {
   public RestResponse<List<ConfiguredLimit>> getLimitsForAccount(@PathParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(adminAccountService.getLimitsConfiguredForAccount(accountId));
   }
+
+  // getRecent AccountUpdates
+
+  @GET
+  @Path("get-recent-updates-account")
+  public RestResponse<List<AccountSummary>> getRecentAccountUpdates() {
+      long currentTime = System.currentTimeMillis();
+      long thirtySecondsAgo = currentTime - 30*1000*60;
+      List<Account> updatedAccounts = adminAccountService.getUpdatedAccounts(thirtySecondsAgo);
+      List<String> updatedAccountIds = new ArrayList<>();
+      for(Account account : updatedAccounts){
+        updatedAccountIds.add(account.getUuid());
+      }
+      return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountIds));
+  }
+
 
   @PUT
   @Path("{accountId}/limits/static-limit")
