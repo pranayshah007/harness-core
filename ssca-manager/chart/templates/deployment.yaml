@@ -55,6 +55,14 @@ spec:
           - "pod"
           - "-lapp=mongodb-replicaset"
       {{- end }}
+      {{- if .Values.global.database.redis.installed }}
+      - name: wait-for-redis
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=redis-sentinel"
+      {{- end }}
       containers:
         - name: ssca-manager
           image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
