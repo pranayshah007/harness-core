@@ -26,9 +26,9 @@ data:
   {{- end }}
   S3_POLICY_BUCKET: {{ .Values.s3.policyBucketName }}
   S3_REGION: {{ .Values.s3.region }}
-  CACHE_CONFIG_REDIS_URL: { { include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) } }
+  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   CACHE_BACKEND: "REDIS"
-  CACHE_CONFIG_REDIS_SENTINELS: { { include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) } }
+  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
