@@ -12,7 +12,8 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.ado.ScmErrorHi
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
 import io.harness.exception.ScmBadRequestException;
-import io.harness.exception.ScmRequestTimeoutException;import io.harness.exception.ScmUnauthorizedException;
+import io.harness.exception.ScmRequestTimeoutException;
+import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
@@ -26,7 +27,7 @@ public class AdoGetFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> could not be fetched from Azure. ";
   private static final String AZURE_REQUEST_TIMEOUT_ERROR_MESSAGE =
-          "Failed to fetch file: file<FILEPATH>. Request to the Azure Git Server Timed out. ";
+      "Failed to fetch file: file<FILEPATH>. Request to the Azure Git Server Timed out. ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
