@@ -1,0 +1,10 @@
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: UDPRoute
+metadata:
+  name: smi-udp-route
+spec:
+  matches:
+  - name: smi-udp-port-rule-1
+    ports:
+    - 7890
+    - 444

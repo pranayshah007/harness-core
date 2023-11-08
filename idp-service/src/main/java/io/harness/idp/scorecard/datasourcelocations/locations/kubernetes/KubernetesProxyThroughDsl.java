@@ -63,8 +63,8 @@ public class KubernetesProxyThroughDsl implements DataSourceLocation {
 
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, possibleReplaceableUrlPairs.get("{HOST}"));
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-    log.info("Received kubernetes response: {}", response);
-    log.info("Received kubernetes response entity: {}", response.getEntity());
+    log.debug("Received kubernetes response: {}", response);
+    log.debug("Received kubernetes response entity: {}", response.getEntity());
     if (response.getStatus() == 500) {
       data.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
     } else if (response.getStatus() == 200) {
@@ -76,7 +76,7 @@ public class KubernetesProxyThroughDsl implements DataSourceLocation {
           GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
     }
 
-    log.info("kubernetes dsl response : {}", data);
+    log.debug("kubernetes dsl response : {}", data);
     return data;
   }
 

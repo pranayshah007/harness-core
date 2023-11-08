@@ -58,7 +58,6 @@ message GraphLayoutInfo {
 message PlanCreationContextValue {
   oneof value {
     string stringValue = 1 [deprecated = true];
-    ExecutionMetadata metadata = 2 [deprecated = true];
   }
   triggers.TriggerPayload triggerPayload = 3;
   string accountIdentifier = 4;
@@ -186,7 +185,11 @@ message Dependencies {
 message Dependency {
   map<string, bytes> metadata = 2;
   RollbackModeBehaviour rollbackModeBehaviour = 3;
+  // used in place of metadata map in v1 -> metadata passed to immediate children
   HarnessStruct nodeMetadata = 4;
+  // metadata passed to all the children and grandchildren until leaf
+  // only some reserved keys can be added in parent info, they are mentioned here in parentInfoKeysList
+  // clients/pipeline-service/pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators/PlanCreatorServiceHelper.java
   HarnessStruct parentInfo = 5;
 }
 
@@ -209,9 +212,7 @@ message HarnessValue {
   }
 }
 
-enum NullValue {
-  NULL_VALUE = 0;
-}
+enum NullValue { NULL_VALUE = 0; }
 
 message ListValue {
   repeated HarnessValue values = 1;

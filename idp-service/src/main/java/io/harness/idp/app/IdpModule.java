@@ -471,6 +471,9 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("licenseUsageDailyCountJob"))
         .toInstance(new ManagedScheduledExecutorService("licenseUsageDailyCountJob"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("checkStatusDailyRunJob"))
+        .toInstance(new ManagedScheduledExecutorService("checkStatusDailyRunJob"));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
@@ -555,6 +558,13 @@ public class IdpModule extends AbstractModule {
   @Named("backstagePodLabel")
   public String backstagePodLabel() {
     return this.appConfig.getBackstagePodLabel();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageEntitiesFetchLimit")
+  public String backstageEntitiesFetchLimit() {
+    return this.appConfig.getBackstageEntitiesFetchLimit();
   }
 
   @Provides

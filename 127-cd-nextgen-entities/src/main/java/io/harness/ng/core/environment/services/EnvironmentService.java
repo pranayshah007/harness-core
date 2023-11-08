@@ -13,6 +13,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
+import io.harness.ng.core.environment.dto.ScopedEnvironmentRequestDTO;
 import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
@@ -49,6 +50,8 @@ public interface EnvironmentService {
   Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions);
 
   Page<Environment> list(Criteria criteria, Pageable pageable);
+  Page<Environment> list(
+      String accountId, String envType, ScopedEnvironmentRequestDTO scopedEnvironmentRequestDTO, int page, int size);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       Long version, boolean forceDelete);

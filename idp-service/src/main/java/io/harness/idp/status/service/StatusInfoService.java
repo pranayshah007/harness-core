@@ -8,11 +8,13 @@
 package io.harness.idp.status.service;
 
 import io.harness.spec.server.idp.v1.model.StatusInfo;
+import io.harness.spec.server.idp.v1.model.StatusInfoV2;
 
 import java.util.Optional;
 
 public interface StatusInfoService {
   Optional<StatusInfo> findByAccountIdentifierAndType(String accountIdentifier, String type);
+  StatusInfoV2 findByAccountIdentifierAndTypeV2(String accountIdentifier, String type);
 
   StatusInfo save(StatusInfo statusInfo, String accountIdentifier, String type);
 }

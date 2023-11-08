@@ -45,7 +45,7 @@ public class K8sInfraMapperTest {
 
     final var step1 = createStep("step1", "image1");
     final var step2 = createStep("step2", "image2");
-    final var logConfig = LogConfig.newBuilder().setLogKey(logKey).build();
+    final var logConfig = LogConfig.newBuilder().setLogPrefix(logKey).build();
     final var infra = createK8sInfraSpec(step1, step2);
 
     final var actual = K8sInfraMapper.map(infra, taskIds, logConfig, loggingToken);

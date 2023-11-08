@@ -18,7 +18,10 @@ import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,11 +33,19 @@ import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.idp.scorecard.checks.repositories.CheckRepository;
+import io.harness.idp.scorecard.checks.repositories.CheckStatusEntityByIdentifier;
+import io.harness.idp.scorecard.checks.repositories.CheckStatusRepository;
 import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndCheckStatus;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -42,9 +53,13 @@ import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.CheckGraph;
+import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
 import io.harness.spec.server.idp.v1.model.Rule;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.client.result.UpdateResult;
@@ -75,6 +90,11 @@ public class CheckServiceImplTest extends CategoryTest {
   private static final String RULE_IDENTIFIER2 = "rule2";
   private CheckServiceImpl checkServiceImpl;
   @Mock CheckRepository checkRepository;
+  @Mock CheckStatusRepository checkStatusRepository;
+  @Mock ScorecardService scorecardService;
+  @Mock NamespaceService namespaceService;
+  @Mock ScoreComputerService scoreComputerService;
+  @Mock ScoreService scoreService;
   @Mock NGSettingsClient settingsClient;
   @Mock EntitySetupUsageClient entitySetupUsageClient;
   @Mock DataPointService dataPointService;
@@ -83,6 +103,7 @@ public class CheckServiceImplTest extends CategoryTest {
 
   @Mock OutboxService outboxService;
   @Captor private ArgumentCaptor<CheckEntity> checkEntityCaptor;
+  @Captor private ArgumentCaptor<List<CheckStatusEntity>> checkStatusEntitiesCaptor;
   private static final String ACCOUNT_ID = "123";
   private static final String GITHUB_CHECK_NAME = "Github Checks";
   private static final String GITHUB_CHECK_ID = "github_checks";
@@ -91,12 +112,16 @@ public class CheckServiceImplTest extends CategoryTest {
   private static final String DATA_SOURCE_ID = "github";
   private static final String DATA_POINT_ID = "isFileExist";
   private static final String README_FILE = "README.md";
+  private static final String SERVICE_MATURITY_SCORECARD = "service-maturity";
+  private static final String IDP_SERVICE_ENTITY_ID = "03bc314a-437b-4d15-b75b-b819179e7859";
+  private static final String IDP_SERVICE_ENTITY_NAME = "idp-service";
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    checkServiceImpl = new CheckServiceImpl(
-        checkRepository, settingsClient, entitySetupUsageClient, dataPointService, transactionTemplate, outboxService);
+    checkServiceImpl = new CheckServiceImpl(checkRepository, checkStatusRepository, scorecardService,
+        scoreComputerService, namespaceService, scoreService, settingsClient, entitySetupUsageClient, dataPointService,
+        transactionTemplate, outboxService);
   }
 
   @Test
@@ -276,6 +301,72 @@ public class CheckServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
+  public void testGetCheckStats() {
+    when(scorecardService.getScorecardIdentifiers(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE))
+        .thenReturn(List.of(SERVICE_MATURITY_SCORECARD));
+    when(scorecardService.getScorecardFilters(ACCOUNT_ID, List.of(SERVICE_MATURITY_SCORECARD)))
+        .thenReturn(getFilters());
+    when(scoreComputerService.getAllEntities(any(), any(), any())).thenReturn(getBackstageCatalogEntities());
+    when(scoreService.getCheckStatusForEntityIdentifiersAndScorecardIdentifiers(
+             any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(getEntityIdentifierAndCheckStatus());
+    List<CheckStats> checkStats = checkServiceImpl.getCheckStats(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE);
+    assertEquals(1, checkStats.size());
+    assertEquals(IDP_SERVICE_ENTITY_NAME, checkStats.get(0).getName());
+    assertEquals(CheckStatus.StatusEnum.PASS.toString(), checkStats.get(0).getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckGraph() {
+    when(checkStatusRepository.findByAccountIdentifierAndIdentifierAndCustom(ACCOUNT_ID, GITHUB_CHECK_ID, true))
+        .thenReturn(getCheckStatusEntities());
+    List<CheckGraph> checkGraphs = checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, true);
+    assertEquals(1, checkGraphs.size());
+    assertEquals(5, (int) checkGraphs.get(0).getCount());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testComputeCheckStatus() {
+    when(namespaceService.getAccountIds()).thenReturn(List.of(ACCOUNT_ID));
+    when(checkRepository.findByAccountIdentifierInAndIsDeleted(anySet(), anyBoolean())).thenReturn(getCheckEntities());
+    when(scorecardService.getScorecardIdentifiers(any(), any(), any()))
+        .thenReturn(List.of(SERVICE_MATURITY_SCORECARD))
+        .thenReturn(new ArrayList<>());
+    when(scoreService.getCheckStatusForEntityIdentifiersAndScorecardIdentifiers(
+             any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(getEntityIdentifierAndCheckStatus());
+    checkServiceImpl.computeCheckStatus();
+    verify(checkStatusRepository).saveAll(checkStatusEntitiesCaptor.capture());
+    assertEquals(GITHUB_CHECK_ID, checkStatusEntitiesCaptor.getValue().get(0).getIdentifier());
+    assertEquals(1, checkStatusEntitiesCaptor.getValue().get(0).getPassCount());
+    assertEquals(1, checkStatusEntitiesCaptor.getValue().get(0).getTotal());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckStatusByAccountIdAndIdentifiers() {
+    when(checkStatusRepository.findByAccountIdentifierAndIdentifierIn(any(), any()))
+        .thenReturn(List.of(CheckStatusEntityByIdentifier.builder()
+                                .identifier(GITHUB_CHECK_ID)
+                                .isCustom(true)
+                                .checkStatusEntity(getCheckStatusEntities().get(0))
+                                .build()));
+    Map<String, CheckStatusEntity> checkStatusEntityMap =
+        checkServiceImpl.getCheckStatusByAccountIdAndIdentifiers(ACCOUNT_ID, List.of(GITHUB_CHECK_ID));
+    CheckStatusEntity checkStatusEntity = checkStatusEntityMap.get(ACCOUNT_ID + DOT_SEPARATOR + GITHUB_CHECK_ID);
+    assertNotNull(checkStatusEntity);
+    assertEquals(5, checkStatusEntity.getPassCount());
+    assertEquals(10, checkStatusEntity.getTotal());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
   public void testDeleteCheck() {
     Call<ResponseDTO<SettingValueResponseDTO>> response = getSettingValueResponseDTOCall(true);
     when(settingsClient.getSetting(any(), any(), any(), any())).thenReturn(response);
@@ -425,5 +516,47 @@ public class CheckServiceImplTest extends CategoryTest {
     inputDetails.key(BRANCH_NAME);
     inputDetails.key(DEVELOP_BRANCH);
     return inputDetails;
+  }
+
+  private List<ScorecardFilter> getFilters() {
+    ScorecardFilter filter = new ScorecardFilter();
+    filter.setKind("component");
+    filter.setType("service");
+    return List.of(filter);
+  }
+
+  private Set<BackstageCatalogEntity> getBackstageCatalogEntities() {
+    BackstageCatalogComponentEntity entity = new BackstageCatalogComponentEntity();
+    BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
+    metadata.setUid(IDP_SERVICE_ENTITY_ID);
+    metadata.setName(IDP_SERVICE_ENTITY_NAME);
+    entity.setMetadata(metadata);
+
+    BackstageCatalogComponentEntity.Spec spec = new BackstageCatalogComponentEntity.Spec();
+    spec.setType("service");
+    spec.setLifecycle("experimental");
+    spec.setOwner("team-a");
+    spec.setSystem("Unknown");
+    entity.setSpec(spec);
+    return Set.of(entity);
+  }
+
+  private List<EntityIdentifierAndCheckStatus> getEntityIdentifierAndCheckStatus() {
+    return List.of(EntityIdentifierAndCheckStatus.builder()
+                       .entityIdentifier(IDP_SERVICE_ENTITY_ID)
+                       .status(CheckStatus.StatusEnum.PASS)
+                       .build());
+  }
+
+  private List<CheckStatusEntity> getCheckStatusEntities() {
+    CheckStatusEntity checkStatusEntity = CheckStatusEntity.builder()
+                                              .accountIdentifier(ACCOUNT_ID)
+                                              .identifier(GITHUB_CHECK_ID)
+                                              .isCustom(true)
+                                              .name(GITHUB_CHECK_NAME)
+                                              .total(10)
+                                              .passCount(5)
+                                              .build();
+    return List.of(checkStatusEntity);
   }
 }

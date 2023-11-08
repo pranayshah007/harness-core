@@ -792,6 +792,7 @@ public class TasStepHelper {
     ArtifactBundleStore artifactBundleStore = (ArtifactBundleStore) tasManifestOutcome.getStore();
     TasManifestDelegateConfig tasManifestDelegateConfig =
         TasManifestDelegateConfig.builder()
+            .identifier(String.valueOf(tasManifestOutcome.getOrder()))
             .manifestPath(getParameterFieldValue(artifactBundleStore.getManifestPath()))
             .deployableUnitPath(getParameterFieldValue(artifactBundleStore.getDeployableUnitPath()))
             .artifactBundleType(artifactBundleStore.getArtifactBundleType().toString())

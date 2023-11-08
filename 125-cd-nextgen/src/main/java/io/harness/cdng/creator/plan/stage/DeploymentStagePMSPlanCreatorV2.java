@@ -87,8 +87,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -221,7 +219,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
 
     // We need to swap the ids if strategy is present
-    PlanNodeBuilder builder =
+    PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
@@ -237,13 +235,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                     .build())
             .adviserObtainments(adviserObtainments);
 
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    builder = setStageTimeoutObtainment(sdkTimeoutObtainment, builder);
-
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
-      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+      planNodeBuilder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
-    return builder.build();
+    return planNodeBuilder.build();
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
@@ -286,7 +281,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
-          String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
+          String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId, ctx);
           saveSingleServiceEnvDeploymentStagePlanCreationSummary(
               planCreationResponseMap.get(serviceNodeId), ctx, stageNode);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
@@ -320,7 +315,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     Optional<String> provisionerIdOptional =
         addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
     String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
-    String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
+    String serviceNodeId =
+        addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId, ctx);
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, stageNode);
@@ -630,7 +626,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
   private String addServiceNode(YamlField specField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
-      String nextNodeId) throws IOException {
+      String nextNodeId, PlanCreationContext ctx) throws IOException {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType deploymentType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
@@ -652,13 +648,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType, envGroupRef));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType, envGroupRef, ctx));
     return serviceNodeId;
   }
 
   private String addServiceNodeForGitOps(YamlField specField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
-      String nextNodeId) {
+      String nextNodeId, PlanCreationContext ctx) {
     // Adding service child by resolving the serviceField
     ServiceDefinitionType deploymentType = stageNode.getDeploymentStageConfig().getDeploymentType();
     ServiceYamlV2 service;
@@ -672,15 +668,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String serviceNodeId = service.getUuid();
     if (stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
       planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNodeForGitOpsEnvGroup(
-          specField, kryoSerializer, service, environmentGroupYaml, serviceNodeId, nextNodeId, deploymentType));
+          specField, kryoSerializer, service, environmentGroupYaml, serviceNodeId, nextNodeId, deploymentType, ctx));
     } else if (stageNode.deploymentStageConfig.getEnvironments() != null) {
       planCreationResponseMap.putAll(
           ServiceAllInOnePlanCreatorUtils.addServiceNodeForGitOpsEnvironments(specField, kryoSerializer, service,
-              stageNode.deploymentStageConfig.getEnvironments(), serviceNodeId, nextNodeId, deploymentType));
+              stageNode.deploymentStageConfig.getEnvironments(), serviceNodeId, nextNodeId, deploymentType, ctx));
     } else if (stageNode.deploymentStageConfig.getEnvironment() != null) {
       planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer, service,
           stageNode.deploymentStageConfig.getEnvironment(), serviceNodeId, nextNodeId, deploymentType,
-          ParameterField.ofNull()));
+          ParameterField.ofNull(), ctx));
     }
 
     return serviceNodeId;

@@ -78,6 +78,20 @@ public class CDNGRbacUtility {
         .build();
   }
 
+  public PermissionCheckDTO environmentResponseToPermissionCheckDTO(
+      String envIdentifier, String accountId, String orgIdentifier, String projectIdentifier) {
+    return PermissionCheckDTO.builder()
+        .permission(CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION)
+        .resourceIdentifier(envIdentifier)
+        .resourceScope(ResourceScope.builder()
+                           .accountIdentifier(accountId)
+                           .orgIdentifier(orgIdentifier)
+                           .projectIdentifier(projectIdentifier)
+                           .build())
+        .resourceType(NGResourceType.ENVIRONMENT)
+        .build();
+  }
+
   public Principal constructPrincipalFromAmbiance(Ambiance ambiance) {
     if (ambiance.getMetadata() == null || ambiance.getMetadata().getPrincipalInfo() == null) {
       return null;

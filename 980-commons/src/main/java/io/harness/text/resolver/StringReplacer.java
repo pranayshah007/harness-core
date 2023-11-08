@@ -297,7 +297,8 @@ public class StringReplacer {
     // =~ and !~ regex match and its negate jexl operators
     // =^ and !^ startsWith and its negate operator
     // =$ and !$ endsWith and its negate operator
-    return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$';
+    return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$'
+        || c == '>';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

@@ -936,6 +936,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         var builder = TaskPayload.newBuilder()
                           .setId(taskId)
                           .setExecutionInfraId(delegateTask.getInfraId())
+                          .setLogKey(delegateTask.getBaseLogKey())
                           .setEventType(delegateTask.getEventType())
                           .setRunnerType(delegateTask.getRunnerType());
         if (Objects.nonNull(delegateTask.getRunnerData())) {

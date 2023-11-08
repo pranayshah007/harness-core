@@ -521,7 +521,10 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(481, "HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2");
     taskTypeOrdinalMapping.put(482, "ECR_HELM_API_LIST_TAGS_TASK_V2");
     taskTypeOrdinalMapping.put(483, "TERRAFORM_TASK_NG_V8");
-    taskTypeOrdinalMapping.put(484, "ARTIFACT_BUNDLE_FETCH_TASK");
+    taskTypeOrdinalMapping.put(484, "AWS_ASG_SHIFT_TRAFFIC_TASK_NG");
+    taskTypeOrdinalMapping.put(485, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3");
+    taskTypeOrdinalMapping.put(486, "AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3");
+    taskTypeOrdinalMapping.put(487, "ARTIFACT_BUNDLE_FETCH_TASK");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

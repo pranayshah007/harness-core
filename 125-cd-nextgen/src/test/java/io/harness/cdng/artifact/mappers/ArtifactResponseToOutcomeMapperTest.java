@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -25,6 +26,7 @@ import io.harness.CategoryTest;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
@@ -45,6 +47,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSourc
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -60,6 +63,7 @@ import io.harness.cdng.artifact.outcome.GoogleCloudSourceArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ami.AMIArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
@@ -119,6 +123,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   private static final String MESSAGE = String.format(
       "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: %s\nAvailable digests:\n%s (V1)\n%s (V2)",
       "sha", SHA, SHA_V2);
+  private static final String EMPTY = "";
 
   @Test
   @Owner(developers = SAHIL)
@@ -763,6 +768,63 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetAMIArtifactOutcomeWithoutDelegateResponse() {
+    AMIArtifactConfig amiArtifactConfig = getSampleAmiArtifactConfig();
+
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("imageType", "AmazonMachineImage");
+    metadata.put("ownerId", "1234");
+
+    AMIArtifactDelegateResponse amiArtifactDelegateResponse =
+        AMIArtifactDelegateResponse.builder()
+            .version(VERSION)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
+            .metadata(metadata)
+            .build();
+    AMIArtifactOutcome amiArtifactOutcome = (AMIArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        amiArtifactConfig, amiArtifactDelegateResponse, false);
+    assertThat(amiArtifactOutcome.getAmiId()).isEqualTo(EMPTY);
+    assertThat(amiArtifactOutcome.getTag()).isEqualTo(EMPTY);
+    assertThat(amiArtifactOutcome.getVersion()).isEqualTo(EMPTY);
+    assertThat(amiArtifactOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(amiArtifactOutcome.getVersionRegex()).isEqualTo(VERSION_REGEX);
+    assertThat(amiArtifactOutcome.getType()).isEqualTo(ArtifactSourceType.AMI.getDisplayName());
+    assertThat(amiArtifactOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(amiArtifactOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(amiArtifactOutcome.getMetadata()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetAMIArtifactOutcome() {
+    AMIArtifactConfig amiArtifactConfig = getSampleAmiArtifactConfig();
+
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("imageType", "AmazonMachineImage");
+    metadata.put("ownerId", "1234");
+
+    AMIArtifactDelegateResponse amiArtifactDelegateResponse =
+        AMIArtifactDelegateResponse.builder()
+            .version(VERSION)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
+            .metadata(metadata)
+            .build();
+    AMIArtifactOutcome amiArtifactOutcome = (AMIArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        amiArtifactConfig, amiArtifactDelegateResponse, true);
+    assertThat(amiArtifactOutcome.getTag()).isEqualTo(VERSION);
+    assertThat(amiArtifactOutcome.getVersion()).isEqualTo(VERSION);
+    assertThat(amiArtifactOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(amiArtifactOutcome.getVersionRegex()).isEqualTo(VERSION_REGEX);
+    assertThat(amiArtifactOutcome.getType()).isEqualTo(ArtifactSourceType.AMI.getDisplayName());
+    assertThat(amiArtifactOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(amiArtifactOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(amiArtifactOutcome.getMetadata()).isEqualTo(metadata);
+  }
+
+  @Test
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void getGCSourceArtifactOutcomeWithBranchTest() {
@@ -1119,6 +1181,16 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         .feed(ParameterField.createValueField(FEED))
         .project(ParameterField.createValueField(PROJECT))
         .scope(ParameterField.createValueField(PROJECT))
+        .build();
+  }
+
+  private AMIArtifactConfig getSampleAmiArtifactConfig() {
+    return AMIArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .version(ParameterField.createValueField(VERSION))
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .primaryArtifact(true)
         .build();
   }
 }

@@ -23,6 +23,7 @@ import io.harness.idp.scorecard.scorecards.repositories.ScorecardRepositoryCusto
 import io.harness.rule.Owner;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,6 +71,17 @@ public class ScorecardRepositoryCustomImplTest extends CategoryTest {
     when(mongoTemplate.remove(any(), eq(ScorecardEntity.class))).thenReturn(DeleteResult.acknowledged(1));
     DeleteResult deleteResult = scorecardRepositoryCustomImpl.delete(ACCOUNT_ID, SCORECARD_ID);
     assertEquals(1, deleteResult.getDeletedCount());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testFindByCheckIdentifierAndIsCustom() {
+    when(mongoTemplate.find(any(), eq(ScorecardEntity.class))).thenReturn(List.of(getScorecardEntity()));
+    List<ScorecardEntity> scorecardEntities =
+        scorecardRepositoryCustomImpl.findByCheckIdentifierAndIsCustom(ACCOUNT_ID, "github_check", Boolean.TRUE);
+    assertEquals(1, scorecardEntities.size());
+    assertEquals(SCORECARD_ID, scorecardEntities.get(0).getIdentifier());
   }
 
   private ScorecardEntity getScorecardEntity() {

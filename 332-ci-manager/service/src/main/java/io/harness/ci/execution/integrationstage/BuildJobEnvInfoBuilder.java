@@ -7,12 +7,12 @@
 
 package io.harness.ci.execution.integrationstage;
 
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
@@ -36,11 +36,11 @@ public class BuildJobEnvInfoBuilder {
   private static final int K8_WIN_INIT_TIMEOUT_MILLIS = 900 * 1000;
 
   public int getTimeout(Infrastructure infrastructure, String accountId) {
-    boolean queueEnabled = ffService.isEnabled(FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
-
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
+    boolean queueEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && ffService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
 
     if (infrastructure.getType() == Type.KUBERNETES_DIRECT) {
       return getK8Timeout((K8sDirectInfraYaml) infrastructure, queueEnabled);

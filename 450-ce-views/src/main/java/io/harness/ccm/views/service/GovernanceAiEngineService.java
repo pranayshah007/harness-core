@@ -7,18 +7,18 @@
 
 package io.harness.ccm.views.service;
 
-import io.harness.ccm.commons.beans.config.GenAIServiceConfig;
+import io.harness.ccm.commons.beans.config.AiEngineConfig;
+import io.harness.ccm.views.dto.GovernanceAiEngineRequestDTO;
+import io.harness.ccm.views.dto.GovernanceAiEngineResponseDTO;
+import io.harness.ccm.views.dto.GovernancePromptRule;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 
-import org.json.JSONObject;
+import java.util.List;
+import java.util.Set;
 
 public interface GovernanceAiEngineService {
-  JSONObject getDataObject(GenAIServiceConfig genAIServiceConfig, String prompt,
-      RuleCloudProviderType ruleCloudProviderType, String resourceType);
-  JSONObject getExplainDataObject(GenAIServiceConfig genAIServiceConfig, String prompt);
-  JSONObject getChatModelPrompt(GenAIServiceConfig genAIServiceConfig, String prompt,
-      RuleCloudProviderType ruleCloudProviderType, String resourceType);
-  JSONObject getExplainChatModelPrompt(GenAIServiceConfig genAIServiceConfig, String prompt);
-  String getCompleteModelPrompt(String prompt, RuleCloudProviderType ruleCloudProviderType, String resourceType);
-  String getExplainCompleteModelPrompt(String prompt);
+  GovernanceAiEngineResponseDTO getAiEngineResponse(
+      String accountId, AiEngineConfig aiEngineConfig, GovernanceAiEngineRequestDTO governanceAiEngineRequestDTO);
+  Set<String> getGovernancePromptResources(RuleCloudProviderType ruleCloudProviderType);
+  List<GovernancePromptRule> getGovernancePromptRules(RuleCloudProviderType ruleCloudProviderType, String resourceType);
 }

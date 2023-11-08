@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
@@ -73,9 +74,10 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
   @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
-  public TerraformTaskNGResponse executeTaskInternal(
-      TerraformTaskNGParameters taskParameters, String delegateId, String taskId, LogCallback logCallback)
+  public TerraformTaskNGResponse executeTaskInternal(TerraformTaskNGParameters taskParameters, String delegateId,
+      String taskId, LogCallback logCallback, AtomicBoolean isAborted)
       throws TerraformCommandExecutionException, IOException, TimeoutException, InterruptedException {
+    handleAborted(isAborted);
     String scriptDirectory;
     String baseDir = terraformBaseHelper.getBaseDir(taskParameters.getEntityId());
     Map<String, String> commitIdToFetchedFilesMap = new HashMap<>();
@@ -146,6 +148,8 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           new TerraformCommandExecutionException("No Terraform config set", WingsException.USER));
     }
 
+    handleAborted(isAborted);
+
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
@@ -158,6 +162,8 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
         TerraformHelperUtils.copytfCloudVarFilesToScriptDirectory(varFilePath, scriptDirectory);
       }
     }
+
+    handleAborted(isAborted);
 
     String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
@@ -173,6 +179,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           commitIdToFetchedFilesMap, keyVersionMap);
     }
 
+    handleAborted(isAborted);
     ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();

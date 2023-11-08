@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.beans.AsgCapacityConfig;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -113,6 +114,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -802,5 +804,78 @@ public class AsgStepCommonHelper extends CDStepHelper {
     }
 
     return isNotEmpty(baseAsg);
+  }
+
+  public boolean isShiftTrafficFeature(List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return false;
+    }
+
+    // use classic iteration in order to break early
+    for (AwsAsgLoadBalancerConfigYaml lb : loadBalancers) {
+      String stageListener = getParameterFieldValue(lb.getStageListener());
+      String stageListenerRule = getParameterFieldValue(lb.getStageListenerRuleArn());
+
+      if (isEmpty(stageListener) && isEmpty(stageListenerRule)) {
+        return true;
+      }
+
+      if (isEmpty(stageListener) || isEmpty(stageListenerRule)) {
+        throw new InvalidRequestException("stageListener and stageListenerRuleArn both or none should be provided");
+      }
+    }
+
+    return false;
+  }
+
+  public static List<AsgLoadBalancerConfig> getLoadBalancers(
+      AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome, Boolean usedForShiftTraffic) {
+    if (isEmpty(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancerConfigs())) {
+      return null;
+    }
+
+    Predicate<AwsAsgLoadBalancerConfigYaml> filterPredicate;
+    if (usedForShiftTraffic == null) {
+      filterPredicate = lb -> true;
+    } else if (usedForShiftTraffic) {
+      filterPredicate = lb -> lb.getStageListener() == null || isEmpty(lb.getStageListener().getValue());
+    } else {
+      filterPredicate = lb -> lb.getStageListener() != null && isNotEmpty(lb.getStageListener().getValue());
+    }
+
+    return asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancerConfigs()
+        .stream()
+        .filter(filterPredicate)
+        .map(lb
+            -> AsgLoadBalancerConfig.builder()
+                   .loadBalancer(getParameterFieldValue(lb.getLoadBalancer()))
+                   .prodListenerArn(getParameterFieldValue(lb.getProdListener()))
+                   .prodListenerRuleArn(getParameterFieldValue(lb.getProdListenerRuleArn()))
+                   .stageListenerArn(getParameterFieldValue(lb.getStageListener()))
+                   .stageListenerRuleArn(getParameterFieldValue(lb.getStageListenerRuleArn()))
+                   .prodTargetGroupArnsList(getProdTargetGroupArnListForLoadBalancer(
+                       asgBlueGreenPrepareRollbackDataOutcome, getParameterFieldValue(lb.getLoadBalancer())))
+                   .stageTargetGroupArnsList(getStageTargetGroupArnListForLoadBalancer(
+                       asgBlueGreenPrepareRollbackDataOutcome, getParameterFieldValue(lb.getLoadBalancer())))
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  public static List<String> getProdTargetGroupArnListForLoadBalancer(
+      AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome, String loadBalancer) {
+    if (isEmpty(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnListForLoadBalancer())) {
+      return null;
+    }
+
+    return asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnListForLoadBalancer().get(loadBalancer);
+  }
+
+  public static List<String> getStageTargetGroupArnListForLoadBalancer(
+      AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome, String loadBalancer) {
+    if (isEmpty(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnListForLoadBalancer())) {
+      return null;
+    }
+
+    return asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnListForLoadBalancer().get(loadBalancer);
   }
 }

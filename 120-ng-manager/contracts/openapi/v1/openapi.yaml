@@ -1630,6 +1630,10 @@ paths:
             type: string
           in: query
           name: file_path
+        - schema:
+            type: string
+          in: query
+          name: event_identifier
       x-internal: true
   /v1/kubernetes/releases/service-mapping:
     get:

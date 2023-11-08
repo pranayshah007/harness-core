@@ -32,7 +32,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDC)
 public class ProjectTemplateApiImplTest extends CategoryTest {
   @InjectMocks ProjectTemplateApiImpl projectTemplateApi;
-  @Mock TemplateResourceApiUtils templateResourceApiUtils;
+  @Mock TemplateResourceApiHelper templateResourceApiHelper;
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_ID = "org_id";
   private final String PROJECT_ID = "project_id";

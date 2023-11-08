@@ -28,7 +28,7 @@ public class ServiceLevelIndicatorDTO {
   @NotNull
   ServiceLevelIndicatorSpec spec;
   @Deprecated SLIMissingDataType sliMissingDataType;
-  String healthSourceRef;
+  @Deprecated String healthSourceRef;
 
   @JsonIgnore
   public String getEvaluationAndMetricType() {

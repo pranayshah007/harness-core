@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.VLICA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Fail.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -1070,6 +1072,59 @@ public class GitClientV2ImplTest extends CategoryTest {
     doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
     doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
     addRemoteWithIndexLock(repoPath);
+    FetchFilesResult fetchFilesResult = gitClient.fetchFilesByPath(request);
+    assertThat(fetchFilesResult.getFiles()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testFetchOptionalFilesAndFetchOnlyExisting() throws Exception {
+    FetchFilesByPathRequest request =
+        FetchFilesByPathRequest.builder()
+            .repoUrl(repoPath)
+            .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+            .connectorId(CONNECTOR_ID)
+            .accountId("ACCOUNT_ID")
+            .optionalFiles(true)
+            .build();
+
+    request.setFilePaths(List.of("base.txt", "not-existing-file.txt"));
+
+    request.setBranch("master");
+    doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
+
+    doCallRealMethod().when(gitClientHelper).addFiles(any(), any(), anyString());
+    doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
+    doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
+    addRemote(repoPath);
+    FetchFilesResult fetchFilesResult = gitClient.fetchFilesByPath(request);
+    assertThat(fetchFilesResult.getFiles()).size().isEqualTo(1);
+    assertThat(fetchFilesResult.getFiles().get(0).getFilePath()).isEqualTo("base.txt");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testFetchOptionalFilesAndNotFailIfNoOptionalFiles() throws Exception {
+    FetchFilesByPathRequest request =
+        FetchFilesByPathRequest.builder()
+            .repoUrl(repoPath)
+            .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+            .connectorId(CONNECTOR_ID)
+            .accountId("ACCOUNT_ID")
+            .optionalFiles(true)
+            .build();
+
+    request.setFilePaths(List.of("not-existing-file1.txt", "not-existing-file2.txt"));
+
+    request.setBranch("master");
+    doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
+
+    doCallRealMethod().when(gitClientHelper).addFiles(any(), any(), anyString());
+    doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
+    doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
+    addRemote(repoPath);
     FetchFilesResult fetchFilesResult = gitClient.fetchFilesByPath(request);
     assertThat(fetchFilesResult.getFiles()).isEmpty();
   }

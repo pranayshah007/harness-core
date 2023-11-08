@@ -407,7 +407,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
     Criteria criteria = getInfrastructureEqualityCriteria(infraEntity);
     Optional<InfrastructureEntity> infraEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
+        getMetadata(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
 
     if (infraEntityOptional.isPresent()) {
       if (infraEntityOptional.get().getType() == InfrastructureType.CUSTOM_DEPLOYMENT) {

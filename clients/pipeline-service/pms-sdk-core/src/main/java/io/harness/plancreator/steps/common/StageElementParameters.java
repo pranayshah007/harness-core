@@ -31,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
-@Builder
+@Builder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("stageElementParameters")
 @OwnedBy(CDC)

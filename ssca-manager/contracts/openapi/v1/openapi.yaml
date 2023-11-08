@@ -954,26 +954,9 @@ components:
         component_filter:
           type: array
           items:
-            x-stoplight:
-              id: z8927vi5w2zn4
-            type: object
-            properties:
-              field_name:
-                type: string
-                enum:
-                  - ComponentVersion
-                  - ComponentName
-              value:
-                type: string
-              operator:
-                $ref: '#/components/schemas/Operator'
+            $ref: '#/components/schemas/ComponentFilter'
         license_filter:
-          type: object
-          properties:
-            value:
-              type: string
-            operator:
-              $ref: '#/components/schemas/Operator'
+          $ref: '#/components/schemas/LicenseFilter'
         policy_violation:
           type: string
           enum:
@@ -1010,7 +993,7 @@ components:
           enum:
             - DEPLOYED
             - GENERATED
-        updated_at:
+        updated:
           type: string
         prod_env_count:
           type: integer
@@ -1066,21 +1049,11 @@ components:
       type: object
       properties:
         component_filter:
-          type: object
-          properties:
-            field_name:
-              type: string
-            operator:
-              type: string
-            value:
-              type: string
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentFilter'
         license_filter:
-          type: object
-          properties:
-            operator:
-              type: string
-            value:
-              type: string
+          $ref: '#/components/schemas/LicenseFilter'
         package_supplier:
           type: string
         package_manager:
@@ -1140,9 +1113,9 @@ components:
           type: string
         pipeline_execution_id:
           type: string
-        allow_list_policy_violation:
+        allow_list_violation_count:
           type: string
-        deny_list_policy_violation:
+        deny_list_violation_count:
           type: string
         attested_status:
           type: string
@@ -1165,6 +1138,27 @@ components:
         - Equals
         - StartsWith
         - Contains
+    ComponentFilter:
+      title: ComponentFilter
+      type: object
+      properties:
+        field_name:
+          type: string
+          enum:
+            - ComponentVersion
+            - ComponentName
+        value:
+          type: string
+        operator:
+          $ref: '#/components/schemas/Operator'
+    LicenseFilter:
+      title: LicenseFilter
+      type: object
+      properties:
+        value:
+          type: string
+        operator:
+          $ref: '#/components/schemas/Operator'
   parameters:
     OrgParam:
       name: org

@@ -29,10 +29,10 @@ import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.Attes
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.EnvTypeEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactDetailResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyComponentFilter;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
+import io.harness.spec.server.ssca.v1.model.ComponentFilter;
+import io.harness.spec.server.ssca.v1.model.LicenseFilter;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.ssca.beans.EnforcementSummaryDBO.EnforcementSummaryDBOKeys;
 import io.harness.ssca.beans.EnvType;
@@ -245,8 +245,8 @@ public class ArtifactServiceImpl implements ArtifactService {
     return new PageImpl<>(artifactListingResponses, pageable, total);
   }
 
-  private Criteria getLicenseCriteria(String accountId, String orgIdentifier, String projectIdentifier,
-      ArtifactListingRequestBodyLicenseFilter licenseFilter) {
+  private Criteria getLicenseCriteria(
+      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter) {
     Criteria criteria = new Criteria();
     List<String> orchestrationIds =
         normalisedSbomComponentService.getOrchestrationIds(accountId, orgIdentifier, projectIdentifier, licenseFilter);
@@ -256,8 +256,8 @@ public class ArtifactServiceImpl implements ArtifactService {
     return criteria;
   }
 
-  private Criteria getComponentFilterCriteria(String accountId, String orgIdentifier, String projectIdentifier,
-      List<ArtifactListingRequestBodyComponentFilter> componentFilter) {
+  private Criteria getComponentFilterCriteria(
+      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter) {
     Criteria criteria = new Criteria();
     List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
         accountId, orgIdentifier, projectIdentifier, componentFilter);
@@ -356,8 +356,8 @@ public class ArtifactServiceImpl implements ArtifactService {
               .triggeredAt(entity.getLastDeployedAt().toString());
 
       if (Objects.nonNull(enforcementSummaryEntity)) {
-        response.allowListPolicyViolation(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
-            .denyListPolicyViolation(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
+        response.allowListViolationCount(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
+            .denyListViolationCount(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
             .enforcementId(enforcementSummaryEntity.getEnforcementId());
       }
       return response;
@@ -415,7 +415,7 @@ public class ArtifactServiceImpl implements ArtifactService {
               .enforcementId(enforcementSummary.getEnforcementId())
               .activity(artifact.getProdEnvCount() + artifact.getNonProdEnvCount() == 0 ? ActivityEnum.GENERATED
                                                                                         : ActivityEnum.DEPLOYED)
-              .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
+              .updated(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount(artifact.getProdEnvCount().intValue())
               .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
               .orchestrationId(artifact.getOrchestrationId())

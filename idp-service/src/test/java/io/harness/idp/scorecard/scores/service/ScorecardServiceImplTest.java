@@ -25,6 +25,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
@@ -34,6 +36,8 @@ import io.harness.idp.scorecard.scorecards.repositories.ScorecardRepository;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.beans.BackstageCatalogEntityFacets;
 import io.harness.idp.scorecard.scores.beans.ScorecardAndChecks;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndScore;
+import io.harness.idp.scorecard.scores.repositories.ScorecardIdentifierAndScore;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.Facets;
@@ -43,6 +47,8 @@ import io.harness.spec.server.idp.v1.model.ScorecardChecksDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
+import io.harness.spec.server.idp.v1.model.ScorecardStats;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.result.DeleteResult;
@@ -50,6 +56,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
 import org.junit.Before;
@@ -68,6 +76,8 @@ public class ScorecardServiceImplTest extends CategoryTest {
   private ScorecardServiceImpl scorecardServiceImpl;
   @Mock ScorecardRepository scorecardRepository;
   @Mock CheckService checkService;
+  @Mock ScoreService scoreService;
+  @Mock ScoreComputerService scoreComputerService;
   @Mock SetupUsageProducer setupUsageProducer;
   @Mock BackstageResourceClient backstageResourceClient;
   @Mock Call<Object> call;
@@ -88,12 +98,14 @@ public class ScorecardServiceImplTest extends CategoryTest {
   private static final String TEST_CHECK_IDENTIFIER = "test-check-identifier";
   private static final boolean TEST_CHECK_IS_CUSTOM = false;
   private static final double TEST_CHECK_WRIGHT = 1.0;
+  private static final String IDP_SERVICE_ENTITY_ID = "03bc314a-437b-4d15-b75b-b819179e7859";
+  private static final String IDP_SERVICE_ENTITY_NAME = "idp-service";
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    scorecardServiceImpl = new ScorecardServiceImpl(scorecardRepository, checkService, setupUsageProducer,
-        backstageResourceClient, transactionTemplate, outboxService);
+    scorecardServiceImpl = new ScorecardServiceImpl(scorecardRepository, checkService, scoreService,
+        scoreComputerService, setupUsageProducer, backstageResourceClient, transactionTemplate, outboxService);
   }
 
   @Test
@@ -103,10 +115,14 @@ public class ScorecardServiceImplTest extends CategoryTest {
     ScorecardEntity scorecardEntity = getScorecardEntity();
     when(scorecardRepository.findByAccountIdentifier(ACCOUNT_ID)).thenReturn(List.of(scorecardEntity));
     when(checkService.getChecksByAccountIdAndIdentifiers(any(), any())).thenReturn(getCheckEntities());
+    when(scoreService.getComputedScoresForScorecards(ACCOUNT_ID, List.of(SCORECARD_ID)))
+        .thenReturn(getScorecardIdentifierAndScoreMap());
     List<Scorecard> scorecards = scorecardServiceImpl.getAllScorecardsAndChecksDetails(ACCOUNT_ID);
     assertEquals(1, scorecards.size());
     assertEquals(1, scorecards.get(0).getChecksMissing().size());
     assertEquals(SAMPLE_CHECK_ID, scorecards.get(0).getChecksMissing().get(0));
+    assertEquals(3, (int) scorecards.get(0).getComponents());
+    assertEquals(67.0, scorecards.get(0).getPercentage());
   }
 
   @Test
@@ -227,6 +243,32 @@ public class ScorecardServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
+  public void testGetScorecardStats() {
+    when(scorecardRepository.findByAccountIdentifierAndIdentifierIn(ACCOUNT_ID, List.of(SCORECARD_ID)))
+        .thenReturn(List.of(getScorecardEntity()));
+    when(scoreComputerService.getAllEntities(any(), any(), any())).thenReturn(getBackstageCatalogEntities());
+    when(scoreService.getScoresForEntityIdentifiersAndScorecardIdentifiers(any(), any(), any()))
+        .thenReturn(getEntityIdentifierAndScore());
+    List<ScorecardStats> scorecardStats = scorecardServiceImpl.getScorecardStats(ACCOUNT_ID, SCORECARD_ID);
+    assertEquals(1, scorecardStats.size());
+    assertEquals(IDP_SERVICE_ENTITY_NAME, scorecardStats.get(0).getName());
+    assertEquals(75, (int) scorecardStats.get(0).getScore());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetScorecardIdentifiers() {
+    when(scorecardRepository.findByCheckIdentifierAndIsCustom(any(), any(), any()))
+        .thenReturn(List.of(getScorecardEntity()));
+    List<String> scorecardIds = scorecardServiceImpl.getScorecardIdentifiers(ACCOUNT_ID, GITHUB_CHECK_ID, Boolean.TRUE);
+    assertEquals(1, scorecardIds.size());
+    assertEquals(SCORECARD_ID, scorecardIds.get(0));
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
   public void testDeleteScorecard() {
     List<CheckEntity> checkEntities = new ArrayList<>(getCheckEntities());
     checkEntities.add(
@@ -335,6 +377,7 @@ public class ScorecardServiceImplTest extends CategoryTest {
         .identifier(SCORECARD_ID)
         .name(SCORECARD_NAME)
         .checks(List.of(check1, check2, check3))
+        .filter(new ScorecardFilter().kind("component").type("service"))
         .published(true)
         .build();
   }
@@ -390,5 +433,30 @@ public class ScorecardServiceImplTest extends CategoryTest {
         .isCustom(TEST_CHECK_IS_CUSTOM)
         .identifier(TEST_CHECK_IDENTIFIER)
         .build();
+  }
+
+  private Map<String, ScorecardIdentifierAndScore> getScorecardIdentifierAndScoreMap() {
+    return Map.of(SCORECARD_ID,
+        ScorecardIdentifierAndScore.builder().scorecardIdentifier(SCORECARD_ID).count(3).percentage(0.6666).build());
+  }
+
+  private Set<BackstageCatalogEntity> getBackstageCatalogEntities() {
+    BackstageCatalogComponentEntity entity = new BackstageCatalogComponentEntity();
+    BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
+    metadata.setUid(IDP_SERVICE_ENTITY_ID);
+    metadata.setName(IDP_SERVICE_ENTITY_NAME);
+    entity.setMetadata(metadata);
+
+    BackstageCatalogComponentEntity.Spec spec = new BackstageCatalogComponentEntity.Spec();
+    spec.setType("service");
+    spec.setLifecycle("experimental");
+    spec.setOwner("team-a");
+    spec.setSystem("Unknown");
+    entity.setSpec(spec);
+    return Set.of(entity);
+  }
+
+  private List<EntityIdentifierAndScore> getEntityIdentifierAndScore() {
+    return List.of(EntityIdentifierAndScore.builder().entityIdentifier(IDP_SERVICE_ENTITY_ID).score(75).build());
   }
 }

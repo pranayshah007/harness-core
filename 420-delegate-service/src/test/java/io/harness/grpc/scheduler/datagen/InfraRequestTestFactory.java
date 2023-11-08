@@ -93,7 +93,7 @@ public class InfraRequestTestFactory {
   private static SetupExecutionInfrastructureRequest createSetupInfraRequest(
       final K8sInfraSpec infraSpec, final String logKey) {
     final ExecutionInfrastructure infra = ExecutionInfrastructure.newBuilder()
-                                              .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
+                                              .setLogConfig(LogConfig.newBuilder().setLogPrefix(logKey).build())
                                               .setK8S(infraSpec)
                                               .build();
     final var config = SchedulingConfig.newBuilder()

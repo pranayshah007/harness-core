@@ -9,20 +9,29 @@ package io.harness.cdng.creator.plan.steps.ecs;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
 import io.harness.cdng.ecs.EcsRollingDeployStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsRollingDeployStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsRollingDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsRollingDeployStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ECS_ROLLING_DEPLOY);
@@ -51,5 +60,23 @@ public class EcsRollingDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsR
         stepElement.getEcsRollingDeployStepInfo().getDelegateSelectors());
 
     return stepParameters;
+  }
+
+  @Override
+  protected StepType getStepSpecType(PlanCreationContext ctx, EcsRollingDeployStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsRollingDeployStepV2.STEP_TYPE;
+    }
+    return EcsRollingDeployStep.STEP_TYPE;
+  }
+
+  @Override
+  protected String getFacilitatorType(PlanCreationContext ctx, EcsRollingDeployStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC_CHAIN;
+    }
+    return OrchestrationFacilitatorType.TASK_CHAIN;
   }
 }

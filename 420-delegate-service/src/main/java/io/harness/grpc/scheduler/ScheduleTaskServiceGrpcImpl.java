@@ -141,7 +141,8 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
     final var capabilities = mapSelectorCapability(config);
     capabilities.add(mapRunnerCapability(config));
 
-    sendTask(config, null, k8SInfra.toByteArray(), SchedulingTaskEvent.EventType.SETUP, taskId, taskId, capabilities);
+    sendTask(
+        config, null, k8SInfra.toByteArray(), SchedulingTaskEvent.EventType.SETUP, taskId, null, taskId, capabilities);
 
     return SetupExecutionInfrastructureResponse.newBuilder()
         .setTaskId(TaskId.newBuilder().setId(taskId).build())
@@ -156,15 +157,15 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
     final var capabilities = mapSelectorCapability(config);
     capabilities.add(mapInfraCapability(execution.getInfraRefId()));
 
-    sendTask(
-        config, taskData, null, SchedulingTaskEvent.EventType.EXECUTE, execution.getInfraRefId(), taskId, capabilities);
+    sendTask(config, taskData, null, SchedulingTaskEvent.EventType.EXECUTE, execution.getInfraRefId(),
+        execution.getStepLogKey(), taskId, capabilities);
 
     return ScheduleTaskResponse.newBuilder().setTaskId(TaskId.newBuilder().setId(taskId).build()).build();
   }
 
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,
-      final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String taskId,
-      final List<ExecutionCapability> capabilities) {
+      final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String stepLogKey,
+      final String taskId, final List<ExecutionCapability> capabilities) {
     final var task =
         DelegateTask.builder()
             .uuid(taskId)
@@ -183,6 +184,8 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
             .emitEvent(false)
             .async(true)
             .forceExecute(false)
+            .baseLogKey(stepLogKey)
+            // Check if we can do with baseLogKey itself only.
             .build();
 
     taskClient.sendTask(task);

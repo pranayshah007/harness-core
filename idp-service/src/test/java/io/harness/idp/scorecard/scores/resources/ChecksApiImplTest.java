@@ -22,17 +22,21 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckDetailsRequest;
+import io.harness.spec.server.idp.v1.model.CheckGraph;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
 import io.harness.spec.server.idp.v1.model.CheckResponse;
+import io.harness.spec.server.idp.v1.model.CheckStats;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +67,7 @@ public class ChecksApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetChecks() {
     when(checkService.getChecksByAccountId(any(), any(), any(), any())).thenReturn(getPageCheckEntity());
+    when(checkService.getCheckStatusByAccountIdAndIdentifiers(any(), any())).thenReturn(getCheckStatusEntityMap());
     when(idpCommonService.buildPageResponse(0, 10, 1, getCheckResponse()))
         .thenReturn(Response.ok().entity(getCheckResponse()).build());
     Response response = checksApiImpl.getChecks(true, ACCOUNT_ID, 0, 10, null, null);
@@ -81,9 +86,45 @@ public class ChecksApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testGetScorecardThrowsException() {
+  public void testGetCheckDetailsThrowsException() {
     when(checkService.getCheckDetails(ACCOUNT_ID, CHECK_ID, false)).thenThrow(InvalidRequestException.class);
     Response response = checksApiImpl.getCheck(CHECK_ID, ACCOUNT_ID, false);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckGraph() {
+    when(checkService.getCheckGraph(ACCOUNT_ID, CHECK_ID, true)).thenReturn(getCheckGraphResponse());
+    Response response = checksApiImpl.getCheckGraph(CHECK_ID, ACCOUNT_ID, true);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckGraphThrowsException() {
+    when(checkService.getCheckGraph(ACCOUNT_ID, CHECK_ID, false)).thenThrow(InvalidRequestException.class);
+    Response response = checksApiImpl.getCheckGraph(CHECK_ID, ACCOUNT_ID, false);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckStats() {
+    when(checkService.getCheckStats(ACCOUNT_ID, CHECK_ID, true)).thenReturn(getCheckStatsResponse());
+    Response response = checksApiImpl.getCheckStats(CHECK_ID, ACCOUNT_ID, true);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetCheckStatsThrowsException() {
+    when(checkService.getCheckStats(ACCOUNT_ID, CHECK_ID, false)).thenThrow(InvalidRequestException.class);
+    Response response = checksApiImpl.getCheckStats(CHECK_ID, ACCOUNT_ID, false);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
 
@@ -166,6 +207,18 @@ public class ChecksApiImplTest extends CategoryTest {
     return new PageImpl<>(List.of(checkEntity));
   }
 
+  private Map<String, CheckStatusEntity> getCheckStatusEntityMap() {
+    return Map.of(ACCOUNT_ID + "." + CHECK_ID,
+        CheckStatusEntity.builder()
+            .accountIdentifier(ACCOUNT_ID)
+            .identifier(CHECK_ID)
+            .isCustom(true)
+            .name(CHECK_NAME)
+            .total(10)
+            .passCount(5)
+            .build());
+  }
+
   private List<CheckResponse> getCheckResponse() {
     List<CheckResponse> response = new ArrayList<>();
     CheckListItem checkListItem = new CheckListItem();
@@ -173,6 +226,7 @@ public class ChecksApiImplTest extends CategoryTest {
     checkListItem.setName(CHECK_NAME);
     checkListItem.setDataSource(List.of("github"));
     checkListItem.setCustom(true);
+    checkListItem.setPercentage(50.0);
     response.add(new CheckResponse().check(checkListItem));
     return response;
   }
@@ -183,5 +237,23 @@ public class ChecksApiImplTest extends CategoryTest {
     checkDetails.setIdentifier(CHECK_ID);
     checkDetails.setCustom(true);
     return checkDetails;
+  }
+
+  private List<CheckGraph> getCheckGraphResponse() {
+    CheckGraph checkGraph = new CheckGraph();
+    checkGraph.setTimestamp(System.currentTimeMillis());
+    checkGraph.setCount(10);
+    return List.of(checkGraph);
+  }
+
+  private List<CheckStats> getCheckStatsResponse() {
+    CheckStats checkStats = new CheckStats();
+    checkStats.setName("idp-service");
+    checkStats.setKind("component");
+    checkStats.setType("service");
+    checkStats.setSystem("Unknown");
+    checkStats.setOwner("team-a");
+    checkStats.setStatus("PASS");
+    return List.of(checkStats);
   }
 }

@@ -1,0 +1,8 @@
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: HTTPRouteGroup
+metadata:
+  name: smi-http-route
+spec:
+  matches:
+  - name: smi-http-uri-1
+    pathRegex: /metrics

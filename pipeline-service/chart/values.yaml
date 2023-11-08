@@ -382,6 +382,22 @@ virtualService:
 ingress:
   annotations: {}
 
+ssca_images:
+  ssca_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.2"
+      repository: harness/ssca-plugin
+      imagePullSecrets: []
+  slsa_plugin:
+    image:
+      registry: docker.io
+      digest: ""
+      tag: "0.12.0"
+      repository: harness/slsa-plugin
+      imagePullSecrets: []
+
 secrets:
   default:
     OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"

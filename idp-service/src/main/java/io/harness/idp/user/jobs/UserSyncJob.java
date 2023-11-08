@@ -47,7 +47,7 @@ public class UserSyncJob implements Managed {
   public void start() throws Exception {
     executorService =
         Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("user-sync-job").build());
-    executorService.scheduleWithFixedDelay(this::run, 0, DELAY_IN_MINUTES, TimeUnit.MINUTES);
+    executorService.scheduleWithFixedDelay(this::run, 8, DELAY_IN_MINUTES, TimeUnit.MINUTES);
   }
 
   @Override

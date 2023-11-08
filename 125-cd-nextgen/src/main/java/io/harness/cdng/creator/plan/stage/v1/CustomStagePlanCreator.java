@@ -13,7 +13,6 @@ import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
 import io.harness.cdng.pipeline.steps.v1.CustomStageStep;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.common.v1.StageElementParametersV1.StageElementParametersV1Builder;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
@@ -86,9 +85,6 @@ public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
     // adding support for strategy
     Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
 
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
     planCreationResponseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
@@ -103,11 +99,10 @@ public class CustomStagePlanCreator extends ChildrenPlanCreator<YamlField> {
 
   Dependency getDependencyForStrategy(
       Map<String, YamlField> dependenciesNodeMap, YamlField field, PlanCreationContext ctx) {
-    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+    Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
         kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
     return Dependency.newBuilder()
-        .putAllMetadata(dependencyMetadata.getMetadataMap())
-        .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+        .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
         .build();
   }
 
