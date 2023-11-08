@@ -35,12 +35,13 @@ import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+@Slf4j
 public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Inject ArtifactService artifactService;
   @Inject ExecutorRegistry executorRegistry;
@@ -65,15 +66,18 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
 
     String regoPolicy =
         ruleEngineService.getPolicy(accountId, orgIdentifier, projectIdentifier, body.getPolicyFileId());
+    log.info("RegoPolicyLength {}", regoPolicy.length());
     Page<NormalizedSBOMComponentEntity> entities =
         sbomComponentRepo.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndOrchestrationId(accountId,
             orgIdentifier, projectIdentifier, artifactEntity.getOrchestrationId(),
             PageRequest.of(0, Integer.MAX_VALUE));
+    log.info("NumberOfEntities {}", entities.getTotalElements());
     Map<String, Object> requestMap = new HashMap<>();
     requestMap.put("rego", regoPolicy);
     requestMap.put("input", entities.get().collect(Collectors.toList()));
     String requestBody = JsonUtils.asJson(requestMap);
     String response = getHttpResponse(requestBody);
+    log.info("Response {}", response);
     Map<String, Object> responseMap1 = JsonUtils.asMap(response);
     List<Map<String, Object>> outputMapList = (List<Map<String, Object>>) responseMap1.get("output");
     List<Map<String, Object>> expressionsMapList =
