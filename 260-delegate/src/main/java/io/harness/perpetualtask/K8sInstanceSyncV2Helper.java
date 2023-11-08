@@ -66,13 +66,6 @@ public class K8sInstanceSyncV2Helper {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
 
-  //  public KubernetesConfig getKubernetesConfig(
-  //      ConnectorInfoDTO connectorDTO, KubernetesCloudClusterConfig kubernetesCloudClusterConfig, String namespace) {
-  //    K8sInfraDelegateConfig k8sInfraDelegateConfig =
-  //        getK8sInfraDelegateConfig(connectorDTO, kubernetesCloudClusterConfig, namespace);
-  //    return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
-  //  }
-
   public KubernetesConfig getKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     return containerBaseHelper.createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
