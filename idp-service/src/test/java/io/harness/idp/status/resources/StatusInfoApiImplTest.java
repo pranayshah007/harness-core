@@ -64,27 +64,27 @@ public class StatusInfoApiImplTest {
 
   // TODO
   // Make necessary changes according to Impl class once UI picks up
-//  @Test
-//  @Owner(developers = VIGNESWARA)
-//  @Category(UnitTests.class)
-//  public void testGetStatusByTypeV2() {
-//    type = StatusType.ONBOARDING.toString();
-//    StatusInfoV2 statusInfov2 = initializeStatusInfoV2(type);
-//    when(statusInfoService.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type)).thenReturn(statusInfov2);
-//    Response response = statusInfoApiImpl.getStatusInfoTypeV2(type, ACCOUNT_ID);
-//    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-//    assertNotNull(((StatusInfoV2) response.getEntity()).get(type.toLowerCase()));
-//  }
-//
-//  @Test
-//  @Owner(developers = VIGNESWARA)
-//  @Category(UnitTests.class)
-//  public void testGetStatusByTypeV2ThrowsException() {
-//    type = StatusType.ONBOARDING.toString();
-//    when(statusInfoService.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type)).thenThrow(InvalidRequestException.class);
-//    Response response = statusInfoApiImpl.getStatusInfoTypeV2(type, ACCOUNT_ID);
-//    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
-//  }
+  //  @Test
+  //  @Owner(developers = VIGNESWARA)
+  //  @Category(UnitTests.class)
+  //  public void testGetStatusByTypeV2() {
+  //    type = StatusType.ONBOARDING.toString();
+  //    StatusInfoV2 statusInfov2 = initializeStatusInfoV2(type);
+  //    when(statusInfoService.findByAccountIdentifierAndTypeV2(ACCOUNT_ID, type)).thenReturn(statusInfov2);
+  //    Response response = statusInfoApiImpl.getStatusInfoTypeV2(type, ACCOUNT_ID);
+  //    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+  //    assertNotNull(((StatusInfoV2) response.getEntity()).get(type.toLowerCase()));
+  //  }
+  //
+  //  @Test
+  //  @Owner(developers = VIGNESWARA)
+  //  @Category(UnitTests.class)
+  //  public void testGetStatusByTypeV2ThrowsException() {
+  //    type = StatusType.ONBOARDING.toString();
+  //    when(statusInfoService.findByAccountIdentifierAndTypeV2(ACCOUNT_ID,
+  //    type)).thenThrow(InvalidRequestException.class); Response response = statusInfoApiImpl.getStatusInfoTypeV2(type,
+  //    ACCOUNT_ID); assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  //  }
 
   @Test
   @Owner(developers = VIGNESWARA)

@@ -57,20 +57,20 @@ public class StatusInfoApiImpl implements StatusInfoApi {
 
   // TODO
   // Make the same change in getStatusInfoByType method once UI picks up
-//  @Override
-//  public Response getStatusInfoTypeV2(String type, String harnessAccount) {
-//    try {
-//      StatusInfoV2 statusInfoV2 = statusInfoService.findByAccountIdentifierAndTypeV2(harnessAccount, type);
-//      return Response.status(Response.Status.OK).entity(statusInfoV2).build();
-//    } catch (Exception e) {
-//      String errorMessage = String.format(
-//          "Error occurred while fetching status info for accountId: [%s], type: [%s]", harnessAccount, type);
-//      log.error(errorMessage, e);
-//      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-//          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-//          .build();
-//    }
-//  }
+  //  @Override
+  //  public Response getStatusInfoTypeV2(String type, String harnessAccount) {
+  //    try {
+  //      StatusInfoV2 statusInfoV2 = statusInfoService.findByAccountIdentifierAndTypeV2(harnessAccount, type);
+  //      return Response.status(Response.Status.OK).entity(statusInfoV2).build();
+  //    } catch (Exception e) {
+  //      String errorMessage = String.format(
+  //          "Error occurred while fetching status info for accountId: [%s], type: [%s]", harnessAccount, type);
+  //      log.error(errorMessage, e);
+  //      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+  //          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+  //          .build();
+  //    }
+  //  }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
