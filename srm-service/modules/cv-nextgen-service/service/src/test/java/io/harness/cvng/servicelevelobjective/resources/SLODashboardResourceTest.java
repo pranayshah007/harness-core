@@ -24,7 +24,6 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -103,7 +102,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO1.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY);
     sloDTO1.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO1);
 
@@ -112,7 +110,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .userJourneyRefs(List.of("uj2"))
                                              .build();
     simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO2.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
     sloDTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO2);
 
@@ -121,7 +118,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .userJourneyRefs(List.of("uj10"))
                                              .build();
     simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO3.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
     sloDTO3.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO3);
 
@@ -166,7 +162,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .build();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO1.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY);
     sloDTO1.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO1);
 
@@ -175,7 +170,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .userJourneyRefs(List.of("uj2"))
                                              .build();
     simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO2.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
     sloDTO2.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO2);
 
@@ -184,7 +178,6 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
                                              .userJourneyRefs(List.of("uj10"))
                                              .build();
     simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) sloDTO3.getSpec();
-    simpleServiceLevelObjectiveSpec.setServiceLevelIndicatorType(ServiceLevelIndicatorType.LATENCY);
     sloDTO3.setSpec(simpleServiceLevelObjectiveSpec);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), sloDTO3);
 

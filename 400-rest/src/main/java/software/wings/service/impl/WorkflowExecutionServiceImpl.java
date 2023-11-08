@@ -1415,7 +1415,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     final Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
                                                .filter(WorkflowExecutionKeys.appId, appId)
                                                .filter(WorkflowExecutionKeys.uuid, workflowExecutionId);
-    prepareWorkflowExecutionProjectionFields(query, fields);
     WorkflowExecution workflowExecution = query.get();
     if (workflowExecution != null && workflowExecution.getArtifacts() != null) {
       for (Artifact artifact : workflowExecution.getArtifacts()) {
@@ -1425,25 +1424,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
     }
     return workflowExecution;
-  }
-
-  private void prepareWorkflowExecutionProjectionFields(Query<WorkflowExecution> query, String[] fields) {
-    if (featureFlagService.isNotGlobalEnabled(FeatureName.SPG_CG_WFE_PROJECTION_FIELDS)) {
-      return;
-    }
-    if (isEmpty(fields)) {
-      return;
-    }
-    // TURN ARRAY INTO A SET TO REMOVE DUPLICATES IF EXIST
-    // ADD COMMON FIELDS HELPFUL ALONG THE EXECUTION FLOW
-    Set<String> uniqueFields = new HashSet<>(Arrays.asList(fields));
-    uniqueFields.add(WorkflowExecutionKeys.uuid);
-    uniqueFields.add(WorkflowExecutionKeys.appId);
-    uniqueFields.add(WorkflowExecutionKeys.accountId);
-
-    for (String field : uniqueFields) {
-      query.project(field, true);
-    }
   }
 
   @Override

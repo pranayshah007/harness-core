@@ -69,7 +69,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.SLOValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
@@ -744,7 +743,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .userJourneys(serviceLevelObjectiveFilter.getUserJourneys())
             .identifiers(serviceLevelObjectiveFilter.getIdentifiers())
             .targetTypes(serviceLevelObjectiveFilter.getTargetTypes())
-            .sliTypes(serviceLevelObjectiveFilter.getSliTypes())
             .errorBudgetRisks(serviceLevelObjectiveFilter.getErrorBudgetRisks())
             .build());
   }
@@ -765,7 +763,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .userJourneys(sloDashboardApiFilter.getUserJourneyIdentifiers())
             .monitoredServiceIdentifier(sloDashboardApiFilter.getMonitoredServiceIdentifier())
             .targetTypes(sloDashboardApiFilter.getTargetTypes())
-            .sliTypes(sloDashboardApiFilter.getSliTypes())
             .sloType(sloDashboardApiFilter.getType())
             .envIdentifiers(sloDashboardApiFilter.getEnvIdentifiers())
             .sliEvaluationType(sloDashboardApiFilter.getEvaluationType())
@@ -886,7 +883,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .identifiers(simpleSLOIdentifiers)
             .monitoredServiceIdentifier(filter.getMonitoredServiceIdentifier())
             .userJourneys(filter.getUserJourneyIdentifiers())
-            .sliTypes(filter.getSliTypes())
             .errorBudgetRisks(filter.getErrorBudgetRisks())
             .targetTypes(filter.getTargetTypes())
             .searchFilter(filter.getSearchFilter())
@@ -1472,9 +1468,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (isNotEmpty(filter.getIdentifiers())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.identifier).in(filter.getIdentifiers());
     }
-    if (isNotEmpty(filter.getSliTypes())) {
-      sloQuery.field(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType).in(filter.getSliTypes());
-    }
     if (isNotEmpty(filter.getTargetTypes())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.target + "." + SLOTargetDTO.SLOTargetKeys.type)
           .in(filter.getTargetTypes());
@@ -1650,7 +1643,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private static class Filter {
     List<String> userJourneys;
     List<String> identifiers;
-    List<ServiceLevelIndicatorType> sliTypes;
     List<SLOTargetType> targetTypes;
     List<ErrorBudgetRisk> errorBudgetRisks;
     String monitoredServiceIdentifier;

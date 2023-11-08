@@ -321,7 +321,7 @@ public class ServiceOverridesResource {
         ngServiceOverridesEntity.getIdentifier(), ngServiceOverridesEntity));
   }
 
-  @GET
+  @POST
   @Path("/list")
   @Hidden
   @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV2")
