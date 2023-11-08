@@ -15,8 +15,8 @@ import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.TunnelRegisterRequestDTO;
 import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.ng.tunnel.entities.Tunnel;
-import io.harness.ng.tunnel.services.TunnelService;
 import io.harness.repositories.ng.tunnel.TunnelRepository;
+import io.harness.services.TunnelService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

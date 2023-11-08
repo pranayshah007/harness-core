@@ -13,9 +13,9 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.TunnelRegisterRequestDTO;
 import io.harness.ng.core.dto.TunnelResponseDTO;
-import io.harness.ng.tunnel.services.TunnelService;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.services.TunnelService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
