@@ -276,24 +276,6 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
       x-internal: true
-  /v2/status-info/{type}:
-    get:
-      summary: Get Status Info by type
-      description: Get Status Info for the given type
-      tags:
-        - StatusInfo
-      responses:
-        '200':
-          $ref: '#/components/responses/StatusInfoResponseV2'
-      operationId: get-status-info-type-v2
-      x-stoplight:
-        id: g2rre6x1jk36w
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-        - $ref: '#/components/parameters/StatusType'
-      security:
-        - x-api-key: []
-      x-internal: true
   /v1/namespace-info:
     get:
       summary: Get Namespace Info

@@ -21,7 +21,6 @@ import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfoRequest;
 import io.harness.spec.server.idp.v1.model.StatusInfoResponse;
-import io.harness.spec.server.idp.v1.model.StatusInfoV2;
 
 import com.google.inject.Inject;
 import java.util.Optional;
@@ -56,20 +55,22 @@ public class StatusInfoApiImpl implements StatusInfoApi {
     }
   }
 
-  @Override
-  public Response getStatusInfoTypeV2(String type, String harnessAccount) {
-    try {
-      StatusInfoV2 statusInfoV2 = statusInfoService.findByAccountIdentifierAndTypeV2(harnessAccount, type);
-      return Response.status(Response.Status.OK).entity(statusInfoV2).build();
-    } catch (Exception e) {
-      String errorMessage = String.format(
-          "Error occurred while fetching status info for accountId: [%s], type: [%s]", harnessAccount, type);
-      log.error(errorMessage, e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
-          .build();
-    }
-  }
+  // TODO
+  // Make the same change in getStatusInfoByType method once UI picks up
+//  @Override
+//  public Response getStatusInfoTypeV2(String type, String harnessAccount) {
+//    try {
+//      StatusInfoV2 statusInfoV2 = statusInfoService.findByAccountIdentifierAndTypeV2(harnessAccount, type);
+//      return Response.status(Response.Status.OK).entity(statusInfoV2).build();
+//    } catch (Exception e) {
+//      String errorMessage = String.format(
+//          "Error occurred while fetching status info for accountId: [%s], type: [%s]", harnessAccount, type);
+//      log.error(errorMessage, e);
+//      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+//          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+//          .build();
+//    }
+//  }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
