@@ -59,6 +59,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FileData;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
@@ -170,6 +171,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
@@ -244,6 +246,7 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2329,6 +2332,87 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(1);
     assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 1, asList("path/to/autoScalar.yml"));
     assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void shouldHandleArtifactBundleFetchResponseTest() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(TasCanaryAppSetupStepParameters.infoBuilder().build()).build();
+    StoreConfig store = ArtifactBundleStore.builder()
+                            .manifestPath(ParameterField.createValueField("/manifest.yaml"))
+                            .artifactBundleType(TasArtifactBundledArtifactType.ZIP)
+                            .deployableUnitPath(ParameterField.createValueField("/artifact.zip"))
+                            .build();
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().identifier("id").store(store).build();
+    Map<String, List<FileData>> filesFromArtifactBundle = new HashMap<>();
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder()
+                                          .outcome(ArtifactsOutcome.builder()
+                                                       .primary(DockerArtifactOutcome.builder()
+                                                                    .type(DOCKER_REGISTRY_NAME)
+                                                                    .connectorRef("connectorRef")
+                                                                    .primaryArtifact(true)
+                                                                    .build())
+                                                       .build())
+                                          .found(true)
+                                          .build();
+    final DockerConnectorDTO dockerConnectorDTO =
+        DockerConnectorDTO.builder()
+            .dockerRegistryUrl("url")
+            .providerType(DockerRegistryProviderType.DOCKER_HUB)
+            .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
+            .build();
+    final ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
+    when(outcomeService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS)))
+        .thenReturn(optionalOutcome);
+    filesFromArtifactBundle.put(
+        "1", List.of(FileData.builder().fileContent(MANIFEST_YML).filePath("path/to/manifest.yaml").build()));
+    Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
+    localStoreFileMapContents.put(
+        "1", asList(TasManifestFileContents.builder().fileContent(VARS_YML_1).filePath("path/to/vars.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
+    ArtifactBundleFetchResponse artifactBundleFetchResponse = ArtifactBundleFetchResponse.builder()
+                                                                  .filesFromArtifactBundle(filesFromArtifactBundle)
+                                                                  .taskStatus(TaskStatus.SUCCESS)
+                                                                  .unitProgressData(unitProgressData)
+                                                                  .build();
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("artifact-bundle-fetch-response", artifactBundleFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder().connectorConfig(dockerConnectorDTO).name("test").build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    TasStepPassThroughData passThroughData =
+        TasStepPassThroughData.builder()
+            .tasManifestOutcome(tasManifestOutcome)
+            .shouldOpenFetchFilesStream(true)
+            .shouldExecuteGitStoreFetch(true)
+            .shouldExecuteArtifactBundleStoreFetch(true)
+            .varsManifestOutcomeList(new ArrayList<>())
+            .autoScalerManifestOutcome(getAutoScalarManifestOutcome(
+                1, getGitStore("master", asList("path/to/autoScalar.yml"), "git-connector"), "autoScalarOverride"))
+            .maxManifestOrder(1)
+            .filesFromArtifactBundle(filesFromArtifactBundle)
+            .localStoreFileMapContents(localStoreFileMapContents)
+            .build();
+    when(tasStepExecutor.executeTasTask(
+             any(), any(), any(), any(TasExecutionPassThroughData.class), anyBoolean(), any(UnitProgressData.class)))
+        .thenReturn(TaskChainResponse.builder().chainEnd(true).passThroughData(passThroughData).build());
+    TaskChainResponse taskChainResponse = tasStepHelper.executeNextLink(
+        tasStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getFilesFromArtifactBundle()).isEqualTo(filesFromArtifactBundle);
+    assertThat(tasStepPassThroughData.getLocalStoreFileMapContents()).isEqualTo(localStoreFileMapContents);
   }
 
   @Test

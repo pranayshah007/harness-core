@@ -68,6 +68,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FileData;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
@@ -191,7 +192,6 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.ParameterFieldUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
@@ -1569,7 +1569,8 @@ public class TasStepHelper {
     TasManifestsPackage tasManifestsPackage =
         getManifestFilesContents(ambiance, tasStepPassThroughData.getGitFetchFilesResultMap(),
             tasStepPassThroughData.getCustomFetchContent(), tasStepPassThroughData.getLocalStoreFileMapContents(),
-            allFilesFetched, tasStepPassThroughData.getMaxManifestOrder(), unresolvedTasManifestsPackage, logCallback);
+            allFilesFetched, tasStepPassThroughData.getFilesFromArtifactBundle(),
+            tasStepPassThroughData.getMaxManifestOrder(), unresolvedTasManifestsPackage, logCallback);
     unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
     logCallback.saveExecutionLog("Successfully verified all manifests", INFO, SUCCESS);
     tasStepPassThroughData.getUnitProgresses().add(unitProgress.build());
@@ -1595,7 +1596,8 @@ public class TasStepHelper {
       Map<String, FetchFilesResult> gitFetchFilesResultMap,
       Map<String, Collection<CustomSourceFile>> customFetchContent,
       Map<String, List<TasManifestFileContents>> localStoreFetchFilesResultMap, Map<String, String> allFilesFetched,
-      Integer maxManifestOrder, TasManifestsPackage unresolvedTasManifestPackage, LogCallback logCallback) {
+      Map<String, List<FileData>> filesFromArtifactBundleMap, Integer maxManifestOrder,
+      TasManifestsPackage unresolvedTasManifestPackage, LogCallback logCallback) {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
     logCallback.saveExecutionLog("Verifying manifests", INFO);
     for (int manifestOrder = 0; manifestOrder <= maxManifestOrder; manifestOrder++) {
@@ -1635,6 +1637,18 @@ public class TasStepHelper {
             addToPcfManifestPackageByType(unresolvedTasManifestPackage, tasManifestFileContents.getFileContent(),
                 tasManifestFileContents.getFilePath(), logCallback);
             allFilesFetched.put(tasManifestFileContents.getFilePath(), fileContent);
+          }
+        }
+      }
+      if (!isNull(filesFromArtifactBundleMap) && filesFromArtifactBundleMap.containsKey(manifestOrderId)) {
+        List<FileData> fileDataList = filesFromArtifactBundleMap.get(manifestOrderId);
+        if (!isNull(fileDataList)) {
+          for (FileData fileData : fileDataList) {
+            String fileContent = (String) cdExpressionResolver.updateExpressions(ambiance, fileData.getFileContent());
+            addToPcfManifestPackageByType(tasManifestsPackage, fileContent, fileData.getFilePath(), logCallback);
+            addToPcfManifestPackageByType(
+                unresolvedTasManifestPackage, fileData.getFileContent(), fileData.getFilePath(), logCallback);
+            allFilesFetched.put(fileData.getFilePath(), fileContent);
           }
         }
       }
