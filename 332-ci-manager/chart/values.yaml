@@ -153,7 +153,7 @@ image:
   repository: harness/ci-manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "5302"
+  tag: "6601"
   digest: ""
   imagePullSecrets: []
 securityImage:
@@ -176,14 +176,14 @@ ci_images:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.16.26"
+      tag: "1.16.29"
       repository: harness/ci-addon
       imagePullSecrets: []
   lite_engine:
     image:
       registry: docker.io
       digest: ""
-      tag: "1.16.26"
+      tag: "1.16.29"
       repository: harness/ci-lite-engine
       imagePullSecrets: []
   git_clone:
@@ -256,6 +256,20 @@ ci_images:
       tag: "1.6.2"
       repository: plugins/cache
       imagePullSecrets: []
+    ssca_plugin:
+      image:
+        registry: docker.io
+        digest: ""
+        tag: "0.12.2"
+        repository: harness/ssca-plugin
+        imagePullSecrets: []
+    slsa_plugin:
+      image:
+        registry: docker.io
+        digest: ""
+        tag: "0.12.0"
+        repository: harness/slsa-plugin
+        imagePullSecrets: []
 stoServiceGlobalToken:
   name: harness-secrets
   key: stoAppHarnessToken
