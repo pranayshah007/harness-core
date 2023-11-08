@@ -47,7 +47,6 @@ import lombok.Data;
 @Data
 @Builder
 public class ArtifactBundleFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander {
-  private String executionLogName;
   private String activityId;
   private String accountId;
   TasArtifactConfig tasArtifactConfig;

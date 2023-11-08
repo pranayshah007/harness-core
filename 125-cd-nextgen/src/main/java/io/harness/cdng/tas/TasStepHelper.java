@@ -803,6 +803,7 @@ public class TasStepHelper {
         ArtifactBundleFetchRequest.builder()
             .tasArtifactConfig(getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome))
             .tasManifestDelegateConfig(tasManifestDelegateConfig)
+            .activityId(ambiance.getStageExecutionId())
             .shouldOpenLogStream(true)
             .closeLogStream(true)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(
@@ -817,18 +818,7 @@ public class TasStepHelper {
                                   .parameters(new Object[] {artifactBundleFetchRequest})
                                   .build();
 
-    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
-    if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
-      stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBasicAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBasicAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBGAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasCommandStepParameters) {
-      stepLevelSelectors = ((TasCommandStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasRollingDeployStepParameters) {
-      stepLevelSelectors = ((TasRollingDeployStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    }
+    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = getStepLevelSelectors(stepElementParameters);
 
     final TaskRequest taskRequest =
         TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
@@ -841,6 +831,22 @@ public class TasStepHelper {
         .taskRequest(taskRequest)
         .passThroughData(tasStepPassThroughData)
         .build();
+  }
+
+  private ParameterField<List<TaskSelectorYaml>> getStepLevelSelectors(StepBaseParameters stepElementParameters) {
+    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
+    if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
+      stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasBasicAppSetupStepParameters) {
+      stepLevelSelectors = ((TasBasicAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasBGAppSetupStepParameters) {
+      stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasCommandStepParameters) {
+      stepLevelSelectors = ((TasCommandStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    } else if (stepElementParameters.getSpec() instanceof TasRollingDeployStepParameters) {
+      stepLevelSelectors = ((TasRollingDeployStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
+    }
+    return stepLevelSelectors;
   }
 
   public void filterManifestOutcomesByType(
@@ -1170,18 +1176,7 @@ public class TasStepHelper {
       StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       List<ManifestOutcome> manifestOutcomeList) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
-    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
-    if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
-      stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBasicAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBasicAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBGAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasCommandStepParameters) {
-      stepLevelSelectors = ((TasCommandStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasRollingDeployStepParameters) {
-      stepLevelSelectors = ((TasRollingDeployStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    }
+    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = getStepLevelSelectors(stepElementParameters);
 
     List<TaskSelectorYaml> delegateSelectors = new ArrayList<>();
 
@@ -1300,18 +1295,7 @@ public class TasStepHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
-    if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
-      stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBasicAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBasicAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasBGAppSetupStepParameters) {
-      stepLevelSelectors = ((TasBGAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasCommandStepParameters) {
-      stepLevelSelectors = ((TasCommandStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    } else if (stepElementParameters.getSpec() instanceof TasRollingDeployStepParameters) {
-      stepLevelSelectors = ((TasRollingDeployStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
-    }
+    ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = getStepLevelSelectors(stepElementParameters);
 
     final TaskRequest taskRequest =
         TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
