@@ -307,6 +307,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("oidcConfigPath") private String oidcConfigPath;
   @JsonProperty("deploymentStagePlanCreationInfoThreadConfig")
   private DeploymentStagePlanCreationInfoThreadPoolConfiguration deploymentStagePlanCreationInfoThreadPoolConfiguration;
+  @JsonProperty("processTriggersSequentially") private boolean processTriggersSequentially;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

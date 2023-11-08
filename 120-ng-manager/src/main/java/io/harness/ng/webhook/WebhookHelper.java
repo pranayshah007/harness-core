@@ -49,6 +49,7 @@ import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
 import io.harness.eventsframework.webhookpayloads.webhookdata.GitDetails;
 import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.webhook.entities.WebhookEvent;
 import io.harness.ng.webhook.entities.WebhookEvent.WebhookEventBuilder;
 import io.harness.product.ci.scm.proto.Action;
@@ -80,6 +81,7 @@ public class WebhookHelper {
   @Inject @Named(GIT_PR_EVENT_STREAM) private Producer gitPrEventProducer;
   @Inject @Named(GIT_BRANCH_HOOK_EVENT_STREAM) private Producer gitBranchHookEventProducer;
   @Inject private WebhookParserSCMService webhookParserSCMService;
+  NextGenConfiguration nextGenConfiguration;
 
   public WebhookEvent toNGTriggerWebhookEvent(
       String accountIdentifier, String payload, MultivaluedMap<String, String> httpHeaders) {
@@ -182,14 +184,16 @@ public class WebhookHelper {
 
   public List<Producer> getProducerListForEvent(WebhookDTO webhookDTO) {
     List<Producer> producers = new ArrayList<>();
-    if (isGitPushEvent(webhookDTO)) {
+    if (nextGenConfiguration.isProcessTriggersSequentially() && isGitPushEvent(webhookDTO)) {
       //      For push based events, we first process the event on gitx and then start the trigger execution
       //      The triggers are processed in the GitXWebhookTriggerHelper
       producers.add(gitPushEventProducer);
     } else {
       producers.add(webhookEventProducer);
       if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()) {
-        if (PR == webhookDTO.getGitDetails().getEvent()) {
+        if (PUSH == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitPushEventProducer);
+        } else if (PR == webhookDTO.getGitDetails().getEvent()) {
           producers.add(gitPrEventProducer);
         } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
             || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {

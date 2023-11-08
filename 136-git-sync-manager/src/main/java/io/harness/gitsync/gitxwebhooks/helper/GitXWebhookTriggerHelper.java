@@ -16,6 +16,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.gitsync.gitxwebhooks.GitXWebhookConfiguration;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -26,12 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitXWebhookTriggerHelper {
   @Inject @Named(WEBHOOK_EVENTS_STREAM) private Producer eventProducer;
+  GitXWebhookConfiguration gitXWebhookConfiguration;
 
   public void startTriggerExecution(WebhookDTO webhookDTO) {
     try {
-      log.info(String.format(
-          "Starting the trigger execution after gitx Webhook processing for the event %s", webhookDTO.getEventId()));
-      eventProducer.send(Message.newBuilder().setData(webhookDTO.toByteString()).build());
+      if (gitXWebhookConfiguration.isProcessTriggersSequentially()) {
+        log.info(String.format(
+            "Starting the trigger execution after gitx Webhook processing for the event %s", webhookDTO.getEventId()));
+        eventProducer.send(Message.newBuilder().setData(webhookDTO.toByteString()).build());
+      }
     } catch (Exception exception) {
       log.error("Faced exception while sequentially executing the trigger for the event: {} ", webhookDTO.getEventId(),
           exception);

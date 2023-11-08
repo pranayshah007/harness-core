@@ -575,6 +575,8 @@ useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-fal
 
 useQueueServiceForGitXWebhook: ${USE_QUEUE_SERVICE_FOR_GITX_WEBHOOK:-false}
 
+processTriggersSequentially: ${PROCESS_TRIGGERS_SEQUENTIALLY:-false}
+
 webhookGitXPushEventQueueConfig:
   batchSize: ${WEBHOOK_GITX_PUSH_EVENT_QUEUE_BATCH_SIZE:-20}
   threadSleepTimeInMillis: ${WEBHOOK_GITX_PUSH_EVENT_QUEUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
