@@ -95,8 +95,6 @@ spec:
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
-            { { - include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 } }
-            { { - include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 } }
           livenessProbe:
             httpGet:
               path: /health
