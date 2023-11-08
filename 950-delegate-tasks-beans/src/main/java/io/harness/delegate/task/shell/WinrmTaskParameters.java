@@ -37,6 +37,7 @@ public class WinrmTaskParameters extends CommandTaskParameters {
   boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
   boolean disableWinRmEnvVarEscaping;
+  boolean preserveWinrmWorkingDir;
 
   @Override
   public void fetchInfraExecutionCapabilities(

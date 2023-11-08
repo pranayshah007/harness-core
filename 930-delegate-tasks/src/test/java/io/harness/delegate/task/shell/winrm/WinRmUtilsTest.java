@@ -136,24 +136,39 @@ public class WinRmUtilsTest {
     final String destinationPath = "C:\\destinationPath";
 
     ScriptCommandUnit scriptCommandUnit = ScriptCommandUnit.builder().workingDirectory(workingDirectory).build();
-    String ret = WinRmUtils.getWorkingDir(scriptCommandUnit);
+    String ret = WinRmUtils.getWorkingDir(scriptCommandUnit, true);
     assertThat(ret).isEqualTo(workingDirectory);
 
+    ret = WinRmUtils.getWorkingDir(scriptCommandUnit, false);
+    assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
+
     CopyCommandUnit copyCommandUnit = CopyCommandUnit.builder().destinationPath(destinationPath).build();
-    ret = WinRmUtils.getWorkingDir(copyCommandUnit);
+    ret = WinRmUtils.getWorkingDir(copyCommandUnit, true);
+    assertThat(ret).isEqualTo(destinationPath);
+
+    ret = WinRmUtils.getWorkingDir(copyCommandUnit, false);
     assertThat(ret).isEqualTo(destinationPath);
 
     NgDownloadArtifactCommandUnit ngDownloadArtifactCommandUnit =
         NgDownloadArtifactCommandUnit.builder().destinationPath(destinationPath).build();
-    ret = WinRmUtils.getWorkingDir(ngDownloadArtifactCommandUnit);
+    ret = WinRmUtils.getWorkingDir(ngDownloadArtifactCommandUnit, true);
+    assertThat(ret).isEqualTo(destinationPath);
+
+    ret = WinRmUtils.getWorkingDir(ngDownloadArtifactCommandUnit, false);
     assertThat(ret).isEqualTo(destinationPath);
 
     NgInitCommandUnit ngInitCommandUnit = NgInitCommandUnit.builder().build();
-    ret = WinRmUtils.getWorkingDir(ngInitCommandUnit);
+    ret = WinRmUtils.getWorkingDir(ngInitCommandUnit, true);
+    assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
+
+    ret = WinRmUtils.getWorkingDir(ngInitCommandUnit, false);
     assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
 
     NgCleanupCommandUnit ngCleanupCommandUnit = NgCleanupCommandUnit.builder().build();
-    ret = WinRmUtils.getWorkingDir(ngCleanupCommandUnit);
+    ret = WinRmUtils.getWorkingDir(ngCleanupCommandUnit, true);
+    assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
+
+    ret = WinRmUtils.getWorkingDir(ngCleanupCommandUnit, false);
     assertThat(ret).isEqualTo(WINDOWS_HOME_DIR);
   }
 }

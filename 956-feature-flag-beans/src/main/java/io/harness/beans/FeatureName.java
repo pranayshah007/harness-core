@@ -7,6 +7,7 @@
 
 package io.harness.beans;
 
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -935,7 +936,8 @@ public enum FeatureName {
   CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE(
       "Remove sdk resume event for async and async chain modes to avoid race condition", PIPELINE),
   CDS_K8S_TRAFFIC_ROUTING_NG(
-      "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP);
+      "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP),
+  CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC);
 
   // keep-sorted end
 
