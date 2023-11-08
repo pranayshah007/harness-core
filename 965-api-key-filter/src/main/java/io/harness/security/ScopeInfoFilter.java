@@ -10,10 +10,11 @@ package io.harness.security;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static java.lang.String.format;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeInfo;
-import io.harness.beans.ScopeLevel;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.scopeinfoclient.remote.ScopeInfoClient;
 import io.harness.security.annotations.InternalApi;
@@ -67,13 +68,17 @@ public class ScopeInfoFilter implements ContainerRequestFilter {
           getProjectIdentifierFrom(requestContext).isPresent() ? getProjectIdentifierFrom(requestContext).get() : null;
       Optional<ScopeInfo> optionalScopeInfo =
           NGRestUtils.getResponse(scopeInfoClient.getScopeInfo(accountIdentifier, orgIdentifier, projectIdentifier));
-      ScopeInfo scopeInfo = ScopeInfo.builder().build();
-      scopeInfo.setAccountIdentifier(accountIdentifier);
-      scopeInfo.setOrgIdentifier(orgIdentifier);
-      scopeInfo.setProjectIdentifier(projectIdentifier);
+      if (optionalScopeInfo.isEmpty()) {
+        log.warn(format(
+            "No Scope with given identifiers - accountIdentifier: [%s], orgIdentifier: [%s], projectIdentifier: [%s] present",
+            accountIdentifier, orgIdentifier, projectIdentifier));
+        return;
+      }
+      ScopeInfo scopeInfo = ScopeInfo.builder().accountIdentifier(accountIdentifier).build();
+      scopeInfo.setOrgIdentifier(optionalScopeInfo.get().getOrgIdentifier());
+      scopeInfo.setProjectIdentifier(optionalScopeInfo.get().getProjectIdentifier());
       scopeInfo.setScopeType(optionalScopeInfo.get().getScopeType());
       scopeInfo.setUniqueId(optionalScopeInfo.get().getUniqueId());
-      scopeInfo.setScopeType(ScopeLevel.ACCOUNT);
       requestContext.setProperty("scopeInfo", scopeInfo);
     }
   }
@@ -92,6 +97,13 @@ public class ScopeInfoFilter implements ContainerRequestFilter {
     if (StringUtils.isEmpty(accountIdentifier)) {
       accountIdentifier =
           containerRequestContext.getUriInfo().getPathParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);
+    }
+    final String accountIdStringConstant = "accountId";
+    if (StringUtils.isEmpty(accountIdentifier)) {
+      accountIdentifier = containerRequestContext.getUriInfo().getQueryParameters().getFirst(accountIdStringConstant);
+    }
+    if (StringUtils.isEmpty(accountIdentifier)) {
+      accountIdentifier = containerRequestContext.getUriInfo().getPathParameters().getFirst(accountIdStringConstant);
     }
     return StringUtils.isEmpty(accountIdentifier) ? Optional.empty() : Optional.of(accountIdentifier);
   }
