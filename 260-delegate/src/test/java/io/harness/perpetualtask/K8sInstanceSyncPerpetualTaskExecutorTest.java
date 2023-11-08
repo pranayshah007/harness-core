@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
@@ -78,6 +79,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
+  @Mock private K8sTaskCleaner taskCleaner;
 
   @Captor private ArgumentCaptor<K8sInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
 

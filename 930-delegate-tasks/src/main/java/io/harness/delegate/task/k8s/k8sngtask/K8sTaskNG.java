@@ -109,6 +109,9 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
 
         KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.decryptAndGetKubernetesConfig(
             k8sDeployRequest.getK8sInfraDelegateConfig(), workingDirectory);
+        cleanupDTOBuilder.infraDelegateConfig(k8sDeployRequest.getK8sInfraDelegateConfig());
+        cleanupDTOBuilder.generatedKubeConfig(kubernetesConfig);
+
         containerDeploymentDelegateBaseHelper.persistKubernetesConfig(kubernetesConfig, workingDirectory);
 
         createDirectoryIfDoesNotExist(Paths.get(workingDirectory, MANIFEST_FILES_DIR).toString());
@@ -132,8 +135,6 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             k8sDeployRequest, k8SDelegateTaskParams, getLogStreamingTaskClient(), commandUnitsProgress);
 
         k8sDeployResponse.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
-        cleanupDTOBuilder.infraDelegateConfig(k8sDeployRequest.getK8sInfraDelegateConfig());
-        cleanupDTOBuilder.generatedKubeConfig(kubernetesConfig);
         return k8sDeployResponse;
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);

@@ -14,7 +14,6 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.ServiceHookDelegateConfig;
@@ -40,12 +39,12 @@ public class HelmRollbackCommandRequestNG extends HelmCommandRequestNG {
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
       String gcpKeyPath, String releaseHistoryPrefix, List<ServiceHookDelegateConfig> serviceHooks,
       boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck, boolean sendTaskProgressEvents,
-      boolean disableFabric8, boolean improvedHelmTracking, KubernetesConfig kubernetesConfig) {
+      boolean disableFabric8, boolean improvedHelmTracking) {
     super(releaseName, HelmCommandType.ROLLBACK, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
         useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, useRefactorSteadyStateCheck,
-        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8, improvedHelmTracking, kubernetesConfig);
+        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8, improvedHelmTracking);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
   }

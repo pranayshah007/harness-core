@@ -33,6 +33,7 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmTaskDTO;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
@@ -61,6 +62,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Mock private HelmTaskHelperBase helmTaskHelperBase;
   @Mock private K8sTaskCleaner k8sTaskCleaner;
   private HelmCommandTaskNG spyHelmCommandTask;
+  private HelmTaskDTO taskDTO;
   @InjectMocks
   private final HelmCommandTaskNG helmCommandTaskNG = new HelmCommandTaskNG(
       DelegateTaskPackage.builder().delegateId("delegateId").data(TaskData.builder().async(false).build()).build(),
@@ -111,11 +113,11 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     HelmInstallCmdResponseNG deployResponse =
         HelmInstallCmdResponseNG.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
-    doReturn(deployResponse).when(helmDeployServiceNG).deploy(request);
+    doReturn(deployResponse).when(helmDeployServiceNG).deploy(request, taskDTO);
 
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
 
-    verify(helmDeployServiceNG, times(1)).deploy(request);
+    verify(helmDeployServiceNG, times(1)).deploy(request, taskDTO);
     verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getHelmCommandResponse()).isSameAs(deployResponse);
@@ -129,10 +131,10 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     HelmInstallCmdResponseNG rollbackResponse =
         HelmInstallCmdResponseNG.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
-    doReturn(rollbackResponse).when(helmDeployServiceNG).rollback(request);
+    doReturn(rollbackResponse).when(helmDeployServiceNG).rollback(request, taskDTO);
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
 
-    verify(helmDeployServiceNG, times(1)).rollback(request);
+    verify(helmDeployServiceNG, times(1)).rollback(request, taskDTO);
     verify(k8sTaskCleaner, times(1)).cleanup(any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(response.getHelmCommandResponse()).isSameAs(rollbackResponse);
@@ -161,7 +163,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunTaskWithException() throws IOException {
     HelmInstallCommandRequestNG request = HelmInstallCommandRequestNG.builder().accountId("accountId").build();
-    doThrow(new IOException("Unable to deploy")).when(helmDeployServiceNG).deploy(request);
+    doThrow(new IOException("Unable to deploy")).when(helmDeployServiceNG).deploy(request, taskDTO);
 
     assertThatThrownBy(() -> spyHelmCommandTask.run(request))
         .isInstanceOf(TaskNGDataException.class)
@@ -178,7 +180,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
                                                   .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                                                   .output("Error while deploying")
                                                   .build();
-    doReturn(deployResponse).when(helmDeployServiceNG).deploy(request);
+    doReturn(deployResponse).when(helmDeployServiceNG).deploy(request, taskDTO);
 
     HelmCmdExecResponseNG response = spyHelmCommandTask.run(request);
     verify(k8sTaskCleaner, times(1)).cleanup(any());

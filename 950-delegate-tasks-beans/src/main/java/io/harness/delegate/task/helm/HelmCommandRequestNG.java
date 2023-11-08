@@ -48,7 +48,6 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.helm.HelmCommandType;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -92,7 +91,6 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private boolean sendTaskProgressEvents;
   private boolean disableFabric8;
   private boolean improvedHelmTracking;
-  private KubernetesConfig kubernetesConfig;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
