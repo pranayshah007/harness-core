@@ -46,4 +46,5 @@ message TaskPayload {
   string account_id = 8;
   string org_id = 9;
   string project_id = 10;
+  string log_key = 11;
 }

@@ -8,11 +8,9 @@
 package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -46,7 +45,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -69,7 +67,6 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
@@ -100,6 +97,8 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
 
   @Mock AwsSamStepHelper awsSamStepHelper;
 
+  @Mock AwsSamDeployStep awsSamDeployStep;
+
   @Mock PluginInfoProviderUtils pluginInfoProviderUtils;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
   @InjectMocks @Spy private AwsSamDeployPluginInfoProvider awsSamDeployPluginInfoProvider;
@@ -121,75 +120,6 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
     assertThat(pluginCreationResponseWrapper.getStepInfo().getIdentifier()).isEqualTo("identifier");
     assertThat(pluginCreationResponseWrapper.getStepInfo().getName()).isEqualTo("name");
     assertThat(pluginCreationResponseWrapper.getStepInfo().getUuid()).isEqualTo("uuid");
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testGetPluginInfoWithSamDirNull() throws IOException {
-    String accountId = "accountId";
-    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
-    PluginCreationRequest pluginCreationRequest = getPluginCreationRequest();
-
-    doReturn(null).when(awsSamStepHelper).getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(any());
-
-    assertThatThrownBy(
-        () -> awsSamDeployPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance))
-        .hasMessage("Not found value for environment variable: PLUGIN_SAM_DIR")
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testValidateEnvVariables() {
-    Map<String, String> environmentVariables =
-        Map.of("PLUGIN_STACK_NAME", "plugin_stack_name", "PLUGIN_SAM_DIR", "sam/manifest/dir");
-    Map<String, String> validatedEnvironmentVariables =
-        awsSamDeployPluginInfoProvider.validateEnvVariables(environmentVariables);
-
-    assertThat(validatedEnvironmentVariables).isEqualTo(environmentVariables);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testValidateEmptyEnvVariables() {
-    Map<String, String> environmentVariables = Collections.emptyMap();
-    Map<String, String> validatedEnvironmentVariables =
-        awsSamDeployPluginInfoProvider.validateEnvVariables(environmentVariables);
-
-    assertThat(validatedEnvironmentVariables).isEqualTo(environmentVariables);
-
-    validatedEnvironmentVariables = awsSamDeployPluginInfoProvider.validateEnvVariables(null);
-
-    assertThat(validatedEnvironmentVariables).isNull();
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testValidateEnvVariablesWithExceptionOneVariable() {
-    Map<String, String> environmentVariables = new HashMap<>();
-    environmentVariables.put("PLUGIN_STACK_NAME", null);
-    environmentVariables.put("PLUGIN_SAM_DIR", "sam/manifest/dir");
-
-    assertThatThrownBy(() -> awsSamDeployPluginInfoProvider.validateEnvVariables(environmentVariables))
-        .hasMessage("Not found value for environment variable: PLUGIN_STACK_NAME")
-        .isInstanceOf(InvalidArgumentsException.class);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testValidateEnvVariablesWithExceptionMoreVariables() {
-    Map<String, String> environmentVariables = new HashMap<>();
-    environmentVariables.put("PLUGIN_STACK_NAME", null);
-    environmentVariables.put("PLUGIN_SAM_DIR", null);
-
-    assertThatThrownBy(() -> awsSamDeployPluginInfoProvider.validateEnvVariables(environmentVariables))
-        .hasMessage("Not found value for environment variables: PLUGIN_SAM_DIR,PLUGIN_STACK_NAME")
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   private PluginCreationRequest getPluginCreationRequest() throws IOException {
@@ -263,6 +193,10 @@ public class AwsSamDeployPluginInfoProviderTest extends CategoryTest {
     when(outcomeService.resolveOptional(any(), any()))
         .thenReturn(OptionalOutcome.builder().outcome(manifestsOutcome).build());
     doReturn(awsSamDirectoryManifestOutcome).when(awsSamStepHelper).getAwsSamDirectoryManifestOutcome(any());
+
+    doReturn(new HashMap<>()).when(awsSamDeployStep).getEnvironmentVariables(any(), any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).getEnvVarsWithSecretRef(any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).validateEnvVariables(any());
 
     return pluginCreationRequest;
   }

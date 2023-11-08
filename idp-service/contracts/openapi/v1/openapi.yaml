@@ -276,6 +276,24 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
       x-internal: true
+  /v2/status-info/{type}:
+    get:
+      summary: Get Status Info by type
+      description: Get Status Info for the given type
+      tags:
+        - StatusInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusInfoResponseV2'
+      operationId: get-status-info-type-v2
+      x-stoplight:
+        id: g2rre6x1jk36w
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/StatusType'
+      security:
+        - x-api-key: []
+      x-internal: true
   /v1/namespace-info:
     get:
       summary: Get Namespace Info
@@ -1507,6 +1525,13 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusInfo'
+    StatusInfoV2:
+      title: StatusInfoV2
+      x-stoplight:
+        id: ygx956s72iibx
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/StatusInfo'
     NamespaceInfo:
       title: NamespaceInfo
       x-stoplight:
@@ -3571,6 +3596,7 @@ components:
         enum:
           - infra
           - onboarding
+          - infra_onboarding
     AccountIdentifier:
       name: accountIdentifier
       in: path
@@ -3906,6 +3932,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    StatusInfoResponseV2:
+      description: Response for getting status info
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusInfoV2'
     LayoutResponse:
       description: Layout response
       content:

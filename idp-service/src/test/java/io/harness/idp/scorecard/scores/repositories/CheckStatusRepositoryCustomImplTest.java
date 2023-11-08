@@ -54,7 +54,7 @@ public class CheckStatusRepositoryCustomImplTest extends CategoryTest {
     when(mongoTemplate.aggregate(any(Aggregation.class), eq("checkStatus"), eq(CheckStatusEntityByIdentifier.class)))
         .thenReturn(new AggregationResults<>(List.of(CheckStatusEntityByIdentifier.builder()
                                                          .identifier(GITHUB_CHECK_ID)
-                                                         .custom(true)
+                                                         .isCustom(true)
                                                          .checkStatusEntity(CheckStatusEntity.builder().build())
                                                          .build()),
             new Document()));

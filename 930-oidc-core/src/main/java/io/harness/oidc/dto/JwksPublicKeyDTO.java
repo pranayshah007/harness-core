@@ -15,7 +15,6 @@ import lombok.Data;
 
 @Data
 @Builder
-
 public class JwksPublicKeyDTO {
   @JsonProperty(OidcConfigConstants.ALGORITHM) String algorithm;
   @JsonProperty(OidcConfigConstants.EXPONENT) String exponent;

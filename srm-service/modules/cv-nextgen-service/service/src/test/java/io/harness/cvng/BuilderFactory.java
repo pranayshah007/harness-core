@@ -1675,7 +1675,6 @@ public class BuilderFactory {
   public ServiceLevelIndicatorDTOBuilder getThresholdServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
         .type(SLIEvaluationType.WINDOW)
-        .healthSourceRef("healthSourceIdentifier")
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.THRESHOLD)
@@ -1690,7 +1689,6 @@ public class BuilderFactory {
   public ServiceLevelIndicatorDTOBuilder getRatioServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
         .type(SLIEvaluationType.WINDOW)
-        .healthSourceRef("healthSourceIdentifier")
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .sliMissingDataType(SLIMissingDataType.GOOD)
                   .type(SLIMetricType.RATIO)

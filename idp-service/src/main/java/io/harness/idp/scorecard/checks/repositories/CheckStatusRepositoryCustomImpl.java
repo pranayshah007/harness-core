@@ -50,8 +50,6 @@ public class CheckStatusRepositoryCustomImpl implements CheckStatusRepositoryCus
     Aggregation aggregation = Aggregation.newAggregation(Aggregation.match(criteria),
         Aggregation.sort(Sort.Direction.DESC, CheckStatusEntity.CheckStatusKeys.timestamp),
         Aggregation.group(CheckStatusEntity.CheckStatusKeys.identifier, CheckStatusEntity.CheckStatusKeys.isCustom)
-            .push(IDENTIFIER_KEY)
-            .as(CheckStatusEntity.CheckStatusKeys.identifier)
             .first(Aggregation.ROOT)
             .as(CHECK_STATUS_ENTITY_KEY),
         projectionOperation);

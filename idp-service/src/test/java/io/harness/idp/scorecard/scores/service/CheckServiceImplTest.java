@@ -353,7 +353,7 @@ public class CheckServiceImplTest extends CategoryTest {
     when(checkStatusRepository.findByAccountIdentifierAndIdentifierIn(any(), any()))
         .thenReturn(List.of(CheckStatusEntityByIdentifier.builder()
                                 .identifier(GITHUB_CHECK_ID)
-                                .custom(true)
+                                .isCustom(true)
                                 .checkStatusEntity(getCheckStatusEntities().get(0))
                                 .build()));
     Map<String, CheckStatusEntity> checkStatusEntityMap =

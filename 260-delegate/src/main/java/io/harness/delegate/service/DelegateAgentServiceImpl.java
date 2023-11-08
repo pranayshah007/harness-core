@@ -2035,6 +2035,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       currentlyAcquiringTasksCount.getAndDecrement();
     }
 
+    currentlyExecutingTasks.get(delegateTaskEvent.getDelegateTaskId()).getIsAborted().set(true);
     currentlyExecutingTasks.remove(delegateTaskEvent.getDelegateTaskId());
     if (currentlyExecutingFutures.remove(delegateTaskEvent.getDelegateTaskId()) != null) {
       log.info("Removed from executing futures on abort");

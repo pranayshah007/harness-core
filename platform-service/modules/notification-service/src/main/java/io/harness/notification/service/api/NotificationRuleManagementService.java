@@ -8,6 +8,7 @@
 package io.harness.notification.service.api;
 
 import io.harness.notification.entities.NotificationEntity;
+import io.harness.notification.entities.NotificationEvent;
 import io.harness.notification.entities.NotificationRule;
 
 import java.util.List;
@@ -21,8 +22,8 @@ public interface NotificationRuleManagementService {
   NotificationRule get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String notificationRuleNameIdentifier);
 
-  NotificationRule get(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, NotificationEntity notificationEntity);
+  NotificationRule get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      NotificationEntity notificationEntity, NotificationEvent notificationEvent);
 
   List<NotificationRule> list(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

@@ -123,6 +123,7 @@ public class ApprovalInstanceResponseMapper {
         .includePipelineExecutionHistory(instance.isIncludePipelineExecutionHistory())
         .approvers(instance.getApprovers())
         .approvalActivities(instance.getApprovalActivities())
+        .autoApprovalParams(instance.getAutoApproval())
         .approverInputs(
             instance.fetchLastApprovalActivity()
                 .map(approvalActivity

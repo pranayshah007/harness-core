@@ -57,7 +57,7 @@ import org.json.JSONObject;
 @Slf4j
 public class ImageSecretBuilder {
   private static final String BASE_GCR_HOSTNAME = "gcr.io";
-  private static final String BASE_GAR_HOSTNAME = "docker.pkg.dev";
+  private static final String BASE_GAR_HOSTNAME = "pkg.dev";
   private static final String GCR_USERNAME = "_json_key";
   private static final String BASE_ECR_HOSTNAME = "amazonaws.com";
   private static final String HTTPS_URL = "https://";
@@ -209,8 +209,8 @@ public class ImageSecretBuilder {
           WingsException.USER);
     }
 
-    boolean isGCR = imageParts.length == 3 && imageParts[0].endsWith(BASE_GCR_HOSTNAME);
-    boolean isGAR = imageParts.length >= 4 && imageParts[0].contains(BASE_GAR_HOSTNAME);
+    boolean isGCR = imageParts[0].contains(BASE_GCR_HOSTNAME);
+    boolean isGAR = imageParts[0].contains(BASE_GAR_HOSTNAME) && imageParts.length >= 4;
 
     if (!isGCR && !isGAR) {
       throw new InvalidArgumentsException(

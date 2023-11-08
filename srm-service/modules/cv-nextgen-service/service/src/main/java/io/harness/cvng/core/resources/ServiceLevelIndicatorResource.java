@@ -59,7 +59,8 @@ public class ServiceLevelIndicatorResource {
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
     return new RestResponse<>(sliService
                                   .getOnboardingGraphs(projectParams.getProjectParams(), monitoredServiceIdentifier,
-                                      serviceLevelIndicatorDTO, CorrelationContext.getCorrelationId())
+                                      serviceLevelIndicatorDTO.getHealthSourceRef(), serviceLevelIndicatorDTO,
+                                      CorrelationContext.getCorrelationId())
                                   .getSliGraph());
   }
 
@@ -72,7 +73,8 @@ public class ServiceLevelIndicatorResource {
       @PathParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
     return new RestResponse<>(sliService.getOnboardingGraphs(projectParams.getProjectParams(),
-        monitoredServiceIdentifier, serviceLevelIndicatorDTO, CorrelationContext.getCorrelationId()));
+        monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), serviceLevelIndicatorDTO,
+        CorrelationContext.getCorrelationId()));
   }
 
   @POST

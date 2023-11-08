@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -88,10 +89,15 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -183,7 +189,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
+  @Mock private EnvironmentService environmentService;
+  @Spy @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
   private AutoCloseable mocks;
 
   private final Ambiance ambiance = buildAmbiance();
@@ -228,6 +235,13 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     doCallRealMethod()
         .when(cdStepHelper)
         .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anyList(), anyString(), anyBoolean());
+
+    doReturn(Optional.of(InfrastructureEntity.builder().storeType(StoreType.INLINE).build()))
+        .when(infrastructureEntityService)
+        .getMetadata(anyString(), anyString(), anyString(), anyString(), anyString());
   }
 
   @After
@@ -833,6 +847,32 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(sshInfraDelegateConfig).isInstanceOf(EmptyHostDelegateConfig.class);
     EmptyHostDelegateConfig emptyHostDelegateConfig = (EmptyHostDelegateConfig) sshInfraDelegateConfig;
     assertThat(emptyHostDelegateConfig.getHosts()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetGitContextForInfraForTransientBranch() {
+    doReturn(
+        Optional.of(
+            InfrastructureEntity.builder().identifier("infra").repo("test-repo").storeType(StoreType.REMOTE).build()))
+        .when(infrastructureEntityService)
+        .getMetadata(anyString(), anyString(), anyString(), anyString(), anyString());
+    doReturn(Optional.of(Environment.builder().identifier("env").repo("test-repo").storeType(StoreType.REMOTE).build()))
+        .when(environmentService)
+        .getMetadata(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().storeType(StoreType.INLINE).build();
+    GitAwareContextHelper.populateGitDetails(gitEntityInfo);
+
+    GitEntityInfo modifiedGitEntityInfo = step.getGitContextForInfra(buildAmbiance(),
+        InfrastructureTaskExecutableStepV2Params.builder()
+            .envRef(ParameterField.createValueField("env"))
+            .infraRef(ParameterField.createValueField("infra"))
+            .build(),
+        "infraBranch");
+
+    assertThat(modifiedGitEntityInfo.getTransientBranch()).isEqualTo("infraBranch");
   }
 
   private AwsEC2Instance mockAwsInstance(String id) {

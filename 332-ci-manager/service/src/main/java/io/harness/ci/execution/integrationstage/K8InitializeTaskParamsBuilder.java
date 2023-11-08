@@ -229,8 +229,10 @@ public class K8InitializeTaskParamsBuilder {
 
     LiteEngineSecretEvaluator liteEngineSecretEvaluator =
         LiteEngineSecretEvaluator.builder().secretUtils(secretUtils).build();
-    List<SecretVariableDetails> secretVariableDetails =
+    List<SecretVariableDetails> resolveSecretVariableDetails =
         liteEngineSecretEvaluator.resolve(initializeStepInfo, ngAccess, ambiance.getExpressionFunctorToken());
+    List<SecretVariableDetails> secretVariableDetails =
+        k8InitializeTaskUtils.deDupSecrets(resolveSecretVariableDetails);
     k8InitializeTaskUtils.checkSecretAccess(ambiance, secretVariableDetails, accountId,
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getOrgIdentifier(ambiance));
 

@@ -31,4 +31,5 @@ public class ConnectorConnectivityDetails {
   @Schema(description = ConnectorConstants.TESTED_AT) long testedAt;
   @Deprecated long lastTestedAt;
   @Schema(description = ConnectorConstants.LAST_CONNECTED_AT) long lastConnectedAt;
+  @Schema(description = ConnectorConstants.LAST_ALERT) Long lastAlertSent;
 }

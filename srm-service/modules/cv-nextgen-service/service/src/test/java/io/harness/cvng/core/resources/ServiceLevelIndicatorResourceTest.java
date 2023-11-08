@@ -39,6 +39,7 @@ import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
@@ -76,6 +77,8 @@ import org.mockito.Mock;
 
 public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   private static ServiceLevelIndicatorResource serviceLevelIndicatorResource = new ServiceLevelIndicatorResource();
+  private static ServiceLevelIndicatorV2Resource serviceLevelIndicatorV2Resource =
+      new ServiceLevelIndicatorV2Resource();
 
   @Inject private Injector injector;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
@@ -93,11 +96,16 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder().addResource(serviceLevelIndicatorResource).build();
 
+  @ClassRule
+  public static final ResourceTestRule RESOURCESV2 =
+      ResourceTestRule.builder().addResource(serviceLevelIndicatorV2Resource).build();
   private String connectorIdentifier;
   private String monitoredServiceIdentifier;
   private OnboardingRequestDTO onboardingRequestDTO;
   private String textLoad;
   private ServiceLevelIndicatorDTO serviceLevelIndicatorDTO;
+
+  private SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec;
 
   private String healthSourceRef;
   private CVConfig cvConfig;
@@ -106,17 +114,23 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Before
   public void setup() {
     injector.injectMembers(serviceLevelIndicatorResource);
+    injector.injectMembers(serviceLevelIndicatorV2Resource);
     connectorIdentifier = generateUuid();
     monitoredServiceIdentifier = "monitoredServiceIdentifier";
     createMonitoredService();
     String tracingId = "tracingId";
     CorrelationContext.setCorrelationId(tracingId);
     serviceLevelIndicatorDTO = builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
-    healthSourceRef = serviceLevelIndicatorDTO.getHealthSourceRef();
+    healthSourceRef = "healthSourceIdentifier";
+    serviceLevelIndicatorDTO.setHealthSourceRef(healthSourceRef);
+    simpleServiceLevelObjectiveSpec = SimpleServiceLevelObjectiveSpec.builder()
+                                          .monitoredServiceRef(monitoredServiceIdentifier)
+                                          .healthSourceRef(healthSourceRef)
+                                          .serviceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO))
+                                          .build();
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     cvConfig = builderFactory.appDynamicsCVConfigBuilder()
-                   .identifier(HealthSourceService.getNameSpacedIdentifier(
-                       monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
+                   .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceRef))
                    .build();
     hPersistence.save(cvConfig);
     metricPackService.populateDataCollectionDsl(cvConfig.getType(), ((MetricCVConfig) cvConfig).getMetricPack());
@@ -124,9 +138,8 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
     textLoad = Resources.toString(
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorEntityAndDTOTransformer.getEntity(builderFactory.getProjectParams(),
-            serviceLevelIndicatorDTO, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), true);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorEntityAndDTOTransformer.getEntity(
+        builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier, healthSourceRef, true);
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
 
@@ -173,6 +186,17 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
             .queryParam("routingId", "tracingId")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(objectMapper.writeValueAsString(serviceLevelIndicatorDTO)));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    response = RESOURCESV2.client()
+                   .target("http://localhost:9998/sli/onboarding-graphs")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("routingId", "tracingId")
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(objectMapper.writeValueAsString(simpleServiceLevelObjectiveSpec)));
 
     assertThat(response.getStatus()).isEqualTo(200);
     SLIOnboardingGraphs sliOnboardingGraphs =

@@ -19,6 +19,6 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.IDP)
 public class CheckStatusEntityByIdentifier {
   private String identifier;
-  private boolean custom;
+  private boolean isCustom;
   private CheckStatusEntity checkStatusEntity;
 }

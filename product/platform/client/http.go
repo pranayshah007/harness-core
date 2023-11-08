@@ -26,8 +26,10 @@ import (
 )
 
 const (
-	apiKeyEndpoint   = "/ng/api/token/validate?accountIdentifier=%s"
-	authAPIKeyHeader = "x-api-key"
+	apiKeyEndpoint    = "/ng/api/token/validate?accountIdentifier=%s"
+	accountEndpoint   = "/api/account/%s"
+	authAPIKeyHeader  = "x-api-key"
+	bearerTokenHeader = "Authorization"
 )
 
 // defaultClient is the default http.Client.
@@ -131,11 +133,21 @@ func (c *HTTPClient) ValidateApiKey(ctx context.Context, accountID, routingId, a
 
 	backoff := createBackoff(60 * time.Second)
 	payload := strings.NewReader(apiKey)
-	out, err := c.retry(ctx, c.Endpoint+path, "POST", apiKey, payload, nil, true, backoff)
+	out, err := c.retry(ctx, c.Endpoint+path, "POST", apiKey, "", payload, nil, true, backoff)
 	if err == nil && out.StatusCode != http.StatusOK {
 		err = fmt.Errorf("Error Authenticating Apikey, Response: ", out.StatusCode)
 	}
 	return err
+}
+
+func (c *HTTPClient) GetVanityURL(ctx context.Context, accountID, token string) (string, error) {
+	path := fmt.Sprintf(accountEndpoint, accountID)
+	account := new(Account)
+	_, err := c.do(ctx, c.Endpoint+path, "GET", "", token, nil, account)
+	if err != nil {
+		return "", err
+	}
+	return account.Resource.SubdomainURL, nil
 }
 
 func createBackoff(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
@@ -144,14 +156,14 @@ func createBackoff(maxElapsedTime time.Duration) *backoff.ExponentialBackOff {
 	return exp
 }
 
-func (c *HTTPClient) retry(ctx context.Context, path, method, apiKey string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {
+func (c *HTTPClient) retry(ctx context.Context, path, method, apiKey, token string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {
 	for {
 		var res *http.Response
 		var err error
 		if !isOpen {
-			res, err = c.do(ctx, path, method, apiKey, in, out)
+			res, err = c.do(ctx, path, method, apiKey, token, in, out)
 		} else {
-			res, err = c.open(ctx, path, method, apiKey, in.(io.Reader))
+			res, err = c.open(ctx, path, method, apiKey, token, in.(io.Reader))
 		}
 
 		// do not retry on Canceled or DeadlineExceeded
@@ -190,7 +202,7 @@ func (c *HTTPClient) retry(ctx context.Context, path, method, apiKey string, in,
 
 // do is a helper function that posts a signed http request with
 // the input encoded and response decoded from json.
-func (c *HTTPClient) do(ctx context.Context, path, method, apiKey string, in, out interface{}) (*http.Response, error) {
+func (c *HTTPClient) do(ctx context.Context, path, method, apiKey, token string, in, out interface{}) (*http.Response, error) {
 	var r io.Reader
 
 	if in != nil {
@@ -206,8 +218,11 @@ func (c *HTTPClient) do(ctx context.Context, path, method, apiKey string, in, ou
 
 	// the request should include the secret shared between
 	// the agent and server for authorization.
+
 	if apiKey != "" {
 		req.Header.Add(authAPIKeyHeader, apiKey)
+	} else {
+		req.Header.Add(bearerTokenHeader, token)
 	}
 	res, err := c.client().Do(req)
 	if res != nil {
@@ -260,13 +275,15 @@ func (c *HTTPClient) do(ctx context.Context, path, method, apiKey string, in, ou
 }
 
 // helper function to open an http request
-func (c *HTTPClient) open(ctx context.Context, path, method, apiKey string, body io.Reader) (*http.Response, error) {
+func (c *HTTPClient) open(ctx context.Context, path, method, apiKey, token string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, path, body)
 	if err != nil {
 		return nil, err
 	}
 	if apiKey != "" {
 		req.Header.Add(authAPIKeyHeader, apiKey)
+	} else {
+		req.Header.Add(bearerTokenHeader, token)
 	}
 	return c.client().Do(req)
 }

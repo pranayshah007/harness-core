@@ -244,6 +244,9 @@ public class CheckServiceImpl implements CheckService {
     int totalPassed = 0;
     int total = 0;
     for (CheckStatus.StatusEnum status : statuses) {
+      if (status == null) {
+        continue;
+      }
       totalPassed += CheckStatus.StatusEnum.PASS.equals(status) ? 1 : 0;
       total++;
     }

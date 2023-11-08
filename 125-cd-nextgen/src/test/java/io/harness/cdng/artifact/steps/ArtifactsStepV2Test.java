@@ -7,6 +7,8 @@
 
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
+import static io.harness.beans.FeatureName.CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE;
 import static io.harness.cdng.artifact.steps.ArtifactsStepV2.ARTIFACTS_STEP_V_2;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.anySet;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -103,6 +106,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -182,6 +186,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock ServiceEntityService serviceEntityService;
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
+  private EmptyStepParameters stepParametersWithDelegateSelector = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
   private AutoCloseable mocks;
 
@@ -198,6 +203,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   private static final ParameterField<String> TAG_NULL = ParameterField.createValueField(null);
   private static final ParameterField<String> TAG_EMPTY = ParameterField.createValueField("");
   private static final ParameterField<String> TAG_INPUT = ParameterField.createValueField("<+input>");
+  private static final String CONNECTOR_DELEGATE = "connectorDelegate";
+  private static final String DEFAULT_ORIGIN = "default";
+  private static final String STAGE_DELEGATE = "stageDelegate";
+  private static final String STAGE_ORIGIN = "stage";
 
   @Before
   public void setUp() throws Exception {
@@ -209,7 +218,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     Reflect.on(stepHelper).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(stepHelper).set("stageExecutionInfoService", stageExecutionInfoService);
     Reflect.on(step).set("artifactStepHelper", stepHelper);
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(CDS_ARTIFACTS_PRIMARY_IDENTIFIER));
+    doReturn(false)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(anyString(), eq(CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE));
 
     // setup mock for connector
     doReturn(Optional.of(
@@ -223,7 +235,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                  DockerConnectorDTO.builder()
                                      .dockerRegistryUrl("https://index.docker.com/v1")
                                      .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
-                                     .delegateSelectors(Set.of("d1"))
+                                     .delegateSelectors(Set.of(CONNECTOR_DELEGATE))
                                      .build())
                              .build())
                      .build()))
@@ -240,14 +252,22 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
         .when(delegateGrpcClientWrapper)
         .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
-    doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
+    doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), any());
     doCallRealMethod()
         .when(cdStepHelper)
-        .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anyList(), any(), anyBoolean());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), any(), anyBoolean());
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class))
         .when(expressionResolver)
         .renderExpression(any(Ambiance.class), anyString());
+
+    TaskSelectorYaml stageDelegateSelectorYaml = new TaskSelectorYaml(STAGE_DELEGATE);
+    stageDelegateSelectorYaml.setOrigin(STAGE_ORIGIN);
+    stepParametersWithDelegateSelector.setDelegateSelectors(
+        ParameterField.createValueField(Arrays.asList(stageDelegateSelectorYaml)));
   }
 
   @After
@@ -255,6 +275,12 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     if (mocks != null) {
       mocks.close();
     }
+  }
+
+  private void enableFF_CDS_DELEGATE_SELECTOR_PRECEDENCE() {
+    doReturn(true)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(anyString(), eq(CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE));
   }
 
   private List<ArtifactSourceType> getArtifactSourceTypesHavingTagField() {
@@ -487,6 +513,198 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
     verifyDockerArtifactRequest(taskRequest, "latest");
+    verifyDelegateSelectors(taskRequest, CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+    assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlyPrimaryCheckDelegateSelectorsFFDisabledWithStageDelegateSelector() {
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<List<StepDelegateInfo>> stepDelegateInfosCaptor = ArgumentCaptor.forClass(List.class);
+
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("docker").build());
+    listEntityDetail.add(EntityDetail.builder().name("googleArtifactRegistry").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
+    doReturn(getServiceYaml(ArtifactListConfig.builder()
+                                .primary(PrimaryArtifact.builder()
+                                             .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                             .spec(DockerHubArtifactConfig.builder()
+                                                       .connectorRef(ParameterField.createValueField("connector"))
+                                                       .tag(ParameterField.createValueField("latest"))
+                                                       .imagePath(ParameterField.createValueField("nginx"))
+                                                       .build())
+                                             .build())
+                                .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParametersWithDelegateSelector, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(delegateGrpcClientWrapper, times(1))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
+    verify(serviceStepsHelper)
+        .publishTaskIdsStepDetailsForServiceStep(eq(ambiance), stepDelegateInfosCaptor.capture(), eq("Artifact Step"));
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(1);
+    assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("primary");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+
+    DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    verifyDockerArtifactRequest(taskRequest, "latest");
+    verifyDelegateSelectors(taskRequest, CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+    assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlyPrimaryCheckDelegateSelectorsFFEnabledWithConnectorDelegateSelector() {
+    enableFF_CDS_DELEGATE_SELECTOR_PRECEDENCE();
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<List<StepDelegateInfo>> stepDelegateInfosCaptor = ArgumentCaptor.forClass(List.class);
+
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("docker").build());
+    listEntityDetail.add(EntityDetail.builder().name("googleArtifactRegistry").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(CDS_ARTIFACTS_PRIMARY_IDENTIFIER));
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
+    doReturn(getServiceYaml(ArtifactListConfig.builder()
+                                .primary(PrimaryArtifact.builder()
+                                             .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                             .spec(DockerHubArtifactConfig.builder()
+                                                       .connectorRef(ParameterField.createValueField("connector"))
+                                                       .tag(ParameterField.createValueField("latest"))
+                                                       .imagePath(ParameterField.createValueField("nginx"))
+                                                       .build())
+                                             .build())
+                                .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(delegateGrpcClientWrapper, times(1))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
+    verify(serviceStepsHelper)
+        .publishTaskIdsStepDetailsForServiceStep(eq(ambiance), stepDelegateInfosCaptor.capture(), eq("Artifact Step"));
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(1);
+    assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("primary");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+
+    DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    verifyDockerArtifactRequest(taskRequest, "latest");
+    verifyDelegateSelectors(taskRequest, CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+    assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlyPrimaryCheckDelegateSelectorsFFEnabledWithStageDelegateSelector() {
+    enableFF_CDS_DELEGATE_SELECTOR_PRECEDENCE();
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<List<StepDelegateInfo>> stepDelegateInfosCaptor = ArgumentCaptor.forClass(List.class);
+
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("docker").build());
+    listEntityDetail.add(EntityDetail.builder().name("googleArtifactRegistry").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(CDS_ARTIFACTS_PRIMARY_IDENTIFIER));
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+
+    doReturn(getServiceYaml(ArtifactListConfig.builder()
+                                .primary(PrimaryArtifact.builder()
+                                             .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                             .spec(DockerHubArtifactConfig.builder()
+                                                       .connectorRef(ParameterField.createValueField("connector"))
+                                                       .tag(ParameterField.createValueField("latest"))
+                                                       .imagePath(ParameterField.createValueField("nginx"))
+                                                       .build())
+                                             .build())
+                                .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParametersWithDelegateSelector, inputPackage, null);
+
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(delegateGrpcClientWrapper, times(1))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(ambiance, listEntityDetail, true);
+    verify(serviceStepsHelper)
+        .publishTaskIdsStepDetailsForServiceStep(eq(ambiance), stepDelegateInfosCaptor.capture(), eq("Artifact Step"));
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(1);
+    assertThat(output.getPrimaryArtifactTaskId()).isNotEmpty();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("primary");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(1);
+
+    DelegateTaskRequest taskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    verifyDockerArtifactRequest(taskRequest, "latest");
+    verifyDelegateSelectors(taskRequest, STAGE_DELEGATE, STAGE_ORIGIN);
     assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(1);
   }
 
@@ -628,8 +846,14 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     assertThat(response.getCallbackIdsCount()).isEqualTo(3);
 
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(0), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(1), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(2), "latest-3");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(2), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
   }
 
   @Test
@@ -748,8 +972,14 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     assertThat(output.getArtifactConfigMapForNonDelegateTaskTypes().get(0).isPrimaryArtifact()).isFalse();
 
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(0), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-1");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(1), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(2), "latest-2");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(2), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
   }
 
   @Test
@@ -806,7 +1036,196 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     assertThat(response.getCallbackIdsCount()).isEqualTo(2);
 
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest-1");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(0), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
     verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(1), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlySidecarsCheckDelegateSelectorsFFDisabledWithStageDelegateSelector() {
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(getServiceYaml(
+                 ArtifactListConfig.builder()
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s1")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-1"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s2")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParametersWithDelegateSelector, inputPackage, null);
+
+    verify(delegateGrpcClientWrapper, times(2))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(2);
+    assertThat(output.getPrimaryArtifactTaskId()).isNull();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("s1", "s2");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(2);
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest-1");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(0), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(1), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlySidecarsCheckDelegateSelectorsFFEnabledWithConnectorDelegateSelector() {
+    enableFF_CDS_DELEGATE_SELECTOR_PRECEDENCE();
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(getServiceYaml(
+                 ArtifactListConfig.builder()
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s1")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-1"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s2")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
+
+    verify(delegateGrpcClientWrapper, times(2))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(2);
+    assertThat(output.getPrimaryArtifactTaskId()).isNull();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("s1", "s2");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(2);
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest-1");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(0), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDelegateSelectors(
+        delegateTaskRequestArgumentCaptor.getAllValues().get(1), CONNECTOR_DELEGATE, DEFAULT_ORIGIN);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeAsyncOnlySidecarsCheckDelegateSelectorsFFEnabledWithStageDelegateSelector() {
+    enableFF_CDS_DELEGATE_SELECTOR_PRECEDENCE();
+    ArgumentCaptor<ArtifactsStepV2SweepingOutput> captor = ArgumentCaptor.forClass(ArtifactsStepV2SweepingOutput.class);
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    when(serviceEntityService.resolveArtifactSourceTemplateRefs(any(), any(), any(), any()))
+        .thenAnswer(i -> i.getArguments()[3]);
+    doReturn(getServiceYaml(
+                 ArtifactListConfig.builder()
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s1")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-1"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .sidecar(SidecarArtifactWrapper.builder()
+                                  .sidecar(SidecarArtifact.builder()
+                                               .identifier("s2")
+                                               .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
+                                               .spec(DockerHubArtifactConfig.builder()
+                                                         .connectorRef(ParameterField.createValueField("connector"))
+                                                         .tag(ParameterField.createValueField("latest-2"))
+                                                         .imagePath(ParameterField.createValueField("nginx"))
+                                                         .build())
+                                               .build())
+                                  .build())
+                     .build()))
+        .when(cdStepHelper)
+        .fetchServiceYamlFromSweepingOutput(Mockito.any(Ambiance.class));
+
+    AsyncExecutableResponse response =
+        step.executeAsync(ambiance, stepParametersWithDelegateSelector, inputPackage, null);
+
+    verify(delegateGrpcClientWrapper, times(2))
+        .submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), eq(Duration.ZERO));
+    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ArtifactsStepV2SweepingOutput output = captor.getValue();
+
+    assertThat(output.getArtifactConfigMap()).hasSize(2);
+    assertThat(output.getPrimaryArtifactTaskId()).isNull();
+    assertThat(
+        output.getArtifactConfigMap().values().stream().map(ArtifactConfig::getIdentifier).collect(Collectors.toSet()))
+        .containsExactly("s1", "s2");
+    assertThat(response.getCallbackIdsCount()).isEqualTo(2);
+
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(0), "latest-1");
+    verifyDelegateSelectors(delegateTaskRequestArgumentCaptor.getAllValues().get(0), STAGE_DELEGATE, STAGE_ORIGIN);
+    verifyDockerArtifactRequest(delegateTaskRequestArgumentCaptor.getAllValues().get(1), "latest-2");
+    verifyDelegateSelectors(delegateTaskRequestArgumentCaptor.getAllValues().get(1), STAGE_DELEGATE, STAGE_ORIGIN);
   }
 
   @Test
@@ -1143,7 +1562,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   private void verifyDockerArtifactRequest(DelegateTaskRequest taskRequest, String tag) {
     assertThat(taskRequest.isParked()).isFalse();
-    assertThat(taskRequest.getTaskSelectors()).containsExactly("d1");
+    assertThat(taskRequest.getTaskSelectors().size()).isEqualTo(0);
     assertThat(taskRequest.getSerializationFormat()).isEqualTo(SerializationFormat.KRYO);
     assertThat(taskRequest.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(taskRequest.getTaskType()).isEqualTo("DOCKER_ARTIFACT_TASK_NG");
@@ -1164,11 +1583,17 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                                 .dockerRegistryUrl("https://index.docker.com/v1")
                                 .auth(DockerAuthenticationDTO.builder().authType(DockerAuthType.ANONYMOUS).build())
                                 .executeOnDelegate(true)
-                                .delegateSelectors(Set.of("d1"))
+                                .delegateSelectors(Set.of(CONNECTOR_DELEGATE))
                                 .build())
                         .build())
                 .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
                 .build());
+  }
+
+  private void verifyDelegateSelectors(DelegateTaskRequest taskRequest, String selector, String origin) {
+    assertThat(taskRequest.getSelectors().size()).isEqualTo(1);
+    assertThat(taskRequest.getSelectors().get(0).getSelector()).isEqualTo(selector);
+    assertThat(taskRequest.getSelectors().get(0).getOrigin()).isEqualTo(origin);
   }
 
   @Test

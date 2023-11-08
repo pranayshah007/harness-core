@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.plan.infrastructure;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -39,6 +40,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -116,12 +118,15 @@ public class InfrastructurePmsPlanCreator {
       infraRef = ParameterField.createValueField(null);
       infraInputs = ParameterField.createValueField(null);
     }
+
+    String gitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
     InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
                                                           .deploymentType(deploymentType)
                                                           .skipInstances(skipInstances)
+                                                          .gitBranch(gitBranch)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
@@ -159,10 +164,13 @@ public class InfrastructurePmsPlanCreator {
       infraRef = ParameterField.createValueField(null);
       infraInputs = ParameterField.createValueField(null);
     }
+
+    String gitBranch = GitXUtils.getBranchIfNotEmpty(environmentYamlV2.getGitBranch());
     InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder()
                                                           .envRef(environmentYamlV2.getEnvironmentRef())
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
+                                                          .gitBranch(gitBranch)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())

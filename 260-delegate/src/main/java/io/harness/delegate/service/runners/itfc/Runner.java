@@ -26,7 +26,7 @@ public interface Runner {
    * @param tasks  Input data for the task
    * @param context  Context of this task, including delegate information, task id, or decrypted secrets
    */
-  void execute(String infraId, InputData tasks, Map<String, char[]> decrypted, Context context);
+  void execute(String infraId, String logKey, InputData tasks, Map<String, char[]> decrypted, Context context);
   /**
    * Clean up an execution infra
    * @param infraId  The execution infra to clean up

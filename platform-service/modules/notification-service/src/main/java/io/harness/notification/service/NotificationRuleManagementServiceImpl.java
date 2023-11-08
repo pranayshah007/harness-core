@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.notification.entities.NotificationEntity;
+import io.harness.notification.entities.NotificationEvent;
 import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.NotificationRule.NotificationRuleKeys;
 import io.harness.notification.repositories.NotificationRuleRepository;
@@ -61,10 +62,11 @@ public class NotificationRuleManagementServiceImpl implements NotificationRuleMa
   }
 
   @Override
-  public NotificationRule get(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, NotificationEntity notificationEntity) {
+  public NotificationRule get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      NotificationEntity notificationEntity, NotificationEvent notificationEvent) {
     Criteria criteria = createNotificationRuleScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     criteria.and(NotificationRuleKeys.notificationEntity).is(notificationEntity.name());
+    criteria.and(NotificationRuleKeys.notificationEvent).is(notificationEvent.name());
     return notificationRuleRepository.findOne(criteria);
   }
 

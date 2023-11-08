@@ -18,5 +18,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CE)
 public class AiEngineConfig {
-  @JsonProperty(value = "genAIService") private GenAIServiceConfig genAIServiceConfig;
+  @JsonProperty(value = "modelExecutionTermination") private long modelExecutionTermination;
+  @JsonProperty(value = "completeModelGenAIService") private GenAIServiceConfig completeModelGenAIConfig;
+  @JsonProperty(value = "chatModelGenAIService") private GenAIServiceConfig chatModelGenAIConfig;
 }

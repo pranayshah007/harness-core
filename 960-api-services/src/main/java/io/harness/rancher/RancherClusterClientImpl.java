@@ -42,7 +42,11 @@ public class RancherClusterClientImpl implements RancherClusterClient {
 
   private static final String RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE =
       "Failed to generate kubeconfig from rancher cluster.";
-  private static final String ENDPOINT_AND_STATUS_CODE_MESSAGE = " Endpoint: [%s]. Status code: [%s]. ";
+  private static final String DELETE_KUBECONFIG_TOKEN_ERROR_MSG =
+      "Failed to delete kubeconfig token [%s] from Rancher cluster [%s]";
+  private static final String ENDPOINT_MESSAGE = " Endpoint: [%s].";
+  private static final String STATUS_CODE_MESSAGE = " Status code: [%s].";
+  private static final String ENDPOINT_AND_STATUS_CODE_MESSAGE = ENDPOINT_MESSAGE + STATUS_CODE_MESSAGE;
   private static final String RANCHER_LIST_CLUSTERS_ERROR_MESSAGE_WITH_INFO =
       RANCHER_LIST_CLUSTERS_ERROR_MESSAGE + ENDPOINT_AND_STATUS_CODE_MESSAGE;
   private static final String RANCHER_GENERATE_KUBECFG_ERROR_MESSAGE_WITH_INFO =
@@ -104,6 +108,25 @@ public class RancherClusterClientImpl implements RancherClusterClient {
       throw new RancherClientRuntimeException(
           RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE + format(RANCHER_ERROR_MESSAGE_RANCHER_URL_CLUSTER, url, clusterId),
           sanitizedException);
+    }
+  }
+
+  @Override
+  public RancherDeleteKubeconfigTokenResponse deleteKubeconfigToken(String bearerToken, String url, String tokenId) {
+    try {
+      RancherRestClient rancherRestClient = rancherRestClientFactory.getRestClient(url, bearerToken);
+      Response<RancherDeleteKubeconfigTokenResponse> deleteKubeconfigTokenResponseResponse =
+          decorateCallable(retry, () -> rancherRestClient.deleteKubeconfigToken(tokenId).execute()).call();
+      if (!deleteKubeconfigTokenResponseResponse.isSuccessful()) {
+        String errorMessage = format(DELETE_KUBECONFIG_TOKEN_ERROR_MSG, tokenId, url)
+            + format(STATUS_CODE_MESSAGE, deleteKubeconfigTokenResponseResponse.code());
+        throw new RancherClientRuntimeException(errorMessage);
+      }
+      return deleteKubeconfigTokenResponseResponse.body();
+    } catch (Exception e) {
+      Exception sanitizedException = sanitizeException(e);
+      log.warn(String.format(DELETE_KUBECONFIG_TOKEN_ERROR_MSG, tokenId, url), sanitizedException);
+      return RancherDeleteKubeconfigTokenResponse.builder().build();
     }
   }
 

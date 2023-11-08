@@ -356,8 +356,8 @@ public class ArtifactServiceImpl implements ArtifactService {
               .triggeredAt(entity.getLastDeployedAt().toString());
 
       if (Objects.nonNull(enforcementSummaryEntity)) {
-        response.allowListPolicyViolation(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
-            .denyListPolicyViolation(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
+        response.allowListViolationCount(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
+            .denyListViolationCount(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
             .enforcementId(enforcementSummaryEntity.getEnforcementId());
       }
       return response;
@@ -415,7 +415,7 @@ public class ArtifactServiceImpl implements ArtifactService {
               .enforcementId(enforcementSummary.getEnforcementId())
               .activity(artifact.getProdEnvCount() + artifact.getNonProdEnvCount() == 0 ? ActivityEnum.GENERATED
                                                                                         : ActivityEnum.DEPLOYED)
-              .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
+              .updated(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount(artifact.getProdEnvCount().intValue())
               .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
               .orchestrationId(artifact.getOrchestrationId())

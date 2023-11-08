@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
@@ -96,6 +97,11 @@ public class AwsSamBuildStepInfo extends AwsSamBaseStepInfo implements CDAbstrac
         .delegateSelectors(this.getDelegateSelectors())
         .buildCommandOptions(this.getBuildCommandOptions())
         .samBuildDockerRegistryConnectorRef(this.getSamBuildDockerRegistryConnectorRef())
+        .connectorRef(this.getConnectorRef())
+        .resources(this.getResources())
+        .privileged(this.getPrivileged())
+        .runAsUser(this.getRunAsUser())
+        .imagePullPolicy(this.getImagePullPolicy())
         .build();
   }
 
