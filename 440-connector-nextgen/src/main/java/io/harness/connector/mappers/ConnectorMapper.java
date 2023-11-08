@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -53,8 +54,7 @@ import lombok.AllArgsConstructor;
 public class ConnectorMapper {
   @Inject private Map<String, ConnectorDTOToEntityMapper> connectorDTOToEntityMapperMap;
   @Inject private Map<String, ConnectorEntityToDTOMapper> connectorEntityToDTOMapperMap;
-
-  @Inject private TunnelService tunnelService;
+  @Inject(optional = true) @Nullable private TunnelService tunnelService;
 
   public Connector toConnector(ConnectorDTO connectorRequestDTO, String accountIdentifier) {
     ConnectorInfoDTO connectorInfo = connectorRequestDTO.getConnectorInfo();
@@ -202,7 +202,7 @@ public class ConnectorMapper {
 
     if (connectorDTO instanceof GithubConnectorDTO) {
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
-      if (githubConnectorDTO.getProxy()) {
+      if (tunnelService != null && githubConnectorDTO.getProxy()) {
         TunnelResponseDTO tunnelResponseDTO = tunnelService.getTunnel(connector.getAccountIdentifier());
         if (tunnelResponseDTO.getServerUrl().isEmpty() || tunnelResponseDTO.getPort().isEmpty()) {
           githubConnectorDTO.setProxyUrl("");

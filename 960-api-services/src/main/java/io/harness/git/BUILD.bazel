@@ -29,6 +29,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/secret:module",
         "//980-commons/src/main/java/io/harness/validation:module",
         "//980-commons/src/main/java/software/wings/misc:module",
+        "//980-commons/src/main/java/io/harness/network:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",

@@ -69,6 +69,7 @@ public class GithubToGitMapper {
       GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo,
           username, usernameRef, passwordRef, githubConnectorDTO.getDelegateSelectors());
       gitConfigForHttp.setExecuteOnDelegate(githubConnectorDTO.getExecuteOnDelegate());
+      gitConfigForHttp.setProxyUrl(githubConnectorDTO.getProxyUrl());
       return gitConfigForHttp;
 
     } else if (authType == GitAuthType.SSH) {

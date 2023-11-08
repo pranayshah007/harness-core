@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -39,6 +40,7 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
 import io.harness.shell.ssh.exception.SshClientException;
+import io.harness.utils.ProxyUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -91,6 +93,11 @@ public class NGGitServiceImpl implements NGGitService {
     if (overrideFromGitConfig) {
       gitBaseRequest.setBranch(gitConfig.getBranchName());
       gitBaseRequest.setRepoUrl(gitConfig.getUrl());
+    }
+
+    if (EmptyPredicate.isNotEmpty(gitConfig.getProxyUrl())) {
+      gitBaseRequest.setProxyHost(ProxyUtils.getProxyHost(gitConfig.getProxyUrl()));
+      gitBaseRequest.setProxyPort(ProxyUtils.getProxyPort(gitConfig.getProxyUrl()));
     }
   }
 

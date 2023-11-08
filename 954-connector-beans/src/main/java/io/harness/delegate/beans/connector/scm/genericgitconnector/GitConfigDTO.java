@@ -57,6 +57,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   private String branchName;
   private Set<String> delegateSelectors;
   private Boolean executeOnDelegate;
+  private String proxyUrl;
   private String gitConnectionUrl;
 
   @JsonProperty("spec")
@@ -68,7 +69,8 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
 
   @Builder
   public GitConfigDTO(GitAuthType gitAuthType, GitAuthenticationDTO gitAuth, GitConnectionType gitConnectionType,
-      String url, String validationRepo, String branchName, Set<String> delegateSelectors, Boolean executeOnDelegate) {
+      String url, String validationRepo, String branchName, Set<String> delegateSelectors, Boolean executeOnDelegate,
+      String proxyUrl) {
     this.gitAuthType = gitAuthType;
     this.gitAuth = gitAuth;
     this.gitConnectionType = gitConnectionType;
@@ -77,6 +79,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
     this.branchName = branchName;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
+    this.proxyUrl = proxyUrl;
   }
 
   @Override
