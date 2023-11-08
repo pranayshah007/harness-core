@@ -11,9 +11,9 @@ if [[ -v "{hostname}" ]]; then
    export HOSTNAME=$(hostname)
 fi
 
+export MEMORY_MIN=1024m
 if [[ -z "$MEMORY" ]]; then
    export MEMORY=4096m
-   export MEMORY_MIN=1024m
 fi
 
 if [[ -z "$COMMAND" ]]; then
