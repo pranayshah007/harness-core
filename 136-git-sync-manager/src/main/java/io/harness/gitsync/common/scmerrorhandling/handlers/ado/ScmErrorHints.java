@@ -25,4 +25,8 @@ public class ScmErrorHints {
       "Please provide the token with correct permissions in the Azure connector<CONNECTOR>.";
   public static final String WRONG_REPO_OR_BRANCH =
       "Please check if the provided branch<BRANCH> or the Azure repo name<REPO> are valid.";
+  public static final String HINT_REQUEST_TIMED_OUT = "Please try these out: \n"
+      + "1. Check if Azure Git server is working as expected from GitLab's status page (https://status.gitlab.com/)\n"
+      + "2. Check if your selected delegates are able to connect to the Azure Git server\n"
+      + "3. If the problem persists, please contact Harness Support Team.";
 }

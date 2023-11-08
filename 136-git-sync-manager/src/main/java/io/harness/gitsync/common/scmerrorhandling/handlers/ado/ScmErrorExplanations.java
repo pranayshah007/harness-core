@@ -26,4 +26,9 @@ public class ScmErrorExplanations {
   public static final String MISSING_PERMISSION_CREDS_EXPLANATION =
       "The credentials provided in the Azure connector<CONNECTOR> do not have correct permissions.";
   public static final String WRONG_REPO_OR_BRANCH = "The provided branch<BRANCH> or the repo<REPO> are invalid.";
+  public static final String EXPLANATION_REQUEST_TIMED_OUT =
+      "Request to the Azure Git Server to fetch file<FILEPATH> from repo<REPO> and branch<BRANCH> timed out.\n"
+      + "This might have occurred due to the following reasons:\n"
+      + "1. Network connectivity issues from delegate to the Azure Git server\n"
+      + "2. Azure Git server experiencing higher traffic than usual, or a downtime at the moment.";
 }
