@@ -235,15 +235,15 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
-  public List<Account> getUpdatedAccounts(long timestamp) {
+  public List<Account> getAccountsUpdatedSinceTimestamp(long timestamp) {
     return accountService.getByLastUpdated(timestamp);
   }
 
   @Override
-  public List<AccountSummary> getAccountSummariesByAccounts(List<String> accountIds) {
+  public List<AccountSummary> getAccountSummaries(List<String> accountIds) {
     List<AccountSummary> accountSummaries = new ArrayList<>();
-    for (String id : accountIds) {
-      accountSummaries.add(getAccountSummaryByAccountId(id));
+    for (String accountId : accountIds) {
+      accountSummaries.add(getAccountSummaryByAccountId(accountId));
     }
     return accountSummaries;
   }

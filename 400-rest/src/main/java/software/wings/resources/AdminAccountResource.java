@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static java.util.stream.Collectors.toList;
+import io.harness.persistence.UuidAware;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
@@ -49,6 +51,8 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -107,11 +111,6 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.getAccountSummaryByAccountId(accountId));
   }
 
-//  @POST
-//  @Path("/update-accounts/accountIds")
-//  public RestResponse<List<AccountSummary>> getAccountSummariesByAccountIds(@Body List<String> accountIds) {
-//    return new RestResponse<>(adminAccountService.getAccountSummariesByAccountIds(accountIds));
-//  }
 
   @GET
   @Path("{accountId}/license")
@@ -204,21 +203,14 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.getLimitsConfiguredForAccount(accountId));
   }
 
-  // getRecent AccountUpdates
-
   @GET
-  @Path("get-recent-updates-account")
-  public RestResponse<List<AccountSummary>> getRecentAccountUpdates() {
-      long currentTime = System.currentTimeMillis();
-      long thirtySecondsAgo = currentTime - 30*1000*60;
-      List<Account> updatedAccounts = adminAccountService.getUpdatedAccounts(thirtySecondsAgo);
-      List<String> updatedAccountIds = new ArrayList<>();
-      for(Account account : updatedAccounts){
-        updatedAccountIds.add(account.getUuid());
-      }
-      return new RestResponse<>(adminAccountService.getAccountSummariesByAccounts(updatedAccountIds));
+  @Path("recently-updated-accounts")
+  public RestResponse<List<AccountSummary>> getRecentAccountUpdates(@QueryParam("timestamp") long timestamp) {
+    List<String> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp).stream()
+            .map(UuidAware::getUuid)
+            .collect(Collectors.toList());
+    return new RestResponse<>(adminAccountService.getAccountSummaries(updatedAccountsIds));
   }
-
 
   @PUT
   @Path("{accountId}/limits/static-limit")
