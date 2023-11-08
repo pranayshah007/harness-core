@@ -41,7 +41,6 @@ import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -73,9 +72,6 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       curr = getStageField(stages.get(i));
       String version = getYamlVersionFromStageField(curr);
       String nextId = getStageField(stages.get(i + 1)).getUuid();
-      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
               .dependencies(
@@ -83,8 +79,6 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                       .putDependencies(curr.getUuid(), curr.getYamlPath())
                       .putDependencyMetadata(curr.getUuid(),
                           Dependency.newBuilder()
-                              .putMetadata(
-                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
                               .setNodeMetadata(HarnessStruct.newBuilder().putData(PlanCreatorConstants.NEXT_ID,
                                   HarnessValue.newBuilder().setStringValue(nextId).build()))
                               .setParentInfo(

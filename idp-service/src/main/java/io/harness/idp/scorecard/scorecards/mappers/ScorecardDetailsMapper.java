@@ -7,7 +7,6 @@
 
 package io.harness.idp.scorecard.scorecards.mappers;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 

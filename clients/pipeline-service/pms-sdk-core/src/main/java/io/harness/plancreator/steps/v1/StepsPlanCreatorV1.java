@@ -31,12 +31,9 @@ import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
-import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,8 +44,6 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
-  @Inject private KryoSerializer kryoSerializer;
-
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
@@ -66,9 +61,6 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       curr = getStepField(stages.get(i));
       String version = getYamlVersionFromStepField(curr);
       String nextId = getStepField(stages.get(i + 1)).getUuid();
-      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
               .dependencies(
@@ -76,8 +68,6 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                       .putDependencies(curr.getUuid(), curr.getYamlPath())
                       .putDependencyMetadata(curr.getUuid(),
                           Dependency.newBuilder()
-                              .putMetadata(
-                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
                               .setNodeMetadata(HarnessStruct.newBuilder()
                                                    .putData(PlanCreatorConstants.NEXT_ID,
                                                        HarnessValue.newBuilder().setStringValue(nextId).build())

@@ -16,7 +16,7 @@ import java.util.List;
 public class TestAsyncWaitEngineImpl implements AsyncWaitEngine {
   @Override
   public void waitForAllOn(
-      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout) {
+      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, long timeout) {
     // Do nothing
   }
 

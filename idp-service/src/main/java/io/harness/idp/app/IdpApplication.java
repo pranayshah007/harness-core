@@ -39,6 +39,7 @@ import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
 import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
+import io.harness.idp.scorecard.scores.jobs.CheckStatusDailyRunJob;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
@@ -220,6 +221,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(LicenseUsageDailyCountJob.class));
+    environment.lifecycle().manage(injector.getInstance(CheckStatusDailyRunJob.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))

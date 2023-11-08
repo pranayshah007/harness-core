@@ -151,8 +151,8 @@ public class K8SLiteRunner implements Runner {
   }
 
   @Override
-  public void execute(
-      final String taskGroupId, final InputData tasks, Map<String, char[]> decrypted, final Context context) {
+  public void execute(final String taskGroupId, final String logKey, final InputData tasks,
+      Map<String, char[]> decrypted, final Context context) {
     ExecuteStep executeStep = ExecuteStep.newBuilder()
                                   .setTaskParameters(tasks.getBinaryData())
                                   .addAllExecuteCommand(List.of("./start.sh"))
@@ -161,6 +161,7 @@ public class K8SLiteRunner implements Runner {
     UnitStep unitStep = UnitStep.newBuilder()
                             .setId(taskGroupId)
                             .setExecuteTask(executeStep)
+                            .setLogKey(logKey)
                             .setCallbackToken(config.getDelegateToken())
                             .setTaskId(context.get(Context.TASK_ID))
                             .setAccountId(config.getAccountId())

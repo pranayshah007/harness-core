@@ -86,7 +86,7 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/triggers/ archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/service/src/test/ archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io prashant.pal@harness.io
-/srm-service/ praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io varsha.lalwani@harness.io dhruv@harness.io ansuman.satapathy@harness.io
+/srm-service/ praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io varsha.lalwani@harness.io dhruv@harness.io ansuman.satapathy@harness.io sridhar.balijepalli@harness.io sandeep.kumar@harness.io shubhendu.patidar@harness.io
 /srm-service/modules/cv-nextgen-service/service/src/test/resources/recaster/alias/alias.txt archit.singla@harness.io sahil.hindwani@harness.io
 /tools/build-cleaner/ gaurav.nanda@harness.io
 

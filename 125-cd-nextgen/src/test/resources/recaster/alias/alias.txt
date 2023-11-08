@@ -124,6 +124,7 @@ io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepParameters
 io.harness.plancreator.stages.StageElementWrapperConfig
 io.harness.cdng.azure.webapp.AzureWebAppRollbackStepParameters
 io.harness.cdng.pipeline.beans.DeploymentStageStepParameters
+io.harness.cdng.pipeline.beans.DeploymentStageStepParametersV1
 io.harness.beans.yaml.extended.volumes.V1.ClaimVolume
 io.harness.beans.execution.PublishedImageArtifact
 io.harness.cdng.k8s.beans.StepExceptionPassThroughData

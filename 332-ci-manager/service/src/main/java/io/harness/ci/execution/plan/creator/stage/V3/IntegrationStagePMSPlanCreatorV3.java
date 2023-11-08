@@ -21,7 +21,6 @@ import io.harness.ci.execution.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.execution.states.IntegrationStageStepPMS;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
-import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StageElementParameters;
@@ -175,12 +174,9 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     CodeBase codeBase =
         createPlanForCodebase(ctx, stageConfigImpl.getClone(), planCreationResponseMap, stepsField.getUuid());
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
-    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+    Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
         kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap, getAdvisorObtainments(ctx.getDependency()));
 
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
     planCreationResponseMap.put(stepsField.getUuid(),
         PlanCreationResponse.builder()
             .dependencies(
@@ -188,9 +184,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
                     .toBuilder()
                     .putDependencyMetadata(field.getUuid(),
                         Dependency.newBuilder()
-                            .putAllMetadata(dependencyMetadata.getMetadataMap())
-                            .setNodeMetadata(
-                                HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+                            .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
                             .build())
                     .putDependencyMetadata(
                         stepsField.getUuid(), getDependencyMetadataForStepsField(infrastructure, codeBase, stageNode))
@@ -234,11 +228,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
       metadataMap.put(CODEBASE, codebaseBytes);
       nodeMetadataMap.put(CODEBASE, HarnessValue.newBuilder().setBytesValue(codebaseBytes).build());
     }
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
     return Dependency.newBuilder()
-        .putAllMetadata(metadataMap)
         .setNodeMetadata(HarnessStruct.newBuilder().putAllData(nodeMetadataMap).build())
         .build();
   }

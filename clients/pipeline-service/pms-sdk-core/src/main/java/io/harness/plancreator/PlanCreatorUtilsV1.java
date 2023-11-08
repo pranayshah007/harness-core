@@ -132,13 +132,6 @@ public class PlanCreatorUtilsV1 {
     return null;
   }
 
-  public ByteString getMetadataValueFromDependency(Dependency dependency, String key) {
-    if (isNotEmpty(dependency.getMetadataMap()) && dependency.getMetadataMap().containsKey(key)) {
-      return dependency.getMetadataMap().get(key);
-    }
-    return null;
-  }
-
   public Optional<Object> getDeserializedObjectFromDependency(
       Dependency dependency, KryoSerializer kryoSerializer, String key, boolean asInflatedObject) {
     if (dependency == null) {
@@ -160,8 +153,7 @@ public class PlanCreatorUtilsV1 {
         return Optional.of(harnessValue.getBoolValue());
       }
     }
-    ByteString bytes = getMetadataValueFromDependency(dependency, key);
-    return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
+    return Optional.empty();
   }
 
   public RepairActionCode toRepairAction(FailureStrategyActionConfigV1 action) {

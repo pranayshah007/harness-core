@@ -19,6 +19,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -62,10 +64,12 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
     assertThat(PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, Dependency.newBuilder().build()).size())
         .isEqualTo(0);
 
-    assertThat(PlanCreatorUtilsV1
-                   .getAdviserObtainmentsForStage(
-                       kryoSerializer, Dependency.newBuilder().putMetadata("abc", ByteString.empty()).build())
-                   .size())
+    assertThat(
+        PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer,
+            Dependency.newBuilder()
+                .setNodeMetadata(HarnessStruct.newBuilder().putData("abc", HarnessValue.newBuilder().build()).build())
+                .build()))
+        .size()
         .isEqualTo(0);
 
     doReturn(nextNodeId).when(kryoSerializer).asObject(nextNodeId.getBytes());
@@ -74,7 +78,10 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
         .asBytes(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build());
     List<AdviserObtainment> adviserObtainments = PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer,
         Dependency.newBuilder()
-            .putMetadata(PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(nextNodeId.getBytes()))
+            .setNodeMetadata(
+                HarnessStruct.newBuilder()
+                    .putData(PlanCreatorConstants.NEXT_ID, HarnessValue.newBuilder().setStringValue(nextNodeId).build())
+                    .build())
             .build());
     assertThat(adviserObtainments.size()).isEqualTo(1);
     assertThat(adviserObtainments.get(0).getType())

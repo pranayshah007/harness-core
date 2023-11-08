@@ -85,6 +85,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   @JsonProperty("backstagePodLabel") private String backstagePodLabel;
+  @JsonProperty("backstageEntitiesFetchLimit") private String backstageEntitiesFetchLimit;
   @JsonProperty("env") private String env;
   @JsonProperty("prEnvDefaultBackstageNamespace") private String prEnvDefaultBackstageNamespace;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;

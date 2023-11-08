@@ -60,7 +60,7 @@ var (
 	getStageStrategyIterations   = external.GetStageStrategyIterations
 	isStepParallelismEnabled     = external.IsStepParallelismEnabled
 	isStageParallelismEnabled    = external.IsStageParallelismEnabled
-	getSha				         = external.GetSha
+	getSha                       = external.GetSha
 )
 
 // RunTestsTask represents an interface to run tests intelligently
@@ -159,6 +159,7 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 	cgDirPath := filepath.Join(r.tmpFilePath, cgDir)
 	testSt := time.Now()
 
+	r.injectReportInformation(ctx)
 	stepOutput, err := r.execute(ctx)
 	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt)
 	if err == nil {
@@ -181,6 +182,19 @@ func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string,
 		r.log.Errorw(fmt.Sprintf("Unable to collect tests reports. Time taken: %s", time.Since(crStart)), zap.Error(errCr))
 	}
 	return errCg
+}
+
+func (r *runTestsTask) injectReportInformation(ctx context.Context) {
+	switch strings.ToLower(r.language) {
+	case "ruby", "python":
+		if r.args == "" && len(r.reports) == 0 {
+			report := &pb.Report{
+				Type:  pb.Report_JUNIT,
+				Paths: []string{fmt.Sprintf("**/%s*", utils.HarnessDefaultReportPath)},
+			}
+			r.reports = []*pb.Report{report}
+		}
+	}
 }
 
 // createJavaAgentArg creates the ini file which is required as input to the java agent

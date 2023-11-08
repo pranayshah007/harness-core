@@ -141,10 +141,12 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
     return asyncExecutableResponseBuilder.build();
   }
 
-  private int getTimeoutForAutoApproval(AutoApprovalParams autoApprovalParams) {
+  private long getTimeoutForAutoApproval(AutoApprovalParams autoApprovalParams) {
     ScheduledDeadline scheduledDeadline = autoApprovalParams.getScheduledDeadline();
-    int autoApprovalDuration = Math.toIntExact(TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(
-        scheduledDeadline.getTime().getValue(), scheduledDeadline.getTimeZone().getValue()));
+
+    long autoApprovalDuration = TimeStampUtils.getTotalDurationWRTCurrentTimeFromTimeStamp(
+        scheduledDeadline.getTime().getValue(), scheduledDeadline.getTimeZone().getValue());
+
     if (autoApprovalDuration <= 0) {
       throw new InvalidRequestException("Auto approval deadline should be greater than current time");
     }

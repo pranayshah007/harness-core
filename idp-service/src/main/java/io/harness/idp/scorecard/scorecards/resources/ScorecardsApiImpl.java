@@ -25,6 +25,7 @@ import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardStats;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -59,6 +60,22 @@ public class ScorecardsApiImpl implements ScorecardsApi {
     } catch (Exception e) {
       String errorMessage =
           String.format("Error occurred while fetching scorecard details for accountId: [%s], scorecardId: [%s]",
+              harnessAccount, scorecardId);
+      log.error(errorMessage, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  public Response getScorecardStats(String scorecardId, String harnessAccount) {
+    try {
+      List<ScorecardStats> scorecardStats = scorecardService.getScorecardStats(harnessAccount, scorecardId);
+      return Response.status(Response.Status.OK).entity(scorecardStats).build();
+    } catch (Exception e) {
+      String errorMessage =
+          String.format("Error occurred while fetching scorecard stats for accountId: [%s], scorecardId: [%s]",
               harnessAccount, scorecardId);
       log.error(errorMessage, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

@@ -10,10 +10,14 @@ package io.harness.steps.approval.step.harness;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.jira.JiraStepUtils.NULL_STRING;
 
+import io.harness.common.ParameterFieldHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalDTO;
 import io.harness.steps.approval.step.harness.beans.AutoApprovalParams;
+import io.harness.steps.approval.step.harness.beans.ScheduledDeadline;
+import io.harness.steps.approval.step.harness.beans.ScheduledDeadlineDTO;
 import io.harness.utils.TimeStampUtils;
 
 import io.dropwizard.util.Duration;
@@ -50,20 +54,45 @@ public class HarnessApprovalUtils {
   }
   public static void checkForNullOrThrowAutoApproval(AutoApprovalParams autoApprovalParams) {
     if (autoApprovalParams.getScheduledDeadline() != null) {
-      if (ParameterField.isNull(autoApprovalParams.getScheduledDeadline().getTime())) {
-        throw new InvalidRequestException("Auto Approval parameter Time cannot be null");
-      }
-      if (ParameterField.isNull(autoApprovalParams.getScheduledDeadline().getTimeZone())) {
-        throw new InvalidRequestException("Auto Approval parameter TimeZone cannot be null");
-      }
-      if (NULL_STRING.equals(autoApprovalParams.getScheduledDeadline().getTimeZone().getValue())) {
-        // Currently, unresolved expression are getting resolved as "null" string
-        throw new InvalidRequestException("Auto Approval parameter TimeZone not resolved");
-      }
-      if (NULL_STRING.equals(autoApprovalParams.getScheduledDeadline().getTime().getValue())) {
-        // Currently, unresolved expression are getting resolved as "null" string
-        throw new InvalidRequestException("Auto Approval parameter Time not resolved");
-      }
+      checkForNullOrThrowAutoApprovalFromScheduledDeadline(autoApprovalParams.getScheduledDeadline());
+    }
+  }
+
+  public static AutoApprovalDTO fromAutoApprovalParams(AutoApprovalParams autoApprovalParams) {
+    if (autoApprovalParams == null) {
+      return null;
+    }
+
+    return AutoApprovalDTO.builder()
+        .action(autoApprovalParams.getAction())
+        .comments(ParameterFieldHelper.getParameterFieldFinalValueString(autoApprovalParams.getComments()))
+        .scheduledDeadline(fromScheduledDeadline(autoApprovalParams.getScheduledDeadline()))
+        .build();
+  }
+  public static ScheduledDeadlineDTO fromScheduledDeadline(ScheduledDeadline scheduledDeadline) {
+    if (scheduledDeadline == null) {
+      return null;
+    }
+    return ScheduledDeadlineDTO.builder()
+        .time(scheduledDeadline.getTime().getValue())
+        .timeZone(scheduledDeadline.getTimeZone().getValue())
+        .build();
+  }
+
+  public static void checkForNullOrThrowAutoApprovalFromScheduledDeadline(ScheduledDeadline scheduledDeadline) {
+    if (ParameterField.isBlank(scheduledDeadline.getTime())) {
+      throw new InvalidRequestException("Auto Approval parameter Time cannot be empty");
+    }
+    if (ParameterField.isBlank(scheduledDeadline.getTimeZone())) {
+      throw new InvalidRequestException("Auto Approval parameter TimeZone cannot be empty");
+    }
+    if (NULL_STRING.equals(scheduledDeadline.getTimeZone().getValue())) {
+      // Currently, unresolved expression are getting resolved as "null" string
+      throw new InvalidRequestException("Auto Approval parameter TimeZone not resolved");
+    }
+    if (NULL_STRING.equals(scheduledDeadline.getTime().getValue())) {
+      // Currently, unresolved expression are getting resolved as "null" string
+      throw new InvalidRequestException("Auto Approval parameter Time not resolved");
     }
   }
 }
