@@ -41,6 +41,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMM
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_HTTP_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_SSH_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_HTTP_PROXY_PORT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_HTTP_PROXY_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_PORT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_USERNAME;
@@ -120,10 +122,15 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.TunnelResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.tunnel.TunnelResourceClient;
+import io.harness.utils.ProxyUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
@@ -142,12 +149,16 @@ public class CodebaseUtils {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
+  @Inject private TunnelResourceClient tunnelResourceClient;
   private final String PRMergeStatus = "merged";
 
   public Map<String, String> getCodebaseVars(
       Ambiance ambiance, CIExecutionArgs ciExecutionArgs, ConnectorDetails gitConnectorDetails) {
     Map<String, String> envVars = BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs);
     envVars.putAll(getRuntimeCodebaseVars(ambiance, gitConnectorDetails));
+    if (gitConnectorDetails.getProxy() != null && gitConnectorDetails.getProxy()) {
+      envVars.putAll(getDroneProxyEnvVars(ambiance));
+    }
     return envVars;
   }
 
@@ -160,6 +171,19 @@ public class CodebaseUtils {
 
     return envVarMap;
   }
+
+  private Map<String, String> getDroneProxyEnvVars(Ambiance ambiance) {
+    Map<String, String> envVarMap = new HashMap<>();
+    TunnelResponseDTO tunnelResponseDTO =
+        NGRestUtils.getResponse(tunnelResourceClient.getTunnel(AmbianceUtils.getAccountId(ambiance)));
+    if (tunnelResponseDTO != null && isNotEmpty(tunnelResponseDTO.getServerUrl())
+        && isNotEmpty(tunnelResponseDTO.getPort())) {
+      envVarMap.put(DRONE_HTTP_PROXY_URL, ProxyUtils.getProxyHost(tunnelResponseDTO.getServerUrl()));
+      envVarMap.put(DRONE_HTTP_PROXY_PORT, String.valueOf(tunnelResponseDTO.getPort()));
+    }
+    return envVarMap;
+  }
+
   public Map<String, String> getRuntimeCodebaseVars(Ambiance ambiance, ConnectorDetails gitConnectorDetails) {
     Map<String, String> codebaseRuntimeVars = new HashMap<>();
 

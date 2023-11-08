@@ -101,6 +101,8 @@ public class BuildEnvironmentConstants {
   public static final String SSH_KEY = "SSH_KEY";
   public static final String DRONE_AWS_REGION = "DRONE_AWS_REGION";
   public static final String DRONE_CARD_PATH = "DRONE_CARD_PATH";
+  public static final String DRONE_HTTP_PROXY_URL = "DRONE_HTTP_PROXY_URL";
+  public static final String DRONE_HTTP_PROXY_PORT = "DRONE_HTTP_PROXY_PORT";
 
   public static final String CI_REPO = "CI_REPO";
   public static final String CI_REPO_NAME = "CI_REPO_NAME";

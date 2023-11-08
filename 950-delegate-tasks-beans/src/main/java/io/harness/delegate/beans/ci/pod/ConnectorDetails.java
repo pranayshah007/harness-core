@@ -32,4 +32,5 @@ public class ConnectorDetails {
   SSHKeyDetails sshKeyDetails;
   @Singular("envToSecretEntry") Map<EnvVariableEnum, String> envToSecretsMap;
   Boolean executeOnDelegate;
+  Boolean proxy;
 }

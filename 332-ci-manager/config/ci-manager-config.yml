@@ -364,7 +364,7 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.4.2
+      gitClone: harness/drone-git:1.4.3
       buildAndPushDockerRegistry: plugins/docker:20.14.5
       buildAndPushACR: plugins/acr:20.14.5
       buildAndPushECR: plugins/ecr:20.14.5
@@ -388,7 +388,7 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.4.2
+        name: github.com/wings-software/drone-git@refs/tags/v1.4.3
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
