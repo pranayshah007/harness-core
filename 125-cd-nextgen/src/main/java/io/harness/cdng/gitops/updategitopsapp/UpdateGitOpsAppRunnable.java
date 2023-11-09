@@ -226,7 +226,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     }
   }
 
-  public static ApplicationUpdateRequest getUpdateRequest(
+  public ApplicationUpdateRequest getUpdateRequest(
       ApplicationResource application, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
     App applicationEntity = application.getApp();
     ApplicationSpec applicationSpec = applicationEntity.getSpec();
@@ -243,7 +243,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     return ApplicationUpdateRequest.builder().application(applicationEntity).build();
   }
 
-  private static void populateUpdateValues(
+  private void populateUpdateValues(
       ApplicationSpec applicationSpec, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
     Source source = applicationSpec.getSource();
     if (source == null) {
@@ -373,7 +373,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     return finalHelmSourceFileParameters;
   }
 
-  private static void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
+  public void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
     KustomizeSource kustomizeSource = source.getKustomize();
     if (kustomizeSource == null) {
       kustomizeSource = KustomizeSource.builder().build();
