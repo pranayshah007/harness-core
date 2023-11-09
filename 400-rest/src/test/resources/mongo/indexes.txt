@@ -19,6 +19,7 @@ accounts {"name": "delegateTelemetryPublisherIteration_1", "background": true} {
 accounts {"name": "gitSyncExpiryCheckIteration_1", "background": true} {"gitSyncExpiryCheckIteration": 1}
 accounts {"name": "globalDelegateAccount_1", "background": true} {"globalDelegateAccount": 1}
 accounts {"name": "isHarnessSupportAccessAllowed_1", "background": true} {"isHarnessSupportAccessAllowed": 1}
+accounts {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 accounts {"name": "next_iteration_license_info2", "background": true} {"licenseExpiryCheckIteration": 1, "encryptedLicenseInfo": 1}
 accounts {"name": "perpetualTaskRebalanceIteration_1", "background": true} {"perpetualTaskRebalanceIteration": 1}
 accounts {"name": "resourceLookupSyncIteration_1", "background": true} {"resourceLookupSyncIteration": 1}
