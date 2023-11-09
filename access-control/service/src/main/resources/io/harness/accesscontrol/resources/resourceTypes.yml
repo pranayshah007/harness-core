@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 37
+version: 38
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -151,3 +151,5 @@ resourceTypes:
     permissionKey: anomalies
   - identifier: CCM_RECOMMENDATIONS
     permissionKey: recommendations
+  - identifier: CCM_COMMITMENT_ORCH
+    permissionKey: commitmentOrch

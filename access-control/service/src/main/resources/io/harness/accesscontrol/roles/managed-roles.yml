@@ -675,6 +675,8 @@ roles:
         - cet_criticalevent_delete
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitment_orch_view
+        - ccm_commitment_orch_edit
       allowedScopeLevels:
         - account
       managed: true
@@ -753,6 +755,7 @@ roles:
         - cet_criticalevent_view
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitment_orch_view
       allowedScopeLevels:
         - account
       managed: true
@@ -993,6 +996,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_delete
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitment_orch_edit
+        - ccm_commitment_orch_view
       managed: true
       allowedScopeLevels:
         - account
@@ -1013,6 +1018,7 @@ roles:
         - ccm_cloudAssetGovernanceRule_view
         - ccm_anomalies_view
         - ccm_recommendations_view
+        - ccm_commitment_orch_view
       managed: true
       allowedScopeLevels:
         - account
