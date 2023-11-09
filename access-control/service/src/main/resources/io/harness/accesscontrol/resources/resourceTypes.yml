@@ -151,5 +151,5 @@ resourceTypes:
     permissionKey: anomalies
   - identifier: CCM_RECOMMENDATIONS
     permissionKey: recommendations
-  - identifier: CCM_COMMITMENT_ORCH
+  - identifier: CCM_COMMITMENT_ORCHESTRATOR
     permissionKey: commitmentOrch
