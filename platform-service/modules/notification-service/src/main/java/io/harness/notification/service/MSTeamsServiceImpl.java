@@ -26,10 +26,10 @@ import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
@@ -109,11 +109,6 @@ public class MSTeamsServiceImpl implements ChannelService {
     String templateId = msTeamDetails.getTemplateId();
     Map<String, String> templateData = msTeamDetails.getTemplateDataMap();
 
-    if (Objects.isNull(trimToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
-    }
-
     List<String> microsoftTeamsWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(microsoftTeamsWebhookUrls)) {
       log.info("No microsoft teams webhook url found in notification request {}", notificationId);
@@ -126,7 +121,7 @@ public class MSTeamsServiceImpl implements ChannelService {
         notificationRequest.getAccountId(), msTeamDetails.getOrgIdentifier(), msTeamDetails.getProjectIdentifier());
 
     return send(microsoftTeamsWebhookUrls, templateId, templateData, notificationId, notificationRequest.getTeam(),
-        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap, msTeamDetails.getMessage());
   }
 
   @Override
@@ -186,7 +181,7 @@ public class MSTeamsServiceImpl implements ChannelService {
         webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse response = send(Collections.singletonList(webhookUrl), TEST_MSTEAMS_TEMPLATE,
         Collections.emptyMap(), msTeamSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
-        Collections.emptyMap());
+        Collections.emptyMap(), EMPTY);
     if (NotificationProcessingResponse.isNotificationRequestFailed(response)) {
       throw new NotificationException("Invalid webhook Url encountered while processing Test Connection request "
               + notificationSettingDTO.getNotificationId(),
@@ -197,22 +192,25 @@ public class MSTeamsServiceImpl implements ChannelService {
 
   private NotificationProcessingResponse send(List<String> microsoftTeamsWebhookUrls, String templateId,
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
-      Map<String, String> abstractionMap) {
-    Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
-    if (!templateOpt.isPresent()) {
-      log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
-    }
-    String template = templateOpt.get();
+      Map<String, String> abstractionMap, String message) {
+    if (EmptyPredicate.isNotEmpty(templateId)) {
+      Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
+      if (!templateOpt.isPresent()) {
+        log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
+        return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      }
+      String template = templateOpt.get();
 
-    templateData = processTemplateVariables(templateData);
-    Optional<String> messageOpt = getDecoratedNotificationMessage(template, templateData);
-    if (!messageOpt.isPresent()) {
-      log.error(
-          "Can't qualify the template {} with given template data for notification request {}. Please check the list of required fields",
-          templateId, notificationId);
+      templateData = processTemplateVariables(templateData);
+      Optional<String> messageOpt = getDecoratedNotificationMessage(template, templateData);
+      if (!messageOpt.isPresent()) {
+        log.error(
+            "Can't qualify the template {} with given template data for notification request {}. Please check the list of required fields",
+            templateId, notificationId);
+      }
+      message = messageOpt.get();
     }
-    String message = messageOpt.get();
+
     List<String> microsoftTeamsWebhookUrlDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
         SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
