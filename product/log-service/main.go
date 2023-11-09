@@ -15,12 +15,33 @@ import (
 	"syscall"
 
 	"github.com/harness/harness-core/product/log-service/cli"
+	"net/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "go.uber.org/automaxprocs"
 )
 
 func main() {
+    //register metric for prometheus
+    metric.RegisterMetrics()
+    //allow prometheus to scrape metrics
+    http.Handle("/metrics",promhttp.Handler())
+
+    go func() {
+        addr := ":8431"
+        server := &http.Server{
+            Addr:    addr,
+            Handler: nil,
+        }
+
+        // Handle potential errors when starting the HTTP server
+        if err := server.ListenAndServe(); err != nil {
+            if err != http.ErrServerClosed {
+                log.Printf("HTTP server error: %v", err)
+            }
+        }
+    }()
 
 	defer func() {
 		if r := recover(); r != nil {

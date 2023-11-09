@@ -17,6 +17,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
+	"github.com/harness/harness-core/product/log-service/metric"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -214,6 +215,7 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 			WithField("num_lines", len(in)).
 			Infoln("api: successfully wrote to stream")
 		w.WriteHeader(http.StatusNoContent)
+		metric.putCount.WithLabelValues("put").Inc()
 	}
 }
 
@@ -286,6 +288,7 @@ func HandleTail(s stream.Stream) http.HandlerFunc {
 		logger.FromRequest(r).WithField("key", key).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: successfully tailed stream")
+		metric.getCount.WithLabelValues("get").Inc()
 	}
 }
 
