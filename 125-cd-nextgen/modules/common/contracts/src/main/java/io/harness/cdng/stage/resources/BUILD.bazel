@@ -6,18 +6,20 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
-filegroup(
-    name = "java_srcs",
-    srcs = glob(["*.java"]),
-    visibility = ["//visibility:public"],
-)
-
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:mapstruct",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/cdstage:module",
+        "//970-ng-commons/src/main/java/io/harness/constants:module",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/dto:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/access-control/sdk:module",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
 )
 

@@ -96,4 +96,5 @@ public class PipelineExecutionSummaryDTO {
 
   ExecutionMode executionMode;
   boolean notesExistForPlanExecutionId;
+  boolean shouldUseSimplifiedKey;
 }

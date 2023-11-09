@@ -23,7 +23,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
@@ -48,7 +47,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardChecks;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
-import io.harness.spec.server.idp.v1.model.ScorecardStats;
+import io.harness.spec.server.idp.v1.model.ScorecardStatsResponse;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,7 +74,6 @@ public class ScorecardServiceImpl implements ScorecardService {
   private final CheckService checkService;
   private final ScoreService scoreService;
   private final ScoreComputerService scoreComputerService;
-  private final SetupUsageProducer setupUsageProducer;
   private final BackstageResourceClient backstageResourceClient;
 
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
@@ -92,14 +90,13 @@ public class ScorecardServiceImpl implements ScorecardService {
 
   @Inject
   public ScorecardServiceImpl(ScorecardRepository scorecardRepository, CheckService checkService,
-      ScoreService scoreService, ScoreComputerService scoreComputerService, SetupUsageProducer setupUsageProducer,
+      ScoreService scoreService, ScoreComputerService scoreComputerService,
       BackstageResourceClient backstageResourceClient, TransactionTemplate transactionTemplate,
       OutboxService outboxService) {
     this.scorecardRepository = scorecardRepository;
     this.checkService = checkService;
     this.scoreService = scoreService;
     this.scoreComputerService = scoreComputerService;
-    this.setupUsageProducer = setupUsageProducer;
     this.backstageResourceClient = backstageResourceClient;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
@@ -179,8 +176,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardCreateEvent(accountIdentifier, savedScorecardDetailsResponse));
-
-      setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
       return true;
     }));
   }
@@ -214,10 +209,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardUpdateEvent(accountIdentifier, updatedScorecardDetails, oldScorecardDetails));
-
-      setupUsageProducer.deleteScorecardSetupUsage(
-          accountIdentifier, scorecardDetailsRequest.getScorecard().getIdentifier());
-      setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
       return true;
     }));
   }
@@ -293,9 +284,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardDeleteEvent(accountIdentifier, toBeDeletedScorecardDetails));
-
-      setupUsageProducer.deleteScorecardSetupUsage(accountIdentifier, identifier);
-
       return true;
     }));
   }
@@ -309,9 +297,14 @@ public class ScorecardServiceImpl implements ScorecardService {
   }
 
   @Override
-  public List<ScorecardStats> getScorecardStats(String accountIdentifier, String identifier) {
-    List<ScorecardFilter> filters = getScorecardFilters(accountIdentifier, List.of(identifier));
-    Set<BackstageCatalogEntity> entities = scoreComputerService.getAllEntities(accountIdentifier, null, filters);
+  public ScorecardStatsResponse getScorecardStats(String accountIdentifier, String identifier) {
+    ScorecardEntity scorecardEntity =
+        scorecardRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    if (scorecardEntity == null || !scorecardEntity.isPublished()) {
+      throw new InvalidRequestException(String.format("Scorecard stats not found for scorecardId [%s]", identifier));
+    }
+    Set<BackstageCatalogEntity> entities =
+        scoreComputerService.getAllEntities(accountIdentifier, null, List.of(scorecardEntity.getFilter()));
     Map<String, Integer> scoreMap =
         scoreService
             .getScoresForEntityIdentifiersAndScorecardIdentifiers(accountIdentifier,
@@ -320,7 +313,7 @@ public class ScorecardServiceImpl implements ScorecardService {
             .stream()
             .collect(
                 Collectors.toMap(EntityIdentifierAndScore::getEntityIdentifier, EntityIdentifierAndScore::getScore));
-    return ScorecardStatsMapper.toDTO(entities, scoreMap);
+    return ScorecardStatsMapper.toDTO(entities, scoreMap, scorecardEntity.getName());
   }
 
   @Override

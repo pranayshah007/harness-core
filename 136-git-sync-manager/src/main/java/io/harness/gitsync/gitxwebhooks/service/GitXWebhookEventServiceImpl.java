@@ -158,6 +158,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .eventTriggerTime(gitXWebhookEvent.getEventTriggeredTime())
         .payload(gitXWebhookEvent.getPayload())
         .eventIdentifier(gitXWebhookEvent.getEventIdentifier())
+        .eventStatus(gitXWebhookEvent.getEventStatus())
         .build();
   }
 
@@ -182,6 +183,9 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     }
     if (isNotEmpty(gitXEventsListRequestDTO.getEventIdentifier())) {
       criteria.and(GitXWebhookEventKeys.eventIdentifier).is(gitXEventsListRequestDTO.getEventIdentifier());
+    }
+    if (isNotEmpty(gitXEventsListRequestDTO.getEventStatus())) {
+      criteria.and(GitXWebhookEventKeys.eventStatus).is(gitXEventsListRequestDTO.getEventStatus());
     }
     return criteria;
   }

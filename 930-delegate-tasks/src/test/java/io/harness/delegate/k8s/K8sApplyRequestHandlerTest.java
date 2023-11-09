@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,11 +35,13 @@ import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.K8sTaskManifestValidator;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.KubernetesTaskException;
+import io.harness.filesystem.FileIo;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -50,6 +53,7 @@ import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +69,8 @@ import org.mockito.MockitoAnnotations;
 public class K8sApplyRequestHandlerTest extends CategoryTest {
   @Mock private K8sApplyBaseHandler k8sApplyBaseHandler;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock private K8sTaskManifestValidator k8sTaskManifestValidator;
+
   @Mock private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
 
   @InjectMocks private K8sApplyRequestHandler requestHandler;
@@ -557,5 +563,77 @@ public class K8sApplyRequestHandlerTest extends CategoryTest {
         .steadyStateCheck(false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback,
             k8sApplyHandlerConfig, true, true, false);
     verify(k8sApplyBaseHandler, times(0)).wrapUp(eq(delegateTaskParams), eq(logCallback), any(Kubectl.class));
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testShouldApplyManifestsSuccessManifestSource() throws Exception {
+    List<String> valuesList = Collections.emptyList();
+    List<String> filePaths = Arrays.asList("deploy.yaml", "k8s/manifest/templates");
+    List<String> pathsInFolder =
+        Arrays.asList("k8s/manifest/templates/service.yaml", "k8s/manifest/templates/template.yaml");
+    List<String> finalPaths =
+        Arrays.asList("deploy.yaml", "k8s/manifest/templates/service.yaml", "k8s/manifest/templates/template.yaml");
+    K8sApplyRequest applyRequest = K8sApplyRequest.builder()
+                                       .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                       .manifestDelegateConfig(manifestDelegateConfig)
+                                       .accountId(accountId)
+                                       .releaseName(releaseName)
+                                       .filePaths(filePaths)
+                                       .timeoutIntervalInMin(timeoutIntervalInMin)
+                                       .valuesYamlList(valuesList)
+                                       .commandName("K8s Apply")
+                                       .skipDryRun(true)
+                                       .skipSteadyStateCheck(false)
+                                       .useManifestSource(true)
+                                       .build();
+    FileIo.createDirectoryIfDoesNotExist(manifestFileDirectory);
+    Files.createFile(Paths.get(manifestFileDirectory, "deploy.yaml"));
+    FileIo.createDirectoryIfDoesNotExist("manifest/manifest-files/k8s/manifest/templates");
+    Files.createFile(Paths.get("manifest/manifest-files/k8s/manifest/templates", "service.yaml"));
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+
+    List<KubernetesResource> resources = Arrays.asList(
+        KubernetesResource.builder()
+            .spec("spec")
+            .resourceId(
+                KubernetesResourceId.builder().namespace(namespace).kind("deployment").name("test-deployment").build())
+            .build());
+    doReturn(pathsInFolder).when(k8sTaskManifestValidator).getFilesToApplyInFolder(any(), any(), any());
+    doReturn(resources)
+        .when(k8sTaskHelperBase)
+        .getResourcesFromManifests(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, finalPaths,
+            valuesList, releaseName, namespace, logCallback, timeoutIntervalInMin, false);
+    doReturn(true).when(k8sApplyBaseHandler).prepare(logCallback, false, k8sApplyHandlerConfig, true);
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .applyManifests(any(Kubectl.class), eq(resources), eq(delegateTaskParams), eq(logCallback), eq(true), eq(true),
+            anyString());
+    doReturn(true)
+        .when(k8sApplyBaseHandler)
+        .steadyStateCheck(false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback,
+            k8sApplyHandlerConfig, true, true, false);
+
+    K8sDeployResponse response = requestHandler.executeTaskInternal(
+        applyRequest, delegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+
+    verify(k8sTaskHelperBase, times(1))
+        .getResourcesFromManifests(eq(delegateTaskParams), eq(manifestDelegateConfig), eq(manifestFileDirectory),
+            eq(finalPaths), eq(valuesList), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin),
+            eq(false));
+    verify(k8sTaskManifestValidator, times(1)).getFilesToApplyInFolder(any(), any(), any());
+    verify(k8sApplyBaseHandler, times(1)).prepare(eq(logCallback), eq(false), eq(k8sApplyHandlerConfig), eq(true));
+    verify(k8sTaskHelperBase, times(1))
+        .applyManifests(any(Kubectl.class), eq(resources), eq(delegateTaskParams), eq(logCallback), eq(true), eq(true),
+            anyString());
+    verify(k8sApplyBaseHandler, times(1))
+        .steadyStateCheck(false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback,
+            k8sApplyHandlerConfig, true, true, false);
+    verify(k8sApplyBaseHandler, times(1)).wrapUp(eq(delegateTaskParams), eq(logCallback), any(Kubectl.class));
+    FileIo.deleteDirectoryAndItsContentIfExists(manifestFileDirectory);
   }
 }

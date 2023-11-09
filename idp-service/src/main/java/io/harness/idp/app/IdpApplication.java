@@ -44,6 +44,7 @@ import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
@@ -204,9 +205,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
     environment.jersey().register(injector.getInstance(IdpServiceRequestInterceptor.class));
+    environment.jersey().register(injector.getInstance(IdpServiceResponseInterceptor.class));
     injector.getInstance(IDPTelemetryRecordsJob.class).scheduleTasks();
+    initMetrics(injector);
 
-    //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
 
@@ -249,6 +251,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
 
   private void initMetrics(Injector injector) {
     injector.getInstance(MetricService.class).initializeMetrics();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 
   private void registerHealthChecksManager(Environment environment, Injector injector) {

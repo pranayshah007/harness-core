@@ -107,9 +107,7 @@ import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.preprocess.YamlPreProcessor;
 import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
-import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -320,11 +318,7 @@ public class ExecutionHelper {
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
         // Adds ids in all the stages and steps where it doesn't already exists
         // For templates, the ids will be added by template service during template resolution
-        YamlPreProcessor preProcessor = yamlPreProcessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
-        if (preProcessor != null) {
-          YamlPreprocessorResponseDTO yamlPreprocessorResponseDTO = preProcessor.preProcess(pipelineYaml);
-          pipelineYaml = YamlUtils.writeYamlString(yamlPreprocessorResponseDTO.getPreprocessedJsonNode());
-        }
+        pipelineYaml = pmsPipelineServiceHelper.preProcessPipelineYaml(pipelineYaml);
         pipelineYamlWithTemplateRef = pipelineYaml;
         templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(
             YamlUtils.readAsJsonNode(pipelineYaml), pipelineEntity, System.currentTimeMillis());

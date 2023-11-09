@@ -184,6 +184,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         .id(artifact.getArtifactId())
         .name(artifact.getName())
         .tag(artifact.getTag())
+        .url(artifact.getUrl())
         .componentsCount(artifact.getComponentsCount().intValue())
         .updated(String.format("%d", artifact.getLastUpdatedAt()))
         .prodEnvCount(artifact.getProdEnvCount().intValue())
@@ -409,6 +410,7 @@ public class ArtifactServiceImpl implements ArtifactService {
               .id(artifact.getArtifactId())
               .name(artifact.getName())
               .tag(artifact.getTag())
+              .url(artifact.getUrl())
               .componentsCount(artifact.getComponentsCount().intValue())
               .allowListViolationCount(String.valueOf(enforcementSummary.getAllowListViolationCount()))
               .denyListViolationCount(String.valueOf(enforcementSummary.getDenyListViolationCount()))
@@ -486,7 +488,8 @@ public class ArtifactServiceImpl implements ArtifactService {
       case PROD:
         return Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0);
       case ALL:
-        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0).and(ArtifactEntityKeys.prodEnvCount).gt(0);
+        return new Criteria().orOperator(Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0),
+            Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0));
       case NONE:
         return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).is(0).and(ArtifactEntityKeys.prodEnvCount).is(0);
       default:

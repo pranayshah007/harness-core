@@ -12,6 +12,8 @@ import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
 import io.harness.delegate.core.beans.K8SStep;
 
+import java.util.stream.Collectors;
+
 public interface K8SStepMapper {
   static K8SStep map(final StepSpec task, final String taskId) {
     if (task == null) {
@@ -25,6 +27,8 @@ public interface K8SStepMapper {
         .setMode(ExecutionMode.MODE_ONCE)
         .setPriority(ExecutionPriority.PRIORITY_DEFAULT)
         .setRuntime(stepRuntime)
+        .addAllInputSecrets(
+            task.getSecrets().getSecretsList().stream().map(SecretToSecretRefMapper::map).collect(Collectors.toList()))
         .build();
   }
 }

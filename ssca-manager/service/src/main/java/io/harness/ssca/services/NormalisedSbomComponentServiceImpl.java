@@ -153,9 +153,7 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
                               .is(projectIdentifier);
 
       criteria.andOperator(getLicenseCriteria(licenseFilter));
-      return sbomComponentRepo.findAll(criteria, Pageable.unpaged())
-          .map(NormalizedSBOMComponentEntity::getOrchestrationId)
-          .toList();
+      return sbomComponentRepo.findDistinctOrchestrationIds(criteria);
     }
     return new ArrayList<>();
   }
@@ -171,9 +169,7 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
                               .is(projectIdentifier);
 
       criteria.andOperator(getComponentCriteria(componentFilter));
-      return sbomComponentRepo.findAll(criteria, Pageable.unpaged())
-          .map(NormalizedSBOMComponentEntity::getOrchestrationId)
-          .toList();
+      return sbomComponentRepo.findDistinctOrchestrationIds(criteria);
     }
     return new ArrayList<>();
   }

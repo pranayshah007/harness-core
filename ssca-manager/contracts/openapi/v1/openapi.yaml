@@ -982,6 +982,8 @@ components:
           type: string
         tag:
           type: string
+        url:
+          type: string
         components_count:
           type: integer
         allow_list_violation_count:
@@ -1021,6 +1023,8 @@ components:
         id:
           type: string
         name:
+          type: string
+        url:
           type: string
         tag:
           type: string

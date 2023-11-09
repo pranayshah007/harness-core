@@ -101,6 +101,7 @@ import io.harness.steps.shellscript.HarnessFileStoreSource;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -398,7 +399,13 @@ public class SshCommandStepHelper extends CDStepHelper {
                 : SESSION_TIMEOUT)
         .disableWinRmEnvVarEscaping(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS))
+        .preserveWinrmWorkingDir(getPreserveWinrmWorkingDir(accountId))
         .build();
+  }
+
+  @VisibleForTesting
+  boolean getPreserveWinrmWorkingDir(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS);
   }
 
   private WinrmTaskParameters createRollbackWinRmTaskParameters(Ambiance ambiance,

@@ -28,4 +28,5 @@ public class GitXEventDTO {
   long eventTriggerTime;
   String webhookIdentifier;
   String payload;
+  String eventStatus;
 }

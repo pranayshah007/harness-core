@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 62
+version: 63
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1724,3 +1724,15 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ccm_commitmentOrchestrator_edit
+    name: Setup CCM Commitment Orchestration
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_commitmentOrchestrator_view
+      name: View CCM Commitment Orchestration
+      status: ACTIVE
+      includedInAllRoles: false
+      allowedScopeLevels:
+        - account

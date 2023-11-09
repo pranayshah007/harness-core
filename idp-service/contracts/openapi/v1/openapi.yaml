@@ -281,7 +281,7 @@ paths:
       summary: Get Status Info by type
       description: Get Status Info for the given type
       tags:
-        - StatusInfo
+        - StatusInfoV2
       responses:
         '200':
           $ref: '#/components/responses/StatusInfoResponseV2'
@@ -3496,6 +3496,26 @@ components:
         - kind
         - type
         - score
+    ScorecardStatsResponse:
+      title: ScorecardStatsResponse
+      x-stoplight:
+        id: csadnzoryu4um
+      description: ScorecardStatsResponse
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: czewiwd87fr8u
+        stats:
+          type: array
+          x-stoplight:
+            id: f4tm5re3zal0h
+          items:
+            $ref: '#/components/schemas/ScorecardStats'
+      required:
+        - name
+        - stats
     CheckStats:
       title: CheckStats
       x-stoplight:
@@ -3535,6 +3555,27 @@ components:
         - kind
         - type
         - status
+    CheckStatsResponse:
+      title: CheckStatsResponse
+      x-stoplight:
+        id: 1hhr4bzpt278k
+      type: object
+      description: CheckStatsResponse
+      x-internal: true
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 5kkekddw3r1zh
+        stats:
+          x-stoplight:
+            id: nd4na7s04suxx
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckStats'
+      required:
+        - name
+        - stats
     CheckGraph:
       title: CheckGraph
       x-stoplight:
@@ -4280,12 +4321,12 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/ScorecardStats'
+              $ref: '#/components/schemas/ScorecardStatsResponse'
         application/yaml:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/ScorecardStats'
+              $ref: '#/components/schemas/ScorecardStatsResponse'
     CheckStatsResponse:
       description: Response for check stats
       content:
@@ -4293,12 +4334,12 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/CheckStats'
+              $ref: '#/components/schemas/CheckStatsResponse'
         application/yaml:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/CheckStats'
+              $ref: '#/components/schemas/CheckStatsResponse'
     CheckGraphResponse:
       description: Response for check graph data
       content:

@@ -7,8 +7,9 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.MetricLessServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -25,6 +26,7 @@ import lombok.experimental.SuperBuilder;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = WindowBasedServiceLevelIndicatorSpec.class, name = "Window")
   , @JsonSubTypes.Type(value = RequestBasedServiceLevelIndicatorSpec.class, name = "Request"),
+      @JsonSubTypes.Type(value = MetricLessServiceLevelIndicatorSpec.class, name = "MetricLess"),
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class ServiceLevelIndicatorSpec {

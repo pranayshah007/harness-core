@@ -142,7 +142,7 @@ public class GitStoreDownloadServiceTest extends CategoryTest {
                                                            .build();
 
     FetchFilesResult result = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
-    verify(scmFetchFilesHelper).downloadFilesUsingScm(OUTPUT_DIR, storeDelegateConfig, logCallback);
+    verify(scmFetchFilesHelper).downloadFilesUsingScm(OUTPUT_DIR, storeDelegateConfig, logCallback, false);
     assertThat(result.getFiles())
         .containsAll(files.stream()
                          .map(file -> Paths.get(OUTPUT_DIR, file).toAbsolutePath().toString())

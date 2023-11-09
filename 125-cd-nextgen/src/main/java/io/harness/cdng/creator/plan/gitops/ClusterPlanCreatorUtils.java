@@ -19,6 +19,7 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.ClusterStepParameters.ClusterStepParametersBuilder;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
@@ -168,7 +169,7 @@ public class ClusterPlanCreatorUtils {
         .build();
   }
 
-  private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {
+  private Set<ClusterAgentRef> getClusterRefs(EnvironmentPlanCreatorConfig config) {
     return new HashSet<>(config.getGitOpsClusterRefs());
   }
 

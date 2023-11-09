@@ -124,12 +124,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-  resources:
-    limits:
-      memory: 128Mi
-    requests:
-      cpu: 128m
-      memory: 128Mi
   containerSecurityContext:
     runAsUser: 65534
     runAsNonRoot: true

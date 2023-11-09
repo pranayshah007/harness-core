@@ -21,7 +21,6 @@ public class SLOConsumptionBreakdown {
   String monitoredServiceIdentifier;
   String serviceName;
   String environmentIdentifier;
-  ServiceLevelIndicatorType sliType;
   @NotNull double weightagePercentage;
   @NotNull double sloTargetPercentage;
   @NotNull double sliStatusPercentage;

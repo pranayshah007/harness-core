@@ -33,6 +33,7 @@ const (
 	storage            = "/storage/"
 	authTokenheader    = "Authorization"
 	vanity             = "-vanity"
+	NA                 = "NA" //Refers to cache key for accounts that dont have any vanity url
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -241,7 +242,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			}
 			if cfg.Platform.VanityURLEnabled {
 				//Get vanity URL from cache if it exists else calculate
-				vanityURL, err := getVanityURLCacheKey(ctx, accountID, prefix, c, cfg, r)
+				vanityURL, err := getVanityURLFromCache(ctx, accountID, prefix, c, cfg, r)
 				if err != nil {
 					logger.FromRequest(r).
 						WithError(err).
@@ -250,30 +251,15 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				}
 				if vanityURL == "" {
 					logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity URL does not exists in cache fetching from platform")
-					vanityURL, err = ngClient.GetVanityURL(ctx, accountID, r.Header.Get(authTokenheader))
-					if err != nil || vanityURL == "" {
+					vanityURL, err = getVanityURLFromPlatform(ctx, accountID, c, cfg, r, ngClient)
+					if err != nil {
 						logger.FromRequest(r).
 							WithError(err).
-							WithField(usePrefixParam, prefix).
-							Warnln("api: cannot fetch the vanity url")
-					} else {
-						err = c.Create(ctx, accountID+vanity, vanityURL, cfg.Platform.VanityURLTTL)
-						if err != nil {
-							logger.FromRequest(r).
-								WithError(err).
-								WithField("vanity_url", vanityURL).
-								WithField("prefix", prefix).
-								Warnln("api: cannot create cache for vanity URL")
-						} else {
-							logger.FromRequest(r).
-								WithError(err).
-								WithField("vanity_url", vanityURL).
-								WithField("prefix", prefix).
-								Infoln("api: created cache for vanity URL")
-						}
+							WithField("prefix", prefix).
+							Errorln("api: cannot fetch vanityURL from platform")
 					}
 				}
-				if vanityURL != "" {
+				if vanityURL != "" && vanityURL != NA {
 					link, err = replaceVanityURL(vanityURL, link, prefix)
 					if err != nil {
 						logger.FromRequest(r).
@@ -284,6 +270,8 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 					} else {
 						logger.FromRequest(r).WithField("prefix", prefix).Infoln("successfully replaced with vanity url")
 					}
+				} else {
+					logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity url does not exist for account")
 				}
 			}
 		}
@@ -398,6 +386,7 @@ func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.
 	return link, nil
 }
 
+// replaceVanityURL replaces the link with vanityURL of that account
 func replaceVanityURL(vanityURL, link, prefix string) (string, error) {
 	lstring := strings.SplitN(link, storage, 2)
 
@@ -408,16 +397,42 @@ func replaceVanityURL(vanityURL, link, prefix string) (string, error) {
 	return link, fmt.Errorf("Error Splitting Vanity URL %s", link)
 }
 
-func getVanityURLCacheKey(ctx context.Context, accountID, prefix string, c cache.Cache, cfg config.Config, r *http.Request) (string, error) {
+// getVanityURLFromCache gets the vanity URL from cache for the account if it exists
+func getVanityURLFromCache(ctx context.Context, accountID, prefix string, c cache.Cache, cfg config.Config, r *http.Request) (string, error) {
 	exists := c.Exists(ctx, accountID+vanity)
 	if exists {
-		logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity url exists in cache")
 		vanityURLBytes, err := c.Get(ctx, accountID+vanity)
 		if err != nil {
-			return "", err
+			return string(vanityURLBytes), err
 		} else {
 			return string(vanityURLBytes), nil
 		}
 	}
 	return "", fmt.Errorf("Vanity URL does not exist in cache")
+}
+
+// getVanityURLFromPlatform gets the vanity URL for the account
+func getVanityURLFromPlatform(ctx context.Context, accountID string, c cache.Cache, cfg config.Config, r *http.Request, ngClient *client.HTTPClient) (string, error) {
+	cookieToken, err := r.Cookie("token")
+	if err != nil {
+		return "", fmt.Errorf("Could not fetch token from Cookie: %v", err)
+	}
+
+	vanityURL, err := ngClient.GetVanityURL(ctx, accountID, "Bearer "+cookieToken.Value)
+	if err != nil {
+		return vanityURL, fmt.Errorf("api: cannot fetch the vanity url: %v", err)
+	}
+	if vanityURL == "" {
+		//Add NA to cache if vanity URL does not exist for account
+		err = c.Create(ctx, accountID+vanity, NA, cfg.Platform.VanityURLTTL)
+		if err != nil {
+			return vanityURL, fmt.Errorf("api: cannot create cache for vanity URL: %v", err)
+		}
+		return NA, fmt.Errorf("api: vanity_url does not exist for account setting dummy")
+	}
+	err = c.Create(ctx, accountID+vanity, vanityURL, cfg.Platform.VanityURLTTL)
+	if err != nil {
+		return vanityURL, fmt.Errorf("api: cannot create cache for vanity URL: %v", err)
+	}
+	return vanityURL, nil
 }
