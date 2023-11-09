@@ -133,13 +133,13 @@ public class GitOpsRequestDTOMapper {
                          .build()
                          .toString())
         .instanceType(InstanceType.K8S_INSTANCE)
-        .lastDeployedAt(gitOpsInstance.getLastExecutedAt())
+//        .lastDeployedAt(gitOpsInstance.getLastExecutedAt())
         .podCreatedAt(gitOpsInstance.getLastDeployedAt())
         .instanceInfoDTO(instanceInfoDTO)
-        .lastPipelineExecutionName(gitOpsInstance.getPipelineName())
-        .lastPipelineExecutionId(gitOpsInstance.getPipelineExecutionId())
-        .lastDeployedByName(gitOpsInstance.getLastDeployedByName())
-        .lastDeployedById(gitOpsInstance.getLastDeployedById())
+//        .lastPipelineExecutionName(gitOpsInstance.getPipelineName())
+//        .lastPipelineExecutionId(gitOpsInstance.getPipelineExecutionId())
+//        .lastDeployedByName(gitOpsInstance.getLastDeployedByName())
+//        .lastDeployedById(gitOpsInstance.getLastDeployedById())
         .build();
   }
 
