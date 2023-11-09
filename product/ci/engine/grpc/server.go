@@ -22,7 +22,7 @@ const (
 )
 
 var (
-   remoteClient = external.GetRemoteHTTPClient
+   remoteLogClient = external.GetRemoteHTTPClient
 )
 
 //go:generate mockgen -source server.go -package=grpc -destination mocks/server_mock.go EngineServer
@@ -64,11 +64,11 @@ func NewEngineServer(port uint, log *zap.SugaredLogger, procWriter io.Writer) (E
 // Start signals the GRPC server to begin serving on the configured port
 func (s *engineServer) Start() error {
 	pb.RegisterLiteEngineServer(s.grpcServer, NewEngineHandler(s.log, s.procWriter))
-	client, _ := remoteClient()
-	logProxyHandler, err := NewLogProxyHandler(s.log, client)
+	client, err := remoteLogClient()
 	if err != nil {
-		return err
-	}
+    	return err
+    }
+	logProxyHandler := NewLogProxyHandler(s.log, client)
 	pb.RegisterLogProxyServer(s.grpcServer, logProxyHandler)
 	pb.RegisterTiProxyServer(s.grpcServer, NewTiProxyHandler(s.log, s.procWriter))
 	err = s.grpcServer.Serve(s.listener)

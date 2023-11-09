@@ -13,15 +13,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"github.com/harness/harness-core/product/log-service/client"
 	"github.com/harness/harness-core/product/log-service/stream"
 	"go.uber.org/zap"
-)
-
-var (
-	remoteLogClient = external.GetRemoteHTTPClient
 )
 
 // handler is used to implement EngineServer
@@ -31,12 +26,8 @@ type logProxyHandler struct {
 }
 
 // NewEngineHandler returns a GRPC handler that implements pb.EngineServer
-func NewLogProxyHandler(log *zap.SugaredLogger, client client.Client) (pb.LogProxyServer, error) {
-	client, err := remoteLogClient()
-	if err != nil {
-		return nil, err
-	}
-	return &logProxyHandler{log, client}, nil
+func NewLogProxyHandler(log *zap.SugaredLogger, client client.Client) pb.LogProxyServer {
+	return &logProxyHandler{log, client}
 }
 
 // Write writes to a log stream.
