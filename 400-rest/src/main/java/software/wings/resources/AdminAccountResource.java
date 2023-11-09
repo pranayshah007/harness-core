@@ -12,8 +12,6 @@ import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import static java.util.stream.Collectors.toList;
-
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,10 +46,8 @@ import software.wings.service.intfc.DelegateService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
