@@ -76,10 +76,12 @@ roles:
         - core_template_edit
         - core_template_view
         - core_governancePolicySets_view
+        - core_governancePolicySets_create
         - core_governancePolicySets_edit
         - core_governancePolicySets_delete
         - core_governancePolicySets_evaluate
         - core_governancePolicy_view
+        - core_governancePolicy_create
         - core_governancePolicy_edit
         - core_governancePolicy_delete
         - chi_monitoredservice_view
@@ -286,10 +288,12 @@ roles:
         - core_template_edit
         - core_template_view
         - core_governancePolicySets_view
+        - core_governancePolicySets_create
         - core_governancePolicySets_edit
         - core_governancePolicySets_delete
         - core_governancePolicySets_evaluate
         - core_governancePolicy_view
+        - core_governancePolicy_create
         - core_governancePolicy_edit
         - core_governancePolicy_delete
         - core_pipeline_edit
@@ -530,10 +534,12 @@ roles:
         - core_template_edit
         - core_template_view
         - core_governancePolicySets_view
+        - core_governancePolicySets_create
         - core_governancePolicySets_edit
         - core_governancePolicySets_delete
         - core_governancePolicySets_evaluate
         - core_governancePolicy_view
+        - core_governancePolicy_create
         - core_governancePolicy_edit
         - core_governancePolicy_delete
         - core_project_delete

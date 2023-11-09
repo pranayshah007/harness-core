@@ -655,8 +655,15 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_governancePolicy_create
+    name: Create Policies
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_governancePolicy_edit
-    name: Create or Edit Policies
+    name: Edit Policies
     status: ACTIVE
     allowedScopeLevels:
       - account
@@ -676,8 +683,15 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_governancePolicySets_create
+    name: Create Policy Sets
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_governancePolicySets_edit
-    name: Create or Edit Policy Sets
+    name: Edit Policy Sets
     status: ACTIVE
     allowedScopeLevels:
       - account

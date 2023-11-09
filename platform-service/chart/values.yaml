@@ -175,7 +175,6 @@ global:
       gateways:
       hosts:
 
-<<<<<<< HEAD
 redis:
   protocol: ""
   hosts: []

@@ -20,6 +20,7 @@ resourceToPermissionsExceptionMapping:
     - sto_ticket_view
   - resourceIdentifier: GOVERNANCEPOLICY
     permissions:
+    - core_governancePolicySets_create
     - core_governancePolicySets_edit
   - resourceIdentifier: CONNECTOR
     permissions:
