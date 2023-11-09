@@ -8,13 +8,13 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import static io.harness.rule.OwnerRule.*;
-import static org.mockito.ArgumentMatchers.*;
+
 import static software.wings.beans.Account.Builder.anAccount;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -197,9 +197,9 @@ public class AdminAccountResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetRecentUpdatedAccount() {
     RestResponse<List<AccountSummary>> response = RESOURCES.client()
-            .target("/admin/accounts/recently-updated-accounts")
-            .request()
-            .get(new GenericType<RestResponse<List<AccountSummary>>>() {});
+                                                      .target("/admin/accounts/recently-updated-accounts")
+                                                      .request()
+                                                      .get(new GenericType<RestResponse<List<AccountSummary>>>() {});
     verify(adminAccountService).getAccountsUpdatedSinceTimestamp(anyLong());
     verify(adminAccountService).getAccountSummaries(any());
   }

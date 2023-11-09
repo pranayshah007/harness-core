@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ccm.anomaly.AnomalyDataStub.accountId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+
 import static java.util.stream.Collectors.toList;
-import io.harness.persistence.UuidAware;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.HarnessModule;
@@ -35,6 +35,7 @@ import io.harness.limits.impl.model.StaticLimit;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.common.beans.Generation;
+import io.harness.persistence.UuidAware;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Account;
@@ -47,7 +48,6 @@ import software.wings.service.intfc.DelegateService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +110,6 @@ public class AdminAccountResource {
   public RestResponse<AccountSummary> getAccountSummaryByAccountId(@PathParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(adminAccountService.getAccountSummaryByAccountId(accountId));
   }
-
 
   @GET
   @Path("{accountId}/license")
@@ -206,9 +205,10 @@ public class AdminAccountResource {
   @GET
   @Path("recently-updated-accounts")
   public RestResponse<List<AccountSummary>> getRecentAccountUpdates(@QueryParam("timestamp") long timestamp) {
-    List<String> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp).stream()
-            .map(UuidAware::getUuid)
-            .collect(Collectors.toList());
+    List<String> updatedAccountsIds = adminAccountService.getAccountsUpdatedSinceTimestamp(timestamp)
+                                          .stream()
+                                          .map(UuidAware::getUuid)
+                                          .collect(Collectors.toList());
     return new RestResponse<>(adminAccountService.getAccountSummaries(updatedAccountsIds));
   }
 
