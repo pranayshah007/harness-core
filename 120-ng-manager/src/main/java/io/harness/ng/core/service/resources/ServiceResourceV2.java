@@ -57,6 +57,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
@@ -243,6 +244,12 @@ public class ServiceResourceV2 {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+      }
+      if (StoreType.REMOTE.equals(serviceEntity.get().getStoreType())) {
+        // validate YAML coming from remote
+        ServiceEntity entity = serviceEntity.get();
+        ServiceElementMapper.validateYamlElseThrow(entity.getAccountIdentifier(), entity.getOrgIdentifier(),
+            entity.getProjectIdentifier(), entity.getIdentifier(), entity.getYaml());
       }
     } else {
       throw new NotFoundException(

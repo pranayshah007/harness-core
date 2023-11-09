@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.mappers;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -18,11 +19,14 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.rule.Owner;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -439,5 +443,35 @@ public class ServiceElementMapperTest extends CategoryTest {
                                                .build();
     return new Object[][] {
         {requestServiceEntity_1, ServiceResponseDTO_1}, {requestServiceEntity_2, ServiceResponseDTO_2}};
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateYamlForRemoteService() {
+    GitAwareContextHelper.updateGitEntityContext(
+        GitEntityInfo.builder().filePath(".harness/IDENTIFIER.yaml").branch("main").build());
+
+    String invalidYaml = "service:\n"
+        + "name: IDENTIFIER\n"
+        + "  identifier: IDENTIFIER\n"
+        + "  orgIdentifier: ORG_ID\n"
+        + "  projectIdentifier: PROJECT_ID\n"
+        + "serviceDefinition:\n"
+        + "  spec:\n"
+        + "    variables:\n"
+        + "      - name: svar1\n"
+        + "        type: String\n"
+        + "        description: \"\"\n"
+        + "        required: false\n"
+        + "        value: <+input>\n"
+        + "  type: Kubernetes";
+
+    assertThatThrownBy(()
+                           -> ServiceElementMapper.validateYamlElseThrow(
+                               "ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", invalidYaml))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessageContaining(
+            "File found on Git in branch [main] for filepath [.harness/IDENTIFIER.yaml] is not a YAML.");
   }
 }

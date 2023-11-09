@@ -20,7 +20,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.CacheResponse;
@@ -33,9 +36,12 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
@@ -255,5 +261,32 @@ public class ServiceElementMapper {
         .projectIdentifier(serviceEntity.getProjectIdentifier())
         .tags(convertToMap(serviceEntity.getTags()))
         .build();
+  }
+
+  public static void validateYamlElseThrow(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, String importedService) {
+    if (EmptyPredicate.isEmpty(importedService)) {
+      String errorMessage =
+          format("Empty YAML found on Git in branch [%s] for service [%s] under Project[%s], Organization [%s].",
+              GitAwareContextHelper.getBranchInRequest(), serviceIdentifier, projectIdentifier, orgIdentifier);
+      throw buildInvalidYamlException(errorMessage, importedService);
+    }
+
+    try {
+      YamlUtils.readTree(importedService);
+    } catch (IOException e) {
+      String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a YAML.",
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw buildInvalidYamlException(errorMessage, importedService);
+    }
+  }
+
+  private InvalidYamlException buildInvalidYamlException(String errorMessage, String serviceYaml) {
+    YamlSchemaErrorWrapperDTO errorWrapperDTO =
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.service").build()))
+            .build();
+    return new InvalidYamlException(errorMessage, errorWrapperDTO, serviceYaml);
   }
 }
