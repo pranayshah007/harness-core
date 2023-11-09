@@ -30,4 +30,5 @@ public class K8sInstanceInfo extends InstanceInfo {
   private String blueGreenColor;
   @NotNull private List<K8sContainer> containerList;
   private HelmChartInfo helmChartInfo;
+  private Boolean canary;
 }

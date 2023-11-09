@@ -97,6 +97,18 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   }
 
   @Override
+  public long deleteByScopeIdentifierAndRoleAssignmentIdentifier(
+      String scopeIdentifier, String roleAssignmentIdentifier) {
+    return mongoTemplate
+        .remove(new Query(Criteria.where(ACLKeys.scopeIdentifier)
+                              .is(scopeIdentifier)
+                              .and(ACL.ROLE_ASSIGNMENT_IDENTIFIER_KEY)
+                              .is(roleAssignmentIdentifier)),
+            ACL.class, getCollectionName())
+        .getDeletedCount();
+  }
+
+  @Override
   public Set<ResourceSelector> getDistinctResourceSelectorsInACLs(String roleAssignmentId) {
     Criteria criteria = Criteria.where(ACLKeys.roleAssignmentId)
                             .is(roleAssignmentId)

@@ -163,7 +163,8 @@ public class ServerlessTaskHelperBase {
       if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
         executionLogCallback.saveExecutionLog("Using optimized file fetch");
         gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
-        scmFetchFilesHelper.downloadFilesUsingScm(workingDirectory, gitStoreDelegateConfig, executionLogCallback);
+        scmFetchFilesHelper.downloadFilesUsingScm(
+            workingDirectory, gitStoreDelegateConfig, executionLogCallback, false);
       } else {
         GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
             gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -172,7 +173,8 @@ public class ServerlessTaskHelperBase {
             gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
-        ngGitService.downloadFiles(gitStoreDelegateConfig, workingDirectory, accountId, sshSessionConfig, gitConfigDTO);
+        ngGitService.downloadFiles(
+            gitStoreDelegateConfig, workingDirectory, accountId, sshSessionConfig, gitConfigDTO, false);
       }
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);

@@ -75,6 +75,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
 
     K8sRollingRollbackDeployRequest k8sRollingRollbackDeployRequest =
         (K8sRollingRollbackDeployRequest) k8sDeployRequest;
+    rollbackHandlerConfig.setKubernetesConfig(k8sDelegateTaskParams.getKubernetesConfig());
     LogCallback initLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
     Map<String, String> k8sCommandFlag = k8sRollingRollbackDeployRequest.getK8sCommandFlags();
@@ -139,8 +140,12 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", rollbackRequest.getReleaseName()), Yellow, Bold));
 
-    rollbackHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        rollbackRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    if (rollbackHandlerConfig.getKubernetesConfig() == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      rollbackHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          rollbackRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
+    }
+
     rollbackHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
     rollbackHandlerConfig.setUseDeclarativeRollback(rollbackRequest.isUseDeclarativeRollback());

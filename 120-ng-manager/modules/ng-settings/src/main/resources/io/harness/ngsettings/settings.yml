@@ -104,12 +104,13 @@ settings :
       ENTERPRISE:
         defaultValue: 35d
         editable: true
+
   - identifier: stage_timeout
     name: Max Stage Timeout
     category: PMS
-    defaultValue: 30m
-    groupIdentifier: pms_execution_settings
+    defaultValue: 1h
     valueType: STRING
+    groupIdentifier: pms_execution_settings
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
@@ -127,9 +128,9 @@ settings :
   - identifier: step_timeout
     name: Max Step Timeout
     category: PMS
-    groupIdentifier: pms_execution_settings
-    defaultValue: 30m
+    defaultValue: 1h
     valueType: STRING
+    groupIdentifier: pms_execution_settings
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION

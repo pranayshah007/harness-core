@@ -107,7 +107,7 @@ public class CommonTest extends CategoryTest {
     try {
       dataPointObjects = convertJsonToListOfMaps("migrations/scorecard/dataPoints.json");
     } catch (Exception e) {
-      fail("Not able to fetch data points");
+      fail("Not able to fetch data points with error: " + e.getMessage());
     }
 
     HashSet<String> dataPointConstants = fetchConstants(DataPoints.class);

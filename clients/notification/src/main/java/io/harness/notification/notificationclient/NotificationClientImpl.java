@@ -16,6 +16,7 @@ import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.messageclient.MessageClient;
+import io.harness.notification.model.NotificationRuleReferenceDTO;
 import io.harness.notification.remote.NotificationHTTPClient;
 import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
@@ -101,5 +102,12 @@ public class NotificationClientImpl implements NotificationClient {
   @Override
   public boolean isDefaultSMTPPresent(String accountId) {
     return getResponse(notificationHTTPClient.isDefaultSMTPPresent(accountId));
+  }
+
+  @Override
+  public NotificationRuleReferenceDTO getNotificationRule(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String notificationEntity, String notificationEvent) {
+    return getResponse(notificationHTTPClient.getNotificationRule(
+        accountIdentifier, orgIdentifier, projectIdentifier, notificationEntity, notificationEvent));
   }
 }

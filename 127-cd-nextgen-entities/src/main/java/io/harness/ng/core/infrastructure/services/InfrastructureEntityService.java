@@ -108,4 +108,10 @@ public interface InfrastructureEntityService {
 
   List<String> filterServicesByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
+
+  void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, String envRef, String infraRef);
+
+  void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
 }

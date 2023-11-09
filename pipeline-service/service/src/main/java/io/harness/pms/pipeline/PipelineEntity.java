@@ -162,7 +162,7 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
 
   @Wither @EntityName String name;
   @Wither @Size(max = 1024) String description;
-  @Wither @Singular @Size(max = 128) List<NGTag> tags;
+  @Wither @Size(max = 128) List<NGTag> tags;
 
   @Wither @Version Long version;
 

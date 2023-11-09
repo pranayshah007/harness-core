@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -62,4 +63,5 @@ public class DelegateTaskPackage {
   private LinkedHashMap<String, String> logStreamingAbstractions;
   private boolean shouldSkipOpenStream;
   private String baseLogKey;
+  @Default private AtomicBoolean isAborted = new AtomicBoolean();
 }

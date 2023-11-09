@@ -10,6 +10,7 @@ package io.harness.notification.remote;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
+import io.harness.notification.model.NotificationRuleReferenceDTO;
 import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
@@ -35,6 +36,12 @@ public interface NotificationHTTPClient {
 
   @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
 
- @GET("api/channels/isDefaultSMTPPresent")
- Call<ResponseDTO<Boolean>> isDefaultSMTPPresent(@Query(value = "accountId") String accountId);
+  @GET("api/channels/isDefaultSMTPPresent")
+  Call<ResponseDTO<Boolean>> isDefaultSMTPPresent(@Query(value = "accountId") String accountId);
+
+  @GET("notification-rule")
+  Call<ResponseDTO<NotificationRuleReferenceDTO>> getNotificationRule(
+      @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
+      @Query("projectIdentifier") String projectIdentifier, @Query("notificationEntity") String notificationEntity,
+      @Query("notificationEvent") String notificationEvent);
 }

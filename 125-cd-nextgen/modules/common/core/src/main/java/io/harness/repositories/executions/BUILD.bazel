@@ -18,6 +18,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/executions:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/provision/terraform/executions:module",

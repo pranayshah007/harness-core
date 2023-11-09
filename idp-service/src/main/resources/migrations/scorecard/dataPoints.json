@@ -12,7 +12,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description": "Branch name"
+        "description": "Branch name",
+        "required": true
       }
     ],
     "description": "Calculates average time taken to merge pull requests.",
@@ -43,7 +44,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description":  "Branch name"
+        "description":  "Branch name",
+        "required": true
       }
     ],
     "description": "Checks the branch protection rule if it is not allowed to force push and delete.",
@@ -86,7 +88,8 @@
     "inputDetails": [
       {
         "key": "filePath",
-        "description": "File path (e.g. src/index.js)"
+        "description": "File path (e.g. src/index.js)",
+        "required": true
       }
     ],
     "description": "Checks if the given filename exist or not.",
@@ -219,7 +222,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description": "Branch name"
+        "description": "Branch name",
+        "required": true
       }
     ],
     "description": "Calculates average time taken to merge pull requests.",
@@ -238,7 +242,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description":  "Branch name"
+        "description":  "Branch name",
+        "required": true
       }
     ],
     "description": "Checks the branch protection rule if it is not allowed to merge pull requests without approvals.",
@@ -257,7 +262,8 @@
     "inputDetails": [
       {
         "key": "jql",
-        "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)"
+        "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)",
+        "required": true
       }
     ],
     "description": "Calculates the average time taken to resolve issues for the given JQL query",
@@ -276,7 +282,8 @@
     "inputDetails": [
       {
         "key": "jql",
-        "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)"
+        "description":  "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)",
+        "required": true
       }
     ],
     "description": "Calculates the total number of issues for the given JQL query",
@@ -295,7 +302,8 @@
     "inputDetails": [
       {
         "key": "jql",
-        "description":  "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)"
+        "description":  "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)",
+        "required": true
       }
     ],
     "description": "Calculates the ratio between Open & Closed issues for the given JQL query",
@@ -314,7 +322,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description": "Branch name"
+        "description": "Branch name",
+        "required": true
       }
     ],
     "description": "Calculates average time taken to merge pull requests.",
@@ -333,7 +342,8 @@
     "inputDetails": [
       {
         "key": "branchName",
-        "description":  "Branch name"
+        "description":  "Branch name",
+        "required": true
       }
     ],
     "description": "Checks the branch protection rule if it is not allowed to force push.",
@@ -352,7 +362,8 @@
     "inputDetails": [
       {
         "key": "filePath",
-        "description": "File path (e.g. src/index.js)"
+        "description": "File path (e.g. src/index.js)",
+        "required": true
       }
     ],
     "description": "Checks if the given filename exist or not.",
@@ -382,7 +393,8 @@
     "inputDetails": [
       {
         "key": "filePath",
-        "description": "YAML filename with extension (ci-workflow.yml)"
+        "description": "YAML filename with extension (ci-workflow.yml)",
+        "required": true
       }
     ],
     "description": "Calculates success rate for the given workflow",
@@ -401,7 +413,8 @@
     "inputDetails": [
       {
         "key": "filePath",
-        "description": "YAML filename with extension (ci-workflow.yml)"
+        "description": "YAML filename with extension (ci-workflow.yml)",
+        "required": true
       }
     ],
     "description": "Calculates average time taken to complete workflow runs",
@@ -420,7 +433,8 @@
     "inputDetails": [
       {
         "key": "filePath",
-        "description": "YAML filename with extension (ci-workflow.yml)"
+        "description": "YAML filename with extension (ci-workflow.yml)",
+        "required": true
       }
     ],
     "description": "Calculates average time taken to complete successful workflow runs",
@@ -439,7 +453,8 @@
     "inputDetails": [
       {
         "key": "severityType",
-        "description": "Severity type (critical or high)"
+        "description": "Severity type (critical or high)",
+        "required": true
       }
     ],
     "description": "Calculates the total number of open alerts reported by Dependabot for the given severity",
@@ -458,7 +473,8 @@
     "inputDetails": [
       {
         "key": "severityType",
-        "description": "Severity type (critical or high)"
+        "description": "Severity type (critical or high)",
+        "required": true
       }
     ],
     "description": "Calculates the total number of open alerts reported in code scanning for the given severity",
@@ -489,62 +505,11 @@
     "inputDetails": [
       {
         "key": "accountName",
-        "description": "Account name (e.g: app/dependabot)"
+        "description": "Account name (e.g: app/dependabot)",
+        "required": true
       }
     ],
     "description": "Calculates the total number of open pull requests raised by the given account",
     "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by account.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
-  },
-  {
-    "id": "653772979a42f41b2bd082fe",
-    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "fileContents",
-    "name": "File contents",
-    "type": "STRING",
-    "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_file_contents",
-    "isConditional": true,
-    "inputDetails": [
-      {
-        "key": "branchName",
-        "description": "Branch Name"
-      },
-      {
-        "key": "filePath",
-        "description": "File path (e.g. src/index.js)"
-      },
-      {
-        "key": "pattern",
-        "description": "Regex Pattern to search for in the file"
-      }
-    ],
-    "description": "Gets the string matching the pattern from given file from the branch.",
-    "detailedDescription": "**How it's calculated:** "
-  },
-  {
-    "id": "6537ca6bf4f2d0d2eb140d32",
-    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "fileContains",
-    "name": "File contains",
-    "type": "BOOLEAN",
-    "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_file_contents",
-    "isConditional": true,
-    "inputDetails": [
-      {
-        "key": "branchName",
-        "description": "Branch Name"
-      },
-      {
-        "key": "filePath",
-        "description": "File path (e.g. src/index.js)"
-      },
-      {
-        "key": "pattern",
-        "description": "Regex Pattern to search for in the file"
-      }
-    ],
-    "description": "Matches the pattern in the given file from the branch.",
-    "detailedDescription": "**How it's calculated:** "
   }
 ]

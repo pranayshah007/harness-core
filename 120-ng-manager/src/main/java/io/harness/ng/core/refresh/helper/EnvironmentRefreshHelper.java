@@ -273,6 +273,7 @@ public class EnvironmentRefreshHelper {
 
   public JsonNode refreshEnvironmentInputs(YamlNode entityNode, EntityRefreshContext context) {
     ObjectNode envObjectNode = (ObjectNode) entityNode.getCurrJsonNode();
+    removeNotRequiredInputFieldsFromEnvObject(entityNode, context, envObjectNode);
     JsonNode envRefJsonNode = envObjectNode.get(YamlTypes.ENVIRONMENT_REF);
     String envRefValue;
     ObjectMapper mapper = new ObjectMapper();
@@ -708,5 +709,52 @@ public class EnvironmentRefreshHelper {
 
   private boolean isNodeNotNullAndValueRuntime(JsonNode node) {
     return node != null && node.isValueNode() && NGExpressionUtils.matchesInputSetPattern(node.asText());
+  }
+
+  private void removeNotRequiredInputFieldsFromEnvObject(
+      YamlNode entityNode, EntityRefreshContext context, ObjectNode envObjectNode) {
+    if (envObjectNode == null) {
+      return;
+    }
+
+    boolean isEnvRefRuntime = isEnvRefRuntime(envObjectNode);
+    boolean isSingleServiceAndServiceRefRuntime = isSingleServiceAndServiceRefRuntime(entityNode, context);
+
+    if (envObjectNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS) != null
+        && NGExpressionUtils.matchesInputSetPattern(envObjectNode.get(YamlTypes.SERVICE_OVERRIDE_INPUTS).asText())
+        && !(isSingleServiceAndServiceRefRuntime || isEnvRefRuntime)) {
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+    }
+
+    if (envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS) != null
+        && NGExpressionUtils.matchesInputSetPattern(envObjectNode.get(YamlTypes.ENVIRONMENT_INPUTS).asText())
+        && !isEnvRefRuntime) {
+      envObjectNode.remove(YamlTypes.ENVIRONMENT_INPUTS);
+    }
+  }
+
+  private boolean isSingleServiceAndServiceRefRuntime(YamlNode entityNode, EntityRefreshContext context) {
+    YamlNode stageYamlNodeInResolvedTemplatesYaml =
+        getCorrespondingStageNodeInResolvedTemplatesYaml(entityNode, context.getResolvedTemplatesYamlNode());
+
+    if (stageYamlNodeInResolvedTemplatesYaml != null) {
+      YamlNode serviceNodeInResolvedTemplatesYaml =
+          YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
+
+      if (serviceNodeInResolvedTemplatesYaml != null
+          && serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) != null) {
+        return NGExpressionUtils.matchesInputSetPattern(
+            serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode().asText());
+      }
+    }
+    return false;
+  }
+
+  private boolean isEnvRefRuntime(ObjectNode envObjectNode) {
+    JsonNode envRefJsonNode = envObjectNode.get(YamlTypes.ENVIRONMENT_REF);
+    if (envRefJsonNode != null) {
+      return NGExpressionUtils.matchesInputSetPattern(envRefJsonNode.asText());
+    }
+    return false;
   }
 }

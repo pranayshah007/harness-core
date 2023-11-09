@@ -121,7 +121,7 @@ public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
   }
 
   @Override
-  public Map<String, Integer> getUniqueLoginCountPerAccountId(
+  public Map<String, Integer> getUniqueActionCount(
       List<String> accountIds, List<Action> actions, Instant startTime, Instant endTime) {
     List<Criteria> criteriaList = new ArrayList<>();
     criteriaList.add(Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY).in(accountIds));

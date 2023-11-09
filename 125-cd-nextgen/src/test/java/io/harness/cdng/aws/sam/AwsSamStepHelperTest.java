@@ -8,10 +8,12 @@
 package io.harness.cdng.aws.sam;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SAINATH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -30,6 +32,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
@@ -43,6 +46,7 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,5 +253,56 @@ public class AwsSamStepHelperTest extends CategoryTest {
     String result =
         awsSamStepHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
     assertThat(result).isEqualTo(identifier + "/" + path);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateEnvVariables() {
+    Map<String, String> environmentVariables =
+        Map.of("PLUGIN_STACK_NAME", "plugin_stack_name", "PLUGIN_SAM_DIR", "sam/manifest/dir");
+    Map<String, String> validatedEnvironmentVariables = awsSamStepHelper.validateEnvVariables(environmentVariables);
+
+    assertThat(validatedEnvironmentVariables).isEqualTo(environmentVariables);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateEmptyEnvVariables() {
+    Map<String, String> environmentVariables = Collections.emptyMap();
+    Map<String, String> validatedEnvironmentVariables = awsSamStepHelper.validateEnvVariables(environmentVariables);
+
+    assertThat(validatedEnvironmentVariables).isEqualTo(environmentVariables);
+
+    validatedEnvironmentVariables = awsSamStepHelper.validateEnvVariables(null);
+
+    assertThat(validatedEnvironmentVariables).isNull();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateEnvVariablesWithExceptionOneVariable() {
+    Map<String, String> environmentVariables = new HashMap<>();
+    environmentVariables.put("PLUGIN_STACK_NAME", null);
+    environmentVariables.put("PLUGIN_SAM_DIR", "sam/manifest/dir");
+
+    assertThatThrownBy(() -> awsSamStepHelper.validateEnvVariables(environmentVariables))
+        .hasMessage("Not found value for environment variable: PLUGIN_STACK_NAME")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateEnvVariablesWithExceptionMoreVariables() {
+    Map<String, String> environmentVariables = new HashMap<>();
+    environmentVariables.put("PLUGIN_STACK_NAME", null);
+    environmentVariables.put("PLUGIN_SAM_DIR", null);
+
+    assertThatThrownBy(() -> awsSamStepHelper.validateEnvVariables(environmentVariables))
+        .hasMessage("Not found value for environment variables: PLUGIN_SAM_DIR,PLUGIN_STACK_NAME")
+        .isInstanceOf(InvalidArgumentsException.class);
   }
 }

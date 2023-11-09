@@ -9,11 +9,15 @@ package io.harness.cdng.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -22,7 +26,11 @@ import io.harness.utils.StageStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDP)
 public interface StageExecutionInfoService {
   /**
@@ -110,4 +118,15 @@ public interface StageExecutionInfoService {
   Optional<StageExecutionInfo> findById(String id);
 
   void delete(String id);
+
+  /**
+   * Lists summary of execution of deployment stages filtered by stage execution identifiers
+   *
+   * @param scope scope of the deployment stage
+   * @param stageExecutionIdentifiers list of CD stage execution identifiers to provide the summary for
+   *
+   * @return a map of stage execution identifiers and formatted stage summary if execution info is present
+   */
+  Map<String, CDStageSummaryResponseDTO> listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+      @Valid @NotNull Scope scope, @NotNull List<String> stageExecutionIdentifiers);
 }

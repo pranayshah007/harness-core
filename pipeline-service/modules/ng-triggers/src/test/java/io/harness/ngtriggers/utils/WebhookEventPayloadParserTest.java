@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.beans.PushWebhookEvent;
 import io.harness.beans.Repository;
@@ -29,9 +30,17 @@ import io.harness.impl.WebhookParserSCMServiceImpl;
 import io.harness.ngtriggers.beans.dto.WebhookEventHeaderData;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.product.ci.scm.proto.Action;
+import io.harness.product.ci.scm.proto.BranchHook;
+import io.harness.product.ci.scm.proto.Commit;
+import io.harness.product.ci.scm.proto.GitProvider;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PushHook;
+import io.harness.product.ci.scm.proto.Reference;
+import io.harness.product.ci.scm.proto.Signature;
+import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,11 +53,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 public class WebhookEventPayloadParserTest extends CategoryTest {
-  @Spy @InjectMocks WebhookEventPayloadParser webhookEventPayloadParser;
+  @InjectMocks WebhookEventPayloadParser webhookEventPayloadParser;
   @Mock WebhookParserSCMServiceImpl webhookParserSCMService;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   private TriggerWebhookEvent triggerWebhookEvent;
 
   @Before
@@ -56,11 +65,15 @@ public class WebhookEventPayloadParserTest extends CategoryTest {
     initMocks(this);
     triggerWebhookEvent =
         TriggerWebhookEvent.builder()
+            .accountId("accountId")
             .headers(Arrays.asList(
                 HeaderConfig.builder().key("content-type").values(Arrays.asList("application/json")).build(),
                 HeaderConfig.builder().key("X-GitHub-Event").values(Arrays.asList("someValue")).build()))
             .payload("{a: b}")
             .build();
+    when(pmsFeatureFlagHelper.isEnabled(
+             "accountId", FeatureName.CDS_NG_CONVERT_BRANCH_TO_PUSH_WEBHOOK_BITBUCKET_ON_PREM))
+        .thenReturn(false);
   }
 
   @Test
@@ -119,6 +132,66 @@ public class WebhookEventPayloadParserTest extends CategoryTest {
         webhookEventPayloadParser.convertWebhookResponse(parseWebhookResponse, triggerWebhookEvent);
     verify(webhookParserSCMService, times(1)).parseWebhookPayload(parseWebhookResponse);
     assertThat(convertedWebhookResponse.getParseWebhookResponse()).isEqualToComparingFieldByField(parseWebhookResponse);
+    assertThat(convertedWebhookResponse.getOriginalEvent()).isEqualToComparingFieldByField(triggerWebhookEvent);
+    assertThat(convertedWebhookResponse.getWebhookGitUser()).isEqualToComparingFieldByField(webhookGitUser);
+    assertThat(convertedWebhookResponse.getWebhookEvent()).isEqualToComparingFieldByField(webhookEvent);
+    assertThat(convertedWebhookResponse.getRepository()).isEqualToComparingFieldByField(repository);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void convertWebhookResponseForBitBucketOnPremBranchPayloadTest() {
+    io.harness.product.ci.scm.proto.Repository repo =
+        io.harness.product.ci.scm.proto.Repository.newBuilder().setName("repo").build();
+    ParseWebhookResponse parseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setBranch(BranchHook.newBuilder()
+                           .setSender(User.newBuilder().setEmail("email").setLogin("login").setName("username").build())
+                           .setRef(Reference.newBuilder().setSha("sha").setName("branch").build())
+                           .setAction(Action.CREATE)
+                           .setRepo(repo)
+                           .build())
+            .build();
+    BranchHook branchHook = parseWebhookResponse.getBranch();
+    Signature author = Signature.newBuilder()
+                           .setEmail(branchHook.getSender().getEmail())
+                           .setLogin(branchHook.getSender().getLogin())
+                           .setName(branchHook.getSender().getName())
+                           .setAvatar(branchHook.getSender().getAvatar())
+                           .build();
+    Commit commit = Commit.newBuilder().setSha(branchHook.getRef().getSha()).setAuthor(author).build();
+    ParseWebhookResponse transformedParseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setPush(PushHook.newBuilder()
+                         .setSender(branchHook.getSender())
+                         .setRepo(branchHook.getRepo())
+                         .setRef(branchHook.getRef().getName())
+                         .setAfter(branchHook.getRef().getSha())
+                         .setCommit(Commit.newBuilder().setAuthor(author).build())
+                         .addCommits(commit)
+                         .build())
+            .build();
+    WebhookGitUser webhookGitUser = WebhookGitUser.builder().name("name").build();
+    Repository repository = Repository.builder().branch("a_branch").build();
+    WebhookEvent webhookEvent = PushWebhookEvent.builder().link("a_link").build();
+    when(webhookParserSCMService.parseWebhookPayload(transformedParseWebhookResponse))
+        .thenReturn(WebhookPayload.builder()
+                        .parseWebhookResponse(transformedParseWebhookResponse)
+                        .repository(repository)
+                        .webhookGitUser(webhookGitUser)
+                        .webhookEvent(webhookEvent)
+                        .build());
+    when(webhookParserSCMService.obtainWebhookSource(any())).thenReturn(GitProvider.STASH);
+    when(pmsFeatureFlagHelper.isEnabled(
+             "accountId", FeatureName.CDS_NG_CONVERT_BRANCH_TO_PUSH_WEBHOOK_BITBUCKET_ON_PREM))
+        .thenReturn(true);
+
+    WebhookPayloadData convertedWebhookResponse =
+        webhookEventPayloadParser.convertWebhookResponse(parseWebhookResponse, triggerWebhookEvent);
+    verify(webhookParserSCMService, times(1)).parseWebhookPayload(transformedParseWebhookResponse);
+    assertThat(convertedWebhookResponse.getParseWebhookResponse())
+        .isEqualToComparingFieldByField(transformedParseWebhookResponse);
     assertThat(convertedWebhookResponse.getOriginalEvent()).isEqualToComparingFieldByField(triggerWebhookEvent);
     assertThat(convertedWebhookResponse.getWebhookGitUser()).isEqualToComparingFieldByField(webhookGitUser);
     assertThat(convertedWebhookResponse.getWebhookEvent()).isEqualToComparingFieldByField(webhookEvent);

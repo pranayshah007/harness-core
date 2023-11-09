@@ -111,6 +111,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipSteadyStateCheck()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
     assertThat(request.getK8sCommandFlags()).isEqualTo(k8sCommandFlag);
+    assertThat(request.isUseManifestSource()).isFalse();
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());
@@ -146,6 +147,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
             .type(ManifestConfigType.K8_MANIFEST)
             .build());
     stepParameters.setCommandFlags(commandFlags);
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();
     K8sApplyRequest request = executeTask(stepElementParameters, K8sApplyRequest.class);
@@ -156,6 +158,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipSteadyStateCheck()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
     assertThat(request.getK8sCommandFlags()).isEqualTo(k8sCommandFlag);
+    assertThat(request.isUseManifestSource()).isTrue();
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());

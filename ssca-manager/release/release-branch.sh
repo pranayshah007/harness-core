@@ -59,17 +59,17 @@ echo "INFO: Step 5: Setting shell condition - exit on error TRUE."
 set -e
 echo "INFO: Step 6: Setting shell condition - debug TRUE."
 set -x
-echo "INFO: Step 7: Fetching develop"
-git fetch origin refs/heads/develop; git checkout develop && git branch
-check_branch_name "develop"
-echo "INFO: Step 8: Checking for Not Merged SSCA Hot Fixes in develop."
+echo "INFO: Step 7: Fetching BASE_BRANCH"
+git fetch origin refs/heads/${BASE_BRANCH}; git checkout ${BASE_BRANCH} && git branch
+check_branch_name "${BASE_BRANCH}"
+echo "INFO: Step 8: Checking for Not Merged SSCA Hot Fixes in BASE_BRANCH."
 
 PROJFILE="jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
-
+export CURRENT_BRANCH=[${BASE_BRANCH:0:1}]${BASE_BRANCH:1}
 git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/[d]evelop --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
+git log --remotes=origin/$CURRENT_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
 
 NOT_MERGED=`comm -23 release.txt develop.txt`
 
@@ -79,7 +79,7 @@ then
     exit 1
 fi
 
-echo "INFO: Get Previous Tag and Tagging develop Branch according to type of release."
+echo "INFO: Get Previous Tag and Tagging BASE_BRANCH according to type of release."
 if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     export SHA=`git rev-parse HEAD`
     export VERSION_FILE=ssca-manager/build.properties
@@ -130,7 +130,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     newBranch="${major}_${minor}"
     echo ${newBranch}
     git commit -m "Branching to release/${PURPOSE}/${newBranch}. New version ${NEW_VERSION}"
-    git push origin develop
+    git push origin ${BASE_BRANCH}
 
     echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
 
@@ -148,8 +148,10 @@ fi
 
 #creating the fix version
 chmod +x ssca-manager/release/release-branch-create-ssca-version.sh
-ssca-manager/release/release-branch-create-ssca-version.sh
+FIX_SSCA_VERSION_ID=`ssca-manager/release/release-branch-create-ssca-version.sh | grep 'FIX_SSCA_VERSION_ID' | sed -e 's: *FIX_SSCA_VERSION_ID=::g'`
 
 #updating jiras with fix version
 chmod +x ssca-manager/release/release-branch-update-jiras.sh
 ssca-manager/release/release-branch-update-jiras.sh
+
+echo "finalVersions NEW_VERSION=$NEW_VERSION-FIX_SSCA_VERSION_ID=$FIX_SSCA_VERSION_ID"

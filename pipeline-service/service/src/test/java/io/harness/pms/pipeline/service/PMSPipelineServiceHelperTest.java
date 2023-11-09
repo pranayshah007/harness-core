@@ -50,6 +50,10 @@ import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.preprocess.YamlPreProcessorFactory;
+import io.harness.pms.yaml.preprocess.YamlPreprocessorResponseDTO;
+import io.harness.pms.yaml.preprocess.YamlV1PreProcessor;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
@@ -84,6 +88,8 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
   @Mock PMSPipelineService pmsPipelineService;
+  @Mock YamlV1PreProcessor preProcessor;
+  @Mock YamlPreProcessorFactory yamlPreprocessorFactory;
   @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
@@ -317,6 +323,23 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                         .yaml(yaml)
                                         .harnessVersion(HarnessYamlVersion.V1)
                                         .build();
+    doReturn(preProcessor).when(yamlPreprocessorFactory).getProcessorInstance(HarnessYamlVersion.V1);
+    doReturn(YamlPreprocessorResponseDTO.builder().preprocessedJsonNode(YamlUtils.readAsJsonNode(yaml)).build())
+        .when(preProcessor)
+        .preProcess(yaml);
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    TemplateMergeResponseDTO templateMergeResponseDTO = TemplateMergeResponseDTO.builder()
+                                                            .mergedPipelineYaml(yaml)
+                                                            .templateReferenceSummaries(templateReferenceSummaryList)
+                                                            .build();
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
+
+    Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
+        .thenReturn(PipelineValidationResponse.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
     GovernanceMetadata governanceMetadata =
         pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
     assertThat(governanceMetadata.getDeny()).isFalse();

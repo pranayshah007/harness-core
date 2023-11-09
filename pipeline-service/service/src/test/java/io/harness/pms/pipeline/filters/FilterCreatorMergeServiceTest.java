@@ -362,8 +362,13 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     context.setGlobalContextRecord(gitSyncBranchContext);
     GlobalContextManager.set(context);
     when(gitSyncSdkService.isGitSimplificationEnabled(anyString(), anyString(), anyString())).thenReturn(true);
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .connectorRef(gitConnectorRef)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
     Optional<EntityDetailProtoDTO> entityDetailProtoDTO =
         filterCreatorMergeService.getGitConnectorReference(pipelineEntity);
     assertThat(entityDetailProtoDTO.isPresent()).isEqualTo(true);

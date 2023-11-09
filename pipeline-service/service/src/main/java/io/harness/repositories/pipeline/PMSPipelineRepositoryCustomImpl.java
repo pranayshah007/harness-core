@@ -318,17 +318,21 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return updatedEntity;
   }
 
-  @Override
-  public PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate) {
+  public PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate, boolean isPatch) {
     Criteria criteria =
         PMSPipelineFilterHelper.getCriteriaForFind(pipelineToUpdate.getAccountId(), pipelineToUpdate.getOrgIdentifier(),
             pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate.getIdentifier(), true);
     Query query = new Query(criteria);
     long timeOfUpdate = System.currentTimeMillis();
-    Update updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
+    Update updateOperations;
+    if (isPatch) {
+      updateOperations = PMSPipelineFilterHelper.getUpdateOperationsForPatch(pipelineToUpdate, timeOfUpdate);
+    } else {
+      updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
+    }
 
     PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
-        () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
+        () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate, isPatch));
 
     if (updatedPipelineEntity == null) {
       return null;
@@ -366,9 +370,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   PipelineEntity updatePipelineEntityInDB(
-      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate, boolean isPatch) {
     Pair<PipelineEntity, PipelineEntity> updatePipelineInDb =
-        updatePipelineEntityWithoutOutboxEvent(query, updateOperations, pipelineToUpdate, timeOfUpdate);
+        updatePipelineEntityWithoutOutboxEvent(query, updateOperations, pipelineToUpdate, timeOfUpdate, isPatch);
     PipelineEntity oldEntityFromDB = updatePipelineInDb.getLeft();
     if (oldEntityFromDB == null) {
       return null;
@@ -381,7 +385,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   Pair<PipelineEntity, PipelineEntity> updatePipelineEntityWithoutOutboxEvent(
-      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate, boolean isPatch) {
     /*
      Return Pair of oldEntityFromDB and pipelineEntityAfterUpdate
      First value is Old, second value is New
@@ -394,9 +398,20 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
               pipelineToUpdate.getIdentifier(), pipelineToUpdate.getAccountIdentifier(),
               pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier()));
     }
-    PipelineEntity pipelineEntityAfterUpdate =
-        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    PipelineEntity pipelineEntityAfterUpdate;
+    if (isPatch) {
+      pipelineEntityAfterUpdate =
+          PMSPipelineFilterHelper.updateFieldsInDBEntryForPatch(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    } else {
+      pipelineEntityAfterUpdate =
+          PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    }
     return Pair.of(oldEntityFromDB, pipelineEntityAfterUpdate);
+  }
+
+  Pair<PipelineEntity, PipelineEntity> updatePipelineEntityWithoutOutboxEvent(
+      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+    return updatePipelineEntityWithoutOutboxEvent(query, updateOperations, pipelineToUpdate, timeOfUpdate, false);
   }
 
   PipelineEntity onboardToInlineIfNullStoreType(PipelineEntity updatedPipelineEntity, Query query) {

@@ -15,6 +15,7 @@ import io.harness.idp.status.k8s.HealthCheck;
 import io.harness.idp.status.mappers.StatusInfoMapper;
 import io.harness.idp.status.repositories.StatusInfoRepository;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
+import io.harness.spec.server.idp.v1.model.StatusInfoV2;
 
 import com.google.inject.Inject;
 import java.util.Optional;
@@ -40,6 +41,42 @@ public class StatusInfoServiceImpl implements StatusInfoService {
           Optional.ofNullable(StatusInfoEntity.builder().status(StatusInfo.CurrentStatusEnum.NOT_FOUND).build());
     }
     return statusEntity.map(StatusInfoMapper::toDTO);
+  }
+
+  @Override
+  public StatusInfoV2 findByAccountIdentifierAndTypeV2(String accountIdentifier, String type) {
+    StatusInfoV2 statusInfoV2 = new StatusInfoV2();
+    switch (StatusType.valueOf(type.toUpperCase())) {
+      case INFRA:
+        statusInfoV2.put(StatusType.INFRA.toString().toLowerCase(), getStatusInfoForInfra(accountIdentifier));
+        break;
+      case ONBOARDING:
+        statusInfoV2.put(
+            StatusType.ONBOARDING.toString().toLowerCase(), getStatusInfoForOnboarding(accountIdentifier, type));
+        break;
+      case INFRA_ONBOARDING:
+        statusInfoV2.put(StatusType.INFRA.toString().toLowerCase(), getStatusInfoForInfra(accountIdentifier));
+        statusInfoV2.put(StatusType.ONBOARDING.toString().toLowerCase(),
+            getStatusInfoForOnboarding(accountIdentifier, StatusType.ONBOARDING.toString().toUpperCase()));
+        break;
+      default:
+        return null;
+    }
+    return statusInfoV2;
+  }
+
+  private StatusInfo getStatusInfoForInfra(String accountIdentifier) {
+    return healthCheck.getCurrentStatus(accountIdentifier).get();
+  }
+
+  private StatusInfo getStatusInfoForOnboarding(String accountIdentifier, String type) {
+    Optional<StatusInfoEntity> statusEntity =
+        statusInfoRepository.findByAccountIdentifierAndType(accountIdentifier, type.toUpperCase());
+    if (statusEntity.isEmpty()) {
+      statusEntity =
+          Optional.ofNullable(StatusInfoEntity.builder().status(StatusInfo.CurrentStatusEnum.NOT_FOUND).build());
+    }
+    return StatusInfoMapper.toDTO(statusEntity.get());
   }
 
   @Override

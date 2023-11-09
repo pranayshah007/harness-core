@@ -19,6 +19,7 @@ import io.harness.mongo.collation.CollationLocale;
 import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -107,7 +108,7 @@ public class Project implements PersistentEntity, NGAccountAccess, UniqueIdAware
   @Wither @Id @dev.morphia.annotations.Id String id;
   String accountIdentifier;
 
-  String uniqueId;
+  @FdUniqueIndex String uniqueId;
   String parentId;
   @EntityIdentifier(allowBlank = false) String identifier;
   @EntityIdentifier(allowBlank = false) String orgIdentifier;

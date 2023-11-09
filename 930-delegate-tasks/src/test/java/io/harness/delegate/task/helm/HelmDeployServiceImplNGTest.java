@@ -330,8 +330,8 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn(new SshSessionConfig()).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
     doNothing()
         .when(ngGitService)
-        .downloadFiles(
-            eq(gitStoreDelegateConfig), anyString(), eq(helmInstallCommandRequestNG.getAccountId()), any(), any());
+        .downloadFiles(eq(gitStoreDelegateConfig), anyString(), eq(helmInstallCommandRequestNG.getAccountId()), any(),
+            any(), eq(false));
     when(spyHelmDeployService.getManifestFileNamesInLogFormat(anyString())).thenReturn("abc");
 
     helmChartManifestDelegateConfig.storeDelegateConfig(gitStoreDelegateConfig);
@@ -375,7 +375,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doReturn(null)
         .when(scmFetchFilesHelperNG)
         .downloadFilesUsingScm(
-            anyString(), eq(gitStoreDelegateConfig), eq(helmInstallCommandRequestNG.getLogCallback()));
+            anyString(), eq(gitStoreDelegateConfig), eq(helmInstallCommandRequestNG.getLogCallback()), eq(false));
     when(spyHelmDeployService.getManifestFileNamesInLogFormat(anyString())).thenReturn("abc");
 
     assertThatCode(()

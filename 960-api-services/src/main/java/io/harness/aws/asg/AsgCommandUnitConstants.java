@@ -7,6 +7,11 @@
 
 package io.harness.aws.asg;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 public enum AsgCommandUnitConstants {
   fetchManifests {
     @Override
@@ -42,6 +47,12 @@ public enum AsgCommandUnitConstants {
     @Override
     public String toString() {
       return "Swap Service";
+    }
+  },
+  shiftTraffic {
+    @Override
+    public String toString() {
+      return "Shift Traffic";
     }
   }
 }

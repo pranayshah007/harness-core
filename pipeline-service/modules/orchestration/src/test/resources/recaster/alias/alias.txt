@@ -1,4 +1,5 @@
 io.harness.plancreator.customDeployment.StepTemplateRef
+io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 io.harness.utils.DummyOrchestrationOutcome
 io.harness.yaml.core.failurestrategy.OnFailureConfig
 parameterField
@@ -227,3 +228,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata

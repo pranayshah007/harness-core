@@ -17,6 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.idp.scorecard.datapoints.parser.factory.KubernetesDataPointParserFactory;
 import io.harness.rule.Owner;
 
 import org.junit.Before;

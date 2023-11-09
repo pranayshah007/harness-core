@@ -12,6 +12,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.model.NotificationRuleReferenceDTO;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -58,6 +59,17 @@ public class FakeNotificationClient implements NotificationClient {
   @Override
   public List<NotificationResult> sendBulkNotificationTrigger(
       List<NotificationTriggerRequest> notificationTriggerRequest) {
+    return null;
+  }
+
+  @Override
+  public boolean isDefaultSMTPPresent(String accountId) {
+    return false;
+  }
+
+  @Override
+  public NotificationRuleReferenceDTO getNotificationRule(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String notificationEntity, String notificationEvent) {
     return null;
   }
 }

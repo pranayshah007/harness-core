@@ -127,7 +127,7 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED)
             .set(PerpetualTaskRecordKeys.assignAfterMs,
-                System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(new Random().nextInt(5)))
+                System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(new Random().nextInt(5)) + 1)
             .unset(PerpetualTaskRecordKeys.unassignedReason)
             .unset(PerpetualTaskRecordKeys.assignTryCount);
     persistence.update(query, updateOperations);
@@ -327,7 +327,8 @@ public class PerpetualTaskRecordDao {
 
     UpdateOperations<PerpetualTaskRecord> updateOperations =
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
-            .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED);
+            .set(PerpetualTaskRecordKeys.state, TASK_UNASSIGNED)
+            .set(PerpetualTaskRecordKeys.assignAfterMs, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10));
     persistence.update(query, updateOperations);
   }
 

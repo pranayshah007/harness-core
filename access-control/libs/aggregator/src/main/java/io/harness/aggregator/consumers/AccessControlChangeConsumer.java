@@ -21,7 +21,7 @@ public interface AccessControlChangeConsumer<T extends AccessControlChangeEventD
         consumeUpdateEvent(id, changeEventData);
         break;
       case DELETE_ACTION:
-        consumeDeleteEvent(id);
+        consumeDeleteEvent(id, changeEventData);
         break;
       default:
         break;
@@ -30,7 +30,7 @@ public interface AccessControlChangeConsumer<T extends AccessControlChangeEventD
 
   boolean consumeUpdateEvent(String id, T changeEventData);
 
-  boolean consumeDeleteEvent(String id);
+  boolean consumeDeleteEvent(String id, T changeEventData);
 
   boolean consumeCreateEvent(String id, T changeEventData);
 }

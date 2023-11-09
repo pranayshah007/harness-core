@@ -357,9 +357,9 @@ public class AuditServiceImpl implements AuditService {
   }
 
   @Override
-  public Map<String, Integer> getUniqueLoginCountPerAccountId(
+  public Map<String, Integer> getUniqueActionCount(
       List<String> accountIds, List<Action> actions, Instant startTime, Instant endTime) {
-    return auditRepository.getUniqueLoginCountPerAccountId(accountIds, actions, startTime, endTime);
+    return auditRepository.getUniqueActionCount(accountIds, actions, startTime, endTime);
   }
 
   @Override

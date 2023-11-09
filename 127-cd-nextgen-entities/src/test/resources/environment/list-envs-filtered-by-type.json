@@ -1,0 +1,21 @@
+{
+  "$or": [
+    {
+      "accountId": "accountIdentifier",
+      "deleted": false,
+      "type": "Production",
+      "orgIdentifier": {
+        "$in": [
+          "orgIdentifier1",
+          "orgIdentifier2"
+        ]
+      },
+      "projectIdentifier": {
+        "$in": [
+          "projectIdentifier1",
+          "projectIdentifier2"
+        ]
+      }
+    }
+  ]
+}

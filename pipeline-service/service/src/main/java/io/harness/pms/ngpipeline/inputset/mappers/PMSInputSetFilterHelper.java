@@ -16,15 +16,20 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.pms.inputset.InputSetFilterPropertiesDto;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -82,8 +87,9 @@ public class PMSInputSetFilterHelper {
     return criteria;
   }
 
-  public Criteria listInputSetsForProjectCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, InputSetListTypePMS type, boolean deleted) {
+  public Criteria listInputSetsForProjectCriteria(String accountId, String orgIdentifier, String projectIdentifier,
+      InputSetListTypePMS type, String searchTerm, boolean deleted,
+      InputSetFilterPropertiesDto inputSetFilterPropertiesDto) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(accountId)) {
       criteria.and(InputSetEntityKeys.accountId).is(accountId);
@@ -99,6 +105,50 @@ public class PMSInputSetFilterHelper {
     if (type != InputSetListTypePMS.ALL) {
       criteria.and(InputSetEntityKeys.inputSetEntityType).is(getInputSetType(type));
     }
+
+    if (inputSetFilterPropertiesDto != null && inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds() != null
+        && inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds().size() > 0) {
+      Criteria filterCriteria =
+          getFilterCriteriaForListInputSets(inputSetFilterPropertiesDto.getInputSetIdsWithPipelineIds());
+      criteria.andOperator(filterCriteria);
+    }
+
+    if (isNotEmpty(searchTerm)) {
+      Criteria searchCriteria = new Criteria().orOperator(
+          where(InputSetEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(InputSetEntityKeys.identifier)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      criteria.andOperator(searchCriteria);
+    }
+
+    return criteria;
+  }
+
+  private static Criteria getFilterCriteriaForListInputSets(List<String> inputSetIdsWithPipelineIds) {
+    Criteria criteria = new Criteria();
+
+    Collection<Criteria> criteriaCollection = new ArrayList<>();
+
+    for (String s : inputSetIdsWithPipelineIds) {
+      String[] ids = s.split("-");
+
+      if (ids.length < 2) {
+        throw new InvalidRequestException(
+            "Filter list of Ids should contain Ids with format: [pipelineId]-[inputSetId]");
+      }
+      String pipelineId = ids[0];
+      String inputSetId = ids[1];
+
+      Criteria filterCriteria = new Criteria()
+                                    .and(InputSetEntityKeys.pipelineIdentifier)
+                                    .is(pipelineId)
+                                    .and(InputSetEntityKeys.identifier)
+                                    .is(inputSetId);
+
+      criteriaCollection.add(filterCriteria);
+    }
+
+    criteria.orOperator(criteriaCollection);
 
     return criteria;
   }

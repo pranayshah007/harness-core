@@ -14,6 +14,7 @@ import io.harness.annotations.dev.ProductModule;
 
 import java.util.Map;
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -26,4 +27,7 @@ public interface RancherRestClient {
 
   @POST("/v3/clusters/{clusterId}?action=generateKubeconfig")
   Call<RancherGenerateKubeconfigResponse> generateKubeconfig(@Path(value = "clusterId") String clusterId);
+
+  @DELETE("/v3/tokens/{tokenId}")
+  Call<RancherDeleteKubeconfigTokenResponse> deleteKubeconfigToken(@Path(value = "tokenId") String tokenId);
 }

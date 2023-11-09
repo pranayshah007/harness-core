@@ -1,0 +1,11 @@
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: HTTPRouteGroup
+metadata:
+  name: http-test-route
+spec:
+  matches:
+  - headers:
+      Content-Type: application/json
+      cookie: ^(.*?;)?(type=insider)(;.*)?$
+      user-agent: .*Android.*
+    name: smi-http-header-1

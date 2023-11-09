@@ -17,7 +17,7 @@ import java.util.List;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface AsyncWaitEngine {
   void waitForAllOn(
-      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, int timeout);
+      NotifyCallback notifyCallback, ProgressCallback progressCallback, List<String> correlationIds, long timeout);
 
   /**
    * This method notifies that they have acquired the task for the given correlationId

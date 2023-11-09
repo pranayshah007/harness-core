@@ -24,8 +24,8 @@ import retrofit2.http.Path;
 
 @OwnedBy(CODE)
 public interface CodeResourceClient {
-  @GET("/accounts/{accountIdentifier}/orgs/{orgIdentifier}/projects/{projectId}/repos")
-  Call<ResponseDTO<List<CodeRepoResponseDTO>>> getRepos(
+  @GET("api/v1/accounts/{accountIdentifier}/orgs/{orgIdentifier}/projects/{projectIdentifier}/repos")
+  Call<List<CodeRepoResponseDTO>> getRepos(
       @NotEmpty @Path(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotEmpty @Path(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotEmpty @Path(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);

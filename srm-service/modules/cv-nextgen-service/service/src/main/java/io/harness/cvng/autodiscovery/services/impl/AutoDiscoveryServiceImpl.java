@@ -226,7 +226,7 @@ public class AutoDiscoveryServiceImpl implements AutoDiscoveryService {
             serviceIdToServiceEnvironmentParams.get(discoveredServiceConnection.getSourceID());
         ServiceEnvironmentParams destinationService =
             serviceIdToServiceEnvironmentParams.get(discoveredServiceConnection.getDestinationID());
-        serviceDependencyService.updateDependencies(projectParams,
+        serviceDependenciesImported += serviceDependencyService.updateDependencies(projectParams,
             MonitoredService.getIdentifier(
                 sourceService.getServiceIdentifier(), sourceService.getEnvironmentIdentifier()),
             Collections.singleton(
@@ -234,7 +234,6 @@ public class AutoDiscoveryServiceImpl implements AutoDiscoveryService {
                     .monitoredServiceIdentifier(MonitoredService.getIdentifier(
                         destinationService.getServiceIdentifier(), destinationService.getEnvironmentIdentifier()))
                     .build()));
-        serviceDependenciesImported++;
       }
     }
     return AutoDiscoveryResponseDTO.builder()

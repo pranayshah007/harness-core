@@ -11,7 +11,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 
 public class RatioServiceLevelIndicatorTransformer
@@ -20,14 +20,15 @@ public class RatioServiceLevelIndicatorTransformer
   public RatioServiceLevelIndicator getEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       boolean isEnabled) {
-    RatioSLIMetricSpec ratioSLIMetricSpec =
-        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec();
+    WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) windowBasedServiceLevelIndicatorSpec.getSpec();
     return RatioServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
-        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
+        .sliMissingDataType(windowBasedServiceLevelIndicatorSpec.getSliMissingDataType())
         .name(serviceLevelIndicatorDTO.getName())
         .metric1(ratioSLIMetricSpec.getMetric1())
         .metric2(ratioSLIMetricSpec.getMetric2())

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public class FilterConstants {
   public static final String CONNECTOR_FILTER = "Connector";
   public static final String PIPELINE_SETUP_FILTER = "PipelineSetup";
+  public static final String INPUTSET_FILTER = "InputSet";
   public static final String TEMPLATE_FILTER = "Template";
   public static final String TRIGGER_FILTER = "Trigger";
   public static final String PIPELINE_EXECUTION_FILTER = "PipelineExecution";

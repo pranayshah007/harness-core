@@ -1,5 +1,6 @@
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.plancreator.customDeployment.StepTemplateRef
+io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 io.harness.pms.sdk.core.data.StringOutcome
 io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters
@@ -228,3 +229,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata

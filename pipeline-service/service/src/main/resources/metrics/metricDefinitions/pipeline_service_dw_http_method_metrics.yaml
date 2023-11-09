@@ -1,0 +1,16 @@
+name: Pipeline Service DW Metrics per Http Method
+identifier: PipelineServiceDwMetricsHttpMethods
+metricGroup: PipelineServiceDwMetricsHttpMethodGroup
+metrics:
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_http_method_requests_count
+    metricDefinition: Jetty - Total number of Requests Count per Http Method
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_http_method_requests_snapshot_95thPercentile
+    metricDefinition: Jetty - P95 Response Time per Http Method
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_http_method_requests_snapshot_99thPercentile
+    metricDefinition: Jetty - P99 Response Time per Http Method
+    type: LastValue
+    unit: count

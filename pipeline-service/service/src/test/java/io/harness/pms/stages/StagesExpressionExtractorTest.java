@@ -104,6 +104,12 @@ public class StagesExpressionExtractorTest extends CategoryTest {
         StagesExpressionExtractor.getNonLocalExpressions(pipelineYaml, Collections.singletonList("d1"));
     assertThat(nonLocalExpressions3).hasSize(1);
     assertThat(nonLocalExpressions3).contains("<+stages.a1.name>");
+
+    Set<String> nonLocalExpressions4 =
+        StagesExpressionExtractor.getNonLocalExpressions(pipelineYaml, Collections.singletonList("pipeline_chaining"));
+    assertThat(nonLocalExpressions4).hasSize(1);
+    assertThat(nonLocalExpressions4)
+        .containsOnly("<+pipeline.stages.stage1.spec.execution.steps.ShellScript_1.output.outputVariables.stage1Var>");
   }
 
   @Test
@@ -268,7 +274,33 @@ public class StagesExpressionExtractorTest extends CategoryTest {
         + "      identifier: d1_again\n"
         + "      name: d1 again\n"
         + "      type: Deployment\n"
-        + "      field: <+that.other.field>\n";
+        + "      field: <+that.other.field>\n"
+        + "  - stage:\n"
+        + "      identifier: pipeline_chaining\n"
+        + "      name: pipeline chaining\n"
+        + "      type: Pipeline\n"
+        + "      field: <+that.other.field>\n"
+        + "      spec:\n"
+        + "        outputs:\n"
+        + "          - name: chainedPipelineOutput\n"
+        + "            value: <+pipeline.stages.stage1.spec.execution.steps.ShellScript_1.output.outputVariables.var1>\n"
+        + "        inputs:\n"
+        + "            identifier: pipelineForChainingReplacedExpressions\n"
+        + "            stages:\n"
+        + "              - stage:\n"
+        + "                  identifier: stage2\n"
+        + "                  type: Custom\n"
+        + "                  spec:\n"
+        + "                    execution:\n"
+        + "                      steps:\n"
+        + "                        - step:\n"
+        + "                            identifier: ShellScript_1\n"
+        + "                            type: ShellScript\n"
+        + "                            spec:\n"
+        + "                              environmentVariables:\n"
+        + "                                - name: var2Input\n"
+        + "                                  type: String\n"
+        + "                                  value: <+pipeline.stages.stage1.spec.execution.steps.ShellScript_1.output.outputVariables.stage1Var>\n";
   }
 
   private String getStage(String identifier, String name, String type, String field) {

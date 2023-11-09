@@ -77,6 +77,10 @@ public class OrchestrationUtils {
       return false;
     }
     StepType currentStepType = AmbianceUtils.getCurrentStepType(nodeExecution.getAmbiance());
+    return isPipelineNode(currentStepType);
+  }
+
+  public static boolean isPipelineNode(StepType currentStepType) {
     return currentStepType != null && currentStepType.getStepCategory() == StepCategory.PIPELINE;
   }
 

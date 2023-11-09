@@ -10,7 +10,7 @@ package io.harness.audit.repositories;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.audit.entities.AuditEvent;
+import io.harness.audit.entities.YamlDiffRecord;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -26,6 +26,6 @@ public class AuditYamlRepositoryCustomImpl implements AuditYamlRepositoryCustom 
   @Override
   public void delete(Criteria criteria) {
     Query query = new Query(criteria);
-    mongoTemplate.remove(query, AuditEvent.class);
+    mongoTemplate.remove(query, YamlDiffRecord.class);
   }
 }

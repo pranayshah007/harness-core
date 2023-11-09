@@ -8,7 +8,9 @@
 package io.harness.engine.pms.commons.events;
 
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_REDIS_URL;
+import static io.harness.pms.events.PmsEventFrameworkConstants.PIE_EVENT_ID;
 import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
 import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
@@ -95,6 +97,7 @@ public class PmsEventSender {
     long startTs = System.currentTimeMillis();
     ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.<String, String>builder()
                                                                .put(SERVICE_NAME, serviceName)
+                                                               .put(PIE_EVENT_ID, generateUuid())
                                                                .putAll(AmbianceUtils.logContextMap(ambiance));
     Producer producer = obtainProducer(eventCategory, serviceName);
     if (isMonitored) {
@@ -113,6 +116,7 @@ public class PmsEventSender {
     long startTs = System.currentTimeMillis();
     Producer producer = obtainProducer(eventCategory, serviceName);
     metadataMap.put(SERVICE_NAME, serviceName);
+    metadataMap.put(PIE_EVENT_ID, generateUuid());
     String messageId = producer.send(Message.newBuilder().putAllMetadata(metadataMap).setData(eventData).build());
     log.info("Successfully Sent {} event for {} to the producer. MessageId {} in [{}ms]", eventCategory, serviceName,
         messageId, System.currentTimeMillis() - startTs);

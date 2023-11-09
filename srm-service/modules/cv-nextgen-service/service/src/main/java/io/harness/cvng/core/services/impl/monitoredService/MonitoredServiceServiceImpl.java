@@ -434,13 +434,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<String> updatedHealthSourceIdentifiers = monitoredServiceDTO.getSources()
                                                         .getHealthSources()
                                                         .stream()
-                                                        .map(healthSource -> healthSource.getIdentifier())
+                                                        .map(HealthSource::getIdentifier)
                                                         .collect(Collectors.toList());
       updateOperations.set(MonitoredServiceKeys.healthSourceIdentifiers, updatedHealthSourceIdentifiers);
       List<String> updatedChangeSourceIdentifiers = monitoredServiceDTO.getSources()
                                                         .getChangeSources()
                                                         .stream()
-                                                        .map(changeSource -> changeSource.getIdentifier())
+                                                        .map(ChangeSourceDTO::getIdentifier)
                                                         .collect(Collectors.toList());
       updateOperations.set(MonitoredServiceKeys.changeSourceIdentifiers, updatedChangeSourceIdentifiers);
     }

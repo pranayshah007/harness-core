@@ -11,4 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(DEL) public enum VersionOverrideType { DELEGATE_JAR, WATCHER_JAR, DELEGATE_IMAGE_TAG, UPGRADER_IMAGE_TAG }
+@OwnedBy(DEL)
+public enum VersionOverrideType {
+  DELEGATE_JAR,
+  WATCHER_JAR,
+  DELEGATE_IMAGE_TAG,
+  UPGRADER_IMAGE_TAG,
+  DELEGATE_CUSTOM_IMAGE_TAG
+}

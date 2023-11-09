@@ -40,7 +40,6 @@ import io.harness.dashboard.DashboardResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
@@ -145,6 +144,7 @@ import io.harness.idp.settings.service.BackstagePermissionsServiceImpl;
 import io.harness.idp.status.k8s.HealthCheck;
 import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
+import io.harness.idp.status.resources.StatusInfoV2ApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
@@ -157,7 +157,6 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
@@ -198,6 +197,7 @@ import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
 import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
+import io.harness.spec.server.idp.v1.StatusInfoV2Api;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ThreadPool;
@@ -248,7 +248,6 @@ public class IdpModule extends AbstractModule {
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
     install(IdpGrpcModule.getInstance());
-    install(EntitySetupUsageModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
@@ -343,8 +342,6 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new NGSettingsClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new EntitySetupUsageClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
-        appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new PipelineRemoteClientModule(
         appConfig.getPipelineServiceConfiguration(), appConfig.getPipelineServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
@@ -386,6 +383,7 @@ public class IdpModule extends AbstractModule {
     bind(GitIntegrationService.class).to(GitIntegrationServiceImpl.class);
     bind(BackstageEnvVariableApi.class).to(BackstageEnvVariableApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
+    bind(StatusInfoV2Api.class).to(StatusInfoV2ApiImpl.class);
     bind(BackstagePermissionsApi.class).to(BackstagePermissionsApiImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
     bind(HealthCheck.class).to(PodHealthCheck.class);
@@ -471,6 +469,9 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("licenseUsageDailyCountJob"))
         .toInstance(new ManagedScheduledExecutorService("licenseUsageDailyCountJob"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("checkStatusDailyRunJob"))
+        .toInstance(new ManagedScheduledExecutorService("checkStatusDailyRunJob"));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
@@ -555,6 +556,13 @@ public class IdpModule extends AbstractModule {
   @Named("backstagePodLabel")
   public String backstagePodLabel() {
     return this.appConfig.getBackstagePodLabel();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageEntitiesFetchLimit")
+  public String backstageEntitiesFetchLimit() {
+    return this.appConfig.getBackstageEntitiesFetchLimit();
   }
 
   @Provides

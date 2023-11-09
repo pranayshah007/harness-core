@@ -37,7 +37,6 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.collections4.CollectionUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @SuperBuilder
@@ -48,7 +47,7 @@ import org.hibernate.validator.constraints.NotEmpty;
     description = "This is the Dynatrace Metric Health Source spec entity defined in Harness")
 public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
-  @NotEmpty String serviceId;
+  String serviceId;
   String serviceName;
   List<String> serviceMethodIds;
   List<DynatraceMetricDefinition> metricDefinitions;

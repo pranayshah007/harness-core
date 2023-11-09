@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -59,6 +60,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -85,7 +87,7 @@ import org.mockito.MockitoAnnotations;
 public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Mock private ServiceEntityService serviceEntityService;
   @Mock private EnvironmentService environmentService;
-
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private InfrastructureEntityService infraService;
   @InjectMocks private DeploymentStageFilterJsonCreatorV2 filterCreator;
 
@@ -155,6 +157,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .when(infraService)
         .getAllInfrastructureFromIdentifierList(
             "accountId", "orgId", "projectId", "env-id", Lists.newArrayList("infra-id"));
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("accountId", FeatureName.CDS_SCOPE_INFRA_TO_SERVICES);
   }
 
   @Test

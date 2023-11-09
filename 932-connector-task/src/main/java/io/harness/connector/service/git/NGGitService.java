@@ -45,7 +45,7 @@ public interface NGGitService {
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
   void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String manifestFilesDirectory, String accountId,
-      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
+      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO, boolean mayHaveMultipleFolders) throws IOException;
 
   AuthRequest getAuthRequest(GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig);
 

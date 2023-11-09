@@ -82,6 +82,9 @@ public class ChangeTracker {
       case "cvng":
         mongoClientUrl = mainConfiguration.getCvngMongo().getUri();
         break;
+      case "chaos":
+        mongoClientUrl = mainConfiguration.getChaosMongo().getUri();
+        break;
       default:
         mongoClientUrl = mainConfiguration.getHarnessMongo().getUri();
         break;

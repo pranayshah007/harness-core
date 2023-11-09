@@ -60,6 +60,7 @@ public class InfrastructureEntityConfigMapper {
     Infrastructure infrastructure = null;
     boolean allowSimultaneousDeployments = false;
     ServiceDefinitionType deploymentType = null;
+    List<String> scopedServices = null;
     if (isNotEmpty(infrastructureEntity.getYaml())) {
       try {
         final InfrastructureConfig config =
@@ -67,6 +68,7 @@ public class InfrastructureEntityConfigMapper {
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
         deploymentType = config.getInfrastructureDefinitionConfig().getDeploymentType();
+        scopedServices = config.getInfrastructureDefinitionConfig().getScopedServices();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
       }
@@ -85,6 +87,7 @@ public class InfrastructureEntityConfigMapper {
                                             .spec(infrastructure)
                                             .deploymentType(deploymentType)
                                             .allowSimultaneousDeployments(allowSimultaneousDeployments)
+                                            .scopedServices(scopedServices)
                                             .build())
         .build();
   }

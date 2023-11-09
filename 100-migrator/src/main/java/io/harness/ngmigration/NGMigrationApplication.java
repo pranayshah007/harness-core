@@ -62,6 +62,8 @@ import io.harness.lock.PersistentLocker;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.migrations.MigrationModule;
 import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -342,6 +344,8 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     Injector injector = Guice.createInjector(modules);
 
     initializeManagerSvc(injector, environment, configuration.getCg());
+    initializeMetrics(injector);
+
     log.info("Starting app done");
     log.info("Manager is running on JRE: {}", System.getProperty("java.version"));
   }
@@ -921,5 +925,10 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
         }
       });
     }
+  }
+
+  private void initializeMetrics(Injector injector) {
+    injector.getInstance(MetricService.class).initializeMetrics();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 }

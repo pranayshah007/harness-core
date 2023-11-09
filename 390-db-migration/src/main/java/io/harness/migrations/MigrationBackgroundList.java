@@ -160,6 +160,7 @@ import io.harness.migrations.all.UpdateEncryptedTokenToDelegateToken;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
 import io.harness.migrations.all.UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
+import io.harness.migrations.all.UpdateOverrideTypeToCustomDelegateImage;
 import io.harness.migrations.all.UpdateStaleDefaultAccountIds;
 import io.harness.migrations.all.UpdateWorkflowExecutionAccountId;
 import io.harness.migrations.all.UpdateWorkflowExecutionDuration;
@@ -441,6 +442,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(254, UpdateEncryptedTokenToDelegateToken.class))
         .add(Pair.of(255, EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigration.class))
         .add(Pair.of(256, EncryptDelegateTokenViaPagination.class))
+        .add(Pair.of(257, UpdateOverrideTypeToCustomDelegateImage.class))
         .build();
   }
 }

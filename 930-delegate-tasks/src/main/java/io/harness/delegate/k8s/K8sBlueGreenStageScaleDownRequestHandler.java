@@ -83,9 +83,13 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     LogCallback logCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sBlueGreenStageScaleDownRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
-        logCallback);
+    KubernetesConfig kubernetesConfig = k8sDelegateTaskParams.getKubernetesConfig();
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          k8sBlueGreenStageScaleDownRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
+          logCallback);
+    }
     init(k8sBlueGreenStageScaleDownRequest, k8sDelegateTaskParams, kubernetesConfig, logCallback);
 
     LogCallback scaleLogCallback =

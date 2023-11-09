@@ -23,12 +23,14 @@ import io.harness.exception.UnexpectedException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 import io.harness.idp.scorecard.scores.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scores.entity.ScoreEntity;
 import io.harness.idp.scorecard.scores.logging.ScoreComputationLogContext;
@@ -36,7 +38,6 @@ import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.logging.AutoLogContext;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
-import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 
@@ -65,8 +66,9 @@ import org.apache.commons.math3.util.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class ScoreComputerServiceImpl implements ScoreComputerService {
-  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?%s";
+  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?%s&limit=%s";
   @Inject @Named("ScoreComputer") ExecutorService executorService;
+  @Inject @Named("backstageEntitiesFetchLimit") private String backstageEntitiesFetchLimit;
   @Inject ScorecardService scorecardService;
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject DataSourceProviderFactory dataSourceProviderFactory;
@@ -88,15 +90,14 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       return;
     }
 
-    Map<String, List<Pair<String, List<InputValue>>>> providerDataPointValues =
-        getProviderDataPointValues(scorecardsAndChecks);
+    Map<String, List<DataFetchDTO>> dataToFetchByProvider = getProviderDataToFetch(scorecardsAndChecks);
     String configs = configReader.fetchAllConfigs(accountIdentifier);
 
     CountDownLatch latch = new CountDownLatch(entities.size());
     for (BackstageCatalogEntity entity : entities) {
       executorService.submit(() -> {
         try {
-          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, providerDataPointValues, configs);
+          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataToFetchByProvider, configs);
           compute(accountIdentifier, entity, scorecardsAndChecks, data);
         } catch (Exception e) {
           log.error("Could not fetch data and compute score for account: {}, entity: {}", accountIdentifier,
@@ -154,7 +155,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       }
 
       try {
-        String url = String.format(CATALOG_API_SUFFIX, accountIdentifier, filterStringBuilder);
+        String url =
+            String.format(CATALOG_API_SUFFIX, accountIdentifier, filterStringBuilder, backstageEntitiesFetchLimit);
         log.info("Making backstage API request: {}", url);
         Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntities(url));
         List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, BackstageCatalogEntity.class);
@@ -183,7 +185,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   private Map<String, Map<String, Object>> fetch(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, List<Pair<String, List<InputValue>>>> providerDataPoints, String configs) {
+      Map<String, List<DataFetchDTO>> providerDataPoints, String configs) {
     try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
                                       .accountIdentifier(accountIdentifier)
                                       .threadName(Thread.currentThread().getName())
@@ -239,7 +241,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
 
         for (CheckEntity check : checks) {
           CheckStatus checkStatus = new CheckStatus();
+          checkStatus.setIdentifier(check.getIdentifier());
           checkStatus.setName(check.getName());
+          checkStatus.setCustom(check.isCustom());
           Pair<CheckStatus.StatusEnum, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
           checkStatus.setStatus(statusAndMessage.getFirst());
           if (statusAndMessage.getSecond() != null) {
@@ -348,9 +352,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     });
   }
 
-  private Map<String, List<Pair<String, List<InputValue>>>> getProviderDataPointValues(
-      List<ScorecardAndChecks> scorecardsAndChecks) {
-    Map<String, List<Pair<String, List<InputValue>>>> providerDataPointValues = new HashMap<>();
+  private Map<String, List<DataFetchDTO>> getProviderDataToFetch(List<ScorecardAndChecks> scorecardsAndChecks) {
+    Map<String, List<DataFetchDTO>> providerDataToFetch = new HashMap<>();
 
     for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
       List<CheckEntity> checks = scorecardAndChecks.getChecks();
@@ -363,13 +366,16 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
         }
         for (Rule rule : check.getRules()) {
           String dataSourceIdentifier = rule.getDataSourceIdentifier();
-          List<Pair<String, List<InputValue>>> dataPointIdentifiersAndInputValues =
-              providerDataPointValues.getOrDefault(dataSourceIdentifier, new ArrayList<>());
-          dataPointIdentifiersAndInputValues.add(new Pair<>(rule.getDataPointIdentifier(), rule.getInputValues()));
-          providerDataPointValues.put(dataSourceIdentifier, dataPointIdentifiersAndInputValues);
+          List<DataFetchDTO> dataFetchDTOS = providerDataToFetch.getOrDefault(dataSourceIdentifier, new ArrayList<>());
+          dataFetchDTOS.add(DataFetchDTO.builder()
+                                .ruleIdentifier(rule.getIdentifier())
+                                .dataPoint(DataPointEntity.builder().identifier(rule.getDataPointIdentifier()).build())
+                                .inputValues(rule.getInputValues())
+                                .build());
+          providerDataToFetch.put(dataSourceIdentifier, dataFetchDTOS);
         }
       }
     }
-    return providerDataPointValues;
+    return providerDataToFetch;
   }
 }

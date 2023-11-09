@@ -7,7 +7,9 @@
 
 package io.harness.accesscontrol.roleassignments;
 
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -18,6 +20,7 @@ import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,15 +29,23 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.common.validation.ValidationResult;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
+import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent;
+import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent;
+import io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDao;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationRequest;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationResult;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidator;
+import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 
@@ -48,24 +59,35 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
   private RoleAssignmentDao roleAssignmentDao;
   private RoleAssignmentValidator roleAssignmentValidator;
   private RoleAssignmentServiceImpl roleAssignmentService;
+  private TransactionTemplate outboxTransactionTemplate;
+  private OutboxService outboxService;
+  private ScopeService scopeService;
 
   @Before
   public void setup() {
     roleAssignmentDao = mock(RoleAssignmentDao.class);
     roleAssignmentValidator = mock(RoleAssignmentValidator.class);
-    roleAssignmentService = spy(new RoleAssignmentServiceImpl(roleAssignmentDao, roleAssignmentValidator));
+    outboxTransactionTemplate = mock(TransactionTemplate.class);
+    outboxService = mock(OutboxService.class);
+    scopeService = mock(ScopeService.class);
+    roleAssignmentService = spy(new RoleAssignmentServiceImpl(
+        roleAssignmentDao, roleAssignmentValidator, outboxTransactionTemplate, outboxService, scopeService));
   }
 
-  private RoleAssignment getRoleAssignment() {
+  private RoleAssignment getRoleAssignment(Scope scope) {
     return RoleAssignment.builder()
+        .id(randomAlphabetic(10))
         .identifier(randomAlphabetic(10))
-        .scopeIdentifier(randomAlphabetic(10))
+        .scopeIdentifier(scope.toString())
         .roleIdentifier(randomAlphabetic(10))
         .principalType(PrincipalType.USER)
         .principalIdentifier(randomAlphabetic(10))
@@ -75,10 +97,14 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testCreate() {
-    RoleAssignment roleAssignment = getRoleAssignment();
+    String accountId = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).build();
+    Scope scope = fromDTO(scopeDTO);
+    RoleAssignment roleAssignment = getRoleAssignment(scope);
     RoleAssignment roleAssignmentClone = (RoleAssignment) HObjectMapper.clone(roleAssignment);
     ValidationResult validResult = ValidationResult.VALID;
     ArgumentCaptor<RoleAssignmentValidationRequest> roleAssignmentValidationRequestArgumentCaptor =
@@ -90,27 +116,34 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
                                                                         .scopeValidationResult(validResult)
                                                                         .resourceGroupValidationResult(validResult)
                                                                         .build();
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<RoleAssignmentCreateEvent> argumentCaptor = ArgumentCaptor.forClass(RoleAssignmentCreateEvent.class);
+    when(roleAssignmentDao.create(any())).thenReturn(roleAssignment);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
     when(roleAssignmentValidator.validate(any())).thenReturn(roleAssignmentValidationResult);
-    when(roleAssignmentDao.create(roleAssignmentClone)).thenReturn(roleAssignmentClone);
-
     RoleAssignment result = roleAssignmentService.create(roleAssignment);
     verify(roleAssignmentValidator, times(1)).validate(roleAssignmentValidationRequestArgumentCaptor.capture());
-    RoleAssignmentValidationRequest roleAssignmentValidationRequest =
-        roleAssignmentValidationRequestArgumentCaptor.getValue();
-
-    assertTrue(roleAssignmentValidationRequest.isValidatePrincipal());
-    assertTrue(roleAssignmentValidationRequest.isValidateResourceGroup());
-    assertTrue(roleAssignmentValidationRequest.isValidateRole());
-    assertTrue(roleAssignmentValidationRequest.isValidateScope());
-    assertEquals(roleAssignmentClone, roleAssignmentValidationRequest.getRoleAssignment());
-    assertEquals(result, roleAssignmentClone);
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    RoleAssignmentCreateEvent roleAssignmentCreateEvent = argumentCaptor.getValue();
+    assertEquals(scopeDTO, roleAssignmentCreateEvent.getScope());
+    assertEquals(scopeDTO.getAccountIdentifier(), roleAssignmentCreateEvent.getAccountIdentifier());
+    assertEquals(RoleAssignmentDTOMapper.toDTO(roleAssignment), roleAssignmentCreateEvent.getRoleAssignment());
+    assertEquals(roleAssignmentClone, result);
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testCreateInvalidParameters() throws IllegalAccessException {
-    RoleAssignment roleAssignment = getRoleAssignment();
+    String accountId = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).build();
+    Scope scope = fromDTO(scopeDTO);
+    RoleAssignment roleAssignment = getRoleAssignment(scope);
     ValidationResult validResult = ValidationResult.VALID;
     ValidationResult invalidResult = ValidationResult.builder().valid(false).errorMessage(randomAlphabetic(10)).build();
 
@@ -121,7 +154,6 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
                                                                         .resourceGroupValidationResult(validResult)
                                                                         .build();
     when(roleAssignmentValidator.validate(any())).thenReturn(roleAssignmentValidationResult);
-    when(roleAssignmentDao.create(any())).thenReturn(any());
 
     List<Field> validationFields = new ArrayList<>();
     validationFields.add(ReflectionUtils.getFieldByName(RoleAssignmentValidationResult.class, "roleValidationResult"));
@@ -141,6 +173,7 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
       } catch (InvalidRequestException exception) {
         verify(roleAssignmentValidator, times(idx)).validate(any());
         ReflectionUtils.setObjectField(field, roleAssignmentValidationResult, validResult);
+        verify(roleAssignmentDao, never()).create(any());
       }
     }
   }
@@ -149,9 +182,13 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testUpdate() {
+    String accountId = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).build();
+    Scope scope = fromDTO(scopeDTO);
     RoleAssignment currentRoleAssignment = RoleAssignment.builder()
                                                .identifier(randomAlphabetic(10))
-                                               .scopeIdentifier(randomAlphabetic(10))
+                                               .scopeIdentifier(scope.toString())
                                                .roleIdentifier(randomAlphabetic(10))
                                                .principalType(PrincipalType.USER)
                                                .principalIdentifier(randomAlphabetic(10))
@@ -160,7 +197,6 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
                                                .disabled(true)
                                                .version(17L)
                                                .build();
-    RoleAssignment currentRoleAssignmentClone = (RoleAssignment) HObjectMapper.clone(currentRoleAssignment);
     RoleAssignment roleAssignmentUpdate =
         RoleAssignment.builder()
             .identifier(currentRoleAssignment.getIdentifier())
@@ -176,33 +212,40 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
     updatedRoleAssignment.setVersion(currentRoleAssignment.getVersion() + 1);
     RoleAssignment updatedRoleAssignmentClone = (RoleAssignment) HObjectMapper.clone(updatedRoleAssignment);
 
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(outboxService.save(any())).thenReturn(null);
+    ArgumentCaptor<RoleAssignmentUpdateEvent> argumentCaptor = ArgumentCaptor.forClass(RoleAssignmentUpdateEvent.class);
+    when(roleAssignmentDao.update(any())).thenReturn(updatedRoleAssignment);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
+
     when(roleAssignmentDao.get(roleAssignmentUpdate.getIdentifier(), roleAssignmentUpdate.getScopeIdentifier()))
         .thenReturn(Optional.of(currentRoleAssignment));
-    ArgumentCaptor<RoleAssignment> roleAssignmentArgumentCaptor = ArgumentCaptor.forClass(RoleAssignment.class);
-    when(roleAssignmentDao.update(any())).thenReturn(updatedRoleAssignment);
+    RoleAssignment updatedRoleAssignment1 = roleAssignmentService.update(roleAssignmentUpdate);
+    assertEquals(updatedRoleAssignmentClone, updatedRoleAssignment1);
+    verify(outboxTransactionTemplate, times(1)).execute(any());
 
-    RoleAssignmentUpdateResult roleAssignmentUpdateResult = roleAssignmentService.update(roleAssignmentUpdate);
-
-    assertEquals(currentRoleAssignmentClone, roleAssignmentUpdateResult.getOriginalRoleAssignment());
-    assertEquals(updatedRoleAssignmentClone, roleAssignmentUpdateResult.getUpdatedRoleAssignment());
-
-    verify(roleAssignmentDao, times(1)).update(roleAssignmentArgumentCaptor.capture());
-    RoleAssignment requestedUpdate = roleAssignmentArgumentCaptor.getValue();
-    assertEquals(updatedRoleAssignmentClone.getScopeIdentifier(), requestedUpdate.getScopeIdentifier());
-    assertEquals(updatedRoleAssignmentClone.getIdentifier(), requestedUpdate.getIdentifier());
-    assertEquals(updatedRoleAssignmentClone.getRoleIdentifier(), requestedUpdate.getRoleIdentifier());
-    assertEquals(updatedRoleAssignmentClone.getPrincipalIdentifier(), requestedUpdate.getPrincipalIdentifier());
-    assertEquals(updatedRoleAssignmentClone.getPrincipalType(), requestedUpdate.getPrincipalType());
-    assertEquals(updatedRoleAssignmentClone.getResourceGroupIdentifier(), requestedUpdate.getResourceGroupIdentifier());
-    assertEquals(17L, requestedUpdate.getVersion().longValue());
-    assertFalse(requestedUpdate.isDisabled());
+    verify(outboxService, times(1)).save(argumentCaptor.capture());
+    RoleAssignmentUpdateEvent roleAssignmentUpdateEvent = argumentCaptor.getValue();
+    assertEquals(scopeDTO, roleAssignmentUpdateEvent.getScope());
+    assertEquals(scopeDTO.getAccountIdentifier(), roleAssignmentUpdateEvent.getAccountIdentifier());
+    assertEquals(
+        RoleAssignmentDTOMapper.toDTO(updatedRoleAssignment), roleAssignmentUpdateEvent.getNewRoleAssignment());
+    assertEquals(
+        RoleAssignmentDTOMapper.toDTO(currentRoleAssignment), roleAssignmentUpdateEvent.getOldRoleAssignment());
   }
 
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testUpdateNotFound() {
-    RoleAssignment roleAssignmentUpdate = getRoleAssignment();
+    String accountId = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).build();
+    Scope scope = fromDTO(scopeDTO);
+    RoleAssignment roleAssignmentUpdate = getRoleAssignment(scope);
     when(roleAssignmentDao.get(roleAssignmentUpdate.getIdentifier(), roleAssignmentUpdate.getScopeIdentifier()))
         .thenReturn(Optional.empty());
     roleAssignmentService.update(roleAssignmentUpdate);
@@ -212,7 +255,11 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testUpdateInvalidUpdate() throws IllegalAccessException {
-    RoleAssignment currentRoleAssignment = getRoleAssignment();
+    String accountId = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).build();
+    Scope scope = fromDTO(scopeDTO);
+    RoleAssignment currentRoleAssignment = getRoleAssignment(scope);
     RoleAssignment currentRoleAssignmentClone = (RoleAssignment) HObjectMapper.clone(currentRoleAssignment);
     RoleAssignment roleAssignmentUpdate =
         RoleAssignment.builder()
@@ -249,6 +296,7 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
         verify(roleAssignmentDao, times(idx)).get(any(), any());
         ReflectionUtils.setObjectField(fieldAndValue.getLeft(), roleAssignmentUpdate,
             ReflectionUtils.getFieldValue(currentRoleAssignmentClone, fieldAndValue.getLeft()));
+        verify(roleAssignmentDao, never()).update(any());
       }
     }
   }
@@ -258,8 +306,17 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
   @Category(UnitTests.class)
   public void testDelete() {
     String identifier = randomAlphabetic(10);
-    String scopeIdentifier = randomAlphabetic(10);
     String roleIdentifier = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).build();
+    Scope scope = fromDTO(scopeDTO);
+    String scopeIdentifier = scope.toString();
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
+    when(outboxService.save(any())).thenReturn(null);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(roleAssignmentDao.delete(identifier, scopeIdentifier))
         .thenReturn(Optional.of(RoleAssignment.builder()
                                     .scopeIdentifier(scopeIdentifier)
@@ -272,18 +329,42 @@ public class RoleAssignmentServiceImplTest extends AccessControlCoreTestBase {
     assertEquals(scopeIdentifier, deletedRoleAssignment.get().getScopeIdentifier());
     assertEquals(roleIdentifier, deletedRoleAssignment.get().getRoleIdentifier());
     verify(roleAssignmentDao, times(1)).delete(identifier, scopeIdentifier);
+    ArgumentCaptor<RoleAssignmentDeleteEvent> deleteEventArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentDeleteEvent.class);
+    verify(outboxService, times(1)).save(deleteEventArgumentCaptor.capture());
+    RoleAssignmentDeleteEvent roleAssignmentDeleteEvent = deleteEventArgumentCaptor.getValue();
+    assertFalse(roleAssignmentDeleteEvent.getSkipAudit());
+    assertEquals(scopeDTO, roleAssignmentDeleteEvent.getScope());
+    RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTOMapper.toDTO(deletedRoleAssignment.get());
+    assertEquals(roleAssignmentDTO, roleAssignmentDeleteEvent.getRoleAssignment());
   }
 
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testDeleteMulti() {
+    String accountId = randomAlphabetic(10);
+    ScopeDTO scopeDTO = ScopeDTO.builder().accountIdentifier(accountId).build();
+    Scope scope = fromDTO(scopeDTO);
     RoleAssignmentFilter roleAssignmentFilter =
         RoleAssignmentFilter.builder().scopeFilter(randomAlphabetic(10)).build();
-    when(roleAssignmentDao.deleteMulti(roleAssignmentFilter)).thenReturn(17L);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
+    when(outboxService.save(any())).thenReturn(null);
+    when(outboxTransactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    List<RoleAssignment> roleAssingmentsDeleted =
+        List.of(RoleAssignment.builder().build(), RoleAssignment.builder().build(), RoleAssignment.builder().build());
+    when(roleAssignmentDao.findAndRemove(roleAssignmentFilter)).thenReturn(roleAssingmentsDeleted);
     long deletedRoleAssignmentsCount = roleAssignmentService.deleteMulti(roleAssignmentFilter);
-    assertEquals(17L, deletedRoleAssignmentsCount);
-    verify(roleAssignmentDao, times(1)).deleteMulti(roleAssignmentFilter);
+    ArgumentCaptor<RoleAssignmentDeleteEvent> deleteEventArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentDeleteEvent.class);
+    verify(outboxService, times(roleAssingmentsDeleted.size())).save(deleteEventArgumentCaptor.capture());
+    RoleAssignmentDeleteEvent roleAssignmentDeleteEvent = deleteEventArgumentCaptor.getValue();
+    assertFalse(roleAssignmentDeleteEvent.getSkipAudit());
+    assertEquals(3L, deletedRoleAssignmentsCount);
+    verify(roleAssignmentDao, times(1)).findAndRemove(roleAssignmentFilter);
   }
 
   @Test

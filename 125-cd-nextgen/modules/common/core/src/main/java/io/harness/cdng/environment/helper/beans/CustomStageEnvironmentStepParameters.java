@@ -31,9 +31,10 @@ public class CustomStageEnvironmentStepParameters implements StepParameters {
   private ParameterField<String> infraId;
   private ParameterField<Map<String, Object>> envInputs;
   private List<String> childrenNodeIds;
+  private String envGitBranch;
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
-    return new LinkedList<>(Arrays.asList("envInputs", "childrenNodeIds"));
+    return new LinkedList<>(Arrays.asList("envInputs", "childrenNodeIds", "envGitBranch"));
   }
 }

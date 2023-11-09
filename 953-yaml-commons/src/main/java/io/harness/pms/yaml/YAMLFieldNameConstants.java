@@ -129,4 +129,10 @@ public class YAMLFieldNameConstants {
   public final String REF = "ref";
   public final String VERSION = "version";
   public final String KIND = "kind";
+  public final String VALIDATOR = "validator";
+  public final String ALLOWED = "allowed";
+  public final String REGEX = "regex";
+  public final String DESC = "desc";
+
+  public final String DEPLOYMENT_STAGE_V1 = "deployment";
 }

@@ -71,8 +71,11 @@ public class AccountActivityMetricsPublisherJob implements Runnable {
           break;
         }
         pageIndex++;
-        accountIds.addAll(
-            pageResponse.getResponse().stream().map(AccountDTO::getIdentifier).collect(Collectors.toList()));
+        accountIds.addAll(pageResponse.getResponse()
+                              .stream()
+                              .filter(AccountDTO -> AccountDTO.isNextGenEnabled() == true)
+                              .map(AccountDTO::getIdentifier)
+                              .collect(Collectors.toList()));
 
         List<Action> actions = new ArrayList<>();
         actions.add(Action.LOGIN);
@@ -81,7 +84,7 @@ public class AccountActivityMetricsPublisherJob implements Runnable {
         Map<String, Integer> uniqueProjectCountPerAccountId =
             auditService.getUniqueProjectCountPerAccountId(accountIds, startTime, endTime);
         Map<String, Integer> uniqueLoginCountPerAccountId =
-            auditService.getUniqueLoginCountPerAccountId(accountIds, actions, startTime, endTime);
+            auditService.getUniqueActionCount(accountIds, actions, startTime, endTime);
 
         for (String accountIdentifier : accountIds) {
           int uniqueActiveProjects = uniqueProjectCountPerAccountId.getOrDefault(accountIdentifier, 0);

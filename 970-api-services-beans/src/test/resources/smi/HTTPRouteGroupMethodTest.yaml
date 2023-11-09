@@ -1,0 +1,10 @@
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: HTTPRouteGroup
+metadata:
+  name: smi-http-route
+spec:
+  matches:
+  - methods:
+    - GET
+    - POST
+    name: smi-http-method-1

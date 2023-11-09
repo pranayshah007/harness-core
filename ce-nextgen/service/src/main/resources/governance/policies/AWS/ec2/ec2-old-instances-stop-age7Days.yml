@@ -1,5 +1,5 @@
 policies:
-  - name: ec2-old-instances-stop
+  - name: ec2-old-instances-stop-age7Days
     resource: ec2
     description: |
       Stop all EC2s where instance age is more than 7 days

@@ -1,0 +1,8 @@
+name: Pipeline Service DW Metrics per Resources for StatusCodes
+identifier: PipelineServiceDwMetricsResourcesForStatusCodes
+metricGroup: PipelineServiceDwMetricsResourceStatusCodeGroup
+metrics:
+  - metricName: io_harness_pipeline_resources_responses_count
+    metricDefinition: Total number of Requests Count per Resource method per status code
+    type: LastValue
+    unit: count

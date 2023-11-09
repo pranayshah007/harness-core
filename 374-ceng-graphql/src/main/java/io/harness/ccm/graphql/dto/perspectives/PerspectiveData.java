@@ -16,6 +16,6 @@ import lombok.Value;
 @Value
 @Builder
 public class PerspectiveData {
-  List<QLCEView> sampleViews;
-  List<QLCEView> customerViews;
+  Long totalCount;
+  List<QLCEView> views;
 }

@@ -11,7 +11,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 
 public class ThresholdServiceLevelIndicatorTransformer
@@ -20,8 +20,10 @@ public class ThresholdServiceLevelIndicatorTransformer
   public ThresholdServiceLevelIndicator getEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIdentifier,
       String healthSourceIdentifier, boolean isEnabled) {
+    WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec();
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec();
+        (ThresholdSLIMetricSpec) windowBasedServiceLevelIndicatorSpec.getSpec();
 
     return ThresholdServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
@@ -29,7 +31,7 @@ public class ThresholdServiceLevelIndicatorTransformer
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
         .name(serviceLevelIndicatorDTO.getName())
-        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
+        .sliMissingDataType(windowBasedServiceLevelIndicatorSpec.getSliMissingDataType())
         .metric1(thresholdSLIMetricSpec.getMetric1())
         .considerConsecutiveMinutes(thresholdSLIMetricSpec.getConsiderConsecutiveMinutes())
         .considerAllConsecutiveMinutesFromStartAsBad(

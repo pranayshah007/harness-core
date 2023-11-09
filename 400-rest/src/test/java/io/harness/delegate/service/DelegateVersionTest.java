@@ -7,6 +7,7 @@
 
 package io.harness.delegate.service;
 
+import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_CUSTOM_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.rule.OwnerRule.JENNY;
 
@@ -71,6 +72,30 @@ public class DelegateVersionTest extends WingsBaseTest {
     assertThat(supportedDelegateVersion).isNotNull();
     assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo("88");
     assertThat(supportedDelegateVersion.getLatestSupportedMinimalVersion()).isEqualTo("88.minimal");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testSupportedDelegateVersionWithCustomImageInVersionOverride() {
+    final VersionOverride overrideImmutable =
+        VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_CUSTOM_IMAGE_TAG).version("cust:88").build();
+    persistence.save(overrideImmutable);
+    when(delegateRingService.getDelegateImageTag(ACCOUNT_ID)).thenReturn(HARNESS_DELEGATE_RING_IMAGE);
+    SupportedDelegateVersion supportedDelegateVersion = delegateVersionService.getSupportedDelegateVersion(ACCOUNT_ID);
+    assertThat(supportedDelegateVersion).isNotNull();
+    assertThat(supportedDelegateVersion.getLatestSupportedVersion()).isEqualTo(HARNESS_DELEGATE_RING_IMAGE_NO_TAG);
+    assertThat(supportedDelegateVersion.getLatestSupportedMinimalVersion()).isEqualTo("ring.minimal");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetLatestImageWithCustomImageVersionOverride() {
+    final VersionOverride overrideImmutable =
+        VersionOverride.builder(ACCOUNT_ID).overrideType(DELEGATE_CUSTOM_IMAGE_TAG).version("myimage:cust88").build();
+    persistence.save(overrideImmutable);
+    assertThat(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).isEqualTo("myimage:cust88");
   }
 
   private void setUpTestData() {

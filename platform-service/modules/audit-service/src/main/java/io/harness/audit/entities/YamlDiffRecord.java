@@ -15,6 +15,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -56,6 +57,11 @@ public class YamlDiffRecord {
                  .name("accountIdentifierAuditIdIdx")
                  .field(YamlDiffRecordKeys.accountIdentifier)
                  .field(YamlDiffRecordKeys.auditId)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("ngYamlDiffAccountTimeIdx")
+                 .field(YamlDiffRecordKeys.accountIdentifier)
+                 .descSortField(YamlDiffRecordKeys.timestamp)
                  .build())
         .build();
   }

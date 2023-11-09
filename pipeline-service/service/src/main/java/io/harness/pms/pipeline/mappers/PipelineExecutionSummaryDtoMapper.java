@@ -98,12 +98,20 @@ public class PipelineExecutionSummaryDtoMapper {
         .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
         .notesExistForPlanExecutionId(checkNotesExistForPlanExecutionId(pipelineExecutionSummaryEntity))
         .yamlVersion(pipelineExecutionSummaryEntity.getPipelineVersion())
+        .shouldUseSimplifiedKey(checkShouldUseSimplifiedLogBaseKey(pipelineExecutionSummaryEntity))
         .build();
   }
 
   public boolean checkNotesExistForPlanExecutionId(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
     if (null != pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId()) {
       return pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId();
+    }
+    return false;
+  }
+
+  public boolean checkShouldUseSimplifiedLogBaseKey(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    if (null != pipelineExecutionSummaryEntity.getShouldUseSimplifiedLogBaseKey()) {
+      return pipelineExecutionSummaryEntity.getShouldUseSimplifiedLogBaseKey();
     }
     return false;
   }
