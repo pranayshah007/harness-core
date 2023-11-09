@@ -49,6 +49,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
@@ -378,7 +379,8 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     if (pmsKustomizeValues.getImages() != null && pmsKustomizeValues.getImages().getValue() != null) {
       kustomizeSource.setImages(pmsKustomizeValues.getImages().getValue());
     }
-    if (pmsKustomizeValues.getNamespace() != null && pmsKustomizeValues.getNamespace().getValue() != null) {
+    if (pmsKustomizeValues.getNamespace() != null
+        && StringUtils.isNotBlank(pmsKustomizeValues.getNamespace().getValue())) {
       kustomizeSource.setNamespace(pmsKustomizeValues.getNamespace().getValue());
     }
     if (pmsKustomizeValues.getReplicas() != null && pmsKustomizeValues.getReplicas().getValue() != null) {
@@ -395,10 +397,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       }
       kustomizeSource.setReplicas(replicasList);
     }
-    if (pmsKustomizeValues.getNamePrefix().getValue() != null) {
+    if (StringUtils.isNotBlank(pmsKustomizeValues.getNamePrefix().getValue())) {
       kustomizeSource.setNamePrefix(pmsKustomizeValues.getNamePrefix().getValue());
     }
-    if (pmsKustomizeValues.getNameSuffix().getValue() != null) {
+    if (StringUtils.isNotBlank(pmsKustomizeValues.getNameSuffix().getValue())) {
       kustomizeSource.setNameSuffix(pmsKustomizeValues.getNameSuffix().getValue());
     }
     if (pmsKustomizeValues.getCommonLabels().getValue() != null) {
