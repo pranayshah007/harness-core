@@ -15,8 +15,8 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 
 public class EcsUpgradeContainerStepV2 extends CdAsyncExecutable<EcsCommandResponse, EcsUpgradeContainerStep> {
-    public static final StepType STEP_TYPE = StepType.newBuilder()
-            .setType(ExecutionNodeType.ECS_UPGRADE_CONTAINER_V2.getName())
-            .setStepCategory(StepCategory.STEP)
-            .build();
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.ECS_UPGRADE_CONTAINER_V2.getName())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
 }

@@ -36,8 +36,7 @@ import java.util.Set;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class EcsUpgradeContainerStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsUpgradeContainerStepNode> {
-  @Inject
-  private CDFeatureFlagHelper featureFlagService;
+  @Inject private CDFeatureFlagHelper featureFlagService;
 
   @Override
   public Set<String> getSupportedStepTypes() {
