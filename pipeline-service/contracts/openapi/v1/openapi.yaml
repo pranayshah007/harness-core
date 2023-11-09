@@ -1108,39 +1108,6 @@ components:
         validation_uuid:
           type: string
           description: 'UUID of the asynchronous validation event started, if any'
-    TriggerGetResponseBody:
-      title: Trigger Get Response Body
-      description: Trigger response body.
-      type: object
-      properties:
-        identifier:
-          type: string
-          description: Trigger identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
-        name:
-          type: string
-          description: Trigger name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
-          minLength: 1
-          maxLength: 128
-        org:
-          type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
-          description: Organization identifier
-        project:
-          type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
-          description: Project identifier
-        description:
-          type: string
-          maxLength: 1024
-          description: Trigger description
     PipelineValidationResponseBody:
       title: Pipeline Validation Response Body
       description: Pipeline Validation Response Body
@@ -1291,13 +1258,10 @@ components:
             - Custom
         spec:
           $ref: '#/components/schemas/TriggerSpec'
-
       required:
         - type
     TriggerUpdateRequestBody:
       title: Trigger Update Request Body
-      x-stoplight:
-        id: ntztvszbumo2l
       type: object
       description: 'Trigger request body object'
       properties:
@@ -1343,6 +1307,60 @@ components:
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
           maxLength: 128
+    TriggerGetResponseBody:
+      title: Trigger Get Response Body
+      description: Trigger response body.
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: Trigger identifier
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        name:
+          type: string
+          description: Trigger name
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          minLength: 1
+          maxLength: 128
+        org:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+          description: Organization identifier
+        project:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+          description: Project identifier
+        pipeline:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+          description: Pipeline identifier
+        description:
+          type: string
+          maxLength: 1024
+          description: Trigger description
+        trigger:
+          $ref: '#/components/schemas/TriggerBody'
+    TriggerBody:
+      title: Trigger Body
+      type: object
+      description: 'Trigger object '
+      properties:
+        type:
+          type: string
+          enum:
+            - Custom
+        spec:
+          $ref: '#/components/schemas/TriggerSpec'
+      required:
+        - type
     PipelineCreateRequestBody:
       title: Pipeline Create Request Body
       x-stoplight:
@@ -3288,10 +3306,10 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PipelineGetResponseBody'
+            $ref: '#/components/schemas/TriggerGetResponseBody'
         application/yaml:
           schema:
-            $ref: '#/components/schemas/PipelineGetResponseBody'
+            $ref: '#/components/schemas/TriggerGetResponseBody'
     PipelineValidationResponseBody:
       description: Pipeline Validation response body
       content:
@@ -3983,6 +4001,16 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/TriggerCreateRequestBody'
+    TriggerUpdateRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TriggerUpdateRequestBody'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/TriggerUpdateRequestBody'
+      description: Trigger request body
+      required: true
     PipelineCreateRequestBody:
       content:
         application/json:
@@ -4249,16 +4277,6 @@ components:
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
       description: Pipeline request body
-      required: true
-    TriggerUpdateRequestBody:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TriggerUpdateRequestBody'
-        application/yaml:
-          schema:
-            $ref: '#/components/schemas/TriggerUpdateRequestBody'
-      description: Trigger request body
       required: true
     InputSetCreateRequestBody:
       content:
