@@ -857,6 +857,7 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
+import io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig;
 import io.harness.delegate.task.pcf.request.AbstractTasTaskRequest;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG;
@@ -2585,5 +2586,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AtomicBoolean.class, 20001003);
     kryo.register(ArtifactBundleFetchRequest.class, 20001004);
     kryo.register(ArtifactBundleFetchResponse.class, 20001005);
+    kryo.register(TasManifestDelegateConfig.class, 20001006);
   }
 }

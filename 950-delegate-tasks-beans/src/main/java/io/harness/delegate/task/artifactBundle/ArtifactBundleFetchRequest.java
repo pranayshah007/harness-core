@@ -69,26 +69,7 @@ public class ArtifactBundleFetchRequest implements ActivityAccess, TaskParameter
   public void populateRequestCapabilities(
       List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
     if (tasArtifactConfig != null) {
-      if (tasArtifactConfig.getArtifactType() == TasArtifactType.CONTAINER) {
-        TasContainerArtifactConfig azureContainerArtifactConfig = (TasContainerArtifactConfig) tasArtifactConfig;
-        switch (azureContainerArtifactConfig.getRegistryType()) {
-          case DOCKER_HUB_PUBLIC:
-          case DOCKER_HUB_PRIVATE:
-            capabilities.addAll(DockerCapabilityHelper.fetchRequiredExecutionCapabilities(
-                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
-            break;
-          case ARTIFACTORY_PRIVATE_REGISTRY:
-            capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
-            break;
-          case ACR:
-            capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
-                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
-            break;
-          default:
-            // no capabilities to add
-        }
-      } else if (tasArtifactConfig.getArtifactType() == TasArtifactType.PACKAGE) {
+      if (tasArtifactConfig.getArtifactType() == TasArtifactType.PACKAGE) {
         TasPackageArtifactConfig azurePackageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
         switch (azurePackageArtifactConfig.getSourceType()) {
           case ARTIFACTORY_REGISTRY:
