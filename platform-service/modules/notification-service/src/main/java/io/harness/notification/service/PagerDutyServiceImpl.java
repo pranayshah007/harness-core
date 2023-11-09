@@ -173,7 +173,6 @@ public class PagerDutyServiceImpl implements ChannelService {
   private NotificationProcessingResponse send(List<String> pagerDutyKeys, String templateId,
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
       Map<String, String> abstractionMap, String summary, Map<String, String> links) {
-    NotificationTaskResponse notificationTaskResponse;
     List<LinkContext> linkContexts = new ArrayList<>();
     if (isNotEmpty(links)) {
       linkContexts = links.entrySet()

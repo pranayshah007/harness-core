@@ -34,6 +34,8 @@ import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.WebhookTaskParams;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.exception.NotificationException;
+import io.harness.notification.remote.dto.NotificationSettingDTO;
+import io.harness.notification.remote.dto.WebhookSettingDTO;
 import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
@@ -56,18 +58,17 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(PL)
 public class WebhookServiceImplTest extends CategoryTest {
   private static final String TEST_NOTIFICATION_TEMPLATE_CONTENT = "This is a test notification";
-  private final String accountId = "accountId";
-  private final String webhookTemplateName = "webhook_test";
-  private final String webhookUrl = "webhook-url";
-  private final String webhookUrl2 = "webhook-url2";
-  private final String id = "id";
-
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private WebhookSenderImpl webhookSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private WebhookServiceImpl webhookService;
+  private String accountId = "accountId";
+  private String webhookTemplateName = "webhook_test";
+  private String webhookurl = "webhook-url";
+  private String webhookurl2 = "webhook-url-2";
+  private String id = "id";
 
   @Before
   public void setUp() throws Exception {
@@ -103,7 +104,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                                                   .setAccountId(accountId)
                                                   .setWebhook(NotificationRequest.Webhook.newBuilder()
                                                                   .setTemplateId(webhookTemplateName)
-                                                                  .addAllUrls(Collections.EMPTY_LIST)
+                                                                  .addAllUrls(Collections.emptyList())
                                                                   .build())
                                                   .build();
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
@@ -119,7 +120,7 @@ public class WebhookServiceImplTest extends CategoryTest {
             .setId(id)
             .setAccountId(accountId)
             .setWebhook(NotificationRequest.Webhook.newBuilder()
-                            .addAllUrls(Collections.singletonList(webhookUrl))
+                            .addAllUrls(Collections.singletonList(webhookurl))
                             .setTemplateId(webhookTemplateName)
                             .addUserGroup(NotificationRequest.UserGroup.newBuilder()
                                               .setIdentifier("identifier")
@@ -147,7 +148,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                               .setAccountId(accountId)
                               .setWebhook(NotificationRequest.Webhook.newBuilder()
                                               .setTemplateId(webhookTemplateName)
-                                              .addAllUrls(Collections.singletonList(webhookUrl))
+                                              .addAllUrls(Collections.singletonList(webhookurl))
                                               .addUserGroup(NotificationRequest.UserGroup.newBuilder()
                                                                 .setIdentifier("identifier")
                                                                 .setProjectIdentifier("projectIdentifier")
@@ -175,7 +176,7 @@ public class WebhookServiceImplTest extends CategoryTest {
             .setId(id)
             .setAccountId(accountId)
             .setWebhook(NotificationRequest.Webhook.newBuilder()
-                            .addAllUrls(Collections.singletonList(webhookUrl))
+                            .addAllUrls(Collections.singletonList(webhookurl))
                             .setTemplateId(webhookTemplateName)
                             .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                             .setOrgIdentifier("orgIdentifier")
@@ -201,7 +202,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                               .setAccountId(accountId)
                               .setWebhook(NotificationRequest.Webhook.newBuilder()
                                               .setTemplateId(webhookTemplateName)
-                                              .addAllUrls(List.of(webhookUrl, webhookUrl2))
+                                              .addAllUrls(List.of(webhookurl, webhookurl2))
                                               .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                                               .setOrgIdentifier("orgIdentifier")
                                               .setProjectIdentifier("projectIdentifier")
@@ -223,7 +224,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void sendNotification_ValidCase_WithoutTemplateId_WithCustomContent() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .setMessage("some-message")
                                                      .build();
     NotificationRequest notificationRequest =
@@ -237,7 +238,7 @@ public class WebhookServiceImplTest extends CategoryTest {
 
     verifyNoInteractions(notificationTemplateService);
     verify(webhookSender, times(1))
-        .send(eq(List.of(webhookUrl)), eq(webhookBuilder.getMessage()), anyString(), anyMap(), anyList());
+        .send(eq(List.of(webhookurl)), eq(webhookBuilder.getMessage()), anyString(), anyMap(), anyList());
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
 
@@ -248,7 +249,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   public void sendNotification_ValidCase_WithoutDelegate() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
                                                      .setTemplateId(webhookTemplateName)
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .build();
     NotificationRequest notificationRequest =
         NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
@@ -262,7 +263,7 @@ public class WebhookServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
 
     verify(webhookSender, times(1))
-        .send(eq(List.of(webhookUrl)), eq(TEST_NOTIFICATION_TEMPLATE_CONTENT), anyString(), anyMap(), anyList());
+        .send(eq(List.of(webhookurl)), eq(TEST_NOTIFICATION_TEMPLATE_CONTENT), anyString(), anyMap(), anyList());
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
 
@@ -273,7 +274,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   public void sendNotification_ValidCase_WithDelegate() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
                                                      .setTemplateId(webhookTemplateName)
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .build();
     NotificationRequest notificationRequest =
         NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
@@ -295,7 +296,7 @@ public class WebhookServiceImplTest extends CategoryTest {
 
     assertThat(webhookTaskParams.getWebhookUrls()).isNotEmpty();
     assertThat(webhookTaskParams.getWebhookUrls()).hasSize(1);
-    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookUrl);
+    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookurl);
     assertThat(webhookTaskParams.getMessage()).isEqualTo(TEST_NOTIFICATION_TEMPLATE_CONTENT);
     assertThat(webhookTaskParams.getHeaders()).isEmpty();
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
@@ -311,7 +312,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                                                   .setAccountId(accountId)
                                                   .setWebhook(NotificationRequest.Webhook.newBuilder()
                                                                   .setTemplateId(webhookTemplateName)
-                                                                  .addAllUrls(Collections.singletonList(webhookUrl))
+                                                                  .addAllUrls(Collections.singletonList(webhookurl))
                                                                   .build())
                                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
@@ -332,7 +333,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                               .setAccountId(accountId)
                               .setWebhook(NotificationRequest.Webhook.newBuilder()
                                               .setTemplateId(webhookTemplateName)
-                                              .addAllUrls(Collections.singletonList(webhookUrl))
+                                              .addAllUrls(Collections.singletonList(webhookurl))
                                               .build())
                               .build();
     notificationExpectedResponse =
@@ -344,6 +345,39 @@ public class WebhookServiceImplTest extends CategoryTest {
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = webhookService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendTestNotification_CheckAllGaurds() {
+    final NotificationSettingDTO notificationSettingDTO1 = WebhookSettingDTO.builder().build();
+    assertThatThrownBy(() -> webhookService.sendTestNotification(notificationSettingDTO1))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationSettingDTO notificationSettingDTO2 = WebhookSettingDTO.builder().accountId(accountId).build();
+    assertThatThrownBy(() -> webhookService.sendTestNotification(notificationSettingDTO2))
+        .isInstanceOf(NotificationException.class);
+
+    final NotificationSettingDTO notificationSettingDTO3 = WebhookSettingDTO.builder().recipient("webhook.url").build();
+    assertThatThrownBy(() -> webhookService.sendTestNotification(notificationSettingDTO3))
+        .isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendTestNotification_ValidRequest() {
+    final NotificationSettingDTO notificationSettingDTO4 =
+        WebhookSettingDTO.builder().accountId(accountId).recipient(webhookurl).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    boolean response = webhookService.sendTestNotification(notificationSettingDTO4);
+    assertTrue(response);
   }
 
   @Test
@@ -407,7 +441,7 @@ public class WebhookServiceImplTest extends CategoryTest {
                                                   .setAccountId(accountId)
                                                   .setWebhook(NotificationRequest.Webhook.newBuilder()
                                                                   .setTemplateId(webhookTemplateName)
-                                                                  .addAllUrls(Collections.singletonList(webhookUrl))
+                                                                  .addAllUrls(Collections.singletonList(webhookurl))
                                                                   .build())
                                                   .build();
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any())).thenReturn(Optional.empty());
@@ -423,14 +457,14 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void sendSyncNotification_ValidCase_WithoutTemplateIdInRequest() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .setMessage("custom-message")
                                                      .build();
     NotificationRequest notificationRequest =
         NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
 
     NotificationProcessingResponse notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
@@ -448,7 +482,7 @@ public class WebhookServiceImplTest extends CategoryTest {
 
     assertThat(webhookTaskParams.getWebhookUrls()).isNotEmpty();
     assertThat(webhookTaskParams.getWebhookUrls()).hasSize(1);
-    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookUrl);
+    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookurl);
     assertEquals(webhookBuilder.getMessage(), webhookTaskParams.getMessage());
     assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
   }
@@ -458,7 +492,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void sendSyncNotification_ValidCase_WithoutDelegate() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .setTemplateId(webhookTemplateName)
                                                      .build();
     NotificationRequest notificationRequest =
@@ -484,7 +518,7 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void sendSyncNotification_ValidCase_UsingDelegate() {
     NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
-                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .addAllUrls(Collections.singletonList(webhookurl))
                                                      .setTemplateId(webhookTemplateName)
                                                      .setMessage("custom-message")
                                                      .build();
@@ -510,7 +544,7 @@ public class WebhookServiceImplTest extends CategoryTest {
 
     assertThat(webhookTaskParams.getWebhookUrls()).isNotEmpty();
     assertThat(webhookTaskParams.getWebhookUrls()).hasSize(1);
-    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookUrl);
+    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookurl);
     assertEquals(TEST_NOTIFICATION_TEMPLATE_CONTENT, webhookTaskParams.getMessage());
     assertEquals(notificationExpectedResponse, notificationTaskResponse.getProcessingResponse());
   }
