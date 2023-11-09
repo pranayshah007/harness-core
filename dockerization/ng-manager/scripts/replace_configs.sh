@@ -629,7 +629,7 @@ replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
-replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+#replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value signupDomainDenylistConfig.gcsCreds "$MINING_GCS_CREDS"
 replace_key_value signupDomainDenylistConfig.projectId "$MINING_GCS_PROJECT_ID"

@@ -343,7 +343,7 @@ replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 replace_key_value serviceDiscoveryServiceClientConfig.baseUrl "$SERVICE_DISCOVERY_SERVICE_BASE_URL"
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 
-replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+#replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"

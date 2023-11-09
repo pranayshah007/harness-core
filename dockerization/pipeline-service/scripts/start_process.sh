@@ -31,13 +31,13 @@ fi
 
 export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS -XX:+UseStringDeduplication -XX:StringDeduplicationAgeThreshold=2 -XX:NativeMemoryTracking=summary -XX:-UseCompressedOops -XX:+AlwaysPreTouch"
 
-if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
-    mkdir /opt/harness/AppServerAgent && unzip AppServerAgent.zip -d /opt/harness/AppServerAgent
-    node_name="-Dappdynamics.agent.nodeName=$(hostname)"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
-    JAVA_OPTS="$JAVA_OPTS $node_name"
-    echo "Using Appdynamics java agent"
-fi
+#if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
+#    mkdir /opt/harness/AppServerAgent && unzip AppServerAgent.zip -d /opt/harness/AppServerAgent
+#    node_name="-Dappdynamics.agent.nodeName=$(hostname)"
+#    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
+#    JAVA_OPTS="$JAVA_OPTS $node_name"
+#    echo "Using Appdynamics java agent"
+#fi
 
 if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
     echo "Monitoring  is enabled"
@@ -45,18 +45,18 @@ if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
     echo "Using inspectIT Java Agent"
 fi
 
-if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
-    echo "OpenTelemetry is enabled"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service}"
-
-    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
-        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
-    else
-        echo "OpenTelemetry export is disabled"
-        JAVA_OPTS=$JAVA_OPTS" -Dotel.traces.exporter=none -Dotel.metrics.exporter=none "
-    fi
-    echo "Using OpenTelemetry Java Agent"
-fi
+#if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+#    echo "OpenTelemetry is enabled"
+#    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-pipeline-service}"
+#
+#    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+#        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+#    else
+#        echo "OpenTelemetry export is disabled"
+#        JAVA_OPTS=$JAVA_OPTS" -Dotel.traces.exporter=none -Dotel.metrics.exporter=none "
+#    fi
+#    echo "Using OpenTelemetry Java Agent"
+#fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml

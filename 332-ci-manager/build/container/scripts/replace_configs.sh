@@ -634,7 +634,7 @@ replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
-replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+#replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
