@@ -183,7 +183,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
             .environmentVariables(new ArrayList<>())
             .outputVariables(outputVars)
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
-            .executionTarget(executionTarget)
+            .executionTarget(ParameterField.createValueField(executionTarget))
             .build());
     return shellScriptStepNode;
   }
