@@ -61,6 +61,8 @@ import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.codec.digest.DigestUtils;
+
 
 public class IACMStepsUtils {
   private static final String ENV_VARIABLE = "env";
@@ -93,6 +95,13 @@ public class IACMStepsUtils {
 
   public void createExecution(Ambiance ambiance, String workspaceId) {
     iacmServiceUtils.createIACMExecution(ambiance, workspaceId);
+  }
+
+  public String generateHashedGitRepoInfo(String repo, String connector, String branch, String commit, String path) {
+   return DigestUtils.md5Hex(String.format("%s_%s_%s_%s", repo, connector, branch, commit, path));
+  }
+  public String generateFilePath(String hashedGitRepoInfo, String filePath) {
+    return String.format("/harnes/.iacm/%s/%s", hashedGitRepoInfo, filePath);
   }
 
   public String populatePipelineIds(Ambiance ambiance, String json) {
@@ -142,8 +151,18 @@ public class IACMStepsUtils {
 
     if (workspaceInfo.getTerraform_variable_files() != null) {
       for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
-        pluginEnvs.put(
-            "PLUGIN_VARIABLE_CONNECTOR_" + variablesRepo.getRepository(), variablesRepo.getRepository_path());
+        String hashedGitInfo = this.generateHashedGitRepoInfo(variablesRepo.getRepository(), variablesRepo.getRepository_connector(),
+                variablesRepo.getRepository_branch(), variablesRepo.getRepository_commit(),variablesRepo.getRepository_path());
+        String filePathWithHash = this.generateFilePath(hashedGitInfo, variablesRepo.getRepository_path());
+
+        if (Objects.equals(variablesRepo.getRepository_connector(), workspaceInfo.getRepository_connector()) &&
+                Objects.equals(variablesRepo.getRepository(), workspaceInfo.getRepository()) &&
+                    Objects.equals(variablesRepo.getRepository_branch(), workspaceInfo.getRepository_branch()) &&
+                        Objects.equals(variablesRepo.getRepository_commit(), workspaceInfo.getRepository_commit())) {
+          pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), variablesRepo.getRepository_path());
+          continue;
+        }
+         pluginEnvs.put(String.format("PLUGIN_VARIABLE_CONNECTOR_%s", hashedGitInfo), filePathWithHash);
       }
     }
     for (WorkspaceVariables variable : variables) {
