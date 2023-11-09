@@ -172,7 +172,7 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.STATUS) List<ExecutionStatus> statusesList,
       @Query("myDeployments") boolean myDeployments);
 
-  @GET(PIPELINE_INPUT_SET_ENDPOINT + "list/")
+  @POST(PIPELINE_INPUT_SET_ENDPOINT + "list/")
   Call<ResponseDTO<PageResponse<InputSetListResponseDTO>>> listInputSetsInProject(
       @Query(value = NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Query(value = NGResourceFilterConstants.SIZE_KEY) @DefaultValue("25") int size,

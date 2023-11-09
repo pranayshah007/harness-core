@@ -568,8 +568,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         "Get List of input sets for project %s, org %s, account %s", projectIdentifier, orgIdentifier, accountId));
     Criteria criteria = PMSInputSetFilterHelper.listInputSetsForProjectCriteria(
         accountId, orgIdentifier, projectIdentifier, inputSetListType, searchTerm, false, inputSetFilterPropertiesDto);
-    Pageable pageRequest = PageUtils.getPageRequest(
-        page, size, new ArrayList<>(), Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
+    Pageable pageRequest =
+        PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
     Page<InputSetEntity> inputSetEntities =
         pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 
