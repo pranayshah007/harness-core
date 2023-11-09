@@ -72,6 +72,7 @@ import retrofit2.Call;
 
 @OwnedBy(PL)
 public class MailServiceImplTest extends CategoryTest {
+  private static final String TEST_NOTIFICATION_TEMPLATE_CONTENT = "This is a test notification";
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private YamlUtils yamlUtils;
@@ -138,22 +139,7 @@ public class MailServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ANKUSH)
-  @Category(UnitTests.class)
-  public void sendNotification_NoTemplateIdInRequest() {
-    NotificationRequest notificationRequest =
-        NotificationRequest.newBuilder()
-            .setId(id)
-            .setAccountId(accountId)
-            .setEmail(
-                NotificationRequest.Email.newBuilder().addAllEmailIds(Collections.singletonList(emailAdress)).build())
-            .build();
-    NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
-    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
-  }
-
-  @Test
-  @Owner(developers = ANKUSH)
+  @Owner(developers = {ANKUSH, ASHISHSANODIA})
   @Category(UnitTests.class)
   public void sendNotification_NoRecipientInRequest() {
     NotificationRequest notificationRequest = NotificationRequest.newBuilder()
@@ -168,11 +154,37 @@ public class MailServiceImplTest extends CategoryTest {
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
   }
 
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithoutTemplateId_WithCustomContent() {
+    NotificationRequest.Email emailBuilder = NotificationRequest.Email.newBuilder()
+                                                 .addAllEmailIds(Collections.singletonList(emailAdress))
+                                                 .addAllCcEmailIds(Collections.singletonList(VALID_EMAIL_1))
+                                                 .setSubject("some-subject")
+                                                 .setBody("some-body-content")
+                                                 .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setEmail(emailBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
+
+    NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
+
+    verifyNoInteractions(notificationTemplateService);
+    verify(mailSender, times(1))
+        .send(any(), eq(emailBuilder.getCcEmailIdsList()), eq(emailBuilder.getSubject()), eq(emailBuilder.getBody()),
+            any(), any());
+    assertEquals(notificationProcessingResponse, notificationExpectedResponse);
+  }
+
   @SneakyThrows
   @Test
-  @Owner(developers = ANKUSH)
+  @Owner(developers = {ANKUSH, ASHISHSANODIA})
   @Category(UnitTests.class)
-  public void sendNotification_ValidCase() {
+  public void sendNotification_ValidCase_WithoutDelegate() {
     NotificationRequest notificationRequest = NotificationRequest.newBuilder()
                                                   .setId(id)
                                                   .setAccountId(accountId)
@@ -182,28 +194,60 @@ public class MailServiceImplTest extends CategoryTest {
                                                                 .build())
                                                   .build();
     NotificationProcessingResponse notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
-    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
-    notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
-        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+
+    assertTrue(notificationProcessingResponse.equals(notificationExpectedResponse));
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithDelegate() {
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder()
+            .setId(id)
+            .setAccountId(accountId)
+            .setEmail(NotificationRequest.Email.newBuilder()
+                          .setTemplateId(mailTemplateName)
+                          .addAllEmailIds(Collections.singletonList(emailAdress))
+                          .addAllCcEmailIds(Collections.singletonList(emailAdress))
+                          .build())
+            .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
-        .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    doReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.emptyList()))
+        .when(notificationSettingsService)
+        .getSmtpConfigResponse(any());
     when(delegateGrpcClientWrapper.submitAsyncTaskV2(any(), any())).thenReturn("");
-    notificationProcessingResponse = mailService.send(notificationRequest);
+
+    NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), any());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    MailTaskParams mailTaskParams = (MailTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(mailTaskParams.getEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getEmailIds()).contains(emailAdress);
+    assertThat(mailTaskParams.getCcEmailIds()).isNotEmpty();
+    assertThat(mailTaskParams.getCcEmailIds()).hasSize(1);
+    assertThat(mailTaskParams.getCcEmailIds()).contains(emailAdress);
+    assertEquals(emailTemplate.getSubject(), mailTaskParams.getSubject());
+    assertEquals(emailTemplate.getBody(), mailTaskParams.getBody());
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
 
@@ -229,7 +273,7 @@ public class MailServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+        .thenReturn(Optional.empty(), Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(notificationSettingsService.getSmtpConfig(eq(accountId))).thenReturn(Optional.of(smtpConfigDefault));
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
@@ -278,7 +322,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     boolean response = mailService.sendTestNotification(notificationSettingDTO4);
     assertTrue(response);
@@ -299,7 +343,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     NotificationTaskResponse response = mailService.sendEmail(emailDTO);
     assertTrue(response.getProcessingResponse().getResult().iterator().next());
@@ -320,7 +364,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
   }
@@ -342,7 +386,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
   }
@@ -360,7 +404,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
   }
@@ -379,7 +423,7 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(false)).shouldRetry(false).build();
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
   }
@@ -405,7 +449,7 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(toCaptor.capture(), ccCaptor.capture(), any(), any(), any(), any()))
         .thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
-        .thenReturn(Optional.of("This is a test notification"));
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     NotificationTaskResponse response = mailService.sendEmail(emailDTO);
     assertTrue(response.getProcessingResponse().getResult().iterator().next());
@@ -434,7 +478,7 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
-        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.emptyList()));
     mailService.sendEmail(emailDTO);
     DelegateTaskRequest request = requestCaptor.getValue();
     assertThat(((MailTaskParams) request.getTaskParameters()).getEmailIds().size()).isEqualTo(2);
@@ -526,7 +570,7 @@ public class MailServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
-        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.emptyList()));
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))

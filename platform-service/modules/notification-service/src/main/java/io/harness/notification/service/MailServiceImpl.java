@@ -20,6 +20,7 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.MailTaskParams;
@@ -98,11 +99,6 @@ public class MailServiceImpl implements ChannelService {
     Map<String, String> templateData = mailDetails.getTemplateDataMap();
     String templateId = mailDetails.getTemplateId();
 
-    if (Objects.isNull(stripToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
-    }
-
     List<String> emailIds = resolveRecipients(notificationRequest);
     if (isEmpty(emailIds)) {
       log.info("No recipients found in notification request {}", notificationId);
@@ -110,20 +106,25 @@ public class MailServiceImpl implements ChannelService {
     }
 
     try {
-      String subject;
-      String body;
-      Optional<EmailTemplate> emailTemplateOpt = getTemplate(templateId, notificationRequest.getTeam());
-      if (!emailTemplateOpt.isPresent()) {
-        log.error(
-            "Failed to send email for notification request {} possibly due to no valid template with name {} found",
-            notificationId, templateId);
-        return NotificationProcessingResponse.trivialResponseWithNoRetries;
-      }
-      EmailTemplate emailTemplate = emailTemplateOpt.get();
+      List<String> ccEmailIds = isNotEmpty(mailDetails.getCcEmailIdsList())
+          ? new ArrayList<>(mailDetails.getCcEmailIdsList())
+          : Collections.emptyList();
+      String subject = mailDetails.getSubject();
+      String body = mailDetails.getBody();
+      if (EmptyPredicate.isNotEmpty(templateId)) {
+        Optional<EmailTemplate> emailTemplateOpt = getTemplate(templateId, notificationRequest.getTeam());
+        if (!emailTemplateOpt.isPresent()) {
+          log.error(
+              "Failed to send email for notification request {} possibly due to no valid template with name {} found",
+              notificationId, templateId);
+          return NotificationProcessingResponse.trivialResponseWithNoRetries;
+        }
+        EmailTemplate emailTemplate = emailTemplateOpt.get();
 
-      subject = processTemplate(templateId + "-subject", emailTemplate.getSubject(), templateData);
-      body = processTemplate(templateId + "-body", emailTemplate.getBody(), templateData);
-      return send(emailIds, subject, body, notificationId, notificationRequest.getAccountId());
+        subject = processTemplate(templateId + "-subject", emailTemplate.getSubject(), templateData);
+        body = processTemplate(templateId + "-body", emailTemplate.getBody(), templateData);
+      }
+      return send(emailIds, ccEmailIds, subject, body, notificationId, notificationRequest.getAccountId());
     } catch (Exception e) {
       log.error("Failed to send email. Check template details for notificationId: {}\n{}", notificationId,
           ExceptionUtils.getMessage(e));
@@ -301,8 +302,8 @@ public class MailServiceImpl implements ChannelService {
     return emails.stream().filter(email -> !EmailValidator.getInstance().isValid(email)).collect(Collectors.toSet());
   }
 
-  private NotificationProcessingResponse send(
-      List<String> emailIds, String subject, String body, String notificationId, String accountId) {
+  private NotificationProcessingResponse send(List<String> emailIds, List<String> ccEmailIds, String subject,
+      String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
     if (Objects.nonNull(smtpConfigResponse) && Objects.nonNull(smtpConfigResponse.getSmtpConfig())) {
@@ -315,7 +316,7 @@ public class MailServiceImpl implements ChannelService {
                                   .notificationId(notificationId)
                                   .subject(subject)
                                   .body(body)
-                                  .ccEmailIds(Collections.emptyList())
+                                  .ccEmailIds(ccEmailIds)
                                   .emailIds(emailIds)
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
@@ -328,7 +329,7 @@ public class MailServiceImpl implements ChannelService {
       notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
     } else {
       notificationProcessingResponse =
-          mailSender.send(emailIds, Collections.emptyList(), subject, body, notificationId, smtpConfigDefault);
+          mailSender.send(emailIds, ccEmailIds, subject, body, notificationId, smtpConfigDefault);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(notificationProcessingResponse)
             ? "Failed to send notification for request {}."
