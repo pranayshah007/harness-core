@@ -17,7 +17,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
+import io.harness.cdng.visitor.helpers.store.ArtifactBundleStoreVisitorHelper;
 import io.harness.delegate.task.pcf.artifact.TasArtifactBundledArtifactType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -44,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(ManifestStoreType.ARTIFACT_BUNDLE)
-@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = ArtifactBundleStoreVisitorHelper.class)
 @TypeAlias("artifactBundleStore")
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.manifest.yaml.ArtifactBundleStore")
