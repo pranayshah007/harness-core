@@ -17,6 +17,10 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.gitops.updategitopsapp.KustomizeReplicas;
 import io.harness.cdng.gitops.updategitopsapp.KustomizeValues;
 import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppRunnable;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepParameters;
+import io.harness.gitops.models.ApplicationResource;
+import io.harness.gitops.models.ApplicationResource.App;
+import io.harness.gitops.models.ApplicationResource.ApplicationSpec;
 import io.harness.gitops.models.ApplicationResource.KustomizeSource;
 import io.harness.gitops.models.ApplicationResource.Replicas;
 import io.harness.gitops.models.ApplicationResource.Source;
@@ -57,7 +61,8 @@ public class UpdateGitOpsAppRunnableTest extends CDNGTestBase {
                                                                   .build())))
             .images(ParameterField.<List<String>>builder().value(List.of("test:updated-image")).build())
             .build();
-    updateGitOpsAppRunnable.populateKustomizeValues(source, pmsKustomizeValues);
+
+    updateGitOpsAppRunnable.getUpdateRequest(getApplicationResource(source), getStepParams(pmsKustomizeValues));
     assertThat(source).isNotNull();
     assertThat(source.getKustomize().getImages()).isEqualTo(List.of("test:updated-image"));
     assertThat(source.getKustomize().getNamePrefix()).isEqualTo("updated-prefix");
@@ -96,7 +101,7 @@ public class UpdateGitOpsAppRunnableTest extends CDNGTestBase {
                                                                   .build())))
             .images(ParameterField.<List<String>>builder().value(null).build())
             .build();
-    updateGitOpsAppRunnable.populateKustomizeValues(source, pmsKustomizeValues);
+    updateGitOpsAppRunnable.getUpdateRequest(getApplicationResource(source), getStepParams(pmsKustomizeValues));
     assertThat(source).isNotNull();
     assertThat(source.getKustomize().getCommonAnnotations()).isNotNull();
     assertThat((Map<String, String>) source.getKustomize().getCommonAnnotations())
@@ -133,7 +138,7 @@ public class UpdateGitOpsAppRunnableTest extends CDNGTestBase {
                                                                   .build())))
             .images(ParameterField.<List<String>>builder().value(null).build())
             .build();
-    updateGitOpsAppRunnable.populateKustomizeValues(source, pmsKustomizeValues);
+    updateGitOpsAppRunnable.getUpdateRequest(getApplicationResource(source), getStepParams(pmsKustomizeValues));
     assertThat(source).isNotNull();
     assertThat(source.getKustomize().getCommonLabels()).isNotNull();
     assertThat((Map<String, String>) source.getKustomize().getCommonLabels())
@@ -141,5 +146,17 @@ public class UpdateGitOpsAppRunnableTest extends CDNGTestBase {
     assertThat(((Map<String, String>) source.getKustomize().getCommonLabels()).get("existing/label"))
         .isEqualTo("updated-value");
     assertThat(source.getKustomize().getForceCommonLabels()).isEqualTo(true);
+  }
+
+  private UpdateGitOpsAppStepParameters getStepParams(KustomizeValues pmsKustomizeValues) {
+    UpdateGitOpsAppStepParameters updateGitOpsAppStepParameters = UpdateGitOpsAppStepParameters.infoBuilder().build();
+    updateGitOpsAppStepParameters.setKustomize(ParameterField.createValueField(pmsKustomizeValues));
+    return updateGitOpsAppStepParameters;
+  }
+
+  private ApplicationResource getApplicationResource(Source source) {
+    ApplicationResource applicationResource = ApplicationResource.builder().build();
+    applicationResource.setApp(App.builder().spec(ApplicationSpec.builder().source(source).build()).build());
+    return applicationResource;
   }
 }
