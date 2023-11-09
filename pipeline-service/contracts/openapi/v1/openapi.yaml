@@ -172,6 +172,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
       - $ref: '#/components/parameters/TriggerParam'
     get:
       summary: Retrieve a Trigger

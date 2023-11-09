@@ -46,20 +46,20 @@ public class TriggersApiImpl implements TriggersApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public Response getTrigger(String org, String project, String trigger, String harnessAccount) {
+  public Response getTrigger(String org, String project, String pipeline, String trigger, String harnessAccount) {
     return Response.ok().entity(new TriggerGetResponseBody()).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public Response updateTrigger(
-      @Valid TriggerUpdateRequestBody body, String org, String project, String trigger, String harnessAccount) {
+  public Response updateTrigger(@Valid TriggerUpdateRequestBody body, String org, String project, String pipeline,
+      String trigger, String harnessAccount) {
     return Response.ok().entity(new TriggerCreateResponseBody()).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public Response deleteTrigger(String org, String project, String trigger, String harnessAccount) {
+  public Response deleteTrigger(String org, String project, String pipeline, String trigger, String harnessAccount) {
     return Response.ok().build();
   }
 }
