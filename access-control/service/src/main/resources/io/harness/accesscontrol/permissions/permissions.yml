@@ -1726,13 +1726,13 @@ permissions:
       - account
   - identifier: ccm_commitment_orch_edit
     name: Setup CCM Commitment Orchestration
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_commitment_orch_view
       name: View CCM Commitment Orchestration
-      status: EXPERIMENTAL
+      status: ACTIVE
       includedInAllRoles: false
       allowedScopeLevels:
         - account
