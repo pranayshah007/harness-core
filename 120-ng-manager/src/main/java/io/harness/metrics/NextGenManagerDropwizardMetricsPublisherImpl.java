@@ -44,34 +44,29 @@ public class NextGenManagerDropwizardMetricsPublisherImpl implements MetricsPubl
   private static final List<String> RESOURCE_METRIC_NAMES_PREFIXES =
       List.of("io_harness_ng_core_service_resources_ServiceResourceV2_",
           "io_harness_ng_core_environment_resources_EnvironmentResourceV2_",
-          "io_harness_ng_core_infrastructure_resource_InfrastructureResource_");
+          "io_harness_ng_core_infrastructure_resource_InfrastructureResource_",
+          "io_harness_ng_core_artifacts_resources_docker_DockerArtifactResource_");
   private static final MetricFilter SERVICE_RESOURCE_V2_FILTER =
       MetricFilter.startsWith("io.harness.ng.core.service.resources.ServiceResourceV2");
   private static final MetricFilter ENVIRONMENT_RESOURCE_V2_FILTER =
       MetricFilter.startsWith("io.harness.ng.core.environment.resources.EnvironmentResourceV2");
   private static final MetricFilter INFRASTRUCTURE_RESOURCE_FILTER =
       MetricFilter.startsWith("io.harness.ng.core.infrastructure.resource.InfrastructureResource");
+  private static final MetricFilter DOCKER_ARTIFACT_RESOURCE_FILTER =
+      MetricFilter.startsWith("io.harness.ng.core.artifacts.resources.docker.DockerArtifactResource");
 
   @Override
   public void recordMetrics() {
-    Set<Map.Entry<String, Meter>> mutableServletContextMeterSet =
-        metricRegistry.getMeters(MUTABLE_SERVLET_CONTEXT_HANDLER_FILTER).entrySet();
-    mutableServletContextMeterSet.forEach(
-        entry -> recordMutableServletContextMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
-
-    Set<Map.Entry<String, Meter>> serviceResourceMeterSet =
-        metricRegistry.getMeters(SERVICE_RESOURCE_V2_FILTER).entrySet();
-    serviceResourceMeterSet.forEach(entry -> recordResourceMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
-
-    Set<Map.Entry<String, Meter>> environmentResourceMeterSet =
-        metricRegistry.getMeters(ENVIRONMENT_RESOURCE_V2_FILTER).entrySet();
-    environmentResourceMeterSet.forEach(
-        entry -> recordResourceMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
-
-    Set<Map.Entry<String, Meter>> infrastructureResourceMeterSet =
-        metricRegistry.getMeters(INFRASTRUCTURE_RESOURCE_FILTER).entrySet();
-    infrastructureResourceMeterSet.forEach(
-        entry -> recordResourceMeter(sanitizeMetricName(entry.getKey()), entry.getValue()));
+    metricRegistry.getMeters(MUTABLE_SERVLET_CONTEXT_HANDLER_FILTER)
+        .forEach((key, value) -> recordMutableServletContextMeter(sanitizeMetricName(key), value));
+    metricRegistry.getMeters(SERVICE_RESOURCE_V2_FILTER)
+        .forEach((key, value) -> recordResourceMeter(sanitizeMetricName(key), value));
+    metricRegistry.getMeters(ENVIRONMENT_RESOURCE_V2_FILTER)
+        .forEach((key, value) -> recordResourceMeter(sanitizeMetricName(key), value));
+    metricRegistry.getMeters(INFRASTRUCTURE_RESOURCE_FILTER)
+        .forEach((key, value) -> recordResourceMeter(sanitizeMetricName(key), value));
+    metricRegistry.getMeters(DOCKER_ARTIFACT_RESOURCE_FILTER)
+        .forEach((key, value) -> recordResourceMeter(sanitizeMetricName(key), value));
 
     Set<Map.Entry<String, Gauge>> gaugeSet = metricRegistry.getGauges().entrySet();
     gaugeSet.forEach(entry -> recordGauge(sanitizeMetricName(entry.getKey()), entry.getValue()));
