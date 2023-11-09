@@ -5,37 +5,37 @@
 
 package metric
 
-import(
-    "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // function to return prometheus counter metric
-func CreatePrometheusCounter(name,help,operation string) *prometheus.CounterVec{
-    return prometheus.NewCounterVec(
-        prometheus.CounterOpts{
-            Name: name,
-            Help: help
-        },
-        []string{"operation"}
-    )
+func CreatePrometheusCounter(name, help, operation string) *prometheus.CounterVec {
+	return prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		},
+		[]string{"operation"},
+	)
 }
 
-var(
-    // defining prometheus metric parameters
-    putCount = CreatePrometheusCounter(
-        "log_service_stream_api_put_count",
-        "Total number of put requests to stream api",
-        "put",
-    )
+var (
+	// defining prometheus metric parameters
+	PutCount = CreatePrometheusCounter(
+		"log_service_stream_api_put_count",
+		"Total number of put requests to stream api",
+		"put",
+	)
 
-    getCount = CreatePrometheusCounter(
-        "log_service_stream_api_get_count",
-        "Total number of get requests to stream api",
-        "get",
-    )
+	GetCount = CreatePrometheusCounter(
+		"log_service_stream_api_get_count",
+		"Total number of get requests to stream api",
+		"get",
+	)
 )
 
 func RegisterMetrics() {
-    prometheus.MustRegister(putCount)
-    prometheus.MustRegister(getCount)
+	prometheus.MustRegister(PutCount)
+	prometheus.MustRegister(GetCount)
 }

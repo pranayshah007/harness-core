@@ -28,6 +28,7 @@ go_library(
         "//product/log-service/config",
         "//product/log-service/entity",
         "//product/log-service/logger",
+        "//product/log-service/metric",
         "//product/log-service/queue",
         "//product/log-service/stackdriver",
         "//product/log-service/store",
