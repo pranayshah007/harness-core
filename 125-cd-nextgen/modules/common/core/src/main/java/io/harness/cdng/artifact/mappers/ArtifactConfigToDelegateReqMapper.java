@@ -116,7 +116,8 @@ public class ArtifactConfigToDelegateReqMapper {
   private final long TIME_OUT = 600000L;
 
   public DockerArtifactDelegateRequest getDockerDelegateRequest(DockerHubArtifactConfig artifactConfig,
-      DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -124,6 +125,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (ParameterField.isNotNull(artifactConfig.getTag())
@@ -160,7 +162,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
-      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     String bucket = (String) artifactConfig.getBucketName().fetchFinalValue();
     String filePath = (String) artifactConfig.getFilePath().fetchFinalValue();
     String filePathRegex = (String) artifactConfig.getFilePathRegex().fetchFinalValue();
@@ -173,6 +176,7 @@ public class ArtifactConfigToDelegateReqMapper {
         filePathRegex = "*";
       }
       filePath = "";
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (StringUtils.isBlank(bucket)) {
@@ -198,7 +202,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(
       GithubPackagesArtifactConfig artifactConfig, GithubConnectorDTO connectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
+      String projectId) {
     String versionRegex = artifactConfig.getVersionRegex() != null
         ? (StringUtils.isBlank((String) artifactConfig.getVersionRegex().fetchFinalValue())
                 ? ""
@@ -213,6 +218,7 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isLastPublishedExpression(version)) {
       versionRegex =
           version.equals(LAST_PUBLISHED_EXPRESSION) ? version.replace(LAST_PUBLISHED_EXPRESSION, "*") : version;
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (ParameterField.isNotNull(artifactConfig.getVersion())
@@ -261,7 +267,8 @@ public class ArtifactConfigToDelegateReqMapper {
     }
   }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
-      AzureArtifactsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      AzureArtifactsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     String versionRegex = (String) artifactConfig.getVersionRegex().fetchFinalValue();
 
     if (StringUtils.isBlank(versionRegex)) {
@@ -272,6 +279,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(version)) {
       versionRegex = getTagRegex(version);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (StringUtils.isBlank(version)) {
@@ -302,7 +310,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
-      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     String versionRegex = "";
 
     if (artifactConfig.getVersionRegex() != null
@@ -318,6 +327,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(version)) {
       versionRegex = (String) artifactConfig.getVersion().fetchFinalValue();
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (StringUtils.isBlank(version)) {
@@ -342,7 +352,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
-      JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     String artifactPath =
         artifactConfig.getArtifactPath() != null ? (String) artifactConfig.getArtifactPath().fetchFinalValue() : "";
     String jobName = artifactConfig.getJobName() != null ? (String) artifactConfig.getJobName().fetchFinalValue() : "";
@@ -357,6 +368,7 @@ public class ArtifactConfigToDelegateReqMapper {
         buildRegex = "";
         buildNumber = "";
       }
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
@@ -365,7 +377,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,
-      BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     List<String> artifactPath = artifactConfig.getArtifactPaths() != null
         ? (List<String>) artifactConfig.getArtifactPaths().fetchFinalValue()
         : Collections.emptyList();
@@ -381,6 +394,7 @@ public class ArtifactConfigToDelegateReqMapper {
         buildNumber = getTagRegex(buildNumber);
         buildRegex = getTagRegex(buildNumber);
       }
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber, buildRegex);
@@ -402,6 +416,8 @@ public class ArtifactConfigToDelegateReqMapper {
     }
     if (isNotEmpty(version) && isLastPublishedExpression(version)) {
       versionRegex = getTagRegex(version);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, AmbianceUtils.getAccountId(ambiance),
+          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
     }
 
     if (ParameterField.isNotNull(artifactConfig.getVersion())
@@ -433,6 +449,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isNotEmpty(version) && isLastPublishedExpression(version)) {
       versionRegex = getTagRegex(version);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, AmbianceUtils.getAccountId(ambiance),
+          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
     }
 
     if (ParameterField.isNotNull(artifactConfig.getVersion())
@@ -549,7 +567,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
-      instrumentationHelper.sendGcrLastPublishedTagExpressionEvent(gcrArtifactConfig, accountId, orgId, projectId);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(gcrArtifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -578,7 +596,7 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isLastPublishedExpression(version)) {
       versionRegex = getTagRegex(version);
       version = "";
-      instrumentationHelper.sendGarLastPublishedTagExpressionEvent(garArtifactConfig, accountId, orgId, projectId);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(garArtifactConfig, accountId, orgId, projectId);
     }
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
       versionRegex = "/*";
@@ -600,13 +618,15 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public EcrArtifactDelegateRequest getEcrDelegateRequest(EcrArtifactConfig ecrArtifactConfig,
-      AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex =
         ecrArtifactConfig.getTagRegex() != null ? (String) ecrArtifactConfig.getTagRegex().fetchFinalValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? (String) ecrArtifactConfig.getTag().fetchFinalValue() : "";
     if (isLastPublishedExpression(tag)) {
       tagRegex = tag.equals(LAST_PUBLISHED_EXPRESSION) ? "*" : tag;
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(ecrArtifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -627,13 +647,15 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(NexusRegistryArtifactConfig artifactConfig,
-      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
     String tag = artifactConfig.getTag() != null ? (String) artifactConfig.getTag().fetchFinalValue() : "";
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -693,7 +715,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
-      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -701,6 +724,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String tag = artifactConfig.getTag() != null ? (String) artifactConfig.getTag().fetchFinalValue() : "";
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -742,19 +766,21 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
+      String projectId) {
     if (artifactConfig.getRepositoryFormat().fetchFinalValue().equals(generic.name())) {
       return ArtifactConfigToDelegateReqMapper.getArtifactoryGenericArtifactDelegateRequest(
-          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef);
+          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId);
     } else {
       return ArtifactConfigToDelegateReqMapper.getArtifactoryDockerArtifactDelegateRequest(
-          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef);
+          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId);
     }
   }
 
   private ArtifactoryArtifactDelegateRequest getArtifactoryDockerArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
+      String projectId) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -762,6 +788,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(tag)) {
       tagRegex = ACCEPT_ALL_REGEX;
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -784,7 +811,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
   private ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
+      String projectId) {
     // If both are empty, artifactPathFilter is latest among all artifacts.
     String artifactPathFilter = ParameterField.isNull(artifactConfig.getArtifactPathFilter())
         ? ""
@@ -803,6 +831,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(artifactPath)) {
       artifactPathFilter = ALL_REGEX;
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
@@ -818,7 +847,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public static ArtifactSourceDelegateRequest getAcrDelegateRequest(AcrArtifactConfig acrArtifactConfig,
-      AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all acr artifacts.
     String tagRegex = ParameterField.isNull(acrArtifactConfig.getTagRegex())
         ? ""
@@ -827,6 +857,7 @@ public class ArtifactConfigToDelegateReqMapper {
         ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : (String) acrArtifactConfig.getTag().fetchFinalValue();
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(acrArtifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -846,7 +877,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(
       GoogleCloudStorageArtifactConfig artifactConfig, GcpConnectorDTO gcpConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
+      String projectId) {
     String project = (String) artifactConfig.getProject().fetchFinalValue();
     String bucket = (String) artifactConfig.getBucket().fetchFinalValue();
     String artifactPath = (String) artifactConfig.getArtifactPath().fetchFinalValue();
@@ -866,6 +898,7 @@ public class ArtifactConfigToDelegateReqMapper {
         artifactPathRegex = getTagRegex(artifactPath);
       }
       artifactPath = "";
+      instrumentationHelper.sendLastPublishedTagExpressionEvent(artifactConfig, accountId, orgId, projectId);
     }
     return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
         artifactPathRegex, gcpConnectorDTO, connectorRef, encryptedDataDetails,

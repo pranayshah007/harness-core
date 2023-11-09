@@ -17,6 +17,7 @@ import static io.harness.telemetry.helpers.InstrumentationConstants.IS_ARTIFACT_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -39,8 +40,8 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
   @Inject TelemetryReporter telemetryReporter;
   private final String userId = getUserId();
 
-  public CompletableFuture<Void> sendGarLastPublishedTagExpressionEvent(
-      GoogleArtifactRegistryConfig artifactConfig, String accountId, String orgId, String projectId) {
+  private CompletableFuture<Void> publishArtifactInfo(
+      ArtifactConfig artifactConfig, String accountId, String orgId, String projectId, String eventName) {
     HashMap<String, Object> eventPropertiesMap = new HashMap<>();
     eventPropertiesMap.put(ARTIFACT_ACCOUNT, accountId);
     eventPropertiesMap.put(ARTIFACT_ORG, orgId);
@@ -48,19 +49,12 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
     eventPropertiesMap.put(ARTIFACT_IDENTIFIER, artifactConfig.getIdentifier());
     eventPropertiesMap.put(ARTIFACT_PROJECT, projectId);
     eventPropertiesMap.put(IS_ARTIFACT_PRIMARY, artifactConfig.isPrimaryArtifact());
-    return sendEvent("Last Published Tag", userId, accountId, eventPropertiesMap);
+    return sendEvent(eventName, userId, accountId, eventPropertiesMap);
   }
 
-  public CompletableFuture<Void> sendGcrLastPublishedTagExpressionEvent(
-      GcrArtifactConfig artifactConfig, String accountId, String orgId, String projectId) {
-    HashMap<String, Object> eventPropertiesMap = new HashMap<>();
-    eventPropertiesMap.put(ARTIFACT_ACCOUNT, accountId);
-    eventPropertiesMap.put(ARTIFACT_ORG, orgId);
-    eventPropertiesMap.put(ARTIFACT_PROJECT, projectId);
-    eventPropertiesMap.put(ARTIFACT_TYPE, artifactConfig.getSourceType());
-    eventPropertiesMap.put(ARTIFACT_IDENTIFIER, artifactConfig.getIdentifier());
-    eventPropertiesMap.put(IS_ARTIFACT_PRIMARY, artifactConfig.isPrimaryArtifact());
-    return sendEvent("Last Published Tag", userId, accountId, eventPropertiesMap);
+  public CompletableFuture<Void> sendLastPublishedTagExpressionEvent(
+      ArtifactConfig artifactConfig, String accountId, String orgId, String projectId) {
+    return publishArtifactInfo(artifactConfig, accountId, orgId, projectId, "last_published_tag");
   }
 
   private CompletableFuture<Void> sendEvent(
