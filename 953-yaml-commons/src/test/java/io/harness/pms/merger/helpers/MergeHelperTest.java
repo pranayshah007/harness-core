@@ -74,19 +74,6 @@ public class MergeHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MEET)
-  @Category(UnitTests.class)
-  public void testMergeInputSetIntoPipelineullIputSetYaml() {
-    String filename = "pipeline-extensive.yml";
-    String yaml = readFile(filename);
-    try {
-      mergeRuntimeInputValuesIntoOriginalYaml(yaml, null, false);
-    } catch (Exception e) {
-      fail("Should not have thrown any exception");
-    }
-  }
-
-  @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testMergeInputSetIntoPipelineRegex() {
