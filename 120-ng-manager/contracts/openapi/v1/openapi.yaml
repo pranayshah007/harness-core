@@ -1634,6 +1634,10 @@ paths:
             type: string
           in: query
           name: event_identifier
+        - schema:
+            type: string
+          in: query
+          name: event_status
       x-internal: true
   /v1/kubernetes/releases/service-mapping:
     get:
@@ -2821,6 +2825,8 @@ components:
           type: integer
           format: int64
         repo_name:
+          type: string
+        event_status:
           type: string
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse

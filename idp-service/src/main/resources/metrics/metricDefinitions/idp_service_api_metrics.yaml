@@ -14,3 +14,8 @@ metrics:
     metricDefinition: IDP Service total number of responses
     type: Count
     unit: "1"
+  - metricName: idp_service_api_duration
+    metricDefinition: Time taken to complete the request.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"

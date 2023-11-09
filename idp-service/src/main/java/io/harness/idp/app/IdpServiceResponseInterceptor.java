@@ -7,6 +7,8 @@
 
 package io.harness.idp.app;
 
+import static io.harness.idp.app.IdpServiceRequestInterceptor.REQUEST_START_TIME;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.metrics.IdpServiceApiMetricsPublisher;
@@ -36,9 +38,11 @@ public class IdpServiceResponseInterceptor implements ContainerResponseFilter {
       int status = containerResponseContext.getStatus();
       String accountIdentifier = getAccountIdentifier(containerRequestContext);
       String path = containerRequestContext.getUriInfo().getPath();
+      long startTime = (long) containerRequestContext.getProperty(REQUEST_START_TIME);
+      long duration = System.currentTimeMillis() - startTime;
       log.info("ACCOUNT {} - API REQUEST {} - RESPONSE STATUS {}", accountIdentifier, path, status);
       if (StringUtils.isNotBlank(accountIdentifier)) {
-        idpServiceApiMetricsPublisher.recordMetric(accountIdentifier, path, status);
+        idpServiceApiMetricsPublisher.recordMetric(accountIdentifier, path, status, duration);
       }
     } catch (Exception e) {
       log.warn("Error intercepting response", e);

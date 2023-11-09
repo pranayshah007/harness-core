@@ -49,7 +49,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
@@ -183,7 +183,12 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckStats> getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+  public CheckStatsResponse getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(
+        custom ? accountIdentifier : GLOBAL_ACCOUNT_ID, identifier);
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check stats not found for checkId [%s]", identifier));
+    }
     List<String> scorecardIdentifiers = scorecardService.getScorecardIdentifiers(accountIdentifier, identifier, custom);
     List<ScorecardFilter> filters = scorecardService.getScorecardFilters(accountIdentifier, scorecardIdentifiers);
     Set<BackstageCatalogEntity> entities = scoreComputerService.getAllEntities(accountIdentifier, null, filters);
@@ -195,7 +200,7 @@ public class CheckServiceImpl implements CheckService {
             .stream()
             .collect(Collectors.toMap(
                 EntityIdentifierAndCheckStatus::getEntityIdentifier, EntityIdentifierAndCheckStatus::getStatus));
-    return CheckStatsMapper.toDTO(entities, statusMap);
+    return CheckStatsMapper.toDTO(entities, statusMap, checkEntity.getName());
   }
 
   @Override

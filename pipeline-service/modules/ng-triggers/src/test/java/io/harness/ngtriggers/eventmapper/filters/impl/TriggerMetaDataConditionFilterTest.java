@@ -149,6 +149,7 @@ public class TriggerMetaDataConditionFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse1.getUnMatchedTriggerInfoList().get(0).getFinalStatus())
         .isEqualTo(TRIGGER_DID_NOT_MATCH_METADATA_CONDITION);
     assertThat(webhookEventMappingResponse1.getUnMatchedTriggerInfoList().get(0).getMessage())
-        .isEqualTo(ngTriggerConfig.getIdentifier() + " didn't match conditions for metadata");
+        .isEqualTo(ngTriggerConfig.getIdentifier()
+            + " didn't match conditions for metadata. <+trigger.artifact.metadata.key1> didn't match value1 on applying Equals operator");
   }
 }

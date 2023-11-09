@@ -103,4 +103,6 @@ public class ResourceTypeConstants {
   public static final String GITOPS_AGENT = "GITOPS_AGENT";
   public static final String GITOPS_PROJECT_MAPPING = "GITOPS_PROJECT_MAPPING";
   public static final String GITOPS_APPLICATION = "GITOPS_APPLICATION";
+
+  public static final String CODE_REPOSITORY = "CODE_REPOSITORY";
 }

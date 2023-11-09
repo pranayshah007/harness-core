@@ -357,8 +357,8 @@ public class ServiceOverridesResource {
   @POST
   @Path("/list")
   @Hidden
-  @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV2")
-  @Operation(operationId = "getServiceOverrideListV2", summary = "Gets Service Override List",
+  @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV3")
+  @Operation(operationId = "getServiceOverrideListV3", summary = "Gets Service Override List",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")

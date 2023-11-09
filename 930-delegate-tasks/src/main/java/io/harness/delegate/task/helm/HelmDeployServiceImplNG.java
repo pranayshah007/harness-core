@@ -924,7 +924,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
             gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
         scmFetchFilesHelper.downloadFilesUsingScm(
-            manifestFilesDirectory, gitStoreDelegateConfig, commandRequest.getLogCallback());
+            manifestFilesDirectory, gitStoreDelegateConfig, commandRequest.getLogCallback(), false);
       } else {
         GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
             gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -934,7 +934,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         ngGitService.downloadFiles(gitStoreDelegateConfig, manifestFilesDirectory, commandRequest.getAccountId(),
-            sshSessionConfig, gitConfigDTO);
+            sshSessionConfig, gitConfigDTO, false);
       }
 
       commandRequest.getLogCallback().saveExecutionLog(color("Successfully fetched following files:", White, Bold));

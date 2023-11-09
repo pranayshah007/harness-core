@@ -234,6 +234,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .connectorRef(isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
             .pipelineVersion(NGYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
+            .shouldUseSimplifiedLogBaseKey(AmbianceUtils.shouldSimplifyLogBaseKey(ambiance))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);

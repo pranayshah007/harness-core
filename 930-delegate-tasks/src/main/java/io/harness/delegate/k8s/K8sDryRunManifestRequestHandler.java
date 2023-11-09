@@ -114,7 +114,7 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sDryRunManifestRequest.getManifestDelegateConfig(),
         this.manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sDryRunManifestRequest.getAccountId(),
-        false);
+        false, false);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
         k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
