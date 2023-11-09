@@ -17,6 +17,7 @@ import io.harness.notification.remote.dto.TemplateDTO;
 import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -33,4 +34,7 @@ public interface NotificationHTTPClient {
       @Query("identifier") String identifier, @Query("harnessManaged") Boolean harnessManaged);
 
   @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
+
+ @GET("api/channels/isDefaultSMTPPresent")
+ Call<ResponseDTO<Boolean>> isDefaultSMTPPresent(@Query(value = "accountId") String accountId);
 }

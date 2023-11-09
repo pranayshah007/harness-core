@@ -4799,8 +4799,7 @@ public class UserServiceImpl implements UserService {
                                                         .templateData(templateData)
                                                         .team(team)
                                                         .userGroups(userGroups);
-    log.info("Sending Notification email through NG: {} templateId: {}  recipients: {} ", emailChannel.toString(),
-        templateId, recipients);
+    log.info("Sending Notification email through NG: templateId: {}  recipients: {} ", templateId, recipients);
     notificationClient.sendNotificationAsync(emailChannel.build());
   }
 
@@ -4819,8 +4818,7 @@ public class UserServiceImpl implements UserService {
 
                               .build();
     emailData.setRetries(2);
-    log.info("Sending Notification email through CG: {} templateId: {}  recipients: {} ", emailChannel.toString(),
-        templateName, to);
+    log.info("Sending Notification email through CG templateId: {}  recipients: {} ", templateName, to);
     return emailNotificationService.send(emailData);
   }
 }

@@ -20,11 +20,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.POST;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 @OwnedBy(PL)
 @Api("channels")
@@ -40,4 +43,9 @@ public interface EmailResource {
   @Path("/email")
   @ApiOperation(value = "Send email", nickname = "sendEmail")
   ResponseDTO<NotificationTaskResponse> sendEmail(@NotNull @Valid EmailDTO emailDTO);
+
+  @GET
+  @Path("/isDefaultSMTPPresent")
+  @ApiOperation(value = "isDefaultSMTPPresent", nickname = "isDefaultSMTPPresent")
+  ResponseDTO<Boolean> isDefaultSMTPPresent(@QueryParam("accountId") String accountId);
 }

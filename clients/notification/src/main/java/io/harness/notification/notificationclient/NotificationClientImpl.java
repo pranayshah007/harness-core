@@ -97,4 +97,9 @@ public class NotificationClientImpl implements NotificationClient {
       List<NotificationTriggerRequest> notificationTriggerRequest) {
     return notificationTriggerRequest.stream().map(this::sendNotificationTrigger).collect(Collectors.toList());
   }
+
+  @Override
+  public boolean isDefaultSMTPPresent(String accountId) {
+    return getResponse(notificationHTTPClient.isDefaultSMTPPresent(accountId));
+  }
 }

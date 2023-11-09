@@ -23,6 +23,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.notification.Team;
+import io.harness.notification.notificationclient.NotificationClient;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;
@@ -54,6 +55,8 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
   private TotpChecker<? super FeatureFlaggedTotpChecker.Request> totpChecker;
 
   @Inject private EmailHelperUtils emailHelperUtils;
+
+  @Inject private NotificationClient notificationClient;
 
   @Inject
   public TOTPAuthHandler(UserService userService, AuthenticationUtils authenticationUtils,
@@ -153,7 +156,8 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
     List<String> toList = new ArrayList();
     toList.add(user.getEmail());
     if (DefaultExperience.NG.equals(defaultAccount.getDefaultExperience())
-        && emailHelperUtils.getSmtpConfig(defaultAccount.getUuid(), true) != null) {
+        && (emailHelperUtils.getSmtpConfig(defaultAccount.getUuid(), true) != null
+            || notificationClient.isDefaultSMTPPresent(defaultAccount.getUuid()))) {
       userService.sendNotificationEmailNG(
           defaultAccount.getUuid(), Collections.emptyList(), templateName, templateModel, Team.OTHER, toList);
     } else {

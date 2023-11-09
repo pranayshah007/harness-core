@@ -17,6 +17,7 @@ import io.harness.notification.service.ChannelServiceImpl;
 import io.harness.notification.service.MailServiceImpl;
 
 import com.google.inject.Inject;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,5 +33,9 @@ public class EmailResourceImpl implements EmailResource {
     log.info("Received email request for notificationId: {}", emailDTO.getNotificationId());
     NotificationTaskResponse result = mailService.sendEmail(emailDTO);
     return ResponseDTO.newResponse(result);
+  }
+
+  public ResponseDTO<Boolean> isDefaultSMTPPresent(String accountId) {
+    return ResponseDTO.newResponse(mailService.isDefaultSMTPPresent(accountId));
   }
 }

@@ -155,6 +155,10 @@ public class MailServiceImpl implements ChannelService {
     return true;
   }
 
+  public boolean isDefaultSMTPPresent(String accountId) {
+    return smtpConfigDefault != null;
+  }
+
   private boolean isSmtpConfigProvided(String accountId) {
     return Objects.nonNull(notificationSettingsService.getSmtpConfigResponse(accountId));
   }
