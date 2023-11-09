@@ -5,23 +5,6 @@ global:
   commonAnnotations: {}
   commonLabels: {}
   kubeVersion: ""
-  secrets:
-    app:
-      external:
-        ## if FALSE, Generate all secrets within K8s Namespace
-        ## If TRUE, use one of the followings kids to inject
-        enabled: false 
-        kind:
-          # use ExternalSecrets Operator
-          externalSecrets: false 
-          # Use CSI Driver volume mount
-          csiSecretDriver: false          
-    database:
-      external:
-        enabled: false
-        kind:
-          externalSecrets: false
-          csiSecretDriver: false 
   loadbalancerURL: ""
   database:
     postgres:
@@ -49,9 +32,28 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD:
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
+      sslEnabled: false
       # --  provide default values if mongo.installed is set to false
       hosts:
         - timescaledb-single-chart:5432
@@ -61,6 +63,28 @@ global:
       extraArgs: ""
       certName: ""
       certKey: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""
     redis:
       installed: true
       protocol: "redis"
@@ -71,6 +95,24 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                REDIS_PASSWORD:
+                  name: ""
+                  property: ""
   ingress:
     # -- create ingress objects
     enabled: false
@@ -100,6 +142,20 @@ global:
   license:
     cg: ''
     ng: ''
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            CG_LICENSE: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              CG_LICENSE:
+                name: ""
+                property: ""
   cd:
     enabled: false
   ci:
@@ -136,7 +192,114 @@ global:
     SMTP_USERNAME: ""
     SMTP_USE_SSL: "true"
     SMTP_PORT: "465"
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            SMTP_USERNAME: ""
+            SMTP_PASSWORD: ""
+            SMTP_HOST: ""
+            SMTP_PORT": ""
+            SMTP_USE_SSL: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              SMTP_USERNAME:
+                name: ""
+                property: ""
+              SMTP_PASSWORD:
+                name: ""
+                property: ""
+              SMTP_HOST:
+                name: ""
+                property: ""
+              SMTP_PORT:
+                name: ""
+                property: ""
+              SMTP_USE_SSL:
+                name: ""
+                property: ""
   ha: false
+
+redis:
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            REDIS_USERNAME:
+              name: ""
+              property: ""
+            REDIS_PASSWORD:
+              name: ""
+              property: ""
+
+timescaledb:
+  # -- TimescaleDB host names
+  hosts: []
+  # -- Enable TimescaleDB SSL
+  # sslEnabled: false
+  # -- TimescaleDB secrets
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          TIMESCALEDB_USERNAME: ""
+          TIMESCALEDB_PASSWORD: ""
+          TIMESCALEDB_SSL_ROOT_CERT: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            TIMESCALEDB_USERNAME:
+              name: ""
+              property: ""
+            TIMESCALEDB_PASSWORD:
+              name: ""
+              property: ""
+            TIMESCALEDB_SSL_ROOT_CERT:
+              name: ""
+              property: ""
+mongo:
+  protocol: ""
+  hosts: []
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          MONGO_USER: ""
+          MONGO_PASSWORD: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            MONGO_USER:
+              name: ""
+              property: ""
+            MONGO_PASSWORD:
+              name: ""
+              property: ""
 
 replicaCount: 1
 maxSurge: 1
@@ -472,12 +635,6 @@ iteratorConfig:
     targetIntervalInSeconds: 86400
     throttleIntervalInSeconds: 0
 
-secrets:
-  LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
-  MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
-  MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
-  VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -606,3 +763,27 @@ ingress:
   annotations: {}
 
 java17flags: ""
+
+secrets:
+  default:
+    LOG_STREAMING_SERVICE_TOKEN: "c76e567a-b341-404d-a8dd-d9738714eb82"
+    VERIFICATION_SERVICE_SECRET: "59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"
+    MONGO_SSL_CA_TRUST_STORE_PATH: "/opt/harness/keystore.jks"
+    MONGO_SSL_CA_TRUST_STORE_PASSWORD: "password"
+  kubernetesSecrets:
+  - secretName: ""
+    keys:
+      LOG_STREAMING_SERVICE_TOKEN: ""
+      VERIFICATION_SERVICE_SECRET: ""
+  secretManagement: 
+    externalSecretsOperator:
+    - secretStore:
+        name: ""
+        kind: ""
+      remoteKeys:
+        LOG_STREAMING_SERVICE_TOKEN:
+          name: ""
+          property: ""
+        VERIFICATION_SERVICE_SECRET:
+          name: ""
+          property: ""

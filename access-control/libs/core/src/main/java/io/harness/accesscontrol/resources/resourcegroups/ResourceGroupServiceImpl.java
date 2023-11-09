@@ -11,10 +11,13 @@ import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_MANAGED;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
 import static java.util.Collections.singleton;
 
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupDeleteEvent;
+import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupUpdateEvent;
 import io.harness.accesscontrol.resources.resourcegroups.persistence.ResourceGroupDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
@@ -23,11 +26,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +49,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class ResourceGroupServiceImpl implements ResourceGroupService {
   private final ResourceGroupDao resourceGroupDao;
   private final RoleAssignmentService roleAssignmentService;
-  private final TransactionTemplate transactionTemplate;
+  private final TransactionTemplate outboxTransactionTemplate;
+  private final OutboxService outboxService;
+
   private static final RetryPolicy<Object> deleteResourceGroupTransactionPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to delete resource group and corresponding role assignments; attempt: {}",
       "[Failed]: Failed to delete resource group and corresponding role assignments; attempt: {}");
@@ -55,10 +62,11 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
   @Inject
   public ResourceGroupServiceImpl(ResourceGroupDao resourceGroupDao, RoleAssignmentService roleAssignmentService,
-      TransactionTemplate transactionTemplate) {
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate outboxTransactionTemplate, OutboxService outboxService) {
     this.resourceGroupDao = resourceGroupDao;
     this.roleAssignmentService = roleAssignmentService;
-    this.transactionTemplate = transactionTemplate;
+    this.outboxTransactionTemplate = outboxTransactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override
@@ -72,17 +80,29 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
         throw new InvalidRequestException("Cannot change the the scopes at which this resource group can be used.");
       }
       if (areScopeLevelsUpdated(currentResourceGroup, resourceGroup) && resourceGroup.isManaged()) {
-        return Failsafe.with(upsertResourceGroupTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
-          Set<String> removedScopeLevels =
-              Sets.difference(currentResourceGroup.getAllowedScopeLevels(), resourceGroup.getAllowedScopeLevels());
-          roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
-                                                .resourceGroupFilter(singleton(resourceGroup.getIdentifier()))
-                                                .scopeFilter("/")
-                                                .includeChildScopes(true)
-                                                .scopeLevelFilter(removedScopeLevels)
-                                                .build());
-          return resourceGroupDao.upsert(resourceGroup);
-        }));
+        return Failsafe.with(upsertResourceGroupTransactionPolicy)
+            .get(() -> outboxTransactionTemplate.execute(status -> {
+              Set<String> removedScopeLevels =
+                  Sets.difference(currentResourceGroup.getAllowedScopeLevels(), resourceGroup.getAllowedScopeLevels());
+              roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
+                                                    .resourceGroupFilter(singleton(resourceGroup.getIdentifier()))
+                                                    .scopeFilter("/")
+                                                    .includeChildScopes(true)
+                                                    .scopeLevelFilter(removedScopeLevels)
+                                                    .build());
+              ResourceGroup updatedResourceGroup = resourceGroupDao.upsert(resourceGroup);
+              outboxService.save(new ResourceGroupUpdateEvent(
+                  currentResourceGroup, resourceGroup, currentResourceGroup.getScopeIdentifier()));
+              return updatedResourceGroup;
+            }));
+      } else {
+        return Failsafe.with(upsertResourceGroupTransactionPolicy)
+            .get(() -> outboxTransactionTemplate.execute(status -> {
+              ResourceGroup updatedResourceGroup = resourceGroupDao.upsert(resourceGroup);
+              outboxService.save(new ResourceGroupUpdateEvent(
+                  currentResourceGroup, resourceGroup, currentResourceGroup.getScopeIdentifier()));
+              return updatedResourceGroup;
+            }));
       }
     }
     return resourceGroupDao.upsert(resourceGroup);
@@ -112,16 +132,6 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   }
 
   @Override
-  public ResourceGroup delete(String identifier, String scopeIdentifier) {
-    Optional<ResourceGroup> currentResourceGroupOptional = get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM);
-    if (!currentResourceGroupOptional.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("Could not find the resource group in the scope %s", scopeIdentifier));
-    }
-    return deleteCustom(identifier, scopeIdentifier);
-  }
-
-  @Override
   public void deleteIfPresent(String identifier, String scopeIdentifier) {
     Optional<ResourceGroup> currentResourceGroupOptional = get(identifier, scopeIdentifier, ManagedFilter.ONLY_CUSTOM);
     if (currentResourceGroupOptional.isPresent()) {
@@ -138,29 +148,38 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   }
 
   private ResourceGroup deleteManaged(String identifier) {
-    return Failsafe.with(deleteResourceGroupTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(deleteResourceGroupTransactionPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
       long deleteCount = roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
                                                                .scopeFilter("/")
                                                                .includeChildScopes(true)
                                                                .resourceGroupFilter(Sets.newHashSet(identifier))
                                                                .build());
-      return resourceGroupDao.delete(identifier, null)
-          .orElseThrow(()
-                           -> new UnexpectedException(String.format(
-                               "Failed to delete the resource group %s in the scope %s", identifier, null)));
+
+      ResourceGroup resourceGroup =
+          resourceGroupDao.delete(identifier, null)
+              .orElseThrow(()
+                               -> new UnexpectedException(String.format(
+                                   "Failed to delete the resource group %s in the scope %s", identifier, null)));
+      outboxService.save(new ResourceGroupDeleteEvent(resourceGroup, null));
+      return resourceGroup;
     }));
   }
 
   private ResourceGroup deleteCustom(String identifier, String scopeIdentifier) {
-    return Failsafe.with(deleteResourceGroupTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(deleteResourceGroupTransactionPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
       long deleteCount = roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
                                                                .scopeFilter(scopeIdentifier)
                                                                .resourceGroupFilter(Sets.newHashSet(identifier))
                                                                .build());
-      return resourceGroupDao.delete(identifier, scopeIdentifier)
-          .orElseThrow(()
-                           -> new UnexpectedException(String.format(
-                               "Failed to delete the resource group %s in the scope %s", identifier, scopeIdentifier)));
+
+      ResourceGroup resourceGroup =
+          resourceGroupDao.delete(identifier, scopeIdentifier)
+              .orElseThrow(
+                  ()
+                      -> new UnexpectedException(String.format(
+                          "Failed to delete the resource group %s in the scope %s", identifier, scopeIdentifier)));
+      outboxService.save(new ResourceGroupDeleteEvent(resourceGroup, scopeIdentifier));
+      return resourceGroup;
     }));
   }
 }

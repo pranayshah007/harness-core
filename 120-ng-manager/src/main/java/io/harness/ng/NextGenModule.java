@@ -94,6 +94,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -176,6 +177,7 @@ import io.harness.ng.core.DefaultOrganizationModule;
 import io.harness.ng.core.DelegateServiceModule;
 import io.harness.ng.core.InviteModule;
 import io.harness.ng.core.NGAggregateModule;
+import io.harness.ng.core.ScopeInfoModule;
 import io.harness.ng.core.SecretManagementModule;
 import io.harness.ng.core.agent.client.AgentNgManagerCgManagerClientModule;
 import io.harness.ng.core.api.ApiKeyService;
@@ -233,6 +235,7 @@ import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
 import io.harness.ng.core.impl.ProjectServiceImpl;
+import io.harness.ng.core.impl.ScopeInfoServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
@@ -253,6 +256,7 @@ import io.harness.ng.core.refresh.service.EntityRefreshServiceImpl;
 import io.harness.ng.core.schema.YamlBaseUrlService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ng.core.services.ScopeInfoService;
 import io.harness.ng.core.smtp.NgSMTPSettingsHttpClientModule;
 import io.harness.ng.core.smtp.SmtpNgService;
 import io.harness.ng.core.smtp.SmtpNgServiceImpl;
@@ -359,6 +363,7 @@ import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
+import io.harness.timescaledb.TimescalePersistence;
 import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
@@ -680,6 +685,18 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("environment-gitx-pool-%d").build());
   }
 
+  private ThreadPoolExecutor deploymentStagePlanCreationInfoThreadPoolConfiguration() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null
+            && appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration() != null
+            && appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration().getThreadPoolConfig() != null
+        ? appConfig.getDeploymentStagePlanCreationInfoThreadPoolConfiguration().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("deployment-stage-plan-creation-info-pool-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
@@ -747,6 +764,8 @@ public class NextGenModule extends AbstractModule {
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+      bind(TimescalePersistence.class)
+          .toConstructor(TimescalePersistence.class.getConstructor(TimeScaleDBService.class));
       bind(RetentionManager.class).to(RetentionManagerImpl.class);
     } catch (NoSuchMethodException e) {
       log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
@@ -813,6 +832,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(JooqModule.getInstance());
     install(new DefaultOrganizationModule());
+    install(new ScopeInfoModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
     install(NGModule.getInstance());
@@ -853,7 +873,8 @@ public class NextGenModule extends AbstractModule {
     install(new OpaClientModule(
         appConfig.getOpaClientConfig(), appConfig.getPolicyManagerSecret(), NG_MANAGER.getServiceId()));
     install(EnforcementModule.getInstance());
-
+    install(new DelegateSelectionLogHttpClientModule(this.appConfig.getManagerClientConfig(),
+        this.appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(EnforcementClientModule.getInstance(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId(),
         appConfig.getEnforcementClientConfiguration()));
@@ -1025,6 +1046,7 @@ public class NextGenModule extends AbstractModule {
     bind(WebhookService.class).to(WebhookServiceImpl.class);
     bind(WebhookEventProcessingService.class).to(WebhookEventProcessingServiceImpl.class);
     bind(NGHostValidationService.class).to(NGHostValidationServiceImpl.class);
+    bind(ScopeInfoService.class).to(ScopeInfoServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(USER_ENTITY + ENTITY_CRUD))
         .to(UserEntityCrudStreamListener.class);
@@ -1070,6 +1092,10 @@ public class NextGenModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("environment-gitx-executor"))
         .toInstance(new ManagedExecutorService(environmentGitXThreadPool()));
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("deployment-stage-plan-creation-info-executor"))
+        .toInstance(new ManagedExecutorService(deploymentStagePlanCreationInfoThreadPoolConfiguration()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);

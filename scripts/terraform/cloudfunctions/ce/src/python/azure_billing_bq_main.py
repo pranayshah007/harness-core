@@ -1015,7 +1015,11 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
                                  "UnitOfMeasure", "ChargeType"]:
             if additionalColumn.lower() in jsonData["columns"]:
                 insert_columns = insert_columns + ", azure%s" % additionalColumn
-                select_columns = select_columns + ", %s as azure%s" % (additionalColumn, additionalColumn)
+                if additionalColumn.lower() in ["costcenter"]:
+                    # BQ schema autodetect failure handling
+                    select_columns = select_columns + ", CAST(%s AS INT64) as azure%s" % (additionalColumn, additionalColumn)
+                else:
+                    select_columns = select_columns + ", %s as azure%s" % (additionalColumn, additionalColumn)
 
 
     query = """DELETE FROM `%s.unifiedTable` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s'  

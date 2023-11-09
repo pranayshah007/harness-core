@@ -108,6 +108,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -162,6 +163,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     }
     HelmChartInfo helmChartInfo = null;
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
+    kubernetesConfig = k8sDelegateTaskParams.getKubernetesConfig();
     deploymentSkipped = false;
     k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
     releaseName = k8sBGDeployRequest.getReleaseName();
@@ -227,7 +229,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.applyManifests(
         client, resources, k8sDelegateTaskParams, applyManifestsLogCallback, true, true, commandFlags);
-
+    OffsetDateTime manifestApplyTime = OffsetDateTime.now();
     k8sTaskHelperBase.saveRelease(
         useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory, releaseName);
 
@@ -253,6 +255,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
                                               .kubernetesConfig(kubernetesConfig)
+                                              .startTime(manifestApplyTime)
                                               .build();
 
     K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sBGDeployRequest.isUseK8sApiForSteadyStateCheck());
@@ -324,8 +327,11 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
 
-    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    }
 
     client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
         k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());

@@ -100,7 +100,6 @@ import com.mongodb.DBObject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
-import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
@@ -730,15 +729,13 @@ public class AuditServiceImpl implements AuditService {
   void changeAuditPreferenceForHomePage(AuditPreference auditPreference, String accountId) {
     if (featureFlagService.isEnabled(FeatureName.ENABLE_LOGIN_AUDITS, accountId)) {
       if (Objects.isNull(auditPreference.getApplicationAuditFilter())
-          && Objects.isNull(auditPreference.getAccountAuditFilter())
-          && Lists.isNullOrEmpty(auditPreference.getOperationTypes())) {
+          && Objects.isNull(auditPreference.getAccountAuditFilter()) && isEmpty(auditPreference.getOperationTypes())) {
         auditPreference.setOperationTypes(Arrays.stream(Type.values()).map(Type::name).collect(Collectors.toList()));
       }
 
     } else {
       if (Objects.isNull(auditPreference.getApplicationAuditFilter())
-          && Objects.isNull(auditPreference.getAccountAuditFilter())
-          && Lists.isNullOrEmpty(auditPreference.getOperationTypes())) {
+          && Objects.isNull(auditPreference.getAccountAuditFilter()) && isEmpty(auditPreference.getOperationTypes())) {
         auditPreference.setOperationTypes(Arrays.stream(Type.values())
                                               .filter(type -> type != Type.LOGIN)
                                               .filter(type -> type != Type.LOGIN_2FA)

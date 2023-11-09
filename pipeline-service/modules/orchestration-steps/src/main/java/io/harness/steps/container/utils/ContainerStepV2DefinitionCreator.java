@@ -10,6 +10,7 @@ package io.harness.steps.container.utils;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils.getKubernetesStandardPodName;
 
 import io.harness.annotations.dev.CodePulse;
@@ -35,7 +36,6 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,12 +60,16 @@ public class ContainerStepV2DefinitionCreator {
         if (!response.getShouldSkip()) {
           StepInfoProto stepInfo = response.getStepInfo();
           String stepIdentifier = stepInfo.getIdentifier();
-          if (Strings.isNotBlank(stepGroupIdentifier)) {
+          if (isNotEmpty(stepGroupIdentifier)) {
             stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
           }
           String identifier = getKubernetesStandardPodName(stepInfo.getIdentifier());
           String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
           Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
+          Map<String, String> envVarsWithPlainTextSecret = new HashMap<>();
+          if (EmptyPredicate.isNotEmpty(pluginDetails.getEnvVariablesWithPlainTextSecretMap())) {
+            envVarsWithPlainTextSecret = new HashMap<>(pluginDetails.getEnvVariablesWithPlainTextSecretMap());
+          }
           List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()
                                                            .stream()
                                                            .map(SecretNgVariableUtils::getSecretNgVariable)
@@ -78,6 +82,7 @@ public class ContainerStepV2DefinitionCreator {
                       os.getValue() != null ? OSType.getOSType(String.valueOf(os.getValue())) : null))
                   .args(StepContainerUtils.getArguments(pluginDetails.getPortUsed(0)))
                   .envVars(envMap)
+                  .envVarsWithPlainTextSecret(envVarsWithPlainTextSecret)
                   .secretVariables(secretNGVariableMap)
                   .containerImageDetails(
                       ContainerImageDetails.builder()

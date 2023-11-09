@@ -43,6 +43,7 @@ import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.delegate.task.k8s.rancher.RancherClusterActionDTO;
+import io.harness.delegate.task.k8s.rancher.RancherHelper;
 import io.harness.delegate.task.k8s.rancher.RancherKubeConfigGenerator;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
@@ -188,9 +189,8 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   private RancherClusterActionDTO getRancherClusterActionDTO(
       LogCallback logCallback, RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
-    String rancherUrl = rancherK8sInfraDelegateConfig.getRancherConnectorDTO().getConfig().getConfig().getRancherUrl();
-    String bearerToken =
-        String.valueOf(getRancherAuthDto(rancherK8sInfraDelegateConfig).getPasswordRef().getDecryptedValue());
+    String rancherUrl = RancherHelper.getRancherUrl(rancherK8sInfraDelegateConfig);
+    String bearerToken = RancherHelper.getRancherBearerToken(rancherK8sInfraDelegateConfig);
     return RancherClusterActionDTO.builder()
         .clusterUrl(rancherUrl)
         .bearerToken(bearerToken)
@@ -198,15 +198,6 @@ public class ContainerDeploymentDelegateBaseHelper {
         .namespace(rancherK8sInfraDelegateConfig.getNamespace())
         .logCallback(logCallback)
         .build();
-  }
-
-  private RancherConnectorBearerTokenAuthenticationDTO getRancherAuthDto(
-      RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig) {
-    return (RancherConnectorBearerTokenAuthenticationDTO) rancherK8sInfraDelegateConfig.getRancherConnectorDTO()
-        .getConfig()
-        .getConfig()
-        .getCredentials()
-        .getAuth();
   }
 
   private char[] getGcpServiceAccountKeyFileContent(GcpConnectorCredentialDTO gcpCredentials) {

@@ -114,4 +114,14 @@ public class ClusterRecordDao {
         persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId);
     return query.asList();
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<ClusterRecord> query =
+        persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId);
+    return persistence.delete(query);
+  }
 }

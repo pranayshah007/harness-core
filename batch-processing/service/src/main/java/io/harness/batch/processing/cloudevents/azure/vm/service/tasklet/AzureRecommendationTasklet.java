@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.cloudevents.azure.vm.service.tasklet;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.azure.vm.service.AzureHelperService;
 import io.harness.batch.processing.cloudevents.azure.vm.service.helper.AzureConfigHelper;
@@ -18,7 +20,6 @@ import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListServi
 import software.wings.beans.AzureAccountAttributes;
 
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class AzureRecommendationTasklet implements Tasklet {
       for (Map.Entry<String, AzureAccountAttributes> azureAccountAttributesEntry : azureAccountAttributes.entrySet()) {
         List<AzureRecommendation> azureRecommendationList =
             azureHelperService.getRecommendations(accountId, azureAccountAttributesEntry.getValue());
-        if (!Lists.isNullOrEmpty(azureRecommendationList)) {
+        if (!isEmpty(azureRecommendationList)) {
           for (AzureRecommendation azureRecommendation : azureRecommendationList) {
             try {
               azureRecommendation = azureRecommendationDAO.saveRecommendation(azureRecommendation);

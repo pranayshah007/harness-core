@@ -26,6 +26,8 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ScmBatchGetFileTaskParams implements TaskParameters, ExecutionCapabilityDemander {
+  // This list should/will only have 1 element for now otherwise delegate selector properties will go for a toss
+  // We cannot change list to single element due to backward compatibility issues in delegate
   List<GetFileTaskParamsPerConnector> getFileTaskParamsPerConnectorList;
 
   @Override
@@ -35,7 +37,7 @@ public class ScmBatchGetFileTaskParams implements TaskParameters, ExecutionCapab
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(
           getFileTaskParamsPerConnector.getConnectorDecryptionParams().getScmConnector());
       executionCapabilities.addAll(
-          GitCapabilityHelper.fetchRequiredExecutionCapabilitiesSimpleCheck(gitConfigDTO, false));
+          GitCapabilityHelper.fetchRequiredExecutionCapabilitiesSimpleCheck(gitConfigDTO, true));
     });
     return executionCapabilities;
   }

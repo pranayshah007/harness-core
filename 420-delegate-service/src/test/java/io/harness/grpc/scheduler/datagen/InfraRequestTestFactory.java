@@ -20,7 +20,6 @@ import io.harness.delegate.SecurityContext;
 import io.harness.delegate.SetupExecutionInfrastructureRequest;
 import io.harness.delegate.StepSpec;
 import io.harness.delegate.TaskSelector;
-import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.RunnerType;
 import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
@@ -94,14 +93,13 @@ public class InfraRequestTestFactory {
   private static SetupExecutionInfrastructureRequest createSetupInfraRequest(
       final K8sInfraSpec infraSpec, final String logKey) {
     final ExecutionInfrastructure infra = ExecutionInfrastructure.newBuilder()
-                                              .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
+                                              .setLogConfig(LogConfig.newBuilder().setLogPrefix(logKey).build())
                                               .setK8S(infraSpec)
                                               .build();
     final var config = SchedulingConfig.newBuilder()
                            .setAccountId("accountId")
                            .setCallbackToken(DelegateCallbackToken.newBuilder().setToken("callbackToken").build())
                            .setExecutionTimeout(Duration.newBuilder().setSeconds(100).build())
-                           .setSetupAbstractions(TaskSetupAbstractions.newBuilder().build())
                            .addSelectors(TaskSelector.newBuilder().build())
                            .addSelectors(TaskSelector.newBuilder().build())
                            .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
@@ -112,7 +110,7 @@ public class InfraRequestTestFactory {
 
   private static Resource createEmptyDir() {
     return Resource.newBuilder()
-        .setType(ResourceType.RES_VOLUME)
+        .setType(ResourceType.RESOURCE_TYPE_VOLUME)
         .setEmptyDir(
             EmptyDirVolume.newBuilder().setName("name").setPath("path").setSize("size").setMedium("medium").build())
         .build();
@@ -144,7 +142,7 @@ public class InfraRequestTestFactory {
 
   private static io.harness.delegate.core.beans.Resource expectedEmptyDir() {
     return io.harness.delegate.core.beans.Resource.newBuilder()
-        .setType(io.harness.delegate.core.beans.ResourceType.RES_VOLUME)
+        .setType(io.harness.delegate.core.beans.ResourceType.RESOURCE_TYPE_VOLUME)
         .setSpec(Any.pack(io.harness.delegate.core.beans.EmptyDirVolume.newBuilder()
                               .setName("name")
                               .setPath("path")

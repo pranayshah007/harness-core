@@ -254,6 +254,10 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     doReturn(k8sClient).when(taskHelperBase).getKubernetesClient(anyBoolean());
     doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
 
+    K8sSteadyStateDTO steadyStateDTO = K8sSteadyStateDTO.builder().build();
+    doReturn(steadyStateDTO)
+        .when(taskHelperBase)
+        .createSteadyStateCheckRequest(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
     doReturn(singletonList(deployment()))
         .when(taskHelperBase)
         .readManifestAndOverrideLocalSecrets(anyList(), eq(logCallback), anyBoolean(), anyBoolean());

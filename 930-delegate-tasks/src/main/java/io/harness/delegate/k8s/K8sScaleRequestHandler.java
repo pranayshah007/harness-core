@@ -60,6 +60,7 @@ import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -91,8 +92,12 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     K8sScaleRequest k8sScaleRequest = (K8sScaleRequest) k8sDeployRequest;
     LogCallback logCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
+    KubernetesConfig kubernetesConfig = k8SDelegateTaskParams.getKubernetesConfig();
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          k8sScaleRequest.getK8sInfraDelegateConfig(), k8SDelegateTaskParams.getWorkingDirectory(), logCallback);
+    }
 
     init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(), logCallback);
 
@@ -110,6 +115,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
 
     boolean success = k8sTaskHelperBase.scale(
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
+    OffsetDateTime scaleActionTime = OffsetDateTime.now();
     if (success) {
       scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
     }
@@ -126,6 +132,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
               .denoteOverallSuccess(true)
               .isErrorFrameworkEnabled(true)
               .kubernetesConfig(kubernetesConfig)
+              .startTime(scaleActionTime)
               .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());

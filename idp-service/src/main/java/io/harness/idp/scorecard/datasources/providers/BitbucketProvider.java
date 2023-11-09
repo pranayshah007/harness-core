@@ -18,19 +18,20 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,7 +51,7 @@ public class BitbucketProvider extends HttpDataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      List<DataFetchDTO> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);

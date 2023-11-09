@@ -265,4 +265,13 @@ public class RuleDAO {
         .equal(ruleCloudProviderType)
         .asList();
   }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(Rule.class).field(RuleId.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<Rule> query = hPersistence.createQuery(Rule.class).field(RuleId.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
 }

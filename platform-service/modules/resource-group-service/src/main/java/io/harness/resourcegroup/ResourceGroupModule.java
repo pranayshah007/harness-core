@@ -29,6 +29,8 @@ import io.harness.delegate.DelegateServiceResourceClientModule;
 import io.harness.envgroup.EnvironmentGroupResourceClientModule;
 import io.harness.envgroup.remote.EnvironmentGroupResourceClient;
 import io.harness.environment.EnvironmentResourceClientModule;
+import io.harness.featureflag.FeatureFlagResourceClient;
+import io.harness.featureflag.FeatureFlagResourceClientModule;
 import io.harness.filestore.FileStoreClientModule;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitops.remote.GitopsResourceClient;
@@ -135,6 +137,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(CodeResourceClient.class);
     requireBinding(GovernanceRuleClient.class);
     requireBinding(ProxyApiKeyClient.class);
+    requireBinding(FeatureFlagResourceClient.class);
   }
 
   private void installResourceValidators() {
@@ -189,5 +192,8 @@ public class ResourceGroupModule extends AbstractModule {
     install(new ProxyApiKeyClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getFfService().getBaseUrl()).build(),
         resourceClients.getFfService().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+    install(new FeatureFlagResourceClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
+        resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }
 }

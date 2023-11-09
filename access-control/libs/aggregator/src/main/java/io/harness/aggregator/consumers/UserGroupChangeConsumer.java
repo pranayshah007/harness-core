@@ -129,7 +129,7 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
   }
 
   @Override
-  public boolean consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id, UserGroupUpdateEventData changeEventData) {
     return true;
   }
 

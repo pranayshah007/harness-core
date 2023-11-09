@@ -19,6 +19,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -26,6 +27,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 @Component
+@Slf4j
 public class AwsCredentialHelper {
   @Autowired private BatchMainConfig batchMainConfig;
   private static final String ceAWSRegion = "us-east-1";
@@ -35,6 +37,7 @@ public class AwsCredentialHelper {
     AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(
         new BasicAWSCredentials(awsS3SyncConfig.getAwsAccessKey(), awsS3SyncConfig.getAwsSecretKey()));
     if (getCeProxyConfig() != null && getCeProxyConfig().isEnabled()) {
+      log.info("AWSSecurityTokenService client initializing with proxy config");
       return AWSSecurityTokenServiceClientBuilder.standard()
           .withCredentials(awsCredentialsProvider)
           .withRegion(ceAWSRegion)

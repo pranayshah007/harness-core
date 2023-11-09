@@ -60,7 +60,7 @@ public class DirectDslClient implements DslClient {
     return new OkHttpClient()
         .newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))

@@ -6,12 +6,12 @@
  */
 
 package io.harness.steps.shellscript.v1;
+
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -20,6 +20,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -98,23 +99,17 @@ public class ShellScriptStepPlanCreator implements PartialPlanCreator<YamlField>
     if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
       builder.adviserObtainments(adviserObtainmentList);
     }
-    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+    Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
         kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, adviserObtainmentList);
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
     return PlanCreationResponse.builder()
         .planNode(builder.build())
-        .dependencies(
-            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                .toBuilder()
-                .putDependencyMetadata(field.getUuid(),
-                    Dependency.newBuilder()
-                        .putAllMetadata(dependencyMetadata.getMetadataMap())
-                        .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
-                        .build())
-                .build())
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(field.getUuid(),
+                              Dependency.newBuilder()
+                                  .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata).build())
+                                  .build())
+                          .build())
         .build();
   }
 

@@ -16,6 +16,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,5 +41,18 @@ public class CeExceptionRecordDao {
         .greaterThanOrEq(recentTimestamp)
         .order(Sort.descending(CeExceptionRecordKeys.createdAt))
         .get();
+  }
+
+  public long count(String accountId) {
+    return persistence.createQuery(CeExceptionRecord.class)
+        .field(CeExceptionRecordKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CeExceptionRecord> query =
+        persistence.createQuery(CeExceptionRecord.class).field(CeExceptionRecordKeys.accountId).equal(accountId);
+    return persistence.delete(query);
   }
 }

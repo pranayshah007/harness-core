@@ -133,7 +133,7 @@ public class ErrorTrackingNotificationServiceImplTest extends CvNextGenTestBase 
              eq(builderFactory.getContext().getAccountId()), eq(SRM_CODE_ERROR_NOTIFICATIONS)))
         .thenReturn(true);
 
-    Scorecard scorecard = Scorecard.builder().newHitCount(1).build();
+    Scorecard scorecard = Scorecard.builder().newHitCount(1).versionIdentifier("v1").build();
     List<Scorecard> scorecards = new ArrayList<>();
     scorecards.add(scorecard);
     ErrorTrackingNotificationData errorTrackingNotificationData = ErrorTrackingNotificationData.builder()

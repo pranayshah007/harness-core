@@ -30,9 +30,11 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@Slf4j
 @OwnedBy(CDP)
 public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
@@ -52,9 +54,13 @@ public class K8sSwapServiceSelectorsHandler extends K8sRequestHandler {
     LogCallback logCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, SwapServiceSelectors, true, commandUnitsProgress);
 
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sSwapServiceSelectorsRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
-        logCallback);
+    KubernetesConfig kubernetesConfig = k8sDelegateTaskParams.getKubernetesConfig();
+    if (kubernetesConfig == null) {
+      log.warn("Kubernetes config passed to task is NULL. Creating it again...");
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          k8sSwapServiceSelectorsRequest.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(),
+          logCallback);
+    }
 
     boolean useDeclarativeRollback = k8sSwapServiceSelectorsRequest.isUseDeclarativeRollback();
     K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);

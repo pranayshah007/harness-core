@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -116,7 +117,17 @@ public class StagesExpressionExtractor {
     String identifier = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getIdentifier();
     String name = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getName();
     String type = stageYamlNode.getField(YAMLFieldNameConstants.STAGE).getNode().getType();
+    if (StepSpecTypeConstants.PIPELINE_STAGE.equals(type)) {
+      /* We need to ignore expressions in Pipeline Chaining stage outputs, since they are referring to
+         the chained pipeline, and we don't support selective stage execution in chained pipelines anyway. */
+      stageYamlNode.getField(YAMLFieldNameConstants.STAGE)
+          .getNode()
+          .getField(YAMLFieldNameConstants.SPEC)
+          .getNode()
+          .removePath(YAMLFieldNameConstants.OUTPUTS);
+    }
     String yaml = YamlPipelineUtils.getYamlString(stageYamlNode.getCurrJsonNode());
+
     return BasicStageInfo.builder().identifier(identifier).name(name).type(type).yaml(yaml).build();
   }
 

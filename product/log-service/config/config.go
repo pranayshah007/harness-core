@@ -24,7 +24,9 @@ type Config struct {
 	}
 
 	Platform struct {
-		BaseURL string `envconfig:"LOG_SERVICE_PLATFORM_BASE_URL"`
+		BaseURL          string        `envconfig:"LOG_SERVICE_PLATFORM_BASE_URL"`
+		VanityURLEnabled bool          `envconfig:"LOG_SERVICE_VANITY_URL_ENABLED"`
+		VanityURLTTL     time.Duration `envconfig:"LOG_SERVICE_VANITY_URL_TTL" default:"1h"`
 	}
 
 	Server struct {
@@ -40,14 +42,17 @@ type Config struct {
 
 	// S3 compatible store
 	S3 struct {
-		Bucket          string `envconfig:"LOG_SERVICE_S3_BUCKET"`
-		Acl             string `envconfig:"LOG_SERVICE_S3_ACL"`
-		Prefix          string `envconfig:"LOG_SERVICE_S3_PREFIX"`
-		Endpoint        string `envconfig:"LOG_SERVICE_S3_ENDPOINT"`
-		PathStyle       bool   `envconfig:"LOG_SERVICE_S3_PATH_STYLE"`
-		Region          string `envconfig:"LOG_SERVICE_S3_REGION"`
-		AccessKeyID     string `envconfig:"LOG_SERVICE_S3_ACCESS_KEY_ID" secret:"true"`
-		AccessKeySecret string `envconfig:"LOG_SERVICE_S3_SECRET_ACCESS_KEY" secret:"true"`
+		Bucket              string `envconfig:"LOG_SERVICE_S3_BUCKET"`
+		Acl                 string `envconfig:"LOG_SERVICE_S3_ACL"`
+		Prefix              string `envconfig:"LOG_SERVICE_S3_PREFIX"`
+		Endpoint            string `envconfig:"LOG_SERVICE_S3_ENDPOINT"`
+		PathStyle           bool   `envconfig:"LOG_SERVICE_S3_PATH_STYLE"`
+		Region              string `envconfig:"LOG_SERVICE_S3_REGION"`
+		AccessKeyID         string `envconfig:"LOG_SERVICE_S3_ACCESS_KEY_ID" secret:"true"`
+		AccessKeySecret     string `envconfig:"LOG_SERVICE_S3_SECRET_ACCESS_KEY" secret:"true"`
+		CustomHost          string `envconfig:"LOG_SERVICE_S3_CUSTOM_HOST" default:"app.harness.io/storage/harness-download"`
+		CredentialsPath     string `envconfig:"LOG_SERVICE_S3_CREDENTIALS_PATH"`
+		ReverseProxyEnabled bool   `envconfig:"LOG_SERVICE_S3_REVERSE_PROXY_ENABLED"`
 	}
 
 	Redis struct {
@@ -94,6 +99,12 @@ type Config struct {
 
 	Zip struct {
 		LIMIT_FILES int `envconfig:"LOG_SERVICE_LIMIT_FILES" default:"100"`
+	}
+
+	Profiler struct {
+		ServiceName    string `envconfig:"LOG_SERVICE_PROFILER_SERVICE_NAME" default:"log-service"`
+		EnableProfiler bool   `envconfig:"LOG_SERVICE_PROFILER_ENABLED"`
+		Environment    string `envconfig:"LOG_SERVICE_PROFILER_ENVIRONMENT"`
 	}
 }
 

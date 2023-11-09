@@ -13,6 +13,7 @@ import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.BITBU
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.CUSTOM;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.GITHUB;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.GITLAB;
+import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.HARNESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
@@ -87,6 +88,8 @@ public class TriggerFilterStore {
         return getTriggerFiltersBitbucketPRCommentList();
       } else if (AZURE_REPO.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
         return getTriggerFiltersAzureRepoIssueCommentList();
+      } else if (HARNESS.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
+        return getTriggerFiltersHarnessRepoIssueCommentList();
       }
     } else if (webhookPayloadData.getParseWebhookResponse().hasRelease()) {
       if (GITHUB.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
@@ -94,6 +97,11 @@ public class TriggerFilterStore {
       }
     }
     return getWebhookGitTriggerFiltersDefaultList();
+  }
+
+  private List<TriggerFilter> getTriggerFiltersHarnessRepoIssueCommentList() {
+    return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
+        headerTriggerFilter, gitWebhookTriggerRepoFilter, issueCommentTriggerFilter, filepathTriggerFilter);
   }
 
   public List<TriggerFilter> getBuildTriggerFiltersDefaultList() {

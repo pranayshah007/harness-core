@@ -132,11 +132,12 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     NGServiceOverridesEntity ngServiceOverridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(Collections.singletonList(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifestId").type(ManifestConfigType.KUSTOMIZE).build())
-                    .build()))
+            .manifests(Collections.singletonList(ManifestConfigWrapper.builder()
+                                                     .manifest(ManifestConfig.builder()
+                                                                   .identifier("manifestId")
+                                                                   .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                                   .build())
+                                                     .build()))
             .build());
 
     NGServiceOverridesEntity updatedEntity1 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
@@ -150,23 +151,24 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     assertThat(updatedEntity1.getSpec().getManifests()).hasSize(1);
     assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getIdentifier()).isEqualTo("manifestId");
     assertThat(updatedEntity1.getSpec().getManifests().get(0).getManifest().getType())
-        .isEqualTo(ManifestConfigType.KUSTOMIZE);
+        .isEqualTo(ManifestConfigType.KUSTOMIZE_PATCHES);
 
     // test multiple update
     ngServiceOverridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(Collections.singletonList(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifestId").type(ManifestConfigType.K8_MANIFEST).build())
-                    .build()))
+            .manifests(Collections.singletonList(ManifestConfigWrapper.builder()
+                                                     .manifest(ManifestConfig.builder()
+                                                                   .identifier("manifestId")
+                                                                   .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                                   .build())
+                                                     .build()))
             .build());
 
     NGServiceOverridesEntity updatedEntity2 = serviceOverridesServiceV2.update(ngServiceOverridesEntity);
     assertThat(updatedEntity2).isNotNull();
     assertThat(updatedEntity2.getSpec().getManifests()).isNotEmpty();
     assertThat(updatedEntity2.getSpec().getManifests().get(0).getManifest().getType())
-        .isEqualTo(ManifestConfigType.K8_MANIFEST);
+        .isEqualTo(ManifestConfigType.KUSTOMIZE_PATCHES);
   }
 
   @Test
@@ -244,7 +246,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // project level with type
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null, null);
 
     Pageable pageRequest =
         PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
@@ -256,7 +258,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // project level without type
     criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(2);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))
@@ -264,13 +266,14 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // org level with type
     criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(1);
     assertThat(overridesEntities.get(0).getIdentifier()).isEqualTo("id2");
 
     // org level without type
-    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null);
+    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(2);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))
@@ -366,11 +369,12 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     overridesEntity.setSpec(
         ServiceOverridesSpec.builder()
-            .manifests(List.of(
-                ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifest1").type(ManifestConfigType.KUSTOMIZE).build())
-                    .build()))
+            .manifests(List.of(ManifestConfigWrapper.builder()
+                                   .manifest(ManifestConfig.builder()
+                                                 .identifier("manifest1")
+                                                 .type(ManifestConfigType.KUSTOMIZE_PATCHES)
+                                                 .build())
+                                   .build()))
             .variables(
                 List.of(StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
                     StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
@@ -386,8 +390,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                 StringNGVariable.builder().name("varC").value(ParameterField.createValueField("valC")).build()))
             .manifests(List.of(
                 ManifestConfigWrapper.builder()
-                    .manifest(
-                        ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.K8_MANIFEST).build())
+                    .manifest(ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.VALUES).build())
                     .build()))
             .configFiles(List.of(
                 ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("configFile2").build()).build()))
@@ -420,7 +423,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                    .map(ManifestConfigWrapper::getManifest)
                    .map(ManifestConfig::getType)
                    .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(ManifestConfigType.K8_MANIFEST, ManifestConfigType.KUSTOMIZE);
+        .containsExactlyInAnyOrder(ManifestConfigType.KUSTOMIZE_PATCHES, ManifestConfigType.VALUES);
 
     assertThat(upsertedOverride.getSpec()
                    .getConfigFiles()
@@ -565,6 +568,17 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     assertThat(envOverrideInputsYaml).isNull();
   }
 
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverrideInputsInvalidManifestType() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityWithInvalidManifestType(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
+    assertThatThrownBy(() -> serviceOverridesServiceV2.create(testOverrideEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unsupported Manifest Types: [K8sManifest] found for Environment Service override");
+  }
+
   private NGServiceOverridesEntity getTestOverrideEntityForRuntimeInput(
       ServiceOverridesType overridesType, boolean isInputsPresent) {
     return NGServiceOverridesEntity.builder()
@@ -613,6 +627,41 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                                   .build())
                           .build()))
                   .build())
+        .build();
+  }
+
+  private NGServiceOverridesEntity getTestOverrideEntityWithInvalidManifestType(ServiceOverridesType overridesType) {
+    return NGServiceOverridesEntity.builder()
+        .accountId(ACCOUNT_IDENTIFIER)
+        .orgIdentifier(ORG_IDENTIFIER)
+        .projectIdentifier(PROJECT_IDENTIFIER)
+        .type(overridesType)
+        .environmentRef(ENVIRONMENT_REF)
+        .serviceRef(SERVICE_REF)
+        .spec(
+            ServiceOverridesSpec.builder()
+                .manifests(List.of(
+                    ManifestConfigWrapper.builder()
+                        .manifest(
+                            ManifestConfig.builder()
+                                .type(ManifestConfigType.K8_MANIFEST)
+                                .identifier("manifest1")
+                                .spec(
+                                    ValuesManifest.builder()
+                                        .identifier("manifest1")
+                                        .store(ParameterField.createValueField(
+                                            StoreConfigWrapper.builder()
+                                                .type(StoreConfigType.GITHUB)
+                                                .spec(GithubStore.builder()
+                                                          .branch(ParameterField.createValueField("randomValue"))
+                                                          .connectorRef(ParameterField.createValueField("randomValue"))
+                                                          .paths(ParameterField.createValueField(List.of("file1")))
+                                                          .build())
+                                                .build()))
+                                        .build())
+                                .build())
+                        .build()))
+                .build())
         .build();
   }
 

@@ -18,10 +18,10 @@ import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.ng.NextGenConfiguration;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.oidc.config.OidcConfigStructure.OidcConfiguration;
 import io.harness.oidc.config.OidcConfigurationUtility;
 import io.harness.oidc.dto.JwksPublicKeyDTO;
+import io.harness.oidc.dto.JwksPublicKeysDTO;
 import io.harness.oidc.entities.OidcJwks;
 import io.harness.oidc.jwks.OidcJwksUtility;
 import io.harness.rsa.RSAKeysUtils;
@@ -38,6 +38,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -81,7 +82,7 @@ public class OidcResource {
   OidcConfigurationUtility oidcConfigurationUtility;
 
   @GET
-  @Path("{accountId}/.wellknown/openid-configuration")
+  @Path("{accountId}/.well-known/openid-configuration")
   @ApiOperation(value = "Gets the openid configuration for Harness", nickname = "getHarnessOpenIdConfig")
   @Operation(operationId = "getHarnessOpenIdConfig", summary = "Get the openid configuration for Harness",
       responses =
@@ -90,7 +91,7 @@ public class OidcResource {
         ApiResponse(responseCode = "default", description = "This gets the openid configuration for Harness")
       })
   @PublicApi
-  public ResponseDTO<OidcConfiguration>
+  public OidcConfiguration
   getOpenIdConnectConfig(@Parameter(
       description = "This is the accountIdentifier for the account for which the JWKS public key needs to be exposed.")
       @PathParam(ACCOUNT_KEY) String accountId) {
@@ -98,21 +99,19 @@ public class OidcResource {
     String issuer = updateBaseClaims(baseOidcConfig.getIssuer(), accountId);
     String jwksUri = updateBaseClaims(baseOidcConfig.getJwksUri(), accountId);
 
-    OidcConfiguration finalOidcConfig = OidcConfiguration.builder()
-                                            .issuer(issuer)
-                                            .jwksUri(jwksUri)
-                                            .subTypesSupported(baseOidcConfig.getSubTypesSupported())
-                                            .responseTypesSupported(baseOidcConfig.getResponseTypesSupported())
-                                            .claimsSupported(baseOidcConfig.getClaimsSupported())
-                                            .signingAlgsSupported(baseOidcConfig.getSigningAlgsSupported())
-                                            .scopesSupported(baseOidcConfig.getScopesSupported())
-                                            .build();
-
-    return ResponseDTO.newResponse(finalOidcConfig);
+    return OidcConfiguration.builder()
+        .issuer(issuer)
+        .jwksUri(jwksUri)
+        .subTypesSupported(baseOidcConfig.getSubTypesSupported())
+        .responseTypesSupported(baseOidcConfig.getResponseTypesSupported())
+        .claimsSupported(baseOidcConfig.getClaimsSupported())
+        .signingAlgsSupported(baseOidcConfig.getSigningAlgsSupported())
+        .scopesSupported(baseOidcConfig.getScopesSupported())
+        .build();
   }
 
   @GET
-  @Path("{accountId}/.well-known/jwks")
+  @Path("{accountId}/.wellknown/jwks")
   @ApiOperation(value = "Gets the openid configuration for Harness", nickname = "getHarnessOpenIdJwks")
   @Operation(operationId = "getHarnessOpenIdConfig", summary = "Get the openid configuration for Harness",
       responses =
@@ -121,7 +120,7 @@ public class OidcResource {
         ApiResponse(responseCode = "default", description = "This gets the openid configuration for Harness")
       })
   @PublicApi
-  public ResponseDTO<JwksPublicKeyDTO>
+  public JwksPublicKeysDTO
   getJwksPublicKey(@Parameter(
       description = "This is the accountIdentifier for the account for which the JWKS public key needs to be exposed.")
       @PathParam(ACCOUNT_KEY) String accountId) {
@@ -138,7 +137,11 @@ public class OidcResource {
             .use("sig")
             .build();
 
-    return ResponseDTO.newResponse(jwksPublicKeyDTO);
+    JwksPublicKeysDTO jwksPublicKeysDTO = JwksPublicKeysDTO.builder().build();
+    jwksPublicKeysDTO.setJwksPublicKeysDto(new ArrayList<>());
+    jwksPublicKeysDTO.getJwksPublicKeysDto().add(jwksPublicKeyDTO);
+
+    return jwksPublicKeysDTO;
   }
 
   private String updateBaseClaims(String claim, String accountId) {

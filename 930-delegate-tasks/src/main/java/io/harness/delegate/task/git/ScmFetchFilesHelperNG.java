@@ -14,6 +14,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.logging.LogLevel.ERROR;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.CodePulse;
@@ -79,7 +80,8 @@ public class ScmFetchFilesHelperNG {
       String identifier, GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
     List<GitFile> gitFiles = fetchFilesFromRepo(identifier, useBranch, gitStoreDelegateConfig.getBranch(),
-        gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
+        gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO(),
+        gitStoreDelegateConfig.isOptional());
     return FetchFilesResult.builder()
         .files(gitFiles)
         .commitResult(
@@ -126,7 +128,7 @@ public class ScmFetchFilesHelperNG {
   }
 
   private List<GitFile> fetchFilesFromRepo(String identifier, boolean useBranch, String branch, String commitId,
-      List<String> filePathList, ScmConnector scmConnector) {
+      List<String> filePathList, ScmConnector scmConnector, boolean isFileOptional) {
     FileContentBatchResponse fileBatchContentResponse =
         fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
     String latestCommitSHA = fileBatchContentResponse.getCommitId();
@@ -136,6 +138,10 @@ public class ScmFetchFilesHelperNG {
             .getFileContentsList()
             .stream()
             .filter(fileContent -> {
+              if (isFileOptional && fileContent.getStatus() == 404) {
+                log.debug(format("Unable to fetch optional file: %s", fileContent.getPath()));
+                return false;
+              }
               if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
                 throwFailedToFetchFileException(useBranch, branch, commitId, fileContent);
                 return false;

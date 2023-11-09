@@ -14,5 +14,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public enum SLIEvaluationType {
   @JsonEnumDefaultValue @JsonProperty("Window") WINDOW,
-  @JsonProperty("Request") REQUEST;
+  @JsonProperty("Request") REQUEST,
+  @JsonProperty("MetricLess") METRIC_LESS;
 }

@@ -17,10 +17,13 @@ import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.idp.license.usage.entities.ActiveDevelopersDailyCountEntity;
 import io.harness.idp.license.usage.entities.ActiveDevelopersEntity;
+import io.harness.idp.license.usage.entities.IDPTelemetrySentStatus;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.onboarding.entities.AsyncCatalogImportEntity;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
+import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.CustomHttpDataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
@@ -29,9 +32,8 @@ import io.harness.idp.scorecard.datasourcelocations.entity.NoopDataSourceLocatio
 import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.entity.HttpDataSourceEntity;
 import io.harness.idp.scorecard.datasources.entity.NoopDataSourceEntity;
-import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
-import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
-import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.idp.scorecard.scores.entity.ScoreEntity;
 import io.harness.idp.settings.beans.entity.BackstagePermissionsEntity;
 import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.idp.user.beans.entity.UserEventEntity;
@@ -59,6 +61,7 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PluginsProxyInfoEntity.class);
     set.add(ScorecardEntity.class);
     set.add(CheckEntity.class);
+    set.add(CheckStatusEntity.class);
     set.add(DataSourceEntity.class);
     set.add(DataPointEntity.class);
     set.add(DataSourceLocationEntity.class);
@@ -70,6 +73,7 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ActiveDevelopersDailyCountEntity.class);
     set.add(HttpDataSourceEntity.class);
     set.add(NoopDataSourceEntity.class);
+    set.add(IDPTelemetrySentStatus.class);
   }
 
   @Override

@@ -36,6 +36,9 @@ public interface InfrastructureEntityService {
   Optional<InfrastructureEntity> get(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
 
+  Optional<InfrastructureEntity> getMetadata(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
+
   Optional<InfrastructureEntity> get(@NotEmpty String accountId, String orgIdentifier, String projectIdentifier,
       @NotEmpty String environmentIdentifier, @NotEmpty String infraIdentifier, boolean loadFromCache,
       boolean loadFromFallbackBranch);
@@ -91,6 +94,9 @@ public interface InfrastructureEntityService {
   List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
       String projectIdentifier, String environmentIdentifier, List<String> infraIds);
 
+  List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentIdentifier, List<String> infraIds, boolean loadFromCache);
+
   String createInfrastructureInputsFromYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String environmentIdentifier, String infraIdentifier);
 
@@ -102,4 +108,10 @@ public interface InfrastructureEntityService {
 
   List<String> filterServicesByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
+
+  void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, String envRef, String infraRef);
+
+  void checkIfInfraIsScopedToService(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
 }

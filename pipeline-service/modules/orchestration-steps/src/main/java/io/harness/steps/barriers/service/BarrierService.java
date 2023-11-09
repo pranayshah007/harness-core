@@ -25,6 +25,7 @@ import java.util.Set;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface BarrierService {
+  String BARRIER_UPDATE_LOCK = "BARRIER_UPDATE_LOCK_";
   BarrierExecutionInstance save(BarrierExecutionInstance barrierExecutionInstance);
   List<BarrierExecutionInstance> saveAll(List<BarrierExecutionInstance> barrierExecutionInstances);
   BarrierExecutionInstance get(String barrierUuid);

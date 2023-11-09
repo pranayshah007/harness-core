@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1105,6 +1106,23 @@ public class KubernetesResourceTest extends CategoryTest {
       String errorMessage = exception.getParams().get("message").toString();
       assertEquals("Unhandled Kubernetes resource Service while getting labels to selector", errorMessage);
       return true;
+    });
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetK8sResource_K8sYamlUtils_YamlLoadAs() throws IOException {
+    URL url = this.getClass().getResource("/irregular-k8s-resources.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    List<KubernetesResource> resources = processYaml(fileContents);
+
+    resources.stream().forEach(resource -> {
+      try {
+        resource.getK8sResource();
+      } catch (KubernetesYamlException kye) {
+        Assertions.fail(format("Test has failed for resource %n %s", resource.getSpec()));
+      }
     });
   }
 }

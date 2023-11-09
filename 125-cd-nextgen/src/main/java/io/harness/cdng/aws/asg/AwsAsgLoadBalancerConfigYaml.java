@@ -50,13 +50,7 @@ public class AwsAsgLoadBalancerConfigYaml {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> prodListenerRuleArn;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> stageListener;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListener;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> stageListenerRuleArn;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
 }

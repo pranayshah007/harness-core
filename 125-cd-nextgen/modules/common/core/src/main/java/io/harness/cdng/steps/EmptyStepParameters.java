@@ -8,10 +8,26 @@
 package io.harness.cdng.steps;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @RecasterAlias("io.harness.cdng.steps.EmptyStepParameters")
-public class EmptyStepParameters implements StepParameters {}
+public class EmptyStepParameters implements StepParameters, WithDelegateSelector {
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return this.delegateSelectors;
+  }
+
+  @Override
+  public void setDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    this.delegateSelectors = delegateSelectors;
+  }
+}

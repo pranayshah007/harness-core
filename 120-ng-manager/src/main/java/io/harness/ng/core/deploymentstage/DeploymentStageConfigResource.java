@@ -19,6 +19,7 @@ import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.ListUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
 import io.harness.ng.core.dto.CDStageMetaDataDTO.CDStageMetaDataDTOBuilder;
@@ -30,7 +31,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
-import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -183,16 +183,16 @@ public class DeploymentStageConfigResource {
     final PipelineInfrastructure infrastructure = deploymentStageConfig.getInfrastructure();
     if (infrastructure != null) {
       if (infrastructure.getEnvironmentRef() != null) {
-        return Lists.newArrayList(getReferenceValue(infrastructure.getEnvironmentRef()));
+        return ListUtils.newArrayList(getReferenceValue(infrastructure.getEnvironmentRef()));
       } else {
         if (infrastructure.getEnvironment() != null) {
-          return Lists.newArrayList(infrastructure.getEnvironment().getIdentifier());
+          return ListUtils.newArrayList(infrastructure.getEnvironment().getIdentifier());
         }
       }
     } else {
       if (deploymentStageConfig.getEnvironment() != null
           && deploymentStageConfig.getEnvironment().getEnvironmentRef() != null) {
-        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getEnvironment().getEnvironmentRef()));
+        return ListUtils.newArrayList(getReferenceValue(deploymentStageConfig.getEnvironment().getEnvironmentRef()));
       }
 
       if (deploymentStageConfig.getEnvironments() != null
@@ -213,15 +213,15 @@ public class DeploymentStageConfigResource {
   private List<String> getServiceRefs(DeploymentStageConfig deploymentStageConfig) {
     if (deploymentStageConfig.getServiceConfig() != null) {
       if (deploymentStageConfig.getServiceConfig().getServiceRef() != null) {
-        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getServiceConfig().getServiceRef()));
+        return ListUtils.newArrayList(getReferenceValue(deploymentStageConfig.getServiceConfig().getServiceRef()));
       } else {
         if (deploymentStageConfig.getServiceConfig().getService() != null) {
-          return Lists.newArrayList(deploymentStageConfig.getServiceConfig().getService().getIdentifier());
+          return ListUtils.newArrayList(deploymentStageConfig.getServiceConfig().getService().getIdentifier());
         }
       }
     } else {
       if (deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getServiceRef() != null) {
-        return Lists.newArrayList(getReferenceValue(deploymentStageConfig.getService().getServiceRef()));
+        return ListUtils.newArrayList(getReferenceValue(deploymentStageConfig.getService().getServiceRef()));
       }
       if (deploymentStageConfig.getServices() != null) {
         if (ParameterField.isNotNull(deploymentStageConfig.getServices().getValues())

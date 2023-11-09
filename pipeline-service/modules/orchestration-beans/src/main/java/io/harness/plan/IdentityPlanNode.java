@@ -111,6 +111,11 @@ public class IdentityPlanNode implements Node {
 
   public static IdentityPlanNode mapPlanNodeToIdentityNode(
       Node node, StepType stepType, String originalNodeExecutionUuid, boolean alwaysSkipGraph) {
+    boolean useAdviserObtainments = false;
+    if (node.getNodeType() == NodeType.IDENTITY_PLAN_NODE
+        && ((IdentityPlanNode) node).getUseAdviserObtainments() != null) {
+      useAdviserObtainments = ((IdentityPlanNode) node).getUseAdviserObtainments();
+    }
     return IdentityPlanNode.builder()
         .uuid(node.getUuid())
         .name(node.getName())
@@ -118,6 +123,9 @@ public class IdentityPlanNode implements Node {
         .group(node.getGroup())
         .skipGraphType(alwaysSkipGraph ? SkipType.SKIP_NODE : node.getSkipGraphType())
         .stepType(stepType)
+        .advisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode())
+        .adviserObtainments(node.getAdviserObtainments())
+        .useAdviserObtainments(useAdviserObtainments)
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
@@ -130,11 +138,20 @@ public class IdentityPlanNode implements Node {
 
   public static IdentityPlanNode mapPlanNodeToIdentityNode(String newUuid, Node node, String nodeIdentifier,
       String nodeName, StepType stepType, String originalNodeExecutionUuid) {
+    boolean useAdviserObtainments = false;
+    if (node.getNodeType() == NodeType.IDENTITY_PLAN_NODE
+        && ((IdentityPlanNode) node).getUseAdviserObtainments() != null) {
+      useAdviserObtainments = ((IdentityPlanNode) node).getUseAdviserObtainments();
+    }
     return IdentityPlanNode.builder()
         .uuid(newUuid != null ? newUuid : node.getUuid())
         .name(nodeName)
         .identifier(nodeIdentifier)
         .group(node.getGroup())
+        .advisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode())
+        .useAdviserObtainments(useAdviserObtainments)
+        .adviserObtainments(node.getAdviserObtainments())
+
         .skipGraphType(node.getSkipGraphType())
         .stepType(stepType)
         .isSkipExpressionChain(node.isSkipExpressionChain())

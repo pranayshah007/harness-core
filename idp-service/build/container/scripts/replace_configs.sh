@@ -253,6 +253,7 @@ replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
 replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
 replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
+replace_key_value backstageEntitiesFetchLimit "$BACKSTAGE_ENTITIES_FETCH_LIMIT"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
 replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
 replace_key_value jwtExternalServiceSecret "$JWT_EXTERNAL_SERVICE_SECRET"
@@ -274,6 +275,10 @@ replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $O
 replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
 replace_key_value shouldConfigureWithNotification "$SHOULD_CONFIGURE_WITH_NOTIFICATION"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE

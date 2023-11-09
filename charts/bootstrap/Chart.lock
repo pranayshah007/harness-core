@@ -1,15 +1,15 @@
 dependencies:
 - name: database
   repository: file://./database
-  version: 0.9.6
+  version: 0.10.1
 - name: harness-secrets
   repository: file://./secrets
-  version: 0.9.1
+  version: 0.10.0
 - name: rbac
   repository: file://./rbac
   version: 0.9.0
 - name: networking
   repository: file://./networking
-  version: 0.9.3
-digest: sha256:b7fbcf660febddda5de10ceae4eff9e0aca815b372de7f14da757aa770b98799
-generated: "2023-10-23T19:53:50.483834+05:30"
+  version: 0.9.4
+digest: sha256:49cdac5f3d3666cd9007d5a4dbac31e9244b3333ba50c10e16a5462f5edafaca
+generated: "2023-11-07T17:14:46.858459+05:30"

@@ -16,6 +16,7 @@ import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.QueryParams;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 import io.harness.cvng.utils.DatadogQueryUtils;
 
@@ -85,5 +86,21 @@ public class DatadogMetricDataCollectionInfoMapper
         .query(nextGenMetricInfo.getQuery())
         .serviceInstanceIdentifierTag(serviceIdentifierTag)
         .build();
+  }
+
+  @Override
+  public void postProcessDataCollectionInfo(DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo,
+      MetricCVConfig cvConfig, VerificationTask.TaskType taskType) {
+    datadogMetricsDataCollectionInfo.setDataCollectionDsl(
+        DataCollectionDSLFactory.readMetricDSL(DataSourceType.DATADOG_METRICS));
+    for (MetricCollectionInfo metricCollectionInfo : datadogMetricsDataCollectionInfo.getMetricDefinitions()) {
+      // composite query the base query is considered and not the grouping query formed by the UI
+      String serviceInstanceIdentifierTag = metricCollectionInfo.getServiceInstanceIdentifierTag();
+      boolean isCollectHostData = StringUtils.isNotEmpty(serviceInstanceIdentifierTag);
+      Pair<String, List<String>> formulaQueriesPair = DatadogQueryUtils.processCompositeQuery(
+          metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceIdentifierTag(), isCollectHostData);
+      metricCollectionInfo.setFormula(formulaQueriesPair.getLeft());
+      metricCollectionInfo.setFormulaQueries(formulaQueriesPair.getRight());
+    }
   }
 }

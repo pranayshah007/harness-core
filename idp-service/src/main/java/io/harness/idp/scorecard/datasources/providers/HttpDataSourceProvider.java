@@ -11,7 +11,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.scorecard.common.beans.DataSourceConfig;
 import io.harness.idp.scorecard.common.beans.DataSourceType;
 import io.harness.idp.scorecard.common.beans.HttpConfig;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;

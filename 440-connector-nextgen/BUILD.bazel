@@ -24,6 +24,7 @@ java_library(
         "//920-delegate-agent-beans:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//932-connector-task:module",
         "//940-feature-flag:module",
         "//940-secret-manager-client:module",

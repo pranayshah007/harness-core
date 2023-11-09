@@ -314,7 +314,8 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(mergedTemplateYaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(accountId, orgId, projectId, pipelineTemplateYaml, "false");
+        .resolveTemplateRefsInPipeline(
+            accountId, orgId, projectId, pipelineTemplateYaml, "false", HarnessYamlVersion.V0);
     doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
     InputSetTemplateResponseDTOPMS responseWithRuntime = validateAndMergeHelper.getInputSetTemplateResponseDTO(
         accountId, orgId, projectId, "has_runtime", Collections.singletonList("Stage1"), false);

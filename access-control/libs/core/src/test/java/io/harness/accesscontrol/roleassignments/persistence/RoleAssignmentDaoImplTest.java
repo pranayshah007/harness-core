@@ -265,9 +265,9 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
   @Category(UnitTests.class)
   public void testDeleteMulti() {
     RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder().build();
-    when(roleAssignmentRepository.deleteMulti(any())).thenReturn(17L);
-    long result = roleAssignmentDao.deleteMulti(roleAssignmentFilter);
-    assertEquals(17L, result);
+    when(roleAssignmentRepository.findAndRemove(any())).thenReturn(List.of(RoleAssignmentDBO.builder().build()));
+    long result = roleAssignmentDao.findAndRemove(roleAssignmentFilter).size();
+    assertEquals(1L, result);
   }
 
   @Test
@@ -277,16 +277,16 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
     RoleAssignmentFilter roleAssignmentFilter = getRoleAssignmentFilter(false);
     RoleAssignmentFilter roleAssignmentFilterClone = (RoleAssignmentFilter) HObjectMapper.clone(roleAssignmentFilter);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(roleAssignmentRepository.deleteMulti(any())).thenReturn(0L);
-    roleAssignmentDao.deleteMulti(roleAssignmentFilter);
-    verify(roleAssignmentRepository, times(1)).deleteMulti(criteriaArgumentCaptor.capture());
+    when(roleAssignmentRepository.findAndRemove(any())).thenReturn(emptyList());
+    roleAssignmentDao.findAndRemove(roleAssignmentFilter);
+    verify(roleAssignmentRepository, times(1)).findAndRemove(criteriaArgumentCaptor.capture());
     assertFilterCriteria(roleAssignmentFilterClone, criteriaArgumentCaptor);
 
     roleAssignmentFilter = getRoleAssignmentFilter(true);
     roleAssignmentFilterClone = (RoleAssignmentFilter) HObjectMapper.clone(roleAssignmentFilter);
     criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    roleAssignmentDao.deleteMulti(roleAssignmentFilter);
-    verify(roleAssignmentRepository, times(2)).deleteMulti(criteriaArgumentCaptor.capture());
+    roleAssignmentDao.findAndRemove(roleAssignmentFilter);
+    verify(roleAssignmentRepository, times(2)).findAndRemove(criteriaArgumentCaptor.capture());
     assertFilterCriteria(roleAssignmentFilterClone, criteriaArgumentCaptor);
   }
 

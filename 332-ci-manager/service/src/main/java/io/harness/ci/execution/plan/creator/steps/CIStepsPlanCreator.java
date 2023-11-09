@@ -42,7 +42,6 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,9 +92,6 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     IntStream.range(0, steps.size() - 1).forEach(i -> {
       YamlField curr = steps.get(i);
       String nextId = steps.get(i + 1).getUuid();
-      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
               .dependencies(
@@ -103,9 +99,6 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
                       .putDependencies(curr.getUuid(), curr.getYamlPath())
                       .putDependencyMetadata(curr.getUuid(),
                           Dependency.newBuilder()
-                              .putAllMetadata(ctx.getDependency().getMetadataMap())
-                              .putMetadata(
-                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
                               .setNodeMetadata(HarnessStruct.newBuilder()
                                                    .putData(PlanCreatorConstants.NEXT_ID,
                                                        HarnessValue.newBuilder().setStringValue(nextId).build())
@@ -117,19 +110,14 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     });
 
     YamlField curr = steps.get(steps.size() - 1);
-    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-    // bytes for complex objects. We will deprecate the first one in v1
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder()
-                              .putDependencyMetadata(curr.getUuid(),
-                                  Dependency.newBuilder()
-                                      .putAllMetadata(ctx.getDependency().getMetadataMap())
-                                      .setNodeMetadata(ctx.getDependency().getNodeMetadata())
-                                      .build())
-                              .putDependencies(curr.getUuid(), curr.getYamlPath())
-                              .build())
+            .dependencies(
+                Dependencies.newBuilder()
+                    .putDependencyMetadata(curr.getUuid(),
+                        Dependency.newBuilder().setNodeMetadata(ctx.getDependency().getNodeMetadata()).build())
+                    .putDependencies(curr.getUuid(), curr.getYamlPath())
+                    .build())
             .build());
     return responseMap;
   }

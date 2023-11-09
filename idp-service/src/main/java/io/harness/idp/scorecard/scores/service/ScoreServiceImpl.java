@@ -13,23 +13,28 @@ import static io.harness.idp.common.JacksonUtils.readValue;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.repositories.CheckRepository;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
-import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
-import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
-import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
-import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
-import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scores.beans.ScorecardAndChecks;
+import io.harness.idp.scorecard.scores.entity.ScoreEntity;
 import io.harness.idp.scorecard.scores.mappers.ScorecardGraphSummaryInfoMapper;
 import io.harness.idp.scorecard.scores.mappers.ScorecardScoreMapper;
 import io.harness.idp.scorecard.scores.mappers.ScorecardSummaryInfoMapper;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndCheckStatus;
+import io.harness.idp.scorecard.scores.repositories.EntityIdentifierAndScore;
 import io.harness.idp.scorecard.scores.repositories.ScoreEntityByScorecardIdentifier;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
+import io.harness.idp.scorecard.scores.repositories.ScorecardIdentifierAndScore;
+import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.EntityScores;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
@@ -39,6 +44,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -49,6 +55,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 @Slf4j
@@ -60,6 +67,7 @@ public class ScoreServiceImpl implements ScoreService {
   @Inject DataSourceRepository datasourceRepository;
   @Inject DataSourceLocationRepository datasourceLocationRepository;
   @Inject ScoreComputerService scoreComputerService;
+  @Inject NamespaceService namespaceService;
   ScorecardService scorecardService;
   ScoreRepository scoreRepository;
 
@@ -196,6 +204,81 @@ public class ScoreServiceImpl implements ScoreService {
       entityScores.add(entity);
     }
     return entityScores;
+  }
+
+  @Override
+  public List<EntityIdentifierAndScore> getScoresForEntityIdentifiersAndScorecardIdentifiers(
+      String accountIdentifier, List<String> entityIdentifiers, List<String> scorecardIdentifiers) {
+    return scoreRepository
+        .getScoresForEntityIdentifiersAndScorecardIdentifiers(
+            accountIdentifier, entityIdentifiers, scorecardIdentifiers)
+        .getMappedResults();
+  }
+
+  @Override
+  public List<EntityIdentifierAndCheckStatus> getCheckStatusForEntityIdentifiersAndScorecardIdentifiers(
+      String accountIdentifier, List<String> entityIdentifiers, List<String> scorecardIdentifiers,
+      Pair<Long, Long> previousDay24HourTimeFrame, String checkIdentifier, boolean custom) {
+    return scoreRepository
+        .getCheckStatusForLatestComputedScores(accountIdentifier, entityIdentifiers, scorecardIdentifiers,
+            previousDay24HourTimeFrame, checkIdentifier, custom)
+        .getMappedResults();
+  }
+
+  @Override
+  public Map<String, ScorecardIdentifierAndScore> getComputedScoresForScorecards(
+      String accountIdentifier, List<String> scorecardIdentifiers) {
+    List<ScorecardIdentifierAndScore> lastComputedScoresForScorecards =
+        scoreRepository.computeScoresPercentageByScorecard(accountIdentifier, scorecardIdentifiers).getMappedResults();
+    return lastComputedScoresForScorecards.stream().collect(
+        Collectors.toMap(ScorecardIdentifierAndScore::getScorecardIdentifier,
+            scorecardIdentifierAndScore -> scorecardIdentifierAndScore));
+  }
+
+  @Override
+  public void migrateScoresWithCheckIdentifier() {
+    List<String> accountIds = namespaceService.getAccountIds();
+    accountIds.forEach(account -> {
+      List<ScorecardAndChecks> scorecardAndChecks = scorecardService.getAllScorecardAndChecks(account, null);
+      scorecardAndChecks.forEach(scorecardChecks -> {
+        List<ScoreEntity> scoreEntities = scoreRepository.findAllByAccountIdentifierAndScorecardIdentifier(
+            scorecardChecks.getScorecard().getAccountIdentifier(), scorecardChecks.getScorecard().getIdentifier());
+        for (ScoreEntity score : scoreEntities) {
+          updateCheckStatus(score, scorecardChecks.getChecks());
+        }
+      });
+    });
+  }
+
+  private void updateCheckStatus(ScoreEntity score, List<CheckEntity> checks) {
+    List<CheckStatus> checkStatuses = new ArrayList<>();
+    for (CheckStatus checkStatus : score.getCheckStatus()) {
+      CheckStatus updatedCheckStatus = new CheckStatus();
+      for (CheckEntity check : checks) {
+        if (check.getName().equals(checkStatus.getName())) {
+          updatedCheckStatus.setIdentifier(check.getIdentifier());
+          updatedCheckStatus.setCustom(check.isCustom());
+          break;
+        }
+      }
+      updatedCheckStatus.setName(checkStatus.getName());
+      updatedCheckStatus.setStatus(checkStatus.getStatus());
+      updatedCheckStatus.setReason(checkStatus.getReason());
+      updatedCheckStatus.setWeight(checkStatus.getWeight());
+      checkStatuses.add(updatedCheckStatus);
+    }
+    UpdateResult updateResult = scoreRepository.updateCheckIdentifier(score, checkStatuses);
+    if (updateResult.getModifiedCount() == 1) {
+      log.info(String.format(
+          "Added check identifier field for scorecard: %s, account: %s, entity: %s, lastComputedTimestamp: %d",
+          score.getScorecardIdentifier(), score.getAccountIdentifier(), score.getEntityIdentifier(),
+          score.getLastComputedTimestamp()));
+    } else {
+      log.warn(String.format(
+          "Could not add check identifier field for scorecard: %s, account: %s, entity: %s, lastComputedTimestamp: %d",
+          score.getScorecardIdentifier(), score.getAccountIdentifier(), score.getEntityIdentifier(),
+          score.getLastComputedTimestamp()));
+    }
   }
 
   private void saveAll(List<CheckEntity> checks, List<DataPointEntity> dataPoints, List<DataSourceEntity> dataSources,

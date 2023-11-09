@@ -43,4 +43,18 @@ public class TagMapper {
 
     return tags.stream().collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
   }
+
+  public static List<NGTag> convertToListWithNull(Map<String, String> tags) {
+    if (tags == null) {
+      return null;
+    }
+    if (isEmpty(tags)) {
+      return EMPTY_LIST;
+    }
+
+    return tags.entrySet()
+        .stream()
+        .map(e -> NGTag.builder().key(e.getKey()).value(e.getValue()).build())
+        .collect(toList());
+  }
 }

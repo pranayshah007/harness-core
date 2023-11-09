@@ -27,6 +27,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
@@ -36,6 +37,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,6 +49,7 @@ public class CdAsyncChainExecutable<T extends CdTaskChainExecutable>
   @Inject protected T cdTaskChainExecutable;
   @Inject protected DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject protected AsyncExecutableTaskHelper asyncExecutableTaskHelper;
+  @Inject private AsyncWaitEngine asyncWaitEngine;
 
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
@@ -94,30 +97,36 @@ public class CdAsyncChainExecutable<T extends CdTaskChainExecutable>
       TaskChainResponse taskChainResponse, Ambiance ambiance) {
     SubmitTaskRequest request = taskChainResponse.getTaskRequest().getDelegateTaskRequest().getRequest();
     TaskData taskData = asyncExecutableTaskHelper.extractTaskRequest(request.getDetails());
+    String taskName = taskChainResponse.getTaskRequest().getDelegateTaskRequest().getTaskName();
     Set<String> selectorsList =
         request.getSelectorsList().stream().map(TaskSelector::getSelector).collect(Collectors.toSet());
     DelegateTaskRequest delegateTaskRequest = asyncExecutableTaskHelper.mapTaskRequestToDelegateTaskRequest(
         taskChainResponse.getTaskRequest(), taskData, selectorsList, "", false);
 
     String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
-    asyncExecutableTaskHelper.publishStepDelegateInfoStepDetails(
-        ambiance, taskData, taskChainResponse.getTaskRequest().getDelegateTaskRequest().getTaskName(), taskId);
-    return createAsyncChainExecutableResponse(taskId, taskChainResponse, taskData.getTimeout());
+    return createAsyncChainExecutableResponse(ambiance, taskId, taskChainResponse, taskData, taskName);
   }
 
   private AsyncChainExecutableResponse createAsyncChainExecutableResponse(
-      String callbackId, TaskChainResponse taskChainResponse, long timeout) {
+      Ambiance ambiance, String callbackId, TaskChainResponse taskChainResponse, TaskData taskData, String taskName) {
     List<String> logKeysList = taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeysList();
     List<String> units = taskChainResponse.getTaskRequest().getDelegateTaskRequest().getUnitsList();
+    byte[] ambianceBytes = ambiance.toByteArray();
+    AsyncDelegateResumeCallback asyncDelegateResumeCallback = AsyncDelegateResumeCallback.builder()
+                                                                  .ambianceBytes(ambianceBytes)
+                                                                  .taskId(callbackId)
+                                                                  .taskName(taskName)
+                                                                  .build();
     ByteString passThroughData =
         ByteString.copyFrom(RecastOrchestrationUtils.toBytes(taskChainResponse.getPassThroughData()));
+    asyncWaitEngine.waitForAllOn(asyncDelegateResumeCallback, null, Collections.singletonList(callbackId), 0);
     return AsyncChainExecutableResponse.newBuilder()
         .addAllLogKeys(logKeysList)
         .addAllUnits(units)
         .setCallbackId(callbackId)
         .setChainEnd(taskChainResponse.isChainEnd())
         .setPassThroughData(passThroughData)
-        .setTimeout(Math.toIntExact(timeout))
+        .setTimeout(Math.toIntExact(taskData.getTimeout()))
         .build();
   }
 }

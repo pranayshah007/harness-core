@@ -144,7 +144,7 @@ public class RuleExecutionDAO {
             CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, ruleExecutionFilter.getAccountId())) {
       query.field(RuleExecutionKeys.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
     }
-    ruleExecutionList.setTotalItems(query.asList().size());
+    ruleExecutionList.setTotalItems((int) query.count());
     final RuleExecutionSortType modifiedSortType = Objects.isNull(ruleExecutionFilter.getRuleExecutionSortType())
         ? RuleExecutionSortType.COST
         : ruleExecutionFilter.getRuleExecutionSortType();
@@ -235,5 +235,28 @@ public class RuleExecutionDAO {
         .field(RuleRecommendationId.uuid)
         .in(recommendationObjectIds)
         .asList();
+  }
+
+  public long countRuleRecommendations(String accountId) {
+    return hPersistence.createQuery(RuleRecommendation.class)
+        .field(RuleRecommendationId.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllRuleRecommendationsForAccount(String accountId) {
+    Query<RuleRecommendation> query =
+        hPersistence.createQuery(RuleRecommendation.class).field(RuleRecommendationId.accountId).equal(accountId);
+    return hPersistence.delete(query);
+  }
+
+  public long countRuleExecutions(String accountId) {
+    return hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId).count();
+  }
+
+  public boolean deleteAllRuleExecutionsForAccount(String accountId) {
+    Query<RuleExecution> query =
+        hPersistence.createQuery(RuleExecution.class).field(RuleExecutionKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
   }
 }

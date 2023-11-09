@@ -172,6 +172,11 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
     return !roleAssignmentDBO.isDisabled();
   }
 
+  public long createImplicitACLsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
+    List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment);
+    return aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
   private List<ACL> getImplicitACLsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
     Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
     Set<String> permissionsFromRole = getPermissionsFromRole(roleAssignment);

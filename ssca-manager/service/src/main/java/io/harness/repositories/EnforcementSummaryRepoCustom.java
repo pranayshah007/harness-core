@@ -20,4 +20,5 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface EnforcementSummaryRepoCustom {
   List<EnforcementSummaryEntity> findAll(Aggregation aggregation);
   List<EnforcementSummaryEntity> findAll(Criteria criteria);
+  EnforcementSummaryEntity findOne(String accountId, Criteria criteria);
 }

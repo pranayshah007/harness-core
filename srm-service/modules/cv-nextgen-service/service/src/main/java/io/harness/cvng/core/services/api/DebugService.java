@@ -28,11 +28,12 @@ public interface DebugService {
 
   Boolean isSLIDeleted(ProjectParams projectParams, String identifier);
 
-  boolean forceDeleteSLO(ProjectParams projectParams, List<String> sloIdentifiers);
+  boolean forceDeleteSLO(ProjectParams projectParams, List<String> sloIdentifiers, List<String> uniqueIdentifiers);
 
   boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers);
 
-  boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers);
+  boolean forceDeleteCompositeSLO(
+      ProjectParams projectParams, List<String> compositeSloIdentifiers, List<String> uniqueIdentifiers);
 
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 

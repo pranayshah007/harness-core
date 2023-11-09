@@ -285,7 +285,17 @@ clickHouseConfig:
 isClickHouseEnabled: false
 
 aiEngineConfig:
-  genAIService:
+  modelExecutionTermination: 10
+  completeModelGenAIService:
+    provider: vertexai
+    model: text-bison
+    temperature: 0.1
+    maxDecodeSteps: 1024
+    topP: 0.8
+    topK: 40
+    apiEndpoint: http://35.202.125.234/complete
+    genAIServiceSecret: placeholder
+  chatModelGenAIService:
     provider: azureopenai
     model: gpt3
     temperature: 0.1
@@ -301,7 +311,7 @@ proxy:
   port: 80
   username: ""
   password: ""
-  protocol: http
+  protocol: https
 
 awsServiceEndpointUrls:
   enabled: false

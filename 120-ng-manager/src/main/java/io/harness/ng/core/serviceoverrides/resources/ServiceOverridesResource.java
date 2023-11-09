@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.serviceoverrides.resources;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
@@ -17,6 +16,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
@@ -46,6 +46,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
+import io.harness.ng.core.serviceoverride.beans.OverrideFilterPropertiesDTO;
 import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideBatchMigrationDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
@@ -212,7 +213,7 @@ public class ServiceOverridesResource {
     String yamlInternal = requestDTOV2.getYamlInternal();
     // if request is coming from v1 automation, yamlInternal is only to be used for sending back to v1 api response
     // In this case it cant be used for creating spec as v1 yaml and v2 yaml (created from spec) are different
-    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+    if (isNotEmpty(yamlInternal) && requestDTOV2.getSpec() == null && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);
@@ -247,7 +248,7 @@ public class ServiceOverridesResource {
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     String yamlInternal = requestDTOV2.getYamlInternal();
-    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+    if (isNotEmpty(yamlInternal) && requestDTOV2.getSpec() == null && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);
@@ -343,8 +344,44 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "This is service override type which is based on override source") @QueryParam(
           "type") ServiceOverridesType type) {
-    Criteria criteria =
-        ServiceOverrideCriteriaHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, type);
+    Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, type, null, null);
+    Pageable pageRequest =
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
+    Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
+
+    return ResponseDTO.newResponse(getNGPageResponse(
+        serviceOverridesEntities.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))));
+  }
+
+  @POST
+  @Path("/list")
+  @Hidden
+  @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV2")
+  @Operation(operationId = "getServiceOverrideListV2", summary = "Gets Service Override List",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")
+      })
+  public ResponseDTO<PageResponse<ServiceOverridesResponseDTOV2>>
+  listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                           NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This is service override type which is based on override source") @QueryParam(
+          "type") ServiceOverridesType type,
+      @RequestBody(description = "This is the body for the filter properties for listing overrides.")
+      OverrideFilterPropertiesDTO filterProperties,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, type, searchTerm, filterProperties);
     Pageable pageRequest =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
@@ -592,8 +629,7 @@ public class ServiceOverridesResource {
             "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
 
     ServiceOverridesSpec spec = serviceOverridesEntity.getSpec();
-    String yamlInternal = serviceOverridesEntity.getYamlInternal();
-    if (spec != null && isEmpty(yamlInternal)) {
+    if (spec != null) {
       try {
         String yamlInternalFromSpec = YamlUtils.writeYamlString(spec);
         serviceOverridesEntity.setYamlInternal(yamlInternalFromSpec);

@@ -102,7 +102,6 @@ import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.states.ArtifactCollectLoopState.ArtifactCollectLoopStateKeys;
 
 import static dev.morphia.mapping.Mapper.ID_KEY;
-import static io.fabric8.utils.Lists.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
@@ -1416,7 +1415,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     final Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
                                                .filter(WorkflowExecutionKeys.appId, appId)
                                                .filter(WorkflowExecutionKeys.uuid, workflowExecutionId);
-    prepareWorkflowExecutionProjectionFields(query, fields);
     WorkflowExecution workflowExecution = query.get();
     if (workflowExecution != null && workflowExecution.getArtifacts() != null) {
       for (Artifact artifact : workflowExecution.getArtifacts()) {
@@ -1426,25 +1424,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
     }
     return workflowExecution;
-  }
-
-  private void prepareWorkflowExecutionProjectionFields(Query<WorkflowExecution> query, String[] fields) {
-    if (featureFlagService.isNotGlobalEnabled(FeatureName.SPG_CG_WFE_PROJECTION_FIELDS)) {
-      return;
-    }
-    if (isEmpty(fields)) {
-      return;
-    }
-    // TURN ARRAY INTO A SET TO REMOVE DUPLICATES IF EXIST
-    // ADD COMMON FIELDS HELPFUL ALONG THE EXECUTION FLOW
-    Set<String> uniqueFields = new HashSet<>(Arrays.asList(fields));
-    uniqueFields.add(WorkflowExecutionKeys.uuid);
-    uniqueFields.add(WorkflowExecutionKeys.appId);
-    uniqueFields.add(WorkflowExecutionKeys.accountId);
-
-    for (String field : uniqueFields) {
-      query.project(field, true);
-    }
   }
 
   @Override
@@ -6414,7 +6393,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }
       }
     } else {
-      if (!isNullOrEmpty(workflowExecution.getServiceIds())) {
+      if (!isEmpty(workflowExecution.getServiceIds())) {
         serviceIds.addAll(workflowExecution.getServiceIds());
       }
     }
@@ -6443,7 +6422,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }
       }
     } else {
-      if (!isNullOrEmpty(workflowExecution.getCloudProviderIds())) {
+      if (!isEmpty(workflowExecution.getCloudProviderIds())) {
         cloudProviderIds.addAll(workflowExecution.getCloudProviderIds());
       }
     }

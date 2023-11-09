@@ -12,11 +12,14 @@ import io.harness.notification.entities.Channel;
 import io.harness.notification.entities.EmailChannel;
 import io.harness.notification.entities.MicrosoftTeamsChannel;
 import io.harness.notification.entities.Notification;
+import io.harness.notification.entities.NotificationChannel;
+import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.PagerDutyChannel;
 import io.harness.notification.entities.SlackChannel;
 import io.harness.notification.entities.WebhookChannel;
 import io.harness.notification.remote.dto.NotificationDTO;
 
+import java.util.Map;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class NotificationMapper {
+  private static final String TEMPLATE_IDENTIFIER = "TEMPLATE_IDENTIFIER";
   public static Notification toNotification(NotificationRequest notificationRequest) {
     try {
       return Notification.builder()
@@ -38,6 +42,70 @@ public class NotificationMapper {
           notificationRequest, e);
       return null;
     }
+  }
+
+  public static Notification toNotification(
+      NotificationRule notificationRule, NotificationChannel notificationChannel) {
+    try {
+      return Notification.builder()
+          .id(notificationRule.getUuid())
+          .accountIdentifier(notificationRule.getAccountIdentifier())
+          .channel(notificationChannel)
+          .build();
+    } catch (Exception e) {
+      log.error("Error converting notification rule to notification for persistence, {}", notificationRule, e);
+      return null;
+    }
+  }
+
+  public static NotificationRequest constructNotificationRequest(
+      NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
+    NotificationRequest.Builder notificationRequestBuilder =
+        NotificationRequest.newBuilder().setAccountId(notificationRule.getAccountIdentifier());
+    switch (notificationChannel.getNotificationChannelType()) {
+      case EMAIL:
+        EmailChannel emailChannel = (EmailChannel) notificationChannel.getChannel();
+        emailChannel.setTemplateData(templateData);
+        String templateId = templateData != null && templateData.get(TEMPLATE_IDENTIFIER) != null
+            ? templateData.get(TEMPLATE_IDENTIFIER)
+            : "templateId";
+        emailChannel.setTemplateData(templateData);
+        emailChannel.setTemplateId(templateId);
+        notificationRequestBuilder.setEmail((NotificationRequest.Email) emailChannel.toObjectofProtoSchema());
+        break;
+      case SLACK:
+        SlackChannel slackChannel = (SlackChannel) notificationChannel.getChannel();
+        notificationRequestBuilder.setSlack((NotificationRequest.Slack) slackChannel.toObjectofProtoSchema());
+        break;
+      case PAGERDUTY:
+        PagerDutyChannel pagerDutyChannel = (PagerDutyChannel) notificationChannel.getChannel();
+        pagerDutyChannel.setTemplateData(templateData);
+        String pagerTemplateId = templateData != null && templateData.get(TEMPLATE_IDENTIFIER) != null
+            ? templateData.get(TEMPLATE_IDENTIFIER)
+            : "templateId";
+        pagerDutyChannel.setTemplateId(pagerTemplateId);
+        notificationRequestBuilder.setPagerDuty(
+            (NotificationRequest.PagerDuty) pagerDutyChannel.toObjectofProtoSchema());
+        break;
+      case MSTEAMS:
+        MicrosoftTeamsChannel msTeamChannel = (MicrosoftTeamsChannel) notificationChannel.getChannel();
+        msTeamChannel.setTemplateData(templateData);
+        String msTeamTemplateId = templateData != null && templateData.get(TEMPLATE_IDENTIFIER) != null
+            ? templateData.get(TEMPLATE_IDENTIFIER)
+            : "templateId";
+        msTeamChannel.setTemplateId(msTeamTemplateId);
+        notificationRequestBuilder.setMsTeam((NotificationRequest.MSTeam) msTeamChannel.toObjectofProtoSchema());
+        break;
+      case WEBHOOK:
+        WebhookChannel webhookChannel = (WebhookChannel) notificationChannel.getChannel();
+        webhookChannel.setTemplateData(templateData);
+        notificationRequestBuilder.setWebhook((NotificationRequest.Webhook) webhookChannel.toObjectofProtoSchema());
+        break;
+      default:
+        log.error("Channel type of the notification trigger request unidentified {}",
+            notificationChannel.getNotificationChannelType());
+    }
+    return notificationRequestBuilder.build();
   }
 
   private static Channel channelDetailsProtoToMongo(NotificationRequest notificationRequest) {

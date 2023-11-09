@@ -31,6 +31,7 @@ import io.harness.cdng.common.resources.AwsResourceServiceHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.ListUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -54,7 +55,6 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -136,7 +136,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()
@@ -245,7 +245,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()
@@ -287,7 +287,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()
@@ -328,7 +328,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()
@@ -370,7 +370,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()
@@ -413,7 +413,7 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+        .thenReturn(ListUtils.newArrayList(encryptedDataDetail));
 
     when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .thenReturn(BaseNGAccess.builder()

@@ -29,6 +29,7 @@ import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,8 +51,8 @@ public class TerraformAbstractTaskHandlerTest {
   @InjectMocks
   TerraformApplyTaskHandler terraformApplyTaskHandler = new TerraformApplyTaskHandler() {
     @Override
-    public TerraformTaskNGResponse executeTaskInternal(
-        TerraformTaskNGParameters taskParameters, String delegateId, String taskId, LogCallback logCallback) {
+    public TerraformTaskNGResponse executeTaskInternal(TerraformTaskNGParameters taskParameters, String delegateId,
+        String taskId, LogCallback logCallback, AtomicBoolean isAborted) {
       return TerraformTaskNGResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     }
   };
@@ -61,8 +62,8 @@ public class TerraformAbstractTaskHandlerTest {
   @InjectMocks
   TerraformApplyTaskHandler terraformApplyTaskHandlerException = new TerraformApplyTaskHandler() {
     @Override
-    public TerraformTaskNGResponse executeTaskInternal(
-        TerraformTaskNGParameters taskParameters, String delegateId, String taskId, LogCallback logCallback) {
+    public TerraformTaskNGResponse executeTaskInternal(TerraformTaskNGParameters taskParameters, String delegateId,
+        String taskId, LogCallback logCallback, AtomicBoolean isAborted) {
       throw new InterruptedRuntimeException(new InterruptedException());
     }
   };
@@ -73,8 +74,8 @@ public class TerraformAbstractTaskHandlerTest {
   public void testTerraformApplyTaskHandler() throws Exception {
     TerraformTaskNGParameters taskNGParameters = getTerraformTaskParameters();
 
-    TerraformTaskNGResponse response =
-        terraformApplyTaskHandler.executeTask(taskNGParameters, "delegateId", "taskId", logCallback);
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTask(
+        taskNGParameters, "delegateId", "taskId", logCallback, new AtomicBoolean());
 
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -90,7 +91,7 @@ public class TerraformAbstractTaskHandlerTest {
     assertThatExceptionOfType(InterruptedRuntimeException.class)
         .isThrownBy(()
                         -> terraformApplyTaskHandlerException.executeTask(
-                            taskNGParameters, "delegateId", "taskId", logCallback));
+                            taskNGParameters, "delegateId", "taskId", logCallback, new AtomicBoolean()));
 
     verify(terraformBaseHelper, times(1)).performCleanupOfTfDirs(eq(taskNGParameters), eq(logCallback));
     verify(logCallback).saveExecutionLog("Interrupt received.", LogLevel.ERROR, CommandExecutionStatus.RUNNING);

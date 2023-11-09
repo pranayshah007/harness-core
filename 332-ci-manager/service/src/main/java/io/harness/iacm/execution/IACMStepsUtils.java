@@ -140,8 +140,8 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
     pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
-    if (workspaceInfo.getTf_var_files() != null) {
-      for (VariablesRepo variablesRepo : workspaceInfo.getTf_var_files()) {
+    if (workspaceInfo.getTerraform_variable_files() != null) {
+      for (VariablesRepo variablesRepo : workspaceInfo.getTerraform_variable_files()) {
         pluginEnvs.put(
             "PLUGIN_VARIABLE_CONNECTOR_" + variablesRepo.getRepository(), variablesRepo.getRepository_path());
       }

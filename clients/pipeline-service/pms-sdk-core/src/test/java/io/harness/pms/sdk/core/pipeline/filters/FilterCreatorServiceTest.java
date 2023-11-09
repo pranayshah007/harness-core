@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.ListUtils;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.SetupMetadata;
@@ -32,7 +33,6 @@ import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -81,9 +81,9 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
   @Category(UnitTests.class)
   public void testMergeResponses() {
     FilterCreationResponse finalCreationResponse =
-        FilterCreationResponse.builder().stageCount(10).stageNames(Lists.newArrayList("stage1")).build();
+        FilterCreationResponse.builder().stageCount(10).stageNames(ListUtils.newArrayList("stage1")).build();
     FilterCreationResponse filterCreationResponse =
-        FilterCreationResponse.builder().stageCount(10).stageNames(Lists.newArrayList("stage2")).build();
+        FilterCreationResponse.builder().stageCount(10).stageNames(ListUtils.newArrayList("stage2")).build();
 
     filterCreatorService.mergeResponses(finalCreationResponse, filterCreationResponse, Dependencies.newBuilder());
 

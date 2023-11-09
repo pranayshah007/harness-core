@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,14 +60,14 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {
-      taskRunner.init(groupId, task.getInfraData(), new Context());
+      taskRunner.init(groupId, task.getInfraData(), Map.of(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_EXECUTE_STEP)) {
-      taskRunner.execute(groupId, task.getTaskData(), new Context());
+      taskRunner.execute(groupId, null, task.getTaskData(), Map.of(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_CLEANUP)) {
       taskRunner.cleanup(groupId, new Context());
     } else { // Task which doesn't have separate infra step (e.g. CD)
-      taskRunner.init(groupId, task.getInfraData(), new Context());
-      taskRunner.execute(groupId, task.getTaskData(), new Context());
+      taskRunner.init(groupId, task.getInfraData(), Map.of(), new Context());
+      taskRunner.execute(groupId, null, task.getTaskData(), Map.of(), new Context());
       taskRunner.cleanup(groupId, new Context());
     }
     return ExecutionStatusResponse.newBuilder()

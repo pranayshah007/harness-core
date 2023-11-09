@@ -2411,12 +2411,17 @@ public class UserServiceImpl implements UserService {
     }
 
     licenseInfo.setAccountStatus(AccountStatus.ACTIVE);
-    Account account = Account.Builder.anAccount()
-                          .withAccountName(user.getAccountName())
-                          .withCompanyName(user.getCompanyName())
-                          .withAppId(GLOBAL_APP_ID)
-                          .withLicenseInfo(licenseInfo)
-                          .build();
+    Account.Builder accountBuilder = Account.Builder.anAccount()
+                                         .withAccountName(user.getAccountName())
+                                         .withCompanyName(user.getCompanyName())
+                                         .withAppId(GLOBAL_APP_ID)
+                                         .withLicenseInfo(licenseInfo);
+
+    if (configuration.isUseUserProvidedAccountIdInTrialSignup() && !isEmpty(existingInvite.getAccountId())) {
+      accountBuilder = accountBuilder.withUuid(existingInvite.getAccountId());
+    }
+
+    Account account = accountBuilder.build();
 
     TrialSignupOptions trialSignupOptions =
         new TrialSignupOptions(Products.getProductsFromFullNames(existingInvite.getFreemiumProducts()),
@@ -3893,6 +3898,26 @@ public class UserServiceImpl implements UserService {
     } catch (UnsupportedEncodingException | JWTCreationException exception) {
       throw new GeneralException("JWTToken validation failed");
     } catch (JWTDecodeException | SignatureVerificationException e) {
+      throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
+    }
+  }
+
+  @Override
+  public String getClaimsFromJWTToken(String jwtToken, JWT_CATEGORY category, String claim) {
+    String jwtPasswordSecret = secretManager.getJWTSecret(category);
+    if (jwtPasswordSecret == null) {
+      throw new InvalidRequestException(INCORRECT_PORTAL_SETUP);
+    }
+    try {
+      Algorithm algorithm = Algorithm.HMAC256(jwtPasswordSecret);
+      JWTVerifier verifier = JWT.require(algorithm).withIssuer(HARNESS_ISSUER).build();
+      verifier.verify(jwtToken);
+      return JWT.decode(jwtToken).getClaim(claim).asString();
+    } catch (UnsupportedEncodingException | JWTCreationException exception) {
+      log.error("JWTToken validation failed", exception);
+      throw new GeneralException("JWTToken validation failed");
+    } catch (JWTDecodeException | SignatureVerificationException exception) {
+      log.error("Invalid JWTToken received, failed to decode the token", exception);
       throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
     }
   }

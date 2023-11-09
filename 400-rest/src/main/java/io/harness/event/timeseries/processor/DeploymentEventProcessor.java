@@ -7,6 +7,8 @@
 
 package io.harness.event.timeseries.processor;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.beans.FeatureName;
 import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.timeseries.processor.utils.DateUtils;
@@ -22,7 +24,6 @@ import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -596,7 +597,7 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
 
   private void insertArrayData(Connection dbConnection, PreparedStatement insertPreparedStatement, List<String> data,
       int index) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       insertPreparedStatement.setArray(index, array);
     } else {

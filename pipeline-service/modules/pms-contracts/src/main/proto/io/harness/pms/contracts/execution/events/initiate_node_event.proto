@@ -24,4 +24,5 @@ enum InitiateMode {
   UNKNOWN_MODE = 0;
   CREATE_AND_START = 1;
   CREATE = 2;
+  START = 3;
 }

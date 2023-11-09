@@ -60,6 +60,8 @@ public class EndNodeExecutionHelper {
         AmbianceUtils.obtainCurrentRuntimeId(ambiance), stepResponse.getStatus(), ops -> {
           setUnset(ops, NodeExecutionKeys.failureInfo, stepResponse.getFailureInfo());
           setUnset(ops, NodeExecutionKeys.unitProgresses, stepResponse.getUnitProgressList());
+          setUnset(ops, NodeExecutionKeys.progressData + "." + NodeExecutionKeys.unitProgresses,
+              stepResponse.getUnitProgressList());
         }, EnumSet.noneOf(Status.class));
   }
 
@@ -99,6 +101,8 @@ public class EndNodeExecutionHelper {
         AmbianceUtils.obtainCurrentRuntimeId(ambiance), stepResponse.getStatus(), ops -> {
           setUnset(ops, NodeExecutionKeys.failureInfo, stepResponse.getFailureInfo());
           setUnset(ops, NodeExecutionKeys.unitProgresses, stepResponse.getUnitProgressList());
+          setUnset(ops, NodeExecutionKeys.progressData + "." + NodeExecutionKeys.unitProgresses,
+              stepResponse.getUnitProgressList());
         }, EnumSet.noneOf(Status.class));
   }
 }

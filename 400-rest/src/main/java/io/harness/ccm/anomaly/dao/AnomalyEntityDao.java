@@ -26,9 +26,12 @@ import software.wings.graphql.schema.type.aggregation.anomaly.QLAnomalyFeedback;
 
 import com.google.inject.Inject;
 import com.healthmarketscience.sqlbuilder.BinaryCondition;
+import com.healthmarketscience.sqlbuilder.Converter;
 import com.healthmarketscience.sqlbuilder.DeleteQuery;
+import com.healthmarketscience.sqlbuilder.FunctionCall;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.InsertQuery;
+import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.UpdateQuery;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -38,6 +41,7 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -126,6 +130,34 @@ public class AnomalyEntityDao {
       }
     }
     return listAnomalies;
+  }
+
+  public Long count(String accountId) {
+    Long anomaliesCount = 0L;
+    boolean successfulRead = false;
+    ResultSet resultSet = null;
+    int retryCount = 0;
+    SelectQuery query = new SelectQuery();
+    query.addCustomColumns(Converter.toCustomColumnSqlObject(FunctionCall.countAll(), "ANOMALIES_COUNT"));
+    query.addCondition(BinaryCondition.equalTo(AnomaliesDataTableSchema.accountId, accountId));
+    String queryStatement = query.validate().toString();
+    while (!successfulRead && retryCount < MAX_RETRY) {
+      try (Connection dbConnection = dbService.getDBConnection();
+           PreparedStatement statement = dbConnection.prepareStatement(queryStatement)) {
+        log.info("[RDA] Query Step 1/3 : Statement in AnomalyDao: {} ", queryStatement);
+        resultSet = statement.executeQuery();
+        if (null != resultSet && resultSet.next()) {
+          anomaliesCount = resultSet.getLong("ANOMALIES_COUNT");
+          successfulRead = true;
+        }
+      } catch (SQLException e) {
+        retryCount++;
+        log.info("[RDA] Query failed after retry count {} , Exception {}", retryCount, e);
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return anomaliesCount;
   }
 
   private List<AnomalyEntity> extractAnomaliesFromResultSet(ResultSet resultSet) throws SQLException {
@@ -271,6 +303,30 @@ public class AnomalyEntityDao {
     } else {
       log.error("[RDA] Not able to delete anomalies in timescale db(validity:{}) ", dbService.isValid());
     }
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    boolean successfulDelete = false;
+    if (dbService.isValid()) {
+      DeleteQuery query = new DeleteQuery(AnomaliesDataTableSchema.table);
+      query.addCondition(new InCondition(AnomaliesDataTableSchema.accountId, Collections.singletonList(accountId)));
+      String queryStatement = query.validate().toString();
+      log.info("[RDA] Deleting anomalies with query : [{}]", queryStatement);
+      int retryCount = 0;
+      while (!successfulDelete && retryCount < MAX_RETRY) {
+        try (Connection dbConnection = dbService.getDBConnection();
+             Statement statement = dbConnection.createStatement()) {
+          statement.execute(queryStatement);
+          successfulDelete = true;
+        } catch (SQLException e) {
+          log.error("[RDA] Failed to delete anomalies , retryCount=[{}], Exception: ", retryCount, e);
+          retryCount++;
+        }
+      }
+    } else {
+      log.error("[RDA] Not able to delete anomalies in timescale db(validity:{}) ", dbService.isValid());
+    }
+    return successfulDelete;
   }
 
   private String getDeleteQuery(List<String> ids, Instant date) {

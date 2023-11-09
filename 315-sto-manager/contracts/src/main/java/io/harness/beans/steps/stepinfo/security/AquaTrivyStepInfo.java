@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlSBOM;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -39,6 +40,8 @@ public class AquaTrivyStepInfo extends STOGenericStepInfo {
   private static final String PRODUCT_NAME = "aqua_trivy";
 
   @JsonProperty protected STOYamlImage image;
+
+  @JsonProperty protected STOYamlSBOM sbom;
 
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")

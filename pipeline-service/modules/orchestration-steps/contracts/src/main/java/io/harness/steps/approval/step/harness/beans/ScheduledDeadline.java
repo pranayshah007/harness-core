@@ -10,6 +10,7 @@ package io.harness.steps.approval.step.harness.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -23,6 +24,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.steps.approval.step.harness.beans.ScheduledDeadline")
 public class ScheduledDeadline {
-  @NotNull String timeZone;
-  @NotNull String time;
+  @NotNull ParameterField<String> timeZone;
+  @NotNull ParameterField<String> time;
 }

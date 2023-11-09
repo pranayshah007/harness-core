@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.ToString;
@@ -121,13 +122,8 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, "");
       notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, "");
 
-      log.info("Aggregated Events size = " + aggregatedEvents.size());
-      for (AggregatedEvents aggregatedEvent : aggregatedEvents) {
-        log.info("aggregatedEvent = " + aggregatedEvent);
-      }
-
       String slackVersionList =
-          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\\\n"));
+          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
 
       final String emailVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toEmailString).collect(Collectors.joining());
@@ -164,18 +160,20 @@ public class ErrorTrackingNotificationRuleUtils {
           if (savedFilter != null) {
             eventStatus = savedFilter.getStatuses()
                               .stream()
+                              .filter(status -> status != EventStatus.ANY_EVENTS)
                               .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
                               .collect(Collectors.toList());
           }
-          AggregatedEvents aggregatedEvents = AggregatedEvents.builder()
-                                                  .version(scorecard.getVersionIdentifier())
-                                                  .url(eventListUrlWithParameters)
-                                                  .newCount(scorecard.getNewHitCount())
-                                                  .criticalCount(scorecard.getCriticalHitCount())
-                                                  .resurfacedCount(scorecard.getResurfacedHitCount())
-                                                  .errorTrackingEventStatus(eventStatus)
-                                                  .savedFilterId(codeErrorCondition.getSavedFilterId())
-                                                  .build();
+          AggregatedEvents aggregatedEvents =
+              AggregatedEvents.builder()
+                  .version(scorecard.getVersionIdentifier())
+                  .url(eventListUrlWithParameters)
+                  .newCount(Optional.ofNullable(scorecard.getNewHitCount()).orElse(0))
+                  .criticalCount(Optional.ofNullable(scorecard.getCriticalHitCount()).orElse(0))
+                  .resurfacedCount(Optional.ofNullable(scorecard.getResurfacedHitCount()).orElse(0))
+                  .errorTrackingEventStatus(eventStatus)
+                  .savedFilterId(codeErrorCondition.getSavedFilterId())
+                  .build();
           urlsByVersion.add(aggregatedEvents);
         }
       } else {
@@ -352,8 +350,8 @@ public class ErrorTrackingNotificationRuleUtils {
     private String arcScreenUrl;
 
     public String toSlackString() {
-      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\\\n");
-      slack.append("```").append(stackTrace.replace(",", "\\\n")).append("```");
+      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
+      slack.append("```").append(stackTrace.replace(",", "\n")).append("```");
       return slack.toString();
     }
 
@@ -362,7 +360,7 @@ public class ErrorTrackingNotificationRuleUtils {
       email.append("<span>" + EVENT_VERSION_LABEL + "<span style=\"font-weight: bold;\">" + version + "</span></span>");
       email.append("<div style =\"margin-top: 4px; background-color: #383946; border-radius: 3px;\">");
       email.append("<p style=\"color:white; padding: 15px; padding-top: 18px; padding-bottom:18px;\">");
-      email.append(stackTrace.replace(",", "</br>"));
+      email.append(stackTrace.replace(",", "<br/>"));
       email.append("</p>").append("</div>").append("</div>");
       return email.toString();
     }
@@ -393,8 +391,7 @@ public class ErrorTrackingNotificationRuleUtils {
         changeEventStatusString = errorTrackingNotificationData.getFilter()
                                       .getStatuses()
                                       .stream()
-                                      .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
-                                      .map(ErrorTrackingEventStatus::getDisplayName)
+                                      .map(EventStatus::getDisplayName)
                                       .collect(Collectors.joining(", "));
 
         changeEventTypeString = errorTrackingNotificationData.getFilter()

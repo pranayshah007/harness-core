@@ -39,7 +39,7 @@ public class TerraformTaskNG extends AbstractDelegateRunnableTask {
 
   public TerraformTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
-    super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
+    super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute, delegateTaskPackage.getIsAborted());
   }
 
   @Override
@@ -68,7 +68,7 @@ public class TerraformTaskNG extends AbstractDelegateRunnableTask {
     TerraformAbstractTaskHandler taskHandler = tfTaskTypeToHandlerMap.get(taskParameters.getTaskType());
     try {
       TerraformTaskNGResponse terraformTaskNGResponse =
-          taskHandler.executeTask(taskParameters, getDelegateId(), getTaskId(), logCallback);
+          taskHandler.executeTask(taskParameters, getDelegateId(), getTaskId(), logCallback, getIsAborted());
       terraformTaskNGResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return terraformTaskNGResponse;
     } catch (Exception e) {

@@ -73,6 +73,7 @@
             <property name="checkFormat" value="$1"/>
         </module>
 
+
         <!-- ANNOTATIONS -->
 
         <!-- Having the following annotations in the suggested order seems very natural ... and it is extremely easy

@@ -20,6 +20,7 @@ import java.util.Map;
 public class Context {
   public static final String DELEGATE_ID = "delegateId";
   public static final String TASK_ID = "taskId";
+  public static final String ACCOUNT_ID = "accountId";
 
   private final Map<String, String> context;
 

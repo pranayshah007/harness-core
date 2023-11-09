@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
+import io.harness.plancreator.customDeployment.v1.StepTemplateRefV1;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.yaml.clone.Clone;
@@ -67,5 +68,6 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(Options.class, 88517);
     kryo.register(Clone.class, 88518);
     kryo.register(CommitShaBuildSpec.class, 88519);
+    kryo.register(StepTemplateRefV1.class, 88520);
   }
 }

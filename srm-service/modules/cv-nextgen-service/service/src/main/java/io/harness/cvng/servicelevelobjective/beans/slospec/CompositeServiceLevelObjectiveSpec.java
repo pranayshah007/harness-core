@@ -7,6 +7,9 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
+import static io.harness.cvng.CVConstants.MAX_NUMBER_OF_SLOS;
+import static io.harness.cvng.CVConstants.MIN_NUMBER_OF_SLOS;
+
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
@@ -29,7 +32,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CompositeServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
-  @Size(min = 2, max = 30) @Valid @NotNull List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
+  @Size(min = MIN_NUMBER_OF_SLOS, max = MAX_NUMBER_OF_SLOS)
+  @Valid
+  @NotNull
+  List<ServiceLevelObjectiveDetailsDTO> serviceLevelObjectivesDetails;
   SLIEvaluationType evaluationType;
 
   CompositeSLOFormulaType sloFormulaType;

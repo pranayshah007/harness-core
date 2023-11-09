@@ -42,6 +42,7 @@ public class StageElementParametersV1 implements StepParameters {
   SpecParameters spec;
   ParameterField<String> timeout;
   ParameterField<List<String>> delegate;
+  Boolean skipInstances;
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
@@ -63,6 +64,7 @@ public class StageElementParametersV1 implements StepParameters {
         .variables(this.variables)
         .labels(this.labels)
         .delegate(this.delegate)
+        .skipInstances(this.skipInstances)
         .build();
   }
 }

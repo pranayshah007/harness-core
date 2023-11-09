@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -88,6 +89,75 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
     assertThat(result.getFiles().size()).isEqualTo(2);
     assertThat(result.getFiles().get(0).getFileContent()).isEqualTo("content");
     assertThat(result.getFiles().get(1).getFileContent()).isEqualTo("content");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testOptionalFilesFetchAndShouldIgnoreNonExisting() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the file path
+    List<String> filePathList = List.of("content-file-path-1", "content-file-path-2", "content-file-path-3");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").optional(true).build();
+    doReturn(
+        FileContentBatchResponse.builder()
+            .fileBatchContentResponse(
+                FileBatchContentResponse.newBuilder()
+                    .addFileContents(FileContent.newBuilder().setStatus(200).setContent("content-file-path-1").build())
+                    .addFileContents(FileContent.newBuilder().setStatus(200).setContent("content-file-path-2").build())
+                    .addFileContents(FileContent.newBuilder()
+                                         .setStatus(404)
+                                         .setError("Not Found")
+                                         .setContent("content-file-path-3")
+                                         .build())
+
+                    .build())
+            .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result = spyScmFetchFilesHelperNG.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(2);
+    assertThat(result.getFiles().get(0).getFileContent()).isEqualTo("content-file-path-1");
+    assertThat(result.getFiles().get(1).getFileContent()).isEqualTo("content-file-path-2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testOptionalFilesFetchAndShouldNotThrowExceptionIfNoFilesFetched() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the file path
+    List<String> filePathList = List.of("content-file-path-1", "content-file-path-2", "content-file-path-3");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").optional(true).build();
+    doReturn(FileContentBatchResponse.builder()
+                 .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-1")
+                                                                    .build())
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-2")
+                                                                    .build())
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-3")
+                                                                    .build())
+                                               .build())
+                 .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result = spyScmFetchFilesHelperNG.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(0);
   }
 
   @Test

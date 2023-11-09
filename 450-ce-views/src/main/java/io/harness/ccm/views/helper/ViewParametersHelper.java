@@ -73,6 +73,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.PRICING_SOURCE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TASK_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -110,7 +111,6 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -373,7 +373,7 @@ public class ViewParametersHelper {
   public List<ViewRule> getModifiedRuleFilters(final List<ViewRule> viewRules) {
     final List<ViewRule> modifiedRuleFilters = new ArrayList<>();
     viewRules.forEach(viewRule -> {
-      if (!Lists.isNullOrEmpty(viewRule.getViewConditions())) {
+      if (!isEmpty(viewRule.getViewConditions())) {
         final List<ViewCondition> modifiedConditions = new ArrayList<>();
         viewRule.getViewConditions().forEach(viewCondition -> {
           final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;

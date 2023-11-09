@@ -605,19 +605,27 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = MOUNIK)
   @Category(UnitTests.class)
   public void shouldNotSaveScheduledConditionTrigger() {
-    scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("* * * * ?").build());
-    assertThatThrownBy(() -> triggerService.save(scheduledConditionTrigger))
+    Trigger ScheduleTrigger =
+        Trigger.builder()
+            .workflowId(PIPELINE_ID)
+            .accountId(ACCOUNT_ID)
+            .uuid(TRIGGER_ID)
+            .appId(APP_ID)
+            .name(TRIGGER_NAME)
+            .condition(ScheduledTriggerCondition.builder().cronExpression("0/5 0 ? * * *").build())
+            .build();
+    ScheduleTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("* * * * ?").build());
+    assertThatThrownBy(() -> triggerService.save(ScheduleTrigger))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
-    scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
-    assertThatThrownBy(() -> triggerService.save(scheduledConditionTrigger))
+    ScheduleTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
+    assertThatThrownBy(() -> triggerService.save(ScheduleTrigger))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
-    scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/5 0 ? * * *").build());
   }
 
   @Test

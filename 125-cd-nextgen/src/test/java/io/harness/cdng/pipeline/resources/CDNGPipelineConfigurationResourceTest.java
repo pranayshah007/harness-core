@@ -19,10 +19,10 @@ import io.harness.beans.ExecutionStrategyType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.helpers.CDNGPipelineConfigurationHelper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.ListUtils;
 import io.harness.ng.core.Status;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -55,51 +55,51 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
     assertThat(executionStrategyResponse.keySet().size()).isEqualTo(14);
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.KUBERNETES))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
             ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.NATIVE_HELM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SSH))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
             ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.WINRM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
             ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.AZURE_WEBAPP))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN,
             ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.CUSTOM_DEPLOYMENT))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.ECS))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
             ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.ASG))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.TAS))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT, ExecutionStrategyType.ROLLING));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.AWS_LAMBDA))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.AWS_SAM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(ListUtils.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
   }
 
   @Test

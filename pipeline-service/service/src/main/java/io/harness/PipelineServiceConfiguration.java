@@ -155,7 +155,6 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pipelineRedisEventsConfig") private PipelineRedisEventsConfig pipelineRedisEventsConfig;
   @JsonProperty("pipelineSdkRedisEventsConfig") private PipelineSdkRedisEventsConfig pipelineSdkRedisEventsConfig;
   @JsonProperty("orchestrationRedisEventsConfig") private OrchestrationRedisEventsConfig orchestrationRedisEventsConfig;
-  @JsonProperty("allowedParallelStages") private int allowedParallelStages;
   @JsonProperty("orchestrationLogConfiguration") private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @JsonProperty("planCreatorMergeServiceDependencyBatch") private Integer planCreatorMergeServiceDependencyBatch;
   @JsonProperty("jsonExpansionPoolConfig") private ThreadPoolConfig jsonExpansionPoolConfig;

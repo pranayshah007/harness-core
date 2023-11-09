@@ -10,11 +10,13 @@ package io.harness.serializer;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.oidc.entities.OidcRegistrars;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.OrchestrationBeansContractKryoRegistrar;
 import io.harness.serializer.kryo.OrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.RecasterKryoRegistrar;
+import io.harness.serializer.morphia.FeatureFlagBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.OrchestrationBeansContractMorphiaRegistrar;
 import io.harness.serializer.morphia.OrchestrationBeansMorphiaRegistrar;
@@ -62,6 +64,8 @@ public class OrchestrationBeansRegistrars {
           .add(OrchestrationBeansMorphiaRegistrar.class)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(OrchestrationBeansContractMorphiaRegistrar.class)
+          .addAll(OidcRegistrars.morphiaRegistrars)
+          .add(FeatureFlagBeansMorphiaRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

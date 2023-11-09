@@ -31,6 +31,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.telemetry.segment.SegmentConfiguration;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -84,6 +85,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   @JsonProperty("backstagePodLabel") private String backstagePodLabel;
+  @JsonProperty("backstageEntitiesFetchLimit") private String backstageEntitiesFetchLimit;
   @JsonProperty("env") private String env;
   @JsonProperty("prEnvDefaultBackstageNamespace") private String prEnvDefaultBackstageNamespace;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
@@ -113,6 +115,7 @@ public class IdpConfiguration extends Configuration {
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
   @JsonProperty("internalAccounts") private List<String> internalAccounts;
+  @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";

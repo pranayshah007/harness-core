@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.user.entities.UserMembership;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,4 +37,6 @@ public interface UserMembershipRepositoryCustom {
   CloseableIterator<UserMembership> stream(Criteria criteria);
 
   long count(Criteria criteria);
+
+  Map<String, Integer> getUserCountPerAccount(List<String> accountIdentifiers);
 }

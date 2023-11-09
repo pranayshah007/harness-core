@@ -44,7 +44,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 public class EntityDisableTime implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware {
   @Id private String uuid;
-  @FdIndex String entityUUID;
+  String entityUUID;
   @FdIndex String accountId;
   Long startTime;
   Long endTime;

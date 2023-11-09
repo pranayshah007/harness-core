@@ -28,6 +28,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_GRID_ENTRY_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_GRANULARITY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -95,7 +96,6 @@ import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
-import io.fabric8.utils.Lists;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -899,7 +899,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
     Map<String, String> labelsKeyAndColumnMapping =
         labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
-    if (Lists.isNullOrEmpty(groupBy)) {
+    if (isEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
       if (viewMetadataFilter.isPresent()) {
         QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();

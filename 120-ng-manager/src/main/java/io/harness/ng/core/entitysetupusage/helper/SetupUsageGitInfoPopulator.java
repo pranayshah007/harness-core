@@ -22,6 +22,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
@@ -41,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageGitInfoPopulator {
   GitInfoPopulatorForConnector gitInfoPopulatorForConnector;
   YamlGitConfigService yamlGitConfigService;
+  GitSyncSdkService gitSyncSdkService;
 
   /*
    * This function assumes that all the setup usages are for the same referredBy entity.
@@ -61,16 +63,22 @@ public class SetupUsageGitInfoPopulator {
     EntityDetail referredByEntity = setupUsages.stream().map(EntitySetupUsage::getReferredByEntity).findAny().get();
     final EntityReference referredByEntityRef = referredByEntity.getEntityRef();
     Boolean isDefault = false;
-    try {
-      isDefault = checkWhetherIsDefaultBranch(referredByEntityRef.getAccountIdentifier(),
-          referredByEntityRef.getOrgIdentifier(), referredByEntityRef.getProjectIdentifier(), repoIdentifier, branch);
-    } catch (Exception exception) {
-      // If any git-sync config doesn't exist / exception occurs from upstream, ignore it and return
-      return;
+    boolean isGitSimplificationEnabled =
+        gitSyncSdkService.isGitSimplificationEnabled(referredByEntityRef.getAccountIdentifier(),
+            referredByEntityRef.getOrgIdentifier(), referredByEntityRef.getProjectIdentifier());
+    if (!isGitSimplificationEnabled) {
+      try {
+        isDefault = checkWhetherIsDefaultBranch(referredByEntityRef.getAccountIdentifier(),
+            referredByEntityRef.getOrgIdentifier(), referredByEntityRef.getProjectIdentifier(), repoIdentifier, branch);
+      } catch (Exception exception) {
+        // If any git-sync config doesn't exist / exception occurs from upstream, ignore it and return
+        return;
+      }
     }
     List<EntityDetail> referredEntities =
         setupUsages.stream().map(EntitySetupUsage::getReferredEntity).filter(Objects::nonNull).collect(toList());
-    populateRepoBranchInReferredByEntity(referredByEntity, repoIdentifier, branch, isDefault);
+    populateRepoBranchInReferredByEntity(
+        referredByEntity, repoIdentifier, branch, isDefault, isGitSimplificationEnabled);
     populateRepoBranchInReferredEntities(referredEntities, repoIdentifier, branch, isDefault);
   }
 
@@ -105,15 +113,17 @@ public class SetupUsageGitInfoPopulator {
         connectorEntities, branch, repo, isReferredByBranchDefault);
   }
 
-  private void populateRepoBranchInReferredByEntity(
-      EntityDetail referredByEntity, String repo, String branch, Boolean isDefault) {
+  private void populateRepoBranchInReferredByEntity(EntityDetail referredByEntity, String repo, String branch,
+      Boolean isDefault, boolean isGitSimplificationEnabled) {
     if (referredByEntity == null) {
       return;
     }
     EntityReference entityRef = referredByEntity.getEntityRef();
     entityRef.setBranch(branch);
     entityRef.setRepoIdentifier(repo);
-    entityRef.setIsDefault(isDefault);
+    if (!isGitSimplificationEnabled) {
+      entityRef.setIsDefault(isDefault);
+    }
   }
 
   private GitEntityInfo getGitEntityInfoFromContext() {

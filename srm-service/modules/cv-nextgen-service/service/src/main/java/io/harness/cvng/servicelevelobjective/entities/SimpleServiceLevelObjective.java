@@ -6,7 +6,6 @@
  */
 package io.harness.cvng.servicelevelobjective.entities;
 
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,7 +31,6 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   @NotNull String healthSourceIdentifier;
   @NotNull String monitoredServiceIdentifier;
   @NotNull @Size(min = 1) List<String> serviceLevelIndicators;
-  ServiceLevelIndicatorType serviceLevelIndicatorType;
 
   @Override
   public Optional<String> mayBeGetMonitoredServiceIdentifier() {
@@ -49,9 +47,7 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
           .set(SimpleServiceLevelObjectiveKeys.healthSourceIdentifier,
               simpleServiceLevelObjective.getHealthSourceIdentifier())
           .set(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier,
-              simpleServiceLevelObjective.getMonitoredServiceIdentifier())
-          .set(SimpleServiceLevelObjectiveKeys.serviceLevelIndicatorType,
-              simpleServiceLevelObjective.getServiceLevelIndicatorType());
+              simpleServiceLevelObjective.getMonitoredServiceIdentifier());
     }
   }
 }

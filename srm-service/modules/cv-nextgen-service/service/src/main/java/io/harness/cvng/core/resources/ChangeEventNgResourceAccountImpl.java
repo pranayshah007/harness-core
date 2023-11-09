@@ -8,6 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import static io.harness.cvng.core.services.CVNextGenConstants.CHANGE_EVENT_NG_ACCOUNT_PATH;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,7 +31,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
@@ -145,11 +145,11 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
     if (endTime == 0) {
       throw new InvalidArgumentsException(Pair.of("endTime", "should not be null or empty"));
     }
-    if (Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers)) {
+    if (isEmpty(scopedMonitoredServiceIdentifiers)) {
       throw new InvalidArgumentsException(
           Pair.of("scopedMonitoredServiceIdentifiers", "should be present for account"));
     }
-    if (!Lists.isNullOrEmpty(monitoredServiceIdentifiers)) {
+    if (!isEmpty(monitoredServiceIdentifiers)) {
       throw new InvalidArgumentsException(
           Pair.of("monitoredServiceIdentifiers", "doesn't need to be sent for account"));
     }

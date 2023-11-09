@@ -52,6 +52,7 @@ import io.harness.engine.interrupts.InterruptMonitor;
 import io.harness.engine.interrupts.OrchestrationEndInterruptHandler;
 import io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy;
 import io.harness.engine.pms.start.NodeStartHelper;
+import io.harness.engine.secrets.ExpressionsObserverFactory;
 import io.harness.engine.timeouts.TimeoutInstanceRemover;
 import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
@@ -146,6 +147,7 @@ import io.harness.pms.plan.execution.handlers.ExecutionInfoUpdateEventHandler;
 import io.harness.pms.plan.execution.handlers.ExecutionSummaryCreateEventHandler;
 import io.harness.pms.plan.execution.handlers.PipelineStatusUpdateEventHandler;
 import io.harness.pms.plan.execution.handlers.PlanStatusEventEmitterHandler;
+import io.harness.pms.plan.execution.handlers.SecretResolutionEventHandler;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkInstanceCacheMonitor;
@@ -607,8 +609,6 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(OrchestrationStartEventHandler.class)));
     planExecutionStrategy.getOrchestrationStartSubject().register(
         injector.getInstance(Key.get(ExecutionSummaryCreateEventHandler.class)));
-    planExecutionStrategy.getOrchestrationStartSubject().register(
-        injector.getInstance(Key.get(PipelineExecutionMetricsObserver.class)));
     // End Observers
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(OrchestrationEndGraphHandler.class)));
@@ -633,6 +633,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(SpawnChildrenRequestProcessor.class));
     spawnChildrenRequestProcessor.getBarrierWithinStrategyExpander().register(
         injector.getInstance(Key.get(BarrierWithinStrategyExpander.class)));
+
+    // Registering SecretResolutionObserver
+    ExpressionsObserverFactory expressionsObserverFactory =
+        injector.getInstance(Key.get(ExpressionsObserverFactory.class));
+    expressionsObserverFactory.getSecretsRuntimeUsagesSubject().register(
+        injector.getInstance(Key.get(SecretResolutionEventHandler.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));

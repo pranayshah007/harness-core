@@ -15,11 +15,13 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERR
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_VARIABLES_PATTERN_REGEX;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.SERVICE_GIT_BRANCH_EXPRESSION;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -27,6 +29,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -64,6 +67,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
@@ -97,6 +101,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -143,6 +148,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Inject private ServiceStepV3Helper serviceStepV3Helper;
+  @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
@@ -239,7 +246,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     checkIfEnvTypesEntityRefIsExpAndThrow(stepParameters.getEnvGroupRef(), ENV_GROUP_REF,
         "[Hint]: service variables expression should not be used as environment group ref.");
   }
-
   private void checkIfEnvTypesEntityRefIsExpAndThrow(
       ParameterField<String> envTypeEntityRef, String entityTypeName, String suffixErrorMessage) {
     if (ParameterField.isNotNull(envTypeEntityRef) && envTypeEntityRef.isExpression()) {
@@ -451,8 +457,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
 
     if (envRef.fetchFinalValue() != null) {
-      Optional<Environment> environment =
-          getEnvironmentWithYaml(accountId, orgIdentifier, projectIdentifier, parameters);
+      Optional<Environment> environment = serviceStepV3Helper.getEnvironmentWithYaml(
+          accountId, orgIdentifier, projectIdentifier, parameters.getEnvRef().getValue(), parameters.getEnvGitBranch());
       if (environment.isEmpty()) {
         throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", envRef.getValue()));
       }
@@ -478,6 +484,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       NGEnvironmentConfig ngEnvironmentConfig =
           serviceStepV3Helper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
+
+      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+        infrastructureEntityService.checkIfInfraIsScopedToService(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+            parameters.getServiceRef().getValue(), parameters.getEnvRef().getValue(),
+            parameters.getInfraId().getValue());
+      }
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier,
@@ -761,20 +774,22 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private Optional<ServiceEntity> getServiceEntityWithYaml(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
-    String gitBranch = stepParameters.getServiceGitBranch() != null ? stepParameters.getServiceGitBranch() : null;
-    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+    String serviceGitBranch = getServiceGitBranch(stepParameters);
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(serviceGitBranch)) {
       return serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     }
   }
 
-  private Optional<Environment> getEnvironmentWithYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, ServiceStepV3Parameters stepParameters) {
-    String envGitBranch = stepParameters.getEnvGitBranch();
-    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(envGitBranch)) {
-      return environmentService.get(
-          accountId, orgIdentifier, projectIdentifier, stepParameters.getEnvRef().getValue(), false);
+  private String getServiceGitBranch(ServiceStepV3Parameters stepParameters) {
+    String serviceGitBranch;
+    if (isBlank(stepParameters.getServiceGitBranch())
+        || SERVICE_GIT_BRANCH_EXPRESSION.equals(stepParameters.getServiceGitBranch())) {
+      serviceGitBranch = null;
+    } else {
+      serviceGitBranch = stepParameters.getServiceGitBranch();
     }
+    return serviceGitBranch;
   }
 
   private NGServiceConfig getNgServiceConfig(

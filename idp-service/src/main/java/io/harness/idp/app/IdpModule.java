@@ -12,6 +12,7 @@ import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CATALOG_CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.IDP_CHECKS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
+import static io.harness.audit.ResourceTypeConstants.IDP_OAUTH_CONFIG;
 import static io.harness.audit.ResourceTypeConstants.IDP_PROXY_HOST;
 import static io.harness.audit.ResourceTypeConstants.IDP_SCORECARDS;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
@@ -39,7 +40,6 @@ import io.harness.dashboard.DashboardResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
@@ -54,6 +54,7 @@ import io.harness.idp.audittrails.eventhandlers.BackstageSecretEnvEventHandler;
 import io.harness.idp.audittrails.eventhandlers.CatalogConnectorEventHandler;
 import io.harness.idp.audittrails.eventhandlers.CheckEventHandler;
 import io.harness.idp.audittrails.eventhandlers.IDPNextGenOutboxEventHandler;
+import io.harness.idp.audittrails.eventhandlers.OAuthConfigEventHandler;
 import io.harness.idp.audittrails.eventhandlers.ProxyHostDetailsEventHandler;
 import io.harness.idp.audittrails.eventhandlers.ScorecardEventHandler;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
@@ -112,6 +113,9 @@ import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
 import io.harness.idp.proxy.services.ProxyApi;
 import io.harness.idp.proxy.services.ProxyApiImpl;
+import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
+import io.harness.idp.scorecard.checks.service.CheckService;
+import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datapoints.service.DataPointServiceImpl;
 import io.harness.idp.scorecard.datapointsdata.resource.HarnessDataPointsApiImpl;
@@ -125,12 +129,9 @@ import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationSe
 import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
 import io.harness.idp.scorecard.datasources.service.DataSourceService;
 import io.harness.idp.scorecard.datasources.service.DataSourceServiceImpl;
-import io.harness.idp.scorecard.scorecardchecks.resources.ChecksApiImpl;
-import io.harness.idp.scorecard.scorecardchecks.resources.ScorecardsApiImpl;
-import io.harness.idp.scorecard.scorecardchecks.service.CheckService;
-import io.harness.idp.scorecard.scorecardchecks.service.CheckServiceImpl;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
-import io.harness.idp.scorecard.scorecardchecks.service.ScorecardServiceImpl;
+import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
 import io.harness.idp.scorecard.scores.service.ScoreComputerService;
 import io.harness.idp.scorecard.scores.service.ScoreComputerServiceImpl;
@@ -143,6 +144,7 @@ import io.harness.idp.settings.service.BackstagePermissionsServiceImpl;
 import io.harness.idp.status.k8s.HealthCheck;
 import io.harness.idp.status.k8s.PodHealthCheck;
 import io.harness.idp.status.resources.StatusInfoApiImpl;
+import io.harness.idp.status.resources.StatusInfoV2ApiImpl;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.idp.status.service.StatusInfoServiceImpl;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
@@ -155,7 +157,6 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
@@ -196,6 +197,9 @@ import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
 import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
+import io.harness.spec.server.idp.v1.StatusInfoV2Api;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
@@ -222,6 +226,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -243,7 +248,6 @@ public class IdpModule extends AbstractModule {
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
     install(IdpGrpcModule.getInstance());
-    install(EntitySetupUsageModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
@@ -338,8 +342,6 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new NGSettingsClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
-    install(new EntitySetupUsageClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
-        appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new PipelineRemoteClientModule(
         appConfig.getPipelineServiceConfiguration(), appConfig.getPipelineServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
@@ -381,6 +383,7 @@ public class IdpModule extends AbstractModule {
     bind(GitIntegrationService.class).to(GitIntegrationServiceImpl.class);
     bind(BackstageEnvVariableApi.class).to(BackstageEnvVariableApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
+    bind(StatusInfoV2Api.class).to(StatusInfoV2ApiImpl.class);
     bind(BackstagePermissionsApi.class).to(BackstagePermissionsApiImpl.class);
     bind(K8sClient.class).to(K8sApiClient.class);
     bind(HealthCheck.class).to(PodHealthCheck.class);
@@ -466,6 +469,22 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("licenseUsageDailyCountJob"))
         .toInstance(new ManagedScheduledExecutorService("licenseUsageDailyCountJob"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("checkStatusDailyRunJob"))
+        .toInstance(new ManagedScheduledExecutorService("checkStatusDailyRunJob"));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return appConfig.getSegmentConfiguration();
+      }
+    });
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("idpTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("idp-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
   }
 
   private void registerOutboxEventHandlers() {
@@ -478,6 +497,7 @@ public class IdpModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(IDP_SCORECARDS).to(ScorecardEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CHECKS).to(CheckEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_ALLOW_LIST).to(AllowListEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_OAUTH_CONFIG).to(OAuthConfigEventHandler.class);
   }
 
   @Provides
@@ -536,6 +556,13 @@ public class IdpModule extends AbstractModule {
   @Named("backstagePodLabel")
   public String backstagePodLabel() {
     return this.appConfig.getBackstagePodLabel();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageEntitiesFetchLimit")
+  public String backstageEntitiesFetchLimit() {
+    return this.appConfig.getBackstageEntitiesFetchLimit();
   }
 
   @Provides

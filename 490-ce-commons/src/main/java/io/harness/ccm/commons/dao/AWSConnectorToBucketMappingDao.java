@@ -51,4 +51,18 @@ public class AWSConnectorToBucketMappingDao {
             .filter(AWSConnectorToBucketMappingKeys.awsConnectorIdentifier, awsConnectorIdentifier);
     return query.get();
   }
+
+  public long count(String accountId) {
+    return persistence.createQuery(AWSConnectorToBucketMapping.class)
+        .field(AWSConnectorToBucketMappingKeys.accountId)
+        .equal(accountId)
+        .count();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<AWSConnectorToBucketMapping> query = persistence.createQuery(AWSConnectorToBucketMapping.class)
+                                                   .field(AWSConnectorToBucketMappingKeys.accountId)
+                                                   .equal(accountId);
+    return persistence.delete(query);
+  }
 }

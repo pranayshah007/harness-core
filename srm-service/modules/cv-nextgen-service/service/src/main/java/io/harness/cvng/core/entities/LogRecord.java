@@ -59,7 +59,7 @@ public final class LogRecord extends VerificationTaskBase implements PersistentE
 
   @Id private String uuid;
   @FdIndex private String accountId;
-  @FdIndex private String verificationTaskId;
+  private String verificationTaskId;
   @NotEmpty private Instant timestamp;
   private String host;
   @JsonIgnore

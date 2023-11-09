@@ -7,10 +7,12 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEView.CEViewKeys;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
@@ -21,10 +23,13 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -41,6 +46,9 @@ public class CEViewDao {
   private static final String VIEW_RULES_VIEW_CONDITIONS_VIEW_FIELD_IDENTIFIER =
       "viewRules.viewConditions.viewField.identifier";
   private static final String BUSINESS_MAPPING = "BUSINESS_MAPPING";
+  private static final String INSENSITIVE_SEARCH = "i";
+  private static final String OPTIONS = "$options";
+  private static final String REGEX = "$regex";
 
   public boolean save(CEView ceView) {
     return hPersistence.save(ceView) != null;
@@ -247,5 +255,58 @@ public class CEViewDao {
         .field(CEViewKeys.uuid)
         .in(uuids)
         .asList();
+  }
+
+  public long count(String accountId) {
+    return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).count();
+  }
+
+  public Long countByAccountIdAndFolderIds(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
+    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, cloudFilters);
+    return query.count();
+  }
+
+  public Query<CEView> paginationQuery(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class).filter(CEViewKeys.accountId, accountId);
+    if (!isEmpty(folderIds)) {
+      query.field(CEViewKeys.folderId).in(folderIds);
+    }
+
+    if (!isEmpty(searchKey)) {
+      BasicDBObject basicDBObject = new BasicDBObject(REGEX, searchKey);
+      basicDBObject.put(OPTIONS, INSENSITIVE_SEARCH);
+      query.filter(CEViewKeys.name, basicDBObject);
+    }
+
+    if (!isEmpty(cloudFilters)) {
+      if (cloudFilters.contains(CloudFilter.DEFAULT) && cloudFilters.size() == 1) {
+        query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
+      } else if (cloudFilters.contains(CloudFilter.DEFAULT)) {
+        List<CloudFilter> tempCloudFilters = new ArrayList<>(cloudFilters);
+        tempCloudFilters.remove(CloudFilter.DEFAULT);
+        query.or(query.criteria(CEViewKeys.viewType).equal(ViewType.DEFAULT),
+            query.criteria(CEViewKeys.dataSources).in(tempCloudFilters));
+      } else {
+        query.field(CEViewKeys.dataSources).in(cloudFilters);
+      }
+    }
+    return query;
+  }
+
+  public List<CEView> findByAccountIdAndFolderId(String accountId, Set<String> folderIds,
+      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
+      List<CloudFilter> filters) {
+    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, filters);
+    query = decorateQueryWithSortCriteria(query, sortCriteria);
+    query.offset(pageNo * pageSize);
+    query.limit(pageSize);
+    return query.asList();
+  }
+
+  public boolean deleteAllForAccount(String accountId) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId);
+    return hPersistence.delete(query);
   }
 }

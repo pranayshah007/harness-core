@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
@@ -23,8 +24,10 @@ import java.util.Date;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
+@FieldNameConstants(innerTypeName = "StepStatusMetadataKeys")
 
 @OwnedBy(CI)
 @Data
@@ -35,8 +38,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("stepStatusMetadata")
 @TypeAlias("stepStatusMetadata")
 @HarnessEntity(exportable = true)
-public class StepStatusMetadata {
+public class StepStatusMetadata implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id String uuid;
+
   String stageExecutionId;
 
   StepExecutionStatus status;

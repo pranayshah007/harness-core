@@ -27,7 +27,6 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter.RoleAssignmentFilterBuilder;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
-import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent;
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
@@ -110,17 +109,9 @@ public class ProjectRoleAssignmentsApiImpl implements ProjectRoleAssignmentsApi 
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
     roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
     roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
-
-    RoleAssignmentResponseDTO responseDTO =
-        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          io.harness.accesscontrol.roleassignments.RoleAssignment createdRoleAssignment =
-              roleAssignmentService.create(roleAssignment);
-          RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(createdRoleAssignment);
-          outboxService.save(new RoleAssignmentCreateEvent(
-              response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
-          return response;
-        }));
-
+    io.harness.accesscontrol.roleassignments.RoleAssignment createdRoleAssignment =
+        roleAssignmentService.create(roleAssignment);
+    RoleAssignmentResponseDTO responseDTO = roleAssignmentDTOMapper.toResponseDTO(createdRoleAssignment);
     RoleAssignmentResponse response = roleAssignmentApiUtils.getRoleAssignmentResponse(responseDTO);
     return Response.status(Response.Status.CREATED).entity(response).build();
   }

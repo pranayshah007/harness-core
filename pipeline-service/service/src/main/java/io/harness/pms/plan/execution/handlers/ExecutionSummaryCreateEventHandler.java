@@ -217,7 +217,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionTriggerInfo(metadata.getTriggerInfo())
             .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
-            .tags(pipelineEntity.get().getTags())
+            .tags(pipelineEntity.get().getTags() != null ? pipelineEntity.get().getTags() : new ArrayList<>())
             .labels(LabelsHelper.getLabels(planExecutionMetadata.getYaml(), pipelineEntity.get().getHarnessVersion()))
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)

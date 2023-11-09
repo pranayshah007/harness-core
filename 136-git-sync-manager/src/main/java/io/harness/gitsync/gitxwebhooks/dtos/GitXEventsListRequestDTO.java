@@ -35,4 +35,5 @@ public class GitXEventsListRequestDTO {
   Long eventEndTime;
   String repoName;
   String filePath;
+  String eventIdentifier;
 }

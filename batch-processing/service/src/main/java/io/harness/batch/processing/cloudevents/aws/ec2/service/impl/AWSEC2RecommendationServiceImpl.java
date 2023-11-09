@@ -103,7 +103,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
     AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(aWSRegion);
     if (batchMainConfig.getCeProxyConfig() != null && batchMainConfig.getCeProxyConfig().isEnabled()) {
-      log.info("AWSCostExplorerClientBuilder initializing with proxy config");
+      log.info("AWSCostExplorerClient client initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(batchMainConfig.getCeProxyConfig()));
     }
     AWSCredentialsProvider credentialsProvider =

@@ -62,8 +62,6 @@ import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -186,7 +184,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
   private ExecutionElementConfig addExtraGitCloneSteps(
       ExecutionElementConfig modifiedExecutionPlan, Workspace workspace) {
-    if (workspace.getTf_var_files() == null) {
+    if (workspace.getTerraform_variable_files() == null) {
       return modifiedExecutionPlan;
     }
     List<ExecutionWrapperConfig> steps = modifiedExecutionPlan.getSteps();
@@ -194,7 +192,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     int stepIndex = 0;
     List<String> processedRepos = new ArrayList<>();
     List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
-    for (VariablesRepo variablesRepo : workspace.getTf_var_files()) {
+    for (VariablesRepo variablesRepo : workspace.getTerraform_variable_files()) {
       // If the connector is the same as where the main repo is, then it means that we do not need to clone the repo
       // again
       if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())) {
@@ -481,8 +479,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     return planNodeBuilder.build();
   }
 
@@ -637,15 +633,27 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         // I could not find a way to get the connector type from the webhook, so I will use the connector type from the
         // workspace and assume that both are the same. This is required because if the connector is an account
         // connector, the repository name can only contain the name and not the full url.
-        if (!Objects.equals(workspace.getRepository_connector(), "") && workspace.getRepository_connector() != null) {
+        if (ctx.getMetadata().getTriggerPayload().getParsedPayload().hasPr()) {
+          if (!Objects.equals(workspace.getRepository_connector(), "") && workspace.getRepository_connector() != null) {
+            iacmCodeBase.repoName(
+                ParameterField.<String>builder()
+                    .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getName())
+                    .build());
+          } else {
+            iacmCodeBase.repoName(
+                ParameterField.<String>builder()
+                    .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getClone())
+                    .build());
+          }
+        } else if (ctx.getMetadata().getTriggerPayload().getParsedPayload().hasPush()) {
           iacmCodeBase.repoName(
               ParameterField.<String>builder()
-                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getName())
+                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPush().getRepo().getName())
                   .build());
-        } else {
+        } else if (ctx.getMetadata().getTriggerPayload().getParsedPayload().hasRelease()) {
           iacmCodeBase.repoName(
               ParameterField.<String>builder()
-                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getClone())
+                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getRelease().getRepo().getName())
                   .build());
         }
         // If getPr is not null the trigger type is a PR trigger, and we want to use the PRBuildSpec.

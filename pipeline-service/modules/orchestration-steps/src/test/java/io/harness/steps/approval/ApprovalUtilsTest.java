@@ -37,7 +37,9 @@ import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInst
 import io.harness.steps.shellscript.ShellType;
 
 import com.mongodb.MongoException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -378,5 +380,29 @@ public class ApprovalUtilsTest extends CategoryTest {
                              .matchAnyCondition(true)
                              .build())
         .build();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testEscapeHTMLForTextFields() {
+    Map<String, String> templateData = new HashMap<>();
+    templateData.put("f1", "this is first line \n this is second line \r\n this is third line \r additional text");
+    templateData.put("f2", "field is not a text field");
+    templateData.put("f3", "this is first line");
+    templateData.put("f4", null);
+    List<String> textFields = List.of("f1", "f3", "f4");
+
+    // edge cases
+    assertThat(ApprovalUtils.escapeHTMLForTextFields(new HashMap<>(), textFields)).isEmpty();
+    assertThat(ApprovalUtils.escapeHTMLForTextFields(templateData, new ArrayList<>())).isEqualTo(templateData);
+
+    Map<String, String> htmlTemplateData = ApprovalUtils.escapeHTMLForTextFields(templateData, textFields);
+    assertThat(templateData)
+        .hasSize(4)
+        .containsEntry("f1", "this is first line <br> this is second line <br> this is third line <br> additional text")
+        .containsEntry("f2", "field is not a text field")
+        .containsEntry("f3", "this is first line")
+        .containsEntry("f4", null);
   }
 }

@@ -81,7 +81,15 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
       NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId,
       NodeExecutionKeys.retryIds, NodeExecutionKeys.skipExpressionChain, NodeExecutionKeys.identifier,
-      NodeExecutionKeys.group, NodeExecutionKeys.levelRuntimeIdx);
+      NodeExecutionKeys.group, NodeExecutionKeys.levelRuntimeIdx, NodeExecutionKeys.stepType);
+
+  // NodeId is added to resolve expression within same step
+  public static final Set<String> fieldsForExpressionEngineWithAmbiance =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.mode, NodeExecutionKeys.startTs,
+          NodeExecutionKeys.endTs, NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams,
+          NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId, NodeExecutionKeys.retryIds,
+          NodeExecutionKeys.skipExpressionChain, NodeExecutionKeys.identifier, NodeExecutionKeys.group,
+          NodeExecutionKeys.levelRuntimeIdx, NodeExecutionKeys.ambiance, NodeExecutionKeys.stepType);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);

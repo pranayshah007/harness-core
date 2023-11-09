@@ -386,13 +386,6 @@ public class TemplateServiceModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
-  @Named("allowedParallelStages")
-  public Integer getAllowedParallelStages() {
-    return templateServiceConfiguration.getAllowedParallelStages();
-  }
-
-  @Provides
   @Named("yaml-schema-mapper")
   @Singleton
   public ObjectMapper getYamlSchemaObjectMapper() {

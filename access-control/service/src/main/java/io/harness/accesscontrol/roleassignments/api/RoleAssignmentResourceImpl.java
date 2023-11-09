@@ -50,10 +50,6 @@ import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter.RoleAssignmentFilterBuilder;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
-import io.harness.accesscontrol.roleassignments.RoleAssignmentUpdateResult;
-import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent;
-import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent;
-import io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
@@ -92,7 +88,6 @@ import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.NotFoundException;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -446,13 +441,9 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     checkAndAddManagedRoleAssignmentForUserGroup(harnessScopeParams, roleAssignmentDTO);
     roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
     roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      RoleAssignment createdRoleAssignment = roleAssignmentService.create(roleAssignment);
-      RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(createdRoleAssignment);
-      outboxService.save(new RoleAssignmentCreateEvent(
-          response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
-      return ResponseDTO.newResponse(response);
-    }));
+    RoleAssignment createdRoleAssignment = roleAssignmentService.create(roleAssignment);
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(createdRoleAssignment);
+    return ResponseDTO.newResponse(response);
   }
 
   @Override
@@ -468,17 +459,9 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     RoleAssignment roleAssignmentUpdate =
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(fromDTO(scope, roleAssignmentDTO), scope);
     roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignmentUpdate);
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      RoleAssignmentUpdateResult roleAssignmentUpdateResult = roleAssignmentService.update(roleAssignmentUpdate);
-      RoleAssignmentResponseDTO response =
-          roleAssignmentDTOMapper.toResponseDTO(roleAssignmentUpdateResult.getUpdatedRoleAssignment());
-      outboxService.save(
-          new RoleAssignmentUpdateEvent(response.getScope().getAccountIdentifier(), response.getRoleAssignment(),
-              roleAssignmentDTOMapper.toResponseDTO(roleAssignmentUpdateResult.getOriginalRoleAssignment())
-                  .getRoleAssignment(),
-              response.getScope()));
-      return ResponseDTO.newResponse(response);
-    }));
+    RoleAssignment updatedRoleAssignment = roleAssignmentService.update(roleAssignmentUpdate);
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(updatedRoleAssignment);
+    return ResponseDTO.newResponse(response);
   }
 
   @Override
@@ -562,16 +545,12 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     if (!validationResult.isValid()) {
       throw new InvalidRequestException(validationResult.getErrorMessage());
     }
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      RoleAssignment deletedRoleAssignment =
-          roleAssignmentService.delete(identifier, scopeIdentifier).<NotFoundException>orElseThrow(() -> {
-            throw new NotFoundException("Role Assignment is already deleted");
-          });
-      RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(deletedRoleAssignment);
-      outboxService.save(new RoleAssignmentDeleteEvent(
-          response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
-      return ResponseDTO.newResponse(response);
-    }));
+    RoleAssignment deletedRoleAssignment =
+        roleAssignmentService.delete(identifier, scopeIdentifier).<NotFoundException>orElseThrow(() -> {
+          throw new NotFoundException("Role Assignment is already deleted");
+        });
+    RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(deletedRoleAssignment);
+    return ResponseDTO.newResponse(response);
   }
 
   @Override
@@ -585,16 +564,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
           roleAssignmentErrorResponseDTOS, roleAssignmentsThatCanBeDeleted);
       List<String> roleAssignmentIdentifiersThatCanBeDeleted =
           roleAssignmentsThatCanBeDeleted.stream().map(RoleAssignment::getIdentifier).collect(toList());
-      Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        roleAssignmentService.deleteMulti(scopeIdentifier, roleAssignmentIdentifiersThatCanBeDeleted);
-        for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
-          RoleAssignmentResponseDTO response = roleAssignmentDTOMapper.toResponseDTO(roleAssignment);
-          outboxService.save(new RoleAssignmentDeleteEvent(
-              response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
-        }
-        return roleAssignmentIdentifiersThatCanBeDeleted;
-      }));
-
+      roleAssignmentService.deleteMulti(scopeIdentifier, roleAssignmentIdentifiersThatCanBeDeleted);
     } catch (Exception e) {
       for (RoleAssignment roleAssignment : roleAssignmentsThatCanBeDeleted) {
         roleAssignmentErrorResponseDTOS.add(RoleAssignmentErrorResponseDTO.builder()
@@ -675,13 +645,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
         roleAssignmentApiUtils.syncDependencies(roleAssignment, scope);
         roleAssignmentApiUtils.checkUpdatePermission(harnessScopeParams, roleAssignment);
         RoleAssignmentResponseDTO roleAssignmentResponseDTO =
-            Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-              RoleAssignmentResponseDTO response =
-                  roleAssignmentDTOMapper.toResponseDTO(roleAssignmentService.create(roleAssignment));
-              outboxService.save(new RoleAssignmentCreateEvent(
-                  response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
-              return response;
-            }));
+            roleAssignmentDTOMapper.toResponseDTO(roleAssignmentService.create(roleAssignment));
         createdRoleAssignments.add(roleAssignmentResponseDTO);
       } catch (Exception e) {
         log.error(String.format("Could not create role assignment %s", roleAssignment), e);

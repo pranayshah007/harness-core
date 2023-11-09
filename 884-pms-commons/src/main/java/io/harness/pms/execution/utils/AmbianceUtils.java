@@ -63,6 +63,7 @@ public class AmbianceUtils {
   public static final String STAGE = "STAGE";
   public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
   public static final String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
+  public static final String PIE_SECRETS_OBSERVER = "PIE_SECRETS_OBSERVER";
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
@@ -261,6 +262,18 @@ public class AmbianceUtils {
       }
     }
     return stageLevel;
+  }
+
+  public Optional<Level> getNearestStepGroupLevelWithStrategyFromAmbiance(Ambiance ambiance) {
+    for (int index = ambiance.getLevelsCount() - 1; index > 0; index--) {
+      Level level = ambiance.getLevelsList().get(index);
+      Level nextLevel = ambiance.getLevelsList().get(index - 1);
+      if (level.getStepType().getType().equals("STEP_GROUP")
+          && nextLevel.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        return Optional.of(level);
+      }
+    }
+    return Optional.empty();
   }
 
   public static boolean isRetry(Ambiance ambiance) {
@@ -536,6 +549,11 @@ public class AmbianceUtils {
   public boolean shouldSimplifyLogBaseKey(Ambiance ambiance) {
     return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
         && ambiance.getMetadata().getFeatureFlagToValueMapMap().getOrDefault(PIE_SIMPLIFY_LOG_BASE_KEY, false);
+  }
+
+  public boolean shouldEnableSecretsObserver(Ambiance ambiance) {
+    return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().getOrDefault(PIE_SECRETS_OBSERVER, false);
   }
 
   public boolean hasStrategyMetadata(Level level) {

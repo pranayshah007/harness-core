@@ -12,20 +12,29 @@ import static io.harness.cdng.visitor.YamlTypes.ECS_CANARY_DEPLOY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
+import io.harness.cdng.ecs.EcsCanaryDeleteStep;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepNode;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepParameters;
+import io.harness.cdng.ecs.asyncsteps.EcsCanaryDeleteStepV2;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsCanaryDeleteStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsCanaryDeleteStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.ECS_CANARY_DELETE);
@@ -53,5 +62,23 @@ public class EcsCanaryDeleteStepPlanCreator extends CDPMSStepPlanCreatorV2<EcsCa
     ecsCanaryDeleteStepParameters.setEcsCanaryDeleteFnq(ecsCanaryDeleteFnq);
 
     return stepParameters;
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, EcsCanaryDeleteStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return EcsCanaryDeleteStepV2.STEP_TYPE;
+    }
+    return EcsCanaryDeleteStep.STEP_TYPE;
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, EcsCanaryDeleteStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_ECS_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    }
+    return OrchestrationFacilitatorType.TASK;
   }
 }

@@ -24,9 +24,11 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.secrets.ExpressionsObserverFactory;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.yaml.YamlField;
@@ -58,6 +60,8 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+
+  @Mock private ExpressionsObserverFactory expressionsObserverFactory;
 
   @InjectMocks YamlExpressionResolveHelper yamlExpressionResolveHelper;
 
@@ -123,6 +127,7 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
         Optional.ofNullable(NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).build());
     doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecutionWithProjections(any(), any());
     doReturn(expressionEvaluator).when(pmsEngineExpressionService).prepareExpressionEvaluator(any());
+    doReturn(new Subject<>()).when(expressionsObserverFactory).getSubjectForSecretsRuntimeUsages(any());
     assertThatCode(()
                        -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
                            arrayTypeString, "planExecutionId", ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS))
@@ -153,6 +158,7 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("inputSetValidatorFactory", inputSetValidatorFactory);
     on(evaluator).set("pmsFeatureFlagService", pmsFeatureFlagService);
+    on(evaluator).set("expressionsObserverFactory", expressionsObserverFactory);
 
     if (EmptyPredicate.isEmpty(contextMap)) {
       return evaluator;

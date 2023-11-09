@@ -15,13 +15,14 @@ public enum DelegateMetric {
       DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
   TASKS_CURRENTLY_EXECUTING(
       "tasks_currently_executing", "Number of tasks in execution", DelegateMetricType.GAUGE, DELEGATE_NAME_LABEL),
-  TASK_TIMEOUT(
-      "task_timeout", "Number of tasks timed out", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
-  TASK_COMPLETED(
-      "task_completed", "Number of tasks completed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
-  TASK_FAILED("task_failed", "Number of tasks failed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
-  TASK_REJECTED("task_rejected", "Number of tasks rejected due to high load on delegate", DelegateMetricType.COUNT,
-      DELEGATE_NAME_LABEL),
+  TASK_TIMEOUT("task_timeout_total", "Number of tasks timed out", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL,
+      TASK_TYPE_LABEL),
+  TASK_COMPLETED("task_completed_total", "Number of tasks completed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL,
+      TASK_TYPE_LABEL),
+  TASK_FAILED(
+      "task_failed_total", "Number of tasks failed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
+  TASK_REJECTED("task_rejected_total", "Number of tasks rejected due to high load on delegate",
+      DelegateMetricType.COUNT, DELEGATE_NAME_LABEL),
   DELEGATE_CONNECTED("delegate_connected", "Delegate connected", DelegateMetricType.GAUGE, DELEGATE_NAME_LABEL),
   RESOURCE_CONSUMPTION_ABOVE_THRESHOLD("delegate_resource_consumption_above_threshold",
       "Delegate resource consumption reached more than threshold", DelegateMetricType.GAUGE, DELEGATE_NAME_LABEL);

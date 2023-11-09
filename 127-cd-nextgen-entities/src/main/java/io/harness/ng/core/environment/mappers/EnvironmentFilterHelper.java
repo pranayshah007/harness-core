@@ -8,6 +8,9 @@
 package io.harness.ng.core.environment.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.cdng.artifact.NGArtifactConstants.ACCOUNT;
+import static io.harness.cdng.artifact.NGArtifactConstants.ORG;
+import static io.harness.cdng.artifact.NGArtifactConstants.PROJECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filter.FilterType.ENVIRONMENT;
@@ -105,6 +108,59 @@ public class EnvironmentFilterHelper {
       return criteria;
     } else {
       throw new InvalidRequestException("account identifier cannot be null for environment list");
+    }
+  }
+
+  public Criteria createCriteriaToGetScopedEnvironments(String accountId, List<String> orgIdentifiers,
+      List<String> projectIdentifiers, String envType, List<String> scopes) {
+    if (isEmpty(accountId)) {
+      throw new InvalidRequestException("account identifier cannot be null for environment list");
+    }
+    if (isEmpty(scopes)) {
+      throw new InvalidRequestException("scopes cannot be null for environment list");
+    }
+    List<Criteria> orCriteriaList = new ArrayList<>();
+    Criteria accountCriteria;
+    Criteria orgCriteria;
+    Criteria projectCriteria;
+    if (scopes.stream().anyMatch(scope -> scope.equalsIgnoreCase(ACCOUNT))) {
+      accountCriteria =
+          Criteria.where(EnvironmentKeys.orgIdentifier).is(null).and(EnvironmentKeys.projectIdentifier).is(null);
+      setBaseCriteria(accountId, envType, accountCriteria);
+      orCriteriaList.add(accountCriteria);
+    }
+    if (scopes.stream().anyMatch(scope -> scope.equalsIgnoreCase(ORG))) {
+      orgCriteria = Criteria.where(EnvironmentKeys.projectIdentifier).is(null);
+      setBaseCriteria(accountId, envType, orgCriteria);
+      if (isNotEmpty(orgIdentifiers)) {
+        orgCriteria.and(EnvironmentKeys.orgIdentifier).in(orgIdentifiers);
+      } else {
+        orgCriteria.and(EnvironmentKeys.orgIdentifier).ne(null);
+      }
+      orCriteriaList.add(orgCriteria);
+    }
+    if (scopes.stream().anyMatch(scope -> scope.equalsIgnoreCase(PROJECT))) {
+      projectCriteria = new Criteria();
+      setBaseCriteria(accountId, envType, projectCriteria);
+      if (isNotEmpty(orgIdentifiers)) {
+        projectCriteria.and(EnvironmentKeys.orgIdentifier).in(orgIdentifiers);
+      } else {
+        projectCriteria.and(EnvironmentKeys.orgIdentifier).ne(null);
+      }
+      if (isNotEmpty(projectIdentifiers)) {
+        projectCriteria.and(EnvironmentKeys.projectIdentifier).in(projectIdentifiers);
+      } else {
+        projectCriteria.and(EnvironmentKeys.projectIdentifier).ne(null);
+      }
+      orCriteriaList.add(projectCriteria);
+    }
+    return new Criteria().orOperator(orCriteriaList);
+  }
+
+  private void setBaseCriteria(String accountId, String envType, Criteria accountCriteria) {
+    accountCriteria.and(EnvironmentKeys.accountId).is(accountId).and(EnvironmentKeys.deleted).is(false);
+    if (isNotEmpty(envType)) {
+      accountCriteria.and(EnvironmentKeys.type).is(envType);
     }
   }
 

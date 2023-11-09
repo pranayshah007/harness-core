@@ -115,6 +115,7 @@ public class InfrastructureMapper {
         .entityGitDetails(getEntityGitDetails(infrastructureEntity))
         .storeType(infrastructureEntity.getStoreType())
         .connectorRef(infrastructureEntity.getConnectorRef())
+        .fallbackBranch(infrastructureEntity.getFallBackBranch())
         .cacheResponseMetadataDTO(getCacheResponse(infrastructureEntity))
         .build();
   }

@@ -8,6 +8,7 @@
 package io.harness.ccm.remote.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -37,8 +38,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Lists;
-import io.fabric8.utils.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -222,7 +221,7 @@ public class BusinessMappingResource {
             .message(COST_CATEGORY_NOT_DELETED);
 
     // No dependency on cost category(business mapping) exists
-    if (Maps.isNullOrEmpty(perspectiveListMessage.getPerspectiveIdAndName())) {
+    if (isEmpty(perspectiveListMessage.getPerspectiveIdAndName())) {
       BusinessMapping costCategory = businessMappingService.get(businessMappingId, accountId);
       businessMappingService.delete(businessMappingId, accountId);
       costCategoryDeleteDTOBuilder.deleted(true).message(COST_CATEGORY_DELETED);
@@ -257,7 +256,7 @@ public class BusinessMappingResource {
           required = true, description = "List of Business Mapping Ids") @Valid List<String> businessMappingIds) {
     rbacHelper.checkCostCategoryViewPermission(accountId, null, null);
     List<LinkedPerspectives> perspectiveListMessages = null;
-    if (!Lists.isNullOrEmpty(businessMappingIds)) {
+    if (!isEmpty(businessMappingIds)) {
       perspectiveListMessages = ceViewService.getViewsByBusinessMapping(accountId, businessMappingIds);
     }
     return new RestResponse<>(perspectiveListMessages);

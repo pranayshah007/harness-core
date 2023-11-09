@@ -19,6 +19,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Objects;
@@ -60,6 +61,9 @@ public class AsyncFilterCreationDispatcher implements Runnable {
           try {
             SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
             SourcePrincipalContextBuilder.setSourcePrincipal(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+            PipelineGitXHelper.setupGitParentEntityDetails(pipelineEntity.get().getAccountIdentifier(),
+                pipelineEntity.get().getOrgIdentifier(), pipelineEntity.get().getProjectIdentifier(),
+                pipelineEntity.get().getConnectorRef(), pipelineEntity.get().getRepo());
             updatedPipelineEntity = pmsPipelineServiceHelper.updatePipelineInfo(
                 pipelineEntity.get(), pipelineEntity.get().getHarnessVersion());
 

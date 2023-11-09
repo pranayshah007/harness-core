@@ -132,6 +132,18 @@ public class CreditServiceImpl implements CreditService {
     return creditRepository.save(updateCredit);
   }
 
+  public void deleteCredit(String creditId, String accountIdentifier) throws InvalidRequestException {
+    Optional<Credit> maybeCredit = creditRepository.findById(creditId);
+    if (!maybeCredit.isPresent()) {
+      throw new NotFoundException(String.format("Credit with identifier [%s] not found", creditId));
+    }
+    if (!maybeCredit.get().getAccountIdentifier().equals(accountIdentifier)) {
+      throw new InvalidRequestException(String.format(
+          "Credit with identifier [%s] does not belongs to the account [%s] ", creditId, accountIdentifier));
+    }
+    creditRepository.delete(maybeCredit.get());
+  }
+
   private String getEmailFromPrincipal() {
     Principal principal = SourcePrincipalContextBuilder.getSourcePrincipal();
     String email = "";

@@ -155,8 +155,6 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
-
 enableOpentelemetry: false
 
 policyManagerSecret: secret

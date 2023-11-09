@@ -57,8 +57,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierWithinStrategyExpander implements BarrierExpandObserver {
-  private static final String BARRIER_WITHIN_STRATEGY_EXPANDER_LOCK = "BARRIER_WITHIN_STRATEGY_EXPANDER_LOCK_";
-
   @Inject private BarrierService barrierService;
   @Inject private PersistentLocker persistentLocker;
 
@@ -71,9 +69,8 @@ public class BarrierWithinStrategyExpander implements BarrierExpandObserver {
         // Nothing to do if there are no barrierExecutionInstances with this planId and strategySetupId.
         return;
       }
-      try (AcquiredLock<?> ignore =
-               persistentLocker.waitToAcquireLock(BARRIER_WITHIN_STRATEGY_EXPANDER_LOCK + planExecutionId,
-                   Duration.ofSeconds(20), Duration.ofSeconds(60))) {
+      try (AcquiredLock<?> ignore = persistentLocker.waitToAcquireLock(
+               BarrierService.BARRIER_UPDATE_LOCK + planExecutionId, Duration.ofSeconds(20), Duration.ofSeconds(60))) {
         /* This lock is necessary to avoid race conditions upon updating a BarrierExecutionInstance in the DB.
            For example: BarrierStep1 is inside strategy1 and BarrierStep2 is inside strategy2. Both barrier steps
            referencing the same barrier ID. If strategy1 and strategy2 are being spawn at the same time, we will have

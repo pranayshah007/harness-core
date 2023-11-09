@@ -15,6 +15,7 @@ public class FaktoryJob {
   private final String jobType;
   private final Object[] args;
   private final String queue;
+  private Integer retry;
 
   public FaktoryJob(Object payload) {
     this(null, null, payload);
@@ -30,6 +31,11 @@ public class FaktoryJob {
 
   public FaktoryJob(JobType jobType, JobQueue queue, Object payload) {
     this(jobType, queue, new Object[] {payload});
+  }
+
+  public FaktoryJob(JobType jobType, JobQueue queue, Object[] payload, JobRetryCount retry) {
+    this(jobType, queue, payload);
+    this.retry = retry == null ? 0 : retry.count;
   }
 
   public FaktoryJob(JobType jobType, JobQueue queue, Object[] args) {
@@ -52,6 +58,10 @@ public class FaktoryJob {
 
   public String getQueue() {
     return queue;
+  }
+
+  public Integer getRetry() {
+    return retry;
   }
 
   @Override

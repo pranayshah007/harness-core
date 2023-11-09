@@ -52,10 +52,10 @@ public class ErrorTrackingTemplateDataGenerator
       "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Saved Search Filter ${SAVED_SEARCH_FILTER_NAME}\"}},";
   public static final String SLACK_EVENT_DETAILS_BUTTON = "SLACK_EVENT_DETAILS_BUTTON";
   public static final String SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE =
-      "{\"type\": \"actions\",\"elements\": [{\"type\": \"button\",\"text\": {\"type\": \"plain_text\",\"text\": \"View Event Details\",\"emoji\": true},\"url\": ${ARC_SCREEN_URL}}]}";
+      "{\"type\": \"actions\",\"elements\": [{\"type\": \"button\",\"text\": {\"type\": \"plain_text\",\"text\": \"View Event Details\",\"emoji\": true},\"url\": \"${ARC_SCREEN_URL}\"}]}";
   public static final String EMAIL_EVENT_DETAILS_BUTTON = "EMAIL_EVENT_DETAILS_BUTTON";
   public static final String EMAIL_EVENT_DETAILS_BUTTON_VALUE =
-      "<button style=\"background-color: white;border-width: 1px;border-radius: 3px;border-color: #BABABA;padding: 8px;padding-left: 16px;padding-right: 16px;\"onclick=\"window.location.href='${ARC_SCREEN_URL}';\">View Event Details </button>";
+      "<a style=\"float:left;font-size: 13px;font-weight: bold;line-height: 16px;text-decoration: none;background-color: #EEEEEE;color: #333333;background-color: white;border: solid;border-width: 1px;border-radius: 3px;border-color: #BABABA;padding: 8px;padding-left: 16px;padding-right: 16px;\" href=\"${ARC_SCREEN_URL}\" class=\"button\">View Event Details</a>";
   public static final String EMAIL_LINK_BEGIN = "<a style=\"text-decoration: none; color: #0278D5;\" href=\"";
   public static final String EMAIL_LINK_MIDDLE = "\">";
   public static final String EMAIL_LINK_END = "</a>";

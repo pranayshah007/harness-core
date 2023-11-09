@@ -31,6 +31,7 @@ public interface ManifestStoreType {
   String AZURE_REPO = "AzureRepo";
   String CUSTOM_REMOTE = "CustomRemote";
   String HARNESS = "Harness";
+  String ARTIFACT_BUNDLE = "ArtifactBundle";
 
   static boolean isInGitSubset(String manifestType) {
     switch (manifestType) {

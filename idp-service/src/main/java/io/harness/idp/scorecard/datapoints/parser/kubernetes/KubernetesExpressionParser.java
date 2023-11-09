@@ -17,11 +17,11 @@ import io.harness.expression.common.ExpressionMode;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -30,23 +30,21 @@ public abstract class KubernetesExpressionParser implements DataPointParser {
   public static final String WORKLOAD_PREFIX = "workload";
 
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
-    Map<String, Object> dataPointResponse = new HashMap<>();
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
     if (!data.containsKey(DSL_RESPONSE) && data.containsKey(ERROR_MESSAGE_KEY)) {
-      dataPointResponse.put(DATA_POINT_VALUE_KEY, null);
-      dataPointResponse.put(ERROR_MESSAGE_KEY, data.get(ERROR_MESSAGE_KEY));
-      return dataPointResponse;
+      return constructDataPointInfo(dataFetchDTO, null, String.valueOf(data.get(ERROR_MESSAGE_KEY)));
     }
-    return parseKubernetesDataPoint(data, dataPoint);
+    return parseKubernetesDataPoint(data, dataFetchDTO);
   }
 
-  private Object parseKubernetesDataPoint(Map<String, Object> data, DataPointEntity dataPoint) {
-    Map<String, Object> dataPointResponse = new HashMap<>();
+  private Object parseKubernetesDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    DataPointEntity dataPoint = dataFetchDTO.getDataPoint();
+    String errorMessage = "";
+    String dataPointValue = null;
     String outcomeExpression = dataPoint.getOutcomeExpression();
     Map<String, List<Object>> clustersData = (Map<String, List<Object>>) data.get(DSL_RESPONSE);
-    dataPointResponse.put(ERROR_MESSAGE_KEY, "");
     if (clustersData.containsKey(ERROR_MESSAGE_KEY) && clustersData.get(ERROR_MESSAGE_KEY) != null) {
-      dataPointResponse.put(ERROR_MESSAGE_KEY, clustersData.get(ERROR_MESSAGE_KEY));
+      errorMessage = String.valueOf(clustersData.get(ERROR_MESSAGE_KEY));
     }
     Object compareValue = null;
 
@@ -70,19 +68,18 @@ public abstract class KubernetesExpressionParser implements DataPointParser {
           Object parsedValue = parseValue(value);
           if (parsedValue != null && compare(parsedValue, compareValue)) {
             compareValue = parsedValue;
-            dataPointResponse.put(DATA_POINT_VALUE_KEY, parsedValue);
-            dataPointResponse.put(ERROR_MESSAGE_KEY,
-                String.format("%s is %s in %s cluster", dataPoint.getIdentifier(), parsedValue, clusterName));
+            dataPointValue = parsedValue.toString();
+            errorMessage = String.format("%s is %s in %s cluster", dataPoint.getIdentifier(), parsedValue, clusterName);
           }
         } catch (Exception e) {
           log.warn("Datapoint expression evaluation failed for data point {}", dataPoint.getIdentifier(), e);
         }
       }
-      if (!dataPointResponse.containsKey(DATA_POINT_VALUE_KEY)) {
-        dataPointResponse.put(ERROR_MESSAGE_KEY, String.format("Missing Data for cluster: %s", clusterName));
+      if (dataPointValue == null) {
+        errorMessage = String.format("Missing Data for cluster: %s", clusterName);
       }
     }
-    return dataPointResponse;
+    return constructDataPointInfo(dataFetchDTO, dataPointValue, errorMessage);
   }
 
   abstract Object parseValue(Object value);

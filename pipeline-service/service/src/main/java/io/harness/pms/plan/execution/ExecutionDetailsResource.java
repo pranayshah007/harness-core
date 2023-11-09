@@ -62,6 +62,8 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
+import com.codahale.metrics.annotation.ResponseMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiModelProperty;
@@ -153,6 +155,8 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns all the Executions of pipelines for given filter")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<Page<PipelineExecutionSummaryDTO>>
   getListOfExecutions(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -221,6 +225,8 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns all the Executions Identifier of pipelines for given filter")
       })
+  @Timed
+  @ResponseMetered
   @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PipelineExecutionIdentifierSummaryDTO>>
   getListOfExecutionIdentifier(
@@ -332,6 +338,8 @@ public class ExecutionDetailsResource {
             description =
                 "Return the Pipeline Execution details for given PlanExecution Id without full graph if stageNodeId is null")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetailV2(
       @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
@@ -383,6 +391,8 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return Execution subGraph for a Given NodeExecution ID")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<NodeExecutionSubGraphResponse>
   getExecutionSubGraphForNodeExecution(
       @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
@@ -445,6 +455,8 @@ public class ExecutionDetailsResource {
             responseCode = "default", description = "Return the Pipeline Execution details for given PlanExecution Id")
       },
       deprecated = true)
+  @Timed
+  @ResponseMetered
   @Deprecated
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetail(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
@@ -566,6 +578,8 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
+  @Timed
+  @ResponseMetered
   public ResponseDTO<InputSetYamlWithTemplateDTO>
   getInputsetYamlV2(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                     @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,

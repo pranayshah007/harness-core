@@ -65,7 +65,6 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
-import static io.fabric8.utils.Files.getFileName;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -3386,7 +3385,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().ocPath(ocPath).build();
     List<FileData> renderedFiles = new ArrayList<>();
-    String templateFileName = getFileName(ocTemplatePath);
+    String templateFileName = new File(ocTemplatePath).getName();
     doReturn(renderedFiles)
         .when(openShiftDelegateService)
         .processTemplatization("manifest", ocPath, templateFileName, executionLogCallback, valuesList);

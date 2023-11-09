@@ -39,6 +39,7 @@ public class SetupVmRequest {
     @JsonProperty("volumes") List<Volume> volumes;
     @JsonProperty("log_config") LogConfig logConfig;
     @JsonProperty("ti_config") TIConfig tiConfig;
+    @JsonProperty("tty") boolean tty;
   }
 
   @Data

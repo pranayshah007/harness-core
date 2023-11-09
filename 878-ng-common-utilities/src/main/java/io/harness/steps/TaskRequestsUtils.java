@@ -47,7 +47,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -192,7 +191,7 @@ public class TaskRequestsUtils {
             .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
             .setSelectionTrackingLogEnabled(true);
 
-    if (Strings.isNotBlank(stageId)) {
+    if (isNotEmpty(stageId)) {
       requestBuilder.setStageId(stageId);
     }
 

@@ -22,4 +22,5 @@ public interface RancherConnectionHelperService {
   ConnectorValidationResult testRancherConnection(String rancherUrl, String bearerToken);
   List<String> listClusters(String rancherUrl, String bearerToken, Map<String, String> pageRequestParams);
   String generateKubeconfig(String rancherUrl, String bearerToken, String clusterName);
+  void deleteKubeconfigToken(String rancherUrl, String bearerToken, String tokenId);
 }

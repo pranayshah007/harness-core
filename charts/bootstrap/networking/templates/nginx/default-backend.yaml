@@ -12,7 +12,7 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.defaultbackend.replicaCount }}
   selector:
     matchLabels:
       app: default-backend

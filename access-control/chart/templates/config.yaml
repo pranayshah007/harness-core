@@ -15,12 +15,12 @@ data:
   LOGGING_LEVEL: '{{ .Values.config.LOGGING_LEVEL }}'
   EVENTS_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  EVENTS_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  EVENTS_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
-  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   RESOURCE_GROUP_ITERATOR_ENABLED: '{{ .Values.config.RESOURCE_GROUP_ITERATOR_ENABLED }}'
   RESOURCE_GROUP_ITERATOR_INTERVAL: '{{ .Values.config.RESOURCE_GROUP_ITERATOR_INTERVAL }}'
   USER_GROUP_ITERATOR_ENABLED: '{{ .Values.config.USER_GROUP_ITERATOR_ENABLED }}'

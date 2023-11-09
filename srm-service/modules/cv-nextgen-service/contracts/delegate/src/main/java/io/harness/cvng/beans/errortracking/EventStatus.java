@@ -6,4 +6,19 @@
  */
 package io.harness.cvng.beans.errortracking;
 
-public enum EventStatus { NEW_EVENTS, CRITICAL_EVENTS, RESURFACED_EVENTS }
+public enum EventStatus {
+  ANY_EVENTS("Any Events"),
+  NEW_EVENTS("New Events"),
+  CRITICAL_EVENTS("Critical Events"),
+  RESURFACED_EVENTS("Resurfaced Events");
+
+  private final String displayName;
+
+  EventStatus(String displayName) {
+    this.displayName = displayName;
+  }
+
+  public String getDisplayName() {
+    return this.displayName;
+  }
+}

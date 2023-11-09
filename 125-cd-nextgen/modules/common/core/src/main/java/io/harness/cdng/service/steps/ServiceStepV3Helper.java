@@ -8,6 +8,7 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
+import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.ENV_GIT_BRANCH_EXPRESSION;
 import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.FREEZE_SWEEPING_OUTPUT;
 import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.PIPELINE_EXECUTION_EXPRESSION;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -17,6 +18,8 @@ import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -42,11 +45,13 @@ import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.FrozenExecutionService;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
@@ -123,6 +128,7 @@ public class ServiceStepV3Helper {
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject NgExpressionHelper ngExpressionHelper;
   @Inject private FrozenExecutionService frozenExecutionService;
+  @Inject private EnvironmentService environmentService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   public void processServiceAndEnvironmentVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
@@ -515,6 +521,16 @@ public class ServiceStepV3Helper {
       }
     }
     return null;
+  }
+
+  public Optional<Environment> getEnvironmentWithYaml(
+      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String envGitBranch) {
+    if (isBlank(envGitBranch) || ENV_GIT_BRANCH_EXPRESSION.equals(envGitBranch)) {
+      envGitBranch = null;
+    }
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(envGitBranch)) {
+      return environmentService.get(accountId, orgIdentifier, projectIdentifier, envRef, false);
+    }
   }
 
   @Data

@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
+import io.harness.pms.merger.helpers.FQNHelper;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.YamlMapGenerator;
 import io.harness.pms.yaml.YamlSchemaFieldConstants;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -122,10 +125,16 @@ public class YamlConfig {
     }
     if (JsonFieldUtils.isArrayNodeField(jsonNode, currentFieldName)) {
       ArrayNode elements = (ArrayNode) jsonNode.get(currentFieldName);
-      for (int i = 0; i < elements.size(); i++) {
-        String resultantType = getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, elements.get(i));
-        if (isNotEmpty(resultantType)) {
-          return resultantType;
+      for (JsonNode element : elements) {
+        String uuidKey = FQNHelper.getUuidKey(element);
+        List<FQNNode> fqnNodeList = fqn.getFqnList();
+        // Traverse inside the array element only if its uuid field matches with the corresponding uuidValue in fqn.
+        if (isNotEmpty(uuidKey) && fqnNodeList.size() > currentFqnIndex + 1
+            && element.get(uuidKey).asText().equals(fqnNodeList.get(currentFqnIndex + 1).getUuidValue())) {
+          String resultantType = getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, element);
+          if (isNotEmpty(resultantType)) {
+            return resultantType;
+          }
         }
       }
     }

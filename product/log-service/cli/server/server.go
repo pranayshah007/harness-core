@@ -12,6 +12,9 @@ import (
 	"os"
 	"os/signal"
 
+	"cloud.google.com/go/profiler"
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
+
 	"github.com/harness/harness-core/commons/go/lib/secret"
 	"github.com/harness/harness-core/product/platform/client"
 
@@ -58,6 +61,16 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 		logrus.WithError(err).
 			Errorln("cannot load the service configuration")
 		return err
+	}
+
+	// enabling Profiler for service
+	if config.Profiler.EnableProfiler {
+		err := StartProfiler(&config)
+		if err != nil {
+			logrus.WithError(err).
+				Errorln("cannot load the gcp profiler")
+			return err
+		}
 	}
 
 	// Parse the entire config to resolve any secrets (if required)
@@ -164,11 +177,18 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
+	var gcsClient gcputils.GCS
+	if config.S3.CredentialsPath != "" {
+		gcsClient, err = gcputils.NewGCSClient(context.Background(), nil, nil, gcputils.WithGCSCredentialsFile(config.S3.CredentialsPath))
+		if err != nil {
+			return err
+		}
+	}
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient),
+		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient, gcsClient),
 	}
 
 	// trap the os signal to gracefully shutdown the
@@ -238,4 +258,18 @@ func initLogging(c config.Config) {
 	if c.Trace {
 		l.SetLevel(logrus.TraceLevel)
 	}
+}
+
+func StartProfiler(config *config.Config) error {
+	hostName, err := os.Hostname()
+	if err != nil {
+		logrus.WithError(err).
+			Warnln("Could not find hostName")
+	}
+	cfg := profiler.Config{
+		Service:        fmt.Sprintf("%s.%s", config.Profiler.ServiceName, config.Profiler.Environment),
+		ServiceVersion: hostName,
+	}
+	logrus.Infoln("Started profiler")
+	return profiler.Start(cfg)
 }

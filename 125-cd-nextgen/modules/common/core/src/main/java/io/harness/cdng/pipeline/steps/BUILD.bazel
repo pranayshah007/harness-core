@@ -19,10 +19,12 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage/v1:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/plancreators:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps/output:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",

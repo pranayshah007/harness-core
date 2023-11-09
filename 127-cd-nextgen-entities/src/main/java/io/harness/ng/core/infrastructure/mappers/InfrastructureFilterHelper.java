@@ -8,8 +8,10 @@
 package io.harness.ng.core.infrastructure.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
@@ -36,18 +38,23 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class InfrastructureFilterHelper {
   public Criteria createListCriteria(String accountId, String orgIdentifier, String projectIdentifier,
-      String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType) {
-    String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      String envIdentifier, String searchTerm, List<String> infraIdentifiers, ServiceDefinitionType deploymentType,
+      String repoName, boolean includeAllAccessibleAtScope) {
     Criteria criteria;
-    if (envRefSplit == null || envRefSplit.length == 1) {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-      criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
+    if (includeAllAccessibleAtScope) {
+      criteria = getCriteriaToReturnAllAccessibleEnvironmentsAtScope(accountId, orgIdentifier, projectIdentifier);
     } else {
-      IdentifierRef envIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(envIdentifier, accountId, orgIdentifier, projectIdentifier);
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
-          envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
-      criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifierRef.getIdentifier());
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+    }
+    if (envIdentifier != null) {
+      String[] envRefSplit = StringUtils.split(envIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (envRefSplit == null || envRefSplit.length == 1) {
+        criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifier);
+      } else {
+        IdentifierRef envIdentifierRef =
+            IdentifierRefHelper.getIdentifierRef(envIdentifier, accountId, orgIdentifier, projectIdentifier);
+        criteria.and(InfrastructureEntityKeys.envIdentifier).is(envIdentifierRef.getIdentifier());
+      }
     }
 
     if (EmptyPredicate.isNotEmpty(searchTerm)) {
@@ -63,6 +70,9 @@ public class InfrastructureFilterHelper {
     }
     if (deploymentType != null) {
       criteria.and(InfrastructureEntityKeys.deploymentType).is(deploymentType);
+    }
+    if (isNotEmpty(repoName)) {
+      criteria.and(InfrastructureEntityKeys.repo).is(repoName);
     }
     return criteria;
   }
@@ -83,5 +93,33 @@ public class InfrastructureFilterHelper {
     update.set(InfrastructureEntityKeys.deploymentType, infrastructureEntity.getDeploymentType());
     update.set(InfrastructureEntityKeys.obsolete, infrastructureEntity.getObsolete());
     return update;
+  }
+
+  private Criteria getCriteriaToReturnAllAccessibleEnvironmentsAtScope(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    Criteria accountCriteria = Criteria.where(InfrastructureEntityKeys.orgIdentifier)
+                                   .is(null)
+                                   .and(InfrastructureEntityKeys.projectIdentifier)
+                                   .is(null)
+                                   .and(InfrastructureEntityKeys.accountId)
+                                   .is(accountId);
+    Criteria orgCriteria = Criteria.where(InfrastructureEntityKeys.orgIdentifier)
+                               .is(orgIdentifier)
+                               .and(InfrastructureEntityKeys.projectIdentifier)
+                               .is(null);
+    Criteria projectCriteria = Criteria.where(InfrastructureEntityKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(InfrastructureEntityKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      criteria.orOperator(orgCriteria, accountCriteria);
+    } else {
+      criteria.orOperator(accountCriteria);
+    }
+    return criteria;
   }
 }

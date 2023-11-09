@@ -10,7 +10,10 @@ package io.harness.yaml.schema.inputs;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlSchemaFieldConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.schema.inputs.beans.InputDetails;
@@ -96,14 +99,30 @@ public class YamlInputUtils {
   private InputDetails buildInputJsonNode(JsonNode inputNode, String inputName) {
     InputDetailsBuilder builder =
         InputDetails.builder().name(inputName).type(SchemaInputType.getYamlInputType(inputNode.get("type").asText()));
-    if (inputNode.get("description") != null) {
-      builder.description(inputNode.get("description").asText());
+    if (inputNode.get(YAMLFieldNameConstants.DESC) != null) {
+      builder.description(inputNode.get(YAMLFieldNameConstants.DESC).asText());
     }
-    if (inputNode.get("required") != null) {
-      builder.required(inputNode.get("required").asBoolean());
+    if (inputNode.get(YAMLFieldNameConstants.REQUIRED) != null) {
+      builder.required(inputNode.get(YAMLFieldNameConstants.REQUIRED).asBoolean());
     }
-    if (!JsonFieldUtils.isPresent(inputNode, "default")) {
-      builder.defaultValue(inputNode.get("default"));
+    if (!JsonFieldUtils.isPresent(inputNode, YAMLFieldNameConstants.DEFAULT)) {
+      builder.defaultValue(inputNode.get(YAMLFieldNameConstants.DEFAULT));
+    }
+    if (inputNode.has(YAMLFieldNameConstants.EXECUTION)) {
+      builder.execution(inputNode.get(YAMLFieldNameConstants.EXECUTION).asBoolean());
+    }
+    JsonNode validatorNode = inputNode.get(YAMLFieldNameConstants.VALIDATOR);
+    if (validatorNode != null) {
+      if (validatorNode.has(YAMLFieldNameConstants.ALLOWED)) {
+        if (!validatorNode.get(YAMLFieldNameConstants.ALLOWED).isArray()) {
+          throw new InvalidRequestException(
+              String.format("Provided value for %s field should be of type List", YAMLFieldNameConstants.ALLOWED));
+        }
+        builder.allowedValues(
+            (List<Object>) JsonNodeUtils.getValueFromJsonNode(validatorNode.get(YAMLFieldNameConstants.ALLOWED)));
+      } else if (validatorNode.has(YAMLFieldNameConstants.REGEX)) {
+        builder.regex(validatorNode.get(YAMLFieldNameConstants.REGEX).asText());
+      }
     }
     return builder.build();
   }
