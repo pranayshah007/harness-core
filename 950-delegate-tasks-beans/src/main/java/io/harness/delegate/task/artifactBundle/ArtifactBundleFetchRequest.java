@@ -65,7 +65,7 @@ public class ArtifactBundleFetchRequest implements ActivityAccess, TaskParameter
 
   public void populateRequestCapabilities(
       List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
-    if (tasArtifactConfig != null || (tasArtifactConfig.getArtifactType() == TasArtifactType.CONTAINER)) {
+    if (tasArtifactConfig == null || (tasArtifactConfig.getArtifactType() == TasArtifactType.CONTAINER)) {
       return;
     }
     TasPackageArtifactConfig azurePackageArtifactConfig = (TasPackageArtifactConfig) tasArtifactConfig;
