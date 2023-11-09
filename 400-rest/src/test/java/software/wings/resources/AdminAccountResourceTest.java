@@ -8,13 +8,20 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.rule.OwnerRule.*;
+import static io.harness.rule.OwnerRule.ASHUTOSH_TRIPATHI;
+import static io.harness.rule.OwnerRule.HANTANG;
+import static io.harness.rule.OwnerRule.UTSAV;
+import static io.harness.rule.OwnerRule.VIKAS;
+import static io.harness.rule.OwnerRule.ZHUO;
 
 import static software.wings.beans.Account.Builder.anAccount;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
