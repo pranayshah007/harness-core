@@ -471,33 +471,36 @@ public class StepUtils {
   }
 
   public static void appendDelegateSelectorsToSpecParameters(StepSpecType stepSpecType, PlanCreationContext ctx) {
+    if (stepSpecType instanceof WithDelegateSelector) {
+      WithDelegateSelector withDelegateSelector = (WithDelegateSelector) stepSpecType;
+      appendDelegateSelectors(withDelegateSelector, ctx);
+    }
+  }
+
+  public static void appendDelegateSelectors(WithDelegateSelector withDelegateSelector, PlanCreationContext ctx) {
     try {
-      if (stepSpecType instanceof WithDelegateSelector) {
-        WithDelegateSelector withDelegateSelector = (WithDelegateSelector) stepSpecType;
-        // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
+      // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
+        return;
+      }
 
-        ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
-        if (hasDelegateSelectors(delegateSelectors)) {
-          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
-          return;
-        }
+      delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
+        return;
+      }
 
-        delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
-        if (hasDelegateSelectors(delegateSelectors)) {
-          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
-          return;
-        }
+      delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
+        return;
+      }
 
-        delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
-        if (hasDelegateSelectors(delegateSelectors)) {
-          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
-          return;
-        }
-
-        delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
-        if (hasDelegateSelectors(delegateSelectors)) {
-          setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
-        }
+      delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
+      if (hasDelegateSelectors(delegateSelectors)) {
+        setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
       }
     } catch (Exception e) {
       log.error("Error while appending delegate selector to spec params ", e);

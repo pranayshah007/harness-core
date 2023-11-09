@@ -51,4 +51,11 @@ public class GitXUtils {
     }
     return null;
   }
+
+  public String getBranchIfNotEmpty(String branch) {
+    if (EmptyPredicate.isEmpty(branch)) {
+      return null;
+    }
+    return branch;
+  }
 }

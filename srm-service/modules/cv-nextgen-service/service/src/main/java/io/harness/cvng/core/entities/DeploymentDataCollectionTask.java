@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.entities;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.time.Duration;
@@ -14,12 +16,18 @@ import java.time.Instant;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class DeploymentDataCollectionTask extends DataCollectionTask {
   private static final List<Duration> RETRY_WAIT_DURATIONS = Lists.newArrayList(Duration.ofSeconds(5),
       Duration.ofSeconds(10), Duration.ofSeconds(20), Duration.ofSeconds(30), Duration.ofMinutes(1));
   @VisibleForTesting public static int MAX_RETRY_COUNT = 5;
+
+  @Override
+  public Duration getValidAfterDuration() {
+    return DATA_COLLECTION_DELAY;
+  }
 
   @Override
   public boolean shouldCreateNextTask() {

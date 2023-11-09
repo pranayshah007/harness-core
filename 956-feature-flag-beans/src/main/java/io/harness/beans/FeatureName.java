@@ -7,6 +7,7 @@
 
 package io.harness.beans;
 
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -65,12 +66,9 @@ public enum FeatureName {
   CCM_CURRENCY_PREFERENCES("Currency Preferences", HarnessTeam.CE),
   CCM_DEV_TEST("", HarnessTeam.CE),
   CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI("Enable Azure Cloud Asset Governance UI", HarnessTeam.CE),
-  CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
   CCM_GOVERNANCE_GENAI_ENABLE("Genai feature for cloud asset governance", HarnessTeam.CE),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
   CCM_LABELS_FLATTENING("Use flattened label's columns in BigQuery", HarnessTeam.CE),
-  CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
-  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
   CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE),
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
@@ -317,6 +315,9 @@ public enum FeatureName {
       "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
   CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
       "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
+
+  CV_UI_DISPLAY_FAIL_IF_ANY_CUSTOM_METRIC_IN_NO_ANALYSIS(
+      "Displays the failIfAnyCustomMetricInNoAnalysis checkbox in verify step UI", HarnessTeam.CDC),
   CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING(
       "When enabled, CV log clustering task type will be CV_LOG_CLUSTER, else it will be LOG_CLUSTER", HarnessTeam.CV),
   CV_DEMO,
@@ -393,7 +394,6 @@ public enum FeatureName {
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
-  FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   FFM_4737_JIRA_INTEGRATION("Enable the Jira Integration feature", HarnessTeam.CF),
   FFM_5256_FF_MFE_Environment_Listing("Enable Feature Flag MFE Environment listing page", HarnessTeam.CF),
   FFM_5939_MFE_TARGET_GROUPS_LISTING("Enable Feature Flag MFE Target Groups listing page", HarnessTeam.CF),
@@ -451,6 +451,8 @@ public enum FeatureName {
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
       "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
   IDP_ENABLE_SCORECARDS("This FF is for enabling the scorecards feature in IDP", HarnessTeam.IDP),
+
+  IDP_ENABLE_STAGE("This FF is for enabling the idp-stage in pipeline studio", HarnessTeam.IDP),
 
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   INLINE_SSH_COMMAND,
@@ -652,9 +654,6 @@ public enum FeatureName {
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
   SPG_CG_K8S_SECRET_MANAGER_CAPABILITIES("Enable to enforce secret manager capabilities on k8s tasks", HarnessTeam.SPG),
-  SPG_CG_WFE_PROJECTION_FIELDS(
-      "Enable to optimize workflow execution queries to retrieve only required fields using projection",
-      HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
       "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
@@ -757,7 +756,6 @@ public enum FeatureName {
   STOP_SHOWING_RUNNING_EXECUTIONS,
   STO_AI_ENHANCED_REMEDIATIONS(
       "Enable STO to enhance security issues with remediation information using generative AI", HarnessTeam.STO),
-  STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),
   STO_ALL_ISSUES_PAGE("Enable all issues page for STO", HarnessTeam.STO),
   STO_DROPDOWN_FILTERS("Enable dropdown filters for STO", HarnessTeam.STO),
   STO_EXEMPTION_DETAILS("Enable exemption details for STO", HarnessTeam.STO),
@@ -936,13 +934,19 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_REMOVE_RESUME_EVENT_FOR_ASYNC_AND_ASYNCCHAIN_MODE(
       "Remove sdk resume event for async and async chain modes to avoid race condition", PIPELINE),
+  CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE(
+      "Follow delegate selector precedence in service/infra step", CDC),
   CDS_K8S_TRAFFIC_ROUTING_NG(
       "Providing Traffic Routing functionality for K8s - BG, Canary and TrafficRouting steps", HarnessTeam.CDP),
   CDS_METHOD_INVOCATION_NEW_FLOW_EXPRESSION_ENGINE(
       "Supports edge cases of method invocation in expression engine", PIPELINE),
 
   CDS_USE_AMBIANCE_IN_EXPRESSION_ENGINE(
-      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE);
+      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE),
+
+  CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC),
+  CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG(
+      "Allows users to apply manifests from sources that are not related to the service", HarnessTeam.CDP);
 
   // keep-sorted end
 

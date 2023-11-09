@@ -9,6 +9,8 @@ package io.harness.cvng.cdng.resources;
 
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
@@ -64,6 +66,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.cvng.verificationjob.utils.VerificationJobInstanceServiceInstanceUtils;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
@@ -76,7 +79,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -89,6 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.ws.rs.BeanParam;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -103,6 +106,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
+  @Inject private AccessControlClient accessControlClient;
 
   @Override
   public List<String> getTransactionGroupsForVerifyStepExecutionId(VerifyStepPathParams verifyStepPathParams) {
@@ -125,11 +129,12 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                    .build())
         .collect(Collectors.toList());
   }
-
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Override
-  public boolean abortVerifyStep(VerifyStepPathParams verifyStepPathParams, VerificationAbortDTO verificationAbortDTO) {
+  public boolean abortVerifyStep(
+      @BeanParam VerifyStepPathParams verifyStepPathParams, VerificationAbortDTO verificationAbortDTO) {
     return verificationJobInstanceService.abort(
-        Arrays.asList(verifyStepPathParams.getVerifyStepExecutionId()), verificationAbortDTO);
+        Collections.singletonList(verifyStepPathParams.getVerifyStepExecutionId()), verificationAbortDTO);
   }
 
   private void sendTelemetryEvent(String verifyStepResult, String projectId, String orgId) {

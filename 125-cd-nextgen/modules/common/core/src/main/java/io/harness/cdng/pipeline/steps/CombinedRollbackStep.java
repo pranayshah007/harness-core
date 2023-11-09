@@ -8,6 +8,7 @@
 package io.harness.cdng.pipeline.steps;
 
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
+import io.harness.cdng.pipeline.steps.output.CombinedRollbackSweepingOutput;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;

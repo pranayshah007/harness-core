@@ -8,6 +8,7 @@
 package io.harness.repositories;
 
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -38,5 +39,12 @@ public class SBOMComponentRepoCustomImpl implements SBOMComponentRepoCustom {
   @Override
   public List<NormalizedSBOMComponentEntity> findAllByQuery(Query query) {
     return mongoTemplate.find(query, NormalizedSBOMComponentEntity.class);
+  }
+
+  @Override
+  public List<String> findDistinctOrchestrationIds(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(
+        query, NormalizedSBOMEntityKeys.orchestrationId, NormalizedSBOMComponentEntity.class, String.class);
   }
 }

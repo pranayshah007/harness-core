@@ -38,7 +38,9 @@ import io.harness.steps.approval.step.custom.beans.CustomApprovalInstanceDetails
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
+import io.harness.steps.approval.step.harness.beans.AutoApprovalDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalInstanceDetailsDTO;
+import io.harness.steps.approval.step.harness.beans.ScheduledDeadlineDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalInstanceDetailsDTO;
@@ -157,6 +159,11 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
     assertThat(harnessApprovalInstanceDetailsDTO.getApprovalMessage()).isEqualTo(HARNESS_APPROVAL_MESSAGE);
     assertThat(harnessApprovalInstanceDetailsDTO.isAutoRejectEnabled()).isFalse();
     assertThat(harnessApprovalInstanceDetailsDTO.isIncludePipelineExecutionHistory()).isTrue();
+    assertThat(harnessApprovalInstanceDetailsDTO.getAutoApprovalParams()).isNotNull();
+    assertThat(harnessApprovalInstanceDetailsDTO.getAutoApprovalParams().getScheduledDeadline().getTime())
+        .isEqualTo("2023-05-05 04:24 am");
+    assertThat(harnessApprovalInstanceDetailsDTO.getAutoApprovalParams().getScheduledDeadline().getTimeZone())
+        .isEqualTo("Asia/Kolkata");
   }
 
   @Test
@@ -340,12 +347,18 @@ public class ApprovalInstanceResponseMapperTest extends CategoryTest {
         approvalInstance = customApprovalInstance;
         break;
       case HARNESS_APPROVAL:
-        HarnessApprovalInstance harnessApprovalInstance = HarnessApprovalInstance.builder()
-                                                              .approvalMessage(HARNESS_APPROVAL_MESSAGE)
-                                                              .includePipelineExecutionHistory(true)
-                                                              .isAutoRejectEnabled(false)
-                                                              .approvers(ApproversDTO.builder().build())
-                                                              .build();
+        HarnessApprovalInstance harnessApprovalInstance =
+            HarnessApprovalInstance.builder()
+                .approvalMessage(HARNESS_APPROVAL_MESSAGE)
+                .includePipelineExecutionHistory(true)
+                .isAutoRejectEnabled(false)
+                .approvers(ApproversDTO.builder().build())
+                .autoApproval(
+                    AutoApprovalDTO.builder()
+                        .scheduledDeadline(
+                            ScheduledDeadlineDTO.builder().time("2023-05-05 04:24 am").timeZone("Asia/Kolkata").build())
+                        .build())
+                .build();
         harnessApprovalInstance.setId(INSTANCE_ID);
         harnessApprovalInstance.setType(ApprovalType.HARNESS_APPROVAL);
         approvalInstance = harnessApprovalInstance;

@@ -36,7 +36,6 @@ import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest.EcsTa
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;

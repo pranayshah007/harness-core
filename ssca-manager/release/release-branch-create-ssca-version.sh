@@ -25,3 +25,16 @@ if  [[ "$response" -ne 201 ]] ; then
 else
   echo "Successfully created version $FIX_SSCA_VERSION in $PROJ"
 fi
+
+# make sure fix version is available
+FIX_SSCA_VERSION_ID=$(curl -X GET -H "Content-Type: application/json" \
+      https://harness.atlassian.net/rest/api/2/project/SSCA/versions \
+      --user $JIRA_USERNAME:$JIRA_PASSWORD \
+      | jq -c '.[] | select( .name == "'$FIX_SSCA_VERSION'" )' | jq '.id' | tr -d '"')
+
+if [[ -z "$FIX_SSCA_VERSION_ID" ]]; then
+  echo "fix version not found - aborting script"
+  exit -1
+else
+  echo "FIX_SSCA_VERSION_ID=$FIX_SSCA_VERSION_ID"
+fi

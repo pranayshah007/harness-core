@@ -11,6 +11,7 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
@@ -33,6 +34,7 @@ public class GitFetchFilesTaskHelper {
   public void printFileNamesInExecutionLogs(
       LogCallback executionLogCallback, List<GitFile> files, boolean closeLogStream) {
     if (EmptyPredicate.isEmpty(files)) {
+      executionLogCallback.saveExecutionLog(color("Weren't able to fetch any files", Yellow, Bold), INFO);
       return;
     }
 

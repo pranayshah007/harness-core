@@ -17,6 +17,7 @@ data:
   MONGO_INDEX_MANAGER_MODE: AUTO
   NG_MANAGER_BASE_URL: http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090
   DEPLOY_MODE: KUBERNETES_ONPREM
+  MEMORY: {{ .Values.java.memory | quote }}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   S3_BUCKET: {{ .Values.s3.sbomBucketName }}
   {{- if .Values.s3.endpoint }}

@@ -24,7 +24,6 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,12 +40,6 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
 
-    if (simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType() != null
-        && serviceLevelObjectiveV2DTO.getTags() == null) {
-      Map<String, String> tags = new HashMap<>();
-      tags.put("serviceLevelIndicatorType", simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType().toString());
-      serviceLevelObjectiveV2DTO.setTags(tags);
-    }
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
                               .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
     long currentTime = System.currentTimeMillis();
@@ -64,7 +57,6 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .target(sloTarget)
         .sloTargetPercentage(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage())
         .enabled(isEnabled)
-        .serviceLevelIndicatorType(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
         .serviceLevelIndicators(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
                                     .stream()
                                     .map(ServiceLevelIndicatorDTO::getIdentifier)
@@ -99,7 +91,6 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .spec(SimpleServiceLevelObjectiveSpec.builder()
                   .monitoredServiceRef(serviceLevelObjective.getMonitoredServiceIdentifier())
                   .healthSourceRef(serviceLevelObjective.getHealthSourceIdentifier())
-                  .serviceLevelIndicatorType(serviceLevelObjective.getServiceLevelIndicatorType())
                   .serviceLevelIndicators(serviceLevelIndicatorService.get(
                       projectParams, serviceLevelObjective.getServiceLevelIndicators()))
                   .build())

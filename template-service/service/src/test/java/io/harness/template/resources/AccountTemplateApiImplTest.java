@@ -32,7 +32,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDC)
 public class AccountTemplateApiImplTest extends CategoryTest {
   @InjectMocks AccountTemplateApiImpl accountTemplateApi;
-  @Mock TemplateResourceApiUtils templateResourceApiUtils;
+  @Mock TemplateResourceApiHelper templateResourceApiHelper;
   private final String ACCOUNT_ID = "account_id";
   private final String TEMPLATE_IDENTIFIER = "template1";
   private final String TEMPLATE_VERSION_LABEL = "version1";

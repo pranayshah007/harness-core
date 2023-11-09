@@ -2455,12 +2455,12 @@ public class K8sTaskHelperBase {
       String manifestFilesDirectory, LogCallback executionLogCallback, long timeoutInMillis, String accountId)
       throws Exception {
     return fetchManifestFilesAndWriteToDirectory(
-        manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis, accountId, true);
+        manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis, accountId, true, false);
   }
 
   public boolean fetchManifestFilesAndWriteToDirectory(ManifestDelegateConfig manifestDelegateConfig,
       String manifestFilesDirectory, LogCallback executionLogCallback, long timeoutInMillis, String accountId,
-      boolean denoteOverallSuccess) throws Exception {
+      boolean denoteOverallSuccess, boolean mayHaveMultipleFolders) throws Exception {
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
       case HARNESS:
@@ -2479,8 +2479,8 @@ public class K8sTaskHelperBase {
                 LogColor.White, LogWeight.Bold));
           }
         }
-        return downloadManifestFilesFromGit(
-            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId, denoteOverallSuccess);
+        return downloadManifestFilesFromGit(storeDelegateConfig, manifestFilesDirectory, executionLogCallback,
+            accountId, denoteOverallSuccess, mayHaveMultipleFolders);
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
@@ -2547,7 +2547,8 @@ public class K8sTaskHelperBase {
   }
 
   private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
-      LogCallback executionLogCallback, String accountId, Boolean denoteOverallSuccess) throws Exception {
+      LogCallback executionLogCallback, String accountId, Boolean denoteOverallSuccess, boolean mayHaveMultipleFolders)
+      throws Exception {
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
       throw new InvalidArgumentsException(Pair.of("storeDelegateConfig", "Must be instance of GitStoreDelegateConfig"));
     }
@@ -2571,15 +2572,16 @@ public class K8sTaskHelperBase {
             GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
             gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
 
-        scmFetchFilesHelper.downloadFilesUsingScm(manifestFilesDirectory, gitStoreDelegateConfig, executionLogCallback);
+        scmFetchFilesHelper.downloadFilesUsingScm(
+            manifestFilesDirectory, gitStoreDelegateConfig, executionLogCallback, mayHaveMultipleFolders);
       } else {
         GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
             gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
-        ngGitService.downloadFiles(
-            gitStoreDelegateConfig, manifestFilesDirectory, accountId, sshSessionConfig, gitConfigDTO);
+        ngGitService.downloadFiles(gitStoreDelegateConfig, manifestFilesDirectory, accountId, sshSessionConfig,
+            gitConfigDTO, mayHaveMultipleFolders);
       }
 
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));

@@ -19,8 +19,10 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ImagePullSecretFunctor implements SdkFunctor {
   public static final String IMAGE_PULL_SECRET = "imagePullSecret";
 
@@ -32,21 +34,26 @@ public class ImagePullSecretFunctor implements SdkFunctor {
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
-    String artifactIdentifier = args[0];
-    ArtifactsOutcome artifactsOutcome = fetchArtifactsOutcome(ambiance);
-    if (artifactIdentifier.equals(PRIMARY_ARTIFACT)) {
-      if (artifactsOutcome == null || artifactsOutcome.getPrimary() == null) {
+    try {
+      String artifactIdentifier = args[0];
+      ArtifactsOutcome artifactsOutcome = fetchArtifactsOutcome(ambiance);
+      if (artifactIdentifier.equals(PRIMARY_ARTIFACT)) {
+        if (artifactsOutcome == null || artifactsOutcome.getPrimary() == null) {
+          return null;
+        }
+        return imagePullSecretUtils.getImagePullSecret(artifactsOutcome.getPrimary(), ambiance);
+      } else if (artifactIdentifier.equals(SIDECAR_ARTIFACTS)) {
+        Map<String, Object> sidecarsImagePullSecrets = new HashMap<>();
+        artifactsOutcome.getSidecars().forEach(
+            (k, v) -> { sidecarsImagePullSecrets.put(k, imagePullSecretUtils.getImagePullSecret(v, ambiance)); });
+        return sidecarsImagePullSecrets;
+      } else {
         return null;
       }
-      return imagePullSecretUtils.getImagePullSecret(artifactsOutcome.getPrimary(), ambiance);
-    } else if (artifactIdentifier.equals(SIDECAR_ARTIFACTS)) {
-      Map<String, Object> sidecarsImagePullSecrets = new HashMap<>();
-      artifactsOutcome.getSidecars().forEach(
-          (k, v) -> { sidecarsImagePullSecrets.put(k, imagePullSecretUtils.getImagePullSecret(v, ambiance)); });
-      return sidecarsImagePullSecrets;
-    } else {
-      return null;
+    } catch (Exception ex) {
+      log.error(String.format("Exception while invoking image pull secret functor with args %s", args), ex);
     }
+    return null;
   }
 
   private ArtifactsOutcome fetchArtifactsOutcome(Ambiance ambiance) {

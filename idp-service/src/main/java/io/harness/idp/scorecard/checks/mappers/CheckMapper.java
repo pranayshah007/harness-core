@@ -10,6 +10,7 @@ package io.harness.idp.scorecard.checks.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
 import io.harness.spec.server.idp.v1.model.CheckResponse;
 import io.harness.spec.server.idp.v1.model.Rule;
@@ -22,7 +23,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class CheckMapper {
-  public CheckListItem toDTO(CheckEntity checkEntity) {
+  public CheckListItem toDTO(CheckEntity checkEntity, CheckStatusEntity checkStatusEntity) {
     CheckListItem checks = new CheckListItem();
     checks.setName(checkEntity.getName());
     checks.setIdentifier(checkEntity.getIdentifier());
@@ -32,6 +33,11 @@ public class CheckMapper {
     checks.setCustom(checkEntity.isCustom());
     checks.setDataSource(
         checkEntity.getRules().stream().map(Rule::getDataSourceIdentifier).distinct().collect(Collectors.toList()));
+    if (checkStatusEntity != null) {
+      checks.setPercentage((double) (checkStatusEntity.getTotal() > 0
+              ? Math.round(checkStatusEntity.getPassCount() * 100.0 / checkStatusEntity.getTotal())
+              : 0));
+    }
     return checks;
   }
 

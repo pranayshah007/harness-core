@@ -153,7 +153,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     logCallback.saveExecutionLog(color("\nStarting Kubernetes Rolling Deployment", LogColor.White, LogWeight.Bold));
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sRollingDeployRequest.getManifestDelegateConfig(),
-        manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId(), false);
+        manifestFilesDirectory, logCallback, steadyStateTimeoutInMillis, k8sRollingDeployRequest.getAccountId(), false,
+        false);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
         k8sDelegateTaskParams.getWorkingDirectory(), logCallback);

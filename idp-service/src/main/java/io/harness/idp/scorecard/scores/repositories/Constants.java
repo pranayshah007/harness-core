@@ -8,7 +8,14 @@ package io.harness.idp.scorecard.scores.repositories;
 
 public class Constants {
   public static final String ID_KEY = "_id";
+  public static final String SCORECARD_IDENTIFIER_KEY = "scorecardIdentifier";
   public static final String SCORE_ENTITY_KEY = "scoreEntity";
-
+  public static final String SCORE_KEY = "score";
+  public static final String SCORES_GREATER_THAN_75_KEY = "scoresGreaterThan75";
+  public static final String COUNT_KEY = "count";
+  public static final String PERCENTAGE_KEY = "percentage";
+  public static final String CHECK_STATUS_KEY = "checkStatus";
+  public static final String CHECK_KEY = "check";
+  public static final String STATUS_KEY = "status";
   public static final String SCORE_COLLECTION_NAME = "scores";
 }

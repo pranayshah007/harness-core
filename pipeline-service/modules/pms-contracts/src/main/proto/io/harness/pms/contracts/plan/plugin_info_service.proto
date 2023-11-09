@@ -74,6 +74,7 @@ message PluginDetails {
   repeated SecretVariable secretVariable = 8;
   repeated ConnectorDetails connectors_for_step = 9;
   google.protobuf.BoolValue isHarnessManaged = 10;
+  map<string, string> envVariablesWithPlainTextSecret = 11;
 }
 
 message PluginContainerResources {

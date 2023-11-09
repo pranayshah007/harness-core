@@ -33,6 +33,7 @@ public class HarnessApprovalInstanceDetailsDTO implements ApprovalInstanceDetail
   boolean includePipelineExecutionHistory;
   @NotNull ApproversDTO approvers;
   List<HarnessApprovalActivity> approvalActivities;
+  AutoApprovalDTO autoApprovalParams;
   List<ApproverInputInfoDTO> approverInputs;
   List<ApprovalUserGroupDTO> validatedApprovalUserGroups;
   boolean isAutoRejectEnabled;

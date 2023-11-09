@@ -76,11 +76,14 @@ public class RoleAssignmentChangeConsumer implements AccessControlChangeConsumer
   @Override
   public boolean consumeDeleteEvent(String id, RoleAssignmentChangeEventData roleAssignmentChangeEventData) {
     long startTime = System.currentTimeMillis();
-    long numberOfACLsDeleted = getNumberOfACLsDeleted(roleAssignmentChangeEventData.getDeletedRoleAssignment());
+    RoleAssignment deletedRoleAssignment = roleAssignmentChangeEventData.getDeletedRoleAssignment();
+    long numberOfACLsDeleted = getNumberOfACLsDeleted(deletedRoleAssignment);
     long permissionsChangeTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
-      log.info("RoleAssignmentChangeConsumer.consumeDeleteEvent: Number of ACLs deleted: {} for {} Time taken: {}",
-          numberOfACLsDeleted, id, permissionsChangeTime);
+      log.info(
+          "RoleAssignmentChangeConsumer.consumeDeleteEvent: Number of ACLs deleted: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsDeleted, deletedRoleAssignment.getId(), deletedRoleAssignment.getIdentifier(),
+          deletedRoleAssignment.getScopeIdentifier(), permissionsChangeTime);
     }
     return true;
   }

@@ -33,12 +33,15 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.k8s.beans.K8sApplyHandlerConfig;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.K8sTaskManifestValidator;
 import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.delegate.task.utils.ServiceHookDTO;
 import io.harness.delegate.utils.ServiceHookHandler;
@@ -67,8 +70,11 @@ import software.wings.beans.LogWeight;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,6 +88,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class K8sApplyRequestHandler extends K8sRequestHandler {
   @Inject private K8sApplyBaseHandler k8sApplyBaseHandler;
+  @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
 
@@ -114,7 +121,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sApplyRequest.getManifestDelegateConfig(),
         k8sApplyHandlerConfig.getManifestFilesDirectory(), executionLogCallback, timeoutInMillis,
-        k8sApplyRequest.getAccountId(), false);
+        k8sApplyRequest.getAccountId(), false, k8sApplyRequest.isUseManifestSource());
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
@@ -201,9 +208,13 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
       logCallback.saveExecutionLog(color("\nNo file specified in the state", Yellow, Bold));
       logCallback.saveExecutionLog("\nFailed.", INFO, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.APPLY_NO_FILEPATH_SPECIFIED,
-
           KubernetesExceptionExplanation.APPLY_NO_FILEPATH_SPECIFIED,
           new KubernetesTaskException(KubernetesExceptionMessages.APPLY_NO_FILEPATH_SPECIFIED));
+    }
+
+    if (request.isUseManifestSource()) {
+      applyFilePaths = getApplyFilePathsForFolders(applyFilePaths, k8sApplyHandlerConfig.getManifestFilesDirectory(),
+          request.getManifestDelegateConfig().getStoreDelegateConfig());
     }
 
     logCallback.saveExecutionLog(color("Found following files to be applied in the state", White, Bold));
@@ -237,6 +248,29 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.dryRunManifests(k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getResources(),
         k8sDelegateTaskParams, logCallback, isErrorFrameworkSupported());
+  }
+
+  private List<String> getApplyFilePathsForFolders(
+      List<String> manifestSourceFilePaths, String manifestDirectory, StoreDelegateConfig storeDelegateConfig) {
+    if (storeDelegateConfig instanceof LocalFileStoreDelegateConfig) {
+      return k8sTaskManifestValidator.getFilesToApplyInFolder(
+          manifestDirectory, StringUtils.EMPTY, K8sTaskManifestValidator.IS_YAML_FILE);
+    }
+    List<String> applyFilePaths = new ArrayList<>();
+    for (String filePath : manifestSourceFilePaths) {
+      String absoluteFilePath = Path.of(manifestDirectory, filePath).toString();
+      if (new File(absoluteFilePath).exists()) {
+        File folder = new File(absoluteFilePath);
+        if (folder.isDirectory()) {
+          List<String> filesInFolder = k8sTaskManifestValidator.getFilesToApplyInFolder(
+              absoluteFilePath, filePath, K8sTaskManifestValidator.IS_YAML_FILE);
+          applyFilePaths.addAll(filesInFolder);
+        } else {
+          applyFilePaths.add(filePath);
+        }
+      }
+    }
+    return applyFilePaths;
   }
 
   @VisibleForTesting

@@ -8,26 +8,24 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.ccm.views.helper.GovernancePoliciesPromptConstants.CLAIMS;
-import static io.harness.ccm.views.helper.GovernancePoliciesPromptConstants.GPT3;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
-import io.harness.ccm.commons.beans.config.GenAIServiceConfig;
+import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.GovernanceAiEngineRequestDTO;
 import io.harness.ccm.views.dto.GovernanceAiEngineResponseDTO;
-import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.dto.GovernancePromptRule;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.service.GovernanceAiEngineService;
-import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.JWTTokenServiceUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 
-import com.google.common.base.CharMatcher;
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -40,30 +38,26 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-@Slf4j
-@Service
 @Api("governance")
 @Path("governance")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@NextGenManagerAuth
+@Slf4j
+@Service
 @OwnedBy(CE)
 @Tag(name = "AiEngine", description = "This contains APIs related to Generative AI Support for Governance ")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
@@ -85,20 +79,17 @@ import org.springframework.stereotype.Service;
     })
 public class GovernanceAiEngineResource {
   private final CENextGenConfiguration configuration;
-  private final GovernanceRuleService governanceRuleService;
   private final GovernanceAiEngineService governanceAiEngineService;
 
   @Inject
-  public GovernanceAiEngineResource(CENextGenConfiguration configuration, GovernanceRuleService governanceRuleService,
-      GovernanceAiEngineService governanceAiEngineService) {
+  public GovernanceAiEngineResource(
+      CENextGenConfiguration configuration, GovernanceAiEngineService governanceAiEngineService) {
     this.configuration = configuration;
-    this.governanceRuleService = governanceRuleService;
     this.governanceAiEngineService = governanceAiEngineService;
   }
 
   //@PublicApi
   @Hidden
-  @NextGenManagerAuth
   @Path("aiengine")
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
@@ -115,68 +106,57 @@ public class GovernanceAiEngineResource {
   aiengine(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountIdentifier,
       @RequestBody(required = true, description = "Request body for queuing the governance job")
-      @Valid GovernanceAiEngineRequestDTO governanceAiEngineRequestDTO) throws IOException {
-    String error = "";
-    GenAIServiceConfig genAIServiceConfig = configuration.getAiEngineConfig().getGenAIServiceConfig();
-    // TODO: Need not generate new token in every request.
-    String jwtToken = JWTTokenServiceUtils.generateJWTToken(
-        CLAIMS, TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES), genAIServiceConfig.getServiceSecret());
-    // log.info("DEBUG: generated jwt {}", jwtToken);
-    log.info("Using internal genai service");
-    String API_ENDPOINT = genAIServiceConfig.getApiEndpoint();
-    HttpURLConnection con = (HttpURLConnection) new URL(API_ENDPOINT).openConnection();
-    con.setRequestMethod("POST");
-    con.setRequestProperty("Content-Type", "application/json");
-    con.setRequestProperty("Authorization", "Bearer " + jwtToken);
+      @Valid GovernanceAiEngineRequestDTO governanceAiEngineRequestDTO) {
+    return ResponseDTO.newResponse(governanceAiEngineService.getAiEngineResponse(
+        accountIdentifier, configuration.getAiEngineConfig(), governanceAiEngineRequestDTO));
+  }
 
-    JSONObject data;
+  @GET
+  @Path("promptResources")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get supported prompt resources", nickname = "getPromptResources")
+  @Operation(operationId = "getPromptResources",
+      description = "Get supported prompt resources for a given cloud provider",
+      summary = "Get supported prompt resources",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Get supported prompt resources for a given cloud provider",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Set<String>>
+  getPromptResources(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountIdentifier,
+      @Parameter(required = true, description = "Cloud Provider") @QueryParam(
+          "cloudProvider") RuleCloudProviderType ruleCloudProviderType) {
+    return ResponseDTO.newResponse(governanceAiEngineService.getGovernancePromptResources(ruleCloudProviderType));
+  }
 
-    if (!governanceAiEngineRequestDTO.getIsExplain()) {
-      data = governanceAiEngineService.getDataObject(genAIServiceConfig, governanceAiEngineRequestDTO.getPrompt(),
-          governanceAiEngineRequestDTO.getRuleCloudProviderType(), governanceAiEngineRequestDTO.getResourceType());
-    } else {
-      data =
-          governanceAiEngineService.getExplainDataObject(genAIServiceConfig, governanceAiEngineRequestDTO.getPrompt());
-    }
-
-    log.info("request payload:  {}", data.toString());
-
-    con.setDoOutput(true);
-    con.getOutputStream().write(data.toString().getBytes());
-    String output =
-        new BufferedReader(new InputStreamReader(con.getInputStream())).lines().reduce((a, b) -> a + b).get();
-    log.info("output:  {}", output);
-    JSONObject responseObject = new JSONObject(output);
-    String result = responseObject.getString("text");
-    log.info("result:  {}", result);
-    if (governanceAiEngineRequestDTO.getIsExplain()) {
-      return ResponseDTO.newResponse(GovernanceAiEngineResponseDTO.builder().text(result).build());
-    }
-    if (genAIServiceConfig.getModel().equalsIgnoreCase(GPT3)) {
-      String pattern = "```([\\s\\S]*?)```";
-      Pattern r = Pattern.compile(pattern);
-      Matcher m = r.matcher(result);
-      if (m.find()) {
-        result = m.group(1);
-        if (result.charAt(0) == '\n') {
-          result = result.substring(1);
-        }
-      }
-    }
-    Rule validateRule = Rule.builder()
-                            .rulesYaml(CharMatcher.is('\"').trimFrom(result))
-                            .name(UUID.randomUUID().toString().replace("-", ""))
-                            .accountId(accountIdentifier)
-                            .build();
-    try {
-      governanceRuleService.custodianValidate(validateRule);
-    } catch (Exception ex) {
-      log.error("Error: ", ex);
-      error = ex.getMessage();
-      return ResponseDTO.newResponse(
-          GovernanceAiEngineResponseDTO.builder().text(result).isValid(false).error(error).build());
-    }
+  @GET
+  @Path("promptRules")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get sample prompt governance rules", nickname = "getPromptRules")
+  @Operation(operationId = "getPromptRules",
+      description = "Get sample prompt rules for given cloud provider and resource type",
+      summary = "Get sample prompt governance rules",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Get sample prompt rules for given cloud provider and resource type",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<GovernancePromptRule>>
+  getPromptRules(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Valid String accountIdentifier,
+      @Parameter(required = true, description = "Cloud Provider") @QueryParam(
+          "cloudProvider") RuleCloudProviderType ruleCloudProviderType,
+      @Parameter(description = "Resource Type") @QueryParam("resourceType") String resourceType) {
     return ResponseDTO.newResponse(
-        GovernanceAiEngineResponseDTO.builder().text(result).isValid(true).error("").build());
+        governanceAiEngineService.getGovernancePromptRules(ruleCloudProviderType, resourceType));
   }
 }

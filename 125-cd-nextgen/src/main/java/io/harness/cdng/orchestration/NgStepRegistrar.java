@@ -131,6 +131,7 @@ import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+import io.harness.cdng.pipeline.steps.v1.DeploymentStageStepV1;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDestroyStep;
@@ -222,6 +223,7 @@ public class NgStepRegistrar {
     engineSteps.put(InfrastructureTaskExecutableStep.STEP_TYPE, InfrastructureTaskExecutableStep.class);
     engineSteps.put(InfrastructureTaskExecutableStepV2.STEP_TYPE, InfrastructureTaskExecutableStepV2.class);
     engineSteps.put(DeploymentStageStep.STEP_TYPE, DeploymentStageStep.class);
+    engineSteps.put(DeploymentStageStepV1.STEP_TYPE, DeploymentStageStepV1.class);
     engineSteps.put(ServiceConfigStepConstants.STEP_TYPE, ServiceConfigStep.class);
     engineSteps.put(ServiceSectionStepConstants.STEP_TYPE, ServiceSectionStep.class);
     engineSteps.put(ServiceStepConstants.STEP_TYPE, ServiceStep.class);

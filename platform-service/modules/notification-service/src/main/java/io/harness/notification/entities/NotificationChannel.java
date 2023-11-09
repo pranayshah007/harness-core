@@ -16,8 +16,6 @@ import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.notification.NotificationChannelType;
-import io.harness.notification.NotificationRequest;
-import io.harness.notification.mapper.NotificationUserGroupMapper;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
@@ -84,43 +82,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
 
   @Override
   public Object toObjectofProtoSchema() {
-    if (channel instanceof EmailChannel) {
-      EmailChannel emailChannel = (EmailChannel) channel;
-      return NotificationRequest.Email.newBuilder()
-          .addAllEmailIds(emailChannel.emailIds)
-          .putAllTemplateData(emailChannel.getTemplateData())
-          .addAllUserGroup(NotificationUserGroupMapper.toProto(emailChannel.getUserGroups()))
-          .build();
-    } else if (channel instanceof SlackChannel) {
-      SlackChannel slackChannel = (SlackChannel) channel;
-      return NotificationRequest.Slack.newBuilder()
-          .addAllSlackWebHookUrls(slackChannel.getSlackWebHookUrls())
-          .putAllTemplateData(slackChannel.getTemplateData())
-          .addAllUserGroup(NotificationUserGroupMapper.toProto(slackChannel.getUserGroups()))
-          .build();
-    } else if (channel instanceof PagerDutyChannel) {
-      PagerDutyChannel pagerDutyChannel = (PagerDutyChannel) channel;
-      return NotificationRequest.PagerDuty.newBuilder()
-          .addAllPagerDutyIntegrationKeys(pagerDutyChannel.getPagerDutyIntegrationKeys())
-          .putAllTemplateData(pagerDutyChannel.getTemplateData())
-          .addAllUserGroup(NotificationUserGroupMapper.toProto(pagerDutyChannel.getUserGroups()))
-          .build();
-    } else if (channel instanceof MicrosoftTeamsChannel) {
-      MicrosoftTeamsChannel microsoftTeamsChannel = (MicrosoftTeamsChannel) channel;
-      return NotificationRequest.MSTeam.newBuilder()
-          .addAllMsTeamKeys(microsoftTeamsChannel.getMsTeamKeys())
-          .putAllTemplateData(microsoftTeamsChannel.getTemplateData())
-          .addAllUserGroup(NotificationUserGroupMapper.toProto(microsoftTeamsChannel.getUserGroups()))
-          .build();
-    } else if (channel instanceof WebhookChannel) {
-      WebhookChannel webhookChannel = (WebhookChannel) channel;
-      return NotificationRequest.Webhook.newBuilder()
-          .addAllUrls(webhookChannel.getWebHookUrls())
-          .putAllTemplateData(webhookChannel.getTemplateData())
-          .addAllUserGroup(NotificationUserGroupMapper.toProto(webhookChannel.getUserGroups()))
-          .putAllHeaders(webhookChannel.getHeaders())
-          .build();
-    }
+    // No implementation
     return null;
   }
 

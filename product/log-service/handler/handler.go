@@ -176,7 +176,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
 			With(ValidatePrefixRequest()).
 			With(CacheRequest(cache)).
-			Post("/", HandleZipLinkPrefix(queue, store, cache, config, gcsClient))
+			Post("/", HandleZipLinkPrefix(queue, store, cache, config, gcsClient, ngClient))
 
 		return sr
 	}())

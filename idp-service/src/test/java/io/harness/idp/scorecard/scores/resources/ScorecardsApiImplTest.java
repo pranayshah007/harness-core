@@ -29,6 +29,8 @@ import io.harness.spec.server.idp.v1.model.ScorecardChecksDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardStats;
+import io.harness.spec.server.idp.v1.model.ScorecardStatsResponse;
 
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -97,6 +99,24 @@ public class ScorecardsApiImplTest extends CategoryTest {
   public void testGetScorecardThrowsException() {
     when(scorecardService.getScorecardDetails(ACCOUNT_ID, SCORECARD_ID)).thenThrow(InvalidRequestException.class);
     Response response = scorecardsApiImpl.getScorecard(SCORECARD_ID, ACCOUNT_ID);
+    assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetScorecardStats() {
+    when(scorecardService.getScorecardStats(ACCOUNT_ID, SCORECARD_ID)).thenReturn(getScorecardStatsResponse());
+    Response response = scorecardsApiImpl.getScorecardStats(SCORECARD_ID, ACCOUNT_ID);
+    assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testGetScorecardStatsThrowsException() {
+    when(scorecardService.getScorecardStats(ACCOUNT_ID, SCORECARD_ID)).thenThrow(InvalidRequestException.class);
+    Response response = scorecardsApiImpl.getScorecardStats(SCORECARD_ID, ACCOUNT_ID);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
   }
 
@@ -192,5 +212,19 @@ public class ScorecardsApiImplTest extends CategoryTest {
         .updateScorecard(new ScorecardDetailsRequest(), ACCOUNT_ID);
     Response response = scorecardsApiImpl.updateScorecard(SCORECARD_ID, new ScorecardDetailsRequest(), ACCOUNT_ID);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+  }
+
+  private ScorecardStatsResponse getScorecardStatsResponse() {
+    ScorecardStatsResponse response = new ScorecardStatsResponse();
+    response.setName(SCORECARD_NAME);
+    ScorecardStats scorecardStats = new ScorecardStats();
+    scorecardStats.setName("idp-service");
+    scorecardStats.setKind("component");
+    scorecardStats.setType("service");
+    scorecardStats.setSystem("Unknown");
+    scorecardStats.setOwner("team-a");
+    scorecardStats.setScore(75);
+    response.setStats(List.of(scorecardStats));
+    return response;
   }
 }

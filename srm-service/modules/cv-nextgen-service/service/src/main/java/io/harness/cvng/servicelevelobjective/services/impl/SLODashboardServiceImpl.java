@@ -426,7 +426,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
             .serviceName(sloDetail.getServiceName())
             .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
-            .sliType(sloDetail.getSliType())
             .weightagePercentage(weightPercentage)
             .sloTargetPercentage(sloDetail.getSloTargetPercentage())
             .sliStatusPercentage(sloGraphData.getSliStatusPercentage())
@@ -539,7 +538,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .serviceIdentifier(monitoredService.getServiceRef())
           .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
           .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
-          .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
           .sloError(getErrorForSimpleSLOForDetailsView((SimpleServiceLevelObjective) serviceLevelObjective))
           .build();
     } else {
@@ -845,7 +843,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
             .healthSourceName(
                 getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
-            .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
             .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
             .downtimeStatusDetails(
                 getDownTimeStatusDetails(monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap, monitoredService))

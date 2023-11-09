@@ -11,10 +11,13 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -55,6 +58,9 @@ public class RancherClusterClientImplTest extends CategoryTest {
 
   @Mock Call<RancherGenerateKubeconfigResponse> mockGenerateKubeconfigCall;
   @Mock Response<RancherGenerateKubeconfigResponse> mockGenerateKubeconfigResponseWrapper;
+
+  @Mock Call<RancherDeleteKubeconfigTokenResponse> mockDeleteKubeconfigCall;
+  @Mock Response<RancherDeleteKubeconfigTokenResponse> mockDeleteKubeconfigResponseWrapper;
 
   @Before
   public void setup() {
@@ -164,5 +170,24 @@ public class RancherClusterClientImplTest extends CategoryTest {
     doThrow(RuntimeException.class).when(rancherRestClient).generateKubeconfig(any());
     assertThatThrownBy(() -> clusterClient.generateKubeconfig("TOKEN", "URL", "CLUSTER"))
         .isInstanceOf(RancherClientRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testDeleteKubeconfig() throws IOException {
+    RancherDeleteKubeconfigTokenResponse deleteKubeconfigTokenResponse =
+        RancherDeleteKubeconfigTokenResponse.builder().build();
+
+    doReturn(mockDeleteKubeconfigCall).when(rancherRestClient).deleteKubeconfigToken(any());
+    doReturn(mockRequest).when(mockDeleteKubeconfigCall).request();
+    doReturn(mockHttpUrl).when(mockRequest).url();
+    doReturn(mockDeleteKubeconfigResponseWrapper).when(mockDeleteKubeconfigCall).execute();
+    doReturn(false).when(mockDeleteKubeconfigResponseWrapper).isSuccessful();
+    doReturn(403).when(mockDeleteKubeconfigResponseWrapper).code();
+    doReturn(RancherDeleteKubeconfigTokenResponse.builder().build()).when(mockDeleteKubeconfigResponseWrapper).body();
+
+    assertThatCode(() -> clusterClient.deleteKubeconfigToken("token", "url", "token")).doesNotThrowAnyException();
+    verify(rancherRestClient, times(1)).deleteKubeconfigToken(any());
   }
 }

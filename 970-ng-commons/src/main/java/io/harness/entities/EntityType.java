@@ -676,7 +676,10 @@ public enum EntityType {
   OVERRIDES(ModuleType.CORE, EntityTypeConstants.OVERRIDES, IdentifierRef.class, EntityYamlRootNames.OVERRIDES),
   @JsonProperty(EntityTypeConstants.ASG_SHIFT_TRAFFIC)
   ASG_SHIFT_TRAFFIC_STEP(
-      ModuleType.CD, EntityTypeConstants.ASG_SHIFT_TRAFFIC, IdentifierRef.class, EntityYamlRootNames.ASG_SHIFT_TRAFFIC);
+      ModuleType.CD, EntityTypeConstants.ASG_SHIFT_TRAFFIC, IdentifierRef.class, EntityYamlRootNames.ASG_SHIFT_TRAFFIC),
+  @JsonProperty(EntityTypeConstants.AQUA_SECURITY)
+  AQUA_SECURITY(
+      ModuleType.STO, EntityTypeConstants.AQUA_SECURITY, IdentifierRef.class, EntityYamlRootNames.AQUA_SECURITY);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -19,6 +19,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -38,10 +40,8 @@ import io.harness.steps.group.GroupStepV1;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -158,8 +158,10 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata(PlanCreatorConstants.NEXT_ID,
-                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .setNodeMetadata(HarnessStruct.newBuilder()
+                                                 .putData(PlanCreatorConstants.NEXT_ID,
+                                                     HarnessValue.newBuilder().setStringValue("nextNodeUuid").build())
+                                                 .build())
                             .build())
             .currentField(new YamlField(stagesNode.get(1)))
             .build(),
@@ -217,8 +219,10 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     response = planCreator.getLayoutNodeInfo(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata(PlanCreatorConstants.NEXT_ID,
-                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .setNodeMetadata(HarnessStruct.newBuilder()
+                                                 .putData(PlanCreatorConstants.NEXT_ID,
+                                                     HarnessValue.newBuilder().setStringValue("nextNodeUuid").build())
+                                                 .build())
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)));

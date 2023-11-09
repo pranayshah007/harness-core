@@ -1133,6 +1133,7 @@ roles:
       description: Can view SEI resources
       permissions:
         - sei_seiinsights_view
+        - sei_seicollections_view
       managed: true
       isPublic: false
       internal: true

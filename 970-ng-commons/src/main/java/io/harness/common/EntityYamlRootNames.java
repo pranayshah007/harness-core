@@ -106,6 +106,7 @@ public class EntityYamlRootNames {
   public static final String SECURITY = "Security";
 
   public static final String ANCHORE = "Anchore";
+  public static final String AQUA_SECURITY = "AquaSecurity";
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
   public static final String AWS_SECURITY_HUB = "AWSSecurityHub";

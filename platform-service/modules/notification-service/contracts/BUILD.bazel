@@ -20,6 +20,7 @@ java_library(
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-ng-commons:module",
         "//980-commons:module",
+        "//platform-service/modules/notification-service/contracts/openapi/v1:notification-server-spec-module",
         "//platform-service/modules/notification-service/contracts/src/main/proto:notification_beans_java_proto",
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],

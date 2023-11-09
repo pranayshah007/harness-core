@@ -26,4 +26,9 @@ public class NoopPipelineSettingServiceImpl implements PipelineSettingsService {
   public int getMaxConcurrencyBasedOnEdition(String accountId, long childCount) {
     return Integer.MAX_VALUE;
   }
+
+  @Override
+  public String getAccountEdition(String accountId) {
+    return null;
+  }
 }

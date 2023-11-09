@@ -133,4 +133,6 @@ public class YAMLFieldNameConstants {
   public final String ALLOWED = "allowed";
   public final String REGEX = "regex";
   public final String DESC = "desc";
+
+  public final String DEPLOYMENT_STAGE_V1 = "deployment";
 }

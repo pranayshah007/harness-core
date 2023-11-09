@@ -13,6 +13,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -20,9 +21,10 @@ import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.annotation.TypeAlias;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Data
@@ -38,4 +40,22 @@ public class SingleServiceEnvDeploymentStageDetailsInfo implements DeploymentSta
   @Nullable private String infraName;
   @Nullable private String serviceIdentifier;
   @Nullable private String serviceName;
+  public static final String NOT_AVAILABLE = "NA";
+
+  @Override
+  public CDStageSummaryResponseDTO getFormattedStageSummary() {
+    String environment = StringUtils.isBlank(envName) ? envIdentifier : envName;
+    String service = StringUtils.isBlank(serviceName) ? serviceIdentifier : serviceName;
+    String infra = StringUtils.isBlank(infraName) ? infraIdentifier : infraName;
+
+    return CDStageSummaryResponseDTO.builder()
+        .service(identityOrElseNAStringIfBlank(service))
+        .infra(identityOrElseNAStringIfBlank(infra))
+        .environment(identityOrElseNAStringIfBlank(environment))
+        .build();
+  }
+
+  public static String identityOrElseNAStringIfBlank(String value) {
+    return StringUtils.isNotBlank(value) ? value : NOT_AVAILABLE;
+  }
 }

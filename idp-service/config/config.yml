@@ -154,6 +154,7 @@ backstageSaToken: ""
 backstageSaCaCrt: ""
 backstageMasterUrl: ""
 backstagePodLabel: ""
+backstageEntitiesFetchLimit: 1000
 
 provisionModuleConfig:
   triggerPipelineUrl: ""
