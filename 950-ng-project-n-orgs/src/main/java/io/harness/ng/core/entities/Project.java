@@ -102,6 +102,12 @@ public class Project implements PersistentEntity, NGAccountAccess, UniqueIdAware
                  .sortField(ProjectKeys.lastModifiedAt)
                  .unique(false)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("parentIdIdentifierIdx")
+                 .field(ProjectKeys.parentId)
+                 .field(ProjectKeys.identifier)
+                 .unique(true)
+                 .build())
         .build();
   }
 
