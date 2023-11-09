@@ -270,7 +270,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     applicationSpec.setSource(source);
   }
 
-  private static void populateHelmValues(Source source, HelmValues pmsHelmValues) {
+  private void populateHelmValues(Source source, HelmValues pmsHelmValues) {
     HelmSource helmSource = source.getHelm();
     if (helmSource == null) {
       helmSource = HelmSource.builder().build();
@@ -320,7 +320,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     source.setHelm(helmSource);
   }
 
-  private static List<HelmSourceParameters> populateHelmParameters(
+  private List<HelmSourceParameters> populateHelmParameters(
       HelmSource helmSource, List<HelmParameters> pmsHelmParameters) {
     Map<String, String> mapOfHelmParams = new HashMap<>();
     if (helmSource.getParameters() != null) {
@@ -348,7 +348,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     return finalHelmSourceParameters;
   }
 
-  private static List<HelmSourceFileParameters> populateHelmFileParameters(
+  private List<HelmSourceFileParameters> populateHelmFileParameters(
       HelmSource helmSource, List<HelmFileParameters> pmsHelmFileParameters) {
     Map<String, String> mapOfHelmFileParams = new HashMap<>();
     if (helmSource.getFileParameters() != null) {
@@ -373,7 +373,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     return finalHelmSourceFileParameters;
   }
 
-  public void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
+  private void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
     KustomizeSource kustomizeSource = source.getKustomize();
     if (kustomizeSource == null) {
       kustomizeSource = KustomizeSource.builder().build();
@@ -429,8 +429,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     source.setKustomize(kustomizeSource);
   }
 
-  private static Map<String, String> mergeFieldsInMap(
-      Map<String, String> existingParams, Map<String, String> inputParams) {
+  private Map<String, String> mergeFieldsInMap(Map<String, String> existingParams, Map<String, String> inputParams) {
     // TODO check if this __uuid can be ignored in the pipeline service itself without any other impact
     inputParams.remove("__uuid");
 
