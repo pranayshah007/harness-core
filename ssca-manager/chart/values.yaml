@@ -19,6 +19,34 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD: ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                REDIS_PASSWORD:
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
@@ -166,7 +194,7 @@ resources:
     memory: 8192Mi
   requests:
     cpu: 1
-    memory: 712Mi
+    memory: 1024Mi
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -192,7 +220,7 @@ tolerations: []
 affinity: {}
 
 java:
-  memory: 512m
+  memory: 4096m
 
 virtualService:
   annotations: {}
@@ -215,3 +243,29 @@ s3SecretAccessKey:
   key: root-password
 
 java17flags: ""
+
+redis:
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD: ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            REDIS_USERNAME:
+              name: ""
+              property: ""
+            REDIS_PASSWORD:
+              name: ""
+              property: ""
