@@ -19,4 +19,5 @@ import java.util.Map;
 public interface RancherClusterClient {
   RancherListClustersResponse listClusters(String bearerToken, String url, Map<String, String> pageRequestParams);
   RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterName);
+  RancherDeleteKubeconfigTokenResponse deleteKubeconfigToken(String bearerToken, String url, String tokenId);
 }

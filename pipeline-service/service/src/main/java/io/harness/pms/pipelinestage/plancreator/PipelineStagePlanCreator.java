@@ -19,9 +19,11 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -62,6 +64,7 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -149,7 +152,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
       // parent execution
       String planNodeId = StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
-
+      List<AdviserObtainment> adviserObtainmentFromMetaData =
+          PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true);
       PlanNodeBuilder builder =
           PlanNode.builder()
               .uuid(planNodeId)
@@ -173,8 +177,9 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                   FacilitatorObtainment.newBuilder()
                       .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                       .build())
-              .adviserObtainments(PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(
-                  kryoSerializer, ctx.getCurrentField(), true));
+              .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, adviserObtainmentFromMetaData)
+              .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, adviserObtainmentFromMetaData)
+              .adviserObtainments(adviserObtainmentFromMetaData);
       if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
         builder.executionInputTemplate(ctx.getExecutionInputTemplate());
       }
@@ -201,7 +206,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(),
         stageNode.getIdentifier(), stageNode.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 
   // This is for graph view of strategy execution

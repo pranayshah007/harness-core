@@ -29,6 +29,6 @@ public interface AuditRepositoryCustom {
 
   Map<String, Integer> getUniqueProjectCountPerAccountId(List<String> accountIds, Instant startTime, Instant endTime);
 
-  Map<String, Integer> getUniqueLoginCountPerAccountId(
+  Map<String, Integer> getUniqueActionCount(
       List<String> accountIds, List<Action> actions, Instant startTime, Instant endTime);
 }

@@ -1,0 +1,9 @@
+name: Pipeline Service DW Metrics Group per Resource Method per Status Codes
+identifier: PipelineServiceDwMetricsResourceStatusCodeGroup
+labels:
+  - method
+  - resource
+  - statusCode
+  - namespace
+  - containerName
+  - serviceName

@@ -276,6 +276,24 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
       x-internal: true
+  /v2/status-info/{type}:
+    get:
+      summary: Get Status Info by type
+      description: Get Status Info for the given type
+      tags:
+        - StatusInfoV2
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusInfoResponseV2'
+      operationId: get-status-info-type-v2
+      x-stoplight:
+        id: g2rre6x1jk36w
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/StatusType'
+      security:
+        - x-api-key: []
+      x-internal: true
   /v1/namespace-info:
     get:
       summary: Get Namespace Info
@@ -1065,6 +1083,42 @@ paths:
         - Checks
       x-stoplight:
         id: pgtm5cqq7zqmt
+  '/v1/checks/{check-id}/stats':
+    get:
+      summary: Get check stats for given checkId
+      tags:
+        - Checks
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckStatsResponse'
+      operationId: get-check-stats
+      x-stoplight:
+        id: x6f6yi2hkheeh
+      description: Get check stats for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/CheckType'
+  '/v1/checks/{check-id}/graph':
+    get:
+      summary: Get check graph data for given checkId
+      tags:
+        - Checks
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckGraphResponse'
+      operationId: get-check-graph
+      x-stoplight:
+        id: x6f6yi2hkheeh
+      description: Get check graph data for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/CheckType'
   /v1/scorecards:
     get:
       summary: Get all scorecards available
@@ -1160,6 +1214,23 @@ paths:
         - Scorecards
       x-stoplight:
         id: t4gtsw95rgoh8
+  '/v1/scorecards/{scorecard-id}/stats':
+    get:
+      summary: Get scorecard stats for given scorecardId
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardStatsResponse'
+      operationId: get-scorecard-stats
+      x-stoplight:
+        id: y6e6yo2hkheeh
+      description: Get scorecard stats for given scorecardId
+      security:
+        - x-api-key: [ ]
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
   /v1/entity-facets:
     get:
       summary: Get all entity facets for given kind
@@ -1454,6 +1525,13 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusInfo'
+    StatusInfoV2:
+      title: StatusInfoV2
+      x-stoplight:
+        id: ygx956s72iibx
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/StatusInfo'
     NamespaceInfo:
       title: NamespaceInfo
       x-stoplight:
@@ -2388,6 +2466,13 @@ components:
                 x-stoplight:
                   id: nl4f2bigcjdmv
                 type: string
+            percentage:
+              type: number
+              x-stoplight:
+                id: kj6pmchmlzqn6
+              format: double
+              minimum: 0
+              maximum: 100
           required:
             - data_source
       x-internal: true
@@ -2466,6 +2551,10 @@ components:
       type: object
       x-internal: true
       properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: e3xw4o7mbekr2
         data_source_identifier:
           type: string
           x-stoplight:
@@ -2573,6 +2662,17 @@ components:
             x-stoplight:
               id: 4mdevxdftzonf
             type: string
+        components:
+          type: integer
+          x-stoplight:
+            id: 9ec2oenrqokcm
+        percentage:
+          type: number
+          x-stoplight:
+            id: iyqzo3vjc6kto
+          format: double
+          minimum: 0
+          maximum: 100
       required:
         - name
         - identifier
@@ -2858,10 +2958,18 @@ components:
           type: string
           x-stoplight:
             id: a55tfumwxdws2
+        identifier:
+          type: string
+          x-stoplight:
+            id: def12dcql6nng
         name:
           type: string
           x-stoplight:
             id: hgm12dcql6uny
+        custom:
+          type: boolean
+          x-stoplight:
+            id: 05nibebb1qklq
         status:
           type: string
           x-stoplight:
@@ -3324,9 +3432,14 @@ components:
           type: string
           x-stoplight:
             id: aqhb6cu8ooj5t
+        required:
+          type: boolean
+          x-stoplight:
+            id: q7eabpypob3ty
       required:
         - key
         - description
+        - required
     InputValue:
       title: InputValue
       x-stoplight:
@@ -3344,6 +3457,99 @@ components:
       required:
         - key
         - value
+    ScorecardStats:
+      title: ScorecardStats
+      x-stoplight:
+        id: mfzfyuj9dxi9v
+      type: object
+      description: ScorecardStats
+      x-internal: true
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: skt0gj9ivt90s
+        owner:
+          type: string
+          x-stoplight:
+            id: uiiw13t7o6uda
+        system:
+          type: string
+          x-stoplight:
+            id: up1h022u2v98y
+        kind:
+          type: string
+          x-stoplight:
+            id: azw80jiyldmxq
+        type:
+          type: string
+          x-stoplight:
+            id: oijvwg17eyejq
+        score:
+          type: integer
+          x-stoplight:
+            id: ehz071o8ft8bg
+      required:
+        - name
+        - owner
+        - system
+        - kind
+        - type
+        - score
+    CheckStats:
+      title: CheckStats
+      x-stoplight:
+        id: mgzeoij8ddi8f
+      type: object
+      description: CheckStats
+      x-internal: true
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: tkt0gj9ivt90s
+        owner:
+          type: string
+          x-stoplight:
+            id: piiw13t7o6uda
+        system:
+          type: string
+          x-stoplight:
+            id: pp1h022u2v98y
+        kind:
+          type: string
+          x-stoplight:
+            id: bzw80jiyldmxq
+        type:
+          type: string
+          x-stoplight:
+            id: pijvwg17eyejq
+        status:
+          type: string
+          x-stoplight:
+            id: fhz071o8ft8bg
+      required:
+        - name
+        - owner
+        - system
+        - kind
+        - type
+        - status
+    CheckGraph:
+      title: CheckGraph
+      x-stoplight:
+        id: 7z8uudt72xmej
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          x-stoplight:
+            id: 549864xz1sb1m
+          format: int64
+        count:
+          type: integer
+          x-stoplight:
+            id: irv1t5g39uexj
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3390,6 +3596,7 @@ components:
         enum:
           - infra
           - onboarding
+          - infra_onboarding
     AccountIdentifier:
       name: accountIdentifier
       in: path
@@ -3725,6 +3932,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    StatusInfoResponseV2:
+      description: Response for getting status info
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusInfoV2'
     LayoutResponse:
       description: Layout response
       content:
@@ -4060,6 +4273,45 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LicenseUsageSaveResponse'
+    ScorecardStatsResponse:
+      description: Response for scorecard stats
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardStats'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardStats'
+    CheckStatsResponse:
+      description: Response for check stats
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckStats'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckStats'
+    CheckGraphResponse:
+      description: Response for check graph data
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckGraph'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckGraph'
   securitySchemes:
     x-api-key:
       name: x-api-key

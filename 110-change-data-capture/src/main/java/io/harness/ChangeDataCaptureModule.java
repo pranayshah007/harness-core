@@ -11,10 +11,16 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.changehandlers.ChaosInfrastructuresChangeDataHandler;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
 import io.harness.entities.CDStageExecutionCDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
+import io.harness.entities.ChaosExperimentRunsEntity;
+import io.harness.entities.ChaosExperimentsEntity;
+import io.harness.entities.ChaosHubsEntity;
+import io.harness.entities.ChaosInfrastructuresEntity;
+import io.harness.entities.ChaosLinuxInfrastructuresEntity;
 import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
 import io.harness.entities.InfrastructureEntityTimeScale;
@@ -109,6 +115,11 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(InterruptCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(PipelineStageExecutionCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(StepExecutionCDCEntity.class);
+    cdcEntityMultibinder.addBinding().to(ChaosExperimentsEntity.class);
+    cdcEntityMultibinder.addBinding().to(ChaosExperimentRunsEntity.class);
+    cdcEntityMultibinder.addBinding().to(ChaosInfrastructuresEntity.class);
+    cdcEntityMultibinder.addBinding().to(ChaosLinuxInfrastructuresEntity.class);
+    cdcEntityMultibinder.addBinding().to(ChaosHubsEntity.class);
   }
 
   @Provides

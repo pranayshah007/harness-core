@@ -39,6 +39,7 @@ public class K8sServerInstanceInfo extends ServerInstanceInfo {
   private String blueGreenColor;
   private List<K8sContainer> containerList;
   private HelmChartInfo helmChartInfo;
+  private boolean canary;
 
   @Override
   public String getReleaseKey() {

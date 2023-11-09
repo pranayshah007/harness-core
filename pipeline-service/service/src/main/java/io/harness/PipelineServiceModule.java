@@ -108,6 +108,7 @@ import io.harness.pms.events.base.PmsMessageListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
+import io.harness.pms.inputset.mappers.InputSetFilterPropertiesMapper;
 import io.harness.pms.jira.JiraStepHelperServiceImpl;
 import io.harness.pms.ngpipeline.inputs.api.InputsApiImpl;
 import io.harness.pms.ngpipeline.inputs.service.PMSInputsService;
@@ -480,6 +481,7 @@ public class PipelineServiceModule extends AbstractModule {
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.PIPELINESETUP.toString()).to(PipelineFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.INPUTSET.toString()).to(InputSetFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.PIPELINEEXECUTION.toString())
         .to(PipelineExecutionFilterPropertiesMapper.class);
 
@@ -885,13 +887,6 @@ public class PipelineServiceModule extends AbstractModule {
     return harnessCacheManager.getCache("partialSchemaCache", SchemaCacheKey.class, PartialSchemaDTOWrapperValue.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
         versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
-  @Provides
-  @Singleton
-  @Named("allowedParallelStages")
-  public Integer getAllowedParallelStages() {
-    return configuration.getAllowedParallelStages();
   }
 
   @Provides

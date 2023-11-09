@@ -103,7 +103,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
                   gitFetchFilesConfig.getIdentifier()));
         }
         executionLogCallback.saveExecutionLog(
-            color(format("Fetching %s files with identifier: %s", gitFetchFilesConfig.getManifestType(),
+            color(format("\nFetching %s files with identifier: %s", gitFetchFilesConfig.getManifestType(),
                       gitFetchFilesConfig.getIdentifier()),
                 White, Bold));
 
@@ -184,7 +184,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
     if (EmptyPredicate.isNotEmpty(gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths())) {
       filePathsToFetch = gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths();
       executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, closeLogStream);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, false);
     }
 
     FetchFilesResult gitFetchFilesResult;

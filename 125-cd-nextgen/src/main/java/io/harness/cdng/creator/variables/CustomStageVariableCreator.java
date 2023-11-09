@@ -15,6 +15,8 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.gitx.GitXTransientBranchGuard;
+import io.harness.ng.core.security.NgManagerSourcePrincipalGuard;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
@@ -85,16 +87,26 @@ public class CustomStageVariableCreator extends AbstractStageVariableCreator<Cus
   private LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesPipelineV2Yaml(
       VariableCreationContext ctx, CustomStageNode config) {
     LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
-    try {
+    try (NgManagerSourcePrincipalGuard sourcePrincipalGuard = new NgManagerSourcePrincipalGuard()) {
       final EnvironmentYamlV2 environment = config.getCustomStageConfig().getEnvironment();
 
       if (environment != null) {
-        stageVariableCreatorHelper.createVariablesForEnvironment(ctx, responseMap, null, environment);
+        try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(getEnvironmentGitBranch(config))) {
+          stageVariableCreatorHelper.createVariablesForEnvironment(ctx, responseMap, null, environment);
+        }
       }
     } catch (Exception ex) {
       log.error("Exception during Custom Stage Node variable creation", ex);
     }
     return responseMap;
+  }
+
+  private String getEnvironmentGitBranch(CustomStageNode stageNode) {
+    EnvironmentYamlV2 environmentYamlV2 = stageNode.getCustomStageConfig().getEnvironment();
+    if (environmentYamlV2 != null) {
+      return environmentYamlV2.getGitBranch();
+    }
+    return null;
   }
 
   @Override

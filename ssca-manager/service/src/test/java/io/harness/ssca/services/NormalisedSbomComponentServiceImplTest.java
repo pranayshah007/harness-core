@@ -24,11 +24,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.Artifact;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyComponentFilter;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
+import io.harness.spec.server.ssca.v1.model.ComponentFilter;
+import io.harness.spec.server.ssca.v1.model.LicenseFilter;
+import io.harness.spec.server.ssca.v1.model.Operator;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
-import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -100,17 +100,43 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
   public void testGetOrchestrationIds() {
     String licenseValue = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
-    ArtifactListingRequestBodyLicenseFilter licenseFilter =
-        new ArtifactListingRequestBodyLicenseFilter()
-            .operator(ArtifactListingRequestBodyLicenseFilter.OperatorEnum.EQUALS)
-            .value(licenseValue);
-    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
-    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
+    assertEquals(orchestrationIds.size(), 2);
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
-    assertEquals(licenseValue, document.get(NormalizedSBOMEntityKeys.packageLicense));
+    BasicDBList licenseList = (BasicDBList) document.get("$and");
+    assertEquals(licenseList.size(), 1);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoLicenseFilter() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = null;
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
+    assertEquals(orchestrationIds.size(), 0);
+    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoComponentFilter() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    List<ComponentFilter> componentFilter = Lists.newArrayList();
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+    assertEquals(orchestrationIds.size(), 0);
+    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
   }
 
   @Test
@@ -120,24 +146,32 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
     String componentValue1 = randomAlphabetic(10);
     String componentValue2 = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
-    List<ArtifactListingRequestBodyComponentFilter> componentFilter =
-        Lists.newArrayList(new ArtifactListingRequestBodyComponentFilter()
-                               .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTNAME)
-                               .operator(ArtifactListingRequestBodyComponentFilter.OperatorEnum.CONTAINS)
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    List<ComponentFilter> componentFilter =
+        Lists.newArrayList(new ComponentFilter()
+                               .fieldName(ComponentFilter.FieldNameEnum.COMPONENTNAME)
+                               .operator(Operator.CONTAINS)
                                .value(componentValue1),
-            new ArtifactListingRequestBodyComponentFilter()
-                .fieldName(ArtifactListingRequestBodyComponentFilter.FieldNameEnum.COMPONENTVERSION)
-                .operator(ArtifactListingRequestBodyComponentFilter.OperatorEnum.STARTSWITH)
+            new ComponentFilter()
+                .fieldName(ComponentFilter.FieldNameEnum.COMPONENTVERSION)
+                .operator(Operator.STARTSWITH)
                 .value(componentValue2));
 
-    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
-    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+    assertEquals(orchestrationIds.size(), 2);
+
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
-    BasicDBList componentList = (BasicDBList) document.get("$and");
+    BasicDBList andList = (BasicDBList) document.get("$and");
 
-    assertEquals(componentList.size(), 2);
+    assertEquals(andList.size(), 1);
+
+    Document criteriaDocument = (Document) andList.get(0);
+
+    BasicDBList orList = (BasicDBList) criteriaDocument.get("$or");
+    assertEquals(orList.size(), 2);
   }
 }

@@ -94,6 +94,7 @@ import java.nio.channels.FileLockInterruptionException;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -1257,6 +1258,10 @@ public class GitClientV2Impl implements GitClientV2 {
             .filter(matchingFilesExtensions(request.getFileExtensions()))
             .forEach(path -> gitClientHelper.addFiles(gitFiles, path, repoPath));
       } catch (Exception e) {
+        if (request.isOptionalFiles() && e instanceof NoSuchFileException) {
+          log.debug(format("Unable to fetch optional file: %s", filePath));
+          return;
+        }
         resetWorkingDir(request);
 
         // GitFetchFilesTask relies on the exception cause whether to fail the deployment or not.
@@ -1311,13 +1316,18 @@ public class GitClientV2Impl implements GitClientV2 {
 
         for (String filePath : request.getFilePaths()) {
           try {
+            File destinationFolder = destinationDir;
             File sourceDir = new File(Paths.get(repoPath + "/" + filePath).toString());
             if (sourceDir.isFile()) {
               FileUtils.copyFile(sourceDir, Paths.get(request.getDestinationDirectory(), filePath).toFile());
             } else {
-              FileUtils.copyDirectory(sourceDir, destinationDir);
+              if (request.isMayHaveMultipleFolders()) {
+                FileIo.createDirectoryIfDoesNotExist(Paths.get(request.getDestinationDirectory(), filePath));
+                destinationFolder = new File(Paths.get(request.getDestinationDirectory(), filePath).toString());
+              }
+              FileUtils.copyDirectory(sourceDir, destinationFolder);
               // if source directory is repo root we don't want to have .git copied to destination directory
-              File gitFile = new File(Paths.get(request.getDestinationDirectory(), ".git").toString());
+              File gitFile = new File(Paths.get(destinationFolder.getPath(), ".git").toString());
               if (gitFile.exists()) {
                 FileUtils.deleteQuietly(gitFile);
               }

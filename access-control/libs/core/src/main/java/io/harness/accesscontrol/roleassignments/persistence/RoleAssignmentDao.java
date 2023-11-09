@@ -34,7 +34,7 @@ public interface RoleAssignmentDao {
 
   Optional<RoleAssignment> delete(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
-  long deleteMulti(@Valid @NotNull RoleAssignmentFilter roleAssignmentFilter);
+  List<RoleAssignment> findAndRemove(RoleAssignmentFilter roleAssignmentFilter);
 
-  long deleteMulti(String scopeIdentifier, List<String> identifiers);
+  List<RoleAssignment> findAndRemove(String scopeIdentifier, List<String> identifiers);
 }

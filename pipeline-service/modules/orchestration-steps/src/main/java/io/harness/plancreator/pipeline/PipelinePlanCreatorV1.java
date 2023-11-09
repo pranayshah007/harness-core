@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.pipeline;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -13,7 +14,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -50,15 +55,23 @@ public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependencies = new HashMap<>();
-    YamlField stagesYamlNode = Preconditions.checkNotNull(
-        config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STAGES));
-    if (stagesYamlNode.getNode() == null) {
+    YamlField specNode = Preconditions.checkNotNull(config.getNode().getField(YAMLFieldNameConstants.SPEC));
+    if (specNode.getNode() == null) {
       return responseMap;
     }
-
-    dependencies.put(stagesYamlNode.getNode().getUuid(), stagesYamlNode);
-    responseMap.put(stagesYamlNode.getNode().getUuid(),
-        PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(dependencies)).build());
+    dependencies.put(specNode.getNode().getUuid(), specNode);
+    responseMap.put(specNode.getNode().getUuid(),
+        PlanCreationResponse.builder()
+            .dependencies(DependenciesUtils.toDependenciesProto(dependencies)
+                              .toBuilder()
+                              .putDependencyMetadata(specNode.getUuid(),
+                                  Dependency.newBuilder()
+                                      .setNodeMetadata(
+                                          HarnessStruct.newBuilder().putData(PlanCreatorConstants.SET_STARTING_NODE_ID,
+                                              HarnessValue.newBuilder().setBoolValue(true).build()))
+                                      .build())
+                              .build())
+            .build());
     return responseMap;
   }
 

@@ -15,7 +15,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
-class RoleAssignmentDBOMapper {
+public class RoleAssignmentDBOMapper {
   public static RoleAssignmentDBO toDBO(RoleAssignment object) {
     return RoleAssignmentDBO.builder()
         .identifier(object.getIdentifier())
@@ -37,6 +37,7 @@ class RoleAssignmentDBOMapper {
 
   public static RoleAssignment fromDBO(RoleAssignmentDBO object) {
     return RoleAssignment.builder()
+        .id(object.getId())
         .identifier(object.getIdentifier())
         .scopeIdentifier(object.getScopeIdentifier())
         .scopeLevel(object.getScopeLevel())

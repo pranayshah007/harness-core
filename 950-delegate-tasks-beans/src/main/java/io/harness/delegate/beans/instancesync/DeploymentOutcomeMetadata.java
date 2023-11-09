@@ -14,7 +14,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes(
-    { @JsonSubTypes.Type(value = CustomDeploymentOutcomeMetadata.class, name = "CustomDeploymentOutcomeMetadata") })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = CustomDeploymentOutcomeMetadata.class, name = "CustomDeploymentOutcomeMetadata")
+  , @JsonSubTypes.Type(value = K8sDeploymentOutcomeMetadata.class, name = "K8sDeploymentOutcomeMetadata")
+})
 @OwnedBy(HarnessTeam.CDP)
 public abstract class DeploymentOutcomeMetadata {}

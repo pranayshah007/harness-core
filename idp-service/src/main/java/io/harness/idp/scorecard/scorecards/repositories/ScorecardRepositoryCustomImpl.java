@@ -12,6 +12,7 @@ import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity.ScorecardKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -59,6 +60,19 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
                             .is(identifier);
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, ScorecardEntity.class);
+  }
+
+  @Override
+  public List<ScorecardEntity> findByCheckIdentifierAndIsCustom(
+      String accountIdentifier, String checkIdentifier, Boolean custom) {
+    Criteria criteria = Criteria.where(ScorecardKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and("checks.identifier")
+                            .is(checkIdentifier)
+                            .and("checks.isCustom")
+                            .is(custom);
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, ScorecardEntity.class);
   }
 
   private ScorecardEntity findByAccountIdAndIdentifier(ScorecardEntity scorecardEntity) {

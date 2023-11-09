@@ -61,7 +61,7 @@ public interface PMSPipelineRepositoryCustom {
    * this method is to be used for new git experience, and for all pipelines that are not git synced in both old and new
    * flows
    */
-  PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate);
+  PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate, boolean isPatch);
 
   PipelineEntity updatePipelineFilters(PipelineEntity pipelineToUpdate, String uuid, Integer yamlHash);
 

@@ -12,12 +12,12 @@ import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.parser.factory.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.math3.util.Pair;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
@@ -40,7 +39,7 @@ public class CatalogProvider extends NoopDataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      List<Pair<String, List<InputValue>>> dataPointsAndInputValues, String configs)
+      List<DataFetchDTO> dataPointsAndInputValues, String configs)
       throws NoSuchAlgorithmException, KeyManagementException {
     return processOut(accountIdentifier, CATALOG_IDENTIFIER, entity, getAuthHeaders(accountIdentifier, null),
         Collections.emptyMap(), Collections.emptyMap(), dataPointsAndInputValues);

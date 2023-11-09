@@ -10,6 +10,7 @@ package io.harness.cdng.environment.bean;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 
 import java.util.Set;
 import lombok.Builder;
@@ -24,5 +25,5 @@ public class IndividualEnvData {
 
   String type;
   boolean deployToAll;
-  Set<String> gitOpsClusterRefs;
+  Set<ClusterAgentRef> gitOpsClusterRefs;
 }

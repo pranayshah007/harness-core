@@ -84,6 +84,8 @@ import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadataInput;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.environment.dto.ScopedEnvironmentRequestDTO;
+import io.harness.ng.core.environment.dto.ScopedEnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -500,6 +502,27 @@ public class EnvironmentResourceV2 {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     return getEnvironmentsPageByCriteria(criteria, pageRequest);
+  }
+
+  @POST
+  @Path("scope-filtered-list")
+  @Hidden
+  @ApiOperation(hidden = true, value = "Get Scope Filtered Environment List", nickname = "getScopedEnvironments")
+  @InternalApi
+  public ResponseDTO<PageResponse<ScopedEnvironmentResponseDTO>> getScopedEnvironments(
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = "Environment Type") @QueryParam("envType") @ResourceIdentifier String envType,
+      @RequestBody(description = "This is the body for filter properties like list of orgIds, projectIds and Scopes.")
+      ScopedEnvironmentRequestDTO scopedEnvironmentRequestDTO) {
+    Page<Environment> environmentEntities =
+        environmentService.list(accountId, envType, scopedEnvironmentRequestDTO, page, size);
+    return ResponseDTO.newResponse(
+        getNGPageResponse(environmentEntities.map(EnvironmentMapper::toScopedResponseWrapper)));
   }
 
   @GET
@@ -1020,7 +1043,7 @@ public class EnvironmentResourceV2 {
   listServiceOverrides(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                            NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("500") int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(

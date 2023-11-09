@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
@@ -88,18 +89,23 @@ public class ClusterPlanCreatorUtilsTest {
                                 EnvClusterRefs.builder().envRef("myenv").deployToAll(true).build()))
                             .build();
 
-    EnvironmentPlanCreatorConfig i2 = EnvironmentPlanCreatorConfig.builder()
-                                          .environmentRef(ParameterField.<String>builder().value("myenv").build())
-                                          .deployToAll(false)
-                                          .gitOpsClusterRefs(asList("c1", "c2", "c3"))
-                                          .build();
-    StepParameters o2 = ClusterStepParameters.builder()
-                            .envClusterRefs(List.of(EnvClusterRefs.builder()
-                                                        .envRef("myenv")
-                                                        .deployToAll(false)
-                                                        .clusterRefs(Set.of("c3", "c1", "c2"))
-                                                        .build()))
-                            .build();
+    EnvironmentPlanCreatorConfig i2 =
+        EnvironmentPlanCreatorConfig.builder()
+            .environmentRef(ParameterField.<String>builder().value("myenv").build())
+            .deployToAll(false)
+            .gitOpsClusterRefs(asList(ClusterAgentRef.builder().clusterId("c1").build(),
+                ClusterAgentRef.builder().clusterId("c2").build(), ClusterAgentRef.builder().clusterId("c3").build()))
+            .build();
+    StepParameters o2 =
+        ClusterStepParameters.builder()
+            .envClusterRefs(List.of(EnvClusterRefs.builder()
+                                        .envRef("myenv")
+                                        .deployToAll(false)
+                                        .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c3").build(),
+                                            ClusterAgentRef.builder().clusterId("c1").build(),
+                                            ClusterAgentRef.builder().clusterId("c2").build()))
+                                        .build()))
+            .build();
     return new Object[][] {{i1, o1}, {i2, o2}};
   }
 
@@ -113,19 +119,22 @@ public class ClusterPlanCreatorUtilsTest {
                             .environmentRef(ParameterField.<String>builder().value("env1").build())
                             .deployToAll(false)
                             .type(EnvironmentType.Production)
-                            .gitOpsClusterRefs(asList("c1", "c2"))
+                            .gitOpsClusterRefs(asList(ClusterAgentRef.builder().clusterId("c1").build(),
+                                ClusterAgentRef.builder().clusterId("c2").build()))
                             .build()))
             .build();
-    StepParameters o1 = ClusterStepParameters.builder()
-                            .envGroupRef("myenvgroup")
-                            .deployToAllEnvs(true)
-                            .envClusterRefs(List.of(EnvClusterRefs.builder()
-                                                        .envRef("env1")
-                                                        .deployToAll(false)
-                                                        .clusterRefs(Set.of("c1", "c2"))
-                                                        .envType(EnvironmentType.Production.toString())
-                                                        .build()))
-                            .build();
+    StepParameters o1 =
+        ClusterStepParameters.builder()
+            .envGroupRef("myenvgroup")
+            .deployToAllEnvs(true)
+            .envClusterRefs(List.of(EnvClusterRefs.builder()
+                                        .envRef("env1")
+                                        .deployToAll(false)
+                                        .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c1").build(),
+                                            ClusterAgentRef.builder().clusterId("c2").build()))
+                                        .envType(EnvironmentType.Production.toString())
+                                        .build()))
+            .build();
 
     EnvGroupPlanCreatorConfig i2 =
         EnvGroupPlanCreatorConfig.builder()
@@ -136,7 +145,8 @@ public class ClusterPlanCreatorUtilsTest {
                            .environmentRef(ParameterField.<String>builder().value("env1").build())
                            .deployToAll(false)
                            .type(EnvironmentType.Production)
-                           .gitOpsClusterRefs(asList("c1", "c2"))
+                           .gitOpsClusterRefs(asList(ClusterAgentRef.builder().clusterId("c1").build(),
+                               ClusterAgentRef.builder().clusterId("c2").build()))
                            .build(),
                     EnvironmentPlanCreatorConfig.builder()
                         .environmentRef(ParameterField.<String>builder().value("env2").build())
@@ -146,25 +156,34 @@ public class ClusterPlanCreatorUtilsTest {
                     EnvironmentPlanCreatorConfig.builder()
                         .environmentRef(ParameterField.<String>builder().value("env3").build())
                         .deployToAll(false)
-                        .gitOpsClusterRefs(asList("c3", "c4", "c5"))
+                        .gitOpsClusterRefs(asList(ClusterAgentRef.builder().clusterId("c3").build(),
+                            ClusterAgentRef.builder().clusterId("c4").build(),
+                            ClusterAgentRef.builder().clusterId("c5").build()))
                         .build()))
             .build();
-    StepParameters o2 = ClusterStepParameters.builder()
-                            .envGroupRef("envgroup")
-                            .deployToAllEnvs(false)
-                            .envClusterRefs(asList(EnvClusterRefs.builder()
-                                                       .envRef("env1")
-                                                       .deployToAll(false)
-                                                       .clusterRefs(Set.of("c1", "c2"))
-                                                       .envType(EnvironmentType.Production.toString())
-                                                       .build(),
-                                EnvClusterRefs.builder()
-                                    .envRef("env2")
-                                    .deployToAll(true)
-                                    .envType(EnvironmentType.Production.toString())
-                                    .build(),
-                                EnvClusterRefs.builder().envRef("env3").clusterRefs(Set.of("c3", "c4", "c5")).build()))
-                            .build();
+    StepParameters o2 =
+        ClusterStepParameters.builder()
+            .envGroupRef("envgroup")
+            .deployToAllEnvs(false)
+            .envClusterRefs(asList(EnvClusterRefs.builder()
+                                       .envRef("env1")
+                                       .deployToAll(false)
+                                       .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c1").build(),
+                                           ClusterAgentRef.builder().clusterId("c2").build()))
+                                       .envType(EnvironmentType.Production.toString())
+                                       .build(),
+                EnvClusterRefs.builder()
+                    .envRef("env2")
+                    .deployToAll(true)
+                    .envType(EnvironmentType.Production.toString())
+                    .build(),
+                EnvClusterRefs.builder()
+                    .envRef("env3")
+                    .clusterRefs(Set.of(ClusterAgentRef.builder().clusterId("c3").build(),
+                        ClusterAgentRef.builder().clusterId("c4").build(),
+                        ClusterAgentRef.builder().clusterId("c5").build()))
+                    .build()))
+            .build();
     return new Object[][] {{i1, o1}, {i2, o2}};
   }
 

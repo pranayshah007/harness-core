@@ -28,6 +28,7 @@ public class ExecutionHandler implements Handler {
   public void handle(
       String runnerType, TaskPayload taskPayload, Map<String, char[]> decryptedSecrets, Context context) {
     Runner runner = runnersFactory.get(runnerType);
-    runner.execute(taskPayload.getExecutionInfraId(), taskPayload.getTaskData(), decryptedSecrets, context);
+    runner.execute(taskPayload.getExecutionInfraId(), taskPayload.getLogKey(), taskPayload.getTaskData(),
+        decryptedSecrets, context);
   }
 }

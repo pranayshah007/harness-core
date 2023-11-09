@@ -8,12 +8,16 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.network.Http.connectableHost;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.network.Http.connectableHttpUrl;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
@@ -26,13 +30,13 @@ import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
@@ -42,10 +46,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class OciHelmValidationHandler implements ConnectorValidationHandler {
   private static final String WORKING_DIR_BASE = "./repository/helm-validation/";
   private static final HelmVersion defaultHelmVersion = HelmVersion.V380;
   private static final long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofMinutes(DEFAULT_STEADY_STATE_TIMEOUT).toMillis();
+  private static final String OCI_PREFIX = "oci://";
+  private static final String HTTP_PREFIX = "http://";
+  private static final String HTTPS_PREFIX = "https://";
 
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private NGErrorHelper ngErrorHelper;
@@ -64,9 +72,12 @@ public class OciHelmValidationHandler implements ConnectorValidationHandler {
 
       decryptEncryptedDetails(helmValidationParams);
       if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
-        URI parsedUri = helmTaskHelperBase.getParsedURI(ociUrl);
-        if (!connectableHost(parsedUri.getHost(), parsedUri.getPort())) {
-          throw new InvalidRequestException(format("Invalid oci url  %s", ociUrl));
+        String uriParsedOciUrl = helmTaskHelperBase.getParsedURI(ociUrl).toString();
+        if (!connectableHttpUrl(uriParsedOciUrl.replace(OCI_PREFIX, HTTPS_PREFIX), true)
+            && !connectableHttpUrl(uriParsedOciUrl.replace(OCI_PREFIX, HTTP_PREFIX), true)) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Check if the OCI Helm URL is reachable from your delegate(s)", "The given OCI Helm URL is not reachable",
+              new InvalidRequestException("Could not reach OCI Helm Server at : " + ociUrl, USER));
         }
       } else if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
         String workingDirectory = helmTaskHelperBase.createNewDirectoryAtPath(Paths.get(WORKING_DIR_BASE).toString());

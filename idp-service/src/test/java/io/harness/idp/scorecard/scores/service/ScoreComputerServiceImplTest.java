@@ -79,11 +79,11 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
   private static final String CHECK_IDENTIFIER2 = "c2";
   private static final String SCORECARD_IDENTIFIER1 = "cw";
   private static final String SCORECARD_IDENTIFIER2 = "ew";
-  private static final String EXPRESSION1 = "ds1.dp1==true";
-  private static final String EXPRESSION2 = "ds1.dp2.v1==true";
   private static final String DATA_SOURCE_IDENTIFIER = "ds1";
   private static final String DATA_SOURCE_LOCATION_IDENTIFIER = "dsl1";
   private static final String DATA_POINT_IDENTIFIER1 = "dp1";
+  private static final String RULE_IDENTIFIER1 = "rule1";
+  private static final String RULE_IDENTIFIER2 = "rule2";
   private static final String DATA_POINT_IDENTIFIER2 = "dp2";
   private static final String OPERATOR1 = "==";
   private static final String OPERATOR2 = "==";
@@ -258,6 +258,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
 
   private List<CheckEntity> getMockChecks() {
     Rule rule1 = new Rule();
+    rule1.setIdentifier(RULE_IDENTIFIER1);
     rule1.setDataSourceIdentifier(DATA_SOURCE_IDENTIFIER);
     rule1.setDataPointIdentifier(DATA_POINT_IDENTIFIER1);
     rule1.setOperator(OPERATOR1);
@@ -266,7 +267,6 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
                              .accountIdentifier(ACCOUNT_ID)
                              .identifier(CHECK_IDENTIFIER1)
                              .name(CHECK_IDENTIFIER1)
-                             .expression(EXPRESSION1)
                              .ruleStrategy(CheckDetails.RuleStrategyEnum.ALL_OF)
                              .rules(Collections.singletonList(rule1))
                              .build();
@@ -274,6 +274,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
     inputValue.setKey("key");
     inputValue.value(INPUT_VALUE);
     Rule rule2 = new Rule();
+    rule2.setIdentifier(RULE_IDENTIFIER2);
     rule2.setDataSourceIdentifier(DATA_SOURCE_IDENTIFIER);
     rule2.setDataPointIdentifier(DATA_POINT_IDENTIFIER2);
     rule2.setOperator(OPERATOR2);
@@ -284,7 +285,6 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
                              .accountIdentifier(ACCOUNT_ID)
                              .identifier(CHECK_IDENTIFIER2)
                              .name(CHECK_IDENTIFIER2)
-                             .expression(EXPRESSION2)
                              .ruleStrategy(CheckDetails.RuleStrategyEnum.ALL_OF)
                              .rules(Collections.singletonList(rule2))
                              .build();
@@ -354,8 +354,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
 
   private Map<String, Map<String, Object>> mockResponseData(boolean value1, boolean value2) {
     return Map.of(DATA_SOURCE_IDENTIFIER,
-        Map.of(DATA_POINT_IDENTIFIER1, Map.of(DATA_POINT_VALUE_KEY, value1, ERROR_MESSAGE_KEY, "Invalid config"),
-            DATA_POINT_IDENTIFIER2,
-            Map.of(INPUT_VALUE, Map.of(DATA_POINT_VALUE_KEY, value2, ERROR_MESSAGE_KEY, "Invalid config"))));
+        Map.of(RULE_IDENTIFIER1, Map.of(DATA_POINT_VALUE_KEY, value1, ERROR_MESSAGE_KEY, "Invalid config"),
+            RULE_IDENTIFIER2, Map.of(DATA_POINT_VALUE_KEY, value2, ERROR_MESSAGE_KEY, "Invalid config")));
   }
 }

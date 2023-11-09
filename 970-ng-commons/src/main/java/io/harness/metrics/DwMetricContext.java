@@ -18,4 +18,29 @@ public class DwMetricContext extends AutoMetricContext {
     put("containerName", containerName);
     put("serviceName", serviceName);
   }
+
+  public DwMetricContext(String httpMethod, String namespace, String containerName, String serviceName) {
+    put("method", httpMethod);
+    put("namespace", namespace);
+    put("containerName", containerName);
+    put("serviceName", serviceName);
+  }
+
+  public DwMetricContext(String method, String resource, String namespace, String containerName, String serviceName) {
+    put("method", method);
+    put("resource", resource);
+    put("namespace", namespace);
+    put("containerName", containerName);
+    put("serviceName", serviceName);
+  }
+
+  public DwMetricContext(
+      String method, String resource, String statusCode, String namespace, String containerName, String serviceName) {
+    put("method", method);
+    put("resource", resource);
+    put("namespace", namespace);
+    put("containerName", containerName);
+    put("serviceName", serviceName);
+    put("statusCode", statusCode);
+  }
 }

@@ -17,6 +17,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
@@ -43,10 +45,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -80,16 +80,19 @@ public class StrategyConfigPlanCreatorV1Test extends PmsSdkCoreTestBase {
 
     String strategyNodeId = Stage1YamlField.getNode().getField("strategy").getNode().getUuid();
     String childNodeId = "childNodeId";
-    Map<String, ByteString> metadataMap = new HashMap<>();
+    HarnessStruct nodeMetadata =
+        HarnessStruct.newBuilder()
+            .putData(StrategyConstants.STRATEGY_METADATA + strategyNodeId,
+                HarnessValue.newBuilder().setBytesValue(ByteString.copyFromUtf8("test")).build())
+            .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.builder()
                                             .childNodeId(childNodeId)
                                             .strategyNodeId(strategyNodeId)
                                             .adviserObtainments(new ArrayList<>())
                                             .build();
-    metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyNodeId, ByteString.copyFromUtf8("test"));
     Mockito.when(kryoSerializer.asInflatedObject(Mockito.any())).thenReturn(strategyMetadata);
     PlanCreationContext context = PlanCreationContext.builder()
-                                      .dependency(Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                                      .dependency(Dependency.newBuilder().setNodeMetadata(nodeMetadata).build())
                                       .currentField(Stage1YamlField.getNode().getField("strategy"))
                                       .build();
     StrategyConfigV1 strategyConfig =

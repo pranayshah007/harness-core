@@ -103,7 +103,7 @@ metrics:
     type: LastValue
     unit: count
   - metricName: PipelineMergeCreatorExecutorService_running
-    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool running tasks count99thPercentile
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool running tasks count
     type: LastValue
     unit: count
   - metricName: EngineExecutorService_running

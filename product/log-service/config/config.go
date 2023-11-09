@@ -24,7 +24,9 @@ type Config struct {
 	}
 
 	Platform struct {
-		BaseURL string `envconfig:"LOG_SERVICE_PLATFORM_BASE_URL"`
+		BaseURL          string        `envconfig:"LOG_SERVICE_PLATFORM_BASE_URL"`
+		VanityURLEnabled bool          `envconfig:"LOG_SERVICE_VANITY_URL_ENABLED"`
+		VanityURLTTL     time.Duration `envconfig:"LOG_SERVICE_VANITY_URL_TTL" default:"1h"`
 	}
 
 	Server struct {

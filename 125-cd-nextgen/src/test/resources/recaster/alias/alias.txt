@@ -26,6 +26,10 @@ io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
 io.harness.cdng.helm.NativeHelmDeployOutcome
 io.harness.cdng.helm.ReleaseHelmChartOutcome
 io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode
+io.harness.cdng.aws.asg.AsgShiftTrafficStepParameters
+io.harness.cdng.aws.asg.AsgShiftTrafficStepNode
+io.harness.cdng.aws.asg.AsgShiftTrafficStepInfo
+io.harness.cdng.aws.asg.AsgShiftTrafficOutcome
 io.harness.cdng.infra.beans.host.HostFilter
 io.harness.cdng.k8s.K8sRollingStepInfo
 io.harness.cdng.manifest.yaml.GoogleCloudFunctionDefinitionManifestOutcome
@@ -121,6 +125,7 @@ io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepParameters
 io.harness.plancreator.stages.StageElementWrapperConfig
 io.harness.cdng.azure.webapp.AzureWebAppRollbackStepParameters
 io.harness.cdng.pipeline.beans.DeploymentStageStepParameters
+io.harness.cdng.pipeline.beans.DeploymentStageStepParametersV1
 io.harness.beans.yaml.extended.volumes.V1.ClaimVolume
 io.harness.beans.execution.PublishedImageArtifact
 io.harness.cdng.k8s.beans.StepExceptionPassThroughData
@@ -429,6 +434,7 @@ io.harness.cdng.gitops.steps.EnvClusterRefs
 io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest
 io.harness.cdng.creator.plan.stage.DeploymentStageNode
+io.harness.cdng.creator.plan.stage.v1.DeploymentStageNodeV1
 io.harness.beans.steps.stepinfo.V1.ScriptStepInfo
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
 io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData
@@ -467,6 +473,7 @@ io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData
 io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest
 io.harness.steps.shellscript.HostsOutput
 io.harness.plancreator.customDeployment.StepTemplateRef
+io.harness.plancreator.customDeployment.v1.StepTemplateRefV1
 io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo
 io.harness.cdng.k8s.K8sStepPassThroughData
 io.harness.cdng.provision.shellscript.ShellScriptProvisionStepParameters
@@ -1285,6 +1292,7 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOut
 io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.K8sDeploymentOutcomeMetadata
 io.harness.cdng.pipeline.beans.CustomStageSpecParams
 io.harness.cdng.creator.plan.stage.CustomStageNode
 io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum
@@ -1309,3 +1317,4 @@ io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
 io.harness.cdng.manifest.yaml.ManifestSourceWrapper
 io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1
 io.harness.cdng.manifest.yaml.ArtifactBundleStore
+io.harness.cdng.gitops.steps.ClusterAgentRef

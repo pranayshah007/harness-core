@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.checks.resources;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 import static io.harness.idp.common.Constants.SUCCESS_RESPONSE;
@@ -19,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.entity.CheckStatusEntity;
 import io.harness.idp.scorecard.checks.mappers.CheckMapper;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -26,13 +28,17 @@ import io.harness.spec.server.idp.v1.ChecksApi;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckDetailsRequest;
 import io.harness.spec.server.idp.v1.model.CheckDetailsResponse;
+import io.harness.spec.server.idp.v1.model.CheckGraph;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
+import io.harness.spec.server.idp.v1.model.CheckStats;
 import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -66,8 +72,14 @@ public class ChecksApiImpl implements ChecksApi {
         : PageUtils.getPageRequest(pageIndex, pageLimit, List.of(sort));
     Page<CheckEntity> checkEntityList =
         checkService.getChecksByAccountId(custom, harnessAccount, pageRequest, searchTerm);
+    Map<String, CheckStatusEntity> checkStatusEntityMap =
+        checkService.getCheckStatusByAccountIdAndIdentifiers(harnessAccount,
+            checkEntityList.getContent().stream().map(CheckEntity::getIdentifier).collect(Collectors.toList()));
     List<CheckListItem> checkListItems = new ArrayList<>();
-    checkEntityList.getContent().forEach(checkEntity -> checkListItems.add(CheckMapper.toDTO(checkEntity)));
+    checkEntityList.getContent().forEach(checkEntity
+        -> checkListItems.add(CheckMapper.toDTO(checkEntity,
+            checkStatusEntityMap.get(
+                checkEntity.getAccountIdentifier() + DOT_SEPARATOR + checkEntity.getIdentifier()))));
     return idpCommonService.buildPageResponse(
         pageIndex, pageLimit, checkEntityList.getTotalElements(), CheckMapper.toResponseList(checkListItems));
   }
@@ -82,6 +94,36 @@ public class ChecksApiImpl implements ChecksApi {
     } catch (Exception e) {
       String errorMessage = String.format(
           "Error occurred while fetching check details for accountId: [%s], checkId: [%s]", harnessAccount, checkId);
+      log.error(errorMessage, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  public Response getCheckGraph(String checkId, String harnessAccount, Boolean custom) {
+    try {
+      List<CheckGraph> checkGraphs = checkService.getCheckGraph(harnessAccount, checkId, custom);
+      return Response.status(Response.Status.OK).entity(checkGraphs).build();
+    } catch (Exception e) {
+      String errorMessage = String.format(
+          "Error occurred while fetching check graph for accountId: [%s], checkId: [%s]", harnessAccount, checkId);
+      log.error(errorMessage, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  public Response getCheckStats(String checkId, String harnessAccount, Boolean isCustom) {
+    try {
+      List<CheckStats> checkStats = checkService.getCheckStats(harnessAccount, checkId, isCustom);
+      return Response.status(Response.Status.OK).entity(checkStats).build();
+    } catch (Exception e) {
+      String errorMessage = String.format(
+          "Error occurred while fetching check stats for accountId: [%s], checkId: [%s]", harnessAccount, checkId);
       log.error(errorMessage, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())

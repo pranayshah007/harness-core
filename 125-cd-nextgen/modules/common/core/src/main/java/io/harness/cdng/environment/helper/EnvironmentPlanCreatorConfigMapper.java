@@ -15,7 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.exception.InvalidRequestException;
@@ -83,8 +83,8 @@ public class EnvironmentPlanCreatorConfigMapper {
         .build();
   }
 
-  public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitopsFromEnv(String mergedEnvYaml,
-      String envIdentifier, NGServiceOverrideConfig serviceOverrideConfig, List<String> clusterRefs) {
+  public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitOpsFromEnv(String mergedEnvYaml,
+      String envIdentifier, NGServiceOverrideConfig serviceOverrideConfig, List<ClusterAgentRef> clusterRefs) {
     NGEnvironmentInfoConfig config = fetchEnvironmentConfig(mergedEnvYaml);
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(ParameterField.createValueField(envIdentifier))
@@ -103,13 +103,16 @@ public class EnvironmentPlanCreatorConfigMapper {
         .build();
   }
 
-  public List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
+  public List<ClusterAgentRef> getClusterRefs(EnvironmentYamlV2 environmentV2) {
     if (environmentV2.getDeployToAll().getValue() == null || !environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()
-          .map(ClusterYaml::getIdentifier)
-          .map(ParameterField::getValue)
+          .map(cluster
+              -> ClusterAgentRef.builder()
+                     .clusterId(cluster.getIdentifier().getValue())
+                     .agentId(cluster.getAgentIdentifier().getValue())
+                     .build())
           .collect(Collectors.toList());
     }
     return new ArrayList<>();

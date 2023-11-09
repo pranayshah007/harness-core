@@ -6,8 +6,6 @@
  */
 package io.harness.idp.scorecard.datapointsdata.service;
 
-import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;

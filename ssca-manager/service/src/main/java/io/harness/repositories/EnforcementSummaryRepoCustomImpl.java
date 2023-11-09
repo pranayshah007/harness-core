@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.beans.EnforcementSummaryDBO;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -41,5 +42,12 @@ public class EnforcementSummaryRepoCustomImpl implements EnforcementSummaryRepoC
   public List<EnforcementSummaryEntity> findAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, EnforcementSummaryEntity.class);
+  }
+
+  @Override
+  public EnforcementSummaryEntity findOne(String accountId, Criteria criteria) {
+    criteria.and(EnforcementSummaryEntityKeys.accountId).is(accountId);
+    Query query = new Query(criteria);
+    return mongoTemplate.findOne(query, EnforcementSummaryEntity.class);
   }
 }

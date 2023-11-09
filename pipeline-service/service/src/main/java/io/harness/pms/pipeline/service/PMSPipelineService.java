@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -114,6 +115,9 @@ public interface PMSPipelineService {
    */
   PipelineCRUDResult validateAndUpdatePipeline(
       PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
+
+  PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails, boolean isPatch);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

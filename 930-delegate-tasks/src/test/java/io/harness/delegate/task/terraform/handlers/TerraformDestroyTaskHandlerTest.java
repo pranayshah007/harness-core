@@ -14,9 +14,11 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -68,10 +70,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,9 +125,41 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
-        getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParameters(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testDestroyAbort() throws IOException, TimeoutException, InterruptedException {
+    AtomicBoolean isAborted = new AtomicBoolean();
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+    doAnswer(invocationOnMock -> {
+      isAborted.set(true);
+      return new ArrayList<>();
+    })
+        .when(terraformBaseHelper)
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+
+    assertThatThrownBy(()
+                           -> terraformDestroyTaskHandler.executeTaskInternal(
+                               getTerraformTaskParameters(), "delegateId", "taskId", logCallback, isAborted))
+        .isInstanceOf(InterruptedException.class);
+
     verify(terraformBaseHelper)
         .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
@@ -149,8 +185,8 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGParameters taskNGParameters = getTerraformTaskParametersBuilder().skipStateStorage(true).build();
-    TerraformTaskNGResponse response =
-        terraformDestroyTaskHandler.executeTaskInternal(taskNGParameters, "delegateId", "taskId", logCallback);
+    TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
+        taskNGParameters, "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
@@ -178,7 +214,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
-        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
@@ -205,7 +241,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
-        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
@@ -231,7 +267,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformDestroyTaskHandler.executeTaskInternal(
-        getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(terraformBaseHelper, times(1))

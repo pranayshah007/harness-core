@@ -12,11 +12,13 @@ import static io.harness.cvng.core.utils.FeatureFlagNames.CET_SINGLE_NOTIFICATIO
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.NotificationRuleConditionType.CODE_ERRORS;
 import static io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_FORMATTED_VERSION_LIST;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EVENT_STATUS;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_EVENT_TRIGGER_LIST;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorHitSummaryTemplateData;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorTemplateData;
@@ -211,6 +213,13 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
                   .getBaseLinkUrl(monitoredService.getAccountId());
           Map<String, String> templateDataMap = new HashMap<>();
           templateDataMap.putAll(getCodeErrorTemplateData(codeErrorCondition, notificationData, baseLinkUrl));
+
+          final String slackVersionList = templateDataMap.get(SLACK_FORMATTED_VERSION_LIST);
+          final String emailVersionList = templateDataMap.get(EMAIL_FORMATTED_VERSION_LIST);
+          if ("".equals(slackVersionList) && "".equals(emailVersionList)) {
+            return NotificationData.builder().shouldSendNotification(false).build();
+          }
+
           templateDataMap.putAll(getConditionTemplateVariables(codeErrorCondition, notificationData));
           templateDataMap.put(
               NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));

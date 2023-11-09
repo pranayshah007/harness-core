@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -27,8 +27,7 @@ public class ServiceLevelIndicatorDTO {
   @Valid
   @NotNull
   ServiceLevelIndicatorSpec spec;
-  @Deprecated SLIMissingDataType sliMissingDataType;
-  String healthSourceRef;
+  @Deprecated String healthSourceRef;
 
   @JsonIgnore
   public String getEvaluationAndMetricType() {
@@ -38,14 +37,5 @@ public class ServiceLevelIndicatorDTO {
       SLIMetricType sliMetricType = ((WindowBasedServiceLevelIndicatorSpec) this.getSpec()).getSpec().getType();
       return type.name() + "_" + sliMetricType.name();
     }
-  }
-
-  @JsonIgnore
-  public SLIMissingDataType getSLIMissingDataType() {
-    if (type == SLIEvaluationType.WINDOW
-        && ((WindowBasedServiceLevelIndicatorSpec) spec).getSliMissingDataType() != null) {
-      return ((WindowBasedServiceLevelIndicatorSpec) spec).getSliMissingDataType();
-    }
-    return this.sliMissingDataType;
   }
 }

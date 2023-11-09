@@ -210,6 +210,7 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1219,6 +1220,13 @@ public class CDStepHelper {
   @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
       Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
+    return mapTaskRequestToDelegateTaskRequest(
+        taskRequest, taskData, TaskSelectorYaml.toTaskSelector(taskSelectors), baseLogKey, shouldSkipOpenStream);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      List<TaskSelector> selectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -1226,7 +1234,8 @@ public class CDStepHelper {
         .parked(taskData.isParked())
         .accountId(submitTaskRequest.getAccountId().getId())
         .taskSetupAbstractions(submitTaskRequest.getSetupAbstractions().getValuesMap())
-        .taskSelectors(taskSelectors)
+        .selectors(selectors)
+        .taskSelectors(new HashSet<>())
         .executionTimeout(Duration.ofMillis(taskData.getTimeout()))
         .logStreamingAbstractions(new LinkedHashMap<>(submitTaskRequest.getLogAbstractions().getValuesMap()))
         .forceExecute(submitTaskRequest.getForceExecute())

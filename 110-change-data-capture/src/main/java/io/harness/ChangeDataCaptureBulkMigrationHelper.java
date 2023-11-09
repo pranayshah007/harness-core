@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeTracker;
+import io.harness.changestreamsframework.ChangeType;
 import io.harness.entities.CDCEntity;
 import io.harness.persistence.PersistentEntity;
 
@@ -34,7 +35,8 @@ public class ChangeDataCaptureBulkMigrationHelper {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ChangeEventProcessor changeEventProcessor;
 
-  private <T extends PersistentEntity> int runBulkMigration(CDCEntity<T> cdcEntity, Bson filter, String changeHandler) {
+  private <T extends PersistentEntity> int runBulkMigration(
+      CDCEntity<T> cdcEntity, Bson filter, String changeHandler, ChangeType changeType) {
     Class<T> subscriptionEntity = cdcEntity.getSubscriptionEntity();
     int counter = 0;
 
@@ -53,7 +55,7 @@ public class ChangeDataCaptureBulkMigrationHelper {
 
     try (MongoCursor<Document> cursor = documents.iterator()) {
       while (cursor.hasNext()) {
-        runSyncForEntity(subscriptionEntity, cursor, changeHandler);
+        runSyncForEntity(subscriptionEntity, cursor, changeHandler, changeType);
         counter++;
       }
     }
@@ -61,26 +63,29 @@ public class ChangeDataCaptureBulkMigrationHelper {
   }
 
   private <T extends PersistentEntity> void runSyncForEntity(
-      Class<T> subscriptionEntity, MongoCursor<Document> cursor, String handler) {
+      Class<T> subscriptionEntity, MongoCursor<Document> cursor, String handler, ChangeType changeType) {
     final Document document = cursor.next();
-    changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document, handler));
+    changeEventProcessor.processChangeEvent(
+        CDCEntityBulkTaskConverter.convert(subscriptionEntity, document, handler, changeType));
   }
 
   public void doBulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync) {
-    bulkSync(entitiesToBulkSync, null, null);
+    bulkSync(entitiesToBulkSync, null, null, ChangeType.INSERT);
   }
 
-  public int doPartialSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler) {
-    return bulkSync(entitiesToBulkSync, filter, changeHandler);
+  public int doPartialSync(
+      Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler, ChangeType changeType) {
+    return bulkSync(entitiesToBulkSync, filter, changeHandler, changeType);
   }
 
-  public int bulkSync(Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler) {
+  public int bulkSync(
+      Iterable<CDCEntity<?>> entitiesToBulkSync, Bson filter, String changeHandler, ChangeType changeType) {
     int counter = 0;
     changeEventProcessor.startProcessingChangeEvents();
     for (CDCEntity<?> cdcEntity : entitiesToBulkSync) {
       if (isPartialSync(filter) || isFirstSync(cdcEntity)) {
         log.info("Migrating {} to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
-        counter += runBulkMigration(cdcEntity, filter, changeHandler);
+        counter += runBulkMigration(cdcEntity, filter, changeHandler, changeType);
         log.info("{} migrated to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
       }
     }

@@ -59,7 +59,7 @@ public class SetupUsageChangeEventMessageListenerTest extends CategoryTest {
     entitySetupUsageService = mock(EntitySetupUsageService.class);
     setupUsageGitInfoPopulator = mock(SetupUsageGitInfoPopulator.class);
     entitySetupUsageEventDTOMapper = new EntitySetupUsageEventDTOMapper(new EntityDetailProtoToRestMapper(),
-        new SetupUsageDetailProtoToRestMapper(), new SetupUsageGitInfoPopulator(null, null));
+        new SetupUsageDetailProtoToRestMapper(), new SetupUsageGitInfoPopulator(null, null, null));
     setupUsageChangeEventMessageListener =
         new SetupUsageChangeEventMessageListener(entitySetupUsageService, entitySetupUsageEventDTOMapper);
     identifierRefProtoDTOHelper = new IdentifierRefProtoDTOHelper();

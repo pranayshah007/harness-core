@@ -21,6 +21,8 @@ import com.google.api.services.cloudresourcemanager.CloudResourceManager;
 import com.google.api.services.cloudresourcemanager.model.GetIamPolicyRequest;
 import com.google.api.services.cloudresourcemanager.model.Policy;
 import com.google.api.services.cloudresourcemanager.model.SetIamPolicyRequest;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -32,16 +34,32 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class GcpResourceManagerServiceImpl implements GcpResourceManagerService {
   private static CloudResourceManager createCloudResourceManagerService() throws GeneralSecurityException, IOException {
-    ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
-    if (serviceAccountCredentials == null) {
-      return null;
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    try {
+      if (!usingWorkloadIdentity) {
+        log.info("WI: Initializing CloudResourceManager service with JSON key file");
+        ServiceAccountCredentials serviceAccountCredentials = getCredentials(CE_GCP_CREDENTIALS_PATH);
+        if (serviceAccountCredentials == null) {
+          return null;
+        }
+        GoogleCredential googleCredential = toGoogleCredential(serviceAccountCredentials);
+        return new CloudResourceManager
+            .Builder(
+                GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), googleCredential)
+            .setApplicationName("service-accounts")
+            .build();
+      } else {
+        log.info("WI: Initializing CloudResourceManager service with Google ADC");
+        return new CloudResourceManager
+            .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(),
+                new HttpCredentialsAdapter(GoogleCredentials.getApplicationDefault()))
+            .setApplicationName("service-accounts")
+            .build();
+      }
+    } catch (IOException | GeneralSecurityException e) {
+      log.error("Unable to initialize service.", e);
     }
-    GoogleCredential googleCredential = toGoogleCredential(serviceAccountCredentials);
-
-    return new CloudResourceManager
-        .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(), googleCredential)
-        .setApplicationName("service-accounts")
-        .build();
+    return null;
   }
 
   // Sets a project's policy

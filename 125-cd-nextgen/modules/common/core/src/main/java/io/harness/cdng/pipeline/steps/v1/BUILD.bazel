@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps/output:module",
         "//clients/pipeline-service/pms-sdk-core:module",
     ],
 )

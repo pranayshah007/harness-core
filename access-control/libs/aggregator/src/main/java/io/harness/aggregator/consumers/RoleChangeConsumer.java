@@ -103,7 +103,7 @@ public class RoleChangeConsumer implements AccessControlChangeConsumer<RoleChang
   }
 
   @Override
-  public boolean consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id, RoleChangeEventData changeEventData) {
     return true;
   }
 

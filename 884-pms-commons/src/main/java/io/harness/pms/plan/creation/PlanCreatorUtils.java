@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.creation;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,6 +17,8 @@ import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.OptionUtils;
@@ -195,15 +198,19 @@ public class PlanCreatorUtils {
   public Dependency createGlobalDependency(KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml) {
     switch (pipelineVersion) {
       case HarnessYamlVersion.V1:
-        return Dependency.newBuilder().putAllMetadata(getOptionsDependency(kryoSerializer, pipelineYaml)).build();
+        return Dependency.newBuilder()
+            .setNodeMetadata(
+                HarnessStruct.newBuilder().putAllData(getOptionsDependency(kryoSerializer, pipelineYaml)).build())
+            .build();
       default:
         return null;
     }
   }
 
-  private Map<String, ByteString> getOptionsDependency(KryoSerializer kryoSerializer, String pipelineYaml) {
+  private Map<String, HarnessValue> getOptionsDependency(KryoSerializer kryoSerializer, String pipelineYaml) {
     Optional<Options> optionalOptions = OptionUtils.getOptions(pipelineYaml);
     Options options = optionalOptions.orElse(Options.builder().build());
-    return Map.of(YAMLFieldNameConstants.OPTIONS, ByteString.copyFrom(kryoSerializer.asBytes(options)));
+    return Map.of(YAMLFieldNameConstants.OPTIONS,
+        HarnessValue.newBuilder().setBytesValue(ByteString.copyFrom(kryoSerializer.asBytes(options))).build());
   }
 }

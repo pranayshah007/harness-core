@@ -7,8 +7,10 @@
 
 package io.harness.pms.events.base;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
+import static io.harness.pms.events.PmsEventFrameworkConstants.PIE_EVENT_ID;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
@@ -169,17 +171,26 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
 
   private boolean isAlreadyProcessed(Message message) {
     try {
-      String key = String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId());
+      String uniqueIdForKey = getUniqueIdForKey(message);
+      String key = String.format(CACHE_KEY, this.getClass().getSimpleName(), uniqueIdForKey);
       boolean isProcessed = !eventsCache.putIfAbsent(key, 1);
       if (isProcessed) {
         log.warn(String.format("Duplicate redis notification received to consumer [%s] with messageId [%s]",
-            this.getClass().getSimpleName(), message.getId()));
+            this.getClass().getSimpleName(), uniqueIdForKey));
       }
       return isProcessed;
     } catch (Exception ex) {
       log.error("Exception occurred while checking for duplicate notification", ex);
       return false;
     }
+  }
+
+  private String getUniqueIdForKey(Message message) {
+    if (message.getMessage().getMetadataMap() == null
+        || isEmpty(message.getMessage().getMetadataMap().get(PIE_EVENT_ID))) {
+      return message.getId();
+    }
+    return message.getMessage().getMetadataMap().get(PIE_EVENT_ID);
   }
 
   private void checkAndLogSchedulingDelays(String messageId, long startTs) {

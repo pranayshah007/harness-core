@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.CVConstants.MAX_NUMBER_OF_SLOS;
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
@@ -337,7 +338,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       ProjectParams projectParams, String compositeSLOIdentifier, Long startTime, Long endTime) {
     PageResponse<SLOHealthListView> sloHealthListViewPageResponse = getSloHealthListView(projectParams,
         SLODashboardApiFilter.builder().compositeSLOIdentifier(compositeSLOIdentifier).childResource(true).build(),
-        PageParams.builder().page(0).size(20).build());
+        PageParams.builder().page(0).size(MAX_NUMBER_OF_SLOS).build());
 
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
@@ -425,7 +426,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
             .serviceName(sloDetail.getServiceName())
             .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
-            .sliType(sloDetail.getSliType())
             .weightagePercentage(weightPercentage)
             .sloTargetPercentage(sloDetail.getSloTargetPercentage())
             .sliStatusPercentage(sloGraphData.getSliStatusPercentage())
@@ -538,7 +538,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .serviceIdentifier(monitoredService.getServiceRef())
           .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
           .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
-          .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
           .sloError(getErrorForSimpleSLOForDetailsView((SimpleServiceLevelObjective) serviceLevelObjective))
           .build();
     } else {
@@ -844,7 +843,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
             .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
             .healthSourceName(
                 getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
-            .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
             .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
             .downtimeStatusDetails(
                 getDownTimeStatusDetails(monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap, monitoredService))

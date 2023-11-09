@@ -9,6 +9,8 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeEvent.ChangeEventBuilder;
@@ -25,12 +27,15 @@ import org.bson.types.ObjectId;
 @Slf4j
 public class CDCEntityBulkTaskConverter {
   public static <T extends PersistentEntity> ChangeEvent<T> convert(
-      Class<T> entityType, Document document, String handler) {
+      Class<T> entityType, Document document, String handler, ChangeType changeType) {
+    if (isNull(changeType)) {
+      changeType = ChangeType.INSERT; // handle default case to be insert if change type not passed
+    }
     DBObject dbObject = toDBObject(document);
 
     ChangeEventBuilder<T> builder = ChangeEvent.builder();
     return builder.fullDocument(dbObject)
-        .changeType(ChangeType.INSERT)
+        .changeType(changeType)
         .entityType(entityType)
         .uuid(getUuidFromDocument(document))
         .handler(handler)

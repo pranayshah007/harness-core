@@ -1,0 +1,8 @@
+name: Pipeline Service DW Metrics Group per Resource Method
+identifier: PipelineServiceDwMetricsResourceGroup
+labels:
+  - method
+  - resource
+  - namespace
+  - containerName
+  - serviceName

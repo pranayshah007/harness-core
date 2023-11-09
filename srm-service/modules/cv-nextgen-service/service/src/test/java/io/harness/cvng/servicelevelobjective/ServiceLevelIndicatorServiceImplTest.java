@@ -53,8 +53,9 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricE
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -126,19 +127,26 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String tracingId = "tracingId";
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
-    CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
-                            .identifier(HealthSourceService.getNameSpacedIdentifier(
-                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
-                            .build();
+    String healthSource = "healthSourceIdentifier";
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        SimpleServiceLevelObjectiveSpec.builder()
+            .monitoredServiceRef(monitoredServiceIdentifier)
+            .healthSourceRef(healthSource)
+            .serviceLevelIndicators(
+                Collections.singletonList(builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build()))
+            .build();
+    CVConfig cvConfig =
+        builderFactory.appDynamicsCVConfigBuilder()
+            .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSource))
+            .build();
     hPersistence.save(cvConfig);
     metricPackService.populateDataCollectionDsl(cvConfig.getType(), ((MetricCVConfig) cvConfig).getMetricPack());
 
     String textLoad = Resources.toString(
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorEntityAndDTOTransformer.getEntity(builderFactory.getProjectParams(),
-            serviceLevelIndicatorDTO, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), true);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorEntityAndDTOTransformer.getEntity(
+        builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier, healthSource, true);
 
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
@@ -169,9 +177,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
              eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
-    SLIOnboardingGraphs sliOnboardingGraphs =
-        serviceLevelIndicatorService.getOnboardingGraphs(builderFactory.getContext().getProjectParams(),
-            monitoredServiceIdentifier, serviceLevelIndicatorDTO, tracingId);
+    SLIOnboardingGraphs sliOnboardingGraphs = serviceLevelIndicatorService.getOnboardingGraphs(
+        builderFactory.getContext().getProjectParams(), simpleServiceLevelObjectiveSpec, tracingId);
 
     assertThat(sliOnboardingGraphs.getSliGraph().getStartTime()).isEqualTo(1595760600000L);
     assertThat(sliOnboardingGraphs.getSliGraph().getEndTime()).isEqualTo(1595847000000L);
@@ -306,10 +313,17 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String tracingId = "tracingId";
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
-    CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
-                            .identifier(HealthSourceService.getNameSpacedIdentifier(
-                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
-                            .build();
+    String healthSource = "healthSourceIdentifier";
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        SimpleServiceLevelObjectiveSpec.builder()
+            .monitoredServiceRef(monitoredServiceIdentifier)
+            .healthSourceRef(healthSource)
+            .serviceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO))
+            .build();
+    CVConfig cvConfig =
+        builderFactory.appDynamicsCVConfigBuilder()
+            .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSource))
+            .build();
     hPersistence.save(cvConfig);
 
     String textLoad = Resources.toString(
@@ -320,9 +334,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     when(mockOnboardingService.getOnboardingResponse(eq(builderFactory.getContext().getAccountId()), any()))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
-    SLIOnboardingGraphs sliOnboardingGraphs =
-        serviceLevelIndicatorService.getOnboardingGraphs(builderFactory.getContext().getProjectParams(),
-            monitoredServiceIdentifier, serviceLevelIndicatorDTO, tracingId);
+    SLIOnboardingGraphs sliOnboardingGraphs = serviceLevelIndicatorService.getOnboardingGraphs(
+        builderFactory.getContext().getProjectParams(), simpleServiceLevelObjectiveSpec, tracingId);
 
     assertThat(sliOnboardingGraphs.getSliGraph().getStartTime()).isEqualTo(1595760600000L);
     assertThat(sliOnboardingGraphs.getSliGraph().getEndTime()).isEqualTo(1595847000000L);
@@ -336,12 +349,18 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetOnboardingGraph_ratio() throws IOException, IllegalAccessException {
     String tracingId = "tracingId";
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
-        builderFactory.getRatioServiceLevelIndicatorDTOBuilder().build();
-    CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
-                            .identifier(HealthSourceService.getNameSpacedIdentifier(
-                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
-                            .build();
+    String healthSource = "healthSourceIdentifier";
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        SimpleServiceLevelObjectiveSpec.builder()
+            .monitoredServiceRef(monitoredServiceIdentifier)
+            .healthSourceRef(healthSource)
+            .serviceLevelIndicators(
+                Collections.singletonList(builderFactory.getRatioServiceLevelIndicatorDTOBuilder().build()))
+            .build();
+    CVConfig cvConfig =
+        builderFactory.appDynamicsCVConfigBuilder()
+            .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSource))
+            .build();
     hPersistence.save(cvConfig);
 
     String textLoad = Resources.toString(
@@ -352,9 +371,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     when(mockOnboardingService.getOnboardingResponse(eq(builderFactory.getContext().getAccountId()), any()))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
-    SLIOnboardingGraphs sliOnboardingGraphs =
-        serviceLevelIndicatorService.getOnboardingGraphs(builderFactory.getContext().getProjectParams(),
-            monitoredServiceIdentifier, serviceLevelIndicatorDTO, tracingId);
+    SLIOnboardingGraphs sliOnboardingGraphs = serviceLevelIndicatorService.getOnboardingGraphs(
+        builderFactory.getContext().getProjectParams(), simpleServiceLevelObjectiveSpec, tracingId);
 
     assertThat(sliOnboardingGraphs.getSliGraph().getStartTime()).isEqualTo(1595760600000L);
     assertThat(sliOnboardingGraphs.getSliGraph().getEndTime()).isEqualTo(1595847000000L);
@@ -653,9 +671,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .identifier("sliIndicator")
         .name("sliName")
         .type(SLIEvaluationType.WINDOW)
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.GOOD)
                             .thresholdValue(50.0)
@@ -672,9 +690,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .identifier("sliIndicator")
         .name("sliName")
         .type(SLIEvaluationType.WINDOW)
-        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
+                  .sliMissingDataType(SLIMissingDataType.GOOD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("metric1")
                             .thresholdValue(50.0)

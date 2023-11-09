@@ -21,6 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.beans.HeaderConfig;
 import io.harness.beans.PRWebhookEvent;
 import io.harness.beans.WebhookBaseAttributes;
 import io.harness.beans.WebhookEvent;
@@ -38,10 +39,12 @@ import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -98,37 +101,38 @@ public class WebhookParserSCMServiceTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void parseObtainWebhookSourceTest() {
-    assertThatThrownBy(() -> webhookParserSCMService.obtainWebhookSource(Collections.emptySet()))
+    assertThatThrownBy(() -> webhookParserSCMService.obtainWebhookSource(List.of()))
         .isInstanceOf(InvalidRequestException.class);
 
-    Set<String> headerKeys = new HashSet<>(Arrays.asList("a", "b", "c"));
+    List<HeaderConfig> headerKeys =
+        Stream.of("a", "b", "c").map(key -> HeaderConfig.builder().key(key).build()).collect(Collectors.toList());
     assertThatThrownBy(() -> webhookParserSCMService.obtainWebhookSource(headerKeys))
         .isInstanceOf(InvalidRequestException.class);
 
-    Set<String> headerKeys1 = new HashSet<>(headerKeys);
-    headerKeys1.add("X-GitHub-Event");
+    List<HeaderConfig> headerKeys1 = new ArrayList<>(headerKeys);
+    headerKeys1.add(HeaderConfig.builder().key("X-GitHub-Event").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(GITHUB);
     headerKeys1.clear();
     headerKeys1.addAll(headerKeys);
-    headerKeys1.add("x-github-event");
+    headerKeys1.add(HeaderConfig.builder().key("x-github-event").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(GITHUB);
 
     headerKeys1.clear();
     headerKeys1.addAll(headerKeys);
-    headerKeys1.add("X-Gitlab-Event");
+    headerKeys1.add(HeaderConfig.builder().key("X-Gitlab-Event").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(GITLAB);
     headerKeys1.clear();
     headerKeys1.addAll(headerKeys);
-    headerKeys1.add("x-gitlab-event");
+    headerKeys1.add(HeaderConfig.builder().key("x-gitlab-event").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(GITLAB);
 
     headerKeys1.clear();
     headerKeys1.addAll(headerKeys);
-    headerKeys1.add("X-Event-Key");
+    headerKeys1.add(HeaderConfig.builder().key("X-Event-Key").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(BITBUCKET);
     headerKeys1.clear();
     headerKeys1.addAll(headerKeys);
-    headerKeys1.add("x-event-key");
+    headerKeys1.add(HeaderConfig.builder().key("x-event-key").build());
     assertThat(webhookParserSCMService.obtainWebhookSource(headerKeys1)).isEqualTo(BITBUCKET);
   }
 

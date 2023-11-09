@@ -647,7 +647,9 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(
             accountId, orgIdentifier, projectIdentifier, cvConfig.getConnectorIdentifier(), cvConfig.getIdentifier()));
     assertThat(nextTask.getValidAfter())
-        .isEqualTo(dataCollectionTask.getEndTime().plus(5, ChronoUnit.MINUTES).plus(DATA_COLLECTION_DELAY));
+        .isAfterOrEqualTo(dataCollectionTask.getEndTime().plus(5, ChronoUnit.MINUTES).plus(DATA_COLLECTION_DELAY));
+    assertThat(nextTask.getValidAfter())
+        .isBefore(dataCollectionTask.getEndTime().plus(5, ChronoUnit.MINUTES).plus(Duration.ofMinutes(5)));
   }
 
   @Test
@@ -708,7 +710,9 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(
             accountId, orgIdentifier, projectIdentifier, cvConfig.getConnectorIdentifier(), cvConfig.getIdentifier()));
     assertThat(nextTask.getValidAfter())
-        .isEqualTo(expectedStartTime.plus(5, ChronoUnit.MINUTES).plus(DATA_COLLECTION_DELAY));
+        .isAfterOrEqualTo(expectedStartTime.plus(5, ChronoUnit.MINUTES).plus(Duration.ofMinutes(2)));
+    assertThat(nextTask.getValidAfter())
+        .isBefore(expectedStartTime.plus(5, ChronoUnit.MINUTES).plus(Duration.ofMinutes(5)));
   }
 
   @Test
@@ -1302,6 +1306,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .endTime(endTime)
           .status(executionStatus)
           .dataCollectionInfo(createDataCollectionInfo())
+          .validAfter(endTime.plus(DATA_COLLECTION_DELAY))
           .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
           .createdAt(fakeNow.minus(Duration.ofMinutes(10)).toEpochMilli())
           .build();

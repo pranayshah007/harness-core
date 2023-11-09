@@ -7,7 +7,6 @@
 
 package io.harness.idp.scorecard.checks.mappers;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 
@@ -15,7 +14,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
-import io.harness.spec.server.idp.v1.model.InputValue;
 import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.List;
@@ -42,8 +40,7 @@ public class CheckDetailsMapper {
   }
 
   public CheckEntity fromDTO(CheckDetails checkDetails, String accountIdentifier) {
-    String expression =
-        constructExpressionFromRules(checkDetails.getRules(), checkDetails.getRuleStrategy(), "", false);
+    String expression = constructDisplayExpression(checkDetails.getRules(), checkDetails.getRuleStrategy());
     return CheckEntity.builder()
         .accountIdentifier(accountIdentifier)
         .identifier(checkDetails.getIdentifier())
@@ -68,15 +65,11 @@ public class CheckDetailsMapper {
   }
 
   String getExpression(Rule rule, String dpValueSuffix, boolean getLhsOnly) {
-    StringBuilder expressionBuilder =
-        new StringBuilder(rule.getDataSourceIdentifier()).append(DOT_SEPARATOR).append(rule.getDataPointIdentifier());
-
-    for (InputValue inputValue : rule.getInputValues()) {
-      if (StringUtils.isNotBlank(inputValue.getValue())) {
-        expressionBuilder.append(DOT_SEPARATOR);
-        expressionBuilder.append(inputValue.getValue());
-      }
-    }
+    StringBuilder expressionBuilder = new StringBuilder(rule.getDataSourceIdentifier())
+                                          .append(DOT_SEPARATOR)
+                                          .append("\"")
+                                          .append(rule.getIdentifier())
+                                          .append("\"");
 
     if (StringUtils.isNotBlank(dpValueSuffix)) {
       expressionBuilder.append(DOT_SEPARATOR);
@@ -89,5 +82,17 @@ public class CheckDetailsMapper {
     }
 
     return expressionBuilder.toString();
+  }
+
+  private static String constructDisplayExpression(List<Rule> rules, CheckDetails.RuleStrategyEnum ruleStrategy) {
+    return rules.stream()
+        .map(CheckDetailsMapper::getDisplayExpression)
+        .collect(Collectors.joining(SPACE_SEPARATOR
+            + (ruleStrategy.equals(CheckDetails.RuleStrategyEnum.ALL_OF) ? "&&" : "||") + SPACE_SEPARATOR));
+  }
+
+  private static String getDisplayExpression(Rule rule) {
+    return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + rule.getOperator()
+        + rule.getValue();
   }
 }

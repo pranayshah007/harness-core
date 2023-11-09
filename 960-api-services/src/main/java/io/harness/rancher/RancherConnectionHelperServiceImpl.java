@@ -7,6 +7,7 @@
 
 package io.harness.rancher;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Collections.emptyMap;
 
@@ -69,5 +70,12 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
     RancherGenerateKubeconfigResponse generateKubeConfigResponse =
         rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterId);
     return generateKubeConfigResponse.getConfig();
+  }
+
+  @Override
+  public void deleteKubeconfigToken(String rancherUrl, String bearerToken, String tokenId) {
+    if (isNotEmpty(tokenId)) {
+      rancherClusterClient.deleteKubeconfigToken(bearerToken, rancherUrl, tokenId);
+    }
   }
 }

@@ -6,13 +6,14 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-	"errors"
 
 	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 
@@ -22,12 +23,16 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/queue"
 	"github.com/harness/harness-core/product/log-service/store"
+	"github.com/harness/harness-core/product/platform/client"
 )
 
 const (
-	filePathSuffix = "logs.zip"
+	filePathSuffix     = "logs.zip"
 	maxItemsToDownload = 1500
-	harnessDownload = "harness-download"
+	harnessDownload    = "harness-download"
+	storage            = "/storage/"
+	authTokenheader    = "Authorization"
+	vanity             = "-vanity"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -203,7 +208,7 @@ func HandleInternalDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
-func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS) http.HandlerFunc {
+func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS, ngClient *client.HTTPClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -234,6 +239,53 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				WriteNotFound(w, err)
 				return
 			}
+			if cfg.Platform.VanityURLEnabled {
+				//Get vanity URL from cache if it exists else calculate
+				vanityURL, err := getVanityURLCacheKey(ctx, accountID, prefix, c, cfg, r)
+				if err != nil {
+					logger.FromRequest(r).
+						WithError(err).
+						WithField("prefix", prefix).
+						Errorln("api: cannot fetch vanityURL from cache")
+				}
+				if vanityURL == "" {
+					logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity URL does not exists in cache fetching from platform")
+					vanityURL, err = ngClient.GetVanityURL(ctx, accountID, r.Header.Get(authTokenheader))
+					if err != nil || vanityURL == "" {
+						logger.FromRequest(r).
+							WithError(err).
+							WithField(usePrefixParam, prefix).
+							Warnln("api: cannot fetch the vanity url")
+					} else {
+						err = c.Create(ctx, accountID+vanity, vanityURL, cfg.Platform.VanityURLTTL)
+						if err != nil {
+							logger.FromRequest(r).
+								WithError(err).
+								WithField("vanity_url", vanityURL).
+								WithField("prefix", prefix).
+								Warnln("api: cannot create cache for vanity URL")
+						} else {
+							logger.FromRequest(r).
+								WithError(err).
+								WithField("vanity_url", vanityURL).
+								WithField("prefix", prefix).
+								Infoln("api: created cache for vanity URL")
+						}
+					}
+				}
+				if vanityURL != "" {
+					link, err = replaceVanityURL(vanityURL, link, prefix)
+					if err != nil {
+						logger.FromRequest(r).
+							WithError(err).
+							WithField("vanity_url", vanityURL).
+							WithField("prefix", prefix).
+							Warnln("api: cannot replace with vanity URL")
+					} else {
+						logger.FromRequest(r).WithField("prefix", prefix).Infoln("successfully replaced with vanity url")
+					}
+				}
+			}
 		}
 
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
@@ -248,14 +300,14 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 		}
 
 		if len(out) > maxItemsToDownload {
-		    err := errors.New("Amount of data is too large to download")
-        	logger.FromRequest(r).
-        	    WithError(err).
-        	    WithField(usePrefixParam, prefix).
-        	    Errorln("api: Download failed! Amount of data is too large")
-        	WriteInternalError(w, fmt.Errorf("Prefix Key Exceeds Maximum Download Limit"))
-        	return
-        }
+			err := errors.New("Amount of data is too large to download")
+			logger.FromRequest(r).
+				WithError(err).
+				WithField(usePrefixParam, prefix).
+				Errorln("api: Download failed! Amount of data is too large")
+			WriteInternalError(w, fmt.Errorf("Prefix Key Exceeds Maximum Download Limit"))
+			return
+		}
 
 		// creates a cache in status queued
 		logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Adding request to queued state for further processing")
@@ -344,4 +396,28 @@ func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.
 	}
 	link = link + harnessDownload + lstring[1]
 	return link, nil
+}
+
+func replaceVanityURL(vanityURL, link, prefix string) (string, error) {
+	lstring := strings.SplitN(link, storage, 2)
+
+	if len(lstring) >= 1 {
+		link = vanityURL + storage + lstring[1]
+		return link, nil
+	}
+	return link, fmt.Errorf("Error Splitting Vanity URL %s", link)
+}
+
+func getVanityURLCacheKey(ctx context.Context, accountID, prefix string, c cache.Cache, cfg config.Config, r *http.Request) (string, error) {
+	exists := c.Exists(ctx, accountID+vanity)
+	if exists {
+		logger.FromRequest(r).WithField("prefix", prefix).Infoln("vanity url exists in cache")
+		vanityURLBytes, err := c.Get(ctx, accountID+vanity)
+		if err != nil {
+			return "", err
+		} else {
+			return string(vanityURLBytes), nil
+		}
+	}
+	return "", fmt.Errorf("Vanity URL does not exist in cache")
 }

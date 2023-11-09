@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -32,12 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
-public class TemplateSchemaParserV0 extends AbstractStaticSchemaParser {
+public class TemplateSchemaParserV0 extends BaseTemplateSchemaParser {
   @Inject TemplateSchemaFetcher templateSchemaFetcher;
   static final String TEMPLATE_DEFINITION_PATH = "definitions/template";
   static final String ONE_OF_REF_IN_TEMPLATE = "template/properties/spec/oneOf";
 
-  static final String TEMPLATE_VO = "v0";
+  public static final String TEMPLATE_VO = "v0";
 
   @Override
   void init() {
@@ -109,21 +108,5 @@ public class TemplateSchemaParserV0 extends AbstractStaticSchemaParser {
         .set(SchemaConstants.TEMPLATE_NODE, individualSchemaNode.get(SchemaConstants.TEMPLATE_NODE));
     // Deleting the template field from the outside.
     JsonNodeUtils.deletePropertiesInJsonNode(individualSchemaNode, SchemaConstants.TEMPLATE_NODE);
-  }
-  @Override
-  void checkIfRootNodeAndAddIntoFqnToNodeMap(String currentFqn, String childNodeRefValue, ObjectNode objectNode) {}
-
-  @Override
-  IndividualSchemaGenContext getIndividualSchemaGenContext() {
-    return IndividualSchemaGenContext.builder()
-        .rootSchemaNode(rootSchemaJsonNode)
-        .resolvedFqnSet(new HashSet<>())
-        .build();
-  }
-
-  @Override
-  public JsonNode getFieldNode(InputFieldMetadata inputFieldMetadata) {
-    // TODO
-    return null;
   }
 }

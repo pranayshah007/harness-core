@@ -334,7 +334,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                                                      .useDeclarativeRollback(true)
                                                      .build();
     K8sDelegateTaskParams delegateTaskParams =
-        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).kubernetesConfig(kubernetesConfig).build();
     K8sCanaryRequestHandler spyRequestHandler = spy(k8sCanaryRequestHandler);
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = spyRequestHandler.getK8sCanaryHandlerConfig();
 

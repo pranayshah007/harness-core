@@ -39,10 +39,10 @@ public class UpdateTagsInServiceLevelObjectiveV2 implements CVNGMigration {
         AbstractServiceLevelObjective serviceLevelObjective = iterator.next();
         tags = serviceLevelObjective.getTags() != null ? serviceLevelObjective.getTags() : new ArrayList<>();
         SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
-        tags.add(NGTag.builder()
-                     .key("serviceLevelIndicatorType")
-                     .value(simpleServiceLevelObjective.getServiceLevelIndicatorType().toString())
-                     .build());
+        //        tags.add(NGTag.builder()
+        //                     .key("serviceLevelIndicatorType")
+        //                     .value(simpleServiceLevelObjective.getServiceLevelIndicatorType().toString())
+        //                     .build());
         UpdateResults updateResults = hPersistence.update(serviceLevelObjective,
             hPersistence.createUpdateOperations(AbstractServiceLevelObjective.class)
                 .set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.tags, tags));

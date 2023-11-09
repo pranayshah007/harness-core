@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
@@ -57,7 +58,6 @@ import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
@@ -178,7 +178,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
 
   private void preSyncDependencies(RoleAssignmentDTO roleAssignmentDTO, boolean scopePresent,
       boolean resourceGroupPresent, boolean principalPresent) {
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     when(scopeService.isPresent(scope.toString())).thenReturn(scopePresent);
     if (!scopePresent) {
       doNothing().when(harnessScopeService).sync(scope);
@@ -291,12 +291,13 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, true, true, true);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any()))
-        .thenReturn(RoleAssignmentResponseDTO.builder().roleAssignment(roleAssignmentDTO).build());
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
+    when(roleAssignmentService.create(any())).thenReturn(roleAssignment);
     accountRoleAssignmentsApi.createAccountScopedRoleAssignments(request, account);
     assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test
@@ -309,12 +310,13 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     RoleAssignmentDTO roleAssignmentDTOClone = (RoleAssignmentDTO) HObjectMapper.clone(roleAssignmentDTO);
     preSyncDependencies(roleAssignmentDTO, false, false, false);
     preCheckUpdatePermission(roleAssignmentDTO);
-    when(transactionTemplate.execute(any()))
-        .thenReturn(RoleAssignmentResponseDTO.builder().roleAssignment(roleAssignmentDTO).build());
+    Scope scope = fromParams(harnessScopeParams);
+    RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
+    when(roleAssignmentService.create(any())).thenReturn(roleAssignment);
     accountRoleAssignmentsApi.createAccountScopedRoleAssignments(request, account);
     assertSyncDependencies(roleAssignmentDTOClone, false, false, false);
     assertCheckUpdatePermission(roleAssignmentDTOClone);
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleAssignmentService, times(1)).create(any());
   }
 
   @Test
@@ -333,7 +335,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     } catch (InvalidRequestException invalidRequestException) {
       assertSyncDependencies(roleAssignmentDTOClone, true, true, true);
       assertCheckUpdatePermission(roleAssignmentDTOClone);
-      verify(transactionTemplate, times(0)).execute(any());
+      verify(roleAssignmentService, times(0)).create(any());
     }
   }
 
@@ -376,7 +378,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     when(roleAssignmentService.get(any(), any())).thenReturn(Optional.of(roleAssignment));
 
@@ -399,7 +401,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.of(roleAssignment));
@@ -431,7 +433,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.empty());
@@ -450,7 +452,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.SERVICE);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.of(roleAssignment));
@@ -472,7 +474,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         getRoleAssignmentRequest(Principal.TypeEnum.USER);
     RoleAssignmentDTO roleAssignmentDTO = roleAssignmentApiUtils.getRoleAssignmentDto(request);
-    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    Scope scope = fromParams(harnessScopeParams);
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.of(roleAssignment));

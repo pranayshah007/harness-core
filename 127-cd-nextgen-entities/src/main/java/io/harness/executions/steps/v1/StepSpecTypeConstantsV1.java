@@ -19,18 +19,16 @@ import io.harness.annotations.dev.ProductModule;
         HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public interface StepSpecTypeConstantsV1 {
-  String DEPLOYMENT_STAGE = "deployment";
-
-  String GITOPS_MERGE_PR = "merge-pr";
-  String GITOPS_REVERT_PR = "revert-pr";
+  String GITOPS_MERGE_PR = "gitops-merge-pr";
+  String GITOPS_REVERT_PR = "gitops-revert-pr";
   String GITOPS_UPDATE_RELEASE_REPO = "gitops-update-release-repo";
   String GITOPS_SYNC = "gitops-sync";
-  String UPDATE_GITOPS_APP = "update-gitops-app";
+  String GITOPS_UPDATE_APP = "gitops-update-app";
   String GITOPS_FETCH_LINKED_APPS = "gitops-fetch-linked-apps";
 
-  String CLOUDFORMATION_CREATE_STACK = "create-stack";
-  String CLOUDFORMATION_DELETE_STACK = "delete-stack";
-  String CLOUDFORMATION_ROLLBACK_STACK = "rollback-stack";
+  String CLOUDFORMATION_CREATE_STACK = "cf-create-stack";
+  String CLOUDFORMATION_DELETE_STACK = "cf-delete-stack";
+  String CLOUDFORMATION_ROLLBACK_STACK = "cf-rollback-stack";
 
   String K8S_ROLLING_DEPLOY = "k8s-rolling-deploy";
   String K8S_ROLLING_ROLLBACK = "k8s-rolling-rollback";
@@ -94,17 +92,17 @@ public interface StepSpecTypeConstantsV1 {
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "custom-deployment";
   String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "fetch-instance-script";
 
-  String TAS_CANARY_APP_SETUP = "canary-app-setup";
-  String TAS_BG_APP_SETUP = "bg-app-setup";
-  String TAS_APP_RESIZE = "app-resize";
-  String TAS_ROLLBACK = "app-rollback";
-  String TAS_SWAP_ROUTES = "swap-routes";
-  String TAS_BASIC_APP_SETUP = "basic-app-setup";
-  String SWAP_ROLLBACK = "swap-rollback";
+  String TAS_CANARY_APP_SETUP = "tas-canary-app-setup";
+  String TAS_BG_APP_SETUP = "tas-bg-app-setup";
+  String TAS_APP_RESIZE = "tas-app-resize";
+  String TAS_ROLLBACK = "tas-app-rollback";
+  String TAS_SWAP_ROUTES = "tas-swap-routes";
+  String TAS_BASIC_APP_SETUP = "tas-basic-app-setup";
+  String TAS_SWAP_ROLLBACK = "tas-swap-rollback";
   String TANZU_COMMAND = "tanzu-command";
   String TAS_ROLLING_DEPLOY = "tas-rolling-deploy";
   String TAS_ROLLING_ROLLBACK = "tas-rolling-rollback";
-  String TAS_ROUTE_MAPPING = "route-mapping";
+  String TAS_ROUTE_MAPPING = "tas-route-mapping";
 
   String ECS_ROLLING_DEPLOY = "ecs-rolling-deploy";
   String ECS_ROLLING_ROLLBACK = "ecs-rolling-rollback";
@@ -118,12 +116,12 @@ public interface StepSpecTypeConstantsV1 {
   String ECS_UPGRADE_CONTAINER = "ecs-upgrade-container";
   String ECS_BASIC_ROLLBACK = "ecs-basic-rollback";
 
-  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "deploy-cloud-function";
-  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "deploy-cloud-function-with-no-traffic";
-  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "cloud-function-traffic-shift";
-  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "cloud-function-rollback";
-  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "deploy-cloud-function-gen-one";
-  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "rollback-cloud-function-gen-one";
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "gcf-deploy";
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "gcf-deploy-with-no-traffic";
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "gcf-traffic-shift";
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "gcf-rollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "gcf-deploy-gen-one";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "gcf-rollback-gen-one";
 
   String AWS_LAMBDA_DEPLOY = "aws-lambda-deploy";
   String AWS_LAMBDA = "aws-lambda";

@@ -10,6 +10,7 @@ package io.harness.notification.remote;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.Team;
+import io.harness.notification.model.NotificationRuleReferenceDTO;
 import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationRequestDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
@@ -18,6 +19,7 @@ import io.harness.notification.remote.dto.TemplateDTO;
 import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -34,6 +36,12 @@ public interface NotificationHTTPClient {
       @Query("identifier") String identifier, @Query("harnessManaged") Boolean harnessManaged);
 
   @POST("channels/email") Call<ResponseDTO<NotificationTaskResponse>> sendEmail(@Body EmailDTO emailDTO);
+
+  @GET("notification-rule")
+  Call<ResponseDTO<NotificationRuleReferenceDTO>> getNotificationRule(
+      @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
+      @Query("projectIdentifier") String projectIdentifier, @Query("notificationEntity") String notificationEntity,
+      @Query("notificationEvent") String notificationEvent);
 
   @POST("channels/send")
   Call<ResponseDTO<NotificationTaskResponse>> sendNotificationSync(@Body NotificationRequestDTO notificationRequestDTO);

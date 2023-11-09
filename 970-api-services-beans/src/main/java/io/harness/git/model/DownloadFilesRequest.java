@@ -19,4 +19,5 @@ import lombok.experimental.SuperBuilder;
 public class DownloadFilesRequest extends FetchFilesByPathRequest {
   private String destinationDirectory;
   private boolean trackCommitReference;
+  private boolean mayHaveMultipleFolders;
 }

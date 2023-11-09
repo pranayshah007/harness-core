@@ -8,6 +8,7 @@
 package io.harness.oidc.config;
 
 public class OidcConfigConstants {
+  public static final String KEYS = "keys";
   public static final String ALGORITHM = "alg";
   public static final String EXPONENT = "e";
   public static final String KID = "kid";

@@ -22,7 +22,7 @@ import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
-import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.cdng.gitops.steps.ClusterAgentRef;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -30,7 +30,6 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.NGFeatureFlagHelperService;
 
@@ -113,8 +112,8 @@ public class EnvironmentsPlanCreatorHelper {
     return environmentsPlanCreatorConfigBuilder.build();
   }
 
-  private static IndividualEnvData getIndividualEnvData(
-      String envRef, String envName, EnvironmentType type, Set<String> filteredClsRefs, boolean isDeployToAll) {
+  private static IndividualEnvData getIndividualEnvData(String envRef, String envName, EnvironmentType type,
+      Set<ClusterAgentRef> filteredClsRefs, boolean isDeployToAll) {
     return IndividualEnvData.builder()
         .envRef(envRef)
         .envName(envName)
@@ -124,13 +123,16 @@ public class EnvironmentsPlanCreatorHelper {
         .build();
   }
 
-  private Set<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
+  private Set<ClusterAgentRef> getClusterRefs(EnvironmentYamlV2 environmentV2) {
     if (!environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()
-          .map(ClusterYaml::getIdentifier)
-          .map(ParameterField::getValue)
+          .map(cluster
+              -> ClusterAgentRef.builder()
+                     .clusterId(cluster.getIdentifier().getValue())
+                     .agentId(cluster.getAgentIdentifier().getValue())
+                     .build())
           .collect(Collectors.toSet());
     }
     return new HashSet<>();

@@ -104,7 +104,7 @@ public class ResourceGroupChangeConsumer implements AccessControlChangeConsumer<
   }
 
   @Override
-  public boolean consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id, ResourceGroupChangeEventData changeEventData) {
     return true;
   }
 

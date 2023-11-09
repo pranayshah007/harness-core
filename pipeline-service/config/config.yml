@@ -327,8 +327,8 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.16.25
-    liteEngineImage: harness/ci-lite-engine:1.16.25
+    addonImage: harness/ci-addon:1.16.29
+    liteEngineImage: harness/ci-lite-engine:1.16.29
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
@@ -520,8 +520,6 @@ orchestrationRedisEventsConfig:
   pipelineStartPartialPlanCreator:
     maxTopicSize: ${START_PARTIAL_PLAN_CREATOR_MAX_TOPIC_SIZE:-5000}
 
-allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
-
 orchestrationLogConfiguration:
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
   shouldUseExpiredListener: ${SHOULD_USE_ORCHESTRATION_LOG_EXPIRED_LISTENER:-true}
@@ -668,6 +666,6 @@ asyncFilterCreationConsumerSleepIntervalMs: ${ASYNC_FILTER_CREATION_CONSUMER_SLE
 
 streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
 
-publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-false}
+publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-true}
 
 disableCustomStageInPipelineService: ${DISABLE_CUSTOM_STAGE_IN_PIPELINE_SERVICE:-false}

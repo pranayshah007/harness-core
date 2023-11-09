@@ -33,4 +33,14 @@ public class K8sPod {
 
     return null;
   }
+
+  @JsonIgnore
+  public boolean isCanary() {
+    if (labels == null) {
+      return false;
+    }
+
+    return HarnessLabelValues.trackCanary.equals(
+        labels.getOrDefault(HarnessLabels.track, HarnessLabelValues.trackStable));
+  }
 }

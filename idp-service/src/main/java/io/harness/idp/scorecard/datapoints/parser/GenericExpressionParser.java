@@ -15,10 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
-import io.harness.spec.server.idp.v1.model.InputValue;
+import io.harness.idp.scorecard.scores.beans.DataFetchDTO;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GenericExpressionParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, List<InputValue> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataFetchDTO dataFetchDTO) {
+    DataPointEntity dataPoint = dataFetchDTO.getDataPoint();
     String outcomeExpression = dataPoint.getOutcomeExpression();
     Map<String, Map<String, Object>> expressionData = new HashMap<>();
     expressionData.put(dataPoint.getDataSourceIdentifier(), data);
@@ -47,6 +47,6 @@ public class GenericExpressionParser implements DataPointParser {
       dataPointResponse.put(ERROR_MESSAGE_KEY, "Datapoint extraction expression evaluation failed");
     }
     dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
-    return dataPointResponse;
+    return Map.of(dataFetchDTO.getRuleIdentifier(), dataPointResponse);
   }
 }

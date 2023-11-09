@@ -40,6 +40,7 @@ import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -48,8 +49,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.tags.TagUtils;
-import io.harness.pms.timeout.SdkTimeoutObtainment;
-import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
@@ -102,6 +101,11 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
   }
 
   @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(yamlField);
+  }
+
+  @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, CustomStageNode stageNode, List<String> childrenNodeIds) {
     stageNode.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
@@ -125,9 +129,6 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()));
-
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
-    builder = setStageTimeoutObtainment(sdkTimeoutObtainment, builder);
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
@@ -242,6 +243,7 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
             .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
             .infraId(infraRef)
             .childrenNodeIds(childrenNodeIds)
+            .envGitBranch(finalEnvironmentYamlV2.getGitBranch())
             .build();
 
     final PlanNode envNode =
