@@ -10,6 +10,7 @@ package io.harness.notification.remote.resources;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -24,6 +25,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 
 @OwnedBy(PL)
 @Api("channels")
@@ -39,4 +41,9 @@ public interface ChannelResource {
   @Path("/test")
   @ApiOperation(value = "Test notification setting", nickname = "testNotificationSetting")
   ResponseDTO<Boolean> testNotificationSetting(@NotNull @Valid NotificationSettingDTO notificationSettingDTO);
+
+  @POST
+  @Path("/tests")
+  @ApiOperation(value = "Test notification setting", nickname = "testNotificationSetting")
+  ResponseDTO<Boolean> testNotificationSettings(@NotNull @Valid NotificationSettingDTO notificationSettingDTO, @Context ScopeInfo scopeInfo);
 }

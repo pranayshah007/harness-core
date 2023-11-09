@@ -32,6 +32,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
@@ -79,6 +80,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -131,13 +134,13 @@ public class OrganizationResource {
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @RequestBody(required = true,
-          description = "Details of the Organization to create") @NotNull @Valid OrganizationRequest organizationDTO) {
+          description = "Details of the Organization to create") @NotNull @Valid OrganizationRequest organizationDTO, @Context ScopeInfo scopeInfo) {
     if (DEFAULT_ORG_IDENTIFIER.equals(organizationDTO.getOrganization().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
     }
-    Organization updatedOrganization = organizationService.create(accountIdentifier, organizationDTO.getOrganization());
-    return ResponseDTO.newResponse(updatedOrganization.getVersion().toString(), toResponseWrapper(updatedOrganization));
+    Organization createdOrganization = organizationService.create(scopeInfo, organizationDTO.getOrganization()); /*organizationService.create(accountIdentifier, organizationDTO.getOrganization());*/
+    return ResponseDTO.newResponse(createdOrganization.getVersion().toString(), toResponseWrapper(createdOrganization));
   }
 
   @GET
@@ -155,8 +158,8 @@ public class OrganizationResource {
   get(@Parameter(description = ORG_PARAM_MESSAGE) @NotNull @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
-    Optional<Organization> organizationOptional = organizationService.get(accountIdentifier, identifier);
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier, @Context ScopeInfo scopeInfo) {
+    Optional<Organization> organizationOptional = organizationService.get(scopeInfo, identifier); /*organizationService.get(accountIdentifier, identifier);*/
     if (!organizationOptional.isPresent()) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", identifier));
     }
@@ -182,7 +185,7 @@ public class OrganizationResource {
           description =
               "This would be used to filter Organizations. Any Organization having the specified string in its Name, ID and Tag would be filtered.")
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @BeanParam PageRequest pageRequest) {
+      @BeanParam PageRequest pageRequest, @Context ScopeInfo scopeInfo) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(identifiers).build();
     if (isEmpty(pageRequest.getSortOrders())) {
@@ -194,7 +197,7 @@ public class OrganizationResource {
       organizationFilterDTO.setIgnoreCase(true);
     }
     Page<Organization> orgsPage =
-        organizationService.listPermittedOrgs(accountIdentifier, getPageRequest(pageRequest), organizationFilterDTO);
+        organizationService.listPermittedOrgs(scopeInfo, getPageRequest(pageRequest), organizationFilterDTO);
     return ResponseDTO.newResponse(getNGPageResponse(orgsPage.map(OrganizationMapper::toResponseWrapper)));
   }
 
@@ -208,10 +211,10 @@ public class OrganizationResource {
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = "Search term") @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @RequestBody(
-          required = true, description = "list of ProjectIdentifiers to filter results by") List<String> identifiers) {
+          required = true, description = "list of ProjectIdentifiers to filter results by") List<String> identifiers, @Context ScopeInfo scopeInfo) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(identifiers).build();
-    Page<Organization> orgsPage = organizationService.listPermittedOrgs(accountIdentifier,
+    Page<Organization> orgsPage = organizationService.listPermittedOrgs(scopeInfo,
         PageUtils.getPageRequest(0, NGCommonEntityConstants.MAX_PAGE_SIZE, new ArrayList<>()), organizationFilterDTO);
     return ResponseDTO.newResponse(getNGPageResponse(orgsPage.map(OrganizationMapper::toResponseWrapper)));
   }
@@ -236,7 +239,7 @@ public class OrganizationResource {
       @RequestBody(required = true,
           description =
               "This is the updated Organization. Please provide values for all fields, not just the fields you are updating")
-      @NotNull @Valid OrganizationRequest organizationDTO) {
+      @NotNull @Valid OrganizationRequest organizationDTO, @Context ScopeInfo scopeInfo) {
     if (DEFAULT_ORG_IDENTIFIER.equals(identifier)) {
       throw new InvalidRequestException(
           String.format(
@@ -245,7 +248,7 @@ public class OrganizationResource {
     }
     organizationDTO.getOrganization().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Organization updatedOrganization =
-        organizationService.update(accountIdentifier, identifier, organizationDTO.getOrganization());
+        organizationService.update(scopeInfo, identifier, organizationDTO.getOrganization());
     return ResponseDTO.newResponse(updatedOrganization.getVersion().toString(), toResponseWrapper(updatedOrganization));
   }
 
@@ -266,7 +269,7 @@ public class OrganizationResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @NotNull @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier, @Context ScopeInfo scopeInfo) {
     if (DEFAULT_ORG_IDENTIFIER.equals(identifier)) {
       throw new InvalidRequestException(
           String.format(
@@ -274,6 +277,6 @@ public class OrganizationResource {
           USER);
     }
     return ResponseDTO.newResponse(
-        organizationService.delete(accountIdentifier, identifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+        organizationService.delete(scopeInfo, identifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
 }

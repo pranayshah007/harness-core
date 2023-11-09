@@ -8,6 +8,7 @@
 package io.harness.platform.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NOTIFICATION_ENTITY;
@@ -68,6 +69,7 @@ import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
 import io.harness.queue.QueueConsumer;
 import io.harness.queue.QueueController;
+import io.harness.scopeinfoclient.ScopeInfoClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NotificationRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
@@ -223,6 +225,7 @@ public class NotificationServiceModule extends AbstractModule {
         appConfig.getManagerServiceConfig(), appConfig.getPlatformSecrets().getNgManagerServiceSecret()));
     install(new NGSettingsClientModule(appConfig.getNgManagerServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
+    install(new ScopeInfoClientModule(appConfig.getNgManagerServiceConfig(), this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
     bind(NotificationSettingsService.class).to(NotificationSettingsServiceImpl.class);
     bind(SeedDataPopulaterService.class).to(SeedDataPopulaterServiceImpl.class);
     bind(ChannelService.class).annotatedWith(Names.named(MAILSERVICE)).to(MailServiceImpl.class);

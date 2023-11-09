@@ -9,7 +9,10 @@ package io.harness.notification.remote.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import javax.ws.rs.core.Context;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.service.api.ChannelService;
@@ -26,6 +29,13 @@ public class ChannelResourceImpl implements ChannelResource {
   private final ChannelService channelService;
 
   public ResponseDTO<Boolean> testNotificationSetting(NotificationSettingDTO notificationSettingDTO) {
+    log.info("Received test notification request for {} - notificationId: {}", notificationSettingDTO.getType(),
+        notificationSettingDTO.getNotificationId());
+    boolean result = channelService.sendTestNotification(notificationSettingDTO);
+    return ResponseDTO.newResponse(result);
+  }
+
+  public ResponseDTO<Boolean> testNotificationSettings(NotificationSettingDTO notificationSettingDTO, ScopeInfo scopeInfo) {
     log.info("Received test notification request for {} - notificationId: {}", notificationSettingDTO.getType(),
         notificationSettingDTO.getNotificationId());
     boolean result = channelService.sendTestNotification(notificationSettingDTO);

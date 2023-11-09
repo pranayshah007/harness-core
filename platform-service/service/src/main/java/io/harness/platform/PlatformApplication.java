@@ -27,6 +27,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.eventframework.AuditEventConsumerService;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeInfoFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
@@ -48,9 +50,11 @@ import io.harness.platform.resourcegroup.ResourceGroupServiceModule;
 import io.harness.platform.resourcegroup.ResourceGroupServiceSetup;
 import io.harness.request.RequestContextFilter;
 import io.harness.resourcegroup.eventframework.ResourceGroupConsumerService;
+import io.harness.scopeinfoclient.remote.ScopeInfoClient;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
+import io.harness.security.ScopeInfoFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
@@ -95,6 +99,7 @@ import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 
@@ -193,6 +198,14 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerAuthFilters(appConfig, environment, godInjector);
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
+    environment.jersey().getResourceConfig().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class);
+      }
+    });
+    environment.jersey().register(
+        new ScopeInfoFilter(godInjector.get(NOTIFICATION_SERVICE).getInstance(Key.get(ScopeInfoClient.class, Names.named("PRIVILEGED")))));
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
     createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
     new NotificationServiceSetup().setup(

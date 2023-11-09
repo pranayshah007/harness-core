@@ -48,6 +48,14 @@ public class Scope {
         .build();
   }
 
+  public static Scope of(ScopeInfo scopeInfo) {
+    return Scope.builder()
+        .accountIdentifier(scopeInfo.getAccountIdentifier())
+        .orgIdentifier(scopeInfo.getOrgIdentifier())
+        .projectIdentifier(scopeInfo.getProjectIdentifier())
+        .build();
+  }
+
   public static Scope of(String accountIdentifier) {
     return Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
   }

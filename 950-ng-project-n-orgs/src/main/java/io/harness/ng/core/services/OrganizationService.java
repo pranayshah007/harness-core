@@ -10,6 +10,7 @@ package io.harness.ng.core.services;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
@@ -25,20 +26,26 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 public interface OrganizationService {
   Organization create(String accountIdentifier, OrganizationDTO organization);
+  Organization create(ScopeInfo scope, OrganizationDTO organization);
 
   List<String> getDistinctAccounts();
 
   Optional<Organization> get(String accountIdentifier, String identifier);
+  Optional<Organization> get(ScopeInfo scope, String identifier);
 
   Optional<Organization> getConsideringCase(String accountIdentifier, String identifier);
 
   Organization update(String accountIdentifier, String identifier, OrganizationDTO organization);
+  Organization update(ScopeInfo scope, String identifier, OrganizationDTO organization);
 
   /**
    * Use this method with caution, verify that the pageable sort is able to make use of the indexes.
    */
   Page<Organization> listPermittedOrgs(
       String accountIdentifier, Pageable pageable, OrganizationFilterDTO organizationFilterDTO);
+
+  Page<Organization> listPermittedOrgs(
+      ScopeInfo scope, Pageable pageable, OrganizationFilterDTO organizationFilterDTO);
 
   /**
    * Use this method with caution, verify that the criteria and pageable sort is able to make use of the indexes.
@@ -51,10 +58,14 @@ public interface OrganizationService {
   List<Organization> list(Criteria criteria);
 
   boolean delete(String accountIdentifier, String identifier, Long version);
+  boolean delete(ScopeInfo scope, String identifier, Long version);
 
   boolean restore(String accountIdentifier, String identifier);
+  boolean restore(ScopeInfo scope, String identifier);
 
   Long countOrgs(String accountIdentifier);
+  Long countOrgs(ScopeInfo scope);
 
   Set<String> getPermittedOrganizations(@NotNull String accountIdentifier, String orgIdentifier);
+  Set<String> getPermittedOrganizations(@NotNull ScopeInfo scope, String orgIdentifier);
 }
