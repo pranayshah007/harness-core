@@ -169,6 +169,9 @@ public class ArtifactStepHelper {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     ConnectorInfoDTO connectorDTO;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     switch (artifactConfig.getSourceType()) {
       case DOCKER_REGISTRY:
         DockerHubArtifactConfig dockerConfig = (DockerHubArtifactConfig) artifactConfig;
@@ -200,7 +203,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
         return ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
-            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue());
+            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue(), accountId, orgId,
+            projectId);
 
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
@@ -286,8 +290,8 @@ public class ArtifactStepHelper {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
-        return ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
-            gcrArtifactConfig, gcpConnectorDTO, encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue());
+        return ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(gcrArtifactConfig, gcpConnectorDTO,
+            encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
       case ECR:
         EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(ecrArtifactConfig.getConnectorRef().getValue(), ambiance);

@@ -108,6 +108,9 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   private static final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
   private static final String TAG = "tag";
   private static final String CONNECTOR_REF = "connectorRef";
+  private static final String ACCOUNT = "account";
+  private static final String ORG = "org";
+  private static final String PROJECT = "project";
   private static final ParameterField LAST_PUBLISHED_EXPRESSION_REGEX = ParameterField.createExpressionField(
       true, LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, TAG), true);
   private static final ParameterField LAST_PUBLISHED_EXPRESSION_PARAMETER =
@@ -1334,7 +1337,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GcrArtifactDelegateRequest gcrDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
-        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
 
     assertThat(gcrDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
@@ -1356,7 +1359,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GcrArtifactDelegateRequest gcrDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
-        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
 
     assertThat(gcrDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
@@ -1379,7 +1382,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GcrArtifactDelegateRequest gcrDelegateRequest = ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(
-        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+        gcrArtifactConfig, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
 
     assertThat(gcrDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
@@ -1404,7 +1407,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GarDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(
-        garArtifactInfo, connectorDTO, encryptedDataDetailList, "");
+        garArtifactInfo, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
 
     assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
@@ -1428,7 +1431,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GarDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(
-        garArtifactInfo, connectorDTO, encryptedDataDetailList, "");
+        garArtifactInfo, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
 
     assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
@@ -1452,8 +1455,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
     GarDelegateRequest amiArtifactDelegateRequest = ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(
-        garArtifactInfo, connectorDTO, encryptedDataDetailList, "");
-
+        garArtifactInfo, connectorDTO, encryptedDataDetailList, "", ACCOUNT, ORG, PROJECT);
     assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);

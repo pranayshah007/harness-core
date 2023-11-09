@@ -91,11 +91,13 @@ import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.telemetry.helpers.CDInstrumentationHelper;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.expression.NgSecretManagerFunctor;
 
+import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -107,6 +109,7 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
+  @Inject CDInstrumentationHelper instrumentationHelper;
   private final String ACCEPT_ALL_REGEX = "\\*";
   private static final String ALL_REGEX = ".*?";
   private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
@@ -537,7 +540,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
-      GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all gcr artifacts.
     String tagRegex =
         gcrArtifactConfig.getTagRegex() != null ? (String) gcrArtifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -545,6 +549,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (isLastPublishedExpression(tag)) {
       tagRegex = getTagRegex(tag);
+      instrumentationHelper.sendGcrLastPublishedTagExpressionEvent(gcrArtifactConfig, accountId, orgId, projectId);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
@@ -561,7 +566,8 @@ public class ArtifactConfigToDelegateReqMapper {
         encryptedDataDetails, ArtifactSourceType.GCR);
   }
   public GarDelegateRequest getGarDelegateRequest(GoogleArtifactRegistryConfig garArtifactConfig,
-      GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+      GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
+      String accountId, String orgId, String projectId) {
     // If both are empty, regex is latest among all gcr artifacts.
     String versionRegex = garArtifactConfig.getVersionRegex() != null
         ? (String) garArtifactConfig.getVersionRegex().fetchFinalValue()
@@ -572,6 +578,7 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isLastPublishedExpression(version)) {
       versionRegex = getTagRegex(version);
       version = "";
+      instrumentationHelper.sendGarLastPublishedTagExpressionEvent(garArtifactConfig, accountId, orgId, projectId);
     }
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
       versionRegex = "/*";
