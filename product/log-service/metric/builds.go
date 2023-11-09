@@ -20,6 +20,16 @@ func CreatePrometheusCounter(name, help, operation string) *prometheus.CounterVe
 	)
 }
 
+func CreatePrometheusHistogram(name, help string) prometheus.Histogram {
+	return prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    name,
+			Help:    help,
+			Buckets: prometheus.DefBuckets,
+		},
+	)
+}
+
 var (
 	// defining prometheus metric parameters
 	PutCount = CreatePrometheusCounter(
@@ -33,9 +43,20 @@ var (
 		"Total number of get requests to stream api",
 		"get",
 	)
+
+	STREAM_API_GET_Latency = CreatePrometheusHistogram(
+		"log_service_stream_api_get_latency",
+		"Latency distribution of stream api requests",
+	)
+	STREAM_API_PUT_Latency = CreatePrometheusHistogram(
+		"log_service_stream_api_put_latency",
+		"Latency distribution of stream api requests",
+	)
 )
 
 func RegisterMetrics() {
 	prometheus.MustRegister(PutCount)
 	prometheus.MustRegister(GetCount)
+	prometheus.MustRegister(STREAM_API_GET_Latency)
+	prometheus.MustRegister(STREAM_API_PUT_Latency)
 }
