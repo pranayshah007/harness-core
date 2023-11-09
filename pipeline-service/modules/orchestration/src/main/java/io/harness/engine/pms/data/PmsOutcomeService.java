@@ -30,6 +30,8 @@ public interface PmsOutcomeService extends Resolver {
 
   String fetchOutcome(@NonNull String outcomeInstanceId);
 
+  String fetchOutcomeByFullyQualifiedName(@NonNull String planExecutionId, @NonNull String fullyQualifiedName);
+
   OptionalOutcome resolveOptional(Ambiance ambiance, RefObject refObject);
 
   List<OutcomeInstance> fetchOutcomeInstanceByRuntimeId(String runtimeId);

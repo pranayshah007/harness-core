@@ -17,6 +17,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -51,6 +52,13 @@ import org.springframework.data.util.CloseableIterator;
 public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorService {
   @Inject NodeExecutionService nodeExecutionService;
   @Inject PmsEngineExpressionService engineExpressionService;
+  @Inject PmsOutcomeService pmsOutcomeService;
+
+  @Override
+  public String getOutcome(String planExecutionId, String fullyQualifiedName) {
+    return pmsOutcomeService.fetchOutcomeByFullyQualifiedName(planExecutionId, fullyQualifiedName);
+  }
+
   @Override
   public ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml) {
     YamlExpressionEvaluator yamlExpressionEvaluator = new YamlExpressionEvaluator(yaml);

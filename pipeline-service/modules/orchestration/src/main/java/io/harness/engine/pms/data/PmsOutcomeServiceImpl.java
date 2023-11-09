@@ -195,6 +195,14 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
     return outcomeInstance.map(OutcomeInstance::getOutcomeJsonValue).orElse(null);
   }
 
+  @Override
+  public String fetchOutcomeByFullyQualifiedName(@NonNull String planExecutionId, @NonNull String fullyQualifiedName) {
+    Query query = query(where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId).and(OutcomeInstanceKeys.fullyQualifiedName).is(fullyQualifiedName));
+    Optional<OutcomeInstance> outcomeInstance =
+            Optional.ofNullable(mongoTemplate.findOne(query, OutcomeInstance.class));
+    return outcomeInstance.map(OutcomeInstance::getOutcomeJsonValue).orElse(null);
+  }
+
   private String resolveUsingRuntimeId(@NotNull Ambiance ambiance, @NotNull RefObject refObject) {
     return resolveUsingLevelRuntimeIdx(
         ambiance.getPlanExecutionId(), ResolverUtils.prepareLevelRuntimeIdIndices(ambiance), refObject);

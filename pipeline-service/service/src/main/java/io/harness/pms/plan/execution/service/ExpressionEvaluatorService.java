@@ -18,4 +18,5 @@ import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
 @OwnedBy(PIPELINE)
 public interface ExpressionEvaluatorService {
   ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml);
+  String getOutcome(String planExecutionId, String fullyQualifiedName);
 }

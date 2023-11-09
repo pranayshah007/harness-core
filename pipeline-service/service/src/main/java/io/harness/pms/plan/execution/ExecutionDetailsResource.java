@@ -443,6 +443,34 @@ public class ExecutionDetailsResource {
     return ResponseDTO.newResponse(expressionEvaluatorService.evaluateExpression(planExecutionId, yaml));
   }
 
+  @POST
+  @Path("/{planExecutionId}/getOutcome")
+  @ApiOperation(value = "TODO", nickname = "TODO")
+  @Operation(operationId = "TODO", description = "TODO",
+          summary = "TODO",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns the Map of evaluated Expression")
+                  })
+  @Hidden
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<String>
+  getOutcome(
+          @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+          @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                  NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+          @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+                  NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+          @NotNull @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true)
+          @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ProjectIdentifier String pipelineIdentifier,
+          @Parameter(description = "Plan Execution Id for which Expression have to be evaluated",
+                  required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
+          @RequestBody(required = true, description = "Pipeline YAML") @NotNull String fullyQualifiedName) {
+    return ResponseDTO.newResponse(expressionEvaluatorService.getOutcome(planExecutionId, fullyQualifiedName));
+  }
+
   @GET
   @Path("/{planExecutionId}")
   @ApiOperation(value = "Gets Execution Detail", nickname = "getExecutionDetail")
