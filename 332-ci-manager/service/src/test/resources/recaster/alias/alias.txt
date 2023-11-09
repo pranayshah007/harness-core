@@ -551,4 +551,3 @@ io.harness.beans.steps.nodes.security.AnchoreScanNode
 io.harness.beans.steps.stepinfo.security.AnchoreStepInfo
 io.harness.beans.steps.nodes.security.AquaSecurityScanNode
 io.harness.beans.steps.stepinfo.security.AquaSecurityStepInfo
-io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig
