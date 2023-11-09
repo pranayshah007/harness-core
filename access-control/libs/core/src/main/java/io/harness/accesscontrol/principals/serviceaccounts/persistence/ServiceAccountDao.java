@@ -23,6 +23,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public interface ServiceAccountDao {
   ServiceAccount createIfNotPresent(@NotNull @Valid ServiceAccount user);
 
+  ServiceAccount update(@NotNull @Valid ServiceAccount serviceAccount);
+
   PageResponse<ServiceAccount> list(@NotNull PageRequest pageRequest, @NotEmpty String scopeIdentifier);
 
   Optional<ServiceAccount> get(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);

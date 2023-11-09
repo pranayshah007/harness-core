@@ -20,6 +20,7 @@ java_library(
         "//:lombok",
         "//970-ng-commons/src/main/java/io/harness/constants:module",
         "//980-commons/src/main/java/io/harness/data/validator:module",
+        "//980-commons/src/main/java/software/wings/jersey:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",

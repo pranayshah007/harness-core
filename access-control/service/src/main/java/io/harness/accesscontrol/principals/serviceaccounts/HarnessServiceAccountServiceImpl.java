@@ -14,13 +14,11 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.serviceaccount.ServiceAccountDTO;
+import io.harness.serviceaccount.ServiceAccountDTOInternal;
 import io.harness.serviceaccount.remote.ServiceAccountClient;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,19 +35,23 @@ public class HarnessServiceAccountServiceImpl implements HarnessServiceAccountSe
   }
 
   @Override
-  public void sync(String identifier, Scope scope) {
+  public void sync(String identifier, Scope scope, String uniqueId) {
     HarnessScopeParams scopeParams = ScopeMapper.toParams(scope);
-    List<String> resourceIds = new ArrayList<>();
-    resourceIds.add(identifier);
 
-    List<ServiceAccountDTO> serviceAccountDTOs =
-        getResponse(serviceAccountClient.listServiceAccounts(scopeParams.getAccountIdentifier(),
-            scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier(), resourceIds));
+    ServiceAccountDTOInternal serviceAccountDTO = getResponse(serviceAccountClient.gerServiceAccountInternal(identifier,
+        scopeParams.getAccountIdentifier(), scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier()));
 
-    if (!serviceAccountDTOs.isEmpty()) {
-      ServiceAccount serviceAccount =
-          ServiceAccount.builder().identifier(identifier).scopeIdentifier(scope.toString()).build();
-      serviceAccountService.createIfNotPresent(serviceAccount);
+    if (serviceAccountDTO != null) {
+      ServiceAccount serviceAccount = ServiceAccount.builder()
+                                          .identifier(identifier)
+                                          .scopeIdentifier(scope.toString())
+                                          .uniqueId(serviceAccountDTO.getUniqueId())
+                                          .build();
+      ServiceAccount savedServiceAccount = serviceAccountService.createIfNotPresent(serviceAccount);
+      if (savedServiceAccount.getUniqueId() == null && serviceAccountDTO.getUniqueId() != null) {
+        savedServiceAccount.setUniqueId(serviceAccountDTO.getUniqueId());
+        serviceAccountService.update(savedServiceAccount);
+      }
     } else {
       serviceAccountService.deleteIfPresent(identifier, scope.toString());
     }

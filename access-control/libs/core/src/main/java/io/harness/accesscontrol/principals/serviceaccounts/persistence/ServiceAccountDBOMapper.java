@@ -24,6 +24,7 @@ public class ServiceAccountDBOMapper {
         .createdAt(object.getCreatedAt())
         .lastModifiedAt(object.getLastModifiedAt())
         .version(object.getVersion())
+        .uniqueId(object.getUniqueId())
         .build();
   }
 
@@ -34,6 +35,7 @@ public class ServiceAccountDBOMapper {
         .createdAt(object.getCreatedAt())
         .lastModifiedAt(object.getLastModifiedAt())
         .version(object.getVersion())
+        .uniqueId(object.getUniqueId())
         .build();
   }
 }

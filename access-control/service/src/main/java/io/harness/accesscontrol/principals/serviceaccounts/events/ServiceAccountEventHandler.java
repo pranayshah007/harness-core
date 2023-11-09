@@ -54,7 +54,7 @@ public class ServiceAccountEventHandler implements EventHandler {
                                       .projectIdentifier(stripToNull(entityChangeDTO.getProjectIdentifier().getValue()))
                                       .build();
       Scope scope = ScopeMapper.fromParams(params);
-      harnessServiceAccountService.sync(stripToNull(entityChangeDTO.getIdentifier().getValue()), scope);
+      harnessServiceAccountService.sync(stripToNull(entityChangeDTO.getIdentifier().getValue()), scope, "");
     } catch (Exception e) {
       log.error("Could not process the resource group change event {} due to error", entityChangeDTO, e);
       return false;

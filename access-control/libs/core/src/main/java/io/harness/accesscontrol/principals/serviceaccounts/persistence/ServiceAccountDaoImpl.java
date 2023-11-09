@@ -10,9 +10,11 @@ package io.harness.accesscontrol.principals.serviceaccounts.persistence;
 import static io.harness.accesscontrol.principals.serviceaccounts.persistence.ServiceAccountDBOMapper.fromDBO;
 import static io.harness.accesscontrol.principals.serviceaccounts.persistence.ServiceAccountDBOMapper.toDBO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.exception.WingsException.USER;
 
 import io.harness.accesscontrol.principals.serviceaccounts.ServiceAccount;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.utils.PageUtils;
@@ -41,6 +43,22 @@ public class ServiceAccountDaoImpl implements ServiceAccountDao {
     Optional<ServiceAccountDBO> savedServiceAccount = serviceAccountRepository.findByIdentifierAndScopeIdentifier(
         serviceAccountDBO.getIdentifier(), serviceAccountDBO.getScopeIdentifier());
     return fromDBO(savedServiceAccount.orElseGet(() -> serviceAccountRepository.save(serviceAccountDBO)));
+  }
+
+  @Override
+  public ServiceAccount update(ServiceAccount serviceAccount) {
+    ServiceAccountDBO serviceAccountDBO = toDBO(serviceAccount);
+    Optional<ServiceAccountDBO> existingServiceAccountOptional =
+        serviceAccountRepository.findByIdentifierAndScopeIdentifier(
+            serviceAccountDBO.getIdentifier(), serviceAccountDBO.getScopeIdentifier());
+    if (existingServiceAccountOptional.isEmpty()) {
+      throw new InvalidRequestException("No Service Account with identifier present", USER);
+    }
+    ServiceAccountDBO existingServiceAccount = existingServiceAccountOptional.get();
+    serviceAccountDBO.setId(existingServiceAccount.getId());
+    serviceAccountDBO.setCreatedAt(existingServiceAccount.getCreatedAt());
+    serviceAccountDBO.setNextReconciliationIterationAt(existingServiceAccount.getNextReconciliationIterationAt());
+    return fromDBO(serviceAccountRepository.save(serviceAccountDBO));
   }
 
   @Override

@@ -32,6 +32,8 @@ import io.harness.ng.core.migration.background.UserMetadataTwoFactorAuthenticati
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+
+import io.harness.ng.serviceaccounts.migration.AddUniqueIdToServiceAccountMigration;
 import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -68,6 +70,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(17, CleanupDeploymentSummaryNg.class))
         .add(Pair.of(18, CleanupInfrastructureMappingNg.class))
         .add(Pair.of(19, CleanupInstanceNg.class))
+        .add(Pair.of(20, AddUniqueIdToServiceAccountMigration.class))
         .build();
   }
 }

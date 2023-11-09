@@ -44,6 +44,7 @@ import io.harness.ng.serviceaccounts.service.ServiceAccountDTOMapper;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.security.annotations.InternalApi;
 import io.harness.serviceaccount.ServiceAccountDTO;
+import io.harness.serviceaccount.ServiceAccountDTOInternal;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -293,5 +294,21 @@ public class ServiceAccountResource {
       @PathParam(IDENTIFIER) @NotNull String identifier) {
     ServiceAccountDTO requestDTOS = serviceAccountService.getServiceAccountDTO(accountIdentifier, identifier);
     return ResponseDTO.newResponse(requestDTOS);
+  }
+
+  @GET
+  @Path("{identifier}")
+  @Hidden
+  @InternalApi
+  @ApiOperation(value = "Get service account by identifier", nickname = "getServiceAccountByIdentifier")
+  public ResponseDTO<ServiceAccountDTOInternal> getServiceAccount(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @PathParam(IDENTIFIER) @NotNull String identifier) {
+    ServiceAccountDTO serviceAccountDTO =
+        serviceAccountService.getServiceAccountDTO(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    return ResponseDTO.newResponse(ServiceAccountDTOMapper.getDTOFromServiceAccountInternal(serviceAccountDTO));
   }
 }

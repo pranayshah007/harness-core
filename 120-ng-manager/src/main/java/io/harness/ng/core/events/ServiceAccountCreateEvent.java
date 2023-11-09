@@ -48,7 +48,12 @@ public class ServiceAccountCreateEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, serviceAccount.getName());
-    return Resource.builder().identifier(serviceAccount.getIdentifier()).type(SERVICE_ACCOUNT).labels(labels).build();
+    return Resource.builder()
+        .identifier(serviceAccount.getIdentifier())
+        .type(SERVICE_ACCOUNT)
+        .labels(labels)
+        .uniqueId(serviceAccount.getUniqueId())
+        .build();
   }
 
   @Override

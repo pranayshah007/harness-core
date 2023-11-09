@@ -65,7 +65,7 @@ public class RoleAssignmentPrincipalScopeLevelMigrationTest extends AccessContro
         roleAssignmentRepository, scopeService, harnessServiceAccountService, serviceAccountService);
     serviceAccountService.createIfNotPresent(
         ServiceAccount.builder().identifier(SERVICE_ACCOUNT_IDENTIFIER).scopeIdentifier(ORG_SCOPE.toString()).build());
-    doNothing().when(harnessServiceAccountService).sync(SERVICE_ACCOUNT_IDENTIFIER, PROJECT_SCOPE);
+    doNothing().when(harnessServiceAccountService).sync(SERVICE_ACCOUNT_IDENTIFIER, PROJECT_SCOPE, "");
   }
 
   @Test

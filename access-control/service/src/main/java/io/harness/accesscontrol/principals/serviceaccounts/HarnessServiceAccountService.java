@@ -16,5 +16,5 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.PL)
 public interface HarnessServiceAccountService {
-  void sync(@NotEmpty String identifier, @NotNull Scope scope);
+  void sync(@NotEmpty String identifier, @NotNull Scope scope, String uniqueId);
 }

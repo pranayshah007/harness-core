@@ -34,7 +34,7 @@ import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 @Slf4j
-public class AddUniqueIdToNGEntitiesMigration<T extends UniqueIdAware> {
+public abstract class AddUniqueIdToNGEntitiesMigration<T extends UniqueIdAware> {
   public static final int BATCH_SIZE = 500;
   public static final String UNIQUE_ID_GENERATION_LOG_CONST = "[NGUniqueIdGenerationMigration]:";
 
@@ -73,7 +73,10 @@ public class AddUniqueIdToNGEntitiesMigration<T extends UniqueIdAware> {
             idValue = ((Project) entity).getId();
           } else if (entity instanceof Organization) {
             idValue = ((Organization) entity).getId();
+          } else {
+            idValue = getId(entity);
           }
+
           if (isNotEmpty(idValue)) {
             toUpdateCounter++;
             batchSizeCounter++;
@@ -99,5 +102,9 @@ public class AddUniqueIdToNGEntitiesMigration<T extends UniqueIdAware> {
         "%s Migration for Entity Type: [%s]. Total documents: [%d], documents to Update: [%s], Successful: [%d], Failed: [%d]",
         UNIQUE_ID_GENERATION_LOG_CONST, persistentClass.getSimpleName(), totalCounter, toUpdateCounter, migratedCounter,
         toUpdateCounter - migratedCounter));
+  }
+
+  public String getId(UniqueIdAware entity) {
+    return null;
   }
 }

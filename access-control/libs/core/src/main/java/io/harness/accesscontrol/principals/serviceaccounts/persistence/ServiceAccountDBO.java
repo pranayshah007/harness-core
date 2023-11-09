@@ -59,6 +59,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("serviceAccounts")
 public class ServiceAccountDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @dev.morphia.annotations.Id String id;
+  String uniqueId;
   @NotEmpty final String scopeIdentifier;
   @NotEmpty final String identifier;
 

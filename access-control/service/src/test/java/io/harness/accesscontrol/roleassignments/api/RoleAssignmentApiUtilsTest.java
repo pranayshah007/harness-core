@@ -229,7 +229,7 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(roleAssignmentParam, scope);
     assertThat(resultRoleAssignment).isEqualToComparingFieldByField(expectedRoleAssigment);
     assertThat(resultRoleAssignment.getPrincipalScopeLevel()).isEqualTo(PROJECT);
-    verify(harnessServiceAccountService, times(1)).sync(PRINCIPAL_ID, scope);
+    verify(harnessServiceAccountService, times(1)).sync(PRINCIPAL_ID, scope, "");
   }
   @Test
   @Owner(developers = MEENAKSHI)

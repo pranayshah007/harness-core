@@ -55,8 +55,8 @@ public class ServiceAccountReconciliationIterator implements Handler<ServiceAcco
 
   @Override
   public void handle(ServiceAccountDBO entity) {
-    harnessServiceAccountService.sync(
-        entity.getIdentifier(), scopeService.buildScopeFromScopeIdentifier(entity.getScopeIdentifier()));
+    harnessServiceAccountService.sync(entity.getIdentifier(),
+        scopeService.buildScopeFromScopeIdentifier(entity.getScopeIdentifier()), entity.getUniqueId());
   }
 
   public void registerIterators() {

@@ -7,27 +7,30 @@
 
 package io.harness.serviceaccount;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import io.harness.NGCommonEntityConstants;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 
+import software.wings.jersey.JsonViews;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotBlank;
 
-@Data
-@Builder
+@Getter
+@SuperBuilder
+@NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OwnedBy(PL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "ServiceAccount", description = "This has the details of Service Account in Harness.")
 public class ServiceAccountDTO {
   @ApiModelProperty(required = true)
@@ -35,6 +38,9 @@ public class ServiceAccountDTO {
   @NotBlank
   @Schema(description = "Identifier of the Service Account.")
   String identifier;
+  @JsonView(JsonViews.Internal.class)
+  @Schema(hidden = true, description = "UniqueId of Service Account")
+  String uniqueId;
   @ApiModelProperty(required = true) @NotBlank @Schema(description = "Name of the Service Account.") String name;
   @ApiModelProperty(required = true)
   @Email

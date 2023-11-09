@@ -69,7 +69,7 @@ public class HarnessServiceAccountServiceImplTest extends AccessControlTestBase 
     when(serviceAccountClient.listServiceAccounts(accountIdentifier, null, null, resourceIds).execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(serviceAccountDTOs)));
     when(serviceAccountService.createIfNotPresent(serviceAccount)).thenReturn(serviceAccount);
-    harnessServiceAccountService.sync(identifier, scope);
+    harnessServiceAccountService.sync(identifier, scope, "");
     verify(serviceAccountClient, atLeast(1)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
     verify(serviceAccountService, times(1)).createIfNotPresent(serviceAccount);
   }
@@ -88,7 +88,7 @@ public class HarnessServiceAccountServiceImplTest extends AccessControlTestBase 
     when(serviceAccountClient.listServiceAccounts(accountIdentifier, null, null, resourceIds).execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(emptyList())));
     when(serviceAccountService.deleteIfPresent(identifier, scope.toString())).thenReturn(Optional.of(serviceAccount));
-    harnessServiceAccountService.sync(identifier, scope);
+    harnessServiceAccountService.sync(identifier, scope, "");
     verify(serviceAccountClient, atLeast(1)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
     verify(serviceAccountService, times(1)).deleteIfPresent(identifier, scope.toString());
   }

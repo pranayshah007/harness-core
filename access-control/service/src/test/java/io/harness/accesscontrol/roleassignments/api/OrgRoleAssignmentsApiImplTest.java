@@ -201,7 +201,9 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
       when(serviceAccountService.get(roleAssignmentDTO.getPrincipal().getIdentifier(), scope.toString()))
           .thenReturn(principalPresent ? Optional.of(ServiceAccount.builder().build()) : Optional.empty());
       if (!principalPresent) {
-        doNothing().when(harnessServiceAccountService).sync(roleAssignmentDTO.getPrincipal().getIdentifier(), scope);
+        doNothing()
+            .when(harnessServiceAccountService)
+            .sync(roleAssignmentDTO.getPrincipal().getIdentifier(), scope, "");
       }
     } else if (PrincipalType.USER_GROUP.equals(roleAssignmentDTO.getPrincipal().getType())) {
       when(userGroupService.get(roleAssignmentDTO.getPrincipal().getIdentifier(), scope.toString()))
@@ -255,7 +257,7 @@ public class OrgRoleAssignmentsApiImplTest extends AccessControlTestBase {
     } else if (PrincipalType.SERVICE_ACCOUNT.equals(roleAssignmentDTO.getPrincipal().getType())) {
       verify(serviceAccountService, times(invocations)).get(any(), any());
       if (!principalPresent) {
-        verify(harnessServiceAccountService, times(invocations)).sync(any(), any());
+        verify(harnessServiceAccountService, times(invocations)).sync(any(), any(), any());
       }
     } else if (PrincipalType.USER_GROUP.equals(roleAssignmentDTO.getPrincipal().getType())) {
       verify(userGroupService, times(invocations)).get(any(), any());

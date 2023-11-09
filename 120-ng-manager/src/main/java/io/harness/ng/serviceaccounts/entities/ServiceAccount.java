@@ -21,6 +21,7 @@ import io.harness.ng.core.NGOrgAccess;
 import io.harness.ng.core.NGProjectAccess;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UniqueIdAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
@@ -51,7 +52,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("serviceAccounts")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.PL)
-public class ServiceAccount implements PersistentEntity, UuidAware, NGAccountAccess, NGOrgAccess, NGProjectAccess {
+public class ServiceAccount
+    implements PersistentEntity, UuidAware, NGAccountAccess, NGOrgAccess, NGProjectAccess, UniqueIdAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -72,6 +74,7 @@ public class ServiceAccount implements PersistentEntity, UuidAware, NGAccountAcc
   }
 
   @org.springframework.data.annotation.Id @Id String uuid;
+  String uniqueId;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
 

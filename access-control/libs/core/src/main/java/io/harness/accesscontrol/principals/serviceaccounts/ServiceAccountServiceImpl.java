@@ -58,6 +58,11 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   }
 
   @Override
+  public ServiceAccount update(ServiceAccount serviceAccount) {
+    return serviceAccountDao.update(serviceAccount);
+  }
+
+  @Override
   public PageResponse<ServiceAccount> list(PageRequest pageRequest, String scopeIdentifier) {
     return serviceAccountDao.list(pageRequest, scopeIdentifier);
   }

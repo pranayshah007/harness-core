@@ -23,6 +23,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(PL)
 @Getter
+@Setter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
@@ -31,6 +32,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class ServiceAccount {
   @NotEmpty final String scopeIdentifier;
   @NotEmpty final String identifier;
+  String uniqueId;
   @EqualsAndHashCode.Exclude @Setter Long createdAt;
   @EqualsAndHashCode.Exclude @Setter Long lastModifiedAt;
   @EqualsAndHashCode.Exclude @Setter Long version;
