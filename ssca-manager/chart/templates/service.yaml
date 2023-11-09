@@ -10,7 +10,7 @@ metadata:
       {{- end }}
   {{- if or .Values.service.annotations .Values.global.commonAnnotations }}
   annotations:
-    {{- if .Values.service.annotations }}
+      {{- if .Values.service.annotations }}
       {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.service.annotations "context" $ ) | nindent 4 }}
       {{- end }}
       {{- if .Values.global.commonAnnotations }}
