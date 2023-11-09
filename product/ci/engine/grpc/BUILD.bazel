@@ -27,6 +27,7 @@ go_library(
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
         "//product/log-service/stream",
+        "//product/log-service/client",
         "@com_github_harness_ti_client//types",
         "@com_github_pkg_errors//:errors",
         "@org_golang_google_grpc//:go_default_library",
