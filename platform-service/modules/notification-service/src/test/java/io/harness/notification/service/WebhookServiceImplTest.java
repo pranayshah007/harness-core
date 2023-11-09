@@ -97,21 +97,6 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void sendNotification_NoTemplateIdInRequest() {
-    NotificationRequest notificationRequest =
-        NotificationRequest.newBuilder()
-            .setId(id)
-            .setAccountId(accountId)
-            .setWebhook(
-                NotificationRequest.Webhook.newBuilder().addAllUrls(Collections.singletonList(webhookUrl)).build())
-            .build();
-    NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
-    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
   public void sendNotification_NoRecipientInRequest() {
     NotificationRequest notificationRequest = NotificationRequest.newBuilder()
                                                   .setId(id)
@@ -229,6 +214,90 @@ public class WebhookServiceImplTest extends CategoryTest {
     when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
     when(delegateGrpcClientWrapper.submitAsyncTaskV2(any(), any())).thenReturn("task-id");
     notificationProcessingResponse = webhookService.send(notificationRequest);
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithoutTemplateId_WithCustomContent() {
+    NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
+                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .setMessage("some-message")
+                                                     .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(false);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+
+    NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
+
+    verifyNoInteractions(notificationTemplateService);
+    verify(webhookSender, times(1))
+        .send(eq(List.of(webhookUrl)), eq(webhookBuilder.getMessage()), anyString(), anyMap(), anyList());
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithoutDelegate() {
+    NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
+                                                     .setTemplateId(webhookTemplateName)
+                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(false);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+
+    NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
+
+    verify(webhookSender, times(1))
+        .send(eq(List.of(webhookUrl)), eq(TEST_NOTIFICATION_TEMPLATE_CONTENT), anyString(), anyMap(), anyList());
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithDelegate() {
+    NotificationRequest.Webhook webhookBuilder = NotificationRequest.Webhook.newBuilder()
+                                                     .setTemplateId(webhookTemplateName)
+                                                     .addAllUrls(Collections.singletonList(webhookUrl))
+                                                     .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setWebhook(webhookBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
+    when(delegateGrpcClientWrapper.submitAsyncTaskV2(any(), any())).thenReturn("");
+
+    NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), any());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    WebhookTaskParams webhookTaskParams = (WebhookTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(webhookTaskParams.getWebhookUrls()).isNotEmpty();
+    assertThat(webhookTaskParams.getWebhookUrls()).hasSize(1);
+    assertThat(webhookTaskParams.getWebhookUrls()).contains(webhookUrl);
+    assertThat(webhookTaskParams.getMessage()).isEqualTo(TEST_NOTIFICATION_TEMPLATE_CONTENT);
+    assertThat(webhookTaskParams.getHeaders()).isEmpty();
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
 

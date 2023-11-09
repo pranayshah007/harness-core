@@ -15,8 +15,8 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.Webhook;
 import static io.harness.notification.NotificationServiceConstants.TEST_WEBHOOK_TEMPLATE;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -79,11 +79,6 @@ public class WebhookServiceImpl implements ChannelService {
     String templateId = webhookDetails.getTemplateId();
     Map<String, String> templateData = webhookDetails.getTemplateDataMap();
 
-    if (Objects.isNull(trimToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
-    }
-
     List<String> webhookUrls = getRecipients(notificationRequest);
     if (isEmpty(webhookUrls)) {
       log.info("No webhookUrls found in notification request {}", notificationId);
@@ -97,7 +92,7 @@ public class WebhookServiceImpl implements ChannelService {
 
     return send(webhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
-        new HashMap<>(webhookDetails.getHeadersMap()));
+        new HashMap<>(webhookDetails.getHeadersMap()), webhookDetails.getMessage());
   }
 
   @Override
@@ -157,7 +152,7 @@ public class WebhookServiceImpl implements ChannelService {
         webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl),
         TEST_WEBHOOK_TEMPLATE, Collections.emptyMap(), webhookSettingDTO.getNotificationId(), null,
-        notificationSettingDTO.getAccountId(), 0, Collections.emptyMap(), Collections.emptyMap());
+        notificationSettingDTO.getAccountId(), 0, Collections.emptyMap(), Collections.emptyMap(), EMPTY);
     if (NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)) {
       throw new NotificationException(
           "Invalid webhook Url encountered while processing Test Connection request " + webhookUrl, DEFAULT_ERROR_CODE,
@@ -168,15 +163,17 @@ public class WebhookServiceImpl implements ChannelService {
 
   private NotificationProcessingResponse send(List<String> webhookUrls, String templateId,
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
-      Map<String, String> abstractionMap, Map<String, String> headers) {
-    Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
-    if (!templateOpt.isPresent()) {
-      log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      Map<String, String> abstractionMap, Map<String, String> headers, String message) {
+    if (isNotEmpty(templateId)) {
+      Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
+      if (!templateOpt.isPresent()) {
+        log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
+        return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      }
+      String template = templateOpt.get();
+      StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
+      message = strSubstitutor.replace(template);
     }
-    String template = templateOpt.get();
-    StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
-    String message = strSubstitutor.replace(template);
     List<String> webhookDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
         SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
