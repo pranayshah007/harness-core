@@ -12,6 +12,7 @@ import (
 	"time"
 
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	"github.com/harness/harness-core/product/log-service/client"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -22,7 +23,7 @@ const (
 
 //go:generate mockgen -source server.go -package=grpc -destination mocks/server_mock.go EngineServer
 
-//EngineServer implements a GRPC server that listens to messages from lite engine
+// EngineServer implements a GRPC server that listens to messages from lite engine
 type EngineServer interface {
 	Start() error
 	Stop()
@@ -37,7 +38,7 @@ type engineServer struct {
 	stopCh     chan bool
 }
 
-//NewEngineServer constructs a new EngineServer
+// NewEngineServer constructs a new EngineServer
 func NewEngineServer(port uint, log *zap.SugaredLogger, procWriter io.Writer) (EngineServer, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -56,14 +57,15 @@ func NewEngineServer(port uint, log *zap.SugaredLogger, procWriter io.Writer) (E
 	return &server, nil
 }
 
-//Start signals the GRPC server to begin serving on the configured port
+// Start signals the GRPC server to begin serving on the configured port
 func (s *engineServer) Start() error {
 	pb.RegisterLiteEngineServer(s.grpcServer, NewEngineHandler(s.log, s.procWriter))
-	logProxyHandler,err := NewLogProxyHandler(s.log)
+	var client client.Client
+	logProxyHandler, err := NewLogProxyHandler(s.log, client)
 	if err != nil {
-	   return err
+		return err
 	}
-	pb.RegisterLogProxyServer(s.grpcServer,logProxyHandler)
+	pb.RegisterLogProxyServer(s.grpcServer, logProxyHandler)
 	pb.RegisterTiProxyServer(s.grpcServer, NewTiProxyHandler(s.log, s.procWriter))
 	err = s.grpcServer.Serve(s.listener)
 	if err != nil {
@@ -73,7 +75,7 @@ func (s *engineServer) Start() error {
 	return nil
 }
 
-//Stop method waits for signal to stop the server and stops GRPC server upon receiving it
+// Stop method waits for signal to stop the server and stops GRPC server upon receiving it
 func (s *engineServer) Stop() {
 	<-s.stopCh
 	s.log.Infow("Initiating shutdown of CI engine server")

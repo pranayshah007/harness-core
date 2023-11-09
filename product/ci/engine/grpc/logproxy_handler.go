@@ -15,8 +15,8 @@ import (
 
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
+	"github.com/harness/harness-core/product/log-service/client"
 	"github.com/harness/harness-core/product/log-service/stream"
-	cli "github.com/harness/harness-core/product/log-service/client"
 	"go.uber.org/zap"
 )
 
@@ -26,23 +26,23 @@ var (
 
 // handler is used to implement EngineServer
 type logProxyHandler struct {
-	log *zap.SugaredLogger
-	client cli.Client
+	log    *zap.SugaredLogger
+	client client.Client
 }
 
 // NewEngineHandler returns a GRPC handler that implements pb.EngineServer
-func NewLogProxyHandler(log *zap.SugaredLogger) (pb.LogProxyServer,error) {
-    client,err := remoteLogClient()
-    if err != nil {
-       return nil,err
-    }
-	return &logProxyHandler{log,client},nil
+func NewLogProxyHandler(log *zap.SugaredLogger, client client.Client) (pb.LogProxyServer, error) {
+	client, err := remoteLogClient()
+	if err != nil {
+		return nil, err
+	}
+	return &logProxyHandler{log, client}, nil
 }
 
 // Write writes to a log stream.
 // Connects to the log service to invoke the write to stream API.
 func (h *logProxyHandler) Write(ctx context.Context, in *pb.WriteRequest) (*pb.WriteResponse, error) {
-    var err error
+	var err error
 	h.log.Infow("LogProxy - starting write", "key", in.GetKey())
 	var lines []*stream.Line
 	for _, strLine := range in.GetLines() {
