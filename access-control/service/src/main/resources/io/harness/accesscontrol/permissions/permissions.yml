@@ -1724,13 +1724,13 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: ccm_commitmentOrch_edit
+  - identifier: ccm_commitmentOrchestrator_edit
     name: Setup CCM Commitment Orchestration
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: ccm_commitmentOrch_view
+  - identifier: ccm_commitmentOrchestrator_view
       name: View CCM Commitment Orchestration
       status: ACTIVE
       includedInAllRoles: false

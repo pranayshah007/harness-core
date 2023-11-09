@@ -73,4 +73,4 @@ roles:
       - chaos_chaossecuritygovernance_view
       - ccm_anomalies_view
       - ccm_recommendations_view
-      - ccm_commitmentOrch_view
+      - ccm_commitmentOrchestrator_view
