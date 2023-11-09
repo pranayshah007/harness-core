@@ -15,11 +15,12 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.NotificationRequest.Slack;
 import static io.harness.notification.NotificationServiceConstants.TEST_SLACK_TEMPLATE;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NotificationProcessingResponse;
@@ -78,11 +79,6 @@ public class SlackServiceImpl implements ChannelService {
     String templateId = slackDetails.getTemplateId();
     Map<String, String> templateData = slackDetails.getTemplateDataMap();
 
-    if (Objects.isNull(trimToNull(templateId))) {
-      log.info("template Id is null for notification request {}", notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
-    }
-
     List<String> slackWebhookUrls = getRecipients(notificationRequest);
     if (isEmpty(slackWebhookUrls)) {
       log.info("No slackWebhookUrls found in notification request {}", notificationId);
@@ -95,7 +91,7 @@ public class SlackServiceImpl implements ChannelService {
         notificationRequest.getAccountId(), slackDetails.getOrgIdentifier(), slackDetails.getProjectIdentifier());
 
     return send(slackWebhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
-        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap, slackDetails.getMessage());
   }
 
   @Override
@@ -154,7 +150,7 @@ public class SlackServiceImpl implements ChannelService {
         webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl), TEST_SLACK_TEMPLATE,
         Collections.emptyMap(), slackSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
-        Collections.emptyMap());
+        Collections.emptyMap(), EMPTY);
     if (NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)) {
       throw new NotificationException(
           "Invalid webhook Url encountered while processing Test Connection request " + webhookUrl, DEFAULT_ERROR_CODE,
@@ -165,15 +161,17 @@ public class SlackServiceImpl implements ChannelService {
 
   private NotificationProcessingResponse send(List<String> slackWebhookUrls, String templateId,
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
-      Map<String, String> abstractionMap) {
-    Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
-    if (!templateOpt.isPresent()) {
-      log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
-      return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      Map<String, String> abstractionMap, String message) {
+    if (EmptyPredicate.isNotEmpty(templateId)) {
+      Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
+      if (!templateOpt.isPresent()) {
+        log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
+        return NotificationProcessingResponse.trivialResponseWithNoRetries;
+      }
+      String template = templateOpt.get();
+      StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
+      message = strSubstitutor.replace(template);
     }
-    String template = templateOpt.get();
-    StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
-    String message = strSubstitutor.replace(template);
     List<String> validDomains = notificationSettingsHelper.getTargetAllowlistFromSettings(
         SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;

@@ -47,6 +47,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.Before;
@@ -92,22 +93,6 @@ public class SlackServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void sendNotification_OnlyIdInRequest() {
     NotificationRequest notificationRequest = NotificationRequest.newBuilder().setId(id).build();
-    NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
-    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
-  }
-
-  @Test
-  @Owner(developers = ANKUSH)
-  @Category(UnitTests.class)
-  public void sendNotification_NoTemplateIdInRequest() {
-    NotificationRequest notificationRequest =
-        NotificationRequest.newBuilder()
-            .setId(id)
-            .setAccountId(accountId)
-            .setSlack(NotificationRequest.Slack.newBuilder()
-                          .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
-                          .build())
-            .build();
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
   }
@@ -238,47 +223,83 @@ public class SlackServiceImplTest extends CategoryTest {
 
   @SneakyThrows
   @Test
-  @Owner(developers = ANKUSH)
+  @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void sendNotification_ValidCase() {
+  public void sendNotification_ValidCase_WithoutTemplateId_WithCustomContent() {
+    NotificationRequest.Slack slackBuilder = NotificationRequest.Slack.newBuilder()
+                                                 .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                                                 .setMessage("some-message")
+                                                 .build();
     NotificationRequest notificationRequest =
-        NotificationRequest.newBuilder()
-            .setId(id)
-            .setAccountId(accountId)
-            .setSlack(NotificationRequest.Slack.newBuilder()
-                          .setTemplateId(slackTemplateName)
-                          .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
-                          .build())
-            .build();
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setSlack(slackBuilder).build();
     NotificationProcessingResponse notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
-    when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
-        .thenReturn(Optional.empty(), Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(false);
     when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
-    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
 
-    notificationProcessingResponse = slackService.send(notificationRequest);
+    verifyNoInteractions(notificationTemplateService);
+    verify(slackSender, times(1)).send(eq(List.of(slackWebhookurl)), eq(slackBuilder.getMessage()), any(), any());
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
 
-    notificationRequest = NotificationRequest.newBuilder()
-                              .setId(id)
-                              .setAccountId(accountId)
-                              .setSlack(NotificationRequest.Slack.newBuilder()
-                                            .setTemplateId(slackTemplateName)
-                                            .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
-                                            .build())
-                              .build();
-    notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithoutDelegate() {
+    NotificationRequest.Slack slackBuilder = NotificationRequest.Slack.newBuilder()
+                                                 .setTemplateId(slackTemplateName)
+                                                 .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                                                 .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setSlack(slackBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
-        .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
-        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
-    notificationProcessingResponse = slackService.send(notificationRequest);
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(false);
+    when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+
+    NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
+
+    verify(slackSender, times(1))
+        .send(eq(List.of(slackWebhookurl)), eq(TEST_NOTIFICATION_TEMPLATE_CONTENT), any(), any());
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void sendNotification_ValidCase_WithDelegate() {
+    NotificationRequest.Slack slackBuilder = NotificationRequest.Slack.newBuilder()
+                                                 .setTemplateId(slackTemplateName)
+                                                 .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                                                 .build();
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder().setId(id).setAccountId(accountId).setSlack(slackBuilder).build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(List.of(true)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
+        .thenReturn(Optional.of(TEST_NOTIFICATION_TEMPLATE_CONTENT));
+    when(notificationSettingsService.checkIfWebhookIsSecret(any())).thenReturn(true);
+    when(delegateGrpcClientWrapper.submitAsyncTaskV2(any(), any())).thenReturn("");
+
+    NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
+
+    ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(delegateTaskRequestArgumentCaptor.capture(), any());
+
+    DelegateTaskRequest actualDelegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
+    SlackTaskParams slackTaskParams = (SlackTaskParams) actualDelegateTaskRequest.getTaskParameters();
+
+    assertThat(slackTaskParams.getSlackWebhookUrls()).isNotEmpty();
+    assertThat(slackTaskParams.getSlackWebhookUrls()).hasSize(1);
+    assertThat(slackTaskParams.getSlackWebhookUrls()).contains(slackWebhookurl);
+    assertThat(slackTaskParams.getMessage()).isEqualTo(TEST_NOTIFICATION_TEMPLATE_CONTENT);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
 
