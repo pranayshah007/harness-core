@@ -12,13 +12,17 @@ import (
 	"time"
 
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
-	"github.com/harness/harness-core/product/log-service/client"
+	"github.com/harness/harness-core/product/ci/common/external"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 const (
 	hardStopWaitTimeout = 10
+)
+
+var (
+   remoteClient = external.GetRemoteHTTPClient
 )
 
 //go:generate mockgen -source server.go -package=grpc -destination mocks/server_mock.go EngineServer
@@ -60,7 +64,7 @@ func NewEngineServer(port uint, log *zap.SugaredLogger, procWriter io.Writer) (E
 // Start signals the GRPC server to begin serving on the configured port
 func (s *engineServer) Start() error {
 	pb.RegisterLiteEngineServer(s.grpcServer, NewEngineHandler(s.log, s.procWriter))
-	var client client.Client
+	client, _ := remoteClient()
 	logProxyHandler, err := NewLogProxyHandler(s.log, client)
 	if err != nil {
 		return err
