@@ -15,7 +15,6 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONN
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
-import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.IDP_CHECK;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPELINES;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
@@ -62,9 +61,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SetupUsageChangeEventMessageListener implements MessageListener {
   EntitySetupUsageService entitySetupUsageService;
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOToRestDTOMapper;
-  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
-      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES,
-          INFRASTRUCTURE, TRIGGERS, IDP_CHECK, CHAOS_INFRASTRUCTURE);
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(SECRETS, CONNECTORS, SERVICE,
+      ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES, INFRASTRUCTURE, TRIGGERS, CHAOS_INFRASTRUCTURE);
 
   @Inject
   public SetupUsageChangeEventMessageListener(EntitySetupUsageService entitySetupUsageService,

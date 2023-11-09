@@ -23,7 +23,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
@@ -75,7 +74,6 @@ public class ScorecardServiceImpl implements ScorecardService {
   private final CheckService checkService;
   private final ScoreService scoreService;
   private final ScoreComputerService scoreComputerService;
-  private final SetupUsageProducer setupUsageProducer;
   private final BackstageResourceClient backstageResourceClient;
 
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
@@ -92,14 +90,13 @@ public class ScorecardServiceImpl implements ScorecardService {
 
   @Inject
   public ScorecardServiceImpl(ScorecardRepository scorecardRepository, CheckService checkService,
-      ScoreService scoreService, ScoreComputerService scoreComputerService, SetupUsageProducer setupUsageProducer,
+      ScoreService scoreService, ScoreComputerService scoreComputerService,
       BackstageResourceClient backstageResourceClient, TransactionTemplate transactionTemplate,
       OutboxService outboxService) {
     this.scorecardRepository = scorecardRepository;
     this.checkService = checkService;
     this.scoreService = scoreService;
     this.scoreComputerService = scoreComputerService;
-    this.setupUsageProducer = setupUsageProducer;
     this.backstageResourceClient = backstageResourceClient;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
@@ -179,8 +176,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardCreateEvent(accountIdentifier, savedScorecardDetailsResponse));
-
-      setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
       return true;
     }));
   }
@@ -214,10 +209,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardUpdateEvent(accountIdentifier, updatedScorecardDetails, oldScorecardDetails));
-
-      setupUsageProducer.deleteScorecardSetupUsage(
-          accountIdentifier, scorecardDetailsRequest.getScorecard().getIdentifier());
-      setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
       return true;
     }));
   }
@@ -293,9 +284,6 @@ public class ScorecardServiceImpl implements ScorecardService {
           accountIdentifier);
 
       outboxService.save(new ScorecardDeleteEvent(accountIdentifier, toBeDeletedScorecardDetails));
-
-      setupUsageProducer.deleteScorecardSetupUsage(accountIdentifier, identifier);
-
       return true;
     }));
   }

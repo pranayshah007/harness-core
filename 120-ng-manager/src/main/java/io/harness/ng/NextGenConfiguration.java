@@ -260,6 +260,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("timescaledb") @ConfigSecret private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
+  @JsonProperty("enablePaginatedQueryOnTimescale") private Boolean enablePaginatedQueryOnTimescale;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("exportMetricsToStackDriver") private boolean exportMetricsToStackDriver;
   @JsonProperty("signupNotificationConfiguration")

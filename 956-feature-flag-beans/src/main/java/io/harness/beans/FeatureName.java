@@ -318,6 +318,9 @@ public enum FeatureName {
       "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
   CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
       "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
+
+  CV_UI_DISPLAY_FAIL_IF_ANY_CUSTOM_METRIC_IN_NO_ANALYSIS(
+      "Displays the failIfAnyCustomMetricInNoAnalysis checkbox in verify step UI", HarnessTeam.CDC),
   CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING(
       "When enabled, CV log clustering task type will be CV_LOG_CLUSTER, else it will be LOG_CLUSTER", HarnessTeam.CV),
   CV_DEMO,
@@ -654,9 +657,6 @@ public enum FeatureName {
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
   SPG_CG_K8S_SECRET_MANAGER_CAPABILITIES("Enable to enforce secret manager capabilities on k8s tasks", HarnessTeam.SPG),
-  SPG_CG_WFE_PROJECTION_FIELDS(
-      "Enable to optimize workflow execution queries to retrieve only required fields using projection",
-      HarnessTeam.SPG),
   SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML("Change the format of secret in yaml when use vault", HarnessTeam.SPG),
   SPG_DASHBOARD_STATS_OPTIMIZE_ACTIVE_SERVICES(
       "Active services slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
@@ -945,7 +945,9 @@ public enum FeatureName {
       "Supports edge cases of method invocation in expression engine", PIPELINE),
 
   CDS_USE_AMBIANCE_IN_EXPRESSION_ENGINE(
-      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE);
+      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE),
+
+  CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS("Use the correct working directory for WinRm deployments", CDC);
 
   // keep-sorted end
 

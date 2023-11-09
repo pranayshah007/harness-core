@@ -16,6 +16,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
@@ -321,7 +322,7 @@ public class ServiceOverridesResource {
         ngServiceOverridesEntity.getIdentifier(), ngServiceOverridesEntity));
   }
 
-  @GET
+  @POST
   @Path("/list")
   @Hidden
   @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV2")
@@ -344,9 +345,11 @@ public class ServiceOverridesResource {
       @Parameter(description = "This is service override type which is based on override source") @QueryParam(
           "type") ServiceOverridesType type,
       @RequestBody(description = "This is the body for the filter properties for listing overrides.")
-      OverrideFilterPropertiesDTO filterProperties) {
+      OverrideFilterPropertiesDTO filterProperties,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, type, filterProperties);
+        accountId, orgIdentifier, projectIdentifier, type, searchTerm, filterProperties);
     Pageable pageRequest =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);

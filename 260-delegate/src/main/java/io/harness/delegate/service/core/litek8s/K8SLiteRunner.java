@@ -246,7 +246,7 @@ public class K8SLiteRunner implements Runner {
       final String infraId, final K8SStep task, final Map<String, char[]> decrypted, final Context context) {
     return task.getInputSecretsList().stream().map(secret -> {
       return secretsBuilder.createSecret(
-          infraId, task.getId(), secret.getFullyQualifiedSecretId(), decrypted.get(secret.getFullyQualifiedSecretId()));
+          infraId, task.getId(), secret.getScopedSecretId(), decrypted.get(secret.getScopedSecretId()));
     });
   }
 

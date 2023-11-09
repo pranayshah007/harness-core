@@ -44,7 +44,7 @@ public class WinRmUtils {
         WinRmSessionConfig.builder()
             .accountId(winRmCommandTaskParameters.getAccountId())
             .executionId(winRmCommandTaskParameters.getExecutionId())
-            .workingDirectory(getWorkingDir(commandUnit))
+            .workingDirectory(getWorkingDir(commandUnit, winRmCommandTaskParameters.isPreserveWinrmWorkingDir()))
             .commandUnitName(commandUnit.getName())
             .environment(winRmCommandTaskParameters.getEnvironmentVariables())
             .hostname(winRmCommandTaskParameters.getHost())
@@ -136,7 +136,12 @@ public class WinRmUtils {
     return isNotEmpty(workingDirectory) ? workingDirectory : WINDOWS_HOME_DIR;
   }
 
-  public static String getWorkingDir(NgCommandUnit commandUnit) {
+  public static String getWorkingDir(NgCommandUnit commandUnit, boolean preserveWinrmWorkingDir) {
+    if (!preserveWinrmWorkingDir) {
+      // old implementation
+      return getWorkingDir(commandUnit.getDestinationPath());
+    }
+
     String workingDir = isNotEmpty(commandUnit.getDestinationPath()) ? commandUnit.getDestinationPath()
                                                                      : commandUnit.getWorkingDirectory();
     return getWorkingDir(workingDir);

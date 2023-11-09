@@ -60,6 +60,9 @@ public abstract class VerificationJobSpec {
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH, value = "Possible values: [true, false]")
   ParameterField<Boolean> failOnNoAnalysis;
 
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH, value = "Possible values: [true, false]")
+  ParameterField<Boolean> failIfAnyCustomMetricInNoAnalysis;
+
   @ApiModelProperty(hidden = true)
   public ParameterField<Boolean> getFailOnNoAnalysis() {
     return failOnNoAnalysis == null || failOnNoAnalysis.getValue() == null ? ParameterField.createValueField(false)
@@ -67,10 +70,19 @@ public abstract class VerificationJobSpec {
   }
 
   @ApiModelProperty(hidden = true)
+  public ParameterField<Boolean> getFailIfAnyCustomMetricInNoAnalysis() {
+    return failIfAnyCustomMetricInNoAnalysis == null || failIfAnyCustomMetricInNoAnalysis.getValue() == null
+        ? ParameterField.createValueField(false)
+        : failIfAnyCustomMetricInNoAnalysis;
+  }
+
+  @ApiModelProperty(hidden = true)
   public VerificationJobBuilder getVerificationJobBuilder() {
     VerificationJobBuilder verificationJobBuilder = verificationJobBuilder();
     return verificationJobBuilder.duration(RuntimeParameter.builder().value(duration.getValue()).build())
-        .failOnNoAnalysis(RuntimeParameter.builder().value(getFailOnNoAnalysis().getValue().toString()).build());
+        .failOnNoAnalysis(RuntimeParameter.builder().value(getFailOnNoAnalysis().getValue().toString()).build())
+        .failIfAnyCustomMetricInNoAnalysis(
+            RuntimeParameter.builder().value(getFailIfAnyCustomMetricInNoAnalysis().getValue().toString()).build());
   }
   @ApiModelProperty(hidden = true) protected abstract VerificationJobBuilder verificationJobBuilder();
   public void validate() {

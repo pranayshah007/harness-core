@@ -16,8 +16,9 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
-import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ApiClientModule extends AbstractModule {
   @Provides
   @Singleton
@@ -27,15 +28,15 @@ public class ApiClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    final var delegateType = System.getenv().get("DELEGATE_TYPE");
     try {
-      final var delegateType = System.getenv().get("DELEGATE_TYPE");
       if ("KUBERNETES".equals(delegateType)) {
         bind(ApiClient.class).toInstance(ClientBuilder.cluster().build());
       } else { // K8S platform runner can only be real K8S or local in which case we need different API client
         bind(ApiClient.class).toInstance(Config.defaultClient());
       }
-    } catch (IOException e) {
-      throw new IllegalStateException("Can't create K8S API client");
+    } catch (Exception e) {
+      log.error("Can't create K8S API client with delegate type {}", delegateType, e);
     }
   }
 }

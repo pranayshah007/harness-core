@@ -363,6 +363,7 @@ import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
+import io.harness.timescaledb.TimescalePersistence;
 import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
@@ -763,6 +764,8 @@ public class NextGenModule extends AbstractModule {
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+      bind(TimescalePersistence.class)
+          .toConstructor(TimescalePersistence.class.getConstructor(TimeScaleDBService.class));
       bind(RetentionManager.class).to(RetentionManagerImpl.class);
     } catch (NoSuchMethodException e) {
       log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);

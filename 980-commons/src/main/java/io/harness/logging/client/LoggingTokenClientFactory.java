@@ -7,6 +7,7 @@
 
 package io.harness.logging.client;
 
+import io.harness.delegate.DelegateTokenUtils;
 import io.harness.network.HttpClientFactory;
 import io.harness.network.OkHttpConfig;
 import io.harness.security.TokenGenerator;
@@ -32,7 +33,8 @@ public class LoggingTokenClientFactory implements Provider<LoggingTokenClient> {
   private final boolean trustAllCertificates;
   @Override
   public LoggingTokenClient get() {
-    final var authInterceptor = new DelegateAuthInterceptor(new TokenGenerator(accountId, delegateToken));
+    final var authInterceptor = new DelegateAuthInterceptor(
+        new TokenGenerator(accountId, DelegateTokenUtils.getDecodedTokenString(delegateToken)));
 
     final var httpConfig = OkHttpConfig.builder()
                                .clientCertificateFilePath(clientCertificateFilePath)

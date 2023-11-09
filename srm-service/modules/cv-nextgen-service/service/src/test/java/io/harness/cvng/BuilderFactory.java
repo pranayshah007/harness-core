@@ -224,7 +224,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO.ServiceLevelIndicatorDTOBuilder;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -234,12 +233,12 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricE
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slispec.RequestBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slispec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
@@ -1489,7 +1488,6 @@ public class BuilderFactory {
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
                   .build())
         .notificationRuleRefs(Collections.emptyList())
         .userJourneyRefs(Collections.singletonList("userJourney"));
@@ -1520,7 +1518,6 @@ public class BuilderFactory {
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
                   .build())
         .notificationRuleRefs(Collections.emptyList())
         .userJourneyRefs(Collections.singletonList("userJourney"));
@@ -1552,7 +1549,6 @@ public class BuilderFactory {
                                                                         .build()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
                   .build())
         .notificationRuleRefs(Collections.emptyList())
         .userJourneyRefs(Collections.singletonList("userJourney"));

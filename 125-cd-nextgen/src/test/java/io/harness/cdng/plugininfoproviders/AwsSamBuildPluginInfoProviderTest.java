@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.aws.sam.AwsSamBuildStep;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -87,6 +88,8 @@ public class AwsSamBuildPluginInfoProviderTest extends CategoryTest {
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private CDStepHelper cdStepHelper;
+
+  @Mock private AwsSamBuildStep awsSamBuildStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -172,6 +175,10 @@ public class AwsSamBuildPluginInfoProviderTest extends CategoryTest {
     String samDir = "samDir";
     doReturn(awsSamDirectoryManifestOutcome).when(awsSamStepHelper).getAwsSamDirectoryManifestOutcome(any());
     doReturn(samDir).when(awsSamStepHelper).getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(any());
+
+    doReturn(new HashMap<>()).when(awsSamBuildStep).getEnvironmentVariables(any(), any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).getEnvVarsWithSecretRef(any());
+    doReturn(new HashMap<>()).when(awsSamStepHelper).validateEnvVariables(any());
 
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
         awsSamBuildPluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance);
