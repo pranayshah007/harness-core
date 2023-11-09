@@ -105,8 +105,13 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
 
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
+  // --- BEGIN Delegate-Runner new fields ---
+  // List of scoped secret ids
+  private List<String> secretsToDecrypt;
   private byte[] taskData;
   private byte[] runnerData;
+  private String orgId;
+  private String projectId;
   // SETUP, EXECUTE or CLEANUP
   private String eventType;
   private String runnerType;
@@ -115,6 +120,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private long executionTimeout;
   // TODO: remove this async
   private boolean async;
+  // --- END Delegate-Runner new fields ---
 
   private TaskData data;
 

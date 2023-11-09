@@ -35,6 +35,7 @@ public class SplunkHealthSourceGenerator extends HealthSourceGenerator {
     return SplunkHealthSourceSpec.builder()
         .connectorRef(MigratorUtility.getIdentifierWithScopeDefaults(migrationContext.getMigratedEntities(),
             state.getAnalysisServerConfigId(), NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT))
+        .feature("Splunk Cloud Logs")
         .queries(Arrays.asList(SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
                                    .name(state.getName())
                                    .query(state.getQuery())

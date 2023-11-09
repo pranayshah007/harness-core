@@ -429,6 +429,7 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 enableDashboardTimescale: false
+enablePaginatedQueryOnTimescale: ${ENABLE_PAGINATED_QUERY_ON_TIMESCALE:-false}
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"

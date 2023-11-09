@@ -76,7 +76,6 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -408,14 +407,15 @@ public class TasStepHelper {
         return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData,
             tasStepPassThroughData.getTasManifestOutcome());
       } else if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
-        ArtifactsOutcome artifactsOutcome = resolveArtifactOutcome(ambiance);
-        if (artifactsOutcome.getPrimary() == null || !(artifactsOutcome.getPrimary().isPrimaryArtifact())) {
+        ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
+            () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
+        if (artifactOutcome == null || !(artifactOutcome.isPrimaryArtifact())) {
           throw new GeneralException("Provided Artifact should be a Primary Artifact for Artifact Bundle Store");
         }
         TasStepPassThroughData updatedTasStepPassThroughData =
             tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
         return getArtifactBundleTaskChainResponse(
-            ambiance, stepElementParameters, updatedTasStepPassThroughData, artifactsOutcome.getPrimary());
+            ambiance, stepElementParameters, updatedTasStepPassThroughData, artifactOutcome);
       } else {
         throw new InvalidRequestException("Store Type used for tas manifest is not supported", USER);
       }
@@ -1080,34 +1080,23 @@ public class TasStepHelper {
           ambiance, stepElementParameters, updatedTasStepPassThroughData, tasManifestOutcome.getStore());
     }
 
+    if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
+      return prepareArtifactBundleTaskChainResponse(ambiance, stepElementParameters, updatedTasStepPassThroughData);
+    }
+
     return executeTasTask(
         ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifestOutcome);
   }
 
   protected TaskChainResponse prepareArtifactBundleTaskChainResponse(
       Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
-    ArtifactsOutcome artifactsOutcome = resolveArtifactOutcome(ambiance);
+    ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
+        () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
 
-    if (artifactsOutcome.getPrimary() == null || !(artifactsOutcome.getPrimary().isPrimaryArtifact())) {
+    if (artifactOutcome == null || !(artifactOutcome.isPrimaryArtifact())) {
       throw new GeneralException("Provided Artifact should be a Primary Artifact for Artifact Bundle Store");
     }
-    return getArtifactBundleTaskChainResponse(
-        ambiance, stepElementParameters, tasStepPassThroughData, artifactsOutcome.getPrimary());
-  }
-
-  private ArtifactsOutcome resolveArtifactOutcome(Ambiance ambiance) {
-    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
-    if (optionalOutcome.isFound()) {
-      return (ArtifactsOutcome) optionalOutcome.getOutcome();
-    }
-    String stageName =
-        AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
-    String stepType =
-        Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("TAS");
-    throw new GeneralException(format(
-        "No Artifact Bundle found in stage %s. %s step requires at least one Artifact Bundle defined in stage service definition",
-        stageName, stepType));
+    return getArtifactBundleTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData, artifactOutcome);
   }
 
   public static boolean shouldOpenFetchFilesStream(Boolean openFetchFilesStream) {
@@ -1323,7 +1312,7 @@ public class TasStepHelper {
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
     }
     if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
-      commandUnits.add(CfCommandUnitConstants.FetchFiles);
+      commandUnits.add(CfCommandUnitConstants.ArtifactBundleFetchFiles);
     }
     if (tasStepExecutor instanceof TasRollingDeployStep) {
       commandUnits.addAll(Arrays.asList(
@@ -1348,7 +1337,7 @@ public class TasStepHelper {
       commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
     } else if (tasStepPassThroughData.getShouldExecuteArtifactBundleStoreFetch()) {
-      commandUnits.add(CfCommandUnitConstants.FetchFiles);
+      commandUnits.add(CfCommandUnitConstants.ArtifactBundleFetchFiles);
     } else {
       commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
     }

@@ -535,8 +535,7 @@ public enum TaskType {
   AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3(TaskGroup.ASG, "AWS Asg Blue Green Rollback V3 with Shift Traffic support"),
   AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V3(
       TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data for Shift Traffic"),
-  ARTIFACT_BUNDLE_FETCH_TASK(TaskGroup.ARTIFACT_BUNDLE, "Artifact bundle fetch task in NG");
-  ;
+  ARTIFACT_BUNDLE_FETCH_TASK(TaskGroup.ARTIFACT_BUNDLE, "Artifact bundle fetch task in NG", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;

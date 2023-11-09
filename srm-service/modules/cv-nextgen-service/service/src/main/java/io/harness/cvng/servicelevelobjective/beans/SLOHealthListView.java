@@ -44,7 +44,6 @@ public class SLOHealthListView {
   @NotNull int errorBudgetRemaining;
   @NotNull int totalErrorBudget;
   SLOTargetType sloTargetType;
-  ServiceLevelIndicatorType sliType;
   @JsonIgnore String sliIdentifier;
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull double sloTargetPercentage;

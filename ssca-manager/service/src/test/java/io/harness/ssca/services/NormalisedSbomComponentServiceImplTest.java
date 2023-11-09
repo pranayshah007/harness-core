@@ -100,10 +100,12 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
   public void testGetOrchestrationIds() {
     String licenseValue = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
     LicenseFilter licenseFilter = new LicenseFilter().operator(Operator.EQUALS).value(licenseValue);
-    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
-    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
+    assertEquals(orchestrationIds.size(), 2);
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());
@@ -114,11 +116,37 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
   @Test
   @Owner(developers = REETIKA)
   @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoLicenseFilter() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    LicenseFilter licenseFilter = null;
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", licenseFilter);
+    assertEquals(orchestrationIds.size(), 0);
+    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetOrchestrationIdsWithNoComponentFilter() {
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
+    List<ComponentFilter> componentFilter = Lists.newArrayList();
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+    assertEquals(orchestrationIds.size(), 0);
+    verify(sbomComponentRepo, times(0)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
   public void testGetOrchestrationIdsForComponentFilter() {
     String componentValue1 = randomAlphabetic(10);
     String componentValue2 = randomAlphabetic(10);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    when(sbomComponentRepo.findAll(any(), any())).thenReturn(Page.empty());
+    when(sbomComponentRepo.findDistinctOrchestrationIds(any())).thenReturn(List.of("orch1", "orch2"));
     List<ComponentFilter> componentFilter =
         Lists.newArrayList(new ComponentFilter()
                                .fieldName(ComponentFilter.FieldNameEnum.COMPONENTNAME)
@@ -129,8 +157,11 @@ public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase 
                 .operator(Operator.STARTSWITH)
                 .value(componentValue2));
 
-    normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
-    verify(sbomComponentRepo, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
+    List<String> orchestrationIds =
+        normalisedSbomComponentService.getOrchestrationIds("account", "org", "project", componentFilter);
+    assertEquals(orchestrationIds.size(), 2);
+
+    verify(sbomComponentRepo, times(1)).findDistinctOrchestrationIds(criteriaArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document document = criteria.getCriteriaObject();
     assertEquals(4, document.size());

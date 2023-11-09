@@ -72,7 +72,9 @@ public class MonitoredServiceYamlExpressionFunctor {
        */
       if (EmptyPredicate.isEmpty(arrayElement.getIdentifier())
           && EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
-        contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
+        if (arrayElement.getField("value") != null && arrayElement.getField("value").getNode() != null) {
+          contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
+        }
       } else {
         Map<String, Object> valueMap = new HashMap<>();
         if (arrayElement.getCurrJsonNode().isValueNode()) {

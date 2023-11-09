@@ -7,6 +7,7 @@
 
 package io.harness.timescaledb;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.experimental.UtilityClass;
@@ -20,6 +21,16 @@ public class DBUtils {
     try {
       if (resultSet != null && !resultSet.isClosed()) {
         resultSet.close();
+      }
+    } catch (SQLException e) {
+      log.warn("Error while closing result set", e);
+    }
+  }
+
+  public static void close(PreparedStatement preparedStatement) {
+    try {
+      if (preparedStatement != null && !preparedStatement.isClosed()) {
+        preparedStatement.close();
       }
     } catch (SQLException e) {
       log.warn("Error while closing result set", e);

@@ -4496,11 +4496,6 @@ public class DelegateServiceImpl implements DelegateService {
               .delegateSetupDetails(delegateSetupDetails)
               .delegateSetupDetailsOld(delegateSetupDetailsOld)
               .build());
-    } else {
-      if (delegateGroup != null) {
-        auditServiceHelper.reportForAuditingUsingAccountId(
-            delegateGroup.getAccountId(), delegateGroup, delegateGroup, Type.DELEGATE_GROUP);
-      }
     }
   }
   private Optional<String> getDelegateTokenNameFromGlobalContext() {

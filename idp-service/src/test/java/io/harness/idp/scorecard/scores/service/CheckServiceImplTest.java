@@ -30,7 +30,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
@@ -96,7 +95,6 @@ public class CheckServiceImplTest extends CategoryTest {
   @Mock ScoreComputerService scoreComputerService;
   @Mock ScoreService scoreService;
   @Mock NGSettingsClient settingsClient;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
   @Mock DataPointService dataPointService;
 
   @Mock TransactionTemplate transactionTemplate;
@@ -119,9 +117,9 @@ public class CheckServiceImplTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    checkServiceImpl = new CheckServiceImpl(checkRepository, checkStatusRepository, scorecardService,
-        scoreComputerService, namespaceService, scoreService, settingsClient, entitySetupUsageClient, dataPointService,
-        transactionTemplate, outboxService);
+    checkServiceImpl =
+        new CheckServiceImpl(checkRepository, checkStatusRepository, scorecardService, scoreComputerService,
+            namespaceService, scoreService, settingsClient, dataPointService, transactionTemplate, outboxService);
   }
 
   @Test
@@ -320,7 +318,7 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetCheckGraph() {
-    when(checkStatusRepository.findByAccountIdentifierAndIdentifierAndCustom(ACCOUNT_ID, GITHUB_CHECK_ID, true))
+    when(checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(ACCOUNT_ID, GITHUB_CHECK_ID, true))
         .thenReturn(getCheckStatusEntities());
     List<CheckGraph> checkGraphs = checkServiceImpl.getCheckGraph(ACCOUNT_ID, GITHUB_CHECK_ID, true);
     assertEquals(1, checkGraphs.size());
@@ -393,12 +391,12 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testDeleteCheckThrowsReferencedEntityException() {
-    Call<ResponseDTO<Boolean>> response = getResponseDTOCall(true);
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(response);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
+    when(scorecardService.getScorecardIdentifiers(any(), any(), anyBoolean()))
+        .thenReturn(List.of(SERVICE_MATURITY_SCORECARD));
     when(checkRepository.findByAccountIdentifierAndIdentifier(any(), any())).thenReturn(getCheckEntities().get(0));
     checkServiceImpl.deleteCustomCheck(ACCOUNT_ID, GITHUB_CHECK_ID, false);
   }
@@ -487,15 +485,6 @@ public class CheckServiceImplTest extends CategoryTest {
                               .isCustom(false)
                               .build();
     return List.of(entity1, entity2);
-  }
-
-  private Call<ResponseDTO<Boolean>> getResponseDTOCall(boolean setValue) {
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(setValue)));
-    } catch (Exception ignored) {
-    }
-    return request;
   }
 
   private Call<ResponseDTO<SettingValueResponseDTO>> getSettingValueResponseDTOCall(boolean setValue) {
