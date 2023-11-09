@@ -156,6 +156,7 @@ organizations {"name": "accountIdentifierDeletedHarnessManagedNameWithCollationI
 organizations {"name": "accountIdentifierDeletedIdentifierIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "identifier": 1}
 organizations {"name": "accountIdentifierIdentifierDeletedHarnessManagedNameWithCollationIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1, "deleted": 1, "harnessManaged": -1, "name": 1}
 organizations {"name": "identifier_1", "background": true} {"identifier": 1}
+organizations {"name": "parentIdIdentifierIdx", "unique": true} {"parentId": 1, "identifier": 1}
 organizations {"name": "uniqueId_1", "unique": true} {"uniqueId": 1}
 organizations {"name": "unique_accountIdentifier_organizationIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
@@ -172,6 +173,7 @@ projects {"name": "accountDeletedLastModifiedAtIdx", "background": true} {"accou
 projects {"name": "accountDeletedModulesLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "modules": 1, "lastModifiedAt": -1}
 projects {"name": "accountDeletedOrgIdentifierSortLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "orgIdentifier": 1, "identifier": 1, "lastModifiedAt": -1}
 projects {"name": "accountOrgIdentifierDeletedCreatedAtLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1, "deleted": 1, "createdAt": 1, "lastModifiedAt": 1}
+projects {"name": "parentIdIdentifierIdx", "unique": true} {"parentId": 1, "identifier": 1}
 projects {"name": "uniqueId_1", "unique": true} {"uniqueId": 1}
 projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1}
 releaseDetailsMappingNG {"name": "accountId_orgIdentifier_projectIdentifier_releaseKey_infraKey_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "releaseKey": 1, "infraKey": 1}
