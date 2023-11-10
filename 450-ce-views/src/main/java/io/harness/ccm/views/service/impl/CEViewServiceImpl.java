@@ -519,6 +519,7 @@ public class CEViewServiceImpl implements CEViewService {
       viewList = ceViewDao.findByAccountIdAndFolderId(
           accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
       viewList.addAll(defaultViewList);
+      Collections.reverse(viewList);
     } else {
       viewList = ceViewDao.findByAccountIdAndFolderId(
           accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
