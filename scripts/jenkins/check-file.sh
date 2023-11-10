@@ -162,12 +162,12 @@ function check_chart_yaml() {
                 echo -e "Chart.yaml found in the following folders or subfolders of '${GREEN}$folder_path${NC}':"
 
                 for chart_path in $chart_paths; do
-                    if ! helm lint "$chart_path"; then
+                    if ! helm lint "$chart_path/Chart.yaml"; then
                         echo -e "${RED}Error: helm lint failed for $chart_path${NC}"
                         exit 1
                     fi
 
-                    if ! helm template "$chart_path"; then
+                    if ! helm template "$chart_path/Chart.yaml"; then
                         echo -e "${RED}Error: helm template failed for $chart_path${NC}"
                         exit 1
                     fi
