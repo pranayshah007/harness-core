@@ -435,7 +435,9 @@ import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.delegate.task.artifactBundle.ArtifactBundleConfig;
 import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.TasArtifactBundleConfig;
 import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -2587,5 +2589,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactBundleFetchRequest.class, 20001004);
     kryo.register(ArtifactBundleFetchResponse.class, 20001005);
     kryo.register(TasManifestDelegateConfig.class, 20001006);
+    kryo.register(ArtifactBundleConfig.class, 20001007);
+    kryo.register(TasArtifactBundleConfig.class, 20001008);
   }
 }

@@ -1319,4 +1319,3 @@ io.harness.cdng.creator.plan.stage.v1.CustomStageNodeV1
 io.harness.cdng.manifest.yaml.ArtifactBundleStore
 io.harness.cdng.gitops.steps.ClusterAgentRef
 io.harness.cdng.tas.beans.ArtifactBundleFetchResponsePassThroughData
-io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig

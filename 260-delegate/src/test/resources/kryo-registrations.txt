@@ -2881,3 +2881,5 @@
 20001004:io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest
 20001005:io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse
 20001006:io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig
+20001007:io.harness.delegate.task.artifactBundle.ArtifactBundleConfig
+20001008:io.harness.delegate.task.artifactBundle.TasArtifactBundleConfig
