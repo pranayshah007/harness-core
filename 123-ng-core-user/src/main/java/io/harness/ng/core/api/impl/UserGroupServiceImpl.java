@@ -244,16 +244,23 @@ public class UserGroupServiceImpl implements UserGroupService {
   private void validationOnUserGroupUpdateDTO(UserGroupDTO userGroupDTO) {
     Set<ConstraintViolation<UserGroupDTO>> violations =
         validator.validateValue(UserGroupDTO.class, UserGroupKeys.name, userGroupDTO.getName());
+
+    Set<ConstraintViolation<UserGroupDTO>> descriptionViolations =
+        validator.validateValue(UserGroupDTO.class, UserGroupKeys.description, userGroupDTO.getDescription());
     if (!violations.isEmpty()) {
-      throw new JerseyViolationException(violations, null);
+      violations.addAll(descriptionViolations);
+    } else {
+      violations = descriptionViolations;
     }
 
-    violations = validator.validateValue(UserGroupDTO.class, UserGroupKeys.description, userGroupDTO.getDescription());
+    Set<ConstraintViolation<UserGroupDTO>> tagViolations =
+        validator.validateValue(UserGroupDTO.class, UserGroupKeys.tags, userGroupDTO.getTags());
     if (!violations.isEmpty()) {
-      throw new JerseyViolationException(violations, null);
+      violations.addAll(tagViolations);
+    } else {
+      violations = tagViolations;
     }
 
-    violations = validator.validateValue(UserGroupDTO.class, UserGroupKeys.tags, userGroupDTO.getTags());
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
     }
