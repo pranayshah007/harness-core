@@ -44,5 +44,4 @@ public class VersionInfoManagerV2 {
       throw new RuntimeException("Failed to retrieve version info: " + e.getMessage(), e);
     }
   }
-
 }
