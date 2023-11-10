@@ -122,13 +122,22 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
 
   private ArtifactoryRegistryArtifactConfig generateGeneticConfig(
       ArtifactoryArtifactStream artifactStream, NGYamlFile connector, String version) {
-    return ArtifactoryRegistryArtifactConfig.builder()
-        .connectorRef(
-            ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector.getNgEntityDetail())))
-        .repository(ParameterField.createValueField(artifactStream.getJobname()))
-        .repositoryFormat(ParameterField.createValueField("generic"))
-        .artifactDirectory(ParameterField.createValueField(artifactStream.getArtifactPattern()))
-        .artifactPath(ParameterField.createValueField(version == null ? "<+input>" : version))
-        .build();
+    ArtifactoryRegistryArtifactConfig artifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(
+                ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector.getNgEntityDetail())))
+            .repository(ParameterField.createValueField(artifactStream.getJobname()))
+            .repositoryFormat(ParameterField.createValueField("generic"))
+            .artifactPath(ParameterField.createValueField(version == null ? "<+input>" : version))
+            .build();
+
+    if (StringUtils.isNotBlank(artifactStream.getArtifactPattern())
+        && artifactStream.getArtifactPattern().contains("*")) {
+      artifactConfig.setArtifactFilter(ParameterField.createValueField(artifactStream.getArtifactPattern()));
+    } else {
+      artifactConfig.setArtifactDirectory(ParameterField.createValueField(artifactStream.getArtifactPattern()));
+    }
+
+    return artifactConfig;
   }
 }

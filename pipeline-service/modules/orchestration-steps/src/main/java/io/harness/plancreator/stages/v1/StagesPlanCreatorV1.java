@@ -41,7 +41,6 @@ import io.harness.steps.StagesStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -67,32 +66,36 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     }
     int i;
     YamlField curr;
-
-    // TODO : Figure out corresponding failure stages and put that here as well
+    boolean isInsideParallel = isInsideParallelNode(ctx);
     for (i = 0; i < stages.size() - 1; i++) {
       curr = getStageField(stages.get(i));
       String version = getYamlVersionFromStageField(curr);
       String nextId = getStageField(stages.get(i + 1)).getUuid();
-      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-      // bytes for complex objects. We will deprecate the first one in v1
+      Dependency dependency =
+          Dependency.newBuilder()
+              .setParentInfo(HarnessStruct.newBuilder()
+                                 .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
+                                 .build())
+              .build();
+      // If Stages is not inside parallel only then nextIds need to be added, else they'll be executed parallelly
+      if (!isInsideParallel) {
+        dependency =
+            Dependency.newBuilder()
+                .setParentInfo(HarnessStruct.newBuilder()
+                                   .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
+                                   .build())
+                .setNodeMetadata(
+                    HarnessStruct.newBuilder()
+                        .putData(PlanCreatorConstants.NEXT_ID, HarnessValue.newBuilder().setStringValue(nextId).build())
+                        .build())
+                .build();
+      }
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(
-                  Dependencies.newBuilder()
-                      .putDependencies(curr.getUuid(), curr.getYamlPath())
-                      .putDependencyMetadata(curr.getUuid(),
-                          Dependency.newBuilder()
-                              .putMetadata(
-                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
-                              .setNodeMetadata(HarnessStruct.newBuilder().putData(PlanCreatorConstants.NEXT_ID,
-                                  HarnessValue.newBuilder().setStringValue(nextId).build()))
-                              .setParentInfo(
-                                  HarnessStruct.newBuilder()
-                                      .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
-                                      .build())
-                              .build())
-                      .build())
+              .dependencies(Dependencies.newBuilder()
+                                .putDependencies(curr.getUuid(), curr.getYamlPath())
+                                .putDependencyMetadata(curr.getUuid(), dependency)
+                                .build())
               .build());
     }
 
@@ -204,6 +207,12 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   private boolean shouldSetStartingNodeId(PlanCreationContext ctx) {
     Optional<Object> value = PlanCreatorUtilsV1.getDeserializedObjectFromDependency(
         ctx.getDependency(), kryoSerializer, PlanCreatorConstants.SET_STARTING_NODE_ID, false);
+    return value.isPresent() && (boolean) value.get();
+  }
+
+  private boolean isInsideParallelNode(PlanCreationContext ctx) {
+    Optional<Object> value = PlanCreatorUtilsV1.getDeserializedObjectFromDependency(
+        ctx.getDependency(), kryoSerializer, PlanCreatorConstants.IS_INSIDE_PARALLEL_NODE, false);
     return value.isPresent() && (boolean) value.get();
   }
 }

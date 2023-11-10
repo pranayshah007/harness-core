@@ -28,9 +28,11 @@ import io.harness.repositories.gitfilecache.GitFileCacheRepository;
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheServiceImpl implements GitFileCacheService {
   @Inject GitFileCacheRepository gitFileCacheRepository;
@@ -85,6 +87,8 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
   public GitFileCacheDeleteResult invalidateCache(GitFileCacheKey gitFileCacheKey) {
     Criteria criteria = getOptionalCriteria(gitFileCacheKey);
     DeleteResult deleteResult = gitFileCacheRepository.delete(criteria);
+    log.info(
+        "Invalidated cache for key: {} , deletedRecordsCount: {}", gitFileCacheKey, deleteResult.getDeletedCount());
     return GitFileCacheDeleteResult.builder().count(deleteResult.getDeletedCount()).build();
   }
 

@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.steps;
 
 import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
+import static io.harness.beans.FeatureName.CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -48,7 +49,9 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ArtifactServerException;
@@ -63,6 +66,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -76,6 +80,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretusage.SecretRuntimeUsageService;
@@ -218,8 +223,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         artifacts.getPrimary().getSpec().validate();
         checkAndWarnIfDoesNotFollowIdentifierRegex(
             artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
-        primaryArtifactTaskId = createDelegateTask(
-            ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+        List<TaskSelector> delegatesWithPrecedence =
+            TaskSelectorYaml.toTaskSelector(stepParameters.fetchDelegateSelectors());
+        primaryArtifactTaskId = createDelegateTask(ambiance, logCallback, artifacts.getPrimary().getSpec(),
+            artifacts.getPrimary().getSourceType(), true, delegatesWithPrecedence);
         stepDelegateInfos.add(StepDelegateInfo.builder()
                                   .taskId(primaryArtifactTaskId)
                                   .taskName("Artifact Task: " + artifacts.getPrimary().getSpec().getIdentifier())
@@ -241,8 +248,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           sidecar.getSidecar().getSpec().validate();
           checkAndWarnIfDoesNotFollowIdentifierRegex(
               sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
-          String taskId = createDelegateTask(
-              ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+          List<TaskSelector> delegatesWithPrecedence =
+              TaskSelectorYaml.toTaskSelector(stepParameters.fetchDelegateSelectors());
+          String taskId = createDelegateTask(ambiance, logCallback, sidecar.getSidecar().getSpec(),
+              sidecar.getSidecar().getSourceType(), false, delegatesWithPrecedence);
           stepDelegateInfos.add(StepDelegateInfo.builder()
                                     .taskId(primaryArtifactTaskId)
                                     .taskName("Artifact Task: " + sidecar.getSidecar().getSpec().getIdentifier())
@@ -312,6 +321,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                .setStageExecutionId(ambiance.getStageExecutionId())
                                                .build())
             .setUsageType(PIPELINE_EXECUTION)
+            .setEntityType(EntityTypeProtoEnum.PIPELINES)
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance)))
             .build());
   }
 
@@ -433,7 +446,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   }
 
   private String createDelegateTask(final Ambiance ambiance, final NGLogCallback logCallback,
-      final ArtifactConfig artifactConfig, final ArtifactSourceType sourceType, final boolean isPrimary) {
+      final ArtifactConfig artifactConfig, final ArtifactSourceType sourceType, final boolean isPrimary,
+      List<TaskSelector> delegates) {
     if (isPrimary) {
       logCallback.saveExecutionLog("Processing primary artifact...");
       logCallback.saveExecutionLog(
@@ -455,7 +469,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     logCallback.saveExecutionLog(
         LogHelper.color("Starting delegate task to fetch details of artifact", LogColor.Cyan, LogWeight.Bold));
 
-    final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
+    final List<TaskSelector> delegateSelectors;
+
+    if (featureFlagHelperService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), CDS_SERVICE_AND_INFRA_STEP_DELEGATE_SELECTOR_PRECEDENCE)
+        && EmptyPredicate.isNotEmpty(delegates)) {
+      delegateSelectors = delegates;
+    } else {
+      delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
+    }
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -481,9 +503,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
             TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), withLogs, taskName, delegateSelectors);
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
-        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), baseLogKey,
-        shouldSkipOpenStream);
+    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(
+        taskRequest, taskData, delegateSelectors, baseLogKey, shouldSkipOpenStream);
 
     String delegateTaskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     logCallback.saveExecutionLog(

@@ -9,15 +9,16 @@ package io.harness.metrics.observers;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.engine.observers.beans.OrchestrationStartInfo;
-import io.harness.execution.PlanExecutionMetadata;
+import io.harness.licensing.Edition;
 import io.harness.metrics.PipelineMetricUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -34,6 +35,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineExecutionMetricsObserverTest extends CategoryTest {
   @Mock PipelineMetricUtils pipelineMetricUtils;
+  @Mock PipelineSettingsService pipelineSettingsService;
   @InjectMocks PipelineExecutionMetricsObserver pipelineExecutionMetricsObserver;
 
   @Before
@@ -46,25 +48,12 @@ public class PipelineExecutionMetricsObserverTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOnEnd() {
     String accountId = UUIDGenerator.generateUuid();
+    doReturn(Edition.ENTERPRISE.name()).when(pipelineSettingsService).getAccountEdition(accountId);
     pipelineExecutionMetricsObserver.onEnd(
         Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, accountId).build(),
         Status.SUCCEEDED);
     verify(pipelineMetricUtils)
-        .publishPipelineExecutionMetrics("pipeline_execution_end_count", Status.SUCCEEDED, accountId);
-  }
-
-  @Test
-  @Owner(developers = ARCHIT)
-  @Category(UnitTests.class)
-  public void testOnStart() {
-    String accountId = UUIDGenerator.generateUuid();
-    pipelineExecutionMetricsObserver.onStart(
-        OrchestrationStartInfo.builder()
-            .ambiance(Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, accountId).build())
-            .planExecutionMetadata(PlanExecutionMetadata.builder().build())
-            .startStatus(Status.RUNNING)
-            .build());
-    verify(pipelineMetricUtils)
-        .publishPipelineExecutionMetrics("pipeline_execution_start_count", Status.RUNNING, accountId);
+        .publishPipelineExecutionMetrics(
+            "pipeline_execution_end_count", Status.SUCCEEDED, accountId, Edition.ENTERPRISE.name());
   }
 }

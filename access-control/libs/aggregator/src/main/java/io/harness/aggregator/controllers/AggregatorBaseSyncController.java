@@ -69,6 +69,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
   private final AccessControlAdminService accessControlAdminService;
   private final PersistentLocker persistentLocker;
   private final AtomicLong hostSelectorIndex;
+  private final boolean enableAclProcessingThroughOutbox;
 
   protected static final String ACCESS_CONTROL_AGGREGATOR_LOCK = "ACCESS_CONTROL_AGGREGATOR_LOCK";
   private static final String MONGO_DB_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
@@ -119,7 +120,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
       AggregatorJobType aggregatorJobType, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
       UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
-      AccessControlAdminService accessControlAdminService) {
+      AccessControlAdminService accessControlAdminService, boolean enableAclProcessingThroughOutbox) {
     ChangeConsumer<RoleAssignmentDBO> roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, aclGeneratorService, roleAssignmentCRUDEventHandler);
     ChangeConsumer<RoleDBO> roleChangeConsumer = new RoleChangeConsumerImpl(
@@ -141,6 +142,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
     this.changeEventFailureHandler = changeEventFailureHandler;
     this.hostSelectorIndex = new AtomicLong(-1);
     this.accessControlAdminService = accessControlAdminService;
+    this.enableAclProcessingThroughOutbox = enableAclProcessingThroughOutbox;
   }
 
   protected DebeziumEngine<ChangeEvent<String, String>> getEngine(
@@ -233,7 +235,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
 
     // configuring debezium
     return new AccessControlDebeziumChangeConsumer(idDeserializer, collectionToDeserializerMap, collectionToConsumerMap,
-        changeEventFailureHandler, accessControlAdminService);
+        changeEventFailureHandler, accessControlAdminService, enableAclProcessingThroughOutbox);
   }
 
   public abstract String getLockName();

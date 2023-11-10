@@ -36,7 +36,7 @@ public class K8sInfraMapper {
     return k8SInfraBuilder.setCompute(compute)
         .setSecurityContext(securityContext)
         .setWorkingDir("/opt/harness")
-        .setLogPrefix(loggingConfig.getLogKey())
+        .setLogPrefix(loggingConfig.getLogPrefix())
         .setLogToken(loggingToken)
         .build();
   }

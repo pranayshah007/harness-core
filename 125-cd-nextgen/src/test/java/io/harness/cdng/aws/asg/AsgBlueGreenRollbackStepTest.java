@@ -8,8 +8,11 @@
 package io.harness.cdng.aws.asg;
 
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -279,5 +282,22 @@ public class AsgBlueGreenRollbackStepTest extends CategoryTest {
     verify(asgStepCommonHelper)
         .queueAsgTask(
             eq(stepElementParameters), any(), eq(ambiance), any(), eq(true), eq(AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getTaskTypeTest() throws Exception {
+    TaskType ret = asgBlueGreenRollbackStep.getTaskType(null);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG);
+
+    List<AsgLoadBalancerConfig> loadBalancers =
+        Arrays.asList(AsgLoadBalancerConfig.builder().stageListenerRuleArn("stageListenerRuleArn").build());
+    ret = asgBlueGreenRollbackStep.getTaskType(loadBalancers);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2);
+
+    loadBalancers = Arrays.asList(AsgLoadBalancerConfig.builder().build());
+    ret = asgBlueGreenRollbackStep.getTaskType(loadBalancers);
+    assertThat(ret).isEqualTo(AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3);
   }
 }

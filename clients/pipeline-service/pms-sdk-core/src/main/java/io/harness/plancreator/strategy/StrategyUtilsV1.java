@@ -9,7 +9,6 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
-import io.harness.plancreator.DependencyMetadata;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
@@ -98,36 +97,22 @@ public class StrategyUtilsV1 {
     return stageYamlFieldMap;
   }
 
-  public DependencyMetadata getStrategyFieldDependencyMetadataIfPresent(KryoSerializer kryoSerializer,
+  public Map<String, HarnessValue> getStrategyFieldDependencyMetadataIfPresent(KryoSerializer kryoSerializer,
       PlanCreationContext ctx, String fieldUuid, Map<String, YamlField> dependenciesNodeMap,
       List<AdviserObtainment> adviserObtainments) {
     return getStrategyFieldDependencyMetadataIfPresent(
         kryoSerializer, ctx, fieldUuid, dependenciesNodeMap, adviserObtainments, true);
   }
 
-  public DependencyMetadata getStrategyFieldDependencyMetadataIfPresent(KryoSerializer kryoSerializer,
+  public Map<String, HarnessValue> getStrategyFieldDependencyMetadataIfPresent(KryoSerializer kryoSerializer,
       PlanCreationContext ctx, String fieldUuid, Map<String, YamlField> dependenciesNodeMap,
       List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    Map<String, ByteString> metadataMap = new HashMap<>();
     Map<String, HarnessValue> nodeMetadataMap = new HashMap<>();
     // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
     // strategy node
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);
-      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
-      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
-      // bytes for complex objects. We will deprecate the first one in v1
-      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
-              StrategyMetadata.builder()
-                  .strategyNodeId(fieldUuid)
-                  .adviserObtainments(adviserObtainments)
-                  .childNodeId(strategyField.getNode().getUuid())
-                  .strategyNodeIdentifier(refineIdentifier(ctx.getCurrentField().getId()))
-                  .strategyNodeName(refineIdentifier(ctx.getCurrentField().getNodeName()))
-                  .shouldProceedIfFailed(shouldProceedIfFailed)
-                  .build())));
       nodeMetadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
           HarnessValue.newBuilder()
               .setBytesValue(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
@@ -140,9 +125,9 @@ public class StrategyUtilsV1 {
                       .shouldProceedIfFailed(shouldProceedIfFailed)
                       .build())))
               .build());
-      return DependencyMetadata.builder().nodeMetadataMap(nodeMetadataMap).metadataMap(metadataMap).build();
+      return nodeMetadataMap;
     }
-    return DependencyMetadata.builder().metadataMap(metadataMap).nodeMetadataMap(nodeMetadataMap).build();
+    return nodeMetadataMap;
   }
 
   /**

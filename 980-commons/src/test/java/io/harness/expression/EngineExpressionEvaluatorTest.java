@@ -364,6 +364,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("g", "def")
             .put("h", "v2")
             .put("i", "v")
+            .put("j", "")
             .put("w", "archit-harness")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
@@ -385,6 +386,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v9", "<+company>/archit-<+f1>")
                     .put("v10", "<+company> <+<+w>.replace('-','')>")
                     .put("v11", "<+company> <+(<+w>).replace('-','')>")
+                    .put("v12", "<+f>><+company>")
+                    .put("v13", "<+company><+j><+f>")
+                    .put("v14", "<+company>><+j>")
+                    .put("v15", "<+company> > <+j>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -541,6 +546,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+variables.v7>", true)).isEqualTo("${ngSecretManager.obtain(\"org.v2\", 123)}");
     assertThat(evaluator.resolve("<+variables.v10>", true)).isEqualTo("harness architharness");
     assertThat(evaluator.resolve("<+variables.v11>", true)).isEqualTo("harness architharness");
+    assertThat(evaluator.resolve("<+variables.v12>", true)).isEqualTo("false");
+    assertThat(evaluator.resolve("<+variables.v13>", true)).isEqualTo("harnessabc");
+    assertThat(evaluator.resolve("<+variables.v14>", true)).isEqualTo("true");
+    assertThat(evaluator.resolve("<+variables.v15>", true)).isEqualTo("true");
 
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");

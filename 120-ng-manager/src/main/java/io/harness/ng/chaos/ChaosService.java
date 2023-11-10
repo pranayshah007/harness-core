@@ -15,4 +15,8 @@ public interface ChaosService {
   boolean registerChaosInfrastructure(ChaosInfrastructureRequest chaosInfrastructureRequest);
 
   boolean deleteChaosInfrastructure(ChaosInfrastructureRequest chaosInfrastructureRequest);
+
+  boolean registerChaosHub(ChaosHubRequest chaosHubRequest);
+
+  boolean deleteChaosHub(ChaosHubRequest chaosHubRequest);
 }

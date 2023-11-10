@@ -184,6 +184,7 @@ public class ArtifactServiceImpl implements ArtifactService {
         .id(artifact.getArtifactId())
         .name(artifact.getName())
         .tag(artifact.getTag())
+        .url(artifact.getUrl())
         .componentsCount(artifact.getComponentsCount().intValue())
         .updated(String.format("%d", artifact.getLastUpdatedAt()))
         .prodEnvCount(artifact.getProdEnvCount().intValue())
@@ -245,28 +246,6 @@ public class ArtifactServiceImpl implements ArtifactService {
     return new PageImpl<>(artifactListingResponses, pageable, total);
   }
 
-  private Criteria getLicenseCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, LicenseFilter licenseFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds =
-        normalisedSbomComponentService.getOrchestrationIds(accountId, orgIdentifier, projectIdentifier, licenseFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
-  private Criteria getComponentFilterCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, List<ComponentFilter> componentFilter) {
-    Criteria criteria = new Criteria();
-    List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
-        accountId, orgIdentifier, projectIdentifier, componentFilter);
-    if (isNotEmpty(orchestrationIds)) {
-      return Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
-    }
-    return criteria;
-  }
-
   @Override
   public Page<ArtifactListingResponse> listArtifacts(String accountId, String orgIdentifier, String projectIdentifier,
       ArtifactListingRequestBody body, Pageable pageable) {
@@ -279,9 +258,20 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
 
-    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body),
-        getLicenseCriteria(accountId, orgIdentifier, projectIdentifier, body.getLicenseFilter()),
-        getComponentFilterCriteria(accountId, orgIdentifier, projectIdentifier, body.getComponentFilter()));
+    LicenseFilter licenseFilter = body.getLicenseFilter();
+    List<ComponentFilter> componentFilter = body.getComponentFilter();
+    Criteria filterCriteria = new Criteria();
+    if (Objects.nonNull(licenseFilter) || isNotEmpty(componentFilter)) {
+      List<String> orchestrationIds = normalisedSbomComponentService.getOrchestrationIds(
+          accountId, orgIdentifier, projectIdentifier, licenseFilter, componentFilter);
+      if (isNotEmpty(orchestrationIds)) {
+        filterCriteria = Criteria.where(ArtifactEntityKeys.orchestrationId).in(orchestrationIds);
+      } else {
+        return Page.empty();
+      }
+    }
+
+    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body), filterCriteria);
 
     Page<ArtifactEntity> artifactEntities = artifactRepository.findAll(criteria, pageable);
 
@@ -356,8 +346,8 @@ public class ArtifactServiceImpl implements ArtifactService {
               .triggeredAt(entity.getLastDeployedAt().toString());
 
       if (Objects.nonNull(enforcementSummaryEntity)) {
-        response.allowListPolicyViolation(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
-            .denyListPolicyViolation(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
+        response.allowListViolationCount(String.valueOf(enforcementSummaryEntity.getAllowListViolationCount()))
+            .denyListViolationCount(String.valueOf(enforcementSummaryEntity.getDenyListViolationCount()))
             .enforcementId(enforcementSummaryEntity.getEnforcementId());
       }
       return response;
@@ -409,13 +399,14 @@ public class ArtifactServiceImpl implements ArtifactService {
               .id(artifact.getArtifactId())
               .name(artifact.getName())
               .tag(artifact.getTag())
+              .url(artifact.getUrl())
               .componentsCount(artifact.getComponentsCount().intValue())
               .allowListViolationCount(String.valueOf(enforcementSummary.getAllowListViolationCount()))
               .denyListViolationCount(String.valueOf(enforcementSummary.getDenyListViolationCount()))
               .enforcementId(enforcementSummary.getEnforcementId())
               .activity(artifact.getProdEnvCount() + artifact.getNonProdEnvCount() == 0 ? ActivityEnum.GENERATED
                                                                                         : ActivityEnum.DEPLOYED)
-              .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
+              .updated(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount(artifact.getProdEnvCount().intValue())
               .nonProdEnvCount(artifact.getNonProdEnvCount().intValue())
               .orchestrationId(artifact.getOrchestrationId())
@@ -486,7 +477,8 @@ public class ArtifactServiceImpl implements ArtifactService {
       case PROD:
         return Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0);
       case ALL:
-        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0).and(ArtifactEntityKeys.prodEnvCount).gt(0);
+        return new Criteria().orOperator(Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0),
+            Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0));
       case NONE:
         return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).is(0).and(ArtifactEntityKeys.prodEnvCount).is(0);
       default:

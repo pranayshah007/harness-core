@@ -45,6 +45,7 @@ data:
   BACKSTAGE_MASTER_URL: "TBD"    #TBD
   BACKSTAGE_POD_LABEL: "TBD"     #TBD
   TRIGGER_PIPELINE_URL: "TBD"    #TBD
+  BACKSTAGE_ENTITIES_FETCH_LIMIT: {{.Values.backstageEntitiesFetchLimit}}
   ENV: {{.Values.ENV}}
 #  BACKSTAGE_BASE_URL: {{.Values.BACKSTAGE_BASE_URL | quote}}
   ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL: "https://qa.harness.io/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"

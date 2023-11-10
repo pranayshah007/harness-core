@@ -89,6 +89,7 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
   String ANCHORE = "Anchore";
+  String AQUA_SECURITY = "AquaSecurity";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
   String AWS_SECURITY_HUB = "AWSSecurityHub";
@@ -203,6 +204,7 @@ public interface EntityTypeConstants {
   String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
   String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
+  String CHAOS_HUB = "ChaosHub";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String IACM_STAGE = "IACMStage";
@@ -276,4 +278,7 @@ public interface EntityTypeConstants {
   String SLSA_VERIFICATION = "SlsaVerification";
 
   String OVERRIDES = "Overrides";
+
+  String IDP_STAGE = "IDPStage";
+  String IDP = "IDP";
 }

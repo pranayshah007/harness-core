@@ -16,4 +16,6 @@ public interface PipelineSettingsService {
   long getMaxPipelineCreationCount(String accountId);
 
   int getMaxConcurrencyBasedOnEdition(String accountId, long childCount);
+
+  String getAccountEdition(String accountId);
 }

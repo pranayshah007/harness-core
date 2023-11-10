@@ -12,8 +12,10 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/rancher:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services/src/main/java/io/harness/k8s/releasehistory:module",
+        "//960-api-services/src/main/java/io/harness/rancher:module",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
         "@maven//:commons_collections_commons_collections",

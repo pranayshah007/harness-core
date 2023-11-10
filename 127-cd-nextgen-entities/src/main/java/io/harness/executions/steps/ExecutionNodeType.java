@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.visitor.v1.YamlTypesV1;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
@@ -49,6 +50,7 @@ public enum ExecutionNodeType {
   INFRASTRUCTURE_TASKSTEP_V2("INFRASTRUCTURE_TASKSTEP_V2", YamlTypes.INFRASTRUCTURE_DEF),
   GITOPS_CLUSTERS("GITOPS CLUSTERS", YamlTypes.GITOPS_CLUSTERS),
   DEPLOYMENT_STAGE_STEP("DEPLOYMENT_STAGE_STEP", "deployment"),
+  DEPLOYMENT_STAGE_STEP_V1("DEPLOYMENT_STAGE_STEP_V1", YamlTypesV1.DEPLOYMENT_STAGE),
   K8S_ROLLING("K8S_ROLLING", YamlTypes.K8S_ROLLING_DEPLOY),
   K8S_ROLLING_V2("K8S_ROLLING_V2", YamlTypes.K8S_ROLLING_DEPLOY),
   K8S_ROLLBACK_ROLLING("K8S_ROLLBACK_ROLLING", YamlTypes.K8S_ROLLING_ROLLBACK),

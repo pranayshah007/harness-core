@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
-public class TemplateSchemaParserV1 extends AbstractStaticSchemaParser {
+public class TemplateSchemaParserV1 extends BaseTemplateSchemaParser {
   @Inject TemplateSchemaFetcher templateSchemaFetcher;
   static final String TEMPLATE_DEFINITION_PATH = "definitions/template";
   static final String ONE_OF_REF_IN_TEMPLATE = "%s/allOf/0/then/properties/spec/oneOf";
   static final String SPEC_PATH = "%s/allOf/0/then/properties/spec";
-  static final String TEMPLATE_V1 = "v1";
+
+  public static final String TEMPLATE_V1 = "v1";
 
   @Override
   void init() {
@@ -137,22 +137,5 @@ public class TemplateSchemaParserV1 extends AbstractStaticSchemaParser {
     } else {
       return String.format(SPEC_PATH, DEFAULT_TEMPLATE_V1_TITLE);
     }
-  }
-
-  @Override
-  void checkIfRootNodeAndAddIntoFqnToNodeMap(String currentFqn, String childNodeRefValue, ObjectNode objectNode) {}
-
-  @Override
-  IndividualSchemaGenContext getIndividualSchemaGenContext() {
-    return IndividualSchemaGenContext.builder()
-        .rootSchemaNode(rootSchemaJsonNode)
-        .resolvedFqnSet(new HashSet<>())
-        .build();
-  }
-
-  @Override
-  public JsonNode getFieldNode(InputFieldMetadata inputFieldMetadata) {
-    // TODO
-    return null;
   }
 }

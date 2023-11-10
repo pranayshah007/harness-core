@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
-import io.harness.plancreator.DependencyMetadata;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext.PlanCreationContextBuilder;
@@ -170,20 +170,18 @@ public class StrategyUtilsV1Test extends PmsSdkCoreTestBase {
     YamlField stageWithoutStrategy = new YamlField(stageYamlNodes.get(1));
     doReturn("".getBytes(StandardCharsets.UTF_8)).when(kryoSerializer).asDeflatedBytes(any());
     // Stage does not have any strategy. So metadata map and dependencyMap both will be empty.
-    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer,
-        PlanCreationContext.builder().currentField(stageWithoutStrategy).build(), stageWithStrategy.getNode().getName(),
-        dependenciesMap, new ArrayList<>());
-    assertThat(dependencyMetadata.getMetadataMap().size()).isEqualTo(0);
+    Map<String, HarnessValue> dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, PlanCreationContext.builder().currentField(stageWithoutStrategy).build(),
+        stageWithStrategy.getNode().getName(), dependenciesMap, new ArrayList<>());
     assertThat(dependenciesMap.size()).isEqualTo(0);
-    assertEquals(dependencyMetadata.getNodeMetadataMap().size(), 0);
+    assertEquals(dependencyMetadata.size(), 0);
 
     // Stage has the strategy. So metadata map and dependencyMap will have size 1.
     dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer,
         PlanCreationContext.builder().currentField(stageWithStrategy).build(), stageWithStrategy.getNode().getName(),
         dependenciesMap, new ArrayList<>());
-    assertThat(dependencyMetadata.getMetadataMap().size()).isEqualTo(1);
     assertThat(dependenciesMap.size()).isEqualTo(1);
-    assertEquals(dependencyMetadata.getNodeMetadataMap().size(), 1);
+    assertEquals(dependencyMetadata.size(), 1);
   }
 
   @Test

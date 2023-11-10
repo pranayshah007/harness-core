@@ -1,0 +1,28 @@
+{
+  "$or": [
+    {
+      "orgIdentifier": null,
+      "projectIdentifier": null,
+      "accountId": "accountIdentifier",
+      "deleted": false
+    },
+    {
+      "projectIdentifier": null,
+      "accountId": "accountIdentifier",
+      "deleted": false,
+      "orgIdentifier": {
+        "$ne": null
+      }
+    },
+    {
+      "accountId": "accountIdentifier",
+      "deleted": false,
+      "orgIdentifier": {
+        "$ne": null
+      },
+      "projectIdentifier": {
+        "$ne": null
+      }
+    }
+  ]
+}

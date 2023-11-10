@@ -44,6 +44,7 @@ import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.metrics.CIManagerMetricsService;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -118,6 +119,9 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private CIManagerMetricsService ciManagerMetricsService;
+  private static final String STAGE_STATUS = "ci_active_stage_execution_count";
+  private static final String STAGE_TIME_COUNT = "ci_stage_execution_time";
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -219,6 +223,11 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     StepResponseNotifyData stepResponseNotifyData = filterStepResponse(responseDataMap);
 
     Status stageStatus = stepResponseNotifyData.getStatus();
+    ciManagerMetricsService.recordStageExecutionCount(
+        String.valueOf(stageStatus), STAGE_STATUS, AmbianceUtils.getAccountId(ambiance), stepParameters.getType());
+    ciManagerMetricsService.recordStageStatusExecutionTime(String.valueOf(stageStatus),
+        (currentTime - startTime) / 1000, STAGE_TIME_COUNT, AmbianceUtils.getAccountId(ambiance),
+        stepParameters.getType());
     log.info("Executed integration stage {} in {} milliseconds with status {} ", stepParameters.getIdentifier(),
         (currentTime - startTime) / 1000, stageStatus);
 

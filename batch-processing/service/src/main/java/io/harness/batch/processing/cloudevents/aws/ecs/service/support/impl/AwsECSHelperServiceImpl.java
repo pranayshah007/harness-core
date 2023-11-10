@@ -73,7 +73,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
              new CloseableAmazonWebServiceClient(getAmazonECSClient(region, awsCrossAccountAttributes))) {
       return listECSClusters(closeableAmazonECSClient.getClient());
     } catch (Exception ex) {
-      log.error(exceptionMessage, awsCrossAccountAttributes, region, ex.getMessage());
+      log.warn(exceptionMessage, awsCrossAccountAttributes, region, ex.getMessage());
       return Collections.emptyList();
     }
   }

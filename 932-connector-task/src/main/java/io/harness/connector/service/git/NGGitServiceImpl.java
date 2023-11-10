@@ -167,13 +167,15 @@ public class NGGitServiceImpl implements NGGitService {
                                                                          : gitStoreDelegateConfig.getConnectorId())
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
+            .optionalFiles(gitStoreDelegateConfig.isOptional())
             .build();
     return gitClientV2.fetchFilesByPath(identifier, fetchFilesByPathRequest);
   }
 
   @Override
   public void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String destinationDirectory,
-      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
+      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO, boolean mayHaveMultipleFolders)
+      throws IOException {
     DownloadFilesRequest downloadFilesRequest =
         DownloadFilesRequest.builder()
             .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
@@ -187,6 +189,7 @@ public class NGGitServiceImpl implements NGGitService {
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
             .destinationDirectory(destinationDirectory)
+            .mayHaveMultipleFolders(mayHaveMultipleFolders)
             .build();
     gitClientV2.downloadFiles(downloadFilesRequest);
   }

@@ -40,7 +40,7 @@ public class CIMiningPatternJob {
   private static final int CACHE_UPDATE_PERIOD = 10;
   private static final String MINING_PATTERENS_FILE = "suspiciousMiningPatterns.txt";
   private static final String VALID_DOMAINS_FILE = "validDomains.txt";
-  private static final String WHITE_LISTED_DOMAINS_FILE = "whiteListedDomains.txt";
+  private static final String WHITE_LISTED_ACCOUNTS_FILE = "whiteListedAccounts.txt";
 
   private final LoadingCache<String, Set<String>> maliciousMiningPatternsCache =
       CacheBuilder.newBuilder()
@@ -62,13 +62,13 @@ public class CIMiningPatternJob {
             }
           });
 
-  private final LoadingCache<String, Set<String>> whiteListedDomains =
+  private final LoadingCache<String, Set<String>> whiteListedAccounts =
       CacheBuilder.newBuilder()
           .expireAfterWrite(CACHE_UPDATE_PERIOD, TimeUnit.MINUTES)
           .build(new CacheLoader<String, Set<String>>() {
             @Override
             public Set<String> load(String blank) {
-              return initializeWhiteListedDomains();
+              return initializeWhiteListedAccounts();
             }
           });
 
@@ -90,7 +90,7 @@ public class CIMiningPatternJob {
 
   public Set<String> getWhiteListed() {
     try {
-      return whiteListedDomains.get("");
+      return whiteListedAccounts.get("");
     } catch (Exception e) {
       return new HashSet<>();
     }
@@ -150,11 +150,11 @@ public class CIMiningPatternJob {
     return validDomains;
   }
 
-  private Set<String> initializeWhiteListedDomains() {
+  private Set<String> initializeWhiteListedAccounts() {
     Set<String> whiteListed = new HashSet<>();
 
     try {
-      byte[] fileContent = downloadFromGCS(WHITE_LISTED_DOMAINS_FILE);
+      byte[] fileContent = downloadFromGCS(WHITE_LISTED_ACCOUNTS_FILE);
 
       String[] patterns = new String(fileContent, StandardCharsets.UTF_8).split("\n");
 

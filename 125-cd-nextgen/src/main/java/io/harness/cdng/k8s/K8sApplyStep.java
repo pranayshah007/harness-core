@@ -37,10 +37,17 @@ import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sApplyRequest.K8sApplyRequestBuilder;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.KubernetesTaskException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -192,12 +199,7 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
       applyRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
 
-    if (k8sApplyStepParameters.getFilePaths() != null && k8sApplyStepParameters.getFilePaths().getValue() != null) {
-      applyRequestBuilder.filePaths(k8sApplyStepParameters.getFilePaths().getValue());
-    } else {
-      applyRequestBuilder.filePaths(
-          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().retrieveFilePaths());
-    }
+    setFilePathsInRequest(k8sApplyStepParameters, applyRequestBuilder, accountId);
 
     Map<String, String> k8sCommandFlag =
         k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags(), ambiance);
@@ -275,6 +277,25 @@ public class K8sApplyStep extends CdTaskChainExecutable implements K8sStepExecut
                                                .setStageExecutionId(ambiance.getStageExecutionId())
                                                .build())
             .setUsageType(PIPELINE_EXECUTION)
+            .setEntityType(EntityTypeProtoEnum.PIPELINES)
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance)))
             .build());
+  }
+
+  private void setFilePathsInRequest(
+      K8sApplyStepParameters k8sApplyStepParameters, K8sApplyRequestBuilder applyRequestBuilder, String accountId) {
+    if (!isEmpty(getParameterFieldValue(k8sApplyStepParameters.getFilePaths()))) {
+      applyRequestBuilder.filePaths(k8sApplyStepParameters.getFilePaths().getValue());
+    } else if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_APPLY_MANIFEST_WITHOUT_SERVICE_NG)) {
+      applyRequestBuilder.filePaths(
+          k8sApplyStepParameters.getManifestSource().getSpec().getStoreConfig().retrieveFilePaths());
+      applyRequestBuilder.useManifestSource(true);
+    } else {
+      throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.APPLY_NO_FILEPATH_SPECIFIED,
+          KubernetesExceptionExplanation.APPLY_NO_FILEPATH_SPECIFIED,
+          new KubernetesTaskException(KubernetesExceptionMessages.APPLY_NO_FILEPATH_SPECIFIED));
+    }
   }
 }

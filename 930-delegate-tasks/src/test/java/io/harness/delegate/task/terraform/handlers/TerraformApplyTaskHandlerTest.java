@@ -11,11 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -71,10 +74,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,12 +136,48 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
-        getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParameters(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(terraformBaseHelper)
         .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
     verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testApplyAborted() throws IOException, TimeoutException, InterruptedException {
+    AtomicBoolean isAborted = new AtomicBoolean();
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+
+    doAnswer(invocationOnMock -> {
+      isAborted.set(true);
+      return new ArrayList<>();
+    })
+        .when(terraformBaseHelper)
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+
+    TerraformTaskNGParameters tfTaskParams = getTerraformTaskParametersBuilder().encryptedTfPlan(null).build();
+
+    assertThatThrownBy(()
+                           -> terraformApplyTaskHandler.executeTaskInternal(
+                               tfTaskParams, "delegateId", "taskId", logCallback, isAborted))
+        .isInstanceOf(InterruptedException.class);
+
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
@@ -163,8 +204,8 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
                 .build());
     TerraformTaskNGParameters taskNGParameters = getTerraformTaskParametersBuilder().skipStateStorage(true).build();
 
-    TerraformTaskNGResponse response =
-        terraformApplyTaskHandler.executeTaskInternal(taskNGParameters, "delegateId", "taskId", logCallback);
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        taskNGParameters, "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
@@ -192,13 +233,85 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
-        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
     verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
     verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testApplyAndSkipFetchVarFilesIfItInheritsFromPlan()
+      throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+
+    when(terraformBaseHelper.executeTerraformApplyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        getTerraformTaskParameters(), "delegateId", "taskId", logCallback, new AtomicBoolean());
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(0))
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testApplyAndFetchVarFilesWhenApplyDoNotInherit()
+      throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    FileIo.createDirectoryIfDoesNotExist("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+
+    when(terraformBaseHelper.executeTerraformApplyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+
+    TerraformTaskNGParameters tfTaskParams = getTerraformTaskParametersBuilder().encryptedTfPlan(null).build();
+
+    TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
+        tfTaskParams, "delegateId", "taskId", logCallback, new AtomicBoolean());
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
+    verify(terraformBaseHelper, times(1)).uploadTfStateFile(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(1))
+        .checkoutRemoteVarFileAndConvertToVarFilePaths(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
   }
 
   @Test
@@ -219,7 +332,7 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
                 .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
                 .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
-        getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback);
+        getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback, new AtomicBoolean());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(terraformBaseHelper, times(1))

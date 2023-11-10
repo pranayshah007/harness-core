@@ -26,6 +26,8 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.ScmException;
+import io.harness.gitsync.caching.beans.GitFileCacheKey;
+import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.helper.GitRepoHelper;
 import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
@@ -68,6 +70,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Inject GitRepoHelper gitRepoHelper;
   @Inject GitSyncConnectorService gitSyncConnectorService;
   @Inject WebhookEventService webhookEventService;
+  @Inject GitFileCacheService gitFileCacheService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "GitX Webhook with identifier [%s] or repo [%s] already exists in the account [%s].";
@@ -85,6 +88,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   public CreateGitXWebhookResponseDTO createGitXWebhook(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(createGitXWebhookRequestDTO)) {
       try {
+        clearCache(createGitXWebhookRequestDTO.getAccountIdentifier(), createGitXWebhookRequestDTO.getRepoName());
         GitXWebhook gitXWebhook = buildGitXWebhooks(createGitXWebhookRequestDTO);
         log.info(String.format("Creating Webhook with identifier %s in account %s",
             createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getAccountIdentifier()));
@@ -165,6 +169,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
       try {
         log.info(String.format("Updating Webhook with identifier %s in account %s",
             updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookCriteriaDTO.getAccountIdentifier()));
+        clearCache(updateGitXWebhookCriteriaDTO.getAccountIdentifier(), updateGitXWebhookRequestDTO.getRepoName());
         Criteria criteria = buildCriteria(
             updateGitXWebhookCriteriaDTO.getAccountIdentifier(), updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
         Query query = new Query(criteria);
@@ -267,7 +272,12 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   }
 
   private Criteria buildListCriteria(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
-    return Criteria.where(GitXWebhookKeys.accountIdentifier).is(listGitXWebhookRequestDTO.getAccountIdentifier());
+    Criteria criteria = new Criteria();
+    criteria.and(GitXWebhookKeys.accountIdentifier).is(listGitXWebhookRequestDTO.getAccountIdentifier());
+    if (isNotEmpty(listGitXWebhookRequestDTO.getWebhookIdentifier())) {
+      criteria.and(GitXWebhookKeys.identifier).is(listGitXWebhookRequestDTO.getWebhookIdentifier());
+    }
+    return criteria;
   }
 
   private Update buildUpdate(UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
@@ -345,5 +355,17 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         .hookEventType(HookEventType.TRIGGER_EVENTS)
         .repoURL(repoUrl)
         .build();
+  }
+
+  private void clearCache(String accountIdentifier, String repoName) {
+    GitFileCacheKey cacheKey =
+        GitFileCacheKey.builder().accountIdentifier(accountIdentifier).repoName(repoName).build();
+    try {
+      gitFileCacheService.invalidateCache(cacheKey);
+    } catch (Exception ex) {
+      log.error("Exception occurred while clearing the cache for key {}", cacheKey, ex);
+      throw new InternalServerErrorException(
+          String.format("Error occurred while clearing the cache files in repo %s", repoName), ex);
+    }
   }
 }

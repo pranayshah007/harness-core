@@ -163,7 +163,7 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
       StoreDelegateConfig storeConfig, String outputDirectory, LogCallback logCallback) {
     GitStoreDelegateConfig gitStoreConfig = (GitStoreDelegateConfig) storeConfig;
     String fileSourceReference =
-        scmFetchFilesHelper.downloadFilesUsingScm(outputDirectory, gitStoreConfig, logCallback);
+        scmFetchFilesHelper.downloadFilesUsingScm(outputDirectory, gitStoreConfig, logCallback, false);
     List<String> files = createFilesPaths(gitStoreConfig, outputDirectory);
 
     return FetchFilesResult.builder()

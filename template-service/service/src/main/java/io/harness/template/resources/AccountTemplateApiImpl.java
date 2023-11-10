@@ -37,30 +37,35 @@ import lombok.extern.slf4j.Slf4j;
 @NextGenManagerAuth
 @Slf4j
 public class AccountTemplateApiImpl implements AccountTemplateApi {
-  private final TemplateResourceApiUtils templateResourceApiUtils;
+  private final TemplateResourceApiHelper templateResourceApiHelper;
   @Override
   public Response createTemplatesAcc(
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     TemplateRequestInfoDTO requestInfoDTO =
-        templateResourceApiUtils.mapCreateToRequestInfoDTO(templateCreateRequestBody);
+        templateResourceApiHelper.mapCreateToRequestInfoDTO(templateCreateRequestBody);
     Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
-    return templateResourceApiUtils.createTemplate(
+    return templateResourceApiHelper.createTemplate(
         account, null, null, gitCreateDetails, requestInfoDTO, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
   public Response deleteTemplateAcc(@ResourceIdentifier String templateIdentifier, String versionLabel,
       @AccountIdentifier String account, String comments, Boolean forceDelete) {
-    return templateResourceApiUtils.deleteTemplate(
+    return templateResourceApiHelper.deleteTemplate(
         account, null, null, templateIdentifier, versionLabel, comments, Boolean.TRUE == forceDelete);
+  }
+
+  @Override
+  public Response getAccTemplatesInputsSchema(String template, String version, String harnessAccount) {
+    return templateResourceApiHelper.getInputsSchema(harnessAccount, null, null, template, version);
   }
 
   @Override
   public Response getTemplateAcc(@ResourceIdentifier String templateIdentifier, String versionLabel,
       @AccountIdentifier String account, Boolean getInputYaml, String branch, String parentConnectorRef,
       String parentRepoName, String parentAccountId, String parentOrgId, String parentProjectId) {
-    return templateResourceApiUtils.getTemplate(account, null, null, templateIdentifier, versionLabel, false, branch,
+    return templateResourceApiHelper.getTemplate(account, null, null, templateIdentifier, versionLabel, false, branch,
         parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
@@ -68,7 +73,7 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
   public Response getTemplateStableAcc(@ResourceIdentifier String templateIdentifier, @AccountIdentifier String account,
       Boolean getInputYaml, String branch, String parentConnectorRef, String parentRepoName, String parentAccountId,
       String parentOrgId, String parentProjectId) {
-    return templateResourceApiUtils.getTemplate(account, null, null, templateIdentifier, null, false, branch,
+    return templateResourceApiHelper.getTemplate(account, null, null, templateIdentifier, null, false, branch,
         parentConnectorRef, parentRepoName, parentAccountId, parentOrgId, parentProjectId, getInputYaml);
   }
 
@@ -76,14 +81,14 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
   public Response getTemplatesListAcc(@AccountIdentifier String account, Integer page, Integer limit, String sort,
       String order, String searchTerm, String listType, Boolean recursive, List<String> names, List<String> identifiers,
       String description, List<String> entityTypes, List<String> childTypes) {
-    return templateResourceApiUtils.getTemplates(account, null, null, page, limit, sort, order, searchTerm, listType,
+    return templateResourceApiHelper.getTemplates(account, null, null, page, limit, sort, order, searchTerm, listType,
         recursive, names, identifiers, description, entityTypes, childTypes);
   }
 
   @Override
   public Response importTemplateAcc(@ResourceIdentifier String template, @Valid TemplateImportRequestBody body,
       @AccountIdentifier String harnessAccount) {
-    return templateResourceApiUtils.importTemplate(
+    return templateResourceApiHelper.importTemplate(
         harnessAccount, null, null, template, body.getGitImportDetails(), body.getTemplateImportRequest());
   }
 
@@ -92,15 +97,15 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
       TemplateUpdateRequestBody templateUpdateRequestBody, @AccountIdentifier String account) {
     GitUpdateDetails gitUpdateDetails = templateUpdateRequestBody.getGitDetails();
     TemplateRequestInfoDTO requestInfoDTO =
-        templateResourceApiUtils.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
-    return templateResourceApiUtils.updateTemplate(account, null, null, templateIdentifier, versionLabel,
+        templateResourceApiHelper.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
+    return templateResourceApiHelper.updateTemplate(account, null, null, templateIdentifier, versionLabel,
         gitUpdateDetails, requestInfoDTO, false, templateUpdateRequestBody.getComments());
   }
 
   @Override
   public Response updateTemplateStableAcc(@ResourceIdentifier String templateIdentifier, String versionLabel,
       GitFindDetails gitFindDetails, @AccountIdentifier String account) {
-    return templateResourceApiUtils.updateStableTemplate(
+    return templateResourceApiHelper.updateStableTemplate(
         account, null, null, templateIdentifier, versionLabel, gitFindDetails, gitFindDetails.getComments());
   }
 }

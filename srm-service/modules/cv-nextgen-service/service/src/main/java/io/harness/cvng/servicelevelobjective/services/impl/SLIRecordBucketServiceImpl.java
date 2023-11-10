@@ -12,11 +12,17 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.SRMPersistence;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
+import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordBucketService;
+import io.harness.cvng.utils.SLOGraphUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -26,6 +32,8 @@ import dev.morphia.query.Sort;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +42,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
   private static final int RETRY_COUNT = 3;
+  public static final int SLI_RECORD_BUCKET_SIZE = 5;
 
   @Inject SRMPersistence hPersistence;
   @Override
@@ -202,5 +212,118 @@ public class SLIRecordBucketServiceImpl implements SLIRecordBucketService {
         .lessThan(endTimeStamp)
         .order(Sort.ascending(SLIRecordBucketKeys.bucketStartTime))
         .asList();
+  }
+
+  @Override
+  public List<SLIRecordBucket> getSLIRecordBucketsForFilterRange(
+      String sliId, Instant startTime, Instant endTime, TimeRangeParams filter, long numOfPoints) {
+    SLIRecordBucket firstRecord = getFirstSLIRecord(sliId, startTime);
+    SLIRecordBucket lastRecord = getLastSLIRecord(sliId, endTime);
+    SLIRecordBucket firstRecordInRange = firstRecord;
+    SLIRecordBucket lastRecordInRange = lastRecord;
+    if (filter.getStartTime() != startTime) {
+      firstRecordInRange = getFirstSLIRecord(sliId, filter.getStartTime());
+    }
+    if (filter.getEndTime() != endTime) {
+      lastRecordInRange = getLastSLIRecord(sliId, filter.getEndTime());
+    }
+    if (firstRecordInRange == null || lastRecordInRange == null) {
+      return Collections.emptyList();
+    } else {
+      endTime = lastRecordInRange.getBucketStartTime();
+    }
+    List<Instant> minutes = SLOGraphUtils.getBucketMinutesExclusiveOfStartAndEndTime(
+        firstRecordInRange.getBucketStartTime(), endTime, numOfPoints, SLI_RECORD_BUCKET_SIZE);
+    List<SLIRecordBucket> sliRecordBuckets = new ArrayList<>();
+    sliRecordBuckets.add(firstRecord);
+    if (!firstRecordInRange.getBucketStartTime().equals(firstRecord.getBucketStartTime())) {
+      sliRecordBuckets.add(firstRecordInRange);
+    }
+    if (!minutes.isEmpty()) {
+      sliRecordBuckets.addAll(getSLIRecordsOfMinutes(sliId, minutes));
+    }
+    if (!lastRecordInRange.getBucketStartTime().equals(
+            lastRecord.getBucketStartTime())) { // handle edge cases of adding the last record
+      sliRecordBuckets.add(lastRecordInRange);
+    }
+    sliRecordBuckets.add(lastRecord); // last record from single query
+    // Map with Timestamp as key and SLIRecord as value with merge function to take the latest -> all this just to sort
+    // and I guess remove duplicates too, may be use a sorted Set TODO
+    return sliRecordBuckets.stream()
+        .collect(Collectors.toMap(SLIRecordBucket::getBucketStartTime, Function.identity(),
+            (sliRecordBucket1, sliRecordBucket2)
+                -> sliRecordBucket1.getLastUpdatedAt() > sliRecordBucket2.getLastUpdatedAt() ? sliRecordBucket1
+                                                                                             : sliRecordBucket2))
+        .values()
+        .stream()
+        .sorted(Comparator.comparing(SLIRecordBucket::getBucketStartTime))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public long getBadCountTillRangeStartTime(ServiceLevelIndicator serviceLevelIndicator,
+      SLIMissingDataType sliMissingDataType, SLIValue sliValue, SLIRecordBucket sliRecordBucket,
+      long previousRunningCount) {
+    long badCountTillRangeStartTime;
+    badCountTillRangeStartTime = sliValue.getBadCount();
+    for (SLIState sliState : sliRecordBucket.getSliStates()) {
+      if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+        if (sliState.equals(SLIState.BAD)
+            || (sliState.equals(SLIState.NO_DATA) && sliMissingDataType == SLIMissingDataType.BAD)) {
+          badCountTillRangeStartTime--;
+        }
+      } else {
+        badCountTillRangeStartTime -= sliRecordBucket.getRunningBadCount() - previousRunningCount;
+      }
+    }
+    return badCountTillRangeStartTime;
+  }
+
+  @Override
+  public SLIValue calculateSLIValue(SLIEvaluationType sliEvaluationType, SLIMissingDataType sliMissingDataType,
+      SLIRecordBucket sliRecordBucket, Pair<Long, Long> baselineRunningCountPair, long beginningMinute,
+      long skipRecordCount, long disabledMinutesFromStart) {
+    long lastRecordBeforeStartGoodCount = baselineRunningCountPair.getLeft();
+    long lastRecordBeforeStartBadCount = baselineRunningCountPair.getRight();
+    long goodCountFromStart = sliRecordBucket.getRunningGoodCount() - lastRecordBeforeStartGoodCount;
+    long badCountFromStart = sliRecordBucket.getRunningBadCount() - lastRecordBeforeStartBadCount;
+    SLIValue sliValue;
+    if (sliEvaluationType == SLIEvaluationType.WINDOW) {
+      long bucketEndTime = (sliRecordBucket.getBucketStartTime().getEpochSecond() / 60) + SLI_RECORD_BUCKET_SIZE;
+      long minutesFromStart = bucketEndTime - beginningMinute; // TODO we removed a + 1 think about it.
+      sliValue = sliMissingDataType.calculateSLIValue(
+          goodCountFromStart + skipRecordCount, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+    } else {
+      sliValue = SLIValue.builder()
+                     .goodCount(goodCountFromStart)
+                     .badCount(badCountFromStart)
+                     .total(goodCountFromStart + badCountFromStart)
+                     .build();
+    }
+    return sliValue;
+  }
+
+  @Override
+  public Pair<Long, Long> getPreviousBucketRunningCount(
+      SLIRecordBucket sliRecordBucket, ServiceLevelIndicator serviceLevelIndicator) {
+    if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
+      long runningBadCount = sliRecordBucket.getRunningBadCount();
+      long runningGoodCount = sliRecordBucket.getRunningGoodCount();
+      for (SLIState sliState : sliRecordBucket.getSliStates()) {
+        if (sliState == SLIState.GOOD) {
+          runningGoodCount--;
+        } else if (sliState == SLIState.BAD) {
+          runningBadCount--;
+        }
+      }
+      return Pair.of(runningGoodCount, runningBadCount);
+    } else {
+      SLIRecordBucket baselineSLIRecordBucket =
+          getLastSLIRecord(serviceLevelIndicator.getUuid(), sliRecordBucket.getBucketStartTime());
+      if (Objects.isNull(baselineSLIRecordBucket)) {
+        return Pair.of(0L, 0L);
+      }
+      return Pair.of(baselineSLIRecordBucket.getRunningGoodCount(), baselineSLIRecordBucket.getRunningBadCount());
+    }
   }
 }

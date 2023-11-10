@@ -37,5 +37,4 @@ public interface Infrastructure extends StepParameters, PassThroughData, Overrid
   @JsonIgnore String[] getInfrastructureKeyValues();
   @JsonIgnore boolean isDynamicallyProvisioned();
   @JsonIgnore String getProvisionerStepIdentifier();
-  List<String> getScopedToServices();
 }

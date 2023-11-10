@@ -118,6 +118,7 @@ public abstract class VerificationJob
 
   private RuntimeParameter duration;
   private RuntimeParameter failOnNoAnalysis;
+  private RuntimeParameter failIfAnyCustomMetricInNoAnalysis;
   private boolean isDefaultJob;
 
   private List<CVConfig> cvConfigs;
@@ -211,6 +212,12 @@ public abstract class VerificationJob
         : RuntimeParameter.builder().isRuntimeParam(isRuntimeParam).value(failOnNoAnalysis).build();
   }
 
+  public void setFailIfAnyCustomMetricInNoAnalysis(String failIfAnyCustomMetricInNoAnalysis, boolean isRuntimeParam) {
+    this.failIfAnyCustomMetricInNoAnalysis = failIfAnyCustomMetricInNoAnalysis == null
+        ? null
+        : RuntimeParameter.builder().isRuntimeParam(isRuntimeParam).value(failIfAnyCustomMetricInNoAnalysis).build();
+  }
+
   public Duration getDuration() {
     if (duration.isRuntimeParam()) {
       return null;
@@ -224,6 +231,14 @@ public abstract class VerificationJob
       return false;
     }
     return Boolean.parseBoolean(failOnNoAnalysis.getValue());
+  }
+
+  public boolean isFailIfAnyCustomMetricInNoAnalysis() {
+    if (failIfAnyCustomMetricInNoAnalysis == null || StringUtils.isEmpty(failIfAnyCustomMetricInNoAnalysis.getValue())
+        || failIfAnyCustomMetricInNoAnalysis.isRuntimeParam) {
+      return false;
+    }
+    return Boolean.parseBoolean(failIfAnyCustomMetricInNoAnalysis.getValue());
   }
 
   public String getServiceIdentifier() {

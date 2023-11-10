@@ -7,8 +7,12 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.cdng.aws.asg.AsgStepCommonHelper.getLoadBalancers;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.CodePulse;
@@ -54,6 +58,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -190,8 +195,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
 
     AsgLoadBalancerConfig asgLoadBalancerConfig =
         AsgBlueGreenSwapServiceStep.getLoadBalancer(asgBlueGreenPrepareRollbackDataOutcome);
-    List<AsgLoadBalancerConfig> loadBalancers =
-        AsgBlueGreenSwapServiceStep.getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome);
+    List<AsgLoadBalancerConfig> loadBalancers = getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome, null);
 
     AsgBlueGreenRollbackRequest asgBlueGreenRollbackRequest =
         AsgBlueGreenRollbackRequest.builder()
@@ -210,8 +214,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .servicesSwapped(trafficShifted)
             .build();
 
-    TaskType taskType =
-        loadBalancers == null ? AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG : AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
+    TaskType taskType = getTaskType(loadBalancers);
 
     return asgStepCommonHelper
         .queueAsgTask(stepElementParameters, asgBlueGreenRollbackRequest, ambiance,
@@ -228,5 +231,21 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
     return TaskRequest.newBuilder()
         .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
         .build();
+  }
+
+  @VisibleForTesting
+  TaskType getTaskType(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (loadBalancers == null) {
+      return AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG;
+    }
+
+    // use classic iteration in order to break early
+    for (AsgLoadBalancerConfig lb : loadBalancers) {
+      if (isEmpty(lb.getStageListenerRuleArn())) {
+        return AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V3;
+      }
+    }
+
+    return AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
   }
 }

@@ -22,4 +22,5 @@ import org.springframework.data.mongodb.core.query.Query;
 public interface SBOMComponentRepoCustom {
   Page<NormalizedSBOMComponentEntity> findAll(Criteria criteria, Pageable pageable);
   List<NormalizedSBOMComponentEntity> findAllByQuery(Query query);
+  List<String> findDistinctOrchestrationIds(Criteria criteria);
 }

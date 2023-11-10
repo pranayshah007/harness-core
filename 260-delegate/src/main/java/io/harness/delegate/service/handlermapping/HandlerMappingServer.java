@@ -58,8 +58,6 @@ public class HandlerMappingServer {
     var handlerContext = context.deepCopy();
     handlerContext.set(Context.TASK_ID, taskPayload.getId());
     handlerContext.set(Context.ACCOUNT_ID, taskPayload.getAccountId());
-    handlerContext.set(Context.ORG_ID, taskPayload.getOrgId());
-    handlerContext.set(Context.PROJECT_ID, taskPayload.getProjectId());
     // TODO: add decrypted secrets here
     // secret decryption start
     List<Secret> binarySecretsList = taskPayload.getSecretsList();
@@ -67,10 +65,11 @@ public class HandlerMappingServer {
     for (Secret secret : binarySecretsList) {
       try {
         var decrypted = decryptionService.decryptProtoBytes(secret);
-        decryptedMap.put(secret.getSecretRef().getFullyQualifiedSecretId(), decrypted);
+        decryptedMap.put(secret.getSecretRef().getScopedSecretId(), decrypted);
       } catch (Exception ex) {
         // TODO: send task failed response
         log.error("exception occurred when decrypting the secret", ex);
+        return;
       }
     }
 

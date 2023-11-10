@@ -160,7 +160,11 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.manifest.CustomSourceFile;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -192,6 +196,7 @@ import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -216,6 +221,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class NativeHelmStepHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -228,6 +235,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Mock private HelmChartService helmChartService;
+  @Mock private NGSettingsClient settingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
 
   // internally used fields -- don't remove
   @Mock private PipelineRbacHelper pipelineRbacHelper;
@@ -2912,7 +2921,16 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                 OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
             .build();
     TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
-    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig, false);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testTaskTypeSteadyStateForJobs() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_JOBS_STEADY_STATE_CHECK;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null, true);
   }
 
   @Test
@@ -2921,7 +2939,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   public void testTaskTypeRancher() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
     TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_RANCHER;
-    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null);
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null, false);
   }
 
   @Test
@@ -2931,7 +2949,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG_V2;
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
-    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null);
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null, false);
   }
 
   @Test
@@ -2940,11 +2958,11 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   public void testTaskType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     TaskType expectedTaskType = TaskType.HELM_COMMAND_TASK_NG;
-    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null);
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, null, false);
   }
 
   private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType,
-      ManifestDelegateConfig manifestDelegateConfig) {
+      ManifestDelegateConfig manifestDelegateConfig, boolean enableSteadyStateCheckForJob) {
     try (MockedStatic<K8sTaskCapabilityHelper> mockK8s = mockStatic(K8sTaskCapabilityHelper.class);
          MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class);
          MockedStatic<AwsCapabilityHelper> mockAws = mockStatic(AwsCapabilityHelper.class)) {
@@ -2963,6 +2981,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                   .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                   .manifestDelegateConfig(manifestDelegateConfig)
                   .serviceHooks(List.of(hook))
+                  .useSteadyStateCheckForJobs(enableSteadyStateCheckForJob)
                   .build(),
               ambiance, NativeHelmExecutionPassThroughData.builder().build());
       assertThat(taskChainResponse.getTaskRequest()
@@ -2974,5 +2993,20 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                      .trim())
           .isEqualTo(expectedTaskType.name());
     }
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testIsSteadyStateForJobsEnabled() throws IOException {
+    assertThat(nativeHelmStepHelper.isSteadyStateForJobsEnabled(ambiance)).isFalse();
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request)
+        .when(settingsClient)
+        .getSetting(eq("native_helm_enable_steady_state_for_jobs"), eq(AmbianceUtils.getAccountId(ambiance)),
+            eq(AmbianceUtils.getOrgIdentifier(ambiance)), eq(AmbianceUtils.getProjectIdentifier(ambiance)));
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+    assertThat(nativeHelmStepHelper.isSteadyStateForJobsEnabled(ambiance)).isTrue();
   }
 }

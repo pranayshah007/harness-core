@@ -13,6 +13,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.graphql.core.perspectives.PerspectiveService;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveData;
+import io.harness.ccm.graphql.dto.perspectives.PerspectiveData.PerspectiveDataBuilder;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveEntityStatsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveFieldsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveFilterData;
@@ -22,12 +23,15 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewPreferences;
-import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
+import io.harness.ccm.views.service.CEViewFolderService;
+import io.harness.ccm.views.service.CEViewService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,10 +39,12 @@ import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.DefaultValue;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.tools.StringUtils;
 
@@ -50,6 +56,8 @@ public class PerspectivesQuery {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private PerspectiveService perspectiveService;
   @Inject private CCMRbacHelper rbacHelper;
+  @Inject private CEViewFolderService ceViewFolderService;
+  @Inject private CEViewService ceViewService;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
   public PerspectiveTrendStats perspectiveTrendStats(
@@ -138,25 +146,29 @@ public class PerspectivesQuery {
   @GraphQLQuery(name = "perspectives", description = "Fetch perspectives for account")
   public PerspectiveData perspectives(@GraphQLArgument(name = "folderId") String folderId,
       @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
+      @GraphQLArgument(name = "pageSize") @DefaultValue("20") Integer pageSize,
+      @GraphQLArgument(name = "pageNo") @DefaultValue("0") Integer pageNo,
+      @GraphQLArgument(name = "searchKey") String searchKey,
+      @GraphQLArgument(name = "cloudFilters") List<CloudFilter> cloudFilters,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
+    PerspectiveDataBuilder perspectiveDataBuilder = PerspectiveData.builder();
     if (StringUtils.isEmpty(folderId)) {
-      List<QLCEView> allPerspectives = perspectiveService.perspectives(sortCriteria, accountId);
-      List<QLCEView> allowedPerspectives = null;
-      if (allPerspectives != null) {
-        Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-            allPerspectives.stream().map(perspective -> perspective.getFolderId()).collect(Collectors.toSet()),
-            PERSPECTIVE_VIEW);
-        allowedPerspectives = allPerspectives.stream()
-                                  .filter(perspective -> allowedFolderIds.contains(perspective.getFolderId()))
-                                  .collect(Collectors.toList());
-      }
-      return PerspectiveData.builder().customerViews(allowedPerspectives).build();
+      List<CEViewFolder> folders = ceViewFolderService.getFolders(accountId, "");
+      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+          folders.stream().map(CEViewFolder::getUuid).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+      perspectiveDataBuilder.totalCount(
+          ceViewService.countByAccountIdAndFolderIds(accountId, allowedFolderIds, searchKey, cloudFilters));
+      perspectiveDataBuilder.views(perspectiveService.perspectives(
+          sortCriteria, accountId, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters));
+    } else {
+      rbacHelper.checkPerspectiveViewPermission(accountId, null, null, folderId);
+      perspectiveDataBuilder.totalCount(ceViewService.countByAccountIdAndFolderIds(
+          accountId, Collections.singleton(folderId), searchKey, cloudFilters));
+      perspectiveDataBuilder.views(perspectiveService.perspectives(
+          folderId, sortCriteria, accountId, pageNo, pageSize, cloudFilters, searchKey));
     }
-    rbacHelper.checkPerspectiveViewPermission(accountId, null, null, folderId);
-    return PerspectiveData.builder()
-        .customerViews(perspectiveService.perspectives(folderId, sortCriteria, accountId))
-        .build();
+    return perspectiveDataBuilder.build();
   }
 
   @GraphQLQuery(name = "perspectiveTotalCount", description = "Get total count of rows for query")

@@ -30,9 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ScmFetcherUtils {
   public void writeFile(String directoryPath, FileContent fileContent, String basePath, boolean relativize,
-      boolean useBase64) throws IOException {
+      boolean useBase64, boolean mayHaveMultipleFolders) throws IOException {
     String filePath;
-    if (relativize) {
+    if (relativize && !mayHaveMultipleFolders) {
       filePath = Paths.get(basePath).relativize(Paths.get(processedFilePath(fileContent.getPath()))).toString();
       if (isEmpty(filePath)) {
         filePath = Paths.get(fileContent.getPath()).getFileName().toString();
@@ -40,7 +40,6 @@ public class ScmFetcherUtils {
     } else {
       filePath = fileContent.getPath();
     }
-
     Path finalPath = Paths.get(directoryPath, filePath);
     Path parent = finalPath.getParent();
     if (parent == null) {

@@ -21,10 +21,11 @@ import com.google.inject.Inject;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class PipelineMetricUtils {
   @Inject MetricService metricService;
-  public void publishPipelineExecutionMetrics(String metricName, Status status, String accountId) {
+  public void publishPipelineExecutionMetrics(String metricName, Status status, String accountId, String edition) {
     ImmutableMap<String, String> metricContextMap = ImmutableMap.<String, String>builder()
                                                         .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountId)
                                                         .put(PmsEventMonitoringConstants.STATUS, status.toString())
+                                                        .put(PmsEventMonitoringConstants.EDITION, edition)
                                                         .build();
 
     try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {

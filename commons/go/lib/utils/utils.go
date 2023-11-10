@@ -38,11 +38,12 @@ const (
 )
 
 const (
-	JAVA_SRC_PATH      = "src/main/java/"
-	JAVA_TEST_PATH     = "src/test/java/"
-	JAVA_RESOURCE_PATH = "src/test/resources/"
-	SCALA_TEST_PATH    = "src/test/scala/"
-	KOTLIN_TEST_PATH   = "src/test/kotlin/"
+	JAVA_SRC_PATH            = "src/main/java/"
+	JAVA_TEST_PATH           = "src/test/java/"
+	JAVA_RESOURCE_PATH       = "src/test/resources/"
+	SCALA_TEST_PATH          = "src/test/scala/"
+	KOTLIN_TEST_PATH         = "src/test/kotlin/"
+	HarnessDefaultReportPath = "harness_test_results.xml"
 )
 
 var (

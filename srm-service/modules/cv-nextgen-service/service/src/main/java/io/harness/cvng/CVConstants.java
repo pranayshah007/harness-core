@@ -86,4 +86,5 @@ public interface CVConstants {
       "ng_le_service_health_max_queued_time_sec", "ng_le_deployment_task_count", "ng_le_service_health_task_count",
       "io_harness_cvng_mongodb_connection_pool_max_size", "io_harness_cvng_mongodb_connections_checked_out",
       "io_harness_cvng_mongodb_connection_pool_size"));
+  String METRIC_LESS_SLI_IDENTIFIER = "metric_less_vyczachdfd";
 }
