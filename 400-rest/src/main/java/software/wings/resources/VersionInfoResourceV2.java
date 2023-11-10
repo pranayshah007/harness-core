@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import com.example.annotations.PublicApi; // Import the appropriate package for @PublicApi annotation
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -17,14 +19,14 @@ import java.util.Map;
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionInfoResourceV2 {
-  private final Map<String, String> versionInfo;
+  private final VersionInfoManagerV2 versionInfoManager;
 
-  public VersionInfoResource(Map<String, String> versionInfo) {
-    this.versionInfo = versionInfo;
+  public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
+    this.versionInfoManager = versionInfoManager;
   }
 
   @GET
   public Map<String, String> getVersionInfo() {
-    return versionInfo;
+    return versionInfoManager.getVersionInfo();
   }
 }
