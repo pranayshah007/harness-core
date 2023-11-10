@@ -30,6 +30,7 @@ import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
+import io.harness.gitsync.gitxwebhooks.helper.GitXWebhookTriggerHelper;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookEventLogContext;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookLogContext;
 import io.harness.gitsync.gitxwebhooks.observer.GitXWebhookEventUpdateObserver;
@@ -61,6 +62,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookService gitXWebhookService;
   @Inject HsqsClientService hsqsClientService;
 
+  @Inject GitXWebhookTriggerHelper gitXWebhookTriggerHelper;
+
   private static final String QUEUE_TOPIC_PREFIX = "ng";
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
@@ -78,6 +81,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         if (gitXWebhook == null) {
           log.info(
               String.format("Skipping processing of event [%s] as no GitX Webhook found.", webhookDTO.getEventId()));
+          gitXWebhookTriggerHelper.startTriggerExecution(webhookDTO);
           return;
         }
         GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
@@ -88,6 +92,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
             String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
       } catch (Exception exception) {
         log.error("Failed to process the webhook event {}", webhookDTO.getEventId(), exception);
+        gitXWebhookTriggerHelper.startTriggerExecution(webhookDTO);
         throw new InternalServerErrorException(
             String.format("Failed to process the webhook event [%s].", webhookDTO.getEventId()));
       }
