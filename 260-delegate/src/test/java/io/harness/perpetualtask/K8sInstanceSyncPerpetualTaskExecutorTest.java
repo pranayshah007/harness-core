@@ -15,7 +15,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -124,6 +126,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(4);
+    verify(taskCleaner, atLeastOnce()).cleanup(any());
 
     serverInstanceDetails.forEach(serverInstanceInfo -> {
       K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
@@ -160,6 +163,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(4);
+    verify(taskCleaner, atLeastOnce()).cleanup(any());
 
     serverInstanceDetails.forEach(serverInstanceInfo -> {
       K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
@@ -196,6 +200,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(4);
+    verify(taskCleaner, atLeastOnce()).cleanup(any());
 
     serverInstanceDetails.forEach(serverInstanceInfo -> {
       K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
@@ -232,6 +237,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(2);
+    verify(taskCleaner, atLeastOnce()).cleanup(any());
 
     serverInstanceDetails.forEach(serverInstanceInfo -> {
       K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
@@ -268,6 +274,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
     assertThat(serverInstanceDetails.size()).isEqualTo(4);
+    verify(taskCleaner, atLeastOnce()).cleanup(any());
 
     serverInstanceDetails.forEach(serverInstanceInfo -> {
       K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
