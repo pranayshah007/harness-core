@@ -568,9 +568,9 @@ REQUIRED:
         {{- $params = (dict "ctx" $ "database" .database "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "sslModeVariableName" .sslModeVariableName "sslModeValue" .sslModeValue "handleSSLModeDisable" .handleSSLModeDisable "certVariableName" .certVariableName "certPathVariableName" .certPathVariableName "certPathValue" .certPathValue "connectionURIVariableName" .connectionURIVariableName "protocol" .protocol "args" .args "addSSLModeArg" .addSSLModeArg) }}
     {{- end }}
     {{- include "harnesscommon.dbv3.timescaleEnv" $params }}
-    {{- $_ := unset $params "userVariableName" }}
-    {{- $_ := unset $params "passwordVariableName" }}
-    {{- include "harnesscommon.dbv3.timescaleConnectionEnv" $params "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName }}
+    {{- $_ := set $params "userVariableName" .userVariableName }}
+    {{- $_ := set $params "passwordVariableName" .passwordVariableName }}
+    {{- include "harnesscommon.dbv3.timescaleConnectionEnv" $params }}
 {{- end }}
 
 {{/*
