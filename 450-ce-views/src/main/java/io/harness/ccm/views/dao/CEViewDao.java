@@ -307,14 +307,12 @@ public class CEViewDao {
 
   public List<CEView> findByAccountIdAndFolderId(String accountId, Set<String> folderIds,
       QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey, List<CloudFilter> filters,
-      boolean excludeDefault) {
+      boolean excludeDefault, Long defaultPerspectiveCount) {
     Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, filters);
     query = getDefaultFilterPerspectives(query, excludeDefault);
     query = decorateQueryWithSortCriteria(query, sortCriteria);
-    final Long defaultPerspectiveCount = countByAccountIdAndFolderIds(accountId, folderIds, searchKey, filters);
-    int limit = Objects.equals(pageNo, 0) ? (int) (pageSize - defaultPerspectiveCount) : pageSize;
     int offset = Objects.equals(pageNo, 0) ? 0 : (int) (pageNo * pageSize - defaultPerspectiveCount);
-    query.limit(limit);
+    query.limit(pageSize);
     query.offset(offset);
     return query.asList();
   }

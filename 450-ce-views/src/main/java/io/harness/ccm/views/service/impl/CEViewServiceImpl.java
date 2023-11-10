@@ -511,13 +511,12 @@ public class CEViewServiceImpl implements CEViewService {
   public List<CEView> getFirstPageViews(String accountId, QLCEViewSortCriteria sortCriteria, Integer pageSize,
       Integer pageNo, String searchKey, Set<String> allowedFolderIds, List<CloudFilter> cloudFilters) {
     List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, false);
-    int defaultPerspectiveCount = defaultViewList.size();
+        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, false, 0L);
+    Long defaultPerspectiveCount = (long) defaultViewList.size();
     List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(accountId, allowedFolderIds, sortCriteria, pageNo,
-        pageSize - defaultPerspectiveCount, searchKey, cloudFilters, true);
+        (int) (pageSize - defaultPerspectiveCount), searchKey, cloudFilters, true, defaultPerspectiveCount);
     defaultViewList.addAll(viewList);
-    viewList = defaultViewList;
-    return viewList;
+    return defaultViewList;
   }
 
   @Override
@@ -530,8 +529,10 @@ public class CEViewServiceImpl implements CEViewService {
       viewList =
           getFirstPageViews(accountId, sortCriteria, pageSize, pageNo, searchKey, allowedFolderIds, cloudFilters);
     } else {
-      viewList = ceViewDao.findByAccountIdAndFolderId(
-          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+      Long defaultPerspectiveCount = countByAccountIdAndFolderId(
+          accountId, allowedFolderIds, searchKey, Collections.singletonList(CloudFilter.DEFAULT));
+      viewList = ceViewDao.findByAccountIdAndFolderId(accountId, allowedFolderIds, sortCriteria, pageNo, pageSize,
+          searchKey, cloudFilters, true, defaultPerspectiveCount);
     }
 
     return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
@@ -557,8 +558,10 @@ public class CEViewServiceImpl implements CEViewService {
     if (Objects.equals(pageNo, 0)) {
       viewList = getFirstPageViews(accountId, sortCriteria, pageSize, pageNo, searchKey, folderIds, cloudFilters);
     } else {
+      Long defaultPerspectiveCount =
+          countByAccountIdAndFolderId(accountId, folderIds, searchKey, Collections.singletonList(CloudFilter.DEFAULT));
       viewList = ceViewDao.findByAccountIdAndFolderId(
-          accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+          accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true, defaultPerspectiveCount);
     }
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
     return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
@@ -876,7 +879,7 @@ public class CEViewServiceImpl implements CEViewService {
     QLCEViewSortCriteria modifiedSortCriteria = sortCriteria;
     if (Objects.isNull(sortCriteria.getSortOrder()) && Objects.isNull(sortCriteria.getSortType())) {
       modifiedSortCriteria =
-          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.ASCENDING).sortType(QLCEViewSortType.TIME).build();
+          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.TIME).build();
     }
     return modifiedSortCriteria;
   }
