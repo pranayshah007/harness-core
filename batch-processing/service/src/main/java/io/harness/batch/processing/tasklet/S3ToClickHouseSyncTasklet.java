@@ -391,7 +391,8 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
           String insertQuery =
               "SET input_format_csv_skip_first_lines=1; SET max_memory_usage=1000000000000; INSERT INTO "
               + awsBillingTableId + " SELECT * FROM s3('https://"
-              + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/" + objectSummary.getKey()
+              + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/"
+              + "AROA47KYUDENVZA362ALZ:W50osoQJS42JItbue3ddhA/harnessceprod/test_utsav_automation/20230901-20231001/harness-customer-billing-data-prod-*.csv.gz"
               + "','" + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
               + configuration.getAwsS3SyncConfig().getAwsSecretKey()
               + "', 'CSV') SETTINGS date_time_input_format='best_effort'";
