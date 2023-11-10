@@ -1255,7 +1255,7 @@ components:
         type:
           type: string
           enum:
-            - Custom
+            - custom
         spec:
           $ref: '#/components/schemas/TriggerSpec'
       required:
@@ -1268,7 +1268,7 @@ components:
         type:
           type: string
           enum:
-            - Custom
+            - custom
         spec:
           $ref: '#/components/schemas/TriggerSpec'
       required:
@@ -1280,12 +1280,12 @@ components:
         payload_conditions:
           type: array
           items:
-            $ref: '#/components/schemas/TriggerPayloadConditions'
+            $ref: '#/components/schemas/TriggerConditions'
         header_conditions:
           type: array
           items:
-            $ref: '#/components/schemas/TriggerPayloadConditions'
-    TriggerPayloadConditions:
+            $ref: '#/components/schemas/TriggerConditions'
+    TriggerConditions:
       title: Trigger PayloadConditions
       type: object
       description: 'Payload Conditions for the Trigger'
@@ -1356,7 +1356,7 @@ components:
         type:
           type: string
           enum:
-            - Custom
+            - custom
         spec:
           $ref: '#/components/schemas/TriggerSpec'
       required:
