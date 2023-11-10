@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 
 import java.util.List;
@@ -32,4 +33,5 @@ import lombok.experimental.FieldDefaults;
 public class GitXEventUpdateRequestDTO {
   List<String> processedFilePaths;
   GitXWebhookEventStatus gitXWebhookEventStatus;
+  WebhookDTO webhookDTO;
 }

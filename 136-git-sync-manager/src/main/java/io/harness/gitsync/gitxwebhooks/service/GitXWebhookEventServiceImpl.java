@@ -23,6 +23,7 @@ import io.harness.gitsync.gitxwebhooks.dtos.GitXEventDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXWebhookEventUpdateInfo;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
@@ -31,10 +32,12 @@ import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookEventLogContext;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookLogContext;
+import io.harness.gitsync.gitxwebhooks.observer.GitXWebhookEventUpdateObserver;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.observer.Subject;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 
@@ -43,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -62,6 +66,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
 
   private static final String LISTING_EVENTS = "listing events";
+
+  @Getter private final Subject<GitXWebhookEventUpdateObserver> gitXWebhookEventUpdateSubject = new Subject<>();
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
@@ -119,6 +125,10 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     Query query = new Query(criteria);
     Update update = buildGitXWebhookEventUpdate(gitXEventUpdateRequestDTO);
     gitXWebhookEventsRepository.update(query, update);
+    gitXWebhookEventUpdateSubject.fireInform(GitXWebhookEventUpdateObserver::onGitXWebhookEventUpdate,
+        GitXWebhookEventUpdateInfo.builder()
+            .eventStatus(gitXEventUpdateRequestDTO.getGitXWebhookEventStatus().name())
+            .build());
   }
 
   private Criteria buildCriteria(String accountIdentifier, String eventIdentifier) {

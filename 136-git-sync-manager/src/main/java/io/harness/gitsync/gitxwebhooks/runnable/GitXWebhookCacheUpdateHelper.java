@@ -57,6 +57,7 @@ public class GitXWebhookCacheUpdateHelper {
         .eventIdentifier(gitXCacheUpdateHelperRequestDTO.getEventIdentifier())
         .modifiedFilePaths(gitXCacheUpdateHelperRequestDTO.getModifiedFilePaths())
         .scmConnector(gitXCacheUpdateHelperRequestDTO.getScmConnector())
+        .webhookDTO(gitXCacheUpdateHelperRequestDTO.getWebhookDTO())
         .build();
   }
 }

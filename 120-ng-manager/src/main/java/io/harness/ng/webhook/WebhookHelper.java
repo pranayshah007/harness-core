@@ -43,6 +43,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
@@ -54,6 +55,7 @@ import io.harness.ng.webhook.entities.WebhookEvent.WebhookEventBuilder;
 import io.harness.product.ci.scm.proto.Action;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.service.WebhookParserSCMService;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
@@ -80,6 +82,7 @@ public class WebhookHelper {
   @Inject @Named(GIT_PR_EVENT_STREAM) private Producer gitPrEventProducer;
   @Inject @Named(GIT_BRANCH_HOOK_EVENT_STREAM) private Producer gitBranchHookEventProducer;
   @Inject private WebhookParserSCMService webhookParserSCMService;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   public WebhookEvent toNGTriggerWebhookEvent(
       String accountIdentifier, String payload, MultivaluedMap<String, String> httpHeaders) {
@@ -182,19 +185,24 @@ public class WebhookHelper {
 
   public List<Producer> getProducerListForEvent(WebhookDTO webhookDTO) {
     List<Producer> producers = new ArrayList<>();
-    producers.add(webhookEventProducer);
-
-    if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()) {
-      if (PUSH == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitPushEventProducer);
-      } else if (PR == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitPrEventProducer);
-      } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
-          || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {
-        producers.add(gitBranchHookEventProducer);
+    if (ngFeatureFlagHelperService.isEnabled(webhookDTO.getAccountId(), FeatureName.PIE_PROCESS_TRIGGER_SEQUENTIALLY)
+        && isGitPushEvent(webhookDTO)) {
+      //      For push based events, we first process the event on gitx and then start the trigger execution
+      //      The triggers are processed in the GitXWebhookTriggerHelper
+      producers.add(gitPushEventProducer);
+    } else {
+      producers.add(webhookEventProducer);
+      if (webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()) {
+        if (PUSH == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitPushEventProducer);
+        } else if (PR == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitPrEventProducer);
+        } else if (CREATE_BRANCH == webhookDTO.getGitDetails().getEvent()
+            || DELETE_BRANCH == webhookDTO.getGitDetails().getEvent()) {
+          producers.add(gitBranchHookEventProducer);
+        }
+        // Here we can add more logic if need to add more event topics.
       }
-
-      // Here we can add more logic if need to add more event topics.
     }
 
     return producers;
@@ -230,5 +238,10 @@ public class WebhookHelper {
                       .toString());
       }
     }
+  }
+
+  private boolean isGitPushEvent(WebhookDTO webhookDTO) {
+    return webhookDTO.hasParsedResponse() && webhookDTO.hasGitDetails()
+        && PUSH == webhookDTO.getGitDetails().getEvent();
   }
 }

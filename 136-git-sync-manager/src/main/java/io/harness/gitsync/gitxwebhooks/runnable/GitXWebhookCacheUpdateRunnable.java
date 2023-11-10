@@ -53,7 +53,7 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
           gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
       scmFacilitatorService.updateGitCache(buildScmUpdateGitCacheRequestDTO(gitXCacheUpdateRunnableRequestDTO));
       gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.SUCCESSFUL).build());
+          buildGitXEventUpdateRequestDTO(GitXWebhookEventStatus.SUCCESSFUL));
       log.info(String.format("In the account %s, successfully updated the git cache for the event %s",
           gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
           gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
@@ -61,7 +61,7 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
       log.error("Faced exception while submitting background task for updating the git cache for event: {} ",
           eventIdentifier, exception);
       gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
+          buildGitXEventUpdateRequestDTO(GitXWebhookEventStatus.FAILED));
     }
   }
 
@@ -100,5 +100,12 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
       GitXCacheUpdateRunnableRequestDTO gitXCacheUpdateRunnableRequestDTO, String modifiedFilePath) {
     return gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier() + "/"
         + gitXCacheUpdateRunnableRequestDTO.getEventIdentifier() + "/" + modifiedFilePath;
+  }
+
+  private GitXEventUpdateRequestDTO buildGitXEventUpdateRequestDTO(GitXWebhookEventStatus gitXWebhookEventStatus) {
+    return GitXEventUpdateRequestDTO.builder()
+        .gitXWebhookEventStatus(gitXWebhookEventStatus)
+        .webhookDTO(gitXCacheUpdateRunnableRequestDTO.getWebhookDTO())
+        .build();
   }
 }
