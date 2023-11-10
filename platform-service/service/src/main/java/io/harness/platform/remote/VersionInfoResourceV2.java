@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 /*
  * Copyright 2022 Harness Inc. All rights reserved.
