@@ -23,10 +23,17 @@ public class VersionInfoResourceV2 {
 
   public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
     this.versionInfoManager = versionInfoManager;
+  private final Map<String, String> versionInfo;
+
+  public VersionInfoResource(Map<String, String> versionInfo) {
+    this.versionInfo = versionInfo;
   }
 
   @GET
   public Map<String, String> getVersionInfo() {
     return versionInfoManager.getVersionInfo();
+  }
+}
+    return versionInfo;
   }
 }
