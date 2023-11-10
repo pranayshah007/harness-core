@@ -130,7 +130,7 @@ public class RuleEnforcementDAO {
                                                  .field(RuleEnforcementId.name)
                                                  .equal(name)
                                                  .asList();
-    if (ruleEnforcements == null) {
+    if (ruleEnforcements == null || ruleEnforcements.isEmpty()) {
       return true;
     }
     if (ruleEnforcements.size() == 1) {
