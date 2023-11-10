@@ -23,6 +23,7 @@ java_library(
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:commons_io_commons_io",
+        "@maven//:org_json_json",
     ],
 )
 
