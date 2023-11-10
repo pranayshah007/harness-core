@@ -940,7 +940,8 @@ public enum FeatureName {
       "Supports edge cases of method invocation in expression engine", PIPELINE),
 
   CDS_USE_AMBIANCE_IN_EXPRESSION_ENGINE(
-      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE);
+      "Uses ambiance in expression engine. Should be enabled only if we see any issues", PIPELINE),
+  PLG_DEVELOPER_LICENSING("Enable new developer licensing changes", GTM);
 
   // keep-sorted end
 

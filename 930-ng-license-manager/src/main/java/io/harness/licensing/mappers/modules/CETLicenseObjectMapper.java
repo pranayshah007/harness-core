@@ -9,16 +9,20 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CETModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CET)
 @Singleton
 public class CETLicenseObjectMapper implements LicenseObjectMapper<CETModuleLicense, CETModuleLicenseDTO> {
+  @Inject private FeatureFlagService featureFlagService;
   @Override
   public CETModuleLicenseDTO toDTO(CETModuleLicense moduleLicense) {
     return CETModuleLicenseDTO.builder().numberOfAgents(moduleLicense.getNumberOfAgents()).build();
@@ -33,14 +37,20 @@ public class CETLicenseObjectMapper implements LicenseObjectMapper<CETModuleLice
 
   @Override
   public void validateModuleLicenseDTO(CETModuleLicenseDTO cetModuleLicenseDTO) {
-    if (cetModuleLicenseDTO.getDeveloperLicenses() != null) {
-      if (cetModuleLicenseDTO.getNumberOfAgents() != null) {
-        throw new InvalidRequestException("Both developerLicenses and numberOfAgents cannot be part of the input!");
-      }
+    if (featureFlagService.isEnabled(FeatureName.PLG_DEVELOPER_LICENSING, cetModuleLicenseDTO.getAccountIdentifier())) {
+      if (cetModuleLicenseDTO.getDeveloperLicenses() != null) {
+        if (cetModuleLicenseDTO.getNumberOfAgents() != null) {
+          throw new InvalidRequestException("Both developerLicenses and numberOfAgents cannot be part of the input!");
+        }
 
-      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
-      Integer mappingRatio = 1;
-      cetModuleLicenseDTO.setNumberOfAgents(mappingRatio * cetModuleLicenseDTO.getDeveloperLicenses());
+        // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+        Integer mappingRatio = 1;
+        cetModuleLicenseDTO.setNumberOfAgents(mappingRatio * cetModuleLicenseDTO.getDeveloperLicenses());
+      }
+    } else {
+      if (cetModuleLicenseDTO.getDeveloperLicenses() != null) {
+        throw new InvalidRequestException("New Developer Licensing feature is not enabled for this account!");
+      }
     }
   }
 }

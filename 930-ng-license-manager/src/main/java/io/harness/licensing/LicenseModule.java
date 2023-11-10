@@ -18,6 +18,7 @@ import io.harness.credit.mappers.CreditObjectConverter;
 import io.harness.credit.mappers.CreditObjectMapper;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.services.impl.CreditServiceImpl;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.licensing.checks.LicenseComplianceResolver;
 import io.harness.licensing.checks.LicenseEditionChecker;
 import io.harness.licensing.checks.impl.DefaultLicenseComplianceResolver;
@@ -73,6 +74,7 @@ public class LicenseModule extends AbstractModule {
   @Override
   protected void configure() {
     install(new SMPLicenseModule());
+    install(FeatureFlagModule.getInstance());
     requireBinding(UserClient.class);
 
     MapBinder<ModuleType, LicenseObjectMapper> objectMapperMapBinder =
