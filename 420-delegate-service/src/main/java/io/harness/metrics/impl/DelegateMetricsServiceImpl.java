@@ -14,6 +14,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
+import io.harness.metrics.beans.AccountRingInfoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.HeartbeatMetricContext;
@@ -61,6 +62,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
   public static final String HEARTBEAT_RECEIVED = "heartbeat_received";
+  public static final String ACCOUNT_RING_INFO = "account_ring_info";
   public static final String HEARTBEAT_CONNECTED = "CONNECTED";
   public static final String HEARTBEAT_RECONNECTED = "RE_CONNECTED";
   public static final String HEARTBEAT_DISCONNECTED = "DISCONNECTED";
@@ -161,6 +163,15 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
              delegateRing.getDelegateJREVersion(), orgId, projectId, delegateName, delegateId, delegateVersion,
              delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
       metricService.recordMetric(metricName, lastHB);
+    }
+  }
+
+  @Override
+  public void recordAccountRingInfoMetric(String accountId, DelegateRing delegateRing, long time, String metricName) {
+    try (AccountRingInfoMetricContext ignore = new AccountRingInfoMetricContext(accountId, delegateRing.getRingName(),
+             delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(), delegateRing.getWatcherVersions(),
+             delegateRing.getWatcherJREVersion(), delegateRing.getDelegateJREVersion())) {
+      metricService.recordMetric(metricName, time);
     }
   }
 }

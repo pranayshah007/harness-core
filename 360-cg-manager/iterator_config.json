@@ -368,5 +368,15 @@
     "targetIntervalInSeconds": 86400,
     "throttleIntervalInSeconds": 0,
     "iteratorMode": "REDIS_BATCH"
+  },
+  {
+    "name": "AccountRingInformation",
+    "enabled": true,
+    "threadPoolSize": 1,
+    "threadPoolIntervalInSeconds": 600,
+    "nextIterationMode": "TARGET",
+    "targetIntervalInSeconds": 600,
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "REDIS_BATCH"
   }
 ]

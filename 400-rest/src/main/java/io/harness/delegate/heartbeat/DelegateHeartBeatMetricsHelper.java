@@ -9,6 +9,7 @@ package io.harness.delegate.heartbeat;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_PUBLISH_HEARTBEAT_METRICS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.ACCOUNT_RING_INFO;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_CONNECTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DELETE_EVENT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_EVENT;
@@ -28,6 +29,7 @@ import software.wings.service.intfc.AccountService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +43,7 @@ public class DelegateHeartBeatMetricsHelper {
   @Inject private HPersistence persistence;
   @Inject private GenericDbCache dbCache;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject protected Clock clock;
 
   private final Cache<String, DelegateRing> delegateRingCache =
       Caffeine.newBuilder().maximumSize(10).expireAfterWrite(30, TimeUnit.MINUTES).build();
@@ -109,5 +112,10 @@ public class DelegateHeartBeatMetricsHelper {
     } catch (Exception ex) {
       log.error("Exception occurred while recording heartBeat metric", ex);
     }
+  }
+
+  public void addAccountRingInfoMetric(String accountId, String ringName) {
+    DelegateRing delegateRing = getDelegateRing(ringName);
+    delegateMetricsService.recordAccountRingInfoMetric(accountId, delegateRing, clock.millis(), ACCOUNT_RING_INFO);
   }
 }

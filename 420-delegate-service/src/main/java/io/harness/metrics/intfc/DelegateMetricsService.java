@@ -29,4 +29,6 @@ public interface DelegateMetricsService {
       DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
       String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
       boolean isImmutable, long lastHB, String metricName);
+
+  void recordAccountRingInfoMetric(String accountId, DelegateRing delegateRing, long time, String metricName);
 }
