@@ -19,7 +19,7 @@ import java.util.Map;
 @PublicApi
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
-public class VersionInfoResource {
+public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
 
   public VersionInfoResource(VersionInfoManagerV2 versionInfoManager) {
