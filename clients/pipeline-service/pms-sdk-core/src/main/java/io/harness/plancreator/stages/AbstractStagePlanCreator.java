@@ -101,9 +101,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
         && stageNode.getStepParameters() instanceof StageElementParameters) {
       StageElementParameters stageElementParameters = (StageElementParameters) stageNode.getStepParameters();
       planNodeBuilder.stepParameters(
-          stageElementParameters.toBuilder()
-              .timeout(ParameterField.createValueField(timeoutParameterField.getValue().getTimeoutString()))
-              .build());
+          stageElementParameters.toBuilder().timeout(getTimeoutString(timeoutParameterField)).build());
     }
     finalResponse.addNode(planNodeBuilder.build());
     finalResponse.setGraphLayoutResponse(getLayoutNodeInfo(ctx, config));
