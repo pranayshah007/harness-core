@@ -16,10 +16,13 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.expression.ExpressionEvaluator;
 
+import software.wings.api.DeploymentType;
+
 import java.util.List;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
 public interface ArtifactBundleConfig {
   List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator);
+  DeploymentType getType();
 }

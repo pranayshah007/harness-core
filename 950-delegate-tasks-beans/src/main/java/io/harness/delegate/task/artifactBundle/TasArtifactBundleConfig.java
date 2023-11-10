@@ -28,7 +28,10 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.manifest.TasManifestDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ng.overview.dto.Deployment;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import software.wings.api.DeploymentType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +55,11 @@ public class TasArtifactBundleConfig implements ArtifactBundleConfig {
             artifactEncryptionDataDetails, maskingEvaluator));
     populateRequestCapabilities(capabilities, maskingEvaluator);
     return capabilities;
+  }
+
+  @Override
+  public DeploymentType getType() {
+    return DeploymentType.PCF;
   }
 
   public void populateRequestCapabilities(
