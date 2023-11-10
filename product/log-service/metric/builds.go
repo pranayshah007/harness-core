@@ -20,12 +20,11 @@ func CreatePrometheusCounter(name, help, operation string) *prometheus.CounterVe
 	)
 }
 
-func CreatePrometheusHistogram(name, help string) prometheus.Histogram {
-	return prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Name:    name,
-			Help:    help,
-			Buckets: prometheus.DefBuckets,
+func CreatePrometheusGauge(name, help string) prometheus.Gauge {
+	return prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: name,
+			Help: help,
 		},
 	)
 }
@@ -44,13 +43,17 @@ var (
 		"get",
 	)
 
-	STREAM_API_GET_Latency = CreatePrometheusHistogram(
+	STREAM_API_GET_Latency = CreatePrometheusGauge(
 		"log_service_stream_api_get_latency",
 		"Latency distribution of stream api requests",
 	)
-	STREAM_API_PUT_Latency = CreatePrometheusHistogram(
+	STREAM_API_PUT_Latency = CreatePrometheusGauge(
 		"log_service_stream_api_put_latency",
 		"Latency distribution of stream api requests",
+	)
+	BLOB_API_LATENCY = CreatePrometheusGauge(
+		"blob_api_latency",
+		"Latency for blob api for get, put, and delete requests",
 	)
 )
 
@@ -59,4 +62,5 @@ func RegisterMetrics() {
 	prometheus.MustRegister(GetCount)
 	prometheus.MustRegister(STREAM_API_GET_Latency)
 	prometheus.MustRegister(STREAM_API_PUT_Latency)
+	prometheus.MustRegister(BLOB_API_LATENCY)
 }

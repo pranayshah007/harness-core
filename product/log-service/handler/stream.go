@@ -216,7 +216,7 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 			Infoln("api: successfully wrote to stream")
 		w.WriteHeader(http.StatusNoContent)
 		metric.PutCount.WithLabelValues("put").Inc()
-		metric.STREAM_API_GET_Latency.Observe(float64(time.Since(st).Milliseconds()))
+		metric.STREAM_API_PUT_Latency.Set(time.Since(st).Seconds())
 	}
 }
 
@@ -291,7 +291,7 @@ func HandleTail(s stream.Stream) http.HandlerFunc {
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: successfully tailed stream")
 		metric.GetCount.WithLabelValues("get").Inc()
-		metric.STREAM_API_PUT_Latency.Observe(float64(time.Since(st).Milliseconds()))
+		metric.STREAM_API_GET_Latency.Set(time.Since(st).Seconds())
 	}
 }
 
