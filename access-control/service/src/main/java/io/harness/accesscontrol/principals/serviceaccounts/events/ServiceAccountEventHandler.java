@@ -23,6 +23,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Objects;
+
+import io.harness.eventsframework.entity_crud.serviceaccount.ServiceAccountEntityChangeDTO;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
@@ -38,9 +40,9 @@ public class ServiceAccountEventHandler implements EventHandler {
 
   @Override
   public boolean handle(Message message) {
-    EntityChangeDTO entityChangeDTO = null;
+    ServiceAccountEntityChangeDTO entityChangeDTO = null;
     try {
-      entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+      entityChangeDTO = ServiceAccountEntityChangeDTO.parseFrom(message.getMessage().getData());
     } catch (InvalidProtocolBufferException e) {
       log.error("Exception in unpacking EntityChangeDTO for user group event with key {}", message.getId(), e);
     }
@@ -49,12 +51,12 @@ public class ServiceAccountEventHandler implements EventHandler {
     }
     try {
       HarnessScopeParams params = HarnessScopeParams.builder()
-                                      .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier().getValue()))
-                                      .orgIdentifier(stripToNull(entityChangeDTO.getOrgIdentifier().getValue()))
-                                      .projectIdentifier(stripToNull(entityChangeDTO.getProjectIdentifier().getValue()))
+                                      .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier()))
+                                      .orgIdentifier(stripToNull(entityChangeDTO.getOrgIdentifier()))
+                                      .projectIdentifier(stripToNull(entityChangeDTO.getProjectIdentifier()))
                                       .build();
       Scope scope = ScopeMapper.fromParams(params);
-      harnessServiceAccountService.sync(stripToNull(entityChangeDTO.getIdentifier().getValue()), scope, "");
+      harnessServiceAccountService.sync(stripToNull(entityChangeDTO.getIdentifier()), scope, entityChangeDTO.getUniqueId());
     } catch (Exception e) {
       log.error("Could not process the resource group change event {} due to error", entityChangeDTO, e);
       return false;

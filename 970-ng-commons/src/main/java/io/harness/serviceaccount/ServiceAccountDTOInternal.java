@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.PL)
@@ -21,7 +20,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@FieldNameConstants(innerTypeName = "ServiceAccountDTOInternal")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ServiceAccountDTOInternal extends ServiceAccountDTO {
   public String uniqueId;

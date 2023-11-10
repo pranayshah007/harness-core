@@ -54,6 +54,7 @@ public class ServiceAccountUpdateEvent implements Event {
         .identifier(oldServiceAccount.getIdentifier())
         .type(SERVICE_ACCOUNT)
         .labels(labels)
+        .uniqueId(oldServiceAccount.getUniqueId())
         .build();
   }
 
