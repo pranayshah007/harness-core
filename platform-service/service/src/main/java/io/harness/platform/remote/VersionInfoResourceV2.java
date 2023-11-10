@@ -22,7 +22,7 @@ import java.util.Map;
 public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
 
-  public VersionInfoResource(VersionInfoManagerV2 versionInfoManager) {
+  public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
     this.versionInfoManager = versionInfoManager;
   }
 
