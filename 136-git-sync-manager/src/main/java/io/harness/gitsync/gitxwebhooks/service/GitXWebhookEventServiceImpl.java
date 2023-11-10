@@ -128,6 +128,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     gitXWebhookEventUpdateSubject.fireInform(GitXWebhookEventUpdateObserver::onGitXWebhookEventUpdate,
         GitXWebhookEventUpdateInfo.builder()
             .eventStatus(gitXEventUpdateRequestDTO.getGitXWebhookEventStatus().name())
+            .webhookDTO(gitXEventUpdateRequestDTO.getWebhookDTO())
             .build());
   }
 

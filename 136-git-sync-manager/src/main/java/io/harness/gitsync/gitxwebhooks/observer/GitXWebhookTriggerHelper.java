@@ -39,7 +39,7 @@ public class GitXWebhookTriggerHelper implements GitXWebhookEventUpdateObserver 
              new GitXWebhookEventLogContext(gitXWebhookEventUpdateInfo.getWebhookDTO())) {
       if (ngFeatureFlagHelperService.isEnabled(gitXWebhookEventUpdateInfo.getWebhookDTO().getAccountId(),
               FeatureName.PIE_PROCESS_TRIGGER_SEQUENTIALLY)) {
-        if (!GitXWebhookEventStatus.PROCESSING.name().equals(gitXWebhookEventUpdateInfo.getEventStatus())) {
+        if (shouldStartTriggerExecution(gitXWebhookEventUpdateInfo.getEventStatus())) {
           try {
             log.info(String.format(
                 "Starting the trigger execution for event %s", gitXWebhookEventUpdateInfo.getEventStatus()));
@@ -52,5 +52,11 @@ public class GitXWebhookTriggerHelper implements GitXWebhookEventUpdateObserver 
         }
       }
     }
+  }
+
+  private boolean shouldStartTriggerExecution(String eventStatus) {
+    return GitXWebhookEventStatus.SUCCESSFUL.name().equals(eventStatus)
+        || GitXWebhookEventStatus.FAILED.name().equals(eventStatus)
+        || GitXWebhookEventStatus.SKIPPED.name().equals(eventStatus);
   }
 }
