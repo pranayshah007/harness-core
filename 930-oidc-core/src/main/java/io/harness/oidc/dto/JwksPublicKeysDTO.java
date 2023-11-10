@@ -7,19 +7,17 @@
 
 package io.harness.oidc.dto;
 
-import io.harness.oidc.config.OidcConfigConstants;
+import static io.harness.oidc.config.OidcConfigConstants.KEYS;
+
+import io.harness.oidc.dto.JwksPublicKeyDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class JwksPublicKeyDTO {
-  @JsonProperty(OidcConfigConstants.ALGORITHM) String algorithm;
-  @JsonProperty(OidcConfigConstants.EXPONENT) String exponent;
-  @JsonProperty(OidcConfigConstants.KID) String kid;
-  @JsonProperty(OidcConfigConstants.KEY_TYPE) String keyType;
-  @JsonProperty(OidcConfigConstants.MODULUS) String modulus;
-  @JsonProperty(OidcConfigConstants.USE) String use;
+public class JwksPublicKeysDTO {
+  @JsonProperty(KEYS) ArrayList<JwksPublicKeyDTO> jwksPublicKeysDto;
 }
