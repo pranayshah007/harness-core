@@ -1535,7 +1535,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         } catch (Exception ex) {
           log.error("Exception while determining delegate behaviour", ex);
         }
-      }, 0, 5, TimeUnit.SECONDS);
+      }, 0, 1, TimeUnit.SECONDS);
     } catch (Exception ex) {
       log.info("Error while fetching memory information, will not enable dynamic handling of tasks", ex);
     }
