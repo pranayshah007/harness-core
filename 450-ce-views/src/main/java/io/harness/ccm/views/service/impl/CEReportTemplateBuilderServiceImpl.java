@@ -251,8 +251,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Trend bar for report
     templatePlaceholders.put(TOTAL_COST,
-        currency.getUtf8HexSymbol() + viewsQueryHelper.formatNumber(Double.valueOf(trendData.getStatsValue())));
-    //            trendData.getStatsValue().replaceFirst(currency.getSymbol(), currency.getUtf8HexSymbol()));
+        currency.getUtf8HexSymbol() + viewsQueryHelper.formatNumber(trendData.getValue().doubleValue()));
     if (trendData.getStatsTrend().doubleValue() < 0) {
       templatePlaceholders.put(TOTAL_COST_TREND,
           String.format(COST_TREND, GREEN_COLOR, trendData.getStatsTrend() + PERCENT, getTotalCostDiff(trendData)));
