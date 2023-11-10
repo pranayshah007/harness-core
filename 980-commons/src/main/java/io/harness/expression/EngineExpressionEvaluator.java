@@ -527,6 +527,15 @@ public class EngineExpressionEvaluator {
       } else {
         return evaluateExpressionInternal((String) object, ctx, depth - 1, expressionMode);
       }
+    } else if (object instanceof Map) {
+      try {
+        Map<String, String> mapObject = (Map<String, String>) object;
+        mapObject.replaceAll((k, v)
+                                 -> renderExpressionInternal(
+                                     v, ctx, depth - 1, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+      } catch (ClassCastException e) {
+        log.warn("Failed to render expressions in map", e);
+      }
     }
 
     observed(expressionBlock, object);
