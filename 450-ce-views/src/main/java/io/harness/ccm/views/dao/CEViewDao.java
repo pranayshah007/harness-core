@@ -261,13 +261,29 @@ public class CEViewDao {
     return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).count();
   }
 
-  public Long countByAccountIdAndFolderIds(
-      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
-    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, cloudFilters);
+  public Long countByAccountIdAndFolderIds(String accountId, Set<String> folderIds, String searchKey,
+      List<CloudFilter> cloudFilters, boolean excludeDefault) {
+    Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, cloudFilters);
+    query = getDefaultFilterCount(query, excludeDefault);
     return query.count();
   }
 
-  public Query<CEView> paginationQuery(
+  public Query<CEView> getDefaultFilterCount(Query<CEView> query, boolean excludeDefault) {
+    if (excludeDefault) {
+      query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
+    }
+    return query;
+  }
+  public Query<CEView> getDefaultFilterPerspectives(Query<CEView> query, boolean excludeDefault) {
+    if (!excludeDefault) {
+      query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
+    } else {
+      query.field(CEViewKeys.viewType).notEqual(ViewType.DEFAULT);
+    }
+    return query;
+  }
+
+  public Query<CEView> getPaginationFiltersQuery(
       String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
     Query<CEView> query = hPersistence.createQuery(CEView.class).filter(CEViewKeys.accountId, accountId);
     if (!isEmpty(folderIds)) {
@@ -296,12 +312,23 @@ public class CEViewDao {
   }
 
   public List<CEView> findByAccountIdAndFolderId(String accountId, Set<String> folderIds,
-      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
-      List<CloudFilter> filters) {
-    Query<CEView> query = paginationQuery(accountId, folderIds, searchKey, filters);
+      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey, List<CloudFilter> filters,
+      boolean excludeDefault) {
+    Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, filters);
+    query = getDefaultFilterPerspectives(query, excludeDefault);
     query = decorateQueryWithSortCriteria(query, sortCriteria);
-    query.offset(pageNo * pageSize);
-    query.limit(pageSize);
+    final Long defaultPerspectiveCount = countByAccountIdAndFolderIds(accountId, folderIds, searchKey, filters, true);
+    if (pageNo.equals(0) && excludeDefault) {
+      query.limit((int) (pageSize - defaultPerspectiveCount));
+      query.offset(0);
+    } else {
+      query.limit(pageSize);
+    }
+    if (defaultPerspectiveCount > 0 && !pageNo.equals(0)) {
+      query.offset((int) ((pageNo * pageSize) - defaultPerspectiveCount));
+    } else {
+      query.offset(pageNo * pageSize);
+    }
     return query.asList();
   }
 

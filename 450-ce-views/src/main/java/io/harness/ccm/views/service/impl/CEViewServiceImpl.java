@@ -512,8 +512,18 @@ public class CEViewServiceImpl implements CEViewService {
       Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
       List<CloudFilter> cloudFilters) {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
-    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+    List<CEView> viewList;
+    if (pageNo.equals(0)) {
+      List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderId(
+          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, false);
+      viewList = ceViewDao.findByAccountIdAndFolderId(
+          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+      viewList.addAll(defaultViewList);
+    } else {
+      viewList = ceViewDao.findByAccountIdAndFolderId(
+          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+    }
+
     return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
   }
 
@@ -524,7 +534,7 @@ public class CEViewServiceImpl implements CEViewService {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
     Set<String> folderIds = new HashSet<>(Collections.singleton(folderId));
     List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+        accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
     return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
   }
@@ -832,9 +842,9 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public Long countByAccountIdAndFolderId(
-      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
-    return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters);
+  public Long countByAccountIdAndFolderId(String accountId, Set<String> folderIds, String searchKey,
+      List<CloudFilter> cloudFilters, boolean excludeDefault) {
+    return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters, excludeDefault);
   }
 
   public QLCEViewSortCriteria getModifiedSortCriteria(QLCEViewSortCriteria sortCriteria) {

@@ -64,6 +64,6 @@ public interface CEViewService {
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
   Long countByAccountIdAndFolderId(
-      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters);
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters, boolean excludeDefault);
   Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(ViewIdCondition viewIdCondition, String accountId);
 }
