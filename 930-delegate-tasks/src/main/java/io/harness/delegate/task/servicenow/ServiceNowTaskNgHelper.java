@@ -1322,7 +1322,8 @@ public class ServiceNowTaskNgHelper {
     if (response.errorBody() == null) {
       throw new ServiceNowException(message + " : " + response.message(), SERVICENOW_ERROR, USER);
     }
-    throw new ServiceNowException(message + " : " + response.errorBody().string(), SERVICENOW_ERROR, USER);
+
+    throw new ServiceNowException(getFormattedError(response.errorBody().toString()), SERVICENOW_ERROR, USER);
   }
 
   @NotNull
@@ -1331,7 +1332,22 @@ public class ServiceNowTaskNgHelper {
         "Check if the ServiceNow url and credentials are correct and accessible from delegate",
         "Not able to access the given ServiceNow url with the credentials", e);
   }
-
+  private static String getFormattedError(String errorBody) {
+    try {
+      // processing the error
+      ServiceNowErrorResponse serviceNowErrorResponse = JsonUtils.asObject(errorBody, new TypeReference<>() {});
+      String formattedError;
+      formattedError = serviceNowErrorResponse.getErrorCode();
+      if (!StringUtils.isBlank(serviceNowErrorResponse.getErrorDetails())) {
+        formattedError = String.format(
+            "[%s] : %s", serviceNowErrorResponse.getErrorCode(), serviceNowErrorResponse.getErrorDetails());
+      }
+      return formattedError;
+    } catch (Exception ex) {
+      log.warn("Error occurred while trying to format Adfs error body", ex);
+      return errorBody;
+    }
+  }
   private void saveLogs(LogCallback executionLogCallback, String message) {
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message);
