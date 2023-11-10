@@ -393,4 +393,8 @@ public interface NodeExecutionService {
    * @return
    */
   List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerAccount();
+
+  List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerModule();
+
+  List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerStepType();
 }

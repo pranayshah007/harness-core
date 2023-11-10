@@ -1138,4 +1138,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerAccount() {
     return nodeExecutionReadHelper.aggregateRunningExecutionCountPerAccount();
   }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerModule() {
+    return nodeExecutionReadHelper.aggregateRunningExecutionCountPerModule();
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerStepType() {
+    return nodeExecutionReadHelper.aggregateRunningExecutionCountPerStepType();
+  }
 }

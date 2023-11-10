@@ -1,0 +1,4 @@
+name: Group by stepType for pipeline metrics
+identifier: PipelineStepTypeMetricsGroup
+labels:
+  - stepType

@@ -134,4 +134,22 @@ public class NodeExecutionReadHelper {
     return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
         .getMappedResults();
   }
+
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerModule() {
+    Aggregation aggregation = Aggregation.newAggregation(
+        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
+        Aggregation.group(NodeExecutionKeys.module).count().as(ExecutionCountWithAccountResultKeys.count));
+
+    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
+        .getMappedResults();
+  }
+
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerStepType() {
+    Aggregation aggregation = Aggregation.newAggregation(
+        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
+        Aggregation.group(NodeExecutionKeys.type).count().as(ExecutionCountWithAccountResultKeys.count));
+
+    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
+        .getMappedResults();
+  }
 }

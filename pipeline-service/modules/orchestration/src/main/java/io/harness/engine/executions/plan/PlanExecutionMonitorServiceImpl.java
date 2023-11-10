@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.plan;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,7 +52,7 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
         planExecutionService.aggregateRunningExecutionCountPerAccount()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getMetricKey())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {

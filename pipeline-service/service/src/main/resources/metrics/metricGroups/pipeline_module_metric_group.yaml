@@ -1,0 +1,4 @@
+name: Group by module for pipeline metrics
+identifier: PipelineModuleMetricsGroup
+labels:
+  - module

@@ -23,6 +23,6 @@ import org.springframework.data.annotation.Id;
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "ExecutionCountWithAccountResultKeys")
 public class ExecutionCountWithAccountResult {
-  @Id private String accountId;
+  @Id private String metricKey;
   private Integer count;
 }

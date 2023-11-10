@@ -54,8 +54,8 @@ public class NodeExecutionMonitorServiceImplTest extends CategoryTest {
     doReturn(true).when(metricsCache).putIfAbsent(any(), any());
 
     List<ExecutionCountWithAccountResult> result = new LinkedList<>();
-    result.add(ExecutionCountWithAccountResult.builder().accountId("ABC").count(1).build());
-    result.add(ExecutionCountWithAccountResult.builder().accountId("DEF").count(5).build());
+    result.add(ExecutionCountWithAccountResult.builder().metricKey("ABC").count(1).build());
+    result.add(ExecutionCountWithAccountResult.builder().metricKey("DEF").count(5).build());
 
     doReturn(result).when(nodeExecutionService).aggregateRunningNodesCountPerAccount();
     nodeExecutionMonitorService.registerActiveExecutionMetrics();
