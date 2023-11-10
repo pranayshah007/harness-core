@@ -150,9 +150,31 @@ CodeformatRequired() {
 
 }
 
+function process_chart_changes() {
+    local run_helm_pr_check=false
+    for file_name in "${merge_summary[@]}"; do
+        local path=$(dirname "$file_name")
+        while [ "$path" != '/' ]; do
+            if [ -e "$path/Chart.yaml" ]; then
+                echo "Found Chart.yaml in: $path"
+                helm lint $path
+                helm template $path
+                break
+            fi
+            path=$(dirname "$path")
+        done
+
+        # If Chart.yaml not found, set run_helm_pr_check to false
+        if [ "$run_helm_pr_check" == false ]; then
+            echo "Chart.yaml not found. Run helm pr check: false"
+        fi
+    done
+}
+
 function send_webhook() {
 # function call to check if codeformat check is required or not
   CodeformatRequired
+  process_chart_changes
 
   for check in "${PR_Name[@]}"; do
     curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
