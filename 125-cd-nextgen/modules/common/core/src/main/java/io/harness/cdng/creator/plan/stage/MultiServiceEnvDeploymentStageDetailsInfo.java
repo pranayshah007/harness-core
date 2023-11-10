@@ -53,9 +53,9 @@ public class MultiServiceEnvDeploymentStageDetailsInfo implements DeploymentStag
     String environmentFormattedString = StringUtils.defaultIfBlank(
         getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
     String serviceFormattedString = StringUtils.defaultIfBlank(
-        getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
+        getFormattedStringForEntities(serviceNames), getFormattedStringForEntities(serviceIdentifiers));
     String infraFormattedString = StringUtils.defaultIfBlank(
-        getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
+        getFormattedStringForEntities(infraNames), getFormattedStringForEntities(infraIdentifiers));
     String envGroupFormattedString = StringUtils.defaultIfBlank(envGroupName, envGroup);
 
     return CDStageSummaryResponseDTO.builder()
