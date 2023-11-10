@@ -99,6 +99,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -108,6 +109,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -135,6 +138,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final ScopeNameMapper scopeNameMapper;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final Validator validator;
   private static final List<String> defaultUserGroups = ImmutableList.of(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER,
       DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
 
@@ -143,7 +147,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       NgUserService ngUserService, AuthSettingsManagerClient managerClient, LastAdminCheckService lastAdminCheckService,
       AccessControlAdminClient accessControlAdminClient, AccessControlClient accessControlClient,
-      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService, Validator validator) {
     this.userGroupRepository = userGroupRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -154,10 +158,15 @@ public class UserGroupServiceImpl implements UserGroupService {
     this.accessControlClient = accessControlClient;
     this.scopeNameMapper = scopeNameMapper;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.validator = validator;
   }
 
   @Override
   public UserGroup create(UserGroupDTO userGroupDTO) {
+    Set<ConstraintViolation<UserGroupDTO>> violations = validator.validate(userGroupDTO);
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
     if (userGroupDTO.isHarnessManaged() || defaultUserGroups.contains(userGroupDTO.getIdentifier())) {
       throw new InvalidRequestException("Cannot create a harness managed user group");
     }
@@ -207,6 +216,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public UserGroup update(UserGroupDTO userGroupDTO) {
+    validationOnUserGroupUpdateDTO(userGroupDTO);
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
     checkUpdateForHarnessManagedGroup(userGroupDTO, savedUserGroup);
@@ -229,6 +239,24 @@ public class UserGroupServiceImpl implements UserGroupService {
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
     checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
     return update(userGroupDTO);
+  }
+
+  private void validationOnUserGroupUpdateDTO(UserGroupDTO userGroupDTO) {
+    Set<ConstraintViolation<UserGroupDTO>> violations =
+        validator.validateValue(UserGroupDTO.class, UserGroupKeys.name, userGroupDTO.getName());
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+
+    violations = validator.validateValue(UserGroupDTO.class, UserGroupKeys.description, userGroupDTO.getDescription());
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
+
+    violations = validator.validateValue(UserGroupDTO.class, UserGroupKeys.tags, userGroupDTO.getTags());
+    if (!violations.isEmpty()) {
+      throw new JerseyViolationException(violations, null);
+    }
   }
 
   private void checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(
