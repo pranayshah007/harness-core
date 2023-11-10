@@ -10,6 +10,9 @@ package io.harness.perpetualtask;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
+import io.harness.delegate.k8s.utils.K8sTaskCleaner;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.k8s.model.KubernetesConfig;
@@ -37,6 +41,7 @@ import org.mockito.Mock;
 public class K8sInstanceSyncV2HelperTest extends WingsBaseTest {
   @InjectMocks private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock private K8sTaskCleaner k8sTaskCleaner;
 
   @Test
   @Owner(developers = OwnerRule.BUHA)
@@ -81,5 +86,6 @@ public class K8sInstanceSyncV2HelperTest extends WingsBaseTest {
     NativeHelmServerInstanceInfo nativeHelmServerInstanceInfo2 =
         (NativeHelmServerInstanceInfo) serverInstanceInfoList.get(1);
     assertThat(nativeHelmServerInstanceInfo2.getNamespace()).isEqualTo("namespace");
+    verify(k8sTaskCleaner, times(1)).cleanup(any());
   }
 }
