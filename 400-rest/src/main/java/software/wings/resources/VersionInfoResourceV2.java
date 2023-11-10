@@ -7,33 +7,42 @@
 
 package software.wings.resources;
 
-import com.example.annotations.PublicApi; // Import the appropriate package for @PublicApi annotation
+import io.harness.security.annotations.PublicApi;
+import io.harness.version.VersionInfoManagerV2;
+import io.harness.version.VersionInfoV2;
 
+import com.google.inject.Inject;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
+import io.dropwizard.jersey.errors.ErrorMessage;
+
 @PublicApi
+@Api("version")
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
 public class VersionInfoResourceV2 {
   private final VersionInfoManagerV2 versionInfoManager;
 
+  @Inject
   public VersionInfoResourceV2(VersionInfoManagerV2 versionInfoManager) {
     this.versionInfoManager = versionInfoManager;
-  private final Map<String, String> versionInfo;
-
-  public VersionInfoResource(Map<String, String> versionInfo) {
-    this.versionInfo = versionInfo;
   }
 
   @GET
-  public Map<String, String> getVersionInfo() {
-    return versionInfoManager.getVersionInfo();
-  }
-}
-    return versionInfo;
+  public VersionInfoV2 getVersionInfo() {
+    try {
+      return versionInfoManager.getVersionInfo();
+    } catch (Exception e) {
+      ErrorMessage errorMessage = new ErrorMessage(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "Failed to retrieve version info: " + e.getMessage());
+      throw new WebApplicationException(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage).build());
+    }
   }
 }
