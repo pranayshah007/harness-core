@@ -24,7 +24,7 @@ function download_saas_apm_binaries(){
   echo "INFO: Download Status: ${JACOCO_AGENT##*/}: $STATUS4"
   chmod 711 ${JACOCO_AGENT##*/}
 
-curl ${JMX_METRICS_AGENT} --output JmxMetricsAgent.zip; STATUS5=$?
+curl ${JMX_METRICS_AGENT} --output ${JMX_METRICS_AGENT##*/}; STATUS5=$?
 	echo "INFO: Download Status: ${JMX_METRICS_AGENT##*/}: $STATUS2"
 	chmod 711 ${JMX_METRICS_AGENT##*/}
 
@@ -41,7 +41,7 @@ export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/a
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
 export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/1.27.0/opentelemetry-javaagent.jar'
 export JACOCO_AGENT='https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.7/jacoco-0.8.7.zip'
-export JMX_METRICS_AGENT='https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.0/jmx_prometheus_javaagent-0.17.0.jar'
+export JMX_METRICS_AGENT='https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.19.0/jmx_prometheus_javaagent-0.19.0.jar'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."
 download_saas_apm_binaries
