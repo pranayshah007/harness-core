@@ -12,9 +12,10 @@
 #Run the TI,FT and other bazel builds based on the commit
 
 # Define colors
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+  GREEN='\033[1;32m'
+  RED='\033[1;31m'
+  YELLOW='\033[1;33m'
+  NC='\033[0m'
 set -e
 export TargetBranch=$(echo "${ghprbTargetBranch}")
 export SourceBranch=$(echo "${ghprbSourceBranch}")
@@ -150,23 +151,33 @@ CodeformatRequired() {
 
 }
 
-function process_chart_changes() {
-    local run_helm_pr_check=false
-    for file_name in "${merge_summary[@]}"; do
-        local path=$(dirname "$file_name")
-        while [ "$path" != '/' ]; do
-            if [ -e "$path/Chart.yaml" ]; then
-                echo "Found Chart.yaml in: $path"
-                helm lint $path
-                helm template $path
-                break
-            fi
-            path=$(dirname "$path")
-        done
+function check_chart_yaml() {
+    for folder_path_ in "${merge_summary[@]}"; do
+        local folder_path=$(dirname "$folder_path_")
 
-        # If Chart.yaml not found, set run_helm_pr_check to false
-        if [ "$run_helm_pr_check" == false ]; then
-            echo "Chart.yaml not found. Run helm pr check: false"
+        if [ -d "$folder_path" ] && [ "$folder_path" != "." ]; then
+            chart_paths=$(find "$folder_path" -type f -name "Chart.yaml" -exec dirname {} \;)
+
+            if [ -n "$chart_paths" ]; then
+                echo -e "Chart.yaml found in the following folders or subfolders of '${GREEN}$folder_path${NC}':"
+
+                for chart_path in $chart_paths; do
+                    if ! helm lint "$chart_path"; then
+                        echo -e "${RED}Error: helm lint failed for $chart_path${NC}"
+                        exit 1
+                    fi
+
+                    if ! helm template "$chart_path"; then
+                        echo -e "${RED}Error: helm template failed for $chart_path${NC}"
+                        exit 1
+                    fi
+                done
+            else
+                echo -e "No Chart.yaml found in '${YELLOW}$folder_path${NC}' or its subfolders."
+            fi
+        else
+            echo -e "${YELLOW}Error: '$folder_path' is not a valid directory.${NC}"
+            exit 1
         fi
     done
 }
@@ -174,7 +185,7 @@ function process_chart_changes() {
 function send_webhook() {
 # function call to check if codeformat check is required or not
   CodeformatRequired
-  process_chart_changes
+  check_chart_yaml
 
   for check in "${PR_Name[@]}"; do
     curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
