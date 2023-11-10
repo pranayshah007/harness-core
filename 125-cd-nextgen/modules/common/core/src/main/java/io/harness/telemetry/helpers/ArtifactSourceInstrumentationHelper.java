@@ -34,9 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
-public class CDInstrumentationHelper extends InstrumentationHelper {
+public class ArtifactSourceInstrumentationHelper extends InstrumentationHelper {
   @Inject TelemetryReporter telemetryReporter;
-  private final String userId = getUserId();
 
   private CompletableFuture<Void> publishArtifactInfo(
       ArtifactConfig artifactConfig, String accountId, String orgId, String projectId, String eventName) {
@@ -47,7 +46,7 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
     eventPropertiesMap.put(ARTIFACT_IDENTIFIER, artifactConfig.getIdentifier());
     eventPropertiesMap.put(ARTIFACT_PROJECT, projectId);
     eventPropertiesMap.put(IS_ARTIFACT_PRIMARY, artifactConfig.isPrimaryArtifact());
-    return sendEvent(eventName, userId, accountId, eventPropertiesMap);
+    return sendEvent(eventName, accountId, eventPropertiesMap);
   }
 
   public CompletableFuture<Void> sendLastPublishedTagExpressionEvent(
@@ -56,9 +55,10 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
   }
 
   private CompletableFuture<Void> sendEvent(
-      String eventName, String userId, String accountId, HashMap<String, Object> eventPropertiesMap) {
+      String eventName, String accountId, HashMap<String, Object> eventPropertiesMap) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
+        String userId = getUserId();
         return CompletableFuture.runAsync(
             ()
                 -> telemetryReporter.sendTrackEvent(eventName, userId, accountId, eventPropertiesMap,
@@ -66,7 +66,7 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
                         .put(Destination.AMPLITUDE, true)
                         .put(Destination.ALL, false)
                         .build(),
-                    Category.CDS, TelemetryOption.builder().sendForCommunity(true).build()));
+                    Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build()));
       } else {
         log.info("There is no account found for account ID = " + accountId + "!. Cannot send " + eventName + " event.");
       }

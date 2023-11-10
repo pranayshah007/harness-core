@@ -7,7 +7,7 @@
 
 package io.harness.telemetry.helpers;
 
-import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 
 import static junit.framework.TestCase.assertTrue;
 
@@ -24,18 +24,18 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
-public class CDInstrumentationHelperTest extends CategoryTest {
+public class ArtifactSourceInstrumentationHelperTest extends CategoryTest {
   private static final String ACCOUNT = "account";
   private static final String ORG = "org";
   private static final String PROJECT = "project";
-  @InjectMocks CDInstrumentationHelper instrumentationHelper;
+  @InjectMocks ArtifactSourceInstrumentationHelper instrumentationHelper;
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
   }
 
   @Test
-  @Owner(developers = TEJAS)
+  @Owner(developers = SARTHAK_KASAT)
   @Category(UnitTests.class)
   public void testCreateConnectorTrackSend() {
     DockerHubArtifactConfig dockerHubArtifactConfig =
