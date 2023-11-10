@@ -48,6 +48,8 @@ import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
+import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
@@ -283,6 +285,10 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
                                                  .setStageExecutionId(ambiance.getStageExecutionId())
                                                  .build())
               .setUsageType(PIPELINE_EXECUTION)
+              .setEntityType(EntityTypeProtoEnum.PIPELINES)
+              .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                  AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                  AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getPipelineIdentifier(ambiance)))
               .build());
     }
   }

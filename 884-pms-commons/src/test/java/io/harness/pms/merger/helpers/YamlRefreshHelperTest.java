@@ -22,11 +22,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.net.URL;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -1014,5 +1018,30 @@ public class YamlRefreshHelperTest extends CategoryTest {
     String refreshedYaml = YamlPipelineUtils.writeYamlString(refreshedNode);
 
     assertThat(expectedYaml).isEqualTo(refreshedYaml);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testRefreshNodeFromSourceNodeWithNonIgnorableKeys() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    URL testFile = classLoader.getResource("template-for-service-env-git-branch-test.json");
+    String refreshedJson = Resources.toString(testFile, Charsets.UTF_8);
+    JsonNode sourceNode = JsonUtils.asObject(refreshedJson, JsonNode.class);
+
+    testFile = classLoader.getResource("template-inputs-for-service-env-git-branch-test.json");
+    String templateInputJson = Resources.toString(testFile, Charsets.UTF_8);
+    JsonNode nodeToRefresh = JsonUtils.asObject(templateInputJson, JsonNode.class);
+    JsonNode refreshedJsonNode = refreshNodeFromSourceNode(nodeToRefresh, sourceNode);
+    assertThat(refreshedJsonNode).isNotNull();
+
+    assertThat(refreshedJsonNode.get("spec")).isNotNull();
+    assertThat(refreshedJsonNode.get("spec").get("service")).isNotNull();
+    assertThat(refreshedJsonNode.get("spec").get("service").get("gitBranch")).isNotNull();
+    assertThat(refreshedJsonNode.get("spec").get("service").get("gitBranch").asText()).isEqualTo("service-git-branch");
+    assertThat(refreshedJsonNode.get("spec").get("environment")).isNotNull();
+    assertThat(refreshedJsonNode.get("spec").get("environment").get("gitBranch")).isNotNull();
+    assertThat(refreshedJsonNode.get("spec").get("environment").get("gitBranch").asText())
+        .isEqualTo("environment-git-branch");
   }
 }

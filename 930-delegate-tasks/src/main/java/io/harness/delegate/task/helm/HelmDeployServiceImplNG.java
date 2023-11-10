@@ -204,7 +204,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   @Override
   public HelmCommandResponseNG deploy(HelmInstallCommandRequestNG commandRequest, HelmTaskDTO taskData)
-      throws IOException {
+      throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
     HelmChartInfo helmChartInfo = null;
     int prevVersion = -1;
@@ -343,7 +343,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
         resources = manifest;
-        workloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+        workloads =
+            helmSteadyStateService.findEligibleWorkloadIds(resources, commandRequest.isUseSteadyStateCheckForJobs());
       }
 
       serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
@@ -692,7 +693,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
         List<KubernetesResource> resources = manifest;
-        rollbackWorkloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+        rollbackWorkloads =
+            helmSteadyStateService.findEligibleWorkloadIds(resources, commandRequest.isUseSteadyStateCheckForJobs());
       }
 
       List<ContainerInfo> containerInfos = getContainerInfos(commandRequest, rollbackWorkloads, useSteadyStateCheck,
