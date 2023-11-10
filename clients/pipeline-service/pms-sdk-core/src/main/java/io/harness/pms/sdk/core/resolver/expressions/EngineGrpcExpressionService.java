@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.resolver.expressions;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceBlockingStub;
@@ -44,7 +45,11 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
                 .setExpression(expression)
                 .setSkipUnresolvedExpressionsCheck(skipUnresolvedExpressionsCheck)
                 .build());
-    return expressionRenderBlobResponse.getValue();
+    if (expression == null) {
+      throw new InvalidRequestException("The expression cannot be empty.");
+    } else {
+      return expressionRenderBlobResponse.getValue();
+    }
   }
 
   @Override
@@ -59,7 +64,11 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
                 .setExpression(expression)
                 .setExpressionMode(mode)
                 .build());
-    return expressionRenderBlobResponse.getValue();
+    if (expression == null) {
+      throw new InvalidRequestException("The expression cannot be empty.");
+    } else {
+      return expressionRenderBlobResponse.getValue();
+    }
   }
 
   @Override
@@ -67,7 +76,12 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
     ExpressionEvaluateBlobResponse expressionEvaluateBlobResponse =
         PmsGrpcClientUtils.retryAndProcessException(engineExpressionProtoServiceBlockingStub::evaluateExpression,
             ExpressionEvaluateBlobRequest.newBuilder().setAmbiance(ambiance).setExpression(expression).build());
-    return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
+
+    if (expression == null) {
+      throw new InvalidRequestException("The expression cannot be empty.");
+    } else {
+      return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
+    }
   }
   @Override
   public Object evaluateExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
@@ -79,6 +93,10 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
                 .setExpressionMode(mode)
                 .setNewRecastFlow(true)
                 .build());
-    return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class, true);
+    if (expression == null) {
+      throw new InvalidRequestException("The expression cannot be empty.");
+    } else {
+      return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class, true);
+    }
   }
 }
