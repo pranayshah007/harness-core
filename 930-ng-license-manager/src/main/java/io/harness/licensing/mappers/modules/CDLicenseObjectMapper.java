@@ -35,6 +35,7 @@ public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicens
 
   @Override
   public CDModuleLicense toEntity(CDModuleLicenseDTO cdModuleLicenseDTO) {
+    // TODO: put this change behind a FF
     validateModuleLicenseDTO(cdModuleLicenseDTO);
 
     CDModuleLicense entity = CDModuleLicense.builder().build();
@@ -60,12 +61,10 @@ public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicens
 
       // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
       Integer mappingRatio = 1;
-      if (CDLicenseType.SERVICES.equals(cdModuleLicenseDTO.getCdLicenseType())) {
-        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
-      } else if (CDLicenseType.SERVICE_INSTANCES.equals(cdModuleLicenseDTO.getCdLicenseType())) {
-        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenseCount());
+      if (cdModuleLicenseDTO.getCdLicenseType().equals(CDLicenseType.SERVICES)) {
+        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
       } else {
-        throw new InvalidRequestException("CDLicenseType has to be either SERVICES or SERVICE_INSTANCES");
+        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
       }
     }
   }
