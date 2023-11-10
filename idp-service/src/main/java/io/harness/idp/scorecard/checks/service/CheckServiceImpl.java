@@ -20,15 +20,11 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
-import io.harness.EntityType;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
-import io.harness.exception.UnexpectedException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
@@ -53,7 +49,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckGraph;
-import io.harness.spec.server.idp.v1.model.CheckStats;
+import io.harness.spec.server.idp.v1.model.CheckStatsResponse;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.InputDetails;
@@ -68,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -90,7 +87,6 @@ public class CheckServiceImpl implements CheckService {
   private final NamespaceService namespaceService;
   private final ScoreService scoreService;
   private final NGSettingsClient settingsClient;
-  private final EntitySetupUsageClient entitySetupUsageClient;
   private final DataPointService dataPointService;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private final OutboxService outboxService;
@@ -98,8 +94,8 @@ public class CheckServiceImpl implements CheckService {
   @Inject
   public CheckServiceImpl(CheckRepository checkRepository, CheckStatusRepository checkStatusRepository,
       ScorecardService scorecardService, ScoreComputerService scoreComputerService, NamespaceService namespaceService,
-      ScoreService scoreService, NGSettingsClient settingsClient, EntitySetupUsageClient entitySetupUsageClient,
-      DataPointService dataPointService, TransactionTemplate transactionTemplate, OutboxService outboxService) {
+      ScoreService scoreService, NGSettingsClient settingsClient, DataPointService dataPointService,
+      TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.checkRepository = checkRepository;
     this.checkStatusRepository = checkStatusRepository;
     this.scorecardService = scorecardService;
@@ -107,7 +103,6 @@ public class CheckServiceImpl implements CheckService {
     this.namespaceService = namespaceService;
     this.scoreService = scoreService;
     this.settingsClient = settingsClient;
-    this.entitySetupUsageClient = entitySetupUsageClient;
     this.dataPointService = dataPointService;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
@@ -122,6 +117,10 @@ public class CheckServiceImpl implements CheckService {
       copyInputValues(checkDetails, accountIdentifier);
 
       validateCheckSaveRequest(checkDetails, accountIdentifier);
+
+      if (isCheckAlreadyDeleted(accountIdentifier, checkDetails.getIdentifier())) {
+        checkDetails.setIdentifier(checkDetails.getIdentifier() + new Random().nextInt(9999));
+      }
       CheckEntity savedCheckEntity = checkRepository.save(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
       outboxService.save(new CheckCreateEvent(accountIdentifier, CheckDetailsMapper.toDTO(savedCheckEntity)));
       return true;
@@ -184,7 +183,12 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckStats> getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+  public CheckStatsResponse getCheckStats(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(
+        custom ? accountIdentifier : GLOBAL_ACCOUNT_ID, identifier);
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check stats not found for checkId [%s]", identifier));
+    }
     List<String> scorecardIdentifiers = scorecardService.getScorecardIdentifiers(accountIdentifier, identifier, custom);
     List<ScorecardFilter> filters = scorecardService.getScorecardFilters(accountIdentifier, scorecardIdentifiers);
     Set<BackstageCatalogEntity> entities = scoreComputerService.getAllEntities(accountIdentifier, null, filters);
@@ -196,13 +200,13 @@ public class CheckServiceImpl implements CheckService {
             .stream()
             .collect(Collectors.toMap(
                 EntityIdentifierAndCheckStatus::getEntityIdentifier, EntityIdentifierAndCheckStatus::getStatus));
-    return CheckStatsMapper.toDTO(entities, statusMap);
+    return CheckStatsMapper.toDTO(entities, statusMap, checkEntity.getName());
   }
 
   @Override
   public List<CheckGraph> getCheckGraph(String accountIdentifier, String identifier, Boolean custom) {
     return CheckStatsMapper.toDTO(
-        checkStatusRepository.findByAccountIdentifierAndIdentifierAndCustom(accountIdentifier, identifier, custom));
+        checkStatusRepository.findByAccountIdentifierAndIdentifierAndIsCustom(accountIdentifier, identifier, custom));
   }
 
   @Override
@@ -244,6 +248,9 @@ public class CheckServiceImpl implements CheckService {
     int totalPassed = 0;
     int total = 0;
     for (CheckStatus.StatusEnum status : statuses) {
+      if (status == null) {
+        continue;
+      }
       totalPassed += CheckStatus.StatusEnum.PASS.equals(status) ? 1 : 0;
       total++;
     }
@@ -293,22 +300,9 @@ public class CheckServiceImpl implements CheckService {
   }
 
   private void validateCheckUsage(String accountIdentifier, String checkIdentifier) {
-    boolean isReferenced;
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(null)
-                                      .projectIdentifier(null)
-                                      .identifier(checkIdentifier)
-                                      .build();
-    try {
-      isReferenced = NGRestUtils.getResponse(entitySetupUsageClient.isEntityReferenced(
-          accountIdentifier, identifierRef.getFullyQualifiedName(), EntityType.IDP_CHECK));
-    } catch (Exception e) {
-      log.info("Encountered exception while requesting the Entity Reference records for checkId {}, with exception",
-          checkIdentifier, e);
-      throw new UnexpectedException("Error while deleting the check");
-    }
-    if (isReferenced) {
+    List<String> scorecardIdentifiers =
+        scorecardService.getScorecardIdentifiers(accountIdentifier, checkIdentifier, true);
+    if (!isEmpty(scorecardIdentifiers)) {
       throw new ReferencedEntityException(
           format("Could not delete the check [%s] as it is referenced by other scorecards", checkIdentifier));
     }
@@ -376,6 +370,12 @@ public class CheckServiceImpl implements CheckService {
       //        }
       //      }
     }
+  }
+
+  private boolean isCheckAlreadyDeleted(String accountIdentifier, String checkId) {
+    CheckEntity checkEntity =
+        checkRepository.findByAccountIdentifierAndIdentifierAndIsDeleted(accountIdentifier, checkId, true);
+    return checkEntity != null;
   }
 
   private void copyInputValues(CheckDetails checkDetails, String accountIdentifier) {

@@ -23,6 +23,7 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -96,7 +97,15 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(task.getAccountId())) {
       metricService.incCounter(metricName);
     }
-    String taskType = task.getTaskDataV2() != null ? task.getTaskDataV2().getTaskType() : task.getData().getTaskType();
+    String taskType = null;
+    if (task.getTaskDataV2() != null) {
+      taskType = task.getTaskDataV2().getTaskType();
+    } else if (task.getData() != null) {
+      taskType = task.getData().getTaskType();
+    }
+    if (Objects.isNull(taskType)) {
+      return;
+    }
     try (AutoMetricContext ignore = new DelegateTaskTypeMetricContext(taskType)) {
       metricService.incCounter(metricName + TASK_TYPE_SUFFIX);
     }

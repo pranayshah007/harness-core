@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -130,7 +130,7 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
     ArgumentCaptor<List<String>> correlationIdsCaptor = ArgumentCaptor.forClass(List.class);
     Mockito.verify(asyncWaitEngine, Mockito.times(1))
         .waitForAllOn(
-            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyInt());
+            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyLong());
     verify(cdTaskChainExecutable).startChainLinkAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertResponse(response);
   }
@@ -146,7 +146,7 @@ public class CdAsyncChainExecutableTest extends CategoryTest {
     ArgumentCaptor<List<String>> correlationIdsCaptor = ArgumentCaptor.forClass(List.class);
     Mockito.verify(asyncWaitEngine, Mockito.times(1))
         .waitForAllOn(
-            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyInt());
+            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyLong());
     verify(cdTaskChainExecutable)
         .executeNextLinkWithSecurityContext(ambiance, stepElementParameters, stepInputPackage, passThroughData, null);
     assertResponse(response);

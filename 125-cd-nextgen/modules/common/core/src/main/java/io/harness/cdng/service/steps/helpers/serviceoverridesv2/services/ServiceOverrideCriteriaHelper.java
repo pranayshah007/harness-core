@@ -6,8 +6,10 @@
  */
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -31,12 +33,17 @@ public class ServiceOverrideCriteriaHelper {
   private final String TYPE = "type";
 
   public Criteria createCriteriaForGetList(@NotNull String accountId, String orgIdentifier, String projectIdentifier,
-      ServiceOverridesType type, OverrideFilterPropertiesDTO filterProperties) {
+      ServiceOverridesType type, String searchTerm, OverrideFilterPropertiesDTO filterProperties) {
     Criteria criteria = new Criteria();
     criteria.and(ACCOUNT_ID).is(accountId);
     criteria.and(ORG_ID).is(orgIdentifier);
     criteria.and(PROJECT_ID).is(projectIdentifier);
     criteria.and(NGServiceOverridesEntity.NGServiceOverridesEntityKeys.spec).exists(true).ne(null);
+
+    if (isNotEmpty(searchTerm)) {
+      criteria.and(NGServiceOverridesEntityKeys.identifier)
+          .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS);
+    }
 
     if (type != null) {
       criteria.and(TYPE).is(type);

@@ -1242,6 +1242,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.protobuf.UnknownFieldSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.SneakyThrows;
 import org.eclipse.jgit.api.GitCommand;
 import org.json.JSONArray;
@@ -2579,5 +2580,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmFetchChartManifestResponse.class, 20000618);
     kryo.register(HelmChartManifest.class, 20000619);
     kryo.register(ReleaseMetadata.class, 20001002);
+    kryo.register(AtomicBoolean.class, 20001003);
   }
 }

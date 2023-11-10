@@ -9,10 +9,13 @@ package io.harness.cdng.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,21 +24,28 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionBasicSummaryProjection;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
 import io.harness.repositories.executions.StageExecutionInfoRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.StageStatus;
 
 import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
@@ -48,8 +58,11 @@ public class StageExecutionInfoServiceTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final String EXECUTION_ID = "executionId";
-
+  private static final List<String> STAGE_EXECUTION_IDENTIFIERS = List.of("id1", "id2");
   @Mock private StageExecutionInfoRepository stageExecutionInfoRepository;
+
+  @Mock private StageExecutionBasicSummaryProjection stageExecutionBasicSummaryProjection1;
+  @Mock private StageExecutionBasicSummaryProjection stageExecutionBasicSummaryProjection2;
   @InjectMocks private StageExecutionInfoServiceImpl stageExecutionInfoService;
 
   @Test
@@ -160,5 +173,93 @@ public class StageExecutionInfoServiceTest extends CategoryTest {
 
     assertThatThrownBy(() -> stageExecutionInfoService.getLatestSuccessfulStageExecutionInfo(executionInfoKey, null))
         .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testListStageExecutionFormattedSummaryByStageExecutionIdentifiersForNegativeCases() {
+    // stage execution ids required
+    AssertionsForClassTypes
+        .assertThatThrownBy(
+            ()
+                -> stageExecutionInfoService.listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+                    Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), new ArrayList<>()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Stage execution identifiers are required");
+
+    // invalid scope
+    AssertionsForClassTypes
+        .assertThatThrownBy(
+            ()
+                -> stageExecutionInfoService.listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+                    Scope.of(ACCOUNT_IDENTIFIER), STAGE_EXECUTION_IDENTIFIERS))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid scope provided, project scope expected");
+    AssertionsForClassTypes
+        .assertThatThrownBy(
+            ()
+                -> stageExecutionInfoService.listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+                    Scope.builder().accountIdentifier(ACCOUNT_IDENTIFIER).orgIdentifier(ORG_IDENTIFIER).build(),
+                    STAGE_EXECUTION_IDENTIFIERS))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Invalid scope provided, project scope expected");
+
+    // with empty records
+    Mockito
+        .when(
+            stageExecutionInfoRepository
+                .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+                    ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, new HashSet<>(STAGE_EXECUTION_IDENTIFIERS)))
+        .thenReturn(new ArrayList<>());
+    assertThat(stageExecutionInfoService.listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+                   Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), STAGE_EXECUTION_IDENTIFIERS))
+        .isEmpty();
+    verify(stageExecutionInfoRepository, times(1))
+        .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, new HashSet<>(STAGE_EXECUTION_IDENTIFIERS));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testListStagePlanCremationFormattedSummaryByStageIdentifiers() {
+    when(stageExecutionBasicSummaryProjection1.getStageExecutionId()).thenReturn("id1");
+    when(stageExecutionBasicSummaryProjection1.getServiceIdentifier()).thenReturn(SERVICE_IDENTIFIER);
+    when(stageExecutionBasicSummaryProjection1.getEnvIdentifier()).thenReturn(ENV_IDENTIFIER);
+    when(stageExecutionBasicSummaryProjection1.getInfraIdentifier()).thenReturn(INFRA_IDENTIFIER);
+
+    when(stageExecutionBasicSummaryProjection2.getStageExecutionId()).thenReturn("id2");
+    when(stageExecutionBasicSummaryProjection2.getServiceIdentifier()).thenReturn(SERVICE_IDENTIFIER);
+    when(stageExecutionBasicSummaryProjection2.getEnvIdentifier()).thenReturn("  ");
+    when(stageExecutionBasicSummaryProjection2.getInfraIdentifier()).thenReturn(INFRA_IDENTIFIER);
+
+    Mockito
+        .when(
+            stageExecutionInfoRepository
+                .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+                    ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, new HashSet<>(STAGE_EXECUTION_IDENTIFIERS)))
+        .thenReturn(List.of(stageExecutionBasicSummaryProjection1, stageExecutionBasicSummaryProjection2));
+    Map<String, CDStageSummaryResponseDTO> stageMap =
+        stageExecutionInfoService.listStageExecutionFormattedSummaryByStageExecutionIdentifiers(
+            Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), STAGE_EXECUTION_IDENTIFIERS);
+    assertThat(stageMap)
+        .hasSize(2)
+        .containsEntry("id1",
+            CDStageSummaryResponseDTO.builder()
+                .service(SERVICE_IDENTIFIER)
+                .environment(ENV_IDENTIFIER)
+                .infra(INFRA_IDENTIFIER)
+                .build())
+        .containsEntry("id2",
+            CDStageSummaryResponseDTO.builder()
+                .service(SERVICE_IDENTIFIER)
+                .environment("NA")
+                .infra(INFRA_IDENTIFIER)
+                .build());
+
+    verify(stageExecutionInfoRepository, times(1))
+        .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndStageExecutionIdIn(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, new HashSet<>(STAGE_EXECUTION_IDENTIFIERS));
   }
 }

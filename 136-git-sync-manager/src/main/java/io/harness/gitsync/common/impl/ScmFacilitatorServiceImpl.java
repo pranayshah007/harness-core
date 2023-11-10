@@ -47,7 +47,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.caching.beans.CacheDetails;
-import io.harness.gitsync.caching.beans.GitFileCacheDeleteResult;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
 import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
@@ -1127,8 +1126,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                                      .repoName(repoName)
                                      .ref(branchName)
                                      .build();
-      GitFileCacheDeleteResult gitFileCacheDeleteResult = gitFileCacheService.invalidateCache(cacheKey);
-      log.info("Invalidated cache for key: {} , result: {}", cacheKey, gitFileCacheDeleteResult);
+      gitFileCacheService.invalidateCache(cacheKey);
     } catch (Exception exception) {
       log.error("invalidateGitFileCache Failure, skipping invalidation of cache", exception);
     }

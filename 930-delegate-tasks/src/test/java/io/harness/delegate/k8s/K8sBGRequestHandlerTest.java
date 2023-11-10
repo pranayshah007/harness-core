@@ -465,8 +465,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doThrow(thrownException)
         .when(k8sTaskHelperBase)
-        .fetchManifestFilesAndWriteToDirectory(
-            any(ManifestDelegateConfig.class), anyString(), eq(logCallback), anyLong(), anyString(), anyBoolean());
+        .fetchManifestFilesAndWriteToDirectory(any(ManifestDelegateConfig.class), anyString(), eq(logCallback),
+            anyLong(), anyString(), anyBoolean(), eq(false));
 
     assertThatThrownBy(()
                            -> k8sBGRequestHandler.executeTaskInternal(

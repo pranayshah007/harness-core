@@ -7,8 +7,6 @@
 
 package io.harness.cvng.core.entities;
 
-import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.analysis.entities.VerificationTaskBase;
@@ -143,9 +141,11 @@ public abstract class DataCollectionTask
   @PrePersist
   private void prePersist() {
     if (validAfter == null) {
-      validAfter = endTime.plus(DATA_COLLECTION_DELAY);
+      validAfter = endTime.plus(getValidAfterDuration());
     }
   }
+
+  public abstract Duration getValidAfterDuration();
 
   public abstract boolean shouldCreateNextTask();
 

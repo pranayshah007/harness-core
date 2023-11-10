@@ -10,9 +10,14 @@ package io.harness.cvng.servicelevelobjective.beans;
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
 @AllArgsConstructor
 public enum SLIEvaluationType {
-  @JsonEnumDefaultValue @JsonProperty("Window") WINDOW,
-  @JsonProperty("Request") REQUEST;
+  @JsonEnumDefaultValue @JsonProperty("Window") WINDOW("Window"),
+  @JsonProperty("Request") REQUEST("Request"),
+  @JsonProperty("MetricLess") METRIC_LESS("Window");
+
+  private final String compositeSLOEvaluationType;
 }

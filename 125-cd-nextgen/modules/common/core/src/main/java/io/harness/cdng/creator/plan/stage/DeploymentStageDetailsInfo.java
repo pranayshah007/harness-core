@@ -16,7 +16,9 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -29,4 +31,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = SingleServiceEnvDeploymentStageDetailsInfo.class,
           name = DeploymentStageTypeConstants.SINGLE_SERVICE_ENVIRONMENT)
     })
-public interface DeploymentStageDetailsInfo {}
+public interface DeploymentStageDetailsInfo {
+  @JsonIgnore CDStageSummaryResponseDTO getFormattedStageSummary();
+}

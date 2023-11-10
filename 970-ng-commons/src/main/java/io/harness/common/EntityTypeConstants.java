@@ -277,4 +277,7 @@ public interface EntityTypeConstants {
   String SLSA_VERIFICATION = "SlsaVerification";
 
   String OVERRIDES = "Overrides";
+
+  String IDP_STAGE = "IDPStage";
+  String IDP = "IDP";
 }

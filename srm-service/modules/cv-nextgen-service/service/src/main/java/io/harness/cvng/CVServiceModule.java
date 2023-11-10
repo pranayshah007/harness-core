@@ -424,6 +424,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjective
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.UserJourneyServiceImpl;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.CalenderSLOTargetTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.MetricLessServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RatioServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RequestServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RollingSLOTargetTransformer;
@@ -1229,6 +1230,10 @@ public class CVServiceModule extends AbstractModule {
     serviceLevelIndicatorFQDITransformerMapBinder
         .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorTransformer.class)
+        .in(Scopes.SINGLETON);
+    serviceLevelIndicatorFQDITransformerMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIEvaluationType.METRIC_LESS, null))
+        .to(MetricLessServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
 
     bind(LearningEngineDevService.class).to(LearningEngineDevServiceImpl.class);

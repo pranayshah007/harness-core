@@ -96,6 +96,13 @@ public class AwsSamDeployStepInfo extends AwsSamBaseStepInfo implements CDAbstra
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())
+        .connectorRef(this.getConnectorRef())
+        .resources(this.getResources())
+        .privileged(this.getPrivileged())
+        .runAsUser(this.getRunAsUser())
+        .imagePullPolicy(this.getImagePullPolicy())
+        .deployCommandOptions(this.getDeployCommandOptions())
+        .stackName(this.getStackName())
         .build();
   }
 

@@ -36,7 +36,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.fork.NGForkStep;
+import io.harness.steps.common.NGSectionStep;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -102,33 +102,31 @@ public class ParallelPlanCreatorV1Test extends CategoryTest {
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         planCreator.createPlanForChildrenNodes(PlanCreationContext.builder().build(), new YamlField(stepsNode.get(0)));
     assertThat(planForChildrenNodes).isNotNull();
-    assertThat(planForChildrenNodes.size()).isEqualTo(2);
-    for (YamlNode yamlNode : stepsNode.get(0).getField("spec").getNode().getField("steps").getNode().asArray()) {
-      assertThat(planForChildrenNodes.get(yamlNode.getUuid())).isNotNull();
-      assertThat(planForChildrenNodes.get(yamlNode.getUuid())
-                     .getDependencies()
-                     .getDependenciesMap()
-                     .get(yamlNode.getUuid())
-                     .toString())
-          .isEqualTo(yamlNode.getYamlPath());
-    }
+    assertThat(planForChildrenNodes.size()).isEqualTo(1);
+    YamlNode yamlNode = stepsNode.get(0).getField("spec").getNode();
+    assertThat(planForChildrenNodes.get(yamlNode.getUuid())).isNotNull();
+    assertThat(planForChildrenNodes.get(yamlNode.getUuid())
+                   .getDependencies()
+                   .getDependenciesMap()
+                   .get(yamlNode.getUuid())
+                   .toString())
+        .isEqualTo(yamlNode.getYamlPath());
 
     List<YamlNode> stagesNode = pipelineYamlField.getNode().getField("stages").getNode().asArray();
 
     planForChildrenNodes =
         planCreator.createPlanForChildrenNodes(PlanCreationContext.builder().build(), new YamlField(stagesNode.get(1)));
     assertThat(planForChildrenNodes).isNotNull();
-    assertThat(planForChildrenNodes.size()).isEqualTo(2);
+    assertThat(planForChildrenNodes.size()).isEqualTo(1);
 
-    for (YamlNode yamlNode : stagesNode.get(1).getField("spec").getNode().getField("stages").getNode().asArray()) {
-      assertThat(planForChildrenNodes.get(yamlNode.getUuid())).isNotNull();
-      assertThat(planForChildrenNodes.get(yamlNode.getUuid())
-                     .getDependencies()
-                     .getDependenciesMap()
-                     .get(yamlNode.getUuid())
-                     .toString())
-          .isEqualTo(yamlNode.getYamlPath());
-    }
+    yamlNode = stagesNode.get(1).getField("spec").getNode();
+    assertThat(planForChildrenNodes.get(yamlNode.getUuid())).isNotNull();
+    assertThat(planForChildrenNodes.get(yamlNode.getUuid())
+                   .getDependencies()
+                   .getDependenciesMap()
+                   .get(yamlNode.getUuid())
+                   .toString())
+        .isEqualTo(yamlNode.getYamlPath());
   }
 
   @Test
@@ -142,19 +140,21 @@ public class ParallelPlanCreatorV1Test extends CategoryTest {
     }
 
     PlanNode planNode = planCreator.createPlanForParentNode(
-        PlanCreationContext.builder().build(), new YamlField(stagesNode.get(1)), childrenIds);
+        PlanCreationContext.builder().currentField(new YamlField(stagesNode.get(1))).build(),
+        new YamlField(stagesNode.get(1)), childrenIds);
     assertThat(planNode).isNotNull();
-    assertThat(planNode.getStepType()).isEqualTo(NGForkStep.STEP_TYPE);
+    assertThat(planNode.getStepType()).isEqualTo(NGSectionStep.STEP_TYPE);
     assertThat(planNode.getAdviserObtainments()).isEmpty();
     assertThat(planNode.getFacilitatorObtainments().size()).isEqualTo(1);
     assertThat(planNode.getFacilitatorObtainments().get(0).getType())
-        .isEqualTo(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build());
+        .isEqualTo(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build());
 
     doReturn("nextNodeUuid").when(kryoSerializer).asObject((byte[]) any());
     doReturn("adviserResponse".getBytes()).when(kryoSerializer).asBytes(any());
 
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
+            .currentField(new YamlField(stagesNode.get(1)))
             .dependency(Dependency.newBuilder()
                             .setNodeMetadata(HarnessStruct.newBuilder()
                                                  .putData(PlanCreatorConstants.NEXT_ID,
@@ -165,7 +165,7 @@ public class ParallelPlanCreatorV1Test extends CategoryTest {
         new YamlField(stagesNode.get(1)), childrenIds);
 
     assertThat(planNode).isNotNull();
-    assertThat(planNode.getStepType()).isEqualTo(NGForkStep.STEP_TYPE);
+    assertThat(planNode.getStepType()).isEqualTo(NGSectionStep.STEP_TYPE);
     assertThat(planNode.getAdviserObtainments().size()).isEqualTo(1);
     assertThat(planNode.getAdviserObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationAdviserTypes.NEXT_STAGE.name());

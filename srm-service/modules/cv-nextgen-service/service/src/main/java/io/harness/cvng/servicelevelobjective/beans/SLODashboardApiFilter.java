@@ -31,9 +31,6 @@ public class SLODashboardApiFilter {
   @Parameter(description = CVConstants.MONITORED_SERVICE_PARAM_MESSAGE)
   @QueryParam("monitoredServiceIdentifier")
   String monitoredServiceIdentifier;
-  @Parameter(description = CVConstants.SLI_TYPE_PARAM_MESSAGE)
-  @QueryParam("sliTypes")
-  List<ServiceLevelIndicatorType> sliTypes;
   @Parameter(description = CVConstants.TARGET_TYPE_PARAM_MESSAGE)
   @QueryParam("targetTypes")
   List<SLOTargetType> targetTypes;

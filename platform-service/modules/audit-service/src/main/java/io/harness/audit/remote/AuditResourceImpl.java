@@ -22,6 +22,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.mapper.AuditEventMapper;
 import io.harness.beans.SortOrder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -69,6 +70,9 @@ public class AuditResourceImpl implements AuditResource {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField(AuditEventKeys.timestamp, DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
+    } else if (pageRequest.getSortOrders().size() > 1
+        || !AuditEventKeys.timestamp.equals(pageRequest.getSortOrders().get(0).getFieldName())) {
+      throw new InvalidRequestException("Sorting is supported only on timestamp.");
     }
     Page<AuditEventDTO> audits =
         auditService.list(accountIdentifier, pageRequest, auditFilterPropertiesDTO).map(AuditEventMapper::toDTO);

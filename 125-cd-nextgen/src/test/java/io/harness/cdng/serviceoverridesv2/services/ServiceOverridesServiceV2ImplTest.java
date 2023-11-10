@@ -246,7 +246,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // project level with type
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null, null);
 
     Pageable pageRequest =
         PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
@@ -258,7 +258,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // project level without type
     criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(2);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))
@@ -266,14 +266,14 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
 
     // org level with type
     criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null);
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, ServiceOverridesType.ENV_SERVICE_OVERRIDE, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(1);
     assertThat(overridesEntities.get(0).getIdentifier()).isEqualTo("id2");
 
     // org level without type
-    criteria =
-        ServiceOverrideCriteriaHelper.createCriteriaForGetList(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null, null);
+    criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, null, null, null);
     overridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(2);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIdentifier).collect(Collectors.toList()))

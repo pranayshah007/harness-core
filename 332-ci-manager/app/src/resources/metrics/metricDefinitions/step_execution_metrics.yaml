@@ -1,0 +1,20 @@
+name: CI Manager Step status Metrics
+identifier: CIManagerStepMetrics
+metricGroup: CIManagerStepMetricsGroup
+metrics:
+  - metricName: ci_active_step_execution_count
+    metricDefinition: CIManagerStepMetrics step completed
+    type: Count
+    unit: "1"
+  - metricName: ci_active_stage_execution_count
+    metricDefinition: CIManagerStageMetrics stage completed
+    type: Count
+    unit: "1"
+  - metricName: ci_stage_execution_time
+    metricDefinition: CIManagerStageMetrics stage execution time
+    type: LastValue
+    unit: count
+  - metricName: ci_step_execution_time
+    metricDefinition: CIManagerStepMetrics step execution time
+    type: LastValue
+    unit: count

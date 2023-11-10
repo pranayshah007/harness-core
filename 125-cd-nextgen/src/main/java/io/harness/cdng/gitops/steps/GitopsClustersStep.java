@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.gitops.steps;
+
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -30,6 +31,7 @@ import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.gitops.mappers.ClusterEntityMapper;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.gitops.steps.ClusterAgentRef.ClusterAgentRefBuilder;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
@@ -72,7 +74,6 @@ import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.utils.RetryUtils;
 
 import com.amazonaws.util.StringUtils;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
@@ -174,7 +175,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     try {
-      final Map<String, List<IndividualClusterInternal>> validatedClusters =
+      final Map<ClusterAgentRef, List<IndividualClusterInternal>> validatedClusters =
           validatedClusters(ambiance, stepParameters, logger, envVars);
 
       if (isEmpty(validatedClusters)) {
@@ -235,7 +236,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     return StepUtils.generateLogKeys(ambiance, null);
   }
 
-  private Map<String, List<IndividualClusterInternal>> validatedClusters(Ambiance ambiance,
+  private Map<ClusterAgentRef, List<IndividualClusterInternal>> validatedClusters(Ambiance ambiance,
       ClusterStepParameters params, LogCallback logger, Map<String, Map<String, Object>> envVarsMap) {
     final Collection<EnvClusterRefs> envClusterRefs;
     if (params.getEnvGroupRef() != null) {
@@ -252,8 +253,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     logEnvironments(envClusterRefs, logger);
 
-    // clusterId -> IndividualClusterInternal list, 1 cluster can be referenced by multiple environments
-    final Map<String, List<IndividualClusterInternal>> individualClusters = fetchClusterRefs(
+    // clusterId, AgentId -> IndividualClusterInternal list, 1 cluster can be referenced by multiple environments
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> individualClusters = fetchClusterRefs(
         params.getEnvGroupRef(), params.getEnvGroupName(), ambiance, envClusterRefs, logger, envVarsMap);
 
     if (isEmpty(individualClusters)) {
@@ -276,61 +277,74 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   }
 
   @NotNull
-  private Map<String, List<IndividualClusterInternal>> filterClustersFromGitopsService(
-      Ambiance ambiance, Map<String, List<IndividualClusterInternal>> individualClusters, LogCallback logger) {
-    final Set<String> accountLevelClustersIds = individualClusters.keySet()
-                                                    .stream()
-                                                    .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "account."))
-                                                    .collect(Collectors.toSet());
-    final Set<String> orgLevelClustersIds =
+  private Map<ClusterAgentRef, List<IndividualClusterInternal>> filterClustersFromGitopsService(
+      Ambiance ambiance, Map<ClusterAgentRef, List<IndividualClusterInternal>> individualClusters, LogCallback logger) {
+    final Set<ClusterAgentRef> accountLevelClustersRefs =
         individualClusters.keySet()
             .stream()
-            .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, ClusterEntityMapper.ORG_PREFIX))
+            .filter(ref -> StringUtils.beginsWithIgnoreCase(ref.getClusterId(), "account."))
+            .collect(Collectors.toSet());
+    final Set<ClusterAgentRef> orgLevelClustersRefs =
+        individualClusters.keySet()
+            .stream()
+            .filter(ref -> StringUtils.beginsWithIgnoreCase(ref.getClusterId(), ClusterEntityMapper.ORG_PREFIX))
             .collect(Collectors.toSet());
 
-    final Map<String, List<IndividualClusterInternal>> accountLevelClusters = new HashMap<>();
-    final Map<String, List<IndividualClusterInternal>> orgLevelClusters = new HashMap<>();
-    final Map<String, List<IndividualClusterInternal>> projectLevelClusters = new HashMap<>();
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> accountLevelClusters = new HashMap<>();
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> orgLevelClusters = new HashMap<>();
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> projectLevelClusters = new HashMap<>();
 
-    for (Map.Entry<String, List<IndividualClusterInternal>> clusterEntry : individualClusters.entrySet()) {
-      final String clusterId = clusterEntry.getKey();
+    for (Map.Entry<ClusterAgentRef, List<IndividualClusterInternal>> clusterEntry : individualClusters.entrySet()) {
+      final ClusterAgentRef clusterAgentRef = clusterEntry.getKey();
       final List<IndividualClusterInternal> envsForCluster = clusterEntry.getValue();
       for (IndividualClusterInternal currentEnv : envsForCluster) {
-        if (accountLevelClustersIds.contains(clusterId)) {
-          putEnvDetailsForCluster(clusterId.split("\\.")[1], accountLevelClusters, currentEnv);
-        } else if (orgLevelClustersIds.contains(clusterId)) {
-          putEnvDetailsForCluster(clusterId.split("\\.")[1], orgLevelClusters, currentEnv);
+        if (accountLevelClustersRefs.contains(clusterAgentRef)) {
+          putEnvDetailsForCluster(clusterAgentRef, accountLevelClusters, currentEnv, true);
+        } else if (orgLevelClustersRefs.contains(clusterAgentRef)) {
+          putEnvDetailsForCluster(clusterAgentRef, orgLevelClusters, currentEnv, true);
         } else {
-          putEnvDetailsForCluster(clusterId, projectLevelClusters, currentEnv);
+          putEnvDetailsForCluster(clusterAgentRef, projectLevelClusters, currentEnv, false);
         }
       }
     }
 
-    final Map<String, List<IndividualClusterInternal>> projectLevelFilteredClusters =
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> projectLevelFilteredClusters =
         filterClustersFromGitopsService(getAccountId(ambiance), getOrgIdentifier(ambiance),
             getProjectIdentifier(ambiance), projectLevelClusters, logger);
-    final Map<String, List<IndividualClusterInternal>> orgLevelFilteredClusters = filterClustersFromGitopsService(
-        getAccountId(ambiance), getOrgIdentifier(ambiance), "", orgLevelClusters, logger);
-    final Map<String, List<IndividualClusterInternal>> accountLevelFilteredClusters =
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> orgLevelFilteredClusters =
+        filterClustersFromGitopsService(
+            getAccountId(ambiance), getOrgIdentifier(ambiance), "", orgLevelClusters, logger);
+    final Map<ClusterAgentRef, List<IndividualClusterInternal>> accountLevelFilteredClusters =
         filterClustersFromGitopsService(getAccountId(ambiance), "", "", accountLevelClusters, logger);
 
     return combine(projectLevelFilteredClusters, orgLevelFilteredClusters, accountLevelFilteredClusters);
   }
 
-  private void putEnvDetailsForCluster(
-      String clusterId, Map<String, List<IndividualClusterInternal>> clusters, IndividualClusterInternal currentEnv) {
-    List<IndividualClusterInternal> existingEnvs = clusters.getOrDefault(clusterId, new ArrayList<>());
+  private void putEnvDetailsForCluster(ClusterAgentRef cluster,
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> clusters, IndividualClusterInternal currentEnv,
+      boolean splitScope) {
+    if (splitScope) {
+      cluster.setClusterId(cluster.getClusterId().split("\\.")[1]);
+    }
+    List<IndividualClusterInternal> existingEnvs = clusters.getOrDefault(cluster, new ArrayList<>());
     existingEnvs.add(currentEnv);
-    clusters.put(clusterId, existingEnvs);
+    clusters.put(cluster, existingEnvs);
   }
 
-  private Map<String, List<IndividualClusterInternal>> filterClustersFromGitopsService(String accountId, String orgId,
-      String projectId, Map<String, List<IndividualClusterInternal>> individualClusters, LogCallback logger) {
+  private Map<ClusterAgentRef, List<IndividualClusterInternal>> filterClustersFromGitopsService(String accountId,
+      String orgId, String projectId, Map<ClusterAgentRef, List<IndividualClusterInternal>> individualClusters,
+      LogCallback logger) {
     if (isEmpty(individualClusters)) {
       return new HashMap<>();
     }
     saveExecutionLog("Processing clusters at scope " + ScopeLevel.of(accountId, orgId, projectId).toString(), logger);
-    Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", individualClusters.keySet()));
+
+    Map<String, Object> filter = new HashMap<>();
+
+    // new flow where agentId is added to the clusters yaml
+    // hasAgentIdInRequest is false when at least one of the clusters doesn't have agent id in it
+    boolean hasAgentIdInRequest = getQueryFilter(individualClusters, filter);
+
     try {
       final ClusterQuery query = ClusterQuery.builder()
                                      .accountId(accountId)
@@ -346,11 +360,19 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       if (response.isSuccessful() && response.body() != null) {
         List<Cluster> content = CollectionUtils.emptyIfNull(response.body().getContent());
 
-        logDataFromGitops(content, logger);
+        logDataFromGitOps(content, logger);
 
+        // this logic assumes that either agent id is available for all clusters in the yaml or none, not a mix of both
+        // TODO add this comment to the troubleshooting doc
         content.forEach(c -> {
-          if (individualClusters.containsKey(c.getIdentifier())) {
-            individualClusters.get(c.getIdentifier()).forEach(envCluster -> {
+          ClusterAgentRefBuilder clusterAgentRefBuilder = ClusterAgentRef.builder().clusterId(c.getIdentifier());
+
+          if (hasAgentIdInRequest) {
+            clusterAgentRefBuilder = clusterAgentRefBuilder.agentId(c.getAgentIdentifier());
+          }
+          ClusterAgentRef clusterAgentRef = clusterAgentRefBuilder.build();
+          if (individualClusters.containsKey(clusterAgentRef)) {
+            individualClusters.get(clusterAgentRef).forEach(envCluster -> {
               envCluster.setClusterName(c.name());
               envCluster.setAgentId(c.getAgentIdentifier());
             });
@@ -359,7 +381,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
         logSkippedClusters(individualClusters.values()
                                .stream()
-                               .flatMap(list -> list.stream())
+                               .flatMap(Collection::stream)
                                .filter(GitopsClustersStep::clusterNameNull)
                                .collect(Collectors.toList()),
             logger);
@@ -371,12 +393,34 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
           response.errorBody() != null ? response.errorBody().string() : ""));
     } catch (Exception e) {
       log.error("Failed to fetch clusters from gitops", e);
-      throw new InvalidRequestException("Failed to fetch clusters from gitops");
+      throw new InvalidRequestException("Failed to fetch clusters from gitops, error: " + e.getMessage());
     }
   }
 
-  private Map<String, List<IndividualClusterInternal>> fetchClusterRefs(String envGroupRef, String envGroupName,
-      Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs, LogCallback logger,
+  private boolean getQueryFilter(
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> individualClusters, Map<String, Object> filter) {
+    boolean hasAgentIdInRequest = true;
+    List<Map<String, String>> orConditions = new ArrayList<>();
+
+    for (ClusterAgentRef clusterAgentRef : individualClusters.keySet()) {
+      Map<String, String> condition = new HashMap<>();
+      condition.put("identifier", clusterAgentRef.getClusterId());
+
+      if (clusterAgentRef.getAgentId() == null) {
+        hasAgentIdInRequest = false;
+      } else {
+        condition.put("agentIdentifier", clusterAgentRef.getAgentId());
+      }
+
+      orConditions.add(condition);
+    }
+
+    filter.put("$or", orConditions);
+    return hasAgentIdInRequest;
+  }
+
+  private Map<ClusterAgentRef, List<IndividualClusterInternal>> fetchClusterRefs(String envGroupRef,
+      String envGroupName, Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs, LogCallback logger,
       Map<String, Map<String, Object>> envVarsMap) {
     final List<IndividualClusterInternal> clusterRefs =
         envClusterRefs.stream()
@@ -391,7 +435,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                   .envName(ec.getEnvName())
                                   .envRef(ec.getEnvRef())
                                   .envType(ec.getEnvType())
-                                  .clusterRef(c)
+                                  .clusterRef(c.getClusterId())
+                                  .agentId(c.getAgentId())
                                   .envVariables(envVarsMap.get(ec.getEnvRef()))
                                   .build())
                        .collect(Collectors.toList()))
@@ -424,15 +469,17 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                                 ? envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvType()
                                                 : null)
                                         .clusterRef(c.getClusterRef())
+                                        .agentId(c.getAgentIdentifier())
                                         .envVariables(envVarsMap.get(c.getEnvRef()))
                                         .build())
                              .collect(Collectors.toSet()));
     }
 
-    return clusterRefs.stream().collect(Collectors.groupingBy(IndividualClusterInternal::getClusterRef));
+    return clusterRefs.stream().collect(Collectors.groupingBy(clusterRef
+        -> ClusterAgentRef.builder().clusterId(clusterRef.getClusterRef()).agentId(clusterRef.getAgentId()).build()));
   }
 
-  protected GitopsClustersOutcome toOutcome(Map<String, List<IndividualClusterInternal>> validatedClusters,
+  protected GitopsClustersOutcome toOutcome(Map<ClusterAgentRef, List<IndividualClusterInternal>> validatedClusters,
       Map<String, Object> svcVariables, Map<String, Map<String, Object>> envSvcOverrideVars) {
     final GitopsClustersOutcome outcome = new GitopsClustersOutcome(new ArrayList<>());
 
@@ -496,9 +543,11 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
   /* TODO what needs to be done if account and project level clusters have the same id, should we combine the results?
    Currently this scenario cannot be tested because of UI issue https://harness.atlassian.net/browse/CDS-49929. */
-  private Map<String, List<IndividualClusterInternal>> combine(Map<String, List<IndividualClusterInternal>> m1,
-      Map<String, List<IndividualClusterInternal>> m2, Map<String, List<IndividualClusterInternal>> m3) {
-    Map<String, List<IndividualClusterInternal>> combined = new HashMap<>();
+  private Map<ClusterAgentRef, List<IndividualClusterInternal>> combine(
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> m1,
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> m2,
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> m3) {
+    Map<ClusterAgentRef, List<IndividualClusterInternal>> combined = new HashMap<>();
 
     m1.keySet().forEach(k -> combined.putIfAbsent(k, m1.get(k)));
     m2.keySet().forEach(k -> combined.putIfAbsent(k, m2.get(k)));
@@ -507,15 +556,25 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     return combined;
   }
 
-  private void logDataFromGitops(List<Cluster> content, LogCallback logger) {
-    saveExecutionLog(format("Following %d cluster(s) are present in Harness Gitops", content.size()), logger);
-    logIdentifiers("Identifiers:", content.stream().map(Cluster::getIdentifier).collect(Collectors.toSet()), logger);
+  private void logDataFromGitOps(List<Cluster> content, LogCallback logger) {
+    saveExecutionLog(format("Following %d cluster(s) are present in Harness GitOps", content.size()), logger);
+    logIdentifiers("Identifier:Agent =>",
+        content.stream()
+            .map(cluster -> String.format("%s:%s", cluster.getIdentifier(), cluster.getAgentIdentifier()))
+            .collect(Collectors.toSet()),
+        logger);
   }
 
   private void logFinalSelectedClusters(
-      Map<String, List<IndividualClusterInternal>> individualClusters, LogCallback logger) {
+      Map<ClusterAgentRef, List<IndividualClusterInternal>> individualClusters, LogCallback logger) {
     saveExecutionLog(format("Following %d cluster(s) are selected after filtering", individualClusters.size()), logger);
-    logIdentifiers("Identifiers:", individualClusters.keySet(), logger);
+    saveExecutionLog(individualClusters.keySet()
+                         .stream()
+                         .map(ClusterAgentRef::toString)
+                         .limit(STRINGS_LOGGING_LIMIT)
+                         .collect(Collectors.joining(","))
+            + " " + (individualClusters.keySet().size() > STRINGS_LOGGING_LIMIT ? "..." : "\n\n"),
+        logger);
   }
 
   private void logEnvironments(Collection<EnvClusterRefs> envClusterRefs, LogCallback logger) {

@@ -16,6 +16,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.RandomUtils;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -25,6 +26,13 @@ public class ServiceGuardDataCollectionTask extends DataCollectionTask {
   private static final List<Duration> RETRY_WAIT_DURATIONS =
       Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
           Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
+
+  @Override
+  public Duration getValidAfterDuration() {
+    // SRM-15981: Randomizing the validAfter so that SG learning engine tasks aren't created at the same time.
+    return Duration.ofSeconds(RandomUtils.nextInt(120, 300));
+  }
+
   @Override
   public boolean shouldCreateNextTask() {
     return true;

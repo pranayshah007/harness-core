@@ -32,6 +32,7 @@ import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentRequest;
+import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent;
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEventV2;
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent;
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEventV2;
@@ -141,12 +142,13 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
       scopeDTO = toDTO(scopes.getRight().get());
       roleAssignmentDTO = RoleAssignmentDTOMapper.toDTO(roleAssignment);
     } else {
-      RoleAssignmentDeleteEvent roleAssignmentDeleteEvent =
-          objectMapper.readValue(outboxEvent.getEventData(), RoleAssignmentDeleteEvent.class);
-      roleAssignmentDTO = roleAssignmentDeleteEvent.getRoleAssignment();
-      scopeDTO = roleAssignmentDeleteEvent.getScope();
+      RoleAssignmentCreateEvent roleAssignmentCreateEvent =
+          objectMapper.readValue(outboxEvent.getEventData(), RoleAssignmentCreateEvent.class);
+      roleAssignmentDTO = roleAssignmentCreateEvent.getRoleAssignment();
+      scopeDTO = roleAssignmentCreateEvent.getScope();
       Scope scope = fromDTO(scopeDTO);
       roleAssignment = RoleAssignmentDTOMapper.fromDTO(scope, roleAssignmentDTO);
+      roleAssignment.setId(roleAssignmentCreateEvent.getRoleAssignmentId());
     }
     if (enableAclProcessingThroughOutbox) {
       RoleAssignmentChangeEventData roleAssignmentChangeEventData =
@@ -230,13 +232,13 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
       scopeDTO = toDTO(scopes.getRight().get());
       roleAssignmentDTO = RoleAssignmentDTOMapper.toDTO(roleAssignment);
     } else {
-      // objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
       RoleAssignmentDeleteEvent roleAssignmentDeleteEvent =
           objectMapper.readValue(outboxEvent.getEventData(), RoleAssignmentDeleteEvent.class);
       roleAssignmentDTO = roleAssignmentDeleteEvent.getRoleAssignment();
       scopeDTO = roleAssignmentDeleteEvent.getScope();
       skipAudit = roleAssignmentDeleteEvent.getSkipAudit() != null && roleAssignmentDeleteEvent.getSkipAudit();
       roleAssignment = RoleAssignmentDTOMapper.fromDTO(scopes.getRight().get(), roleAssignmentDTO);
+      roleAssignment.setId(roleAssignmentDeleteEvent.getRoleAssignmentId());
     }
     if (enableAclProcessingThroughOutbox) {
       RoleAssignmentChangeEventData changeEventData =

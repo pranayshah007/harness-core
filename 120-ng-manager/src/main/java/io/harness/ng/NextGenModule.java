@@ -94,6 +94,8 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResource;
+import io.harness.cdng.stage.resources.CDNGStageSummaryResourceImpl;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
@@ -364,6 +366,7 @@ import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
+import io.harness.timescaledb.TimescalePersistence;
 import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.timescaledb.retention.RetentionManager;
 import io.harness.timescaledb.retention.RetentionManagerImpl;
@@ -764,6 +767,8 @@ public class NextGenModule extends AbstractModule {
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+      bind(TimescalePersistence.class)
+          .toConstructor(TimescalePersistence.class.getConstructor(TimeScaleDBService.class));
       bind(RetentionManager.class).to(RetentionManagerImpl.class);
     } catch (NoSuchMethodException e) {
       log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
@@ -894,6 +899,7 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
+    bind(CDNGStageSummaryResource.class).to(CDNGStageSummaryResourceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton

@@ -1,0 +1,6 @@
+name: CI Manager Step Metrics Group
+identifier: CIManagerStepMetricsGroup
+labels:
+  - accountId
+  - status
+  - type

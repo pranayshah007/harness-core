@@ -267,7 +267,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(1);
     assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(2);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
-    assertThat(artifactListingResponses.get(0).getUpdatedAt())
+    assertThat(artifactListingResponses.get(0).getUpdated())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
 
     assertThat(artifactListingResponses.get(1).getId()).isEqualTo("artifact2");
@@ -279,7 +279,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(1);
     assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(2);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
-    assertThat(artifactListingResponses.get(1).getUpdatedAt())
+    assertThat(artifactListingResponses.get(1).getUpdated())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
   }
 
@@ -324,7 +324,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(0).getComponentsCount()).isEqualTo(35);
     assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(1);
     assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(2);
-    assertThat(artifactListingResponses.get(0).getUpdatedAt())
+    assertThat(artifactListingResponses.get(0).getUpdated())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
 
     assertThat(artifactListingResponses.get(1).getId()).isEqualTo("artifact2");
@@ -336,7 +336,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(1);
     assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(0);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
-    assertThat(artifactListingResponses.get(1).getUpdatedAt())
+    assertThat(artifactListingResponses.get(1).getUpdated())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
   }
 

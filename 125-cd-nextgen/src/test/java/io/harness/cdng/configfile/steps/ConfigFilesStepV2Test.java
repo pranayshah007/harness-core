@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -142,6 +143,9 @@ public class ConfigFilesStepV2Test extends CategoryTest {
     doCallRealMethod()
         .when(cdStepHelper)
         .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anyList(), anyString(), anyBoolean());
     doAnswer(invocationOnMock -> UUIDGenerator.generateUuid())
         .when(delegateGrpcClientWrapper)
         .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));

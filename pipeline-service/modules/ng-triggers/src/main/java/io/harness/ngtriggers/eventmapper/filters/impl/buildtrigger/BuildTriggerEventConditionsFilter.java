@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.TriggerEligibilityInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
@@ -55,14 +56,17 @@ public class BuildTriggerEventConditionsFilter implements TriggerFilter {
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
-        if (checkTriggerEligibility(filterRequestData, trigger)) {
+        TriggerEligibilityInfo triggerEligibilityInfo = checkTriggerEligibility(filterRequestData, trigger);
+        if (triggerEligibilityInfo.isResult()) {
           matchedTriggers.add(trigger);
         } else {
           UnMatchedTriggerInfo unMatchedTriggerInfo =
               UnMatchedTriggerInfo.builder()
                   .unMatchedTriggers(trigger)
                   .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_EVENT_CONDITION)
-                  .message(trigger.getNgTriggerEntity().getIdentifier() + " didn't match conditions for payload event")
+                  .message("Conditions mentioned in trigger with identifier "
+                      + trigger.getNgTriggerEntity().getIdentifier() + " did not match. "
+                      + triggerEligibilityInfo.getMessage())
                   .build();
           unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
@@ -88,7 +92,8 @@ public class BuildTriggerEventConditionsFilter implements TriggerFilter {
     return mappingResponseBuilder.build();
   }
 
-  boolean checkTriggerEligibility(FilterRequestData filterRequestData, TriggerDetails triggerDetails) {
+  TriggerEligibilityInfo checkTriggerEligibility(FilterRequestData filterRequestData, TriggerDetails triggerDetails) {
+    String message = null;
     String version = filterRequestData.getPollingResponse().getBuildInfo().getVersions(0);
 
     List<TriggerEventDataCondition> triggerEventConditions = null;
@@ -108,12 +113,19 @@ public class BuildTriggerEventConditionsFilter implements TriggerFilter {
     }
 
     if (isEmpty(triggerEventConditions)) {
-      return true;
+      return TriggerEligibilityInfo.builder().result(true).build();
     }
 
     TriggerEventDataCondition condition = triggerEventConditions.get(0);
 
-    return ("version".equals(condition.getKey()) || "build".equals(condition.getKey()))
+    boolean result = ("version".equals(condition.getKey()) || "build".equals(condition.getKey()))
         && ConditionEvaluator.evaluate(version, condition.getValue(), condition.getOperator().getValue());
+
+    if (!result) {
+      message = String.format("%s didn't match %s on applying %s operator", version, condition.getValue(),
+          condition.getOperator().getValue());
+    }
+
+    return TriggerEligibilityInfo.builder().result(result).message(message).build();
   }
 }

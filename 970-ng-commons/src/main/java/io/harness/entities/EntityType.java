@@ -679,7 +679,9 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.ASG_SHIFT_TRAFFIC, IdentifierRef.class, EntityYamlRootNames.ASG_SHIFT_TRAFFIC),
   @JsonProperty(EntityTypeConstants.AQUA_SECURITY)
   AQUA_SECURITY(
-      ModuleType.STO, EntityTypeConstants.AQUA_SECURITY, IdentifierRef.class, EntityYamlRootNames.AQUA_SECURITY);
+      ModuleType.STO, EntityTypeConstants.AQUA_SECURITY, IdentifierRef.class, EntityYamlRootNames.AQUA_SECURITY),
+  @JsonProperty(EntityTypeConstants.IDP_STAGE)
+  IDP_STAGE(ModuleType.IDP, EntityTypeConstants.IDP_STAGE, IdentifierRef.class, EntityYamlRootNames.IDP_STAGE);
 
   private final ModuleType moduleType;
   String yamlName;
