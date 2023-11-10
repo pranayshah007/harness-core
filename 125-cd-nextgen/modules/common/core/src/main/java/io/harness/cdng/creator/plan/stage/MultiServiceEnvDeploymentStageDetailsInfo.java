@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -17,11 +18,14 @@ import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.annotation.TypeAlias;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
@@ -41,9 +45,31 @@ public class MultiServiceEnvDeploymentStageDetailsInfo implements DeploymentStag
   @Nullable private Set<String> serviceIdentifiers;
   @Nullable private Set<String> serviceNames;
   @Nullable private String envGroup;
+  @Nullable private String envGroupName;
+  public static final String NOT_AVAILABLE = "NA";
 
   @Override
   public CDStageSummaryResponseDTO getFormattedStageSummary() {
+    String environmentFormattedString = StringUtils.defaultIfBlank(
+        getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
+    String serviceFormattedString = StringUtils.defaultIfBlank(
+        getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
+    String infraFormattedString = StringUtils.defaultIfBlank(
+        getFormattedStringForEntities(envNames), getFormattedStringForEntities(envIdentifiers));
+    String envGroupFormattedString = StringUtils.defaultIfBlank(envGroupName, envGroup);
+
+    return CDStageSummaryResponseDTO.builder()
+        .services(StringUtils.defaultIfBlank(serviceFormattedString, NOT_AVAILABLE))
+        .infras(StringUtils.defaultIfBlank(infraFormattedString, NOT_AVAILABLE))
+        .environments(StringUtils.defaultIfBlank(environmentFormattedString, NOT_AVAILABLE))
+        .envGroup(StringUtils.defaultIfBlank(envGroupFormattedString, NOT_AVAILABLE))
+        .build();
+  }
+
+  private String getFormattedStringForEntities(Collection<String> entities) {
+    if (isNotEmpty(entities)) {
+      return Arrays.toString(entities.toArray());
+    }
     return null;
   }
 }

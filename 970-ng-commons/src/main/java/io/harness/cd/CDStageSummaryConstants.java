@@ -22,6 +22,10 @@ public final class CDStageSummaryConstants {
   public static final String SERVICE = "Service";
   public static final String ENVIRONMENT = "Environment";
   public static final String INFRA_DEFINITION = "Infrastructure Definition";
+  public static final String SERVICES = "Services";
+  public static final String ENVIRONMENTS = "Environments";
+  public static final String INFRA_DEFINITIONS = "Infrastructure Definitions";
+  public static final String ENVIRONMENT_GROUP = "Environment Group";
   public static final String STAGE_IDENTIFIERS_KEY = "stageIdentifiers";
   public static final String STAGE_IDENTIFIERS_PARAM_MESSAGE = "List of stage identifiers";
   public static final String STAGE_EXECUTION_IDENTIFIERS_KEY = "stageExecutionIdentifiers";

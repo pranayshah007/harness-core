@@ -48,5 +48,25 @@ public class CDStageSummaryResponseDTO {
   @Schema(description = CDStageSummaryConstants.INFRA_DEFINITION)
   @Nullable
   String infra;
+
+  @JsonProperty(CDStageSummaryConstants.SERVICES)
+  @Schema(description = CDStageSummaryConstants.SERVICES)
+  @Nullable
+  String services;
+
+  @JsonProperty(CDStageSummaryConstants.ENVIRONMENTS)
+  @Schema(description = CDStageSummaryConstants.ENVIRONMENTS)
+  @Nullable
+  String environments;
+
+  @JsonProperty(CDStageSummaryConstants.INFRA_DEFINITIONS)
+  @Schema(description = CDStageSummaryConstants.INFRA_DEFINITIONS)
+  @Nullable
+  String infras;
+
+  @JsonProperty(CDStageSummaryConstants.ENVIRONMENT_GROUP)
+  @Schema(description = CDStageSummaryConstants.ENVIRONMENT_GROUP)
+  @Nullable
+  String envGroup;
   // Maintain union of fields from subtypes of io.harness.cdng.creator.plan.stage.DeploymentStageDetailsInfo
 }
