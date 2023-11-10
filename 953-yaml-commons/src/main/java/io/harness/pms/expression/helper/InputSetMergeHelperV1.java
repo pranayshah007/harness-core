@@ -34,7 +34,7 @@ public class InputSetMergeHelperV1 {
    * @param entityJsonNode This is JsonNode for the complete entity-yaml. This jsoNode might refer some inputs and we
    *     want to resolve those reference with the values.
    * @return returns the resolved YAML for the given entityJsonNode.
-   ***/
+   */
   public String mergeInputSetIntoPipelineYaml(JsonNode inputSetJsonNode, JsonNode entityJsonNode) {
     if (EmptyPredicate.isEmpty(inputSetJsonNode)) {
       return YamlUtils.writeYamlString(entityJsonNode);
