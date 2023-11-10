@@ -912,6 +912,7 @@ workflowVerificationResults {"name": "stateExecutionId_1", "unique": true} {"sta
 workflowVerificationResults {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 workflows {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
 workflows {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
+workflows {"name": "accountId_workflowType_createdAt_id_appId", "background": true} {"accountId": 1, "workflowType": 1, "createdAt": -1, "_id": 1, "appId": 1}
 workflows {"name": "account_orchestrationWorkflowTypeIndex", "background": true} {"accountId": 1, "orchestration.orchestrationWorkflowType": 1}
 workflows {"name": "appId_1", "background": true} {"appId": 1}
 workflows {"name": "appId_name", "background": true} {"appId": 1, "name": 1}

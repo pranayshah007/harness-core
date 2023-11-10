@@ -110,6 +110,14 @@ public class Workflow
                  .field(WorkflowKeys.templatized)
                  .field(WorkflowKeys.templateExpressions)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_workflowType_createdAt_id_appId")
+                 .field(WorkflowKeys.accountId)
+                 .field(WorkflowKeys.workflowType)
+                 .descSortField(WorkflowKeys.createdAt)
+                 .rangeField("_id")
+                 .rangeField(WorkflowKeys.appId)
+                 .build())
         .build();
   }
 
