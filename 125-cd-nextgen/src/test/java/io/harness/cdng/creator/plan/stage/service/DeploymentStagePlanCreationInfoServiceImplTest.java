@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.stage.service;
 
 import static io.harness.rule.OwnerRule.NAMANG;
 
+import static org.apache.sshd.common.util.GenericUtils.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.times;
@@ -18,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePlanCreationInfo;
+import io.harness.cdng.creator.plan.stage.MultiServiceEnvDeploymentStageDetailsInfo;
 import io.harness.cdng.creator.plan.stage.SingleServiceEnvDeploymentStageDetailsInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.cdstage.CDStageSummaryResponseDTO;
@@ -26,10 +28,12 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -177,6 +181,82 @@ public class DeploymentStagePlanCreationInfoServiceImplTest extends CategoryTest
                 .service(SERVICE_NAME)
                 .environment(ENVIRONMENT_IDENTIFIER)
                 .infra("NA")
+                .build());
+
+    verify(deploymentStagePlanCreationInfoRepository, times(1))
+        .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndStageIdentifierIn(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, PLAN_ID, new HashSet<>(STAGE_IDENTIFIERS));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testListMultiStagePlanCreationFormattedSummaryByStageIdentifiers() {
+    DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfoWithNames =
+        DeploymentStagePlanCreationInfo.builder()
+            .stageIdentifier("id1")
+            .deploymentStageDetailsInfo(
+                MultiServiceEnvDeploymentStageDetailsInfo.builder()
+                    .serviceIdentifiers(asList(SERVICE_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .serviceNames(asList(SERVICE_NAME).stream().collect(Collectors.toSet()))
+                    .infraIdentifiers(asList(INFRA_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .infraNames(asList(INFRA_NAME).stream().collect(Collectors.toSet()))
+                    .envIdentifiers(asList(ENVIRONMENT_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .envNames(asList(ENVIRONMENT_NAME).stream().collect(Collectors.toSet()))
+                    .build())
+            .build();
+    DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfoWithoutNames =
+        DeploymentStagePlanCreationInfo.builder()
+            .stageIdentifier("id2")
+            .deploymentStageDetailsInfo(
+                MultiServiceEnvDeploymentStageDetailsInfo.builder()
+                    .serviceIdentifiers(asList(SERVICE_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .infraIdentifiers(asList(INFRA_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .envIdentifiers(asList(ENVIRONMENT_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .build())
+            .build();
+    DeploymentStagePlanCreationInfo deploymentStagePlanCreationInfoWithNA =
+        DeploymentStagePlanCreationInfo.builder()
+            .stageIdentifier("id3")
+            .deploymentStageDetailsInfo(
+                MultiServiceEnvDeploymentStageDetailsInfo.builder()
+                    .serviceIdentifiers(asList(SERVICE_NAME).stream().collect(Collectors.toSet()))
+                    .infraIdentifiers(new HashSet<>())
+                    .envIdentifiers(asList(ENVIRONMENT_IDENTIFIER).stream().collect(Collectors.toSet()))
+                    .build())
+            .build();
+
+    Mockito
+        .when(deploymentStagePlanCreationInfoRepository
+                  .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndStageIdentifierIn(
+                      ACCOUNT_ID, ORG_ID, PROJECT_ID, PLAN_ID, new HashSet<>(STAGE_IDENTIFIERS)))
+        .thenReturn(List.of(deploymentStagePlanCreationInfoWithoutNames, deploymentStagePlanCreationInfoWithNames,
+            deploymentStagePlanCreationInfoWithNA));
+    Map<String, CDStageSummaryResponseDTO> stageMap =
+        deploymentStagePlanCreationInfoService.listStagePlanCreationFormattedSummaryByStageIdentifiers(
+            Scope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID), PLAN_ID, STAGE_IDENTIFIERS);
+    assertThat(stageMap)
+        .hasSize(3)
+        .containsEntry("id1",
+            CDStageSummaryResponseDTO.builder()
+                .services(Arrays.toString(Arrays.asList(SERVICE_NAME).toArray()))
+                .environments(Arrays.toString(Arrays.asList(ENVIRONMENT_NAME).toArray()))
+                .infras(Arrays.toString(Arrays.asList(INFRA_NAME).toArray()))
+                .envGroup("NA")
+                .build())
+        .containsEntry("id2",
+            CDStageSummaryResponseDTO.builder()
+                .services(Arrays.toString(Arrays.asList(SERVICE_IDENTIFIER).toArray()))
+                .environments(Arrays.toString(Arrays.asList(ENVIRONMENT_IDENTIFIER).toArray()))
+                .infras(Arrays.toString(Arrays.asList(INFRA_IDENTIFIER).toArray()))
+                .envGroup("NA")
+                .build())
+        .containsEntry("id3",
+            CDStageSummaryResponseDTO.builder()
+                .services(Arrays.toString(Arrays.asList(SERVICE_NAME).toArray()))
+                .environments(Arrays.toString(Arrays.asList(ENVIRONMENT_IDENTIFIER).toArray()))
+                .infras("NA")
+                .envGroup("NA")
                 .build());
 
     verify(deploymentStagePlanCreationInfoRepository, times(1))
