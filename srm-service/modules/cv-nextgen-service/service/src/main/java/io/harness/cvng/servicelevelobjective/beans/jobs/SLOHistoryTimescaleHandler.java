@@ -5,18 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.jobs;
+package io.harness.cvng.servicelevelobjective.beans.jobs;
 
-import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 
-public class SLOHealthIndicatorTimescaleHandler implements MongoPersistenceIterator.Handler<SLOHealthIndicator> {
+public class SLOHistoryTimescaleHandler implements MongoPersistenceIterator.Handler<AbstractServiceLevelObjective> {
   @Inject SLOTimeScaleService sloTimeScaleService;
   @Override
-  public void handle(SLOHealthIndicator sloHealthIndicator) {
-    sloTimeScaleService.upsertSloHealthIndicator(sloHealthIndicator);
+  public void handle(AbstractServiceLevelObjective serviceLevelObjective) {
+    sloTimeScaleService.insertSLOHistory(serviceLevelObjective);
   }
 }

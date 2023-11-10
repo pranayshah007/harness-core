@@ -34,6 +34,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
@@ -59,6 +60,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
+import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetBurnDownDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
@@ -981,6 +983,18 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   public SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO) {
     return sloErrorBudgetResetService.resetErrorBudget(projectParams, resetDTO);
   }
+
+  @Override
+  public ErrorBudgetBurnDownDTO saveErrorBudgetBurnDown(
+      ProjectParams projectParams, ErrorBudgetBurnDownDTO errorBudgetBurnDownDTO) {
+    return null;
+  }
+
+  @Override
+  public PageResponse<ErrorBudgetBurnDownDTO> get(ProjectPathParams projectPathParams, String identifier) {
+    return null;
+  }
+
   @Override
   public void handleNotification(AbstractServiceLevelObjective serviceLevelObjective) {
     ProjectParams projectParams = ProjectParams.builder()

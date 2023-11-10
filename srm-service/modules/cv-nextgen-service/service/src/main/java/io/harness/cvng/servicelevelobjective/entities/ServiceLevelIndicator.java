@@ -138,6 +138,8 @@ public abstract class ServiceLevelIndicator
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {}
   }
   @FdIndex Long createNextTaskIteration;
+  @FdIndex Long createNextStateMachineIteration;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -156,6 +158,8 @@ public abstract class ServiceLevelIndicator
     if (fieldName.equals(ServiceLevelIndicatorKeys.createNextTaskIteration)) {
       this.createNextTaskIteration = nextIteration;
       return;
+    } else if (fieldName.equals(ServiceLevelIndicatorKeys.createNextStateMachineIteration)) {
+      this.createNextStateMachineIteration = nextIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -164,6 +168,8 @@ public abstract class ServiceLevelIndicator
   public Long obtainNextIteration(String fieldName) {
     if (fieldName.equals(ServiceLevelIndicatorKeys.createNextTaskIteration)) {
       return createNextTaskIteration;
+    } else if (fieldName.equals(ServiceLevelIndicatorKeys.createNextStateMachineIteration)) {
+      return createNextStateMachineIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
