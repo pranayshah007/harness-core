@@ -9,49 +9,51 @@ package io.harness.version;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.VersionInfoException;
-import io.harness.serializer.YamlUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import io.dropwizard.Application;
+import io.dropwizard.setup.Environment;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
+import java.util.HashMap;
+import java.util.Map;
 
-@Slf4j
-@OwnedBy(PL)
-public class VersionInfoManager {
-  private static final String INIT_VERSION_INFO = "BUILD_VERSION: 0.0.0\n"
-          + "BUILD_TIME: 000000-0000\n"
-          + "BRANCH_NAME: unknown\n"
-          + "COMMIT_SHA: 000000";
+public class VersionInfoManagerV2 extends Application<Configuration> {
+  public static void main(String[] args) throws Exception {
+    new VersionInfoManagerV2().run(args);
+  }
 
-  private final VersionInfo versionInfo;
-  private String fullVersion;
+  @Override
+  public void run(Configuration configuration, Environment environment) {
+    // Read the YAML file from the Docker container
+    String filePath = "/opt/harness/version.yaml";
+    Map<String, String> versionInfo = readYamlFile(filePath);
 
-  private static String initVersionInfo() {
-    String versionInfoYaml = VersionInfoManager.INIT_VERSION_INFO;
+    // Register a resource that returns the JSON response
+    environment.jersey().register(new VersionInfoResource(versionInfo));
+  }
 
-    try {
-      // Load version.yaml from the specified path
-      final InputStream stream = VersionInfoManager.class.getClassLoader().getResourceAsStream("/opt/harness/version.yaml");
-      if (stream != null) {
-        versionInfoYaml = IOUtils.toString(stream, StandardCharsets.UTF_8);
-      }
-    } catch (IOException exception) {
-      log.error("Error reading version info from file", exception);
-      throw new VersionInfoException(String.format("Failed to parse yaml content %s", versionInfoYaml), exception);
+  // Helper method to read the YAML file and parse its content
+  private Map<String, String> readYamlFile(String filePath) {
+    Map<String, String> versionInfo = new HashMap<>();
+    Yaml yaml = new Yaml();
+
+    try (FileReader fileReader = new FileReader(filePath)) {
+      versionInfo = yaml.load(fileReader);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    return versionInfoYaml;
+    return versionInfo;
   }
 
-  public VersionInfoManager() {
-    this(initVersionInfo());
-  }
-
-  public VersionInfo getVersionInfo() {
-    return this.versionInfo;
+  // Configure Jackson to format the JSON response nicely
+  @Override
+  public void configure(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+    objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+    objectMapper.setDateFormat(new StdDateFormat());
   }
 }
