@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.resources.nexus.service;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
@@ -69,6 +70,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
@@ -123,6 +125,12 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    if (StringUtils.isBlank(extension)) {
+      extension = null;
+    }
+    if (StringUtils.isBlank(classifier)) {
+      classifier = null;
+    }
     NexusArtifactDelegateRequest nexusRequest =
         ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(repositoryName, repositoryPort, artifactPath,
             repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,

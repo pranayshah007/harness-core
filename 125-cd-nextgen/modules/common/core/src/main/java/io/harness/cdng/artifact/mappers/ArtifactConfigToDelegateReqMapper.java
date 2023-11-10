@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.mappers;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -677,7 +678,12 @@ public class ArtifactConfigToDelegateReqMapper {
       extension = (String) nexusRegistryMavenConfig.getExtension().fetchFinalValue();
       classifier = (String) nexusRegistryMavenConfig.getClassifier().fetchFinalValue();
     }
-
+    if (StringUtils.isBlank(extension)) {
+      extension = null;
+    }
+    if (StringUtils.isBlank(classifier)) {
+      classifier = null;
+    }
     return ArtifactDelegateRequestUtils.getNexusArtifactDelegateRequest(
         (String) artifactConfig.getRepository().fetchFinalValue(), port, artifactId,
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactRepositoryUrl, tag, tagRegex,
