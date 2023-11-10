@@ -139,7 +139,9 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       }
       foldersToIngestSet.add(maxSizedVersionedFolderName);
     }
-    List<String> foldersToIngest = new ArrayList<>(foldersToIngestSet);
+    List<String> foldersToIngest = new ArrayList<>();
+    foldersToIngest.add(
+        "AROA47KYUDENVZA362ALZ:W50osoQJS42JItbue3ddhA/harnessceprod/test_utsav_automation/20230901-20231001");
 
     log.info("\nFollowing folders will be ingested:\n" + String.join(", ", foldersToIngest));
 
@@ -392,7 +394,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
               "SET input_format_csv_skip_first_lines=1; SET max_memory_usage=1000000000000; INSERT INTO "
               + awsBillingTableId + " SELECT * FROM s3('https://"
               + configuration.getAwsS3SyncConfig().getAwsS3BucketName() + ".s3.amazonaws.com/"
-              + "AROA47KYUDENVZA362ALZ:W50osoQJS42JItbue3ddhA/harnessceprod/test_utsav_automation/20230901-20231001/harness-customer-billing-data-prod-*.csv.gz"
+              + "AROA47KYUDENVZA362ALZ:W50osoQJS42JItbue3ddhA/harnessceprod/test_utsav_automation/20230901-20231001/harness-customer-billing-data-prod*.csv.gz"
               + "','" + configuration.getAwsS3SyncConfig().getAwsAccessKey() + "','"
               + configuration.getAwsS3SyncConfig().getAwsSecretKey()
               + "', 'CSV') SETTINGS date_time_input_format='best_effort'";
