@@ -29,6 +29,7 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -261,19 +262,12 @@ public class CEViewDao {
     return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).count();
   }
 
-  public Long countByAccountIdAndFolderIds(String accountId, Set<String> folderIds, String searchKey,
-      List<CloudFilter> cloudFilters, boolean excludeDefault) {
+  public Long countByAccountIdAndFolderIds(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
     Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, cloudFilters);
-    query = getDefaultFilterCount(query, excludeDefault);
     return query.count();
   }
 
-  public Query<CEView> getDefaultFilterCount(Query<CEView> query, boolean excludeDefault) {
-    if (excludeDefault) {
-      query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
-    }
-    return query;
-  }
   public Query<CEView> getDefaultFilterPerspectives(Query<CEView> query, boolean excludeDefault) {
     if (!excludeDefault) {
       query.filter(CEViewKeys.viewType, ViewType.DEFAULT);
@@ -317,18 +311,20 @@ public class CEViewDao {
     Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, filters);
     query = getDefaultFilterPerspectives(query, excludeDefault);
     query = decorateQueryWithSortCriteria(query, sortCriteria);
-    final Long defaultPerspectiveCount = countByAccountIdAndFolderIds(accountId, folderIds, searchKey, filters, true);
-    if (pageNo.equals(0) && excludeDefault) {
-      query.limit((int) (pageSize - defaultPerspectiveCount));
-      query.offset(0);
-    } else {
-      query.limit(pageSize);
-    }
-    if (defaultPerspectiveCount > 0 && !pageNo.equals(0)) {
-      query.offset((int) ((pageNo * pageSize) - defaultPerspectiveCount));
-    } else {
-      query.offset(pageNo * pageSize);
-    }
+    final Long defaultPerspectiveCount = countByAccountIdAndFolderIds(accountId, folderIds, searchKey, filters);
+    int limit = Objects.equals(pageNo, 0) ? (int) (pageSize - defaultPerspectiveCount) : pageSize;
+    int offset = Objects.equals(pageNo, 0) ? 0 : (int) (pageNo * pageSize - defaultPerspectiveCount);
+    query.limit(limit);
+    query.offset(offset);
+    return query.asList();
+  }
+  public List<CEView> findByAccountIdAndFolderId(String accountId, Set<String> folderIds,
+      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
+      List<CloudFilter> filters) {
+    Query<CEView> query = getPaginationFiltersQuery(accountId, folderIds, searchKey, filters);
+    query = decorateQueryWithSortCriteria(query, sortCriteria);
+    query.limit(pageSize);
+    query.offset(pageNo * pageSize);
     return query.asList();
   }
 

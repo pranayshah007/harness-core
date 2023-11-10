@@ -234,6 +234,13 @@ public class PerspectiveService {
         accountId, true, sortCriteria, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters);
   }
 
+  public List<QLCEView> perspectives(QLCEViewSortCriteria sortCriteria, String accountId, Integer pageSize,
+      Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters, boolean excludeDefault) {
+    return viewService.getAllViews(accountId, true, sortCriteria, pageSize, pageNo, searchKey, folders,
+        allowedFolderIds, cloudFilters, excludeDefault);
+  }
+
   public Integer perspectiveTotalCount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       ViewPreferences viewPreferences, Boolean isClusterQuery, String accountId) {
     isClusterQuery = isClusterQuery != null && isClusterQuery;

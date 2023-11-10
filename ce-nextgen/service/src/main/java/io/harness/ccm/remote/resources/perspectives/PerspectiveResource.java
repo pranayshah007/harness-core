@@ -460,9 +460,9 @@ public class PerspectiveResource {
     Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
         folders.stream().map(CEViewFolder::getUuid).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
     perspectiveDataBuilder.totalCount(
-        ceViewService.countByAccountIdAndFolderId(accountId, allowedFolderIds, searchKey, cloudFilters,false));
+        ceViewService.countByAccountIdAndFolderId(accountId, allowedFolderIds, searchKey, cloudFilters));
     perspectiveDataBuilder.views(perspectiveService.perspectives(
-        sortCriteria, accountId, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters));
+        sortCriteria, accountId, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters, true));
     return ResponseDTO.newResponse(perspectiveDataBuilder.build());
   }
 

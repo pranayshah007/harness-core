@@ -46,9 +46,15 @@ public interface CEViewService {
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
       Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
       List<CloudFilter> cloudFilters);
+  List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters, boolean excludeDefault);
   List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault,
       QLCEViewSortCriteria sortCriteria, Integer pageSize, Integer pageNo, String searchKey,
       List<CloudFilter> cloudFilters);
+
+  public List<CEView> getFirstPageViews(String accountId, QLCEViewSortCriteria sortCriteria, Integer pageSize,
+      Integer pageNo, String searchKey, Set<String> allowedFolderIds, List<CloudFilter> cloudFilters);
 
   List<CEViewShortHand> getAllViewsShortHand(String accountId);
   List<CEView> getViewByState(String accountId, ViewState viewState);
@@ -64,6 +70,6 @@ public interface CEViewService {
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
   Long countByAccountIdAndFolderId(
-      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters, boolean excludeDefault);
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters);
   Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(ViewIdCondition viewIdCondition, String accountId);
 }

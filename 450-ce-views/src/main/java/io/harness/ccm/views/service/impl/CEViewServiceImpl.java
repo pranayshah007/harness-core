@@ -508,18 +508,27 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
+  public List<CEView> getFirstPageViews(String accountId, QLCEViewSortCriteria sortCriteria, Integer pageSize,
+      Integer pageNo, String searchKey, Set<String> allowedFolderIds, List<CloudFilter> cloudFilters) {
+    List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderId(
+        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, false);
+    int defaultPerspectiveCount = defaultViewList.size();
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(accountId, allowedFolderIds, sortCriteria, pageNo,
+        pageSize - defaultPerspectiveCount, searchKey, cloudFilters, true);
+    defaultViewList.addAll(viewList);
+    viewList = defaultViewList;
+    return viewList;
+  }
+
+  @Override
   public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
       Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
       List<CloudFilter> cloudFilters) {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
     List<CEView> viewList;
-    if (pageNo.equals(0)) {
-      List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderId(
-          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, false);
-      viewList = ceViewDao.findByAccountIdAndFolderId(
-          accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
-      viewList.addAll(defaultViewList);
-      Collections.reverse(viewList);
+    if (Objects.equals(pageNo, 0)) {
+      viewList =
+          getFirstPageViews(accountId, sortCriteria, pageSize, pageNo, searchKey, allowedFolderIds, cloudFilters);
     } else {
       viewList = ceViewDao.findByAccountIdAndFolderId(
           accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
@@ -529,13 +538,28 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
+  public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters, boolean excludeDefault) {
+    sortCriteria = getModifiedSortCriteria(sortCriteria);
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
+        accountId, allowedFolderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+    return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
+  }
+
+  @Override
   public List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault,
       QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
       List<CloudFilter> cloudFilters) {
     sortCriteria = getModifiedSortCriteria(sortCriteria);
     Set<String> folderIds = new HashSet<>(Collections.singleton(folderId));
-    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(
-        accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+    List<CEView> viewList;
+    if (Objects.equals(pageNo, 0)) {
+      viewList = getFirstPageViews(accountId, sortCriteria, pageSize, pageNo, searchKey, folderIds, cloudFilters);
+    } else {
+      viewList = ceViewDao.findByAccountIdAndFolderId(
+          accountId, folderIds, sortCriteria, pageNo, pageSize, searchKey, cloudFilters, true);
+    }
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
     return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
   }
@@ -843,16 +867,16 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public Long countByAccountIdAndFolderId(String accountId, Set<String> folderIds, String searchKey,
-      List<CloudFilter> cloudFilters, boolean excludeDefault) {
-    return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters, excludeDefault);
+  public Long countByAccountIdAndFolderId(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
+    return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters);
   }
 
   public QLCEViewSortCriteria getModifiedSortCriteria(QLCEViewSortCriteria sortCriteria) {
     QLCEViewSortCriteria modifiedSortCriteria = sortCriteria;
     if (Objects.isNull(sortCriteria.getSortOrder()) && Objects.isNull(sortCriteria.getSortType())) {
       modifiedSortCriteria =
-          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.ASCENDING).sortType(QLCEViewSortType.NAME).build();
+          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.ASCENDING).sortType(QLCEViewSortType.TIME).build();
     }
     return modifiedSortCriteria;
   }
