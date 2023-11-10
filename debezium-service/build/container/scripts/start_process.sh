@@ -35,6 +35,10 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_JMX_PROMETHEUS}" == "true" ]]; then
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/jmx_prometheus_javaagent-0.17.0.jar=73734:jmx_prometheus_config.yaml"
+fi
+
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
 else

@@ -24,7 +24,12 @@ function download_saas_apm_binaries(){
   echo "INFO: Download Status: ${JACOCO_AGENT##*/}: $STATUS4"
   chmod 711 ${JACOCO_AGENT##*/}
 
-	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ] ; then
+curl ${JMX_METRICS_AGENT} --output JmxMetricsAgent.zip; STATUS5=$?
+	echo "INFO: Download Status: ${JMX_METRICS_AGENT##*/}: $STATUS2"
+	chmod 711 ${JMX_METRICS_AGENT##*/}
+
+
+	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ] && [ "${STATUS5}" -eq 0 ] ; then
 		echo "Download Finished..."
 	else
 		echo "Failed to Download Saas APM Binaries. Exiting..."
@@ -36,6 +41,7 @@ export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/a
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
 export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/1.27.0/opentelemetry-javaagent.jar'
 export JACOCO_AGENT='https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.7/jacoco-0.8.7.zip'
+export JMX_METRICS_AGENT='https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.0/jmx_prometheus_javaagent-0.17.0.jar'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."
 download_saas_apm_binaries

@@ -12,6 +12,7 @@ COPY --chown=65534:65534 debezium-service-capsule.jar /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 jmx_prometheus_config.yaml /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 COPY --chown=65534:65534 default.jfc /opt/harness/
