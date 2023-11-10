@@ -18,8 +18,6 @@ import static io.harness.telemetry.helpers.InstrumentationConstants.IS_ARTIFACT_
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.Destination;
@@ -68,7 +66,7 @@ public class CDInstrumentationHelper extends InstrumentationHelper {
                         .put(Destination.AMPLITUDE, true)
                         .put(Destination.ALL, false)
                         .build(),
-                    Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build()));
+                    Category.CDS, TelemetryOption.builder().sendForCommunity(true).build()));
       } else {
         log.info("There is no account found for account ID = " + accountId + "!. Cannot send " + eventName + " event.");
       }

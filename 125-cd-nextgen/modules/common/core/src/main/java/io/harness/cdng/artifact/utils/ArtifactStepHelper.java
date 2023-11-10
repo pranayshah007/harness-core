@@ -96,6 +96,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.telemetry.helpers.CDInstrumentationHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
@@ -128,6 +129,7 @@ public class ArtifactStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject CDInstrumentationHelper instrumentationHelper;
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
     if (artifactsOutcome != null) {
@@ -187,7 +189,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, connectorConfig.getAuth().getCredentials());
         }
         return ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(dockerConfig, connectorConfig,
-            encryptedDataDetails, dockerConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, dockerConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case GOOGLE_ARTIFACT_REGISTRY:
         GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
         connectorDTO = getConnector(googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
@@ -204,7 +207,7 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
             encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue(), accountId, orgId,
-            projectId);
+            projectId, instrumentationHelper);
 
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
@@ -221,7 +224,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO.getCredential().getConfig());
         }
         return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
-            encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -238,7 +242,7 @@ public class ArtifactStepHelper {
 
         return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
             githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue(),
-            accountId, orgId, projectId);
+            accountId, orgId, projectId, instrumentationHelper);
       case AZURE_ARTIFACTS:
         AzureArtifactsConfig azureArtifactsConfig = (AzureArtifactsConfig) artifactConfig;
 
@@ -258,7 +262,7 @@ public class ArtifactStepHelper {
 
         return ArtifactConfigToDelegateReqMapper.getAzureArtifactsDelegateRequest(azureArtifactsConfig,
             azureArtifactsConnectorDTO, encryptedDataDetails, azureArtifactsConfig.getConnectorRef().getValue(),
-            accountId, orgId, projectId);
+            accountId, orgId, projectId, instrumentationHelper);
       case AMI:
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
 
@@ -278,7 +282,8 @@ public class ArtifactStepHelper {
         }
 
         return ArtifactConfigToDelegateReqMapper.getAMIDelegateRequest(amiArtifactConfig, awsConnectorDTO1,
-            encryptedDataDetails, amiArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, amiArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -293,7 +298,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
         }
         return ArtifactConfigToDelegateReqMapper.getGcrDelegateRequest(gcrArtifactConfig, gcpConnectorDTO,
-            encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, gcrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case ECR:
         EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(ecrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -308,7 +314,8 @@ public class ArtifactStepHelper {
               ngAccess, (DecryptableEntity) connector.getCredential().getConfig());
         }
         return ArtifactConfigToDelegateReqMapper.getEcrDelegateRequest(ecrArtifactConfig, connector,
-            encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case NEXUS3_REGISTRY:
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexusRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -325,7 +332,7 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(nexusRegistryArtifactConfig,
             nexusConnectorDTO, encryptedDataDetails, nexusRegistryArtifactConfig.getConnectorRef().getValue(),
-            accountId, orgId, projectId);
+            accountId, orgId, projectId, instrumentationHelper);
       case NEXUS2_REGISTRY:
         Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig = (Nexus2RegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexus2RegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -342,7 +349,7 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getNexus2ArtifactDelegateRequest(nexus2RegistryArtifactConfig,
             nexus2ConnectorDTO, encryptedDataDetails, nexus2RegistryArtifactConfig.getConnectorRef().getValue(),
-            accountId, orgId, projectId);
+            accountId, orgId, projectId, instrumentationHelper);
       case ARTIFACTORY_REGISTRY:
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
@@ -360,7 +367,8 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getArtifactoryArtifactDelegateRequest(
             artifactoryRegistryArtifactConfig, artifactoryConnectorDTO, encryptedDataDetails,
-            artifactoryRegistryArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            artifactoryRegistryArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case ACR:
         AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(acrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -386,7 +394,8 @@ public class ArtifactStepHelper {
           }
         }
         return ArtifactConfigToDelegateReqMapper.getAcrDelegateRequest(acrArtifactConfig, azureConnectorDTO,
-            encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case JENKINS:
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -402,7 +411,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, jenkinsConnectorDTO.getAuth().getCredentials());
         }
         return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
-            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case BAMBOO:
         BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
         connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -418,7 +428,8 @@ public class ArtifactStepHelper {
               secretManagerClientService.getEncryptionDetails(ngAccess, bambooConnectorDTO.getAuth().getCredentials());
         }
         return ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(bambooArtifactConfig, bambooConnectorDTO,
-            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         /*
@@ -428,9 +439,10 @@ public class ArtifactStepHelper {
          */
         if (customArtifactConfig.isFromTrigger()) {
           return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
-              customArtifactConfig, ambiance, delegateMetricsService, ngSecretService);
+              customArtifactConfig, ambiance, delegateMetricsService, ngSecretService, instrumentationHelper);
         }
-        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
+        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+            customArtifactConfig, ambiance, instrumentationHelper);
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
             (GoogleCloudStorageArtifactConfig) artifactConfig;
@@ -448,7 +460,8 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getGoogleCloudStorageArtifactDelegateRequest(
             googleCloudStorageArtifactConfig, gcpConnectorDTO, encryptedDataDetails,
-            googleCloudStorageArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId);
+            googleCloudStorageArtifactConfig.getConnectorRef().getValue(), accountId, orgId, projectId,
+            instrumentationHelper);
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
         GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
             (GoogleCloudSourceArtifactConfig) artifactConfig;

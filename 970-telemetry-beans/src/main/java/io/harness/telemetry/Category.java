@@ -12,4 +12,5 @@ public interface Category {
   String GLOBAL = "GLOBAL";
   String COMMUNITY = "COMMUNITY";
   String PLATFORM = "PLATFORM";
+  String CDS = "CDS";
 }

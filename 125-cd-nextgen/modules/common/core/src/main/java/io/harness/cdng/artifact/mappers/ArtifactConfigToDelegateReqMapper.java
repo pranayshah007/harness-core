@@ -97,7 +97,6 @@ import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.expression.NgSecretManagerFunctor;
 
-import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -109,7 +108,6 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
-  @Inject CDInstrumentationHelper instrumentationHelper;
   private final String ACCEPT_ALL_REGEX = "\\*";
   private static final String ALL_REGEX = ".*?";
   private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
@@ -117,7 +115,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public DockerArtifactDelegateRequest getDockerDelegateRequest(DockerHubArtifactConfig artifactConfig,
       DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -163,7 +161,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     String bucket = (String) artifactConfig.getBucketName().fetchFinalValue();
     String filePath = (String) artifactConfig.getFilePath().fetchFinalValue();
     String filePathRegex = (String) artifactConfig.getFilePathRegex().fetchFinalValue();
@@ -203,7 +201,7 @@ public class ArtifactConfigToDelegateReqMapper {
   public GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(
       GithubPackagesArtifactConfig artifactConfig, GithubConnectorDTO connectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
-      String projectId) {
+      String projectId, CDInstrumentationHelper instrumentationHelper) {
     String versionRegex = artifactConfig.getVersionRegex() != null
         ? (StringUtils.isBlank((String) artifactConfig.getVersionRegex().fetchFinalValue())
                 ? ""
@@ -268,7 +266,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
       AzureArtifactsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     String versionRegex = (String) artifactConfig.getVersionRegex().fetchFinalValue();
 
     if (StringUtils.isBlank(versionRegex)) {
@@ -311,7 +309,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     String versionRegex = "";
 
     if (artifactConfig.getVersionRegex() != null
@@ -353,7 +351,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
       JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     String artifactPath =
         artifactConfig.getArtifactPath() != null ? (String) artifactConfig.getArtifactPath().fetchFinalValue() : "";
     String jobName = artifactConfig.getJobName() != null ? (String) artifactConfig.getJobName().fetchFinalValue() : "";
@@ -378,7 +376,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,
       BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     List<String> artifactPath = artifactConfig.getArtifactPaths() != null
         ? (List<String>) artifactConfig.getArtifactPaths().fetchFinalValue()
         : Collections.emptyList();
@@ -400,7 +398,7 @@ public class ArtifactConfigToDelegateReqMapper {
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber, buildRegex);
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
-      CustomArtifactConfig artifactConfig, Ambiance ambiance) {
+      CustomArtifactConfig artifactConfig, Ambiance ambiance, CDInstrumentationHelper instrumentationHelper) {
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     long timeout = TIME_OUT;
     String version = (String) artifactConfig.getVersion().fetchFinalValue();
@@ -439,7 +437,8 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,
-      DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService) {
+      DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService,
+      CDInstrumentationHelper instrumentationHelper) {
     String versionRegex = (String) artifactConfig.getVersionRegex().fetchFinalValue();
     String version = (String) artifactConfig.getVersion().fetchFinalValue();
 
@@ -559,7 +558,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
       GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all gcr artifacts.
     String tagRegex =
         gcrArtifactConfig.getTagRegex() != null ? (String) gcrArtifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -585,7 +584,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
   public GarDelegateRequest getGarDelegateRequest(GoogleArtifactRegistryConfig garArtifactConfig,
       GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all gcr artifacts.
     String versionRegex = garArtifactConfig.getVersionRegex() != null
         ? (String) garArtifactConfig.getVersionRegex().fetchFinalValue()
@@ -619,7 +618,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public EcrArtifactDelegateRequest getEcrDelegateRequest(EcrArtifactConfig ecrArtifactConfig,
       AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex =
         ecrArtifactConfig.getTagRegex() != null ? (String) ecrArtifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -648,7 +647,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(NexusRegistryArtifactConfig artifactConfig,
       NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -716,7 +715,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public NexusArtifactDelegateRequest getNexus2ArtifactDelegateRequest(Nexus2RegistryArtifactConfig artifactConfig,
       NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -767,20 +766,22 @@ public class ArtifactConfigToDelegateReqMapper {
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
-      String projectId) {
+      String projectId, CDInstrumentationHelper instrumentationHelper) {
     if (artifactConfig.getRepositoryFormat().fetchFinalValue().equals(generic.name())) {
-      return ArtifactConfigToDelegateReqMapper.getArtifactoryGenericArtifactDelegateRequest(
-          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId);
+      return ArtifactConfigToDelegateReqMapper.getArtifactoryGenericArtifactDelegateRequest(artifactConfig,
+          artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId,
+          instrumentationHelper);
     } else {
-      return ArtifactConfigToDelegateReqMapper.getArtifactoryDockerArtifactDelegateRequest(
-          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId);
+      return ArtifactConfigToDelegateReqMapper.getArtifactoryDockerArtifactDelegateRequest(artifactConfig,
+          artifactoryConnectorDTO, encryptedDataDetails, connectorRef, accountId, orgId, projectId,
+          instrumentationHelper);
     }
   }
 
   private ArtifactoryArtifactDelegateRequest getArtifactoryDockerArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
-      String projectId) {
+      String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex =
         artifactConfig.getTagRegex() != null ? (String) artifactConfig.getTagRegex().fetchFinalValue() : "";
@@ -812,7 +813,7 @@ public class ArtifactConfigToDelegateReqMapper {
   private ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
-      String projectId) {
+      String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, artifactPathFilter is latest among all artifacts.
     String artifactPathFilter = ParameterField.isNull(artifactConfig.getArtifactPathFilter())
         ? ""
@@ -848,7 +849,7 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public static ArtifactSourceDelegateRequest getAcrDelegateRequest(AcrArtifactConfig acrArtifactConfig,
       AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef,
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, CDInstrumentationHelper instrumentationHelper) {
     // If both are empty, regex is latest among all acr artifacts.
     String tagRegex = ParameterField.isNull(acrArtifactConfig.getTagRegex())
         ? ""
@@ -878,7 +879,7 @@ public class ArtifactConfigToDelegateReqMapper {
   public GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(
       GoogleCloudStorageArtifactConfig artifactConfig, GcpConnectorDTO gcpConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef, String accountId, String orgId,
-      String projectId) {
+      String projectId, CDInstrumentationHelper instrumentationHelper) {
     String project = (String) artifactConfig.getProject().fetchFinalValue();
     String bucket = (String) artifactConfig.getBucket().fetchFinalValue();
     String artifactPath = (String) artifactConfig.getArtifactPath().fetchFinalValue();
