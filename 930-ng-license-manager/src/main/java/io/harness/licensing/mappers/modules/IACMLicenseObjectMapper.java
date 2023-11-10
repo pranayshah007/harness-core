@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -24,7 +25,23 @@ public class IACMLicenseObjectMapper implements LicenseObjectMapper<IACMModuleLi
   }
 
   @Override
-  public IACMModuleLicense toEntity(IACMModuleLicenseDTO dto) {
-    return IACMModuleLicense.builder().numberOfDevelopers(dto.getNumberOfDevelopers()).build();
+  public IACMModuleLicense toEntity(IACMModuleLicenseDTO iacmModuleLicenseDTO) {
+    validateModuleLicenseDTO(iacmModuleLicenseDTO);
+
+    return IACMModuleLicense.builder().numberOfDevelopers(iacmModuleLicenseDTO.getNumberOfDevelopers()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(IACMModuleLicenseDTO iacmModuleLicenseDTO) {
+    if (iacmModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (iacmModuleLicenseDTO.getNumberOfDevelopers() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      iacmModuleLicenseDTO.setNumberOfDevelopers(mappingRatio * iacmModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }

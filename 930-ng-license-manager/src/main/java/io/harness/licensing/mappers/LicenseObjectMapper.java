@@ -17,4 +17,6 @@ public interface LicenseObjectMapper<T extends ModuleLicense, K extends ModuleLi
   K toDTO(T moduleLicense);
 
   T toEntity(K moduleLicenseDTO);
+
+  void validateModuleLicenseDTO(K moduleLicenseDTO);
 }

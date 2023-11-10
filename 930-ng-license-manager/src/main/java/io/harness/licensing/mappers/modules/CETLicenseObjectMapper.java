@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CETModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -24,7 +25,22 @@ public class CETLicenseObjectMapper implements LicenseObjectMapper<CETModuleLice
   }
 
   @Override
-  public CETModuleLicense toEntity(CETModuleLicenseDTO moduleLicenseDTO) {
-    return CETModuleLicense.builder().numberOfAgents(moduleLicenseDTO.getNumberOfAgents()).build();
+  public CETModuleLicense toEntity(CETModuleLicenseDTO cetModuleLicenseDTO) {
+    validateModuleLicenseDTO(cetModuleLicenseDTO);
+
+    return CETModuleLicense.builder().numberOfAgents(cetModuleLicenseDTO.getNumberOfAgents()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(CETModuleLicenseDTO cetModuleLicenseDTO) {
+    if (cetModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (cetModuleLicenseDTO.getNumberOfAgents() != null) {
+        throw new InvalidRequestException("Both developerLicenses and numberOfAgents cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      cetModuleLicenseDTO.setNumberOfAgents(mappingRatio * cetModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }
