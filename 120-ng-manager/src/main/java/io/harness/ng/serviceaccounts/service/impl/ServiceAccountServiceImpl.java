@@ -149,6 +149,9 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     ServiceAccount newAccount = ServiceAccountDTOMapper.getServiceAccountFromDTO(requestDTO);
     newAccount.setUuid(serviceAccount.getUuid());
     newAccount.setCreatedAt(serviceAccount.getCreatedAt());
+    if (serviceAccount.getUniqueId() != null) {
+      newAccount.setUniqueId(serviceAccount.getUniqueId());
+    }
     validate(newAccount);
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       ServiceAccount savedAccount = serviceAccountRepository.save(newAccount);
