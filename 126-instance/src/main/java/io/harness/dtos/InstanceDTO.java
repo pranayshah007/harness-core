@@ -33,11 +33,11 @@ public class InstanceDTO {
   @NonFinal @Setter String projectIdentifier;
   String instanceKey;
   InstanceType instanceType;
-  String envIdentifier;
+  @NonFinal @Setter String envIdentifier;
   String envName;
   String envGroupRef;
   EnvironmentType envType;
-  String serviceIdentifier;
+  @NonFinal@Setter String serviceIdentifier;
   String serviceName;
   String infrastructureMappingId;
   String infrastructureKind;

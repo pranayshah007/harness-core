@@ -100,6 +100,12 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
     processInstanceSyncForSyncKeysFromDBInstances(
         instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstancesFromServerMap, instancesToBeModified);
 
+    for(OperationsOnInstances op: instancesToBeModified.keySet()){
+      for(InstanceDTO instanceDTO1 : instancesToBeModified.get(op)){
+        instanceDTO1.setEnvIdentifier(null);
+        instanceDTO1.setServiceIdentifier(null);
+      }
+    }
     return instancesToBeModified;
   }
 
