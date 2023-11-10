@@ -126,6 +126,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.TasArtifactBundleConfig;
 import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -802,8 +803,10 @@ public class TasStepHelper {
 
     ArtifactBundleFetchRequest artifactBundleFetchRequest =
         ArtifactBundleFetchRequest.builder()
-            .tasArtifactConfig(getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome))
-            .tasManifestDelegateConfig(tasManifestDelegateConfig)
+            .artifactBundleConfig(TasArtifactBundleConfig.builder()
+                                      .tasArtifactConfig(getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome))
+                                      .tasManifestDelegateConfig(tasManifestDelegateConfig)
+                                      .build())
             .activityId(ambiance.getStageExecutionId())
             .shouldOpenLogStream(true)
             .closeLogStream(true)

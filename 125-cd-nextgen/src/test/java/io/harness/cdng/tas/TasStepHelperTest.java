@@ -171,6 +171,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifactBundle.ArtifactBundleFetchRequest;
+import io.harness.delegate.task.artifactBundle.TasArtifactBundleConfig;
 import io.harness.delegate.task.artifactBundle.response.ArtifactBundleFetchResponse;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -2491,13 +2492,15 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(tasStepPassThroughData.getGitFetchFilesResultMap()).isEqualTo(filesFromMultipleRepo);
     assertThat(tasStepPassThroughData.getLocalStoreFileMapContents()).isEqualTo(localStoreFileMapContents);
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(ArtifactBundleFetchRequest.class);
     ArtifactBundleFetchRequest artifactBundleFetchRequest = (ArtifactBundleFetchRequest) taskParameters;
-    assertThat(artifactBundleFetchRequest.getTasArtifactConfig()).isInstanceOf(TasContainerArtifactConfig.class);
+    assertThat(artifactBundleFetchRequest.getArtifactBundleConfig()).isInstanceOf(TasArtifactBundleConfig.class);
+    TasArtifactBundleConfig tasArtifactBundleConfig =
+        (TasArtifactBundleConfig) artifactBundleFetchRequest.getArtifactBundleConfig();
     TasContainerArtifactConfig tasContainerArtifactConfig =
-        (TasContainerArtifactConfig) artifactBundleFetchRequest.getTasArtifactConfig();
+        (TasContainerArtifactConfig) tasArtifactBundleConfig.getTasArtifactConfig();
     assertThat(tasContainerArtifactConfig.getConnectorConfig()).isInstanceOf(DockerConnectorDTO.class);
   }
 
