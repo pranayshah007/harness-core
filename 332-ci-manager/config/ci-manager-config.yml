@@ -171,10 +171,10 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.30
-  liteEngineImage: harness/ci-lite-engine:1.16.30
-  isLocal: false
+  delegateServiceEndpointVariableValue: "6.tcp.ngrok.io:16242"
+  addonImage: harness/ci-addon:1.16.29
+  liteEngineImage: harness/ci-lite-engine:1.16.29
+  isLocal: true
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
   cacheIntelligenceConfig:
@@ -214,12 +214,6 @@ ciExecutionServiceConfig:
     images:
       - product: anchore_default
         image: harness/anchore-job-runner
-      - product: aquasecurity_default
-        image: harness/sto-plugin
-        entrypoint:
-          - /bin/sto_plugin
-          - "--run-strategy"
-          - single-container
       - product: awsecr_default
         image: harness/aws-ecr-job-runner
       - product: awssecurityhub_default
@@ -441,7 +435,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 enableDashboardTimescale: false
 
