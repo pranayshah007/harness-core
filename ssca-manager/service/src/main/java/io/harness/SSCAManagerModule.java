@@ -167,6 +167,7 @@ public class SSCAManagerModule extends AbstractModule {
         .withEndpointConfiguration(
             new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
         .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        .withPathStyleAccessEnabled(Boolean.TRUE)
         .build();
   }
 
