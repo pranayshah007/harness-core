@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -27,10 +28,27 @@ public class CFLicenseObjectMapper implements LicenseObjectMapper<CFModuleLicens
   }
 
   @Override
-  public CFModuleLicense toEntity(CFModuleLicenseDTO dto) {
+  public CFModuleLicense toEntity(CFModuleLicenseDTO cfModuleLicenseDTO) {
+    validateModuleLicenseDTO(cfModuleLicenseDTO);
+
     return CFModuleLicense.builder()
-        .numberOfClientMAUs(dto.getNumberOfClientMAUs())
-        .numberOfUsers(dto.getNumberOfUsers())
+        .numberOfClientMAUs(cfModuleLicenseDTO.getNumberOfClientMAUs())
+        .numberOfUsers(cfModuleLicenseDTO.getNumberOfUsers())
         .build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(CFModuleLicenseDTO cfModuleLicenseDTO) {
+    if (cfModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (cfModuleLicenseDTO.getNumberOfUsers() != null || cfModuleLicenseDTO.getNumberOfClientMAUs() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and numberOfUsers/numberOfClientMAUs cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      cfModuleLicenseDTO.setNumberOfUsers(mappingRatio * cfModuleLicenseDTO.getDeveloperLicenses());
+      cfModuleLicenseDTO.setNumberOfClientMAUs(((long) mappingRatio * cfModuleLicenseDTO.getDeveloperLicenses()));
+    }
   }
 }

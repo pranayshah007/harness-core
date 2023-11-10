@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -24,7 +25,18 @@ public class CELicenseObjectMapper implements LicenseObjectMapper<CEModuleLicens
   }
 
   @Override
-  public CEModuleLicense toEntity(CEModuleLicenseDTO dto) {
-    return CEModuleLicense.builder().spendLimit(dto.getSpendLimit()).build();
+  public CEModuleLicense toEntity(CEModuleLicenseDTO ceModuleLicenseDTO) {
+    validateModuleLicenseDTO(ceModuleLicenseDTO);
+
+    return CEModuleLicense.builder().spendLimit(ceModuleLicenseDTO.getSpendLimit()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(CEModuleLicenseDTO ceModuleLicenseDTO) {
+    // CCM will never have primary entitlements
+    if (ceModuleLicenseDTO.getDeveloperLicenses() != null) {
+      throw new InvalidRequestException(
+          "Cloud Cost Management License will never have primary entitlements i.e. developerLicenses");
+    }
   }
 }

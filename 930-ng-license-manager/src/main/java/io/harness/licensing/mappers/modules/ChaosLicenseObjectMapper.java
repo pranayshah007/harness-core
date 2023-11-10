@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -27,10 +28,28 @@ public class ChaosLicenseObjectMapper implements LicenseObjectMapper<ChaosModule
   }
 
   @Override
-  public ChaosModuleLicense toEntity(ChaosModuleLicenseDTO dto) {
+  public ChaosModuleLicense toEntity(ChaosModuleLicenseDTO chaosModuleLicenseDTO) {
+    validateModuleLicenseDTO(chaosModuleLicenseDTO);
+
     return ChaosModuleLicense.builder()
-        .totalChaosExperimentRuns(dto.getTotalChaosExperimentRuns())
-        .totalChaosInfrastructures(dto.getTotalChaosInfrastructures())
+        .totalChaosExperimentRuns(chaosModuleLicenseDTO.getTotalChaosExperimentRuns())
+        .totalChaosInfrastructures(chaosModuleLicenseDTO.getTotalChaosInfrastructures())
         .build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(ChaosModuleLicenseDTO chaosModuleLicenseDTO) {
+    if (chaosModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (chaosModuleLicenseDTO.getTotalChaosExperimentRuns() != null
+          || chaosModuleLicenseDTO.getTotalChaosInfrastructures() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and totalChaosExperimentRuns/totalChaosInfrastructures cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      chaosModuleLicenseDTO.setTotalChaosExperimentRuns(mappingRatio * chaosModuleLicenseDTO.getDeveloperLicenses());
+      chaosModuleLicenseDTO.setTotalChaosExperimentRuns(mappingRatio * chaosModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }

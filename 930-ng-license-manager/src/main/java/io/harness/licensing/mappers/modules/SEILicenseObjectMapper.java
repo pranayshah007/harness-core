@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.SEIModuleLicenseDTO;
 import io.harness.licensing.entities.modules.SEIModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -23,7 +24,23 @@ public class SEILicenseObjectMapper implements LicenseObjectMapper<SEIModuleLice
   }
 
   @Override
-  public SEIModuleLicense toEntity(SEIModuleLicenseDTO moduleLicenseDTO) {
-    return SEIModuleLicense.builder().numberOfContributors(moduleLicenseDTO.getNumberOfContributors()).build();
+  public SEIModuleLicense toEntity(SEIModuleLicenseDTO seiModuleLicenseDTO) {
+    validateModuleLicenseDTO(seiModuleLicenseDTO);
+
+    return SEIModuleLicense.builder().numberOfContributors(seiModuleLicenseDTO.getNumberOfContributors()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(SEIModuleLicenseDTO seiModuleLicenseDTO) {
+    if (seiModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (seiModuleLicenseDTO.getNumberOfContributors() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and numberOfContributors cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      seiModuleLicenseDTO.setNumberOfContributors(mappingRatio * seiModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }

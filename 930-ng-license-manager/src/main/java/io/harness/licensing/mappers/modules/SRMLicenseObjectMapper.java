@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -24,7 +25,22 @@ public class SRMLicenseObjectMapper implements LicenseObjectMapper<SRMModuleLice
   }
 
   @Override
-  public SRMModuleLicense toEntity(SRMModuleLicenseDTO moduleLicenseDTO) {
-    return SRMModuleLicense.builder().numberOfServices(moduleLicenseDTO.getNumberOfServices()).build();
+  public SRMModuleLicense toEntity(SRMModuleLicenseDTO srmModuleLicenseDTO) {
+    validateModuleLicenseDTO(srmModuleLicenseDTO);
+
+    return SRMModuleLicense.builder().numberOfServices(srmModuleLicenseDTO.getNumberOfServices()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(SRMModuleLicenseDTO srmModuleLicenseDTO) {
+    if (srmModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (srmModuleLicenseDTO.getNumberOfServices() != null) {
+        throw new InvalidRequestException("Both developerLicenses and numberOfServices cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      srmModuleLicenseDTO.setNumberOfServices(mappingRatio * srmModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }

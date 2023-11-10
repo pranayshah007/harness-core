@@ -9,6 +9,8 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDLicenseType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -28,11 +30,32 @@ public class CDLicenseObjectMapper implements LicenseObjectMapper<CDModuleLicens
   }
 
   @Override
-  public CDModuleLicense toEntity(CDModuleLicenseDTO dto) {
+  public CDModuleLicense toEntity(CDModuleLicenseDTO cdModuleLicenseDTO) {
+    // TODO: put this change behind a FF
+    validateModuleLicenseDTO(cdModuleLicenseDTO);
+
     CDModuleLicense entity = CDModuleLicense.builder().build();
-    entity.setCdLicenseType(dto.getCdLicenseType());
-    entity.setServiceInstances(dto.getServiceInstances());
-    entity.setWorkloads(dto.getWorkloads());
+    entity.setCdLicenseType(cdModuleLicenseDTO.getCdLicenseType());
+    entity.setServiceInstances(cdModuleLicenseDTO.getServiceInstances());
+    entity.setWorkloads(cdModuleLicenseDTO.getWorkloads());
     return entity;
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(CDModuleLicenseDTO cdModuleLicenseDTO) {
+    if (cdModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (cdModuleLicenseDTO.getWorkloads() != null || cdModuleLicenseDTO.getServiceInstances() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      if (cdModuleLicenseDTO.getCdLicenseType().equals(CDLicenseType.SERVICES)) {
+        cdModuleLicenseDTO.setWorkloads(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
+      } else {
+        cdModuleLicenseDTO.setServiceInstances(mappingRatio * cdModuleLicenseDTO.getDeveloperLicenses());
+      }
+    }
   }
 }

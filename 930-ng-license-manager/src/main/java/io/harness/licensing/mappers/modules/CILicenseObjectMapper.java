@@ -9,6 +9,8 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDLicenseType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -28,11 +30,27 @@ public class CILicenseObjectMapper implements LicenseObjectMapper<CIModuleLicens
   }
 
   @Override
-  public CIModuleLicense toEntity(CIModuleLicenseDTO dto) {
+  public CIModuleLicense toEntity(CIModuleLicenseDTO ciModuleLicenseDTO) {
+    validateModuleLicenseDTO(ciModuleLicenseDTO);
+
     return CIModuleLicense.builder()
-        .numberOfCommitters(dto.getNumberOfCommitters())
-        .cacheAllowance(dto.getCacheAllowance())
-        .hostingCredits(dto.getHostingCredits())
+        .numberOfCommitters(ciModuleLicenseDTO.getNumberOfCommitters())
+        .cacheAllowance(ciModuleLicenseDTO.getCacheAllowance())
+        .hostingCredits(ciModuleLicenseDTO.getHostingCredits())
         .build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(CIModuleLicenseDTO ciModuleLicenseDTO) {
+    if (ciModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (ciModuleLicenseDTO.getNumberOfCommitters() != null) {
+        throw new InvalidRequestException(
+            "Both developerLicenses and workloads/serviceInstances cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      ciModuleLicenseDTO.setNumberOfCommitters(mappingRatio * ciModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }

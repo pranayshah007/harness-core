@@ -9,6 +9,7 @@ package io.harness.licensing.mappers.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -24,7 +25,22 @@ public class STOLicenseObjectMapper implements LicenseObjectMapper<STOModuleLice
   }
 
   @Override
-  public STOModuleLicense toEntity(STOModuleLicenseDTO dto) {
-    return STOModuleLicense.builder().numberOfDevelopers(dto.getNumberOfDevelopers()).build();
+  public STOModuleLicense toEntity(STOModuleLicenseDTO stoModuleLicenseDTO) {
+    validateModuleLicenseDTO(stoModuleLicenseDTO);
+
+    return STOModuleLicense.builder().numberOfDevelopers(stoModuleLicenseDTO.getNumberOfDevelopers()).build();
+  }
+
+  @Override
+  public void validateModuleLicenseDTO(STOModuleLicenseDTO stoModuleLicenseDTO) {
+    if (stoModuleLicenseDTO.getDeveloperLicenses() != null) {
+      if (stoModuleLicenseDTO.getNumberOfDevelopers() != null) {
+        throw new InvalidRequestException("Both developerLicenses and numberOfDevelopers cannot be part of the input!");
+      }
+
+      // TODO: fetch mapping ratio from DeveloperMapping collection, once that work is complete
+      Integer mappingRatio = 1;
+      stoModuleLicenseDTO.setNumberOfDevelopers(mappingRatio * stoModuleLicenseDTO.getDeveloperLicenses());
+    }
   }
 }
