@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +95,22 @@ public class PMSPipelineServiceStepHelper {
     for (StepInfo stepType : ffEnabledStepInfoList) {
       addToTopLevel(stepCategory, stepType, featureRestrictionNameBooleanMap);
     }
+    sortStepFolderOrders(stepCategory);
+
     return stepCategory;
+  }
+
+  // We can take this priority list from the individual services instead of keeping this here.
+  private void sortStepFolderOrders(StepCategory stepCategory){
+    if(stepCategory.getName().equals("Continuous Integration")){
+      Map<String,Integer> priorityMap = Map.of("Build", 0,"Artifacts", 1, "Security Tests",2, "Security", 3);
+      stepCategory.getStepCategories().sort(new Comparator<StepCategory>() {
+        @Override
+        public int compare(StepCategory o1, StepCategory o2) {
+          return priorityMap.get(o1.getName())-priorityMap.get(o2.getName());
+        }
+      });
+    }
   }
 
   public StepCategory calculateStepsForModuleBasedOnCategory(
