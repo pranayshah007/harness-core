@@ -33,7 +33,8 @@ public class ApprovalSummary {
   // maintain this list with field keys which can have multiple lines
   // it is being used to convert to line breaks when rendering as html
   public static final List<String> TEXT_FIELDS_IN_APPROVAL_SUMMARY =
-      List.of(ApprovalSummaryKeys.approvalMessage, ApprovalSummaryKeys.action);
+      List.of(ApprovalSummaryKeys.approvalMessage, ApprovalSummaryKeys.action, ApprovalSummaryKeys.finishedStages,
+          ApprovalSummaryKeys.runningStages, ApprovalSummaryKeys.upcomingStages);
   String pipelineName;
   String orgName;
   String projectName;
@@ -79,6 +80,7 @@ public class ApprovalSummary {
     if (EmptyPredicate.isEmpty(stages)) {
       return "N/A";
     }
-    return String.join(", ", stages);
+    // TODO: add a FF condition if required
+    return String.join("\n ", stages);
   }
 }
