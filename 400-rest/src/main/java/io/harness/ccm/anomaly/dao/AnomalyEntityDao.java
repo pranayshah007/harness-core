@@ -274,6 +274,9 @@ public class AnomalyEntityDao {
           case NOTIFICATION_SENT:
             anomalyBuilder.notificationSent(resultSet.getBoolean(field.getFieldName()));
             break;
+          case CLOUD_PROVIDER:
+            anomalyBuilder.cloudProvider(resultSet.getString(field.getFieldName()));
+            break;
           default:
             log.error("Unknown field : {} encountered while Resultset conversion in AnomalyDao", field);
         }
@@ -401,6 +404,7 @@ public class AnomalyEntityDao {
                .addColumn(AnomaliesDataTableSchema.anomalyScore, anomaly.getAnomalyScore())
                .addColumn(AnomaliesDataTableSchema.reportedBy, anomaly.getReportedBy())
                .addColumn(AnomaliesDataTableSchema.newEntity, ((Boolean) anomaly.isNewEntity()).toString())
+               .addColumn(AnomaliesDataTableSchema.cloudProvider, anomaly.getCloudProvider())
                .validate()
                .toString()
         + " ON CONFLICT "
