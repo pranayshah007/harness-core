@@ -6,9 +6,8 @@
 package grpc
 
 import (
-	"io"
-
 	"github.com/harness/harness-core/commons/go/lib/images"
+	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/harness-core/product/ci/engine/legacy/jexl"
 	"github.com/harness/harness-core/product/ci/engine/legacy/state"
 	"github.com/harness/harness-core/product/ci/engine/new/executor"
@@ -18,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"io"
 )
 
 var (
@@ -71,7 +71,8 @@ func (h *engineHandler) GetImageEntrypoint(ctx context.Context, in *pb.GetImageE
 	if in.GetSecret() == "" {
 		entrypoint, args, err = getPublicImgMetadata(in.GetImage())
 	} else {
-		entrypoint, args, err = getPrivateImgMetadata(in.GetImage(), in.GetSecret())
+		httpTransport := external.GetTransportWithCerts(external.GetAdditionalCertsDir(), false)
+		entrypoint, args, err = getPrivateImgMetadata(in.GetImage(), in.GetSecret(), httpTransport)
 	}
 
 	if err != nil {

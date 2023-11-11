@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -105,7 +106,7 @@ func TestGetImageEntrypointWithSecretSuccess(t *testing.T) {
 	}
 
 	oldImgMetadata := getPrivateImgMetadata
-	getPrivateImgMetadata = func(image, secret string) ([]string, []string, error) {
+	getPrivateImgMetadata = func(image, secret string, transport *http.Transport) ([]string, []string, error) {
 		return commands, nil, nil
 	}
 	defer func() { getPrivateImgMetadata = oldImgMetadata }()
@@ -127,7 +128,7 @@ func TestGetImageEntrypointWithSecretErr(t *testing.T) {
 	}
 
 	oldImgMetadata := getPrivateImgMetadata
-	getPrivateImgMetadata = func(image, secret string) ([]string, []string, error) {
+	getPrivateImgMetadata = func(image, secret string, transport *http.Transport) ([]string, []string, error) {
 		return nil, nil, fmt.Errorf("failed to find entrypoint")
 	}
 	defer func() { getPrivateImgMetadata = oldImgMetadata }()

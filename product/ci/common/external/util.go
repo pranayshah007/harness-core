@@ -7,10 +7,14 @@ package external
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -528,4 +532,50 @@ func isUrlSame(url1, url2 string) bool {
 		return false
 	}
 	return true
+}
+
+func GetTransportWithCerts(certsDir string, skipVerify bool) *http.Transport {
+	if certsDir == "" {
+		return nil
+	}
+
+	// Use the system certs if possible
+	rootCAs, err := x509.SystemCertPool()
+	if rootCAs == nil {
+		fmt.Printf("unable to get system cert pool, creating a new cert pool, error %s\n", err)
+		rootCAs = x509.NewCertPool()
+	}
+
+	fmt.Printf("additional certs dir to allow: %s\n", certsDir)
+	files, err := os.ReadDir(certsDir)
+	if err != nil {
+		fmt.Errorf("could not read directory %s, error: %s\n", certsDir, err)
+		return nil
+	}
+
+	// Go through all certs in this directory and add them to the global certs
+	for _, f := range files {
+		path := filepath.Join(certsDir, f.Name())
+		fmt.Printf("trying to add certs at: %s to root certs\n", path)
+		// Create TLS config using cert PEM
+		rootPem, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Println(fmt.Errorf("could not read certificate file (%s), error: %s", path, err.Error()))
+			continue
+		}
+		// Append certs to the global certs
+		ok := rootCAs.AppendCertsFromPEM(rootPem)
+		if !ok {
+			fmt.Println(fmt.Errorf("error adding cert (%s) to pool, please check format of the certs provided\n", path))
+			continue
+		}
+		fmt.Printf("successfully added cert at: %s to root certs\n", path)
+	}
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipVerify,
+			RootCAs:            rootCAs,
+		},
+	}
 }
