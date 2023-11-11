@@ -200,20 +200,8 @@ public class PerspectiveToAnomalyQueryHelper {
                 CCMField.REGION, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case CLOUD_PROVIDER_FIELD_ID:
-            String[] emptyArray = new String[0];
-            for (String value : filter.getIdFilter().getValues()) {
-              if (value.toLowerCase().equals(ViewFieldIdentifier.AWS.getDisplayName().toLowerCase())) {
-                stringFilters.add(buildStringFilter(CCMField.AWS_ACCOUNT, emptyArray, QLCEViewFilterOperator.NOT_NULL));
-              } else if (value.toLowerCase().equals(ViewFieldIdentifier.GCP.getDisplayName().toLowerCase())) {
-                stringFilters.add(buildStringFilter(CCMField.GCP_PROJECT, emptyArray, QLCEViewFilterOperator.NOT_NULL));
-              } else if (value.toLowerCase().equals(ViewFieldIdentifier.AZURE.getDisplayName().toLowerCase())) {
-                stringFilters.add(
-                    buildStringFilter(CCMField.AZURE_SUBSCRIPTION_GUID, emptyArray, QLCEViewFilterOperator.NOT_NULL));
-              } else {
-                stringFilters.add(
-                    buildStringFilter(CCMField.CLUSTER_NAME, emptyArray, QLCEViewFilterOperator.NOT_NULL));
-              }
-            }
+            stringFilters.add(buildStringFilter(
+                CCMField.CLOUD_PROVIDER, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           default:
             if (filter.getIdFilter().getField().getIdentifier() == BUSINESS_MAPPING) {
