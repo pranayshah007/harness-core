@@ -26,7 +26,6 @@ go_library(
         "//product/ci/engine/new/executor",
         "//product/ci/engine/output",
         "//product/ci/engine/proto",
-        "//product/log-service/client",
         "//product/log-service/stream",
         "@com_github_harness_ti_client//types",
         "@com_github_pkg_errors//:errors",
