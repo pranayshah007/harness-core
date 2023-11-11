@@ -48,6 +48,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -1632,6 +1633,43 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(delegateRequest.getArtifactPath()).isEqualTo(nexusRegistryDockerConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
+    assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
+    assertThat(delegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetNexusDelegateRequestWithBlankClassifier() {
+    NexusRegistryMavenConfig nexusRegistryDockerConfig = NexusRegistryMavenConfig.builder()
+                                                             .artifactId(ParameterField.createValueField("artifactId"))
+                                                             .groupId(ParameterField.createValueField("groupId"))
+                                                             .extension(ParameterField.createValueField(""))
+                                                             .classifier(ParameterField.createValueField(""))
+                                                             .build();
+
+    NexusRegistryArtifactConfig artifactConfig =
+        NexusRegistryArtifactConfig.builder()
+            .repository(ParameterField.createValueField("TEST_REPO"))
+            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.maven.name()))
+            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+            .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
+            .build();
+    NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    NexusArtifactDelegateRequest delegateRequest = ArtifactConfigToDelegateReqMapper.getNexusArtifactDelegateRequest(
+        artifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(delegateRequest.getNexusConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
+    assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.maven.name());
+    assertThat(delegateRequest.getArtifactRepositoryUrl()).isNull();
+    assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(delegateRequest.getClassifier()).isNull();
+    assertThat(delegateRequest.getExtension()).isNull();
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
