@@ -289,7 +289,7 @@ public class AggregateProjectServiceImplTest extends CategoryTest {
         .thenReturn(getPage(projects, 5));
     when(favoritesService.getFavorites(anyString(), any(), any(), anyString(), anyString()))
         .thenReturn(Collections.emptyList());
-    when(organizationService.get(any(), any())).thenReturn(Optional.empty());
+    when(organizationService.get(anyString(), anyString())).thenReturn(Optional.empty());
 
     when(ngUserService.listUsers(any())).thenReturn(emptyList());
     when(ngUserService.listUsersHavingRole(any(), any())).thenReturn(emptyList());

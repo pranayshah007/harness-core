@@ -10,6 +10,7 @@ package io.harness.ng.core.services;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.favorites.entities.Favorite;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -28,12 +29,16 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 public interface ProjectService {
   Project create(String accountIdentifier, String orgIdentifier, ProjectDTO project);
+  Project create(String accountIdentifier, ScopeInfo scope, ProjectDTO project);
 
   Optional<Project> get(String accountIdentifier, String orgIdentifier, String identifier);
+  Optional<Project> get(ScopeInfo scope, String identifier);
 
   Optional<Project> getConsideringCase(String accountIdentifier, String orgIdentifier, String identifier);
+  Optional<Project> getConsideringCase(ScopeInfo scope, String identifier);
 
   Project update(String accountIdentifier, String orgIdentifier, String identifier, ProjectDTO project);
+  Project update(ScopeInfo scope, String identifier, ProjectDTO project);
 
   PageResponse<ProjectDTO> listProjectsForUser(String userId, String accountId, PageRequest pageRequest);
 

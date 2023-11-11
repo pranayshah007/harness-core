@@ -17,6 +17,7 @@ import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -90,7 +91,7 @@ public class NGAccountSetupServiceTest extends CategoryTest {
     when(accessControlAdminClientConfiguration.getMockAccessControlService()).thenReturn(true);
 
     when(accountOrgProjectValidator.isPresent(any(), any(), any())).thenReturn(true);
-    when(organizationService.get(any(), any()))
+    when(organizationService.get(anyString(), anyString()))
         .thenReturn(of(Organization.builder()
                            .accountIdentifier(ACCOUNT_ID)
                            .identifier(DEFAULT_ORG_IDENTIFIER)

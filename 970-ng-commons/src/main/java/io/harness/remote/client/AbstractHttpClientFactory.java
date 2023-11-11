@@ -216,6 +216,7 @@ public abstract class AbstractHttpClientFactory {
               .proxy(checkAndGetNonProxyIfApplicable(baseUrl))
               .connectTimeout(serviceHttpClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
               .readTimeout(serviceHttpClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
+
               .addInterceptor(getAuthorizationInterceptor(clientMode))
               .addInterceptor(getCorrelationIdInterceptor())
               .addInterceptor(getGitContextInterceptor())
