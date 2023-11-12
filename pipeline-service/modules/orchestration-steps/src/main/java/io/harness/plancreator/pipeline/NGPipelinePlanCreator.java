@@ -8,7 +8,6 @@
 package io.harness.plancreator.pipeline;
 
 import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_PIPELINE_TIMEOUT;
-import static io.harness.pms.utils.NGPipelineSettingsConstant.MAX_STAGE_TIMEOUT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

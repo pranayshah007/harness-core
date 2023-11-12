@@ -20,6 +20,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.LinkedHashMap;
@@ -70,16 +71,9 @@ public abstract class ChildrenPlanCreator<T> implements PartialPlanCreator<T> {
     return planNodeBuilder.timeoutObtainment(
         SdkTimeoutObtainment.builder()
             .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-            .parameters(AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(timeout)).build())
+            .parameters(AbsoluteSdkTimeoutTrackerParameters.builder()
+                            .timeout(TimeoutUtils.getParameterTimeoutString(timeout))
+                            .build())
             .build());
-  }
-
-  public ParameterField<String> getTimeoutString(ParameterField<Timeout> timeout) {
-    if (timeout.isExpression()) {
-      return ParameterField.createExpressionField(
-          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
-    } else {
-      return ParameterField.createValueField(timeout.getValue().getTimeoutString());
-    }
   }
 }
