@@ -91,9 +91,8 @@ public class ServiceAccountEventHandler implements OutboxEventHandler {
     String projectIdentifier = scope.getProjectIdentifier();
     Resource resource = outboxEvent.getResource();
 
-
     boolean publishedToRedis = publishEvent(accountIdentifier, orgIdentifier, projectIdentifier,
-        outboxEvent.getResource().getIdentifier(),resource, EventsFrameworkMetadataConstants.CREATE_ACTION);
+        outboxEvent.getResource().getIdentifier(), resource, EventsFrameworkMetadataConstants.CREATE_ACTION);
 
     ServiceAccountCreateEvent serviceAccountCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceAccountCreateEvent.class);
@@ -119,9 +118,8 @@ public class ServiceAccountEventHandler implements OutboxEventHandler {
     String orgIdentifier = scope.getOrgIdentifier();
     String projectIdentifier = scope.getProjectIdentifier();
 
-
     boolean publishedToRedis = publishEvent(accountIdentifier, orgIdentifier, projectIdentifier,
-        outboxEvent.getResource().getIdentifier(),resource, EventsFrameworkMetadataConstants.UPDATE_ACTION);
+        outboxEvent.getResource().getIdentifier(), resource, EventsFrameworkMetadataConstants.UPDATE_ACTION);
     ServiceAccountUpdateEvent serviceAccountUpdateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceAccountUpdateEvent.class);
     AuditEntry auditEntry =
@@ -151,7 +149,7 @@ public class ServiceAccountEventHandler implements OutboxEventHandler {
     Resource resource = outboxEvent.getResource();
 
     boolean publishedToRedis = publishEvent(accountIdentifier, orgIdentifier, projectIdentifier,
-        outboxEvent.getResource().getIdentifier(),resource,  EventsFrameworkMetadataConstants.DELETE_ACTION);
+        outboxEvent.getResource().getIdentifier(), resource, EventsFrameworkMetadataConstants.DELETE_ACTION);
     ServiceAccountDeleteEvent serviceAccountDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceAccountDeleteEvent.class);
     AuditEntry auditEntry =
@@ -168,8 +166,8 @@ public class ServiceAccountEventHandler implements OutboxEventHandler {
     return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean publishEvent(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, Resource resource, String action) {
+  private boolean publishEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String identifier, Resource resource, String action) {
     try {
       eventProducer.send(
           Message.newBuilder()
