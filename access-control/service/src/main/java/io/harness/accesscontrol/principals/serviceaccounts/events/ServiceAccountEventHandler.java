@@ -18,13 +18,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.entity_crud.serviceaccount.ServiceAccountEntityChangeDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Objects;
-
-import io.harness.eventsframework.entity_crud.serviceaccount.ServiceAccountEntityChangeDTO;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
@@ -56,7 +55,8 @@ public class ServiceAccountEventHandler implements EventHandler {
                                       .projectIdentifier(stripToNull(entityChangeDTO.getProjectIdentifier()))
                                       .build();
       Scope scope = ScopeMapper.fromParams(params);
-      harnessServiceAccountService.sync(stripToNull(entityChangeDTO.getIdentifier()), scope, entityChangeDTO.getUniqueId());
+      harnessServiceAccountService.sync(
+          stripToNull(entityChangeDTO.getIdentifier()), scope, entityChangeDTO.getUniqueId());
     } catch (Exception e) {
       log.error("Could not process the resource group change event {} due to error", entityChangeDTO, e);
       return false;
