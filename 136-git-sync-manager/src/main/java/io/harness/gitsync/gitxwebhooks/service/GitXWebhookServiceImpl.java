@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HookEventType;
+import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.ExplanationException;
@@ -92,7 +93,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         GitXWebhook gitXWebhook = buildGitXWebhooks(createGitXWebhookRequestDTO);
         log.info(String.format("Creating Webhook with identifier %s in account %s",
             createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getAccountIdentifier()));
-        registerWebhookOnGit(gitXWebhook.getAccountIdentifier(), gitXWebhook.getRepoName(),
+        registerWebhookOnGit(createGitXWebhookRequestDTO.getScope(), gitXWebhook.getRepoName(),
             gitXWebhook.getConnectorRef(), gitXWebhook.getIdentifier());
         GitXWebhook createdGitXWebhook = gitXWebhookRepository.create(gitXWebhook);
         if (createdGitXWebhook == null) {
@@ -176,9 +177,8 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         Update update = buildUpdate(updateGitXWebhookRequestDTO);
         if (isNotEmpty(updateGitXWebhookRequestDTO.getRepoName())) {
           String connectorRef = getConnectorRef(updateGitXWebhookCriteriaDTO, updateGitXWebhookRequestDTO);
-          registerWebhookOnGit(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
-              updateGitXWebhookRequestDTO.getRepoName(), connectorRef,
-              updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
+          registerWebhookOnGit(updateGitXWebhookRequestDTO.getScope(), updateGitXWebhookRequestDTO.getRepoName(),
+              connectorRef, updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
         }
         GitXWebhook updatedGitXWebhook;
         updatedGitXWebhook = gitXWebhookRepository.update(query, update);
@@ -305,7 +305,9 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
 
   private GitXWebhook buildGitXWebhooks(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
     return GitXWebhook.builder()
-        .accountIdentifier(createGitXWebhookRequestDTO.getAccountIdentifier())
+        .accountIdentifier(createGitXWebhookRequestDTO.getScope().getAccountIdentifier())
+        .orgIdentifier(createGitXWebhookRequestDTO.getScope().getOrgIdentifier())
+        .projectIdentifier(createGitXWebhookRequestDTO.getScope().getProjectIdentifier())
         .identifier(createGitXWebhookRequestDTO.getWebhookIdentifier())
         .name(createGitXWebhookRequestDTO.getWebhookName())
         .connectorRef(createGitXWebhookRequestDTO.getConnectorRef())
@@ -315,10 +317,8 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         .build();
   }
 
-  private void registerWebhookOnGit(
-      String accountIdentifier, String repoName, String connectorRef, String webhookIdentifier) {
-    UpsertWebhookRequestDTO upsertWebhookRequestDTO =
-        buildUpsertWebhookRequestDTO(accountIdentifier, repoName, connectorRef);
+  private void registerWebhookOnGit(Scope scope, String repoName, String connectorRef, String webhookIdentifier) {
+    UpsertWebhookRequestDTO upsertWebhookRequestDTO = buildUpsertWebhookRequestDTO(scope, repoName, connectorRef);
     try {
       final RetryPolicy<Object> retryPolicy = getWebhookRegistrationRetryPolicy(
           "[Retrying] attempt: {} for failure case of save webhook call", "Failed to save webhook after {} attempts");
@@ -345,12 +345,13 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
-  private UpsertWebhookRequestDTO buildUpsertWebhookRequestDTO(
-      String accountIdentifier, String repoName, String connectorRef) {
-    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(accountIdentifier, "", "", connectorRef);
+  private UpsertWebhookRequestDTO buildUpsertWebhookRequestDTO(Scope scope, String repoName, String connectorRef) {
+    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(scope, connectorRef);
     String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return UpsertWebhookRequestDTO.builder()
-        .accountIdentifier(accountIdentifier)
+        .accountIdentifier(scope.getAccountIdentifier())
+        .orgIdentifier(scope.getOrgIdentifier())
+        .projectIdentifier(scope.getProjectIdentifier())
         .connectorIdentifierRef(connectorRef)
         .hookEventType(HookEventType.TRIGGER_EVENTS)
         .repoURL(repoUrl)

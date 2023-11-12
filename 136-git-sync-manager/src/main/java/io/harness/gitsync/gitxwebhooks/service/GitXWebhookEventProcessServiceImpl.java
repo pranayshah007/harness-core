@@ -84,8 +84,12 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
               GitXWebhookEventStatus.SKIPPED);
           return;
         }
-        ScmConnector scmConnector = getScmConnector(
-            gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName());
+        ScmConnector scmConnector = getScmConnector(Scope.builder()
+                                                        .accountIdentifier(gitXWebhook.getAccountIdentifier())
+                                                        .orgIdentifier(gitXWebhook.getOrgIdentifier())
+                                                        .projectIdentifier(gitXWebhook.getProjectIdentifier())
+                                                        .build(),
+            gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName());
         List<String> modifiedFilePaths =
             parsePayloadAndGetModifiedFilePaths(gitXWebhook, gitXWebhookEvent, scmConnector);
         List<String> processingFilePaths = getMatchingFilePaths(modifiedFilePaths, gitXWebhook);
@@ -183,10 +187,11 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
         .collect(Collectors.toList());
   }
 
-  public ScmConnector getScmConnector(String accountIdentifier, String connectorRef, String repoName) {
-    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(accountIdentifier, "", "", connectorRef);
+  private ScmConnector getScmConnector(Scope scope, String connectorRef, String repoName) {
+    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(scope, connectorRef);
     scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
-    return gitSyncConnectorService.getDecryptedConnectorForNewGitX(accountIdentifier, "", "", scmConnector);
+    return gitSyncConnectorService.getDecryptedConnectorForNewGitX(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
   }
 
   private void updateEventStatus(

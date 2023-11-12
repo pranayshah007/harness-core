@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.gitxwebhooks.mapper;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
@@ -51,6 +53,11 @@ public class GitXWebhookMapper {
     }
     return CreateGitXWebhookRequestDTO.builder()
         .accountIdentifier(harnessAccount)
+        .scope(Scope.builder()
+                   .accountIdentifier(harnessAccount)
+                   .orgIdentifier("default")
+                   .projectIdentifier("test_project")
+                   .build())
         .webhookIdentifier(body.getWebhookIdentifier())
         .connectorRef(body.getConnectorRef())
         .folderPaths(body.getFolderPaths())

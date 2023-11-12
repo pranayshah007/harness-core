@@ -243,6 +243,12 @@ public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
   }
 
   @Override
+  public ScmConnector getScmConnector(Scope scope, String connectorRef) {
+    return getScmConnector(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef);
+  }
+
+  @Override
   public ScmConnector getDecryptedConnectorByRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector gitConnectorConfig =

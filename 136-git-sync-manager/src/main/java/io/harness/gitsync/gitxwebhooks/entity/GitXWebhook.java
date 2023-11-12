@@ -59,6 +59,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class GitXWebhook implements PersistentEntity, UuidAccess {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
   String name;
   String identifier;
   String connectorRef;
