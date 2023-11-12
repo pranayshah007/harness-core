@@ -1243,9 +1243,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       }
       return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult, false);
     } catch (Exception e) {
+      ValidationResult validationResult = ValidationResult.builder().success(false).message(e.getMessage()).build();
       log.error(String.format("Failed in trigger validation for Trigger: %s", ngTriggerEntity.getIdentifier()), e);
+      return updateTriggerWithValidationStatus(ngTriggerEntity, validationResult, true);
     }
-    return ngTriggerEntity;
   }
 
   /*

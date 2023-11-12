@@ -53,7 +53,7 @@ public class StringReplacer {
     return substitute(buf, source, true, false);
   }
 
-  public StringReplacerResponse replaceWithRenderCheckAndOldMethodInvocation(String source) {
+  public StringReplacerResponse replaceWithRenderCheckAndNewMethodInvocation(String source) {
     if (source == null) {
       return null;
     }
@@ -63,7 +63,7 @@ public class StringReplacer {
   }
 
   private StringReplacerResponse substitute(
-      StringBuffer buf, String source, boolean checkRenderExpression, boolean isOldMethodInvocation) {
+      StringBuffer buf, String source, boolean checkRenderExpression, boolean isNewMethodInvocation) {
     boolean altered = false;
     boolean onlyRenderedExpressions = true;
     int bufEnd = buf.length();
@@ -125,7 +125,7 @@ public class StringReplacer {
         String expressionValue = expressionResolver.resolve(expression);
         if (checkRenderExpression
             && checkIfExpressionValueCanBeConcatenated(
-                expressionValue, expressionStartPos, expressionEndPos, buf, isOldMethodInvocation)) {
+                expressionValue, expressionStartPos, expressionEndPos, buf, isNewMethodInvocation)) {
           expressionValue = (String) expressionResolver.getContextValue(expressionValue);
         } else {
           onlyRenderedExpressions = false;
@@ -158,7 +158,7 @@ public class StringReplacer {
    * @return
    */
   private boolean checkIfExpressionValueCanBeConcatenated(String expressionValue, int expressionStartPos,
-      int expressionEndPos, StringBuffer buf, boolean isOldMethodInvocation) {
+      int expressionEndPos, StringBuffer buf, boolean isNewMethodInvocation) {
     Object contextValue = expressionResolver.getContextValue(expressionValue);
     if (expressionValue == null || contextValue == null) {
       return false;
@@ -173,7 +173,7 @@ public class StringReplacer {
     }
 
     // Check if right substring has method invocation, then return false
-    if (checkIfValueHasMethodInvocation(buf, expressionEndPos, isOldMethodInvocation)) {
+    if (checkIfValueHasMethodInvocation(buf, expressionEndPos, isNewMethodInvocation)) {
       return false;
     }
 
@@ -230,10 +230,10 @@ public class StringReplacer {
   }
 
   private boolean checkIfValueHasMethodInvocation(
-      StringBuffer buf, int expressionEndPos, boolean isOldMethodInvocation) {
+      StringBuffer buf, int expressionEndPos, boolean isNewMethodInvocation) {
     // Right substring
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
-    if (isOldMethodInvocation) {
+    if (!isNewMethodInvocation) {
       Pattern pattern = Pattern.compile("\\.\\w+\\(");
       Matcher matcher = pattern.matcher(charSequence);
       return matcher.find();
@@ -297,7 +297,8 @@ public class StringReplacer {
     // =~ and !~ regex match and its negate jexl operators
     // =^ and !^ startsWith and its negate operator
     // =$ and !$ endsWith and its negate operator
-    return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$';
+    return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$'
+        || c == '>';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

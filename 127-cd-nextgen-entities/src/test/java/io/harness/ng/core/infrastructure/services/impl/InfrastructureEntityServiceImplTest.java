@@ -303,7 +303,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // List infra operations.
     Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null, false);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -380,7 +380,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // List infra operations.
     Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null, false);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -441,14 +441,14 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     }
 
     Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null, false);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(4);
 
     criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.KUBERNETES, null);
+        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.KUBERNETES, null, false);
     list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(2);
@@ -459,7 +459,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
         .hasSize(2);
 
     criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.NATIVE_HELM, null);
+        "ENV_IDENTIFIER", "", Collections.emptyList(), ServiceDefinitionType.NATIVE_HELM, null, false);
     list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(2);
@@ -535,7 +535,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // List infra operations.
     Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
-        ACCOUNT_ID, ORG_ID, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null);
+        ACCOUNT_ID, ORG_ID, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null, false);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -588,7 +588,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // List infra operations.
     Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
-        ACCOUNT_ID, null, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null);
+        ACCOUNT_ID, null, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null, null, false);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();

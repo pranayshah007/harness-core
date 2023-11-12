@@ -8,6 +8,7 @@
 package io.harness.gar;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -81,33 +82,67 @@ public class GARApiServiceTest extends CategoryTest {
     wireMockRule.stubFor(
         WireMock
             .get(WireMock.urlPathEqualTo(
-                "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/tags"))
+                "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/versions"))
             .withHeader("Authorization", equalTo("bearerToken"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
-                + "    \"tags\": [\n"
+                + "  \"versions\": [\n"
+                + "    {\n"
+                + "      \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:33908b2777fab67fb40ba604c2796cf6b83e88129a10e345466cb584049c33b0\",\n"
+                + "      \"createTime\": \"2022-07-26T10:01:04.563871Z\",\n"
+                + "      \"updateTime\": \"2022-10-18T05:35:23.602863Z\",\n"
+                + "      \"relatedTags\": [\n"
                 + "        {\n"
-                + "            \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest\",\n"
-                + "            \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                + "          \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/hello\",\n"
+                + "          \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:33908b2777fab67fb40ba604c2796cf6b83e88129a10e345466cb584049c33b0\"\n"
                 + "        },\n"
                 + "        {\n"
-                + "            \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest1\",\n"
-                + "            \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
-                + "        },\n"
-                + "        {\n"
-                + "            \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
-                + "            \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                + "          \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/hello1\",\n"
+                + "          \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:33908b2777fab67fb40ba604c2796cf6b83e88129a10e345466cb584049c33b0\"\n"
                 + "        }\n"
-                + "    ]\n"
-                + "}")));
+                + "      ],\n"
+                + "      \"metadata\": {\n"
+                + "        \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/dockerImages/mongo@sha256:33908b2777fab67fb40ba604c2796cf6b83e88129a10e345466cb584049c33b0\",\n"
+                + "        \"imageSizeBytes\": \"55365574\",\n"
+                + "        \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n"
+                + "        \"buildTime\": \"2022-07-19T18:40:47.278146013Z\"\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\",\n"
+                + "      \"createTime\": \"2022-07-26T10:07:10.596991Z\",\n"
+                + "      \"updateTime\": \"2022-09-01T11:01:04.862703Z\",\n"
+                + "      \"relatedTags\": [\n"
+                + "        {\n"
+                + "          \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest\",\n"
+                + "          \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                + "        },\n"
+                + "        {\n"
+                + "          \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest1\",\n"
+                + "          \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                + "        },\n"
+                + "        {\n"
+                + "          \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
+                + "          \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                + "        }\n"
+                + "      ],\n"
+                + "      \"metadata\": {\n"
+                + "        \"buildTime\": \"2022-06-22T02:10:54.278228662Z\",\n"
+                + "        \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/dockerImages/mongo@sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\",\n"
+                + "        \"imageSizeBytes\": \"155649666\",\n"
+                + "        \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}\n")));
     wireMockRule.stubFor(WireMock
                              .get(WireMock.urlPathEqualTo(
-                                 "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/tags"))
+                                 "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/mongo/versions"))
                              .withHeader("Authorization", notMatching("bearerToken"))
                              .willReturn(aResponse().withStatus(401).withBody("Wrong bearer Token")));
     wireMockRule.stubFor(
         WireMock
             .get(WireMock.urlPathEqualTo(
-                "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/wrongpackage/tags"))
+                "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/wrongpackage/versions"))
             .withHeader("Authorization", equalTo("bearerToken"))
             .willReturn(aResponse().withStatus(404).withBody("Test Body")));
     wireMockRule.stubFor(
@@ -134,6 +169,17 @@ public class GARApiServiceTest extends CategoryTest {
                         + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
                         + "}")));
     wireMockRule.stubFor(
+        WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play/vivek-repo/mongo/manifests/hello1"))
+            .withHeader("Authorization", equalTo("bearerToken"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Docker-Content-Digest", SHA)
+                    .withBody("{\n"
+                        + "    \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/hello1\",\n"
+                        + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                        + "}")));
+    wireMockRule.stubFor(
         WireMock.get(WireMock.urlPathEqualTo("/v2/cd-play/vivek-repo/mongo/manifests/sha1:2323242"))
             .withHeader("Authorization", equalTo("bearerToken"))
             .willReturn(
@@ -152,9 +198,9 @@ public class GARApiServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getBuildsTest() {
     List<BuildDetailsInternal> actual = garApiServiceImpl.getBuilds(gcpInternalConfig, "", 100);
-    assertThat(actual).hasSize(3);
+    assertThat(actual).hasSize(5);
     assertThat(actual.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
-        .isEqualTo(Lists.newArrayList(LATEST_10, "latest1", "latest"));
+        .isEqualTo(Lists.newArrayList("hello1", "hello", LATEST_10, "latest1", "latest"));
 
     actual = garApiServiceImpl.getBuilds(gcpInternalConfig, "latest1", 100);
     assertThat(actual).hasSize(2);
@@ -171,6 +217,17 @@ public class GARApiServiceTest extends CategoryTest {
         .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
     BuildDetailsInternal actual = garApiServiceImpl.getLastSuccessfulBuildFromRegex(gcpInternalConfig, "latest");
     assertThat(actual.getNumber()).isEqualTo(LATEST_10);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void getLastSuccessfulBuild() {
+    when(garApiServiceImpl.getGarRestClientDockerRegistryAPIUrl(any())).thenReturn("http://" + url);
+    when(dockerRegistryUtils.parseArtifactMetaInfoResponse(any(), any()))
+        .thenReturn(ArtifactMetaInfo.builder().sha(SHA).labels(label).build());
+    BuildDetailsInternal actual = garApiServiceImpl.getLastSuccessfulBuildFromRegex(gcpInternalConfig, ".*?");
+    assertThat(actual.getNumber()).isEqualTo("hello1");
   }
 
   @Test

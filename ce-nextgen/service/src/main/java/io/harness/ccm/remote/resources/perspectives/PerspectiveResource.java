@@ -41,14 +41,19 @@ import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
+import io.harness.ccm.graphql.dto.perspectives.PerspectiveData;
+import io.harness.ccm.graphql.dto.perspectives.PerspectiveData.PerspectiveDataBuilder;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewType;
-import io.harness.ccm.views.graphql.QLCEView;
+import io.harness.ccm.views.graphql.QLCESortOrder;
+import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
+import io.harness.ccm.views.graphql.QLCEViewSortType;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
@@ -90,6 +95,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -432,19 +438,28 @@ public class PerspectiveResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns a List of Perspectives",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<List<QLCEView>>
+  public ResponseDTO<PerspectiveData>
   getAll(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    List<QLCEView> allPerspectives = ceViewService.getAllViews(accountId, true, null);
-    List<QLCEView> allowedPerspectives = null;
-    if (allPerspectives != null) {
-      Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
-          allPerspectives.stream().map(QLCEView::getFolderId).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
-      allowedPerspectives = allPerspectives.stream()
-                                .filter(perspective -> allowedFolderIds.contains(perspective.getFolderId()))
-                                .collect(Collectors.toList());
-    }
-    return ResponseDTO.newResponse(allowedPerspectives);
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @NotNull @Valid @QueryParam("pageSize") @DefaultValue("20") @Parameter(
+          required = true, description = "Number of perspectives to be shown") Integer pageSize,
+      @NotNull @Valid @QueryParam("pageNo") @DefaultValue("0") @Parameter(
+          required = true, description = "Number of records to be skipped") Integer pageNo,
+      @Valid @QueryParam("searchKey") @Parameter(description = "Characters in search bar") String searchKey,
+      @Valid @QueryParam("sortType") @Parameter(description = " sorting filters in UI") QLCEViewSortType sortType,
+      @Valid @QueryParam("sortOrder") @Parameter(description = "sorting order") QLCESortOrder sortOrder,
+      @Valid @QueryParam("cloudFilters") @Parameter(
+          description = "filters for clouds and clusters") List<CloudFilter> cloudFilters) {
+    PerspectiveDataBuilder perspectiveDataBuilder = PerspectiveData.builder();
+    List<CEViewFolder> folders = ceViewFolderService.getFolders(accountId, "");
+    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
+        folders.stream().map(CEViewFolder::getUuid).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+    perspectiveDataBuilder.totalCount(
+        ceViewService.countByAccountIdAndFolderIds(accountId, allowedFolderIds, searchKey, cloudFilters));
+    QLCEViewSortCriteria sortCriteria = QLCEViewSortCriteria.builder().sortType(sortType).sortOrder(sortOrder).build();
+    perspectiveDataBuilder.views(ceViewService.getAllPerspectives(
+        accountId, true, sortCriteria, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters));
+    return ResponseDTO.newResponse(perspectiveDataBuilder.build());
   }
 
   @PUT

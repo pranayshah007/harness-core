@@ -114,7 +114,7 @@ public class DelegateInstallationCommandServiceTest {
                 + "  --set delegateToken=%s \\\n"
                 + "  --set managerEndpoint=%s \\\n"
                 + "  --set delegateDockerImage=%s \\\n"
-                + "  --set replicas=1 --set upgrader.enabled=false",
+                + "  --set replicas=1 --set upgrader.enabled=true",
             ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("HELM", MANAGER_URL, ACCOUNT_ID, null)).isEqualTo(result);
@@ -137,7 +137,7 @@ public class DelegateInstallationCommandServiceTest {
                 + "  --set delegateToken=%s \\\n"
                 + "  --set managerEndpoint=%s \\\n"
                 + "  --set delegateDockerImage=%s \\\n"
-                + "  --set replicas=1 --set upgrader.enabled=false",
+                + "  --set replicas=1 --set upgrader.enabled=true",
             ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("HELM", MANAGER_URL, ACCOUNT_ID, null)).isEqualTo(result);

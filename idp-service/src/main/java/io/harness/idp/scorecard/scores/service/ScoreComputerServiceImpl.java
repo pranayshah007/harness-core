@@ -66,8 +66,9 @@ import org.apache.commons.math3.util.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class ScoreComputerServiceImpl implements ScoreComputerService {
-  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?%s";
+  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?%s&limit=%s";
   @Inject @Named("ScoreComputer") ExecutorService executorService;
+  @Inject @Named("backstageEntitiesFetchLimit") private String backstageEntitiesFetchLimit;
   @Inject ScorecardService scorecardService;
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject DataSourceProviderFactory dataSourceProviderFactory;
@@ -154,7 +155,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       }
 
       try {
-        String url = String.format(CATALOG_API_SUFFIX, accountIdentifier, filterStringBuilder);
+        String url =
+            String.format(CATALOG_API_SUFFIX, accountIdentifier, filterStringBuilder, backstageEntitiesFetchLimit);
         log.info("Making backstage API request: {}", url);
         Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntities(url));
         List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, BackstageCatalogEntity.class);
@@ -239,7 +241,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
 
         for (CheckEntity check : checks) {
           CheckStatus checkStatus = new CheckStatus();
+          checkStatus.setIdentifier(check.getIdentifier());
           checkStatus.setName(check.getName());
+          checkStatus.setCustom(check.isCustom());
           Pair<CheckStatus.StatusEnum, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
           checkStatus.setStatus(statusAndMessage.getFirst());
           if (statusAndMessage.getSecond() != null) {

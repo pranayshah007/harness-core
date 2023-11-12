@@ -23,6 +23,7 @@ import io.harness.serializer.KryoRegistrar;
 import software.wings.beans.SerializationFormat;
 
 import com.esotericsoftware.kryo.Kryo;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommonTaskKryoRegistrar implements KryoRegistrar {
   @Override
@@ -44,5 +45,6 @@ public class CommonTaskKryoRegistrar implements KryoRegistrar {
     // DelegateTaskResponse
     kryo.register(DelegateTaskResponse.class, 5006);
     kryo.register(DelegateTaskResponse.ResponseCode.class, 5520);
+    kryo.register(AtomicBoolean.class, 20001003);
   }
 }

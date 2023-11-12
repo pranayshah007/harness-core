@@ -35,6 +35,7 @@ public class NGArtifactConstants {
   public static final String PACKAGE_NAME = "packageName";
   public static final String PACKAGE_TYPE = "packageType";
   public static final String CONNECTOR_REF = "connectorRef";
+  public static final String ACCOUNT = "account";
   public static final String ORG = "org";
   public static final String PROJECT = "project";
   public static final String IMAGE_PATH = "imagePath";

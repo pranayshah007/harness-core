@@ -8,9 +8,12 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.k8s.exception.KubernetesExceptionExplanation.FILE_PATH_NOT_PART_OF_MANIFEST_FORMAT;
+import static io.harness.k8s.exception.KubernetesExceptionExplanation.NO_FILES_EXISTS_IN_MANIFEST_DIRECTORY;
 import static io.harness.k8s.exception.KubernetesExceptionHints.MAYBE_DID_YOU_MEAN_FILE_FORMAT;
+import static io.harness.k8s.exception.KubernetesExceptionHints.NO_FILES_FOUND_IN_MANIFEST_DIRECTORY;
 import static io.harness.k8s.exception.KubernetesExceptionMessages.UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -24,11 +27,13 @@ import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.SneakyThrows;
 import org.junit.After;
@@ -135,6 +140,39 @@ public class K8sTaskManifestValidatorTest extends CategoryTest {
         });
   }
 
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testManifestSourceGetFilesFromFolder() throws IOException {
+    createK8sManifestTestFiles();
+    assertThatCode(()
+                       -> k8sTaskManifestValidator.getFilesToApplyInFolder(
+                           Paths.get(testManifestDirectory.toString(), "files").toString(), "files",
+                           K8sTaskManifestValidator.IS_YAML_FILE))
+        .doesNotThrowAnyException();
+    List<String> files = k8sTaskManifestValidator.getFilesToApplyInFolder(
+        Paths.get(testManifestDirectory.toString(), "files").toString(), "files",
+        K8sTaskManifestValidator.IS_YAML_FILE);
+    assertThat(files).contains("files/deployment.yaml");
+    assertThat(files.size()).isEqualTo(1);
+    FileIo.deleteDirectoryAndItsContentIfExists(Paths.get(testManifestDirectory.toString(), "files").toString());
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testManifestSourceFilesInvalid() throws IOException {
+    createK8sManifestFolderTestFiles();
+    assertThatCode(()
+                       -> k8sTaskManifestValidator.getFilesToApplyInFolder(
+                           testManifestDirectory.toString(), "files", K8sTaskManifestValidator.IS_YAML_FILE))
+        .matches(throwable -> {
+          validateNoFilesMessage(throwable, "files");
+          return true;
+        });
+    FileIo.deleteDirectoryAndItsContentIfExists(Paths.get(testManifestDirectory.toString(), "files").toString());
+  }
+
   @SneakyThrows
   private Path createTestManifestDirectory() {
     return Files.createTempDirectory(TEMP_MANIFEST_DIR_SUFFIX);
@@ -148,6 +186,12 @@ public class K8sTaskManifestValidatorTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(pathInManifestDirectory("files"));
     FileIo.writeFile(pathInManifestDirectory("files/random.bin"), MANIFEST_FILE_CONTENT);
     FileIo.writeFile(pathInManifestDirectory("files/deployment.yaml"), MANIFEST_FILE_CONTENT);
+  }
+
+  @SneakyThrows
+  private void createK8sManifestFolderTestFiles() {
+    FileIo.createDirectoryIfDoesNotExist(pathInManifestDirectory("files"));
+    FileIo.writeFile(pathInManifestDirectory("files/random.bin"), MANIFEST_FILE_CONTENT);
   }
 
   @SneakyThrows
@@ -197,5 +241,14 @@ public class K8sTaskManifestValidatorTest extends CategoryTest {
     assertThat(messages).contains(format(MAYBE_DID_YOU_MEAN_FILE_FORMAT, expectedBestMatchFile));
     assertThat(messages).contains(format(FILE_PATH_NOT_PART_OF_MANIFEST_FORMAT, fileInput));
     assertThat(messages).contains(format(UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT, fileInput));
+  }
+
+  private void validateNoFilesMessage(Throwable throwable, String folderPath) {
+    Set<String> messages = new HashSet<>();
+    collectMessagesFromWingsException(throwable, messages);
+
+    assertThat(messages).contains(NO_FILES_FOUND_IN_MANIFEST_DIRECTORY);
+    assertThat(messages).contains(format(UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT, folderPath));
+    assertThat(messages).contains(NO_FILES_EXISTS_IN_MANIFEST_DIRECTORY);
   }
 }

@@ -7,7 +7,6 @@
 
 package io.harness.idp.scorecard.scorecards.mappers;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 
@@ -15,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.idp.scorecard.scores.repositories.ScorecardIdentifierAndScore;
 import io.harness.spec.server.idp.v1.model.Check;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardResponse;
@@ -27,8 +27,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class ScorecardMapper {
-  public Scorecard toDTO(
-      ScorecardEntity scorecardEntity, Map<String, CheckEntity> checkEntityMap, String harnessAccount) {
+  public Scorecard toDTO(ScorecardEntity scorecardEntity, Map<String, CheckEntity> checkEntityMap,
+      ScorecardIdentifierAndScore scorecardIdentifierAndScore, String harnessAccount) {
     Scorecard scorecard = new Scorecard();
     scorecard.setName(scorecardEntity.getName());
     scorecard.setIdentifier(scorecardEntity.getIdentifier());
@@ -52,6 +52,11 @@ public class ScorecardMapper {
     scorecard.setChecks(checks);
     scorecard.setChecksMissing(checksMissing);
     scorecard.setPublished(scorecardEntity.isPublished());
+
+    if (scorecardIdentifierAndScore != null) {
+      scorecard.setComponents(scorecardIdentifierAndScore.getCount());
+      scorecard.setPercentage((double) Math.round(scorecardIdentifierAndScore.getPercentage() * 100.0));
+    }
     return scorecard;
   }
 

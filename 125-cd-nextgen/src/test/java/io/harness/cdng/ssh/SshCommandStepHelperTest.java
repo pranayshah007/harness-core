@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS;
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANIL;
@@ -943,6 +944,25 @@ public class SshCommandStepHelperTest extends CategoryTest {
         Map.of("key", ParameterField.createExpressionField(true, "<+secrets.getValue(\"secret\")>", null, true));
     result = helper.evaluateVariables(ambiance, variables);
     assertThat(result.get("key")).isEqualTo("evaluated String");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getPreserveWinrmWorkingDir() {
+    doReturn(true)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS));
+
+    Boolean result = helper.getPreserveWinrmWorkingDir(accountId);
+    assertThat(result).isTrue();
+
+    doReturn(false)
+        .when(cdFeatureFlagHelper)
+        .isEnabled(anyString(), eq(CDS_PRESERVE_WINRM_WORKING_DIR_FOR_COMMAND_UNITS));
+
+    result = helper.getPreserveWinrmWorkingDir(accountId);
+    assertThat(result).isFalse();
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

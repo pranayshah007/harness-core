@@ -257,6 +257,7 @@ public class ArtifactResponseToOutcomeMapper {
         .amiId(useDelegateResponse ? amiArtifactDelegateResponse.getAmiId() : "")
         .metadata(useDelegateResponse ? amiArtifactDelegateResponse.getMetadata() : null)
         .version(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "")
+        .tag(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "") // Use the version field for tag.
         .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMI.getDisplayName())
         .identifier(amiArtifactConfig.getIdentifier())

@@ -9,9 +9,11 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -30,6 +32,7 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.GitClientException;
+import io.harness.filesystem.FileIo;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.LogCallback;
 import io.harness.product.ci.scm.proto.FileBatchContentResponse;
@@ -88,6 +91,75 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
     assertThat(result.getFiles().size()).isEqualTo(2);
     assertThat(result.getFiles().get(0).getFileContent()).isEqualTo("content");
     assertThat(result.getFiles().get(1).getFileContent()).isEqualTo("content");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testOptionalFilesFetchAndShouldIgnoreNonExisting() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the file path
+    List<String> filePathList = List.of("content-file-path-1", "content-file-path-2", "content-file-path-3");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").optional(true).build();
+    doReturn(
+        FileContentBatchResponse.builder()
+            .fileBatchContentResponse(
+                FileBatchContentResponse.newBuilder()
+                    .addFileContents(FileContent.newBuilder().setStatus(200).setContent("content-file-path-1").build())
+                    .addFileContents(FileContent.newBuilder().setStatus(200).setContent("content-file-path-2").build())
+                    .addFileContents(FileContent.newBuilder()
+                                         .setStatus(404)
+                                         .setError("Not Found")
+                                         .setContent("content-file-path-3")
+                                         .build())
+
+                    .build())
+            .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result = spyScmFetchFilesHelperNG.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(2);
+    assertThat(result.getFiles().get(0).getFileContent()).isEqualTo("content-file-path-1");
+    assertThat(result.getFiles().get(1).getFileContent()).isEqualTo("content-file-path-2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testOptionalFilesFetchAndShouldNotThrowExceptionIfNoFilesFetched() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the file path
+    List<String> filePathList = List.of("content-file-path-1", "content-file-path-2", "content-file-path-3");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").optional(true).build();
+    doReturn(FileContentBatchResponse.builder()
+                 .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-1")
+                                                                    .build())
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-2")
+                                                                    .build())
+                                               .addFileContents(FileContent.newBuilder()
+                                                                    .setStatus(404)
+                                                                    .setError("Not Found")
+                                                                    .setContent("content-file-path-3")
+                                                                    .build())
+                                               .build())
+                 .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result = spyScmFetchFilesHelperNG.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(0);
   }
 
   @Test
@@ -238,7 +310,7 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
         .when(scmDelegateClient)
         .processScmRequest(any());
 
-    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, false);
 
     File file = new File("manifests/test2/path.txt");
     assertThat(file.exists()).isTrue();
@@ -276,7 +348,7 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
                                               .build())
                 .build());
 
-    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, false);
 
     File file = new File("manifests/test2/path.txt");
     File file2 = new File("manifests/test3/path.txt");
@@ -314,7 +386,7 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
                                                       .build())
                         .build());
 
-    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, false);
 
     File file = new File("manifests/file1/path.txt");
     assertThat(file.exists()).isTrue();
@@ -347,7 +419,7 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
                                                       .build())
                         .build());
 
-    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, false);
 
     File file = new File("manifests/test/test2/path.txt");
     assertThat(file.exists()).isTrue();
@@ -377,10 +449,71 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
                                                       .build())
                         .build());
 
-    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback);
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, false);
 
     File file = new File("manifests/deployment.yaml");
     assertThat(file.exists()).isTrue();
     assertThat(FileUtils.readFileToString(file, StandardCharsets.UTF_8)).isEqualTo("content: abc");
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testShouldDownloadFilesInCaseOfManifestSourceForFiles() throws IOException {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    LogCallback logCallback = mock(NGDelegateLogCallback.class);
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder()
+            .paths(Collections.singletonList("/test/templates/service.yaml"))
+            .fetchType(FetchType.BRANCH)
+            .branch("main")
+            .build();
+    when(scmDelegateClient.processScmRequest(any()))
+        .thenReturn(FileContentBatchResponse.builder()
+                        .fileBatchContentResponse(FileBatchContentResponse.newBuilder().build())
+                        .build())
+        .thenReturn(FileContentBatchResponse.builder()
+                        .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                                      .addFileContents(FileContent.newBuilder()
+                                                                           .setStatus(200)
+                                                                           .setContent("content: abc")
+                                                                           .setPath("test/templates/service.yaml")
+                                                                           .build())
+                                                      .build())
+                        .build());
+
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, true);
+
+    File file = new File("manifests/test/templates/service.yaml");
+    assertThat(file).exists();
+    FileIo.deleteFileIfExists(file.getAbsolutePath());
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testShouldDownloadFilesInCaseOfManifestSourceWithFolder() throws IOException {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    LogCallback logCallback = mock(NGDelegateLogCallback.class);
+    String encodedValue = Base64.getEncoder().encodeToString("content: abc".getBytes(StandardCharsets.UTF_8));
+    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
+                                                        .paths(Collections.singletonList("/test/templates"))
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .branch("main")
+                                                        .build();
+    when(scmDelegateClient.processScmRequest(any()))
+        .thenReturn(FileContentBatchResponse.builder()
+                        .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
+                                                      .addFileContents(FileContent.newBuilder()
+                                                                           .setStatus(200)
+                                                                           .setContent(encodedValue)
+                                                                           .setPath("test/templates/deployment.yaml")
+                                                                           .build())
+                                                      .build())
+                        .build());
+
+    spyScmFetchFilesHelperNG.downloadFilesUsingScm("manifests", gitStoreDelegateConfig, logCallback, true);
+
+    File file = new File("manifests/test/templates/deployment.yaml");
+    assertThat(file).exists();
+    FileIo.deleteFileIfExists(file.getAbsolutePath());
   }
 }

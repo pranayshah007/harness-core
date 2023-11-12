@@ -143,6 +143,6 @@ public class BuildTriggerValidationFilterTest extends CategoryTest {
     assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getFinalStatus())
         .isEqualTo(VALIDATION_FAILED_FOR_TRIGGER);
     assertThat(webhookEventMappingResponse.getUnMatchedTriggerInfoList().get(0).getMessage())
-        .isEqualTo("first_trigger didn't match polling event after event condition evaluation");
+        .isEqualTo("first_trigger failed validation. message");
   }
 }

@@ -3,3 +3,4 @@ identifier: PipelineExecutionMetricsGroup
 labels:
   - accountId
   - status
+  - edition

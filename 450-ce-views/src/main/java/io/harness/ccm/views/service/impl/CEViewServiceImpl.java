@@ -38,6 +38,7 @@ import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -53,6 +54,7 @@ import io.harness.ccm.views.entities.ViewTimeRange;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.entities.ViewVisualization;
+import io.harness.ccm.views.graphql.QLCESortOrder;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
@@ -60,6 +62,7 @@ import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
+import io.harness.ccm.views.graphql.QLCEViewSortType;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewCostData;
@@ -84,6 +87,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -434,8 +438,8 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
-    ceViewDao.updateBusinessMappingName(accountId, buinessMappingUuid, newBusinessMappingName);
+  public void updateBusinessMappingName(String accountId, String businessMappingUuid, String newBusinessMappingName) {
+    ceViewDao.updateBusinessMappingName(accountId, businessMappingUuid, newBusinessMappingName);
   }
 
   @Override
@@ -487,12 +491,7 @@ public class CEViewServiceImpl implements CEViewService {
   public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
     List<CEView> viewList = ceViewDao.findByAccountId(accountId, sortCriteria);
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, "");
-    if (!includeDefault) {
-      viewList = viewList.stream()
-                     .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
-                     .collect(Collectors.toList());
-    }
-    return getQLCEViewsFromCEViews(accountId, viewList, folderList);
+    return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
   }
 
   @Override
@@ -500,17 +499,58 @@ public class CEViewServiceImpl implements CEViewService {
       String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
     List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(accountId, folderId, sortCriteria);
     List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
-    if (!includeDefault) {
-      viewList = viewList.stream()
-                     .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
-                     .collect(Collectors.toList());
-    }
-    return getQLCEViewsFromCEViews(accountId, viewList, folderList);
+    return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
   }
 
   @Override
   public List<CEView> getAllViews(String accountId) {
     return ceViewDao.list(accountId);
+  }
+
+  @Override
+  public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters) {
+    sortCriteria = getModifiedSortCriteria(sortCriteria);
+    List<CEView> viewList =
+        getViewList(accountId, sortCriteria, pageSize, pageNo, searchKey, allowedFolderIds, cloudFilters);
+    return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
+  }
+
+  @Override
+  public List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault,
+      QLCEViewSortCriteria sortCriteria, Integer pageNo, Integer pageSize, String searchKey,
+      List<CloudFilter> cloudFilters) {
+    sortCriteria = getModifiedSortCriteria(sortCriteria);
+    Set<String> folderIds = new HashSet<>(Collections.singleton(folderId));
+    List<CEView> viewList = getViewList(accountId, sortCriteria, pageSize, pageNo, searchKey, folderIds, cloudFilters);
+    List<CEViewFolder> folderList = ceViewFolderDao.getFolders(accountId, Collections.singletonList(folderId));
+    return getQLCEViewsFromCEViews(accountId, viewList, folderList, includeDefault);
+  }
+
+  private List<CEView> getViewList(String accountId, QLCEViewSortCriteria sortCriteria, Integer pageSize,
+      Integer pageNo, String searchKey, Set<String> allowedFolderIds, List<CloudFilter> cloudFilters) {
+    List<CEView> defaultViewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, pageSize, 0, searchKey, cloudFilters, false);
+    int limit = Objects.equals(pageNo, 0) ? pageSize - defaultViewList.size() : pageSize;
+    int offset = Objects.equals(pageNo, 0) ? 0 : pageNo * pageSize - defaultViewList.size();
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, limit, offset, searchKey, cloudFilters, true);
+    if (Objects.equals(pageNo, 0)) {
+      defaultViewList.addAll(viewList);
+      viewList = defaultViewList;
+    }
+    return viewList;
+  }
+
+  @Override
+  public List<QLCEView> getAllPerspectives(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria,
+      Integer pageSize, Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters) {
+    sortCriteria = getModifiedSortCriteria(sortCriteria);
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderIds(
+        accountId, allowedFolderIds, sortCriteria, pageSize, pageNo * pageSize, searchKey, cloudFilters);
+    return getQLCEViewsFromCEViews(accountId, viewList, folders, includeDefault);
   }
 
   @Override
@@ -544,10 +584,16 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   private List<QLCEView> getQLCEViewsFromCEViews(
-      String accountId, List<CEView> viewList, List<CEViewFolder> folderList) {
-    List<QLCEView> graphQLViewObjList = new ArrayList<>();
-    Map<String, String> folderIdToNameMapping =
+      String accountId, List<CEView> viewList, List<CEViewFolder> folderList, boolean includeDefault) {
+    Map<String, String> folderIdToName =
         folderList.stream().collect(Collectors.toMap(CEViewFolder::getUuid, CEViewFolder::getName));
+
+    if (!includeDefault) {
+      viewList = viewList.stream()
+                     .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
+                     .collect(Collectors.toList());
+    }
+    List<QLCEView> graphQLViewObjList = new ArrayList<>();
     Map<String[], List<CEReportSchedule>> viewIdReportSchedule = getViewIdReportSchedule(accountId, viewList);
     for (CEView view : viewList) {
       String[] viewIdList = {view.getUuid()};
@@ -563,7 +609,7 @@ public class CEViewServiceImpl implements CEViewService {
               .id(view.getUuid())
               .name(view.getName())
               .folderId(view.getFolderId())
-              .folderName((view.getFolderId() != null) ? folderIdToNameMapping.get(view.getFolderId()) : null)
+              .folderName((view.getFolderId() != null) ? folderIdToName.get(view.getFolderId()) : null)
               .totalCost(view.getTotalCost())
               .createdBy(null != view.getCreatedBy() ? view.getCreatedBy().getEmail() : "")
               .createdAt(view.getCreatedAt())
@@ -807,5 +853,20 @@ public class CEViewServiceImpl implements CEViewService {
     }
     ceView.setFolderId(allowedCeViewFolders.get(0).getUuid());
     return true;
+  }
+
+  @Override
+  public Long countByAccountIdAndFolderIds(
+      String accountId, Set<String> folderIds, String searchKey, List<CloudFilter> cloudFilters) {
+    return ceViewDao.countByAccountIdAndFolderIds(accountId, folderIds, searchKey, cloudFilters);
+  }
+
+  private QLCEViewSortCriteria getModifiedSortCriteria(QLCEViewSortCriteria sortCriteria) {
+    QLCEViewSortCriteria modifiedSortCriteria = sortCriteria;
+    if (Objects.isNull(sortCriteria)) {
+      modifiedSortCriteria =
+          QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.TIME).build();
+    }
+    return modifiedSortCriteria;
   }
 }

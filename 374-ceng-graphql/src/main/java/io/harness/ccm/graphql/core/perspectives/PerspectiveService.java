@@ -18,6 +18,8 @@ import io.harness.ccm.graphql.dto.perspectives.PerspectiveFilterData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveOverviewStatsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.CloudFilter;
 import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEView;
@@ -218,6 +220,18 @@ public class PerspectiveService {
 
   public List<QLCEView> perspectives(String folderId, QLCEViewSortCriteria sortCriteria, String accountId) {
     return viewService.getAllViews(accountId, folderId, true, sortCriteria);
+  }
+
+  public List<QLCEView> perspectives(String folderId, QLCEViewSortCriteria sortCriteria, String accountId,
+      Integer pageNo, Integer pageSize, List<CloudFilter> cloudFilters, String searchKey) {
+    return viewService.getAllViews(accountId, folderId, true, sortCriteria, pageNo, pageSize, searchKey, cloudFilters);
+  }
+
+  public List<QLCEView> perspectives(QLCEViewSortCriteria sortCriteria, String accountId, Integer pageSize,
+      Integer pageNo, String searchKey, List<CEViewFolder> folders, Set<String> allowedFolderIds,
+      List<CloudFilter> cloudFilters) {
+    return viewService.getAllViews(
+        accountId, true, sortCriteria, pageSize, pageNo, searchKey, folders, allowedFolderIds, cloudFilters);
   }
 
   public Integer perspectiveTotalCount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,

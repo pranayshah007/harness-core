@@ -8,7 +8,6 @@
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,8 +28,7 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SimpleServiceLevelObjectiveSpec extends ServiceLevelObjectiveSpec {
   @ApiModelProperty(required = true) @NotNull String monitoredServiceRef;
-  @ApiModelProperty(required = true) @NotNull String healthSourceRef;
-  @Valid @Deprecated ServiceLevelIndicatorType serviceLevelIndicatorType;
+  @ApiModelProperty(required = true) String healthSourceRef;
   @Valid @NotNull List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
 
   @Override

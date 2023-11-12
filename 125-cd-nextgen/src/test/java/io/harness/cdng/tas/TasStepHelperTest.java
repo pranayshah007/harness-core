@@ -30,6 +30,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceType.GOOGLE_CLOUD
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
@@ -92,6 +93,7 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ArtifactBundleStore;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
@@ -2479,6 +2481,52 @@ public class TasStepHelperTest extends CategoryTest {
                            unitProgressData, ambiance, "Failed to execute TAS step"))
                        .build());
     assertThat(taskChainResponse.isChainEnd()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testValidateArtifactBundleManifestStore() {
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder().build();
+    TasManifestOutcome tasManifestOutcome1 =
+        TasManifestOutcome.builder()
+            .order(0)
+            .identifier("ArtifactBundleStoreTaskManifest")
+            .autoScalerPath(ParameterField.createValueField(List.of("autoscalerPath")))
+            .store(ArtifactBundleStore.builder().build())
+            .build();
+    TasManifestOutcome tasManifestOutcome2 = TasManifestOutcome.builder()
+                                                 .order(1)
+                                                 .identifier("ArtifactBundleStoreTaskManifest")
+                                                 .store(CustomRemoteStoreConfig.builder().build())
+                                                 .build();
+    Collection<ManifestOutcome> manifestOutcomes = List.of(tasManifestOutcome1, tasManifestOutcome2);
+    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(passThroughData, manifestOutcomes))
+        .hasMessageContaining(
+            "Tas Manifest of Artifact Bundle Store type doesn't support Additional Manifest of type Tas Manifest.Expected count of Tas Manifest is 1 but found : 2");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testValidateArtifactBundleManifestStore2() {
+    TasStepPassThroughData passThroughData = TasStepPassThroughData.builder().build();
+    TasManifestOutcome tasManifestOutcome1 =
+        TasManifestOutcome.builder()
+            .order(0)
+            .identifier("ArtifactBundleStoreTaskManifest")
+            .autoScalerPath(ParameterField.createValueField(List.of("autoscalerPath")))
+            .store(ArtifactBundleStore.builder().build())
+            .build();
+    AutoScalerManifestOutcome tasManifestOutcome2 = AutoScalerManifestOutcome.builder()
+                                                        .order(1)
+                                                        .identifier("ArtifactBundleStoreTaskManifest")
+                                                        .store(CustomRemoteStoreConfig.builder().build())
+                                                        .build();
+    Collection<ManifestOutcome> manifestOutcomes = List.of(tasManifestOutcome1, tasManifestOutcome2);
+    assertThatThrownBy(() -> tasStepHelper.filterManifestOutcomesByType(passThroughData, manifestOutcomes))
+        .hasMessageContaining(
+            "Tas Manifest of Artifact Bundle Store type having Autoscaler manifest configured doesn't support Autoscaler manifest type Separately.");
   }
 
   @Test

@@ -1,0 +1,10 @@
+apiVersion: specs.smi-spec.io/v1alpha3
+kind: TCPRoute
+metadata:
+  name: smi-tcp-route
+spec:
+  matches:
+  - name: smi-tcp-port-rule-1
+    ports:
+    - 8080
+    - 1234

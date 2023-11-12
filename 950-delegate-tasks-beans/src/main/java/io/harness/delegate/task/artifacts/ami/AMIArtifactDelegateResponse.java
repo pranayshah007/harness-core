@@ -49,4 +49,12 @@ public class AMIArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.amiId = amiId;
     this.metadata = metadata;
   }
+
+  @Override
+  public String describe() {
+    String metadataKeys = (getMetadata() != null) ? String.valueOf(getMetadata().keySet()) : null;
+
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nversion: " + getVersion()
+        + "\nAmiId: " + getAmiId() + "\nMetadata keys: " + metadataKeys;
+  }
 }

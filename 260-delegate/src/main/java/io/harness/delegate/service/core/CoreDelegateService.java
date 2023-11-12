@@ -62,12 +62,12 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {
       taskRunner.init(groupId, task.getInfraData(), Map.of(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_EXECUTE_STEP)) {
-      taskRunner.execute(groupId, task.getTaskData(), Map.of(), new Context());
+      taskRunner.execute(groupId, null, task.getTaskData(), Map.of(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_CLEANUP)) {
       taskRunner.cleanup(groupId, new Context());
     } else { // Task which doesn't have separate infra step (e.g. CD)
       taskRunner.init(groupId, task.getInfraData(), Map.of(), new Context());
-      taskRunner.execute(groupId, task.getTaskData(), Map.of(), new Context());
+      taskRunner.execute(groupId, null, task.getTaskData(), Map.of(), new Context());
       taskRunner.cleanup(groupId, new Context());
     }
     return ExecutionStatusResponse.newBuilder()

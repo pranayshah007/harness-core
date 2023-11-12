@@ -7,8 +7,8 @@
 
 package io.harness.idp.configmanager.service;
 
-import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.DEVESH;
+import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
@@ -36,9 +37,12 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 import io.harness.springdata.TransactionHelper;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,7 +89,17 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   static final String TEST_HARNESS_CI_CD_PLUGIN_NAME = "Harness CI/CD";
   static final String TEST_CONFIG_VALUE =
       "kafka:\n  clientId: backstage\n  clusters:\n    - name: cluster\n      dashboardUrl: https://akhq.io/\n      brokers:\n        - localhost:9092";
-
+  static final String K8s_CONFIG_VALUE = "kubernetes:\n"
+      + "  serviceLocatorMethod:\n"
+      + "    type: multiTenant\n"
+      + "  clusterLocatorMethods:\n"
+      + "    - type: config\n"
+      + "      clusters:\n"
+      + "        - url: https://35.238.78.97\n"
+      + "          name: backstage-cluster\n"
+      + "          authProvider: 'google'\n"
+      + "          skipTLSVerify: true\n"
+      + "          skipMetricsLookup: false\n";
   static final String TEST_INVALID_CONFIG_VALUE =
       "kafk2da:\n  clie23dntId: backstage\n  clusters:\n    - name: cluster\n      dashboardUrl: https://akhq.io/\n      brokers:\n        - localhost:9092";
   static final String TEST_HARNESS_CI_CD_PLUGIN_CONFIG =
@@ -530,6 +544,68 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(returnedAppConfig.getConfigName(), TEST_CONFIG_NAME);
   }
 
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testToggleConfigForK8s() throws ExecutionException {
+    AppConfigEntity appConfigEntity = getAppConfigEntityForK8s();
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
+        .thenReturn(Optional.of(AppConfigEntity.builder().build()));
+    AppConfig returnedAppConfig = configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, Constants.KUBERNETES_PLUGIN, true, TEST_PLUGIN_CONFIG_TYPE);
+    assertEquals(returnedAppConfig.getConfigId(), Constants.KUBERNETES_PLUGIN);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testToggleConfigForK8sThrowsException() throws ExecutionException {
+    AppConfigEntity appConfigEntity = getAppConfigEntityForK8s();
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
+             TEST_ACCOUNT_IDENTIFIER, Constants.KUBERNETES_PLUGIN, ConfigType.PLUGIN))
+        .thenReturn(Optional.of(appConfigEntity));
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
+             TEST_ACCOUNT_IDENTIFIER, Constants.GOOGLE_AUTH, ConfigType.AUTH))
+        .thenReturn(Optional.empty());
+    configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, Constants.KUBERNETES_PLUGIN, true, TEST_PLUGIN_CONFIG_TYPE);
+  }
+
+  @Test
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testToggleConfigForGithubInsights() throws ExecutionException {
+    AppConfigEntity appConfigEntity = getAppConfigEntityForGithubInsights();
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
+        .thenReturn(Optional.of(AppConfigEntity.builder().build()));
+    AppConfig returnedAppConfig = configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, Constants.GITHUB_INSIGHTS_PLUGIN, true, TEST_PLUGIN_CONFIG_TYPE);
+    assertEquals(returnedAppConfig.getConfigId(), Constants.GITHUB_INSIGHTS_PLUGIN);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testToggleConfigForGithubInsightsThrowsException() throws ExecutionException {
+    AppConfigEntity appConfigEntity = getAppConfigEntityForGithubInsights();
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(appConfigEntity);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
+             TEST_ACCOUNT_IDENTIFIER, Constants.GITHUB_INSIGHTS_PLUGIN, ConfigType.PLUGIN))
+        .thenReturn(Optional.of(AppConfigEntity.builder().build()));
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
+             TEST_ACCOUNT_IDENTIFIER, Constants.GITHUB_AUTH, ConfigType.AUTH))
+        .thenReturn(Optional.empty());
+    configManagerServiceImpl.toggleConfigForAccount(
+        TEST_ACCOUNT_IDENTIFIER, Constants.GITHUB_INSIGHTS_PLUGIN, true, TEST_PLUGIN_CONFIG_TYPE);
+  }
+
   private AppConfigEntity getTestAppConfigEntity() {
     return AppConfigEntity.builder()
         .id(TEST_ID)
@@ -538,6 +614,36 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
         .configId(TEST_CONFIG_ID)
         .configName(TEST_CONFIG_NAME)
         .configs(TEST_CONFIG_VALUE)
+        .enabled(TEST_ENABLED)
+        .createdAt(TEST_CREATED_AT_TIME)
+        .lastModifiedAt(TEST_LAST_MODIFIED_AT_TIME)
+        .enabledDisabledAt(TEST_ENABLED_DISABLED_AT_TIME)
+        .build();
+  }
+
+  private AppConfigEntity getAppConfigEntityForK8s() {
+    return AppConfigEntity.builder()
+        .id(TEST_ID)
+        .accountIdentifier(TEST_ACCOUNT_IDENTIFIER)
+        .configType(TEST_PLUGIN_CONFIG_TYPE)
+        .configId(Constants.KUBERNETES_PLUGIN)
+        .configName(Constants.KUBERNETES_PLUGIN)
+        .configs(K8s_CONFIG_VALUE)
+        .enabled(TEST_ENABLED)
+        .createdAt(TEST_CREATED_AT_TIME)
+        .lastModifiedAt(TEST_LAST_MODIFIED_AT_TIME)
+        .enabledDisabledAt(TEST_ENABLED_DISABLED_AT_TIME)
+        .build();
+  }
+
+  private AppConfigEntity getAppConfigEntityForGithubInsights() {
+    return AppConfigEntity.builder()
+        .id(TEST_ID)
+        .accountIdentifier(TEST_ACCOUNT_IDENTIFIER)
+        .configType(TEST_PLUGIN_CONFIG_TYPE)
+        .configId(Constants.GITHUB_INSIGHTS_PLUGIN)
+        .configName(Constants.GITHUB_INSIGHTS_PLUGIN)
+        .configs(null)
         .enabled(TEST_ENABLED)
         .createdAt(TEST_CREATED_AT_TIME)
         .lastModifiedAt(TEST_LAST_MODIFIED_AT_TIME)

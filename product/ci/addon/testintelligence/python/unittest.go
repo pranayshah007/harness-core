@@ -65,6 +65,9 @@ func (b *unittestRunner) ReadPackages(files []types.File) []types.File {
 func (b *unittestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Run all the tests
 	testCmd := ""
+	if userArgs == "" {
+		userArgs = fmt.Sprintf("--junitxml='%s${HARNESS_NODE_INDEX}' -o junit_family='xunit1'", utils.HarnessDefaultReportPath)
+	}
 	scriptPath := filepath.Join(b.agentPath, "harness", "python-agent", "python_agent.py")
 	userCmd := strings.TrimSpace(fmt.Sprintf("\"%s %s\"", unittestCmd, userArgs))
 	if runAll {

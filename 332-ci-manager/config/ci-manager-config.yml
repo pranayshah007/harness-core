@@ -104,16 +104,16 @@ tiServiceConfig:
 
 sscaServiceConfig:
   httpClientConfig:
-    baseUrl: http://localhost:8186
+    baseUrl: http://localhost:8188
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
-  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
-  serviceSecret: secret
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-true}
+  serviceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 stoServiceConfig:
   baseUrl: http://localhost:4000
   internalUrl: ""
-  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  globalToken: "token"
 
 iacmServiceConfig:
   baseUrl: http://localhost:4000
@@ -172,8 +172,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.29
-  liteEngineImage: harness/ci-lite-engine:1.16.29
+  addonImage: harness/ci-addon:1.16.30
+  liteEngineImage: harness/ci-lite-engine:1.16.30
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -214,6 +214,12 @@ ciExecutionServiceConfig:
     images:
       - product: anchore_default
         image: harness/anchore-job-runner
+      - product: aquasecurity_default
+        image: harness/sto-plugin
+        entrypoint:
+          - /bin/sto_plugin
+          - "--run-strategy"
+          - single-container
       - product: awsecr_default
         image: harness/aws-ecr-job-runner
       - product: awssecurityhub_default
@@ -345,7 +351,7 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.6.1
+      image: plugins/cache:1.6.3
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -375,7 +381,7 @@ ciExecutionServiceConfig:
       security: harness/sto-plugin:${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
       artifactoryUpload: plugins/artifactory:1.4.7
       cacheGCS: plugins/cache:1.6.2
-      cacheS3: plugins/cache:1.6.2
+      cacheS3: plugins/cache:1.6.3
       sscaOrchestration: harness/ssca-plugin:0.11.0
       sscaEnforcement: harness/ssca-plugin:0.11.0
     vmContainerlessStepConfig:
@@ -384,7 +390,7 @@ ciExecutionServiceConfig:
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.5.0
       cacheS3Config:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.3
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.1
       gitCloneConfig:

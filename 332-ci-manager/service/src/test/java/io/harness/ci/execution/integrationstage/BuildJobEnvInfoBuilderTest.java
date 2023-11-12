@@ -49,7 +49,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = SAHITHI)
   @Category(UnitTests.class)
-  public void getKubernetisTimeoutDefault() {
+  public void getKubernetesTimeoutDefault() {
     String connectorRefValue = "docker";
     Infrastructure infrastructure =
         K8sDirectInfraYaml.builder()
@@ -64,7 +64,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = SAHITHI)
   @Category(UnitTests.class)
-  public void getKubernetisTimeoutWhenGivenInitTimeout() {
+  public void getKubernetesTimeoutWhenGivenInitTimeout() {
     String connectorRefValue = "docker";
 
     ParameterField<String> timeout = new ParameterField<>();
@@ -84,7 +84,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = SAHITHI)
   @Category(UnitTests.class)
-  public void getKubernetisTimeoutWhenGivenOstypeWindows() {
+  public void getKubernetesTimeoutWhenGivenOstypeWindows() {
     String connectorRefValue = "docker";
 
     ParameterField<OSType> osTypeParameterField = new ParameterField<>();
@@ -103,7 +103,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = SAHITHI)
   @Category(UnitTests.class)
-  public void getKubernetisTimeoutWhenQueueEnabled() {
+  public void getKubernetesTimeoutWhenQueueEnabled() {
     String connectorRefValue = "docker";
     when(ciFeatureFlagService.isEnabled(eq(FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY), any())).thenReturn(true);
     Infrastructure infrastructure =
@@ -113,6 +113,6 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
                       .build())
             .build();
     int response = buildJobEnvInfoBuilder.getTimeout(infrastructure, ACCOUNT_ID);
-    assertThat(response).isEqualTo(36000 * 1000L);
+    assertThat(response).isEqualTo(600 * 1000L);
   }
 }

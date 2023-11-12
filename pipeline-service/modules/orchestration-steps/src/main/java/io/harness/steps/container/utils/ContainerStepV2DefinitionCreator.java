@@ -66,6 +66,10 @@ public class ContainerStepV2DefinitionCreator {
           String identifier = getKubernetesStandardPodName(stepInfo.getIdentifier());
           String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
           Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
+          Map<String, String> envVarsWithPlainTextSecret = new HashMap<>();
+          if (EmptyPredicate.isNotEmpty(pluginDetails.getEnvVariablesWithPlainTextSecretMap())) {
+            envVarsWithPlainTextSecret = new HashMap<>(pluginDetails.getEnvVariablesWithPlainTextSecretMap());
+          }
           List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()
                                                            .stream()
                                                            .map(SecretNgVariableUtils::getSecretNgVariable)
@@ -78,6 +82,7 @@ public class ContainerStepV2DefinitionCreator {
                       os.getValue() != null ? OSType.getOSType(String.valueOf(os.getValue())) : null))
                   .args(StepContainerUtils.getArguments(pluginDetails.getPortUsed(0)))
                   .envVars(envMap)
+                  .envVarsWithPlainTextSecret(envVarsWithPlainTextSecret)
                   .secretVariables(secretNGVariableMap)
                   .containerImageDetails(
                       ContainerImageDetails.builder()

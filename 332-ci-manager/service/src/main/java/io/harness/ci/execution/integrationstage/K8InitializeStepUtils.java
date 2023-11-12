@@ -426,12 +426,14 @@ public class K8InitializeStepUtils {
     String image = resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException(String.format(
-          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, image is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
       throw new CIStageExecutionException(String.format(
-          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, connector ref is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     Integer port = portFinder.getNextPort();
@@ -493,14 +495,16 @@ public class K8InitializeStepUtils {
     String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException(String.format(
-          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, image is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     String connectorRef =
         resolveStringParameter("connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), true);
     if (isEmpty(connectorRef)) {
       throw new CIStageExecutionException(String.format(
-          "connectorRef can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, connector ref is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     Map<String, String> portBindings =
@@ -565,12 +569,14 @@ public class K8InitializeStepUtils {
     String image = resolveStringParameter("Image", "RunTest", identifier, runTestsStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException(String.format(
-          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, image is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     if (ParameterField.isNull(runTestsStepInfo.getConnectorRef())) {
       throw new CIStageExecutionException(String.format(
-          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
+          "With a Kubernetes cluster build infrastructure, connector ref is required for stepId: %s and stepName: %s.",
+          identifier, name));
     }
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);

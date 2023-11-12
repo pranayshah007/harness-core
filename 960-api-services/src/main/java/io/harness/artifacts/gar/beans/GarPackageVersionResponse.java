@@ -26,6 +26,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GarPackageVersionResponse {
-  private List<GarTags> Tags;
+  private List<GarVersions> versions;
   String nextPageToken;
 }

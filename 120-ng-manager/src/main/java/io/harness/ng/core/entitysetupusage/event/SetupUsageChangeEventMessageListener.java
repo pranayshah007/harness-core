@@ -10,12 +10,12 @@ package io.harness.ng.core.entitysetupusage.event;
 import static io.harness.NGConstants.BRANCH;
 import static io.harness.NGConstants.REPO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CHAOS_HUB;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CHAOS_INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
-import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.IDP_CHECK;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPELINES;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
@@ -64,7 +64,7 @@ public class SetupUsageChangeEventMessageListener implements MessageListener {
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOToRestDTOMapper;
   final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
       Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES,
-          INFRASTRUCTURE, TRIGGERS, IDP_CHECK, CHAOS_INFRASTRUCTURE);
+          INFRASTRUCTURE, TRIGGERS, CHAOS_INFRASTRUCTURE, CHAOS_HUB);
 
   @Inject
   public SetupUsageChangeEventMessageListener(EntitySetupUsageService entitySetupUsageService,

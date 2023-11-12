@@ -212,7 +212,6 @@ public class PlanCreatorMergeService {
                                                    .setProjectIdentifier(projectIdentifier)
                                                    .setIsExecutionInputEnabled(true);
     if (metadata != null) {
-      builder.setMetadata(metadata);
       builder.setExecutionContext(PlanExecutionContextMapper.toExecutionContext(metadata, settingsMap, featureFlagMap));
     }
     if (planExecutionMetadata != null) {

@@ -196,6 +196,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
     assertThat(task.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
     assertThat(task.getDelegateId()).isEqualTo("test-delegate-id1");
     assertThat(task.getClientContext()).isEqualTo(clientContext);
+    assertThat(task.getAssignAfterMs()).isGreaterThanOrEqualTo(System.currentTimeMillis());
   }
 
   @Test

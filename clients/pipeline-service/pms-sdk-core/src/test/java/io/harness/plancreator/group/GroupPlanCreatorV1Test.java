@@ -19,6 +19,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -38,10 +40,8 @@ import io.harness.steps.group.GroupStepV1;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -104,14 +104,14 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     assertThat(planForChildrenNodes).isNotNull();
     assertThat(planForChildrenNodes.size()).isEqualTo(1);
 
-    YamlNode internalStepsField = stepsNode.get(0).getField("spec").getNode().getField("steps").getNode();
-    assertThat(planForChildrenNodes.get(internalStepsField.getUuid())).isNotNull();
-    assertThat(planForChildrenNodes.get(internalStepsField.getUuid())
+    YamlNode specField = stepsNode.get(0).getField("spec").getNode();
+    assertThat(planForChildrenNodes.get(specField.getUuid())).isNotNull();
+    assertThat(planForChildrenNodes.get(specField.getUuid())
                    .getDependencies()
                    .getDependenciesMap()
-                   .get(internalStepsField.getUuid())
+                   .get(specField.getUuid())
                    .toString())
-        .isEqualTo(internalStepsField.getYamlPath());
+        .isEqualTo(specField.getYamlPath());
 
     List<YamlNode> stagesNode = pipelineYamlField.getNode().getField("stages").getNode().asArray();
 
@@ -120,15 +120,15 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     assertThat(planForChildrenNodes).isNotNull();
     assertThat(planForChildrenNodes.size()).isEqualTo(1);
 
-    YamlNode internalStagesField = stagesNode.get(1).getField("spec").getNode().getField("stages").getNode();
+    specField = stagesNode.get(1).getField("spec").getNode();
 
-    assertThat(planForChildrenNodes.get(internalStagesField.getUuid())).isNotNull();
-    assertThat(planForChildrenNodes.get(internalStagesField.getUuid())
+    assertThat(planForChildrenNodes.get(specField.getUuid())).isNotNull();
+    assertThat(planForChildrenNodes.get(specField.getUuid())
                    .getDependencies()
                    .getDependenciesMap()
-                   .get(internalStagesField.getUuid())
+                   .get(specField.getUuid())
                    .toString())
-        .isEqualTo(internalStagesField.getYamlPath());
+        .isEqualTo(specField.getYamlPath());
   }
 
   @Test
@@ -142,7 +142,8 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     }
 
     PlanNode planNode = planCreator.createPlanForParentNode(
-        PlanCreationContext.builder().build(), new YamlField(stagesNode.get(1)), childrenIds);
+        PlanCreationContext.builder().currentField(new YamlField(stagesNode.get(1))).build(),
+        new YamlField(stagesNode.get(1)), childrenIds);
     assertThat(planNode).isNotNull();
     assertThat(planNode.getStepType()).isEqualTo(GroupStepV1.STEP_TYPE);
     assertThat(planNode.getAdviserObtainments()).isEmpty();
@@ -157,9 +158,12 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata(PlanCreatorConstants.NEXT_ID,
-                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .setNodeMetadata(HarnessStruct.newBuilder()
+                                                 .putData(PlanCreatorConstants.NEXT_ID,
+                                                     HarnessValue.newBuilder().setStringValue("nextNodeUuid").build())
+                                                 .build())
                             .build())
+            .currentField(new YamlField(stagesNode.get(1)))
             .build(),
         new YamlField(stagesNode.get(1)), childrenIds);
 
@@ -215,8 +219,10 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     response = planCreator.getLayoutNodeInfo(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata(PlanCreatorConstants.NEXT_ID,
-                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .setNodeMetadata(HarnessStruct.newBuilder()
+                                                 .putData(PlanCreatorConstants.NEXT_ID,
+                                                     HarnessValue.newBuilder().setStringValue("nextNodeUuid").build())
+                                                 .build())
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)));

@@ -65,7 +65,6 @@ public class PerspectiveResourceTest extends CategoryTest {
   private final ViewType PERSPECTIVE_TYPE = ViewType.CUSTOMER;
   private final String perspectiveVersion = "v1";
   private final String NEW_NAME = "PERSPECTIVE_NAME_NEW";
-  private final String UNIFIED_TABLE_NAME = "unified";
   private final String PERSPECTIVE_FOLDER_ID = "FOLDER_ID";
 
   private CEView perspective;

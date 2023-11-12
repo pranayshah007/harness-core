@@ -21,4 +21,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class NGSectionStepParameters implements StepParameters {
   String childNodeId;
   String logMessage;
+  String name;
+  String id;
 }

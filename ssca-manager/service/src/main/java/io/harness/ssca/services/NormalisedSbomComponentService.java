@@ -9,8 +9,8 @@ package io.harness.ssca.services;
 
 import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyComponentFilter;
-import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBodyLicenseFilter;
+import io.harness.spec.server.ssca.v1.model.ComponentFilter;
+import io.harness.spec.server.ssca.v1.model.LicenseFilter;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
@@ -26,9 +26,7 @@ public interface NormalisedSbomComponentService {
   Page<NormalizedSBOMComponentEntity> getNormalizedSbomComponents(String accountId, String orgIdentifier,
       String projectIdentifier, ArtifactEntity artifact, ArtifactComponentViewRequestBody filterBody,
       Pageable pageable);
-  List<String> getOrchestrationIds(String accountId, String orgIdentifier, String projectIdentifier,
-      ArtifactListingRequestBodyLicenseFilter licenseFilter);
 
   List<String> getOrchestrationIds(String accountId, String orgIdentifier, String projectIdentifier,
-      List<ArtifactListingRequestBodyComponentFilter> componentFilter);
+      LicenseFilter licenseFilter, List<ComponentFilter> componentFilter);
 }

@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -165,7 +165,7 @@ public class CdAsyncExecutableTest extends CategoryTest {
 
     Mockito.verify(asyncWaitEngine, Mockito.times(1))
         .waitForAllOn(
-            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyInt());
+            asyncDelegateResumeCallbackArgumentCaptor.capture(), any(), correlationIdsCaptor.capture(), anyLong());
     verify(asyncExecutableTaskHelper).extractTaskRequest(any());
     verify(asyncExecutableTaskHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), any(), any(), anyBoolean());
     assertThat(response.getLogKeys(0)).isEqualTo("logkey1");

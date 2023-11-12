@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.group;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.v1.FailureStrategiesUtilsV1;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -74,22 +76,16 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
-    YamlNode specNode = config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode();
-    YamlField childrenField;
-    if (specNode.getField(YAMLFieldNameConstants.STAGES) != null) {
-      childrenField = specNode.getField(YAMLFieldNameConstants.STAGES);
-    } else {
-      childrenField = specNode.getField(YAMLFieldNameConstants.STEPS);
-    }
+    YamlField specField = config.getNode().getField(YAMLFieldNameConstants.SPEC);
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
 
     Map<String, YamlField> yamlFieldMap = new HashMap<>();
-    yamlFieldMap.put(childrenField.getUuid(), childrenField);
-    responseMap.put(childrenField.getUuid(),
+    yamlFieldMap.put(specField.getNode().getUuid(), specField);
+    responseMap.put(specField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(yamlFieldMap)
                               .toBuilder()
-                              .putDependencyMetadata(childrenField.getUuid(), getDependencyForChildren(config))
+                              .putDependencyMetadata(specField.getNode().getUuid(), getDependencyForChildren(config))
                               .build())
             .build());
 
@@ -114,27 +110,18 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    YamlField childrenField;
-    YamlNode specNode = config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode();
-    if (specNode.getField(YAMLFieldNameConstants.STAGES) != null) {
-      childrenField = specNode.getField(YAMLFieldNameConstants.STAGES);
-    } else {
-      childrenField = specNode.getField(YAMLFieldNameConstants.STEPS);
-    }
-    YamlNode currentNode = config.getNode();
     return PlanNode.builder()
-        .uuid(currentNode.getUuid())
-        .name(YAMLFieldNameConstants.GROUP)
-        .identifier(YAMLFieldNameConstants.GROUP + currentNode.getUuid())
+        .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
+        .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getNodeName()))
+        .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
         .stepType(GroupStepV1.STEP_TYPE)
-        .stepParameters(GroupStepParametersV1.builder().childNodeID(childrenField.getNode().getUuid()).build())
+        .stepParameters(GroupStepParametersV1.getStepParameters(config, childrenNodeIds.get(0)))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(ctx, config))
         .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
-        .skipExpressionChain(true)
         .build();
   }
 

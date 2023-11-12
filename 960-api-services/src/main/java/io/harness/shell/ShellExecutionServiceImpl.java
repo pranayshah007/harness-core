@@ -114,7 +114,7 @@ public class ShellExecutionServiceImpl implements ShellExecutionService {
         throw new ShellExecutionException("Error occurred during script execution, Reason: " + message[0]);
       }
     } catch (IOException | InterruptedException | TimeoutException e) {
-      log.error("Exception in Script execution ", e);
+      log.warn("Exception in Script execution ", e);
       shellExecutionResponseBuilder.message(ExceptionUtils.getMessage(e));
       shellExecutionResponseBuilder.exitValue(1);
     } finally {

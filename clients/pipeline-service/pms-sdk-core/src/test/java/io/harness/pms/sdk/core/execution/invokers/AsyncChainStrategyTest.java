@@ -104,7 +104,7 @@ public class AsyncChainStrategyTest extends PmsSdkCoreTestBase {
 
     Mockito.verify(asyncWaitEngine, Mockito.times(1))
         .waitForAllOn(notifyCallbackArgumentCaptor.capture(), progressCallbackArgumentCaptor.capture(),
-            correlationIdsCaptor.capture(), eq(TestAsyncChainStep.timeout));
+            correlationIdsCaptor.capture(), eq((long) TestAsyncChainStep.timeout));
     // Wait Engine Mock verify interactions
     AsyncSdkResumeCallback resumeCallback = notifyCallbackArgumentCaptor.getValue();
     assertThat(resumeCallback.getAmbianceBytes()).isEqualTo(ambiance.toByteArray());

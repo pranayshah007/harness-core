@@ -1,0 +1,6 @@
+name: IDP Service Dropwizard Metrics Group
+identifier: IdpServiceDwMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

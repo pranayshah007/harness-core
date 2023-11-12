@@ -56,7 +56,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "  --set delegateToken=${token} \\\n"
       + "  --set managerEndpoint=${manager_url} \\\n"
       + "  --set delegateDockerImage=${image} \\\n"
-      + "  --set replicas=1 --set upgrader.enabled=false";
+      + "  --set replicas=1 --set upgrader.enabled=true";
 
   private static final String KUBERNETES_MANIFEST_INSTRUCTIONS = "\"PUT_YOUR_DELEGATE_NAME\" with kubernetes-delegate\n"
       + "\"PUT_YOUR_ACCOUNT_ID\" with ${account_id}\n"

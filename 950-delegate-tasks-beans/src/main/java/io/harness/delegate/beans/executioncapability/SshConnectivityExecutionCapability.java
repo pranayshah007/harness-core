@@ -73,7 +73,11 @@ public class SshConnectivityExecutionCapability implements ExecutionCapability {
         ? sshInfraDelegateConfig.getSshKeySpecDto().getAuth().getAuthScheme().toString()
         : " no authentication details";
     String host = fetchCapabilityBasis();
-    return isNotEmpty(host) ? String.format("Capability to connect %s with %s", host, authScheme) : null;
+    return isNotEmpty(host)
+        ? String.format(
+            "Capability to connect %s with %s may have failed due to incorrect host/port provided or socket connection error, possibly caused by network/firewall issues.",
+            host, authScheme)
+        : null;
   }
 
   /**
