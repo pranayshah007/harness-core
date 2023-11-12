@@ -15,6 +15,8 @@ import io.harness.delegate.ComputingResource;
 import io.harness.delegate.ExecutionInfrastructure;
 import io.harness.delegate.K8sInfraSpec;
 import io.harness.delegate.LogConfig;
+import io.harness.delegate.Secret;
+import io.harness.delegate.Secrets;
 import io.harness.delegate.StepSpec;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.InitializeExecutionInfraResponse;
@@ -80,7 +82,8 @@ public class InitKubernetesInfraContainerStep
     ContainerStepSpec containerStepSpec = (ContainerStepSpec) stepElementParameters.getSpec();
     final List<TaskSelector> delegateSelectors = getTaskSelectors(ambiance, containerStepSpec);
 
-    ExecutionInfrastructure executionInfrastructure = buildExecutionInfrastructure(ambiance, stepElementParameters);
+    ExecutionInfrastructure executionInfrastructure =
+        buildExecutionInfrastructure(ambiance, List.of(stepElementParameters));
     long timeout =
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     return TaskRequestsUtils.prepareInitTaskRequest(ambiance, executionInfrastructure, timeout,
@@ -88,22 +91,28 @@ public class InitKubernetesInfraContainerStep
   }
 
   private ExecutionInfrastructure buildExecutionInfrastructure(
-      Ambiance ambiance, StepElementParameters stepElementParameters) {
-    // iterate over the steps and populate step specs
-    K8sInfraSpec k8sInfraSpec =
-        K8sInfraSpec.newBuilder()
-            .addAllSteps(List.of(
-                StepSpec.newBuilder()
-                    .setImage("imijailovic/shell-task-ng-linux-amd64:3.0")
-                    .setStepId(SHELL_SCRIPT_TASK_IDENTIFIER)
-                    .setComputeResource(ComputingResource.newBuilder().setCpu("100m").setMemory("100Mi").build())
-                    .build()))
-            .build();
+      Ambiance ambiance, List<StepElementParameters> stepElementParametersList) {
+    // iterate over the steps and populate step specs. The values are hardcoded for POC
+    List<StepSpec> stepSpecList = new ArrayList<>();
+    for (StepElementParameters stepElementParameters : stepElementParametersList) {
+      StepSpec stepSpec =
+          StepSpec.newBuilder()
+              .setImage("imijailovic/shell-task-ng-linux-amd64:3.0")
+              .setStepId(SHELL_SCRIPT_TASK_IDENTIFIER)
+              .setComputeResource(ComputingResource.newBuilder().setCpu("100m").setMemory("100Mi").build())
+              .setSecrets(
+                  Secrets.newBuilder()
+                      .addSecrets(Secret.newBuilder().setScopeSecretIdentifier("org.shell_script_secret").build())
+                      .build())
+              .build();
 
-    String logKey = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
+      stepSpecList.add(stepSpec);
+    }
+
+    String logPrefix = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
     return ExecutionInfrastructure.newBuilder()
-        .setLogConfig(LogConfig.newBuilder().setLogKey(logKey).build())
-        .setK8S(k8sInfraSpec)
+        .setLogConfig(LogConfig.newBuilder().setLogPrefix(logPrefix).build())
+        .setK8S(K8sInfraSpec.newBuilder().addAllSteps(stepSpecList).build())
         .build();
   }
 
